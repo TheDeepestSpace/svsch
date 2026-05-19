@@ -111,6 +111,20 @@ test.describe('register visual rendering', () => {
 
     await expect(page).toHaveScreenshot('register-no-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
   });
+
+  test('renders a clock-enabled register with feedback mux and reset', async ({ page }) => {
+    await openFixture(page, 'register_clock_enable.sv', 'register-enable');
+
+    await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('.register-clock-port')).toBeVisible();
+    await expect(page.locator('.register-reset-port')).toBeVisible();
+    await expect(page.locator('.mux-select-port >> text=s')).toBeVisible();
+    await expect(page.locator('.mux-side-port >> text=true')).toBeVisible();
+    await expect(page.locator('.mux-side-port >> text=false')).toBeVisible();
+
+    await expect(page).toHaveScreenshot('register-clock-enable-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {
@@ -585,7 +599,7 @@ test.describe('node sizing visual rendering', () => {
   });
 });
 
-type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'comb' | 'alu' | 'loop' | 'replicate';
+type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'register-enable' | 'comb' | 'alu' | 'loop' | 'replicate';
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -736,11 +750,13 @@ async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMod
           ? createStructVisualLayout(graph, moduleName)
           : layoutMode === 'register'
             ? createRegisterVisualLayout(graph, moduleName)
-            : layoutMode === 'comb'
-              ? createCombVisualLayout(graph, moduleName)
-              : layoutMode === 'alu'
-                ? createAluVisualLayout(graph, moduleName)
-              : { version: 1, modules: {} } as SavedLayout;
+            : layoutMode === 'register-enable'
+              ? createRegisterEnableVisualLayout(graph, moduleName)
+              : layoutMode === 'comb'
+                ? createCombVisualLayout(graph, moduleName)
+                : layoutMode === 'alu'
+                  ? createAluVisualLayout(graph, moduleName)
+                : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
@@ -776,6 +792,52 @@ function createRegisterVisualLayout(graph: DesignGraph, moduleName: string): Sav
       [moduleName]: { nodes }
     }
   };
+}
+
+function createRegisterEnableVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const reg = designModule.nodes.find((node) => node.kind === 'register');
+  const mux = designModule.nodes.find((node) => node.kind === 'mux');
+  const selectorSignal = mux?.ports.find((port) => port.name === 'sel')?.connectedSignal;
+  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
+  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const nodes: Record<string, { x: number; y: number }> = {};
+  const grid = 24;
+
+  const muxX = grid * 9;
+  const muxY = grid * 4;
+  const regX = grid * 19;
+  const regY = grid * 4;
+
+  if (mux) nodes[mux.id] = { x: muxX, y: muxY };
+  if (reg) nodes[reg.id] = { x: regX, y: regY };
+
+  const clkLike = inputPorts.filter((p) => /^c/i.test(p.label));
+  const rstLike = inputPorts.filter((p) => /^r/i.test(p.label));
+  const selectorPorts = inputPorts.filter((p) => p.label === selectorSignal);
+  const dataPorts = inputPorts.filter((p) => !clkLike.includes(p) && !rstLike.includes(p) && !selectorPorts.includes(p));
+
+  selectorPorts.forEach((port, i) => {
+    nodes[port.id] = { x: muxX - grid * 3, y: muxY - grid * 5 - i * grid * 2 };
+  });
+
+  dataPorts.forEach((port, i) => {
+    nodes[port.id] = { x: grid * 0, y: muxY + grid * 2 + i * grid * 2 };
+  });
+
+  clkLike.forEach((port, i) => {
+    nodes[port.id] = { x: regX + grid * i * 6, y: regY + grid * 7 };
+  });
+
+  rstLike.forEach((port, i) => {
+    nodes[port.id] = { x: regX + grid * 4 + i * grid * 6, y: regY + grid * 7 };
+  });
+
+  outputPorts.forEach((port) => {
+    nodes[port.id] = { x: regX + grid * 11, y: regY };
+  });
+
+  return { version: 1, modules: { [moduleName]: { nodes } } };
 }
 
 function createBusVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {

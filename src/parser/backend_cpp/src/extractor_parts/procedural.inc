@@ -200,6 +200,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
 
     bool is_reset_condition = false;
     vpiHandle reset_branch_stmt = nullptr;
+    vpiHandle else_branch_stmt = nullptr;
 
     if (!rst_signal.empty()) {
         vpiHandle body = vpi_handle(vpiStmt, always_handle);
@@ -215,6 +216,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 if (getSignalName(cond_id) == rst_signal) {
                     is_reset_condition = true;
                     reset_branch_stmt = vpi_handle(vpiStmt, body);
+                    else_branch_stmt = vpi_handle(vpiElseStmt, body);
                     break;
                 }
             }
@@ -228,6 +230,12 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         std::map<std::string, std::string> desired_outputs;
         for (const auto& target : targets) desired_outputs[target] = target + "_next";
         lowered_values = lowerStatement(stmt, mod, true, desired_outputs, always_handle);
+    } else if (is_reset_condition && else_branch_stmt && containsIf(else_branch_stmt) && !findFirstCase(else_branch_stmt)) {
+        std::set<std::string> targets;
+        collectAssignmentTargets(else_branch_stmt, targets);
+        std::map<std::string, std::string> desired_outputs;
+        for (const auto& target : targets) desired_outputs[target] = target + "_next";
+        lowered_values = lowerStatement(else_branch_stmt, mod, true, desired_outputs, always_handle);
     }
 
     for (vpiHandle aggregate_assign : aggregate_assignments) {

@@ -1426,6 +1426,20 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(graph.diagnostics.some((diagnostic) => diagnostic.message.includes('if_clock_enable.q') && diagnostic.message.includes('inferred latch'))).toBe(false);
     });
 
+    it('lowers clock enable inside reset else-branch to a feedback mux', async () => {
+      if (backend !== 'uhdm') return;
+
+      const graph = await proceduralIfFixtureGraph(backend);
+      const mod = graph.modules.if_reset_then_enable;
+      const reg = mod.nodes.find((node) => node.kind === 'register' && node.label === 'q');
+      const mux = muxesSelectedBy(mod, 'en')[0];
+
+      expect(reg).toBeDefined();
+      expectMuxInput(mod, mux, 'd', 'true');
+      expectMuxInput(mod, mux, 'q', 'false');
+      expect(mod.edges.some((edge) => edge.source === mux?.id && edge.target === reg?.id && edge.targetPort === 'd')).toBe(true);
+    });
+
     it('adds independent feedback muxes for partially assigned clocked registers', async () => {
       if (backend !== 'uhdm') return;
 
