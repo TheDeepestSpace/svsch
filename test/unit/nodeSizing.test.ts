@@ -117,13 +117,13 @@ describe('diagram node sizing', () => {
     };
 
     expect(selectNodeHasVectorOutput(bitSelect)).toBe(false);
-    expect(selectPortLabel(bitSelect, 's')).toBe('s');
-    expect(selectPortLabel(bitSelect, 'in')).toBe('in');
-    expect(selectPortLabel(bitSelect, 'out')).toBe('out');
+    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'sel')!)).toBe('s[]');
+    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'in')!)).toBe('in[]');
+    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'out')!)).toBe('out');
     expect(selectNodeHasVectorOutput(partSelect)).toBe(true);
-    expect(selectPortLabel(partSelect, 's')).toBe('s[]');
-    expect(selectPortLabel(partSelect, 'w')).toBe('w[]');
-    expect(selectPortLabel(partSelect, 'out')).toBe('out[]');
+    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'sel')!)).toBe('s[]');
+    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'width')!)).toBe('w[]');
+    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'out')!)).toBe('out[]');
   });
 
   test('keeps a toy case mux at the default width', () => {
