@@ -268,6 +268,7 @@ export function OrthogonalEdge({
   
   const isStructAggregate = diagramEdge?.metadata?.aggregate === 'struct';
   const isInterfaceAggregate = diagramEdge?.metadata?.aggregate === 'interface';
+  const isStacked = diagramEdge?.isStacked === true;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -428,10 +429,16 @@ export function OrthogonalEdge({
           })()}
         </g>
       )}
+      {isStacked && (
+        <>
+          <path className="svsch-edge svsch-edge-stacked-side" d={edgeRender.path} transform="translate(0,-3)" />
+          <path className="svsch-edge svsch-edge-stacked-side" d={edgeRender.path} transform="translate(0,3)" />
+        </>
+      )}
       {isInterfaceAggregate && (
         <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
       )}
-      <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={edgeRender.path} />
+      <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={edgeRender.path} />
       <path
         className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}`}
         d={rawEdgePath}

@@ -1490,6 +1490,15 @@ select {
   stroke-width: 1.5;
 }
 
+.svsch-edge-stacked {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 80%, var(--vscode-editor-foreground));
+}
+
+.svsch-edge-stacked-side {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 40%, var(--vscode-editor-background));
+  pointer-events: none;
+}
+
 .svsch-edge-struct {
   stroke-width: 4.5;
 }
