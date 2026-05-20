@@ -1112,13 +1112,14 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
   return (
     <button
-      className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}`}
+      className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ' hdl-node-array' : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
-      style={nodeStyle}
+      style={{ ...nodeStyle, ...(isArray ? { opacity: 0.75 } : {}) }}
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
       onDoubleClick={handleDoubleClick}
     >
+      {isArray && arrayLayers}
       {node.kind !== 'mux' && node.kind !== 'alu' && node.kind !== 'select' && nodeSelection}
       {node.kind === 'mux' && <MuxSkin width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'select' && <SelectSkin width={nodeWidth} height={nodeHeight} />}
