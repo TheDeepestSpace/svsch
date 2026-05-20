@@ -1642,4 +1642,135 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(top.edges.some(e => e.source === 'port:Top:b' && e.target === mux?.id && e.targetPort === runPort?.id)).toBe(true);
     });
   });
+
+  describe('array register extraction', () => {
+    async function arrayRegisterGraph() {
+      return runParser(backend, 'array_register.sv', fixture('array_register.sv'));
+    }
+
+    it('emits a stacked write_en mux driven by write_en', async () => {
+      const graph = await arrayRegisterGraph();
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+      expect(mod).toBeDefined();
+
+      const writeEnMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'write_en')
+      ));
+      expect(writeEnMux).toBeDefined();
+      expectMuxInput(mod, writeEnMux, 'write_data', 'true');
+      expectMuxInput(mod, writeEnMux, 'M', 'false');
+    });
+
+    it('emits an array register node tagged with isArrayNode', async () => {
+      const graph = await runParser(backend, 'array_register.sv', fixture('array_register.sv'));
+      const mod = graph.modules.array_register;
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+    });
+
+    it('records the unpacked array dimension on the register when available', async () => {
+      const graph = await runParser(backend, 'array_register.sv', fixture('array_register.sv'));
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      expect(arrayReg).toBeDefined();
+      const dim = arrayReg?.arrayDimension ?? arrayReg?.metadata?.arrayDimension;
+      if (dim !== undefined) {
+        expect(dim).toMatch(/\[0:\d+\]/);
+      }
+    });
+
+    it('emits N chained stacked addr muxes for variable-index writes', async () => {
+      const graph = await arrayRegisterGraph();
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      const arrSize = arrayReg?.arraySize ?? arrayReg?.metadata?.arraySize ?? 0;
+
+      const addrMuxes = mod.nodes.filter((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'address')
+      ));
+      expect(addrMuxes.length).toBe(arrSize);
+
+      // Each addr mux has M as false input
+      for (const mux of addrMuxes) {
+        expect(mux.ports.some((p) => p.direction === 'input' && p.connectedSignal === 'M')).toBe(true);
+      }
+
+      // Last addr mux feeds M.D (the array register D port)
+      const lastMux = addrMuxes.at(-1);
+      expect(mod.edges.some((e) => e.source === lastMux?.id && e.target === arrayReg?.id)).toBe(true);
+    });
+
+    it('addr muxes form a chain: each true input is previous output', async () => {
+      const graph = await arrayRegisterGraph();
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+
+      const addrMuxes = mod.nodes.filter((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'address')
+      ));
+      expect(addrMuxes.length).toBeGreaterThan(1);
+
+      for (let i = 1; i < addrMuxes.length; i++) {
+        const prevOut = addrMuxes[i - 1].ports.find((p) => p.direction === 'output')?.connectedSignal;
+        const currTrue = addrMuxes[i].ports.find((p) => p.name === 'true')?.connectedSignal;
+        expect(prevOut).toBeDefined();
+        expect(currTrue).toBe(prevOut);
+      }
+    });
+
+    it('emits a non-stacked read mux for variable-index array reads', async () => {
+      const graph = await runParser(backend, 'array_register.sv', fixture('array_register.sv'));
+      const mod = graph.modules.array_register;
+      const readMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMux).toBeDefined();
+      // Read mux is NOT stacked — it converts stacked array to a scalar output
+      expect(readMux?.isArrayNode ?? readMux?.metadata?.isArrayNode).toBeFalsy();
+      expect(mod.edges.some((e) => e.source === readMux?.id && e.signal === 'read_data')).toBe(true);
+    });
+
+    it('marks edges between stacked nodes as isStacked', async () => {
+      const graph = await arrayRegisterGraph();
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      const writeEnMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'write_en')
+      ));
+
+      // Edge from stacked register M.Q to write_en mux should be stacked
+      const stackedEdge = mod.edges.find((e) => e.source === arrayReg?.id && e.target === writeEnMux?.id);
+      expect(stackedEdge).toBeDefined();
+      expect(stackedEdge?.isStacked).toBe(true);
+
+      // Promoted edge: scalar write_en into stacked mux should also be stacked
+      const promotedEdge = mod.edges.find((e) => e.signal === 'write_en' && e.target === writeEnMux?.id);
+      expect(promotedEdge).toBeDefined();
+      expect(promotedEdge?.isStacked).toBe(true);
+    });
+
+    it('edge from stacked array output to non-stacked read mux is marked isStacked', async () => {
+      const graph = await arrayRegisterGraph();
+      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      const readMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'read');
+
+      const stackedReadEdge = mod.edges.find((e) => e.source === arrayReg?.id && e.target === readMux?.id);
+      expect(stackedReadEdge).toBeDefined();
+      expect(stackedReadEdge?.isStacked).toBe(true);
+
+      // Output edge from read mux to read_data is NOT stacked
+      const scalarOutEdge = mod.edges.find((e) => e.source === readMux?.id && e.signal === 'read_data');
+      expect(scalarOutEdge).toBeDefined();
+      expect(scalarOutEdge?.isStacked).toBeFalsy();
+    });
+  });
 });

@@ -278,6 +278,55 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         vpiHandle lhs_first = vpi_handle(vpiLhs, reg_assigns_vec[0]);
         std::string reg_base = getBaseSignalName(lhs_first);
 
+        // Detect variable-index array write: bracket with non-constant index → stacked mux chain
+        // We check independently of mod.arrayDimensions since UHDM may store unpacked dims differently.
+        bool is_array_reg = mod.arrayDimensions.count(reg_base) > 0;
+        bool is_variable_index = false;
+        std::string index_expr;
+        {
+            size_t bracket = reg_name.find('[');
+            if (bracket != std::string::npos) {
+                std::string candidate = reg_name.substr(bracket + 1);
+                if (!candidate.empty() && candidate.back() == ']') candidate.pop_back();
+                // Strip any trailing ]+:... for indexed part-selects
+                auto plus_colon = candidate.find("+:");
+                if (plus_colon != std::string::npos) candidate = candidate.substr(0, plus_colon);
+                // A constant index contains only digits, ':', and optionally '-' (e.g., "0", "3:2", "7:4")
+                bool is_constant = !candidate.empty() &&
+                    std::all_of(candidate.begin(), candidate.end(), [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
+                if (!is_constant && !candidate.empty() && candidate != "?" && candidate != "idx" && candidate != "bit") {
+                    is_variable_index = true;
+                    index_expr = candidate;
+                    // Ensure base is a known declared signal (not a struct field or bus slice)
+                    if (mod.internalSignals.find(reg_base) == mod.internalSignals.end()) {
+                        is_variable_index = false;
+                    }
+                }
+            }
+        }
+
+        // If array dimensions weren't found by the module scanner (UHDM doesn't expose them via VPI
+        // ranges for logic arrays), fall back to source-text regex extraction.
+        if (is_variable_index && !mod.arrayDimensions.count(reg_base)) {
+            std::string dim = getDeclaredArrayDimension(mod, reg_base);
+            if (!dim.empty()) {
+                // Parse "[left:right]" to get the size
+                std::string s = dim;
+                s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
+                if (s.size() >= 4 && s[0] == '[' && s.back() == ']') {
+                    s = s.substr(1, s.size() - 2);
+                    auto colon = s.find(':');
+                    if (colon != std::string::npos) {
+                        int lft = std::stoi(s.substr(0, colon));
+                        int rgt = std::stoi(s.substr(colon + 1));
+                        mod.arrayDimensions[reg_base] = dim;
+                        mod.arraySizes[reg_base] = std::abs(lft - rgt) + 1;
+                        is_array_reg = true;
+                    }
+                }
+            }
+        }
+
         Node n;
         n.id = "reg:" + mod.name + ":" + reg_name;
         n.kind = "register";
@@ -361,6 +410,140 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         if (!clk_signal.empty()) n.ports.push_back({clk_signal, "input", clk_signal, ""});
         if (!rst_signal.empty()) n.ports.push_back({rst_signal, "input", rst_signal, ""});
 
+        // Array handling: stacked mux chain for variable-index writes; tag array registers
+        if (is_variable_index) {
+            int arr_size = mod.arraySizes.count(reg_base) ? mod.arraySizes.at(reg_base) : 1;
+
+            // Ensure the whole-array register node exists first
+            std::string array_reg_id = "reg:" + mod.name + ":" + reg_base;
+            bool array_reg_exists = false;
+            for (const auto& existing : mod.nodes) {
+                if (existing.id == array_reg_id) { array_reg_exists = true; break; }
+            }
+            if (!array_reg_exists) {
+                Node arr_reg;
+                arr_reg.id = array_reg_id;
+                arr_reg.kind = "register";
+                arr_reg.label = reg_base;
+                arr_reg.source = n.source;
+                arr_reg.metadata.clockSignal = clk_signal;
+                arr_reg.metadata.resetSignal = rst_signal;
+                arr_reg.metadata.resetKind = reset_kind;
+                arr_reg.metadata.resetActiveLow = reset_active_low;
+                arr_reg.metadata.isProcedural = true;
+                arr_reg.metadata.isArrayNode = true;
+                arr_reg.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                arr_reg.metadata.arraySize = arr_size;
+                arr_reg.ports.push_back({"D", "input", reg_base + "_next", reg_width});
+                arr_reg.ports.push_back({"Q", "output", reg_base, reg_width});
+                if (!clk_signal.empty()) arr_reg.ports.push_back({clk_signal, "input", clk_signal, ""});
+                if (!rst_signal.empty()) arr_reg.ports.push_back({rst_signal, "input", rst_signal, ""});
+                mod.nodes.push_back(arr_reg);
+            }
+
+            // Convert any lowered scalar muxes for this element write into stacked muxes (write_en mux).
+            // Use sanitized comparison since IDs are sanitized (e.g. M[address] → M_address_).
+            std::string sanitized_reg_prefix = sanitizeId("mux:" + mod.name + ":" + reg_name + ":");
+            for (auto& n_tmp : mod.nodes) {
+                if (n_tmp.kind == "mux" && n_tmp.id.find(sanitized_reg_prefix) != std::string::npos) {
+                    n_tmp.metadata.isArrayNode = true;
+                    n_tmp.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                    n_tmp.metadata.arraySize = arr_size;
+                    for (auto& p : n_tmp.ports) {
+                        if (p.direction == "input" && p.signal == reg_name) {
+                            p.signal = reg_base; // Retain old array value when write disabled
+                        }
+                    }
+                }
+            }
+
+            // For the reset+enable case: also tag the existing mux created by lowerStatement.
+            std::string d_signal_for_addr = d_signal;
+            if (is_reset_condition && else_branch_stmt) {
+                // Check if the else branch has a clock-enable if (write_en) condition
+                vpiHandle en_cond = nullptr;
+                if (vpi_get(vpiType, else_branch_stmt) == vpiIf || vpi_get(vpiType, else_branch_stmt) == vpiIfElse) {
+                    en_cond = vpi_handle(vpiCondition, else_branch_stmt);
+                }
+                if (en_cond) {
+                    std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
+                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal);
+                    bool write_en_mux_exists = false;
+                    for (auto& existing : mod.nodes) {
+                        if (existing.id == candidate_id) {
+                            // Tag the existing write_en mux as stacked and fix its false port
+                            existing.metadata.isArrayNode = true;
+                            existing.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                            existing.metadata.arraySize = arr_size;
+                            for (auto& p : existing.ports) {
+                                if (p.direction == "input" && (p.signal == reg_name || p.signal == reg_base + "_if_false")) {
+                                    p.signal = reg_base;
+                                }
+                            }
+                            // Use this mux output as the chain start
+                            for (const auto& p : existing.ports) {
+                                if (p.direction == "output") { d_signal_for_addr = p.signal; break; }
+                            }
+                            write_en_mux_exists = true;
+                            break;
+                        }
+                    }
+                    if (!write_en_mux_exists) {
+                        std::string write_candidate = reg_base + "_write_candidate";
+                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
+                        Node write_en_mux;
+                        write_en_mux.id = candidate_id;
+                        write_en_mux.kind = "mux";
+                        write_en_mux.label = "if " + enable_signal;
+                        write_en_mux.source = n.source;
+                        write_en_mux.metadata.isArrayNode = true;
+                        write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                        write_en_mux.metadata.arraySize = arr_size;
+                        write_en_mux.metadata.isProcedural = true;
+                        write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
+                        write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
+                        write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
+                        write_en_mux.ports.push_back({"out", "output", write_candidate, reg_width});
+                        mod.nodes.push_back(write_en_mux);
+                        d_signal_for_addr = write_candidate;
+                    }
+                }
+            }
+
+            // Create N chained stacked addr muxes (one per array element)
+            // addr_mux[0]: sel=address, true=write_candidate, false=M.Q
+            // addr_mux[i]: sel=address, true=addr_mux[i-1].out, false=M.Q
+            // addr_mux[N-1].out = M_next (fed to M.D)
+            std::string prev_chain = d_signal_for_addr;
+            for (int idx = 0; idx < arr_size; idx++) {
+                bool is_last = (idx == arr_size - 1);
+                std::string out_signal = is_last ? reg_base + "_next"
+                                                 : reg_base + "_addr_chain_" + std::to_string(idx);
+                Node m_addr_i;
+                m_addr_i.id = "mux:" + mod.name + ":" + reg_base + "_addr_" + std::to_string(idx);
+                m_addr_i.kind = "mux";
+                m_addr_i.label = "addr==" + std::to_string(idx);
+                m_addr_i.source = n.source;
+                m_addr_i.metadata.isArrayNode = true;
+                m_addr_i.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                m_addr_i.metadata.arraySize = arr_size;
+                m_addr_i.metadata.arrayIndexSignal = std::to_string(idx);
+                m_addr_i.ports.push_back({"sel", "input", index_expr, ""});
+                m_addr_i.ports.push_back({"true", "input", prev_chain, reg_width, "match"});
+                m_addr_i.ports.push_back({"false", "input", reg_base, reg_width, "no match"});
+                m_addr_i.ports.push_back({"out", "output", out_signal, reg_width});
+                mod.nodes.push_back(m_addr_i);
+                prev_chain = out_signal;
+            }
+            // Skip pushing the per-element register node — represented by the array register
+            continue;
+        }
+
+        if (is_array_reg) {
+            n.metadata.isArrayNode = true;
+            n.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+            n.metadata.arraySize = mod.arraySizes[reg_base];
+        }
 
         mod.nodes.push_back(n);
     }

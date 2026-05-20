@@ -79,6 +79,58 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         }
     }
 
+    // Scan array-typed variables for unpacked dimensions.
+    // logic arrays come in as vpiVariables in Surelog UHDM; reg arrays use vpiRegArray.
+    // We check for an unpacked range on any variable to detect arrays.
+    // Helper: record array dimensions from a variable handle.
+    // For dedicated array types (vpiRegArray, vpiArrayVar), take first range as unpacked extent.
+    // For general variables (vpiVariables), require 2+ ranges (packed + unpacked) and take last.
+    auto recordArrayDim = [&](vpiHandle arr_handle, bool requires_two_ranges) {
+        const char* arr_name_c = vpi_get_str(vpiName, arr_handle);
+        if (!arr_name_c || strlen(arr_name_c) == 0) return;
+        std::string arr_name = arr_name_c;
+        if (mod.arrayDimensions.count(arr_name)) return; // already found
+
+        vpiHandle range_itr = vpi_iterate(vpiRange, arr_handle);
+        if (!range_itr) return;
+        int lft_first = vpiUndefined, rgt_first = vpiUndefined;
+        int lft_last = vpiUndefined, rgt_last = vpiUndefined;
+        int range_count = 0;
+        while (vpiHandle r = vpi_scan(range_itr)) {
+            int l = vpi_get(vpiLeftRange, r);
+            int ri = vpi_get(vpiRightRange, r);
+            if (l != vpiUndefined && ri != vpiUndefined) {
+                if (range_count == 0) { lft_first = l; rgt_first = ri; }
+                lft_last = l; rgt_last = ri;
+            }
+            range_count++;
+        }
+        if (requires_two_ranges) {
+            // For vpiVariables: need packed + unpacked → use last range as unpacked extent
+            if (range_count >= 2 && lft_last != vpiUndefined) {
+                mod.arrayDimensions[arr_name] = "[" + std::to_string(lft_last) + ":" + std::to_string(rgt_last) + "]";
+                mod.arraySizes[arr_name] = std::abs(lft_last - rgt_last) + 1;
+                mod.internalSignals.insert(arr_name);
+            }
+        } else {
+            // For dedicated array types: first range is the unpacked extent
+            if (range_count >= 1 && lft_first != vpiUndefined) {
+                mod.arrayDimensions[arr_name] = "[" + std::to_string(lft_first) + ":" + std::to_string(rgt_first) + "]";
+                mod.arraySizes[arr_name] = std::abs(lft_first - rgt_first) + 1;
+                mod.internalSignals.insert(arr_name);
+            }
+        }
+    };
+
+    for (int arr_type : {vpiRegArray, 3010 /* vpiArrayVar */, vpiVariables}) {
+        vpiHandle arr_itr = vpi_iterate(arr_type, mod_handle);
+        if (!arr_itr) continue;
+        bool need_two = (arr_type == vpiVariables);
+        while (vpiHandle arr_handle = vpi_scan(arr_itr)) {
+            recordArrayDim(arr_handle, need_two);
+        }
+    }
+
     // Assignments
     vpiHandle assign_itr = vpi_iterate(vpiContAssign, mod_handle);
     if (assign_itr) {
@@ -202,6 +254,46 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         }
     }
     synthesizeInterfaceHarnesses(mod);
+
+    // Synthesize array read nodes
+    std::set<std::string> array_read_signals;
+    for (const auto& n : mod.nodes) {
+        for (const auto& p : n.ports) {
+            if (p.direction == "input") {
+                size_t bracket = p.signal.find('[');
+                if (bracket != std::string::npos) {
+                    std::string base = p.signal.substr(0, bracket);
+                    if (mod.arrayDimensions.count(base)) {
+                        array_read_signals.insert(p.signal);
+                    }
+                }
+            }
+        }
+    }
+
+    for (const auto& sig : array_read_signals) {
+        size_t bracket = sig.find('[');
+        std::string base = sig.substr(0, bracket);
+        std::string index = sig.substr(bracket + 1);
+        if (!index.empty() && index.back() == ']') index.pop_back();
+
+        auto plus_colon = index.find("+:");
+        if (plus_colon != std::string::npos) index = index.substr(0, plus_colon);
+
+        bool is_constant = !index.empty() && std::all_of(index.begin(), index.end(), [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
+        if (!is_constant && !index.empty() && index != "?" && index != "idx" && index != "bit") {
+            Node read_mux;
+            read_mux.id = "mux:" + mod.name + ":" + base + "_read_" + index;
+            read_mux.kind = "mux";
+            read_mux.label = "read";
+            // Read mux is NOT stacked: it consumes the stacked array input but outputs a scalar.
+            read_mux.ports.push_back({"in", "input", base, mod.arrayDimensions[base], "in"});
+            read_mux.ports.push_back({"sel", "input", index, "", "addr"});
+            read_mux.ports.push_back({"out", "output", sig, ""});
+            mod.nodes.push_back(read_mux);
+        }
+    }
+
     modules_.push_back(mod);
     processing_modules_.erase(mod_name);
 }

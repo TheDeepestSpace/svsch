@@ -316,6 +316,10 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (n.metadata.packed || !n.metadata.role.empty() || !n.metadata.fields.empty()) {
                 j_meta["packed"] = n.metadata.packed;
             }
+            if (n.metadata.isArrayNode) j_meta["isArrayNode"] = true;
+            if (!n.metadata.arrayDimension.empty()) j_meta["arrayDimension"] = n.metadata.arrayDimension;
+            if (n.metadata.arraySize > 0) j_meta["arraySize"] = n.metadata.arraySize;
+            if (!n.metadata.arrayIndexSignal.empty()) j_meta["arrayIndexSignal"] = n.metadata.arrayIndexSignal;
             if (!n.metadata.parameterRefs.empty()) {
                 json refs = json::array();
                 for (const auto& ref : n.metadata.parameterRefs) {
@@ -447,6 +451,7 @@ json DesignExtractor::extract(const std::string& targetModule) {
             } else if (e.aggregateStruct) {
                 j_edge["metadata"] = {{"aggregate", "struct"}};
             }
+            if (e.isStacked) j_edge["isStacked"] = true;
             j_mod["edges"].push_back(j_edge);
         }
         j_modules.push_back(j_mod);

@@ -1017,6 +1017,10 @@ interface RawUhdmIr {
             fields?: Array<{ name: string; width?: string; bitRange?: string; typeName?: string; direction?: 'input' | 'output' | 'inout' | 'unknown'; source?: { file: string; line: number; col: number; endLine: number; endCol: number } }>;
             aggregateKind?: string;
             preferredSide?: string;
+            isArrayNode?: boolean;
+            arrayDimension?: string;
+            arraySize?: number;
+            arrayIndexSignal?: string;
             metadata?: RawNodeMetadata;
             ports: Array<{
                 name: string;
@@ -1041,6 +1045,7 @@ interface RawUhdmIr {
             targetPort: string;
             signal: string;
             width?: string;
+            isStacked?: boolean;
             sourceRange?: { file: string; line: number; col: number; endLine: number; endCol: number };
             metadata?: DiagramEdgeMetadata;
         }>;
@@ -1132,6 +1137,10 @@ function rawNodeMetadata(n: RawNode): RawNodeMetadata | undefined {
     if (n.fields !== undefined) topLevel.fields = n.fields;
     if (n.aggregateKind !== undefined) topLevel.aggregateKind = n.aggregateKind;
     if (n.preferredSide !== undefined) topLevel.preferredSide = n.preferredSide;
+    if (n.isArrayNode !== undefined) topLevel.isArrayNode = n.isArrayNode;
+    if (n.arrayDimension !== undefined) topLevel.arrayDimension = n.arrayDimension;
+    if (n.arraySize !== undefined) topLevel.arraySize = n.arraySize;
+    if (n.arrayIndexSignal !== undefined) topLevel.arrayIndexSignal = n.arrayIndexSignal;
     if (n.metadata?.preferredSide !== undefined) topLevel.preferredSide = n.metadata.preferredSide;
     if (n.metadata?.parameterRefs !== undefined) topLevel.parameterRefs = n.metadata.parameterRefs;
     if (n.metadata?.instanceParameters !== undefined) topLevel.instanceParameters = n.metadata.instanceParameters;
@@ -1731,6 +1740,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     targetPort: targetPortId,
                     signal: e.signal,
                     width: e.width,
+                    isStacked: e.isStacked || undefined,
                     sourceRange: e.sourceRange ? {
                         file: path.relative(workspaceRoot, e.sourceRange.file),
                         startLine: e.sourceRange.line,

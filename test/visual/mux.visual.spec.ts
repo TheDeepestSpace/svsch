@@ -125,6 +125,17 @@ test.describe('register visual rendering', () => {
 
     await expect(page).toHaveScreenshot('register-clock-enable-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders an array register with isometric stacking layers and a dimension badge', async ({ page }) => {
+    await openFixture(page, 'array_register.sv', 'register');
+
+    await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
+    await expect(page.locator('[data-node-kind="mux"]').first()).toBeVisible();
+    await expect(page.locator('.hdl-node-array').first()).toBeVisible();
+    await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
+
+    await expect(page).toHaveScreenshot('array-register-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {

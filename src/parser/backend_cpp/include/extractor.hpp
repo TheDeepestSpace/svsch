@@ -150,6 +150,10 @@ struct Node {
         std::vector<InstanceParameter> instanceParameters;
         std::vector<StructField> fields;
         std::string aggregateKind;
+        bool isArrayNode = false;
+        std::string arrayDimension;
+        int arraySize = 0;
+        std::string arrayIndexSignal;
     } metadata;
     std::vector<NodePort> ports;
     SourceInfo source;
@@ -165,6 +169,7 @@ struct Edge {
     SourceInfo sourceInfo;
     bool aggregateStruct = false;
     std::string aggregateKind;
+    bool isStacked = false;
 };
 
 struct PendingStructAssign {
@@ -184,6 +189,8 @@ struct Module {
     std::map<std::string, InterfaceSignal> interfaceSignals;
     std::set<std::string> internalSignals;
     std::vector<PendingStructAssign> pendingStructAssigns;
+    std::map<std::string, std::string> arrayDimensions;
+    std::map<std::string, int> arraySizes;
 };
 
 struct LoweredValue {
@@ -284,6 +291,7 @@ private:
     std::string getAssignmentRhsText(vpiHandle assignment_handle);
     std::string ensureLiteralNode(vpiHandle handle, Module& mod, const std::string& output_signal, const std::string& width, vpiHandle source_handle, const std::string& label_override = "");
     std::string getDeclaredSignalWidth(const Module& mod, const std::string& signal);
+    std::string getDeclaredArrayDimension(const Module& mod, const std::string& signal);
     std::string getDeclaredLiteralWidth(const Module& mod, const std::string& literal);
     bool isNonZeroResetValue(vpiHandle handle);
     bool isAncestor(vpiHandle ancestor, vpiHandle descendant);

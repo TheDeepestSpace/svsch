@@ -1,4 +1,16 @@
 void DesignExtractor::buildEdges(Module& mod) {
+    // Collect stacked signals: outputs of isArrayNode nodes + clock/reset exclusions
+    std::set<std::string> stacked_signals;
+    std::set<std::string> clk_rst_signals;
+    for (const auto& n : mod.nodes) {
+        if (!n.metadata.isArrayNode) continue;
+        if (!n.metadata.clockSignal.empty()) clk_rst_signals.insert(n.metadata.clockSignal);
+        if (!n.metadata.resetSignal.empty()) clk_rst_signals.insert(n.metadata.resetSignal);
+        for (const auto& p : n.ports) {
+            if (p.direction == "output") stacked_signals.insert(p.signal);
+        }
+    }
+
     std::map<std::string, std::vector<std::pair<std::string, std::string>>> signal_map;
     for (const auto& n : mod.nodes) {
         for (const auto& p : n.ports) {
@@ -55,6 +67,23 @@ void DesignExtractor::buildEdges(Module& mod) {
                 if (mod.interfaceSignals.count(signal)) {
                     e.aggregateKind = "interface";
                 }
+
+                // Mark edge as stacked if: the signal is a stacked signal (output of array node),
+                // OR the target node is an array node and the port is not clock/reset.
+                if (!clk_rst_signals.count(signal)) {
+                    if (stacked_signals.count(signal)) {
+                        e.isStacked = true;
+                    } else {
+                        // Check if target is an array node (promotion of scalar into stacked context)
+                        for (const auto& n : mod.nodes) {
+                            if (n.id == l.first && n.metadata.isArrayNode) {
+                                e.isStacked = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 bool duplicate = false;
                 for (const auto& existing : mod.edges) {
                     if (existing.source == e.source && existing.target == e.target &&
@@ -892,6 +921,33 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
         }
     }
 
+    return "";
+}
+
+std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const std::string& signal) {
+    if (signal.empty() || mod.source.file.empty()) return "";
+
+    std::ifstream file(mod.source.file);
+    if (!file.is_open()) return "";
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string text = buffer.str();
+
+    // Match: (logic|reg|wire) [packed] signal_name [unpacked]
+    // e.g.: logic [31:0] M [0:7]  →  captures "[0:7]"
+    std::string escaped;
+    for (char c : signal) {
+        if (std::string(R"(\.^$|()[]{}*+?)").find(c) != std::string::npos) escaped.push_back('\\');
+        escaped.push_back(c);
+    }
+    std::regex array_decl_re(
+        std::string(R"((?:logic|reg|wire)\s+(?:\[[^\]]+\]\s+)?(?:\w+\s+)*)") + escaped
+        + R"(\s*(\[[\s\d:]+\]))"
+    );
+    std::smatch m;
+    if (std::regex_search(text, m, array_decl_re)) {
+        return m[1].str();
+    }
     return "";
 }
 

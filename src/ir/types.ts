@@ -85,6 +85,10 @@ export interface DiagramNodeMetadata {
   instanceParameters?: InstanceParameter[];
   fields?: StructField[];
   aggregateKind?: 'struct' | 'interface' | string;
+  isArrayNode?: boolean;
+  arrayDimension?: string;
+  arraySize?: number;
+  arrayIndexSignal?: string;
 }
 
 export interface BaseDiagramNode {
@@ -121,6 +125,10 @@ export interface BaseDiagramNode {
   instanceParameters?: InstanceParameter[];
   fields?: StructField[];
   aggregateKind?: 'struct' | 'interface' | string;
+  isArrayNode?: boolean;
+  arrayDimension?: string;
+  arraySize?: number;
+  arrayIndexSignal?: string;
 
   /** Legacy backend payload. Prefer the typed fields above for new code. */
   metadata?: DiagramNodeMetadata;
@@ -159,7 +167,8 @@ export type DiagramNode =
   | PortDiagramNode
   | LoopDiagramNode
   | UnknownDiagramNode
-  | ModuleDiagramNode;
+  | ModuleDiagramNode
+ ;
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
@@ -174,6 +183,7 @@ export interface DiagramEdge {
   label?: string;
   signal?: string;
   width?: string;
+  isStacked?: boolean;
   waypoint?: {
     x: number;
     y: number;

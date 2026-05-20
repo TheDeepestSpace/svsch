@@ -1,5 +1,5 @@
 import type { DiagramNode } from '../ir/types';
-import { nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
+import { nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import {
   combHeightForPortRows,
   diagramSizing,
@@ -40,10 +40,11 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
   const sideInputs = topInputCount > 0 ? inputs.slice(topInputCount) : inputs;
   const portRows = Math.max(sideInputs.length, outputs.length);
 
-  let height = nodeHeightForKind(node, inputs.length, outputs.length, portRows);
+  const height = nodeHeightForKind(node, inputs.length, outputs.length, portRows);
+  const arrayPad = nodeIsArrayNode(node) ? 8 : 0; // 2 cosmetic layers × 4px each
   return {
-    width: nodeWidthForKind(node, sideInputs, outputs, topPorts, bottomPorts),
-    height
+    width: nodeWidthForKind(node, sideInputs, outputs, topPorts, bottomPorts) + arrayPad,
+    height: height + arrayPad
   };
 }
 

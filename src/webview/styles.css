@@ -516,6 +516,60 @@ select {
   box-shadow: none;
 }
 
+/* ── Array stacking layers ─────────────────────────────── */
+
+.hdl-node-array {
+  overflow: visible;
+}
+
+.hdl-node-array-layer {
+  border-radius: inherit;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--svsch-array-border-color, var(--vscode-panel-border));
+  background: var(--vscode-editorWidget-background);
+}
+
+.hdl-node-array-back {
+  opacity: 0.5;
+  transform: translate(4px, 4px);
+  z-index: -2;
+}
+
+.hdl-node-array-front {
+  opacity: 1.0;
+  transform: translate(-4px, -4px);
+  z-index: -1;
+}
+
+/* Per-kind border colours for array cosmetic layers */
+.hdl-node-register.hdl-node-array .hdl-node-array-layer {
+  --svsch-array-border-color: var(--vscode-charts-green);
+}
+
+.hdl-node-mux.hdl-node-array .hdl-node-array-layer {
+  --svsch-array-border-color: var(--vscode-charts-purple);
+}
+
+/* ── Array dimension badge ─────────────────────────────── */
+
+.hdl-node-array-badge {
+  background: color-mix(in srgb, var(--vscode-charts-blue) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vscode-charts-blue) 50%, transparent);
+  border-radius: 3px;
+  color: var(--vscode-charts-blue);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  line-height: 1;
+  padding: 1px 4px;
+  pointer-events: none;
+  position: absolute;
+  right: 4px;
+  top: 3px;
+  z-index: 3;
+}
+
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus {

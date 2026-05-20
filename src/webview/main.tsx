@@ -55,6 +55,8 @@ import {
   registerClockSignal,
   registerResetActiveLow,
   registerResetSignal,
+  nodeArrayDimension,
+  nodeIsArrayNode,
   repeatExpression,
   repeatExpressionSource,
   structFields,
@@ -655,6 +657,20 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
   const nodeSelection = <div className="hdl-node-selection-rect" aria-hidden="true" />;
 
+  // Array stacking: front layer (100% opacity, -4px/-4px) and back layer (50%, +4px/+4px)
+  // The node element itself is the "middle" layer (75% opacity) — actual ports and handles live here.
+  const isArray = nodeIsArrayNode(node);
+  const arrayDim = nodeArrayDimension(node);
+  const arrayLayers = isArray ? (
+    <>
+      <div className="hdl-node-array-layer hdl-node-array-back" aria-hidden="true" />
+      <div className="hdl-node-array-layer hdl-node-array-front" aria-hidden="true" />
+    </>
+  ) : null;
+  const arrayBadge = isArray && arrayDim ? (
+    <div className="hdl-node-array-badge" aria-hidden="true">{arrayDim}</div>
+  ) : null;
+
   const handleDoubleClick = () => {
     let msg: any = null;
     const isInterface = node.kind === 'interface' || (node.kind === 'port' && Boolean(typeName && (modportName !== undefined || typeName.endsWith('_if') || typeName.endsWith('if'))));
@@ -986,11 +1002,12 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
     return (
       <button
-        className="hdl-node hdl-node-register hdl-register-node"
+        className={`hdl-node hdl-node-register hdl-register-node${isArray ? ' hdl-node-array' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={{
           ...nodeStyle,
+          ...(isArray ? { opacity: 0.75 } : {}),
           '--svsch-register-d-top': `${registerPortTop('d', nodeHeight, hasReset, hasRv)}px`,
           '--svsch-register-q-top': `${registerPortTop('q', nodeHeight, hasReset, hasRv)}px`,
           '--svsch-register-clock-top': `${registerPortTop('clock', nodeHeight, hasReset, hasRv)}px`,
@@ -1000,7 +1017,9 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
         onDoubleClick={handleDoubleClick}
       >
+        {arrayLayers}
         {nodeSelection}
+        {arrayBadge}
         <div className="node-kind">REGISTER</div>
         <div className="node-title">{title}</div>
         <div className="register-port-layer">
@@ -1089,6 +1108,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       </button>
     );
   }
+
 
   return (
     <button

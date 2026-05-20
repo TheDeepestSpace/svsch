@@ -1,5 +1,5 @@
 import type { DesignGraph, DiagramEdge, DiagramNode, DiagramViewModel, PositionedNode } from '../ir/types';
-import { registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
+import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
@@ -379,6 +379,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     };
   });
 
+  const arrayLayerPad = nodeIsArrayNode(node) ? 4 : 0;
   const margins = portGeometry.reduce((current, port) => {
     if (port.side === 'WEST') {
       current.left = Math.max(current.left, port.leadLength);
@@ -386,11 +387,11 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       current.right = Math.max(current.right, port.leadLength);
     } else if (port.side === 'NORTH') {
       current.top = Math.max(current.top, port.leadLength);
-    } else {
+    } else if (port.side === 'SOUTH') {
       current.bottom = Math.max(current.bottom, port.leadLength);
     }
     return current;
-  }, { left: 0, right: 0, top: 0, bottom: 0 });
+  }, { left: arrayLayerPad, right: arrayLayerPad, top: arrayLayerPad, bottom: arrayLayerPad });
 
   const ports = portGeometry.map((port) => {
     const leadX = port.side === 'WEST'

@@ -73,3 +73,15 @@ export function repeatExpression(node: DiagramNode): string | undefined {
 export function repeatExpressionSource(node: DiagramNode): SourceRange | undefined {
   return node.kind === 'replicate' ? node.repeatExpressionSource ?? node.metadata?.repeatExpressionSource : undefined;
 }
+
+export function nodeIsArrayNode(node: DiagramNode): boolean {
+  return node.isArrayNode === true || node.metadata?.isArrayNode === true;
+}
+
+export function nodeArrayDimension(node: DiagramNode): string | undefined {
+  return node.arrayDimension ?? node.metadata?.arrayDimension;
+}
+
+export function nodeArraySize(node: DiagramNode): number | undefined {
+  return node.arraySize ?? node.metadata?.arraySize;
+}
