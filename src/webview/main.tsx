@@ -131,7 +131,7 @@ function PortSkin({ title, direction, width, isArray = false }: { title: React.R
             <path className="port-skin-array-layer port-skin-array-back" d={path} />
           </>
         )}
-        <path className="port-skin-body" d={path} />
+        <path className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''}`} d={path} />
         {isArray && <path className="port-skin-array-layer port-skin-array-front" d={path} />}
         <path className="port-skin-selection" d={path} />
       </svg>

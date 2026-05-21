@@ -10,7 +10,7 @@ import type { SavedLayout } from '../../src/storage/layoutStore';
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
 async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
-  const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-side').evaluateAll((paths) => {
+  const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-back, .svsch-edge-stacked-front').evaluateAll((paths) => {
     const numberPattern = /-?\d+(?:\.\d+)?/g;
     const diagonals: string[] = [];
 
@@ -38,7 +38,7 @@ async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
 }
 
 async function expectArrayStackEdgeLanes(page: Page, edgeId: string): Promise<void> {
-  const lanes = await page.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-side, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked`).evaluateAll((paths) => {
+  const lanes = await page.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-back, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-front, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked`).evaluateAll((paths) => {
     const pointPattern = /[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g;
 
     return paths.map((path) => {
@@ -122,7 +122,7 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
     }
 
     const edge = document.querySelector(`.react-flow__edge[data-id="${currentEdgeId}"]`);
-    const paths = [...edge?.querySelectorAll('.svsch-edge-stacked-side, .svsch-edge-stacked') ?? []];
+    const paths = [...edge?.querySelectorAll('.svsch-edge-stacked-back, .svsch-edge-stacked-front, .svsch-edge-stacked') ?? []];
     const targetLeadPaths = [...document.querySelectorAll(`[data-node-id="${currentTargetNodeId}"] .svsch-array-stack-lead-target-left`)];
     return {
       edgeId: currentEdgeId,
@@ -325,7 +325,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('[data-node-id="reg:array_port_register:storage"] .svsch-array-stack-lead-source-right')).toHaveCount(3);
     await expect(page.locator('[data-node-id="port:array_port_register:in_data"] .svsch-array-stack-lead-source-right')).toHaveCount(3);
     await expect(page.locator('[data-node-id="port:array_port_register:out_data"] .svsch-array-stack-lead-target-left')).toHaveCount(3);
-    expect(await page.locator('.svsch-edge-stacked-side').count()).toBeGreaterThanOrEqual(6);
+    expect(await page.locator('.svsch-edge-stacked-back, .svsch-edge-stacked-front').count()).toBeGreaterThanOrEqual(4);
     await expectStackedEdgeSegmentsOrthogonal(page);
     await expectArrayStackEdgeLanes(page, dataInputEdge!.id);
     await expectArrayStackEdgeLanes(page, dataOutputEdge!.id);

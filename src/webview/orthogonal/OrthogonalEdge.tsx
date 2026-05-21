@@ -493,7 +493,7 @@ export function OrthogonalEdge({
         </g>
       )}
       {isStacked && !isPromotedStack && (
-        <path className="svsch-edge svsch-edge-stacked-side" d={backStackPath} />
+        <path className="svsch-edge svsch-edge-stacked-back" d={backStackPath} />
       )}
       {isInterfaceAggregate && (
         <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
@@ -510,7 +510,7 @@ export function OrthogonalEdge({
         <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
       )}
       {isStacked && !isPromotedStack && (
-        <path className="svsch-edge svsch-edge-stacked-side" d={frontStackPath} />
+        <path className="svsch-edge svsch-edge-stacked-front" d={frontStackPath} />
       )}
       <path
         className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}`}

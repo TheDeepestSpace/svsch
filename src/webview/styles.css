@@ -547,11 +547,13 @@ select {
 .hdl-node-array-back {
   transform: translate(4px, 4px);
   z-index: 0;
+  opacity: 0.5;
 }
 
 .hdl-node-array-middle {
   transform: translate(0, 0);
   z-index: 1;
+  opacity: 0.75;
 }
 
 .hdl-node-array-front {
@@ -1246,6 +1248,11 @@ select {
 
 .port-skin-array-back {
   transform: translate(4px, 4px);
+  opacity: 0.5;
+}
+
+.port-skin-array-middle {
+  opacity: 0.75;
 }
 
 .port-skin-array-front {
@@ -1595,9 +1602,16 @@ select {
 
 .svsch-edge-stacked {
   stroke: var(--vscode-editor-foreground);
+  opacity: 0.75;
 }
 
-.svsch-edge-stacked-side {
+.svsch-edge-stacked-back {
+  stroke: var(--vscode-editor-foreground);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.svsch-edge-stacked-front {
   stroke: var(--vscode-editor-foreground);
   pointer-events: none;
 }
