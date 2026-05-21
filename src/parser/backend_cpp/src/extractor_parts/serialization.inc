@@ -193,6 +193,11 @@ json DesignExtractor::extract(const std::string& targetModule) {
                 };
             }
             if (!p.preferredSide.empty()) j_port["preferredSide"] = p.preferredSide;
+            if (!p.arrayDimension.empty()) {
+                j_port["isArrayNode"] = true;
+                j_port["arrayDimension"] = p.arrayDimension;
+            }
+            if (p.arraySize > 0) j_port["arraySize"] = p.arraySize;
             j_mod["ports"].push_back(j_port);
         }
 

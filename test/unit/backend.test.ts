@@ -1772,5 +1772,34 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(scalarOutEdge).toBeDefined();
       expect(scalarOutEdge?.isStacked).toBeFalsy();
     });
+
+    it('renders whole-array input through an array register to an array output without scalar alias nodes', async () => {
+      const graph = await runParser(backend, 'array_port_register.sv', fixture('array_port_register.sv'));
+      const mod = graph.modules.array_port_register;
+      expect(mod).toBeDefined();
+
+      const inputPort = mod.nodes.find((n) => n.kind === 'port' && n.label === 'in_data');
+      const outputPort = mod.nodes.find((n) => n.kind === 'port' && n.label === 'out_data');
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'storage');
+      expect(inputPort?.isArrayNode ?? inputPort?.metadata?.isArrayNode).toBe(true);
+      expect(outputPort?.isArrayNode ?? outputPort?.metadata?.isArrayNode).toBe(true);
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+      expect(arrayReg?.ports.find((p) => p.name === 'D')?.connectedSignal).toBe('in_data');
+      expect(arrayReg?.ports.find((p) => p.name === 'Q')?.connectedSignal).toBe('storage');
+
+      expect(mod.nodes.some((n) => n.kind === 'comb' && n.ports.some((p) => p.connectedSignal === 'out_data'))).toBe(false);
+
+      const inputEdge = mod.edges.find((e) => e.source === inputPort?.id && e.target === arrayReg?.id && e.signal === 'in_data');
+      expect(inputEdge).toBeDefined();
+      expect(inputEdge?.isStacked).toBe(true);
+
+      const clockEdge = mod.edges.find((e) => e.source === 'port:array_port_register:clk' && e.target === arrayReg?.id && e.signal === 'clk');
+      expect(clockEdge).toBeDefined();
+      expect(clockEdge?.isStacked).toBe(true);
+
+      const outputEdge = mod.edges.find((e) => e.source === arrayReg?.id && e.target === outputPort?.id && e.signal === 'out_data');
+      expect(outputEdge).toBeDefined();
+      expect(outputEdge?.isStacked).toBe(true);
+    });
   });
 });

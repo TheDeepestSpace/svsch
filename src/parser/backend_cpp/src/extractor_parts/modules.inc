@@ -59,6 +59,12 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             if (struct_it != mod.structSignals.end() && struct_it->second.type.packed && !struct_it->second.type.width.empty()) {
                 p.width = struct_it->second.type.width;
             }
+            ensureDeclaredArray(mod, p.name);
+            auto array_it = mod.arrayDimensions.find(p.name);
+            if (array_it != mod.arrayDimensions.end()) {
+                p.arrayDimension = array_it->second;
+                p.arraySize = mod.arraySizes[p.name];
+            }
             mod.ports.push_back(p);
             mod.internalSignals.insert(p.name);
         }
@@ -571,6 +577,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     };
 
     std::string rhs_signal = getSignalName(rhs);
+    std::string rhs_base = getBaseSignalName(rhs);
     auto lhs_interface_field = interfaceFieldRef(out_signal);
     auto rhs_interface_field = interfaceFieldRef(rhs_signal);
     if (lhs_interface_field && rhs_interface_field && lhs_interface_field->first == rhs_interface_field->first) {
@@ -588,7 +595,18 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     }
 
     collectStructSignal(lhs, out_base.empty() ? out_signal : out_base, mod, getSourceInfo(lhs));
-    collectStructSignal(rhs, getBaseSignalName(rhs), mod, getSourceInfo(rhs));
+    collectStructSignal(rhs, rhs_base, mod, getSourceInfo(rhs));
+
+    ensureDeclaredArray(mod, out_base);
+    ensureDeclaredArray(mod, rhs_base);
+    if (!out_base.empty() && !rhs_base.empty()
+        && out_signal == out_base
+        && rhs_signal == rhs_base
+        && mod.arrayDimensions.count(out_base)
+        && mod.arrayDimensions.count(rhs_base)) {
+        mod.pendingArrayAliases.push_back({out_base, rhs_base, getSourceInfo(assign_handle)});
+        return;
+    }
 
     auto lhs_field = getStructFieldRef(lhs, mod);
     auto rhs_field = getStructFieldRef(rhs, mod);

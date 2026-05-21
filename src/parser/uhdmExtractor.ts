@@ -988,6 +988,9 @@ interface RawUhdmIr {
             typeSource?: { file: string; line: number; col: number; endLine: number; endCol: number };
             modportName?: string;
             modportSource?: { file: string; line: number; col: number; endLine: number; endCol: number };
+            isArrayNode?: boolean;
+            arrayDimension?: string;
+            arraySize?: number;
             source: { file: string; line: number; col: number; endLine: number; endCol: number }
         }>;
         nodes?: Array<{
@@ -1658,6 +1661,9 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             modportName: p.modportName,
             modportSource: sourceRangeFromRaw(p.modportSource, workspaceRoot),
             preferredSide: (p as any).preferredSide || undefined,
+            isArrayNode: p.isArrayNode,
+            arrayDimension: p.arrayDimension,
+            arraySize: p.arraySize,
             source: p.source ? {
                 file: path.relative(workspaceRoot, p.source.file),
                 startLine: p.source.line,
@@ -1677,6 +1683,9 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 kind: 'port',
                 label: p.name,
                 parentModule: modName,
+                isArrayNode: p.isArrayNode,
+                arrayDimension: p.arrayDimension,
+                arraySize: p.arraySize,
                 ports: [p],
                 source: p.source || { file: moduleFile, startLine: 1 }
             });

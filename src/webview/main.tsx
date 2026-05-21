@@ -66,9 +66,15 @@ import {
 interface HdlNodeData {
   [key: string]: unknown;
   node: PositionedNode;
+  arrayConnections?: ArrayStackConnection[];
 }
 
 type HdlFlowNode = Node<HdlNodeData>;
+
+interface ArrayStackConnection {
+  portId?: string;
+  role: 'source' | 'target';
+}
 
 interface GraphMessage {
   type: 'graph';
@@ -97,15 +103,15 @@ export const InteractionContext = React.createContext<{
   setHovered: (netKey?: string) => void;
 }>({ setHovered: () => {} });
 
-function InputPortSkin({ title, width }: { title: React.ReactNode; width: number }): React.ReactElement {
-  return <PortSkin title={title} direction="input" width={width} />;
+function InputPortSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+  return <PortSkin title={title} direction="input" width={width} isArray={isArray} />;
 }
 
-function OutputPortSkin({ title, width }: { title: React.ReactNode; width: number }): React.ReactElement {
-  return <PortSkin title={title} direction="output" width={width} />;
+function OutputPortSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+  return <PortSkin title={title} direction="output" width={width} isArray={isArray} />;
 }
 
-function PortSkin({ title, direction, width }: { title: React.ReactNode; direction: 'input' | 'output'; width: number }): React.ReactElement {
+function PortSkin({ title, direction, width, isArray = false }: { title: React.ReactNode; direction: 'input' | 'output'; width: number; isArray?: boolean }): React.ReactElement {
   const height = diagramSizing.portHeight;
   const skinHeight = diagramSizing.portSkinHeight;
   const noseLength = diagramSizing.portNoseLength;
@@ -120,7 +126,13 @@ function PortSkin({ title, direction, width }: { title: React.ReactNode; directi
         aria-hidden="true"
         focusable="false"
       >
+        {isArray && (
+          <>
+            <path className="port-skin-array-layer port-skin-array-back" d={path} />
+          </>
+        )}
         <path className="port-skin-body" d={path} />
+        {isArray && <path className="port-skin-array-layer port-skin-array-front" d={path} />}
         <path className="port-skin-selection" d={path} />
       </svg>
       <div className="port-skin-label">{title}</div>
@@ -605,8 +617,53 @@ function RegisterClockGlyph(): React.ReactElement {
   );
 }
 
+function ArrayStackLeads({
+  side,
+  width,
+  y,
+  trimSink = false
+}: {
+  side: 'left' | 'right';
+  width: number;
+  y: number;
+  trimSink?: boolean;
+}): React.ReactElement {
+  const layers = [
+    { id: 'front', dx: -4, dy: -4, trim: diagramSizing.gridSize / 8 },
+    { id: 'middle', dx: 0, dy: 0, trim: diagramSizing.gridSize / 4 },
+    { id: 'back', dx: 4, dy: 4, trim: diagramSizing.gridSize * 3 / 8 }
+  ];
+
+  return (
+    <svg
+      className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {layers.map((layer) => {
+        const shapeX = side === 'left' ? layer.dx : width + layer.dx;
+        const leadX = trimSink
+          ? side === 'left'
+            ? shapeX - layer.trim
+            : shapeX + layer.trim
+          : shapeX;
+        const leadY = y + layer.dy;
+        return (
+          <path
+            key={layer.id}
+            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
+            d={`M ${leadX} ${leadY} L ${shapeX} ${leadY}`}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
+  const arrayConnections = data.arrayConnections ?? [];
+  const isArray = nodeIsArrayNode(node);
   const width = normalizeWidth(metadataNodeWidth(node));
   const fallbackNodeWidth = node.kind === 'port'
     ? normalizeWidth(node.ports[0]?.widthExpression ?? node.ports[0]?.width)
@@ -633,6 +690,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       {showTitleTypeLabel && (
         <TypeLabel typeName={typeName} width={width ?? fallbackNodeWidth} source={typeSource} modportName={modportName} modportSource={modportSource} parameterRefs={node.kind === 'port' ? node.ports[0]?.parameterRefs : undefined} />
       )}
+      {isArray && <span className="hdl-node-array-index">[0]</span>}
     </div>
   );
 
@@ -656,14 +714,17 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   } as React.CSSProperties;
 
   const nodeSelection = <div className="hdl-node-selection-rect" aria-hidden="true" />;
+  const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean => {
+    return isArray && arrayConnections.some((connection) => connection.portId === portId && connection.role === role);
+  };
 
   // Array stacking: front layer (100% opacity, -4px/-4px) and back layer (50%, +4px/+4px)
   // The node element itself is the "middle" layer (75% opacity) — actual ports and handles live here.
-  const isArray = nodeIsArrayNode(node);
   const arrayDim = nodeArrayDimension(node);
   const arrayLayers = isArray ? (
     <>
       <div className="hdl-node-array-layer hdl-node-array-back" aria-hidden="true" />
+      <div className="hdl-node-array-layer hdl-node-array-middle" aria-hidden="true" />
       <div className="hdl-node-array-layer hdl-node-array-front" aria-hidden="true" />
     </>
   ) : null;
@@ -695,7 +756,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const isSkinnedPort = isInput || isOutput || isInterfacePort;
     return (
       <button
-        className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}`}
+        className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ' hdl-node-array' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -707,20 +768,37 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           handleDoubleClick();
         }}
       >
+        {isArray && !isSkinnedPort && arrayLayers}
         {!isSkinnedPort && nodeSelection}
+        {arrayBadge}
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={Position.Left} />}
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={Position.Left} />}
+        {isArray && isSkinnedPort && isOutput && hasArrayConnection(node.ports[0]?.id, 'target') && (
+          <ArrayStackLeads
+            side="left"
+            width={nodeWidth}
+            y={diagramSizing.portHeight / 2}
+            trimSink
+          />
+        )}
         {isInterfacePort ? (
           <HarnessSkin title={title} width={nodeWidth} />
         ) : isInput ? (
-          <InputPortSkin title={title} width={nodeWidth} />
+          <InputPortSkin title={title} width={nodeWidth} isArray={isArray} />
         ) : isOutput ? (
-          <OutputPortSkin title={title} width={nodeWidth} />
+          <OutputPortSkin title={title} width={nodeWidth} isArray={isArray} />
         ) : (
           <>
             <div className="port-direction">{portDirection}</div>
             <div className="port-title">{title}</div>
           </>
+        )}
+        {isArray && isSkinnedPort && !isOutput && hasArrayConnection(node.ports[0]?.id, 'source') && (
+          <ArrayStackLeads
+            side="right"
+            width={nodeWidth}
+            y={diagramSizing.portHeight / 2}
+          />
         )}
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={Position.Right} />}
       </button>
@@ -1007,7 +1085,6 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         data-node-kind={node.kind}
         style={{
           ...nodeStyle,
-          ...(isArray ? { opacity: 0.75 } : {}),
           '--svsch-register-d-top': `${registerPortTop('d', nodeHeight, hasReset, hasRv)}px`,
           '--svsch-register-q-top': `${registerPortTop('q', nodeHeight, hasReset, hasRv)}px`,
           '--svsch-register-clock-top': `${registerPortTop('clock', nodeHeight, hasReset, hasRv)}px`,
@@ -1017,6 +1094,22 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
         onDoubleClick={handleDoubleClick}
       >
+        {dPort && hasArrayConnection(dPort.id, 'target') && (
+          <ArrayStackLeads
+            side="left"
+            width={nodeWidth}
+            y={registerPortTop('d', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2}
+            trimSink
+          />
+        )}
+        {clockPort && hasArrayConnection(clockPort.id, 'target') && (
+          <ArrayStackLeads
+            side="left"
+            width={nodeWidth}
+            y={registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2}
+            trimSink
+          />
+        )}
         {arrayLayers}
         {nodeSelection}
         {arrayBadge}
@@ -1064,6 +1157,13 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             </div>
           ))}
         </div>
+        {qPort && hasArrayConnection(qPort.id, 'source') && (
+          <ArrayStackLeads
+            side="right"
+            width={nodeWidth}
+            y={registerPortTop('q', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2}
+          />
+        )}
       </button>
     );
   }
@@ -1115,7 +1215,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ' hdl-node-array' : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
-      style={{ ...nodeStyle, ...(isArray ? { opacity: 0.75 } : {}) }}
+      style={nodeStyle}
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
       onDoubleClick={handleDoubleClick}
     >
@@ -1369,11 +1469,38 @@ function DiagramApp(): React.ReactElement {
     if (!view) {
       return;
     }
+    const nodeById = new Map(view.nodes.map((node) => [node.id, node]));
+    const arrayConnectionsByNode = new Map<string, ArrayStackConnection[]>();
+    const addArrayConnection = (nodeId: string, connection: ArrayStackConnection) => {
+      const list = arrayConnectionsByNode.get(nodeId) ?? [];
+      if (!list.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
+        list.push(connection);
+      }
+      arrayConnectionsByNode.set(nodeId, list);
+    };
+
+    view.edges.forEach((edge) => {
+      if (!edge.isStacked) {
+        return;
+      }
+      const sourceNode = nodeById.get(edge.source);
+      const targetNode = nodeById.get(edge.target);
+      const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
+      const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
+      if (!targetIsArray) {
+        return;
+      }
+      if (sourceIsArray) {
+        addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source' });
+      }
+      addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+    });
+
     setNodes(view.nodes.map((node) => ({
       id: node.id,
       type: 'hdl',
       position: node.position,
-      data: { node }
+      data: { node, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
     })));
 
     const netToLeader = new Map<string, string>();

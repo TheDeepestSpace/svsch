@@ -1,11 +1,9 @@
 void DesignExtractor::buildEdges(Module& mod) {
-    // Collect stacked signals: outputs of isArrayNode nodes + clock/reset exclusions
+    // Collect stacked signals: outputs of isArrayNode nodes. Scalar controls can still
+    // be promoted into stacked inputs when they target array-capable nodes.
     std::set<std::string> stacked_signals;
-    std::set<std::string> clk_rst_signals;
     for (const auto& n : mod.nodes) {
         if (!n.metadata.isArrayNode) continue;
-        if (!n.metadata.clockSignal.empty()) clk_rst_signals.insert(n.metadata.clockSignal);
-        if (!n.metadata.resetSignal.empty()) clk_rst_signals.insert(n.metadata.resetSignal);
         for (const auto& p : n.ports) {
             if (p.direction == "output") stacked_signals.insert(p.signal);
         }
@@ -17,6 +15,25 @@ void DesignExtractor::buildEdges(Module& mod) {
             if (!p.signal.empty()) signal_map[p.signal].push_back({n.id, p.name});
         }
     }
+    for (const auto& p : mod.ports) {
+        if (!p.name.empty()) signal_map[p.name].push_back({"self", p.name});
+    }
+    auto endpoint_is_array = [&](const std::pair<std::string, std::string>& endpoint) {
+        if (endpoint.first == "self") return mod.arrayDimensions.count(endpoint.second) > 0;
+        for (const auto& n : mod.nodes) {
+            if (n.id == endpoint.first) return n.metadata.isArrayNode;
+        }
+        return false;
+    };
+    auto has_array_alias = [&](const std::string& signal) {
+        for (const auto& alias : mod.pendingArrayAliases) {
+            if (alias.targetSignal != signal) continue;
+            if (stacked_signals.count(alias.sourceSignal)) return true;
+            if (mod.arrayDimensions.count(alias.sourceSignal) && mod.arrayDimensions.count(alias.targetSignal)) return true;
+        }
+        return false;
+    };
+
     for (auto const& [signal, ports] : signal_map) {
         if (mod.interfaceSignals.count(signal)) continue;
         std::vector<std::pair<std::string, std::string>> drivers, loads;
@@ -39,6 +56,22 @@ void DesignExtractor::buildEdges(Module& mod) {
                 else if (p.direction == "inout") {
                     drivers.push_back({"self", p.name});
                     loads.push_back({"self", p.name});
+                }
+            }
+        }
+
+        for (const auto& alias : mod.pendingArrayAliases) {
+            if (alias.targetSignal != signal) continue;
+            for (const auto& n : mod.nodes) {
+                for (const auto& p : n.ports) {
+                    if (p.signal == alias.sourceSignal && (p.direction == "output" || p.direction == "inout")) {
+                        drivers.push_back({n.id, p.name});
+                    }
+                }
+            }
+            for (const auto& p : mod.ports) {
+                if (p.name == alias.sourceSignal && (p.direction == "input" || p.direction == "inout")) {
+                    drivers.push_back({"self", p.name});
                 }
             }
         }
@@ -68,21 +101,13 @@ void DesignExtractor::buildEdges(Module& mod) {
                     e.aggregateKind = "interface";
                 }
 
-                // Mark edge as stacked if: the signal is a stacked signal (output of array node),
-                // OR the target node is an array node and the port is not clock/reset.
-                if (!clk_rst_signals.count(signal)) {
-                    if (stacked_signals.count(signal)) {
-                        e.isStacked = true;
-                    } else {
-                        // Check if target is an array node (promotion of scalar into stacked context)
-                        for (const auto& n : mod.nodes) {
-                            if (n.id == l.first && n.metadata.isArrayNode) {
-                                e.isStacked = true;
-                                break;
-                            }
-                        }
-                    }
-                }
+                // Mark stacked edges when either side participates in array transport. Scalar
+                // signals entering an array node are promoted; array sources stay stacked until
+                // a scalarizing consumer (such as the read mux output) emits a new scalar signal.
+                e.isStacked = stacked_signals.count(signal) > 0
+                    || endpoint_is_array(d)
+                    || endpoint_is_array(l)
+                    || has_array_alias(signal);
 
                 bool duplicate = false;
                 for (const auto& existing : mod.edges) {
@@ -933,15 +958,15 @@ std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const 
     buffer << file.rdbuf();
     std::string text = buffer.str();
 
-    // Match: (logic|reg|wire) [packed] signal_name [unpacked]
-    // e.g.: logic [31:0] M [0:7]  →  captures "[0:7]"
+    // Match: optional port direction, (logic|reg|wire), optional packed range,
+    // signal_name, unpacked range. E.g. "logic [31:0] M [0:7]".
     std::string escaped;
     for (char c : signal) {
         if (std::string(R"(\.^$|()[]{}*+?)").find(c) != std::string::npos) escaped.push_back('\\');
         escaped.push_back(c);
     }
     std::regex array_decl_re(
-        std::string(R"((?:logic|reg|wire)\s+(?:\[[^\]]+\]\s+)?(?:\w+\s+)*)") + escaped
+        std::string(R"((?:input|output|inout)?\s*(?:logic|reg|wire)\s+(?:\[[^\]]+\]\s+)?(?:\w+\s+)*)") + escaped
         + R"(\s*(\[[\s\d:]+\]))"
     );
     std::smatch m;
@@ -949,6 +974,30 @@ std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const 
         return m[1].str();
     }
     return "";
+}
+
+void DesignExtractor::ensureDeclaredArray(Module& mod, const std::string& signal) {
+    if (signal.empty() || mod.arrayDimensions.count(signal)) return;
+    std::string dim = getDeclaredArrayDimension(mod, signal);
+    if (dim.empty()) return;
+
+    std::string s = dim;
+    s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
+    if (s.size() < 4 || s[0] != '[' || s.back() != ']') return;
+
+    s = s.substr(1, s.size() - 2);
+    auto colon = s.find(':');
+    if (colon == std::string::npos) return;
+
+    try {
+        int lft = std::stoi(s.substr(0, colon));
+        int rgt = std::stoi(s.substr(colon + 1));
+        mod.arrayDimensions[signal] = dim;
+        mod.arraySizes[signal] = std::abs(lft - rgt) + 1;
+        mod.internalSignals.insert(signal);
+    } catch (...) {
+        return;
+    }
 }
 
 std::string DesignExtractor::getDeclaredLiteralWidth(const Module& mod, const std::string& literal) {

@@ -46,6 +46,9 @@ export interface DiagramPort {
   modportName?: string;
   modportSource?: SourceRange;
   preferredSide?: 'left' | 'right' | string;
+  isArrayNode?: boolean;
+  arrayDimension?: string;
+  arraySize?: number;
   connectedSignal?: string;
   position?: number;
   source?: SourceRange;

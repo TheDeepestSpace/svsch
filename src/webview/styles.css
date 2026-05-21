@@ -249,6 +249,14 @@ select {
   width: 100%;
 }
 
+.react-flow__edges {
+  z-index: 5;
+}
+
+.react-flow__nodes {
+  z-index: 4;
+}
+
 .empty {
   align-items: center;
   display: flex;
@@ -519,6 +527,10 @@ select {
 /* ── Array stacking layers ─────────────────────────────── */
 
 .hdl-node-array {
+  --svsch-array-content-shift: calc(var(--svsch-grid) / 8);
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
   overflow: visible;
 }
 
@@ -529,18 +541,22 @@ select {
   inset: 0;
   border: 1px solid var(--svsch-array-border-color, var(--vscode-panel-border));
   background: var(--vscode-editorWidget-background);
+  box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
 .hdl-node-array-back {
-  opacity: 0.5;
   transform: translate(4px, 4px);
-  z-index: -2;
+  z-index: 0;
+}
+
+.hdl-node-array-middle {
+  transform: translate(0, 0);
+  z-index: 1;
 }
 
 .hdl-node-array-front {
-  opacity: 1.0;
   transform: translate(-4px, -4px);
-  z-index: -1;
+  z-index: 2;
 }
 
 /* Per-kind border colours for array cosmetic layers */
@@ -552,22 +568,92 @@ select {
   --svsch-array-border-color: var(--vscode-charts-purple);
 }
 
+.hdl-node-port.hdl-node-array .hdl-node-array-layer,
+.hdl-node-port.hdl-node-array .port-skin-array-layer {
+  --svsch-array-border-color: var(--vscode-charts-yellow);
+}
+
+.hdl-node-array .node-kind,
+.hdl-node-array .node-title,
+.hdl-node-array .instance-parameter-list {
+  transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
+}
+
+.hdl-node-array .node-kind,
+.hdl-node-array .node-title,
+.hdl-node-array .node-ports,
+.hdl-node-array .mux-port-layer,
+.hdl-node-array .alu-port-layer,
+.hdl-node-array .register-port-layer,
+.hdl-node-array .instance-parameter-list {
+  z-index: 3;
+}
+
+.hdl-node-array .node-kind,
+.hdl-node-array .node-title,
+.hdl-node-array .node-ports,
+.hdl-node-array .instance-parameter-list {
+  position: relative;
+}
+
+.hdl-node-array .port-skin-label {
+  transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
+}
+
+.hdl-node-array .register-port span,
+.hdl-node-array .register-clock-glyph,
+.hdl-node-array .mux-select-port span,
+.hdl-node-array .mux-side-port span,
+.hdl-node-array .mux-output-port span {
+  transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
+}
+
+.hdl-node-array-index {
+  color: color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
 /* ── Array dimension badge ─────────────────────────────── */
 
 .hdl-node-array-badge {
-  background: color-mix(in srgb, var(--vscode-charts-blue) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--vscode-charts-blue) 50%, transparent);
-  border-radius: 3px;
-  color: var(--vscode-charts-blue);
+  background: transparent;
+  border: 0;
+  color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 10px;
   line-height: 1;
-  padding: 1px 4px;
+  padding: 0;
   pointer-events: none;
   position: absolute;
-  right: 4px;
-  top: 3px;
-  z-index: 3;
+  right: -22px;
+  top: -20px;
+  z-index: 4;
+}
+
+.svsch-array-stack-leads {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  z-index: 4;
+}
+
+.svsch-array-stack-leads-target {
+  z-index: 0;
+}
+
+.svsch-array-stack-leads-source {
+  z-index: 4;
+}
+
+.svsch-array-stack-lead {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
 }
 
 .hdl-node-mux:focus,
@@ -1150,6 +1236,22 @@ select {
   stroke-width: 1.5;
 }
 
+.port-skin-array-layer {
+  fill: color-mix(in srgb, var(--vscode-charts-yellow) 36%, var(--vscode-editor-background));
+  pointer-events: none;
+  stroke: var(--svsch-array-border-color, var(--vscode-charts-yellow));
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.port-skin-array-back {
+  transform: translate(4px, 4px);
+}
+
+.port-skin-array-front {
+  transform: translate(-4px, -4px);
+}
+
 .port-skin-selection {
   fill: none;
   opacity: 0;
@@ -1178,6 +1280,7 @@ select {
   position: absolute;
   right: 12px;
   justify-content: center;
+  z-index: 2;
   text-align: center;
   text-overflow: ellipsis;
   top: calc((var(--svsch-port-height) - var(--svsch-port-skin-height)) / 2);
@@ -1491,11 +1594,17 @@ select {
 }
 
 .svsch-edge-stacked {
-  stroke: color-mix(in srgb, var(--vscode-charts-blue) 80%, var(--vscode-editor-foreground));
+  stroke: var(--vscode-editor-foreground);
 }
 
 .svsch-edge-stacked-side {
-  stroke: color-mix(in srgb, var(--vscode-charts-blue) 40%, var(--vscode-editor-background));
+  stroke: var(--vscode-editor-foreground);
+  pointer-events: none;
+}
+
+.svsch-edge-stacked-breakout {
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 2;
   pointer-events: none;
 }
 

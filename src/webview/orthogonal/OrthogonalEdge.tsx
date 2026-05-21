@@ -20,6 +20,7 @@ import {
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender } from '../react-flow-line-jumps';
 import { InteractionContext } from '../main';
+import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 
 interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   onRouteChange?: RouteChangeHandler;
@@ -88,6 +89,56 @@ function routePointsWithAnchoredLeads(points: OrthogonalPoint[], officialPoints:
 
 function routePointsFromFullPoints(points: OrthogonalPoint[]): OrthogonalPoint[] {
   return points.slice(1, -1).map((point) => ({ ...point }));
+}
+
+function pathFromPoints(points: OrthogonalPoint[]): string {
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function offsetPoints(points: OrthogonalPoint[], dx: number, dy: number): OrthogonalPoint[] {
+  return points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
+}
+
+const STACK_LANE_OFFSET = 4;
+
+function shortenStackTarget(points: OrthogonalPoint[], amount: number, targetPosition: HdlPosition): OrthogonalPoint[] {
+  if (points.length === 0 || amount === 0) return points;
+  const next = points.map((point) => ({ ...point }));
+  const last = next[next.length - 1];
+  if (targetPosition === HdlPosition.Left) last.x -= amount;
+  else if (targetPosition === HdlPosition.Right) last.x += amount;
+  else if (targetPosition === HdlPosition.Top) last.y -= amount;
+  else if (targetPosition === HdlPosition.Bottom) last.y += amount;
+  return next;
+}
+
+function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): { trunk: string; bar: string; branches: string[] } | undefined {
+  if (points.length < 2) return undefined;
+
+  const target = points[points.length - 1];
+  const splitDistance = diagramSizing.gridSize;
+  let split: OrthogonalPoint;
+
+  if (targetPosition === HdlPosition.Left) split = { x: target.x - splitDistance, y: target.y };
+  else if (targetPosition === HdlPosition.Right) split = { x: target.x + splitDistance, y: target.y };
+  else if (targetPosition === HdlPosition.Top) split = { x: target.x, y: target.y - splitDistance };
+  else split = { x: target.x, y: target.y + splitDistance };
+
+  const trunkPoints = [...points.slice(0, -1), split];
+  const barTop = { x: split.x - 4, y: split.y - 4 };
+  const barBottom = { x: split.x + 4, y: split.y + 4 };
+  const branchStarts = [barTop, split, barBottom];
+  const branchTargets = [
+    { x: target.x - 4, y: target.y - 4 },
+    target,
+    { x: target.x + 4, y: target.y + 4 }
+  ].map((point, index) => shortenStackTarget([point], diagramSizing.gridSize * (index + 1) / 8, targetPosition)[0]);
+
+  return {
+    trunk: pathFromPoints(trunkPoints),
+    bar: `M ${barTop.x} ${barTop.y} L ${barBottom.x} ${barBottom.y}`,
+    branches: branchTargets.map((branchTarget, index) => `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`)
+  };
 }
 
 function nodeObstacle(node: any): NodeObstacle | undefined {
@@ -269,6 +320,11 @@ export function OrthogonalEdge({
   const isStructAggregate = diagramEdge?.metadata?.aggregate === 'struct';
   const isInterfaceAggregate = diagramEdge?.metadata?.aggregate === 'interface';
   const isStacked = diagramEdge?.isStacked === true;
+  const sourceFlowNode = flowNodes.find((node) => node.id === source);
+  const targetFlowNode = flowNodes.find((node) => node.id === target);
+  const sourceIsArray = sourceFlowNode?.data?.node ? nodeIsArrayNode(sourceFlowNode.data.node as any) : false;
+  const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
+  const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -330,6 +386,13 @@ export function OrthogonalEdge({
   const jumpHaloPaths = edgeRender.jumpPaths.length > 0
     ? edgeRender.jumpPaths
     : jumpHaloPathsFromPath(edgeRender.path);
+  const targetHdlPosition = targetPosition as unknown as HdlPosition;
+  const backStackPoints = shortenStackTarget(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET), diagramSizing.gridSize * 3 / 8, targetHdlPosition);
+  const middleStackPoints = shortenStackTarget(points, diagramSizing.gridSize / 4, targetHdlPosition);
+  const backStackPath = pathFromPoints(backStackPoints);
+  const middleStackPath = pathFromPoints(middleStackPoints);
+  const frontStackPath = pathFromPoints(shortenStackTarget(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET), diagramSizing.gridSize / 8, targetHdlPosition));
+  const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
 
@@ -429,16 +492,26 @@ export function OrthogonalEdge({
           })()}
         </g>
       )}
-      {isStacked && (
-        <>
-          <path className="svsch-edge svsch-edge-stacked-side" d={edgeRender.path} transform="translate(0,-3)" />
-          <path className="svsch-edge svsch-edge-stacked-side" d={edgeRender.path} transform="translate(0,3)" />
-        </>
+      {isStacked && !isPromotedStack && (
+        <path className="svsch-edge svsch-edge-stacked-side" d={backStackPath} />
       )}
       {isInterfaceAggregate && (
         <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
       )}
-      <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={edgeRender.path} />
+      {promotedFanout ? (
+        <>
+          <path className={`svsch-edge svsch-edge-stacked${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={promotedFanout.trunk} />
+          <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} />
+          {promotedFanout.branches.map((branchPath, index) => (
+            <path key={`${id}-stack-branch-${index}`} className="svsch-edge svsch-edge-stacked-side" d={branchPath} />
+          ))}
+        </>
+      ) : (
+        <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
+      )}
+      {isStacked && !isPromotedStack && (
+        <path className="svsch-edge svsch-edge-stacked-side" d={frontStackPath} />
+      )}
       <path
         className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}`}
         d={rawEdgePath}

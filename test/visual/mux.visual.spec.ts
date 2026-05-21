@@ -9,6 +9,171 @@ import type { SavedLayout } from '../../src/storage/layoutStore';
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
+async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
+  const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-side').evaluateAll((paths) => {
+    const numberPattern = /-?\d+(?:\.\d+)?/g;
+    const diagonals: string[] = [];
+
+    for (const path of paths) {
+      const d = path.getAttribute('d') ?? '';
+      const values = [...d.matchAll(numberPattern)].map((match) => Number(match[0]));
+      const points: Array<{ x: number; y: number }> = [];
+      for (let index = 0; index + 1 < values.length; index += 2) {
+        points.push({ x: values[index], y: values[index + 1] });
+      }
+      for (let index = 1; index < points.length; index++) {
+        const dx = Math.abs(points[index].x - points[index - 1].x);
+        const dy = Math.abs(points[index].y - points[index - 1].y);
+        if (dx > 0.5 && dy > 0.5) {
+          diagonals.push(d);
+          break;
+        }
+      }
+    }
+
+    return diagonals;
+  });
+
+  expect(diagonalSegments).toEqual([]);
+}
+
+async function expectArrayStackEdgeLanes(page: Page, edgeId: string): Promise<void> {
+  const lanes = await page.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-side, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked`).evaluateAll((paths) => {
+    const pointPattern = /[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g;
+
+    return paths.map((path) => {
+      const d = path.getAttribute('d') ?? '';
+      const points: Array<{ x: number; y: number }> = [];
+      let match = pointPattern.exec(d);
+      while (match) {
+        points.push({ x: Number(match[1]), y: Number(match[2]) });
+        match = pointPattern.exec(d);
+      }
+
+      return {
+        d,
+        start: points[0],
+        end: points[points.length - 1]
+      };
+    });
+  });
+
+  expect(lanes).toHaveLength(3);
+  expect(lanes.every((lane) => lane.start && lane.end)).toBe(true);
+
+  const bySourceLayer = [...lanes].sort((a, b) => a.start.y - b.start.y);
+  expect(bySourceLayer[1].start.x - bySourceLayer[0].start.x).toBeCloseTo(4, 0);
+  expect(bySourceLayer[2].start.x - bySourceLayer[1].start.x).toBeCloseTo(4, 0);
+  expect(bySourceLayer[1].start.y - bySourceLayer[0].start.y).toBeCloseTo(4, 0);
+  expect(bySourceLayer[2].start.y - bySourceLayer[1].start.y).toBeCloseTo(4, 0);
+
+  const byTargetLayer = [...lanes].sort((a, b) => a.end.y - b.end.y);
+  expect(byTargetLayer[1].end.x - byTargetLayer[0].end.x).toBeCloseTo(1, 0);
+  expect(byTargetLayer[2].end.x - byTargetLayer[1].end.x).toBeCloseTo(1, 0);
+  expect(byTargetLayer[1].end.y - byTargetLayer[0].end.y).toBeCloseTo(4, 0);
+  expect(byTargetLayer[2].end.y - byTargetLayer[1].end.y).toBeCloseTo(4, 0);
+}
+
+async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, sourceNodeId: string, targetNodeId: string): Promise<void> {
+  const geometry = await page.evaluate(({ edgeId: currentEdgeId, sourceNodeId: currentSourceNodeId, targetNodeId: currentTargetNodeId }) => {
+    type Rect = { left: number; right: number; top: number; bottom: number; width: number; height: number };
+
+    function pointFromPath(path: Element, useEnd: boolean): { x: number; y: number } | undefined {
+      const d = path.getAttribute('d') ?? '';
+      const matches = [...d.matchAll(/[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)];
+      const match = useEnd ? matches[matches.length - 1] : matches[0];
+      const matrix = (path as SVGPathElement).getScreenCTM();
+      if (!match || !matrix) return undefined;
+      const x = Number(match[1]);
+      const y = Number(match[2]);
+      return {
+        x: matrix.a * x + matrix.c * y + matrix.e,
+        y: matrix.b * x + matrix.d * y + matrix.f
+      };
+    }
+
+    function rectFor(selector: string): Rect | undefined {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      if (!rect) return undefined;
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function layerRects(nodeId: string): { front?: Rect; middle?: Rect; back?: Rect } {
+      const portFront = rectFor(`[data-node-id="${nodeId}"] .port-skin-array-front`);
+      if (portFront) {
+        return {
+          front: portFront,
+          middle: rectFor(`[data-node-id="${nodeId}"] .port-skin-body`),
+          back: rectFor(`[data-node-id="${nodeId}"] .port-skin-array-back`)
+        };
+      }
+      return {
+        front: rectFor(`[data-node-id="${nodeId}"] .hdl-node-array-front`),
+        middle: rectFor(`[data-node-id="${nodeId}"] .hdl-node-array-middle`),
+        back: rectFor(`[data-node-id="${nodeId}"] .hdl-node-array-back`)
+      };
+    }
+
+    const edge = document.querySelector(`.react-flow__edge[data-id="${currentEdgeId}"]`);
+    const paths = [...edge?.querySelectorAll('.svsch-edge-stacked-side, .svsch-edge-stacked') ?? []];
+    const targetLeadPaths = [...document.querySelectorAll(`[data-node-id="${currentTargetNodeId}"] .svsch-array-stack-lead-target-left`)];
+    return {
+      edgeId: currentEdgeId,
+      lanes: paths.map((path) => ({
+        className: path.getAttribute('class'),
+        d: path.getAttribute('d'),
+        start: pointFromPath(path, false),
+        end: pointFromPath(path, true)
+      })),
+      targetLeads: targetLeadPaths.map((path) => ({
+        className: path.getAttribute('class'),
+        start: pointFromPath(path, false),
+        end: pointFromPath(path, true)
+      })),
+      source: layerRects(currentSourceNodeId),
+      target: layerRects(currentTargetNodeId)
+    };
+  }, { edgeId, sourceNodeId, targetNodeId });
+
+  expect(geometry.lanes).toHaveLength(3);
+  expect(geometry.source.front).toBeDefined();
+  expect(geometry.source.middle).toBeDefined();
+  expect(geometry.source.back).toBeDefined();
+  expect(geometry.target.front).toBeDefined();
+  expect(geometry.target.middle).toBeDefined();
+  expect(geometry.target.back).toBeDefined();
+
+  const bySourceLayer = [...geometry.lanes].sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
+  expect(bySourceLayer[0].start?.x).toBeCloseTo(geometry.source.front!.right, 0);
+  expect(bySourceLayer[1].start?.x).toBeCloseTo(geometry.source.middle!.right, 0);
+  expect(bySourceLayer[2].start?.x).toBeCloseTo(geometry.source.back!.right, 0);
+
+  const byTargetLayer = [...geometry.lanes].sort((a, b) => (a.end?.y ?? 0) - (b.end?.y ?? 0));
+  const layerScale = (geometry.target.middle!.left - geometry.target.front!.left) / 4;
+  expect(byTargetLayer[0].end?.x).toBeCloseTo(geometry.target.front!.left - 3 * layerScale, 0);
+  expect(byTargetLayer[1].end?.x).toBeCloseTo(geometry.target.middle!.left - 6 * layerScale, 0);
+  expect(byTargetLayer[2].end?.x).toBeCloseTo(geometry.target.back!.left - 9 * layerScale, 0);
+
+  const targetLaneYs = byTargetLayer.map((lane) => lane.end?.y ?? 0);
+  const byTargetLead = geometry.targetLeads
+    .filter((lead) => targetLaneYs.some((y) => Math.abs((lead.start?.y ?? 0) - y) < 1))
+    .sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
+  expect(byTargetLead).toHaveLength(3);
+  expect(byTargetLead[0].start?.x).toBeCloseTo(byTargetLayer[0].end!.x, 0);
+  expect(byTargetLead[0].end?.x).toBeCloseTo(geometry.target.front!.left, 0);
+  expect(byTargetLead[1].start?.x).toBeCloseTo(byTargetLayer[1].end!.x, 0);
+  expect(byTargetLead[1].end?.x).toBeCloseTo(geometry.target.middle!.left, 0);
+  expect(byTargetLead[2].start?.x).toBeCloseTo(byTargetLayer[2].end!.x, 0);
+  expect(byTargetLead[2].end?.x).toBeCloseTo(geometry.target.back!.left, 0);
+}
+
 test.describe('mux visual rendering', () => {
   test('renders a mux node interpreted from SystemVerilog', async ({ page }) => {
     await openFixture(page, 'mux_only.sv', 'manual');
@@ -135,6 +300,39 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
     await expect(page).toHaveScreenshot('array-register-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders an array input through a stacked register to an array output', async ({ page }) => {
+    const view = await openFixture(page, 'array_port_register.sv', 'register');
+
+    expect(view.nodes.some((node) => node.id === 'port:array_port_register:in_data' && (node.isArrayNode || node.metadata?.isArrayNode))).toBe(true);
+    expect(view.nodes.some((node) => node.id === 'reg:array_port_register:storage' && (node.isArrayNode || node.metadata?.isArrayNode))).toBe(true);
+    expect(view.nodes.some((node) => node.id === 'port:array_port_register:out_data' && (node.isArrayNode || node.metadata?.isArrayNode))).toBe(true);
+    expect(view.edges.some((edge) => edge.source === 'port:array_port_register:in_data' && edge.target === 'reg:array_port_register:storage' && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === 'reg:array_port_register:storage' && edge.target === 'port:array_port_register:out_data' && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === 'port:array_port_register:clk' && edge.target === 'reg:array_port_register:storage' && edge.isStacked)).toBe(true);
+    const dataInputEdge = view.edges.find((edge) => edge.source === 'port:array_port_register:in_data' && edge.target === 'reg:array_port_register:storage' && edge.isStacked);
+    const dataOutputEdge = view.edges.find((edge) => edge.source === 'reg:array_port_register:storage' && edge.target === 'port:array_port_register:out_data' && edge.isStacked);
+    expect(dataInputEdge).toBeDefined();
+    expect(dataOutputEdge).toBeDefined();
+
+    await expect(page.locator('[data-node-id="port:array_port_register:in_data"].hdl-node-array')).toBeVisible();
+    await expect(page.locator('[data-node-id="reg:array_port_register:storage"].hdl-node-array')).toBeVisible();
+    await expect(page.locator('[data-node-id="port:array_port_register:out_data"].hdl-node-array')).toBeVisible();
+    await expect(page.locator('[data-node-id="port:array_port_register:in_data"] .port-skin-array-layer')).toHaveCount(2);
+    await expect(page.locator('[data-node-id="port:array_port_register:out_data"] .port-skin-array-layer')).toHaveCount(2);
+    await expect(page.locator('[data-node-id="reg:array_port_register:storage"] .svsch-array-stack-lead-target-left')).toHaveCount(6);
+    await expect(page.locator('[data-node-id="reg:array_port_register:storage"] .svsch-array-stack-lead-source-right')).toHaveCount(3);
+    await expect(page.locator('[data-node-id="port:array_port_register:in_data"] .svsch-array-stack-lead-source-right')).toHaveCount(3);
+    await expect(page.locator('[data-node-id="port:array_port_register:out_data"] .svsch-array-stack-lead-target-left')).toHaveCount(3);
+    expect(await page.locator('.svsch-edge-stacked-side').count()).toBeGreaterThanOrEqual(6);
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectArrayStackEdgeLanes(page, dataInputEdge!.id);
+    await expectArrayStackEdgeLanes(page, dataOutputEdge!.id);
+    await expectArrayStackEdgeLayerCoordinates(page, dataInputEdge!.id, 'port:array_port_register:in_data', 'reg:array_port_register:storage');
+    await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
+
+    await expect(page).toHaveScreenshot('array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 

@@ -277,6 +277,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     for (auto const& [reg_name, reg_assigns_vec] : reg_assigns) {
         vpiHandle lhs_first = vpi_handle(vpiLhs, reg_assigns_vec[0]);
         std::string reg_base = getBaseSignalName(lhs_first);
+        ensureDeclaredArray(mod, reg_base);
 
         // Detect variable-index array write: bracket with non-constant index → stacked mux chain
         // We check independently of mod.arrayDimensions since UHDM may store unpacked dims differently.
@@ -308,23 +309,8 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         // If array dimensions weren't found by the module scanner (UHDM doesn't expose them via VPI
         // ranges for logic arrays), fall back to source-text regex extraction.
         if (is_variable_index && !mod.arrayDimensions.count(reg_base)) {
-            std::string dim = getDeclaredArrayDimension(mod, reg_base);
-            if (!dim.empty()) {
-                // Parse "[left:right]" to get the size
-                std::string s = dim;
-                s.erase(std::remove(s.begin(), s.end(), ' '), s.end());
-                if (s.size() >= 4 && s[0] == '[' && s.back() == ']') {
-                    s = s.substr(1, s.size() - 2);
-                    auto colon = s.find(':');
-                    if (colon != std::string::npos) {
-                        int lft = std::stoi(s.substr(0, colon));
-                        int rgt = std::stoi(s.substr(colon + 1));
-                        mod.arrayDimensions[reg_base] = dim;
-                        mod.arraySizes[reg_base] = std::abs(lft - rgt) + 1;
-                        is_array_reg = true;
-                    }
-                }
-            }
+            ensureDeclaredArray(mod, reg_base);
+            is_array_reg = mod.arrayDimensions.count(reg_base) > 0;
         }
 
         Node n;

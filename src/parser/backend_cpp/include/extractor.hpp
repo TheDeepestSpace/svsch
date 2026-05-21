@@ -59,6 +59,8 @@ struct Port {
     std::string preferredSide;
     std::string widthExpression;
     std::vector<ParameterRef> parameterRefs;
+    std::string arrayDimension;
+    int arraySize = 0;
 };
 
 struct NodePort {
@@ -178,6 +180,12 @@ struct PendingStructAssign {
     SourceInfo source;
 };
 
+struct PendingArrayAlias {
+    std::string targetSignal;
+    std::string sourceSignal;
+    SourceInfo source;
+};
+
 struct Module {
     std::string name;
     std::vector<ParameterDecl> parameters;
@@ -189,6 +197,7 @@ struct Module {
     std::map<std::string, InterfaceSignal> interfaceSignals;
     std::set<std::string> internalSignals;
     std::vector<PendingStructAssign> pendingStructAssigns;
+    std::vector<PendingArrayAlias> pendingArrayAliases;
     std::map<std::string, std::string> arrayDimensions;
     std::map<std::string, int> arraySizes;
 };
@@ -292,6 +301,7 @@ private:
     std::string ensureLiteralNode(vpiHandle handle, Module& mod, const std::string& output_signal, const std::string& width, vpiHandle source_handle, const std::string& label_override = "");
     std::string getDeclaredSignalWidth(const Module& mod, const std::string& signal);
     std::string getDeclaredArrayDimension(const Module& mod, const std::string& signal);
+    void ensureDeclaredArray(Module& mod, const std::string& signal);
     std::string getDeclaredLiteralWidth(const Module& mod, const std::string& literal);
     bool isNonZeroResetValue(vpiHandle handle);
     bool isAncestor(vpiHandle ancestor, vpiHandle descendant);
