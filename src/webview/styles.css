@@ -249,14 +249,6 @@ select {
   width: 100%;
 }
 
-.react-flow__edges {
-  z-index: 5;
-}
-
-.react-flow__nodes {
-  z-index: 4;
-}
-
 .empty {
   align-items: center;
   display: flex;
@@ -1354,15 +1346,18 @@ select {
   width: 0;
 }
 
+/* Push all node-port handles to the block boundary to prevent lead-spill */
+.hdl-node .node-port .react-flow__handle-left { left: -10px; }
+.hdl-node .node-port .react-flow__handle-right { right: -10px; }
+
+/* Nodes with 12px padding need a larger offset */
 .hdl-node-comb .node-port .react-flow__handle-left,
-.hdl-node-loop .node-port .react-flow__handle-left {
-  left: -12px;
-}
+.hdl-node-loop .node-port .react-flow__handle-left,
+.hdl-node-instance .node-port .react-flow__handle-left { left: -12px; }
 
 .hdl-node-comb .node-port .react-flow__handle-right,
-.hdl-node-loop .node-port .react-flow__handle-right {
-  right: -12px;
-}
+.hdl-node-loop .node-port .react-flow__handle-right,
+.hdl-node-instance .node-port .react-flow__handle-right { right: -12px; }
 
 .hdl-node-comb .node-port,
 .hdl-node-loop .node-port {
@@ -1449,8 +1444,20 @@ select {
   max-width: calc(var(--svsch-node-width) / 2);
   overflow: visible;
   padding: 0 4px;
+  position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mux-select-lead {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  display: block;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 1.5px;
 }
 
 .mux-select-port .react-flow__handle-top {

@@ -71,6 +71,10 @@ interface HdlNodeData {
 
 type HdlFlowNode = Node<HdlNodeData>;
 
+const ARRAY_NODE_Z_INDEX = 0;
+const EDGE_Z_INDEX = 1;
+const BLOCK_NODE_Z_INDEX = 2;
+
 interface ArrayStackConnection {
   portId?: string;
   role: 'source' | 'target';
@@ -286,6 +290,27 @@ function muxInputPortCenterY(index: number, count: number, height: number): numb
   const heightUnits = Math.max(1, Math.round(height / grid));
   const startUnit = Math.max(1, Math.ceil((heightUnits - count + 1) / 2));
   return grid * (startUnit + index);
+}
+
+function muxTopPortSkinEdgeY(index: number, count: number, height: number): number {
+  const xFraction = (index + 1) / (count + 1);
+  const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
+  const rightTop = (height - rightSideHeight) / 2;
+  return rightTop * xFraction;
+}
+
+function muxTopPortLabelOffsetY(index: number, count: number, height: number): number {
+  return Math.max(0, muxTopPortSkinEdgeY(index, count, height) - diagramSizing.gridSize) + 8;
+}
+
+function muxTopPortLeadLengthY(index: number, count: number, height: number): number {
+  return Math.max(0, muxTopPortSkinEdgeY(index, count, height) - diagramSizing.gridSize);
+}
+
+function shouldLowerMuxTopPortLabel(node: DiagramNode, port: DiagramPort): boolean {
+  return node.kind === 'select'
+    || Boolean(normalizeWidth(port.width))
+    || (node.kind === 'mux' && (node.label.startsWith('if ') || (port.connectedSignal?.length ?? 0) > 24));
 }
 
 function busTapPortCenterY(index: number, startUnits = 1): number {
@@ -1224,12 +1249,23 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       {node.kind === 'mux' && <MuxSkin width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'select' && <SelectSkin width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'alu' && <AluSkin width={nodeWidth} height={nodeHeight} />}
-      {muxTopPorts.map((port: DiagramPort, index: number) => (
-        <div className="mux-select-port" key={port.id} style={{ left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%` }}>
-          <Handle type="target" id={port.id} position={Position.Top} />
-          <span>{node.kind === 'select' ? selectPortLabel(node, port.name === 'width' ? 'w' : 's') : 's'}</span>
-        </div>
-      ))}
+      {muxTopPorts.map((port: DiagramPort, index: number) => {
+        const leadLengthY = node.kind === 'mux' && (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
+          ? muxTopPortLeadLengthY(index, muxTopPorts.length, nodeHeight)
+          : 0;
+        const labelOffsetY = shouldLowerMuxTopPortLabel(node, port)
+          ? muxTopPortLabelOffsetY(index, muxTopPorts.length, nodeHeight)
+          : 0;
+        return (
+          <div className="mux-select-port" key={port.id} style={{ left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%` }}>
+            {leadLengthY > 0 && <i aria-hidden="true" className="mux-select-lead" style={{ height: `${leadLengthY}px` }} />}
+            <Handle type="target" id={port.id} position={Position.Top} />
+            <span style={{ top: `${labelOffsetY}px` }}>
+              {node.kind === 'select' ? selectPortLabel(node, port.name === 'width' ? 'w' : 's') : 's'}
+            </span>
+          </div>
+        );
+      })}
       <div className="node-kind">{formatNodeKind(node)}</div>
       {node.kind === 'instance' && <InstanceParameterList parameters={instanceParameters} />}
       {node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'loop' && <div className="node-title">{title}</div>}
@@ -1500,6 +1536,7 @@ function DiagramApp(): React.ReactElement {
       id: node.id,
       type: 'hdl',
       position: node.position,
+      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
       data: { node, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
     })));
 
@@ -1530,6 +1567,7 @@ function DiagramApp(): React.ReactElement {
         targetHandle: edge.targetPort,
         label: edge.label,
         type: 'svsch',
+        zIndex: EDGE_Z_INDEX,
         data: {
           waypoint: edge.waypoint,
           routePoints: edge.routePoints,
@@ -1647,6 +1685,7 @@ function DiagramApp(): React.ReactElement {
                 deleteKeyCode={null}
                 snapToGrid
                 snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
+                zIndexMode="manual"
                 proOptions={{ hideAttribution: true }}
               >
                 <Background gap={diagramSizing.gridSize} />

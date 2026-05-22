@@ -275,6 +275,19 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
         const startUnit = Math.max(1, Math.ceil((heightUnits - (inputs.length - 1) + 1) / 2));
         portY = grid * (startUnit + sideInputIndex);
       }
+    } else if (node.kind === 'select') {
+      const allInputs = node.ports.filter(p => p.direction !== 'output');
+      const topPorts = allInputs.filter((p, i) => i === 0 || p.name === 'width');
+      const portIndex = topPorts.indexOf(port);
+      if (portIndex >= 0) {
+        side = 'NORTH';
+        portX = width * (portIndex + 1) / (topPorts.length + 1);
+        portY = 0;
+      } else if (port.direction === 'output') {
+        portY = height / 2;
+      } else {
+        portY = height / 2;
+      }
     } else if (node.kind === 'alu') {
       if (port.direction === 'output') {
         side = 'EAST';
