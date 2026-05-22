@@ -325,6 +325,8 @@ export function OrthogonalEdge({
   const sourceIsArray = sourceFlowNode?.data?.node ? nodeIsArrayNode(sourceFlowNode.data.node as any) : false;
   const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
+  // For stacked edges reaching a non-array target, suppress back/front lanes — they'd spill into the scalar block
+  const isConvergingStack = isStacked && !targetIsArray;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -492,7 +494,7 @@ export function OrthogonalEdge({
           })()}
         </g>
       )}
-      {isStacked && !isPromotedStack && (
+      {isStacked && !isPromotedStack && !isConvergingStack && (
         <path className="svsch-edge svsch-edge-stacked-back" d={backStackPath} />
       )}
       {isInterfaceAggregate && (
@@ -509,7 +511,7 @@ export function OrthogonalEdge({
       ) : (
         <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
       )}
-      {isStacked && !isPromotedStack && (
+      {isStacked && !isPromotedStack && !isConvergingStack && (
         <path className="svsch-edge svsch-edge-stacked-front" d={frontStackPath} />
       )}
       <path

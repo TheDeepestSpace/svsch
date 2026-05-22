@@ -1354,6 +1354,16 @@ select {
   width: 0;
 }
 
+.hdl-node-comb .node-port .react-flow__handle-left,
+.hdl-node-loop .node-port .react-flow__handle-left {
+  left: -12px;
+}
+
+.hdl-node-comb .node-port .react-flow__handle-right,
+.hdl-node-loop .node-port .react-flow__handle-right {
+  right: -12px;
+}
+
 .hdl-node-comb .node-port,
 .hdl-node-loop .node-port {
   padding-left: 12px;
