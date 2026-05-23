@@ -127,7 +127,29 @@ function shortenStackSource(points: OrthogonalPoint[], amount: number, sourcePos
   return next;
 }
 
-function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): { trunk: string; bar: string; branches: string[] } | undefined {
+interface PromotedStackFanout {
+  trunk: string;
+  bar: string;
+  barStart: OrthogonalPoint;
+  barEnd: OrthogonalPoint;
+  branches: Array<{ layerId: ArrayStackLayerId; path: string }>;
+}
+
+function stackedLayerEdgeClass(layerId: ArrayStackLayerId): string {
+  if (layerId === 'front') return 'svsch-edge-stacked-front';
+  if (layerId === 'back') return 'svsch-edge-stacked-back';
+  return 'svsch-edge-stacked';
+}
+
+function stableFragmentId(value: string): string {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(hash, 31) + value.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): PromotedStackFanout | undefined {
   if (points.length < 2) return undefined;
 
   const target = points[points.length - 1];
@@ -149,8 +171,13 @@ function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlP
 
   return {
     trunk: pathFromPoints(trunkPoints),
+    barStart: branchStarts[0],
+    barEnd: branchStarts[branchStarts.length - 1],
     bar: `M ${branchStarts[0].x} ${branchStarts[0].y} L ${branchStarts[branchStarts.length - 1].x} ${branchStarts[branchStarts.length - 1].y}`,
-    branches: branchTargets.map((branchTarget, index) => `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`)
+    branches: branchTargets.map((branchTarget, index) => ({
+      layerId: ARRAY_STACK_LEAD_LAYERS[index].id,
+      path: `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`
+    }))
   };
 }
 
@@ -434,6 +461,7 @@ export function OrthogonalEdge({
   );
   const frontStackPath = pathFromPoints(frontStackPoints);
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
+  const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const netGeometries = context && edgeData?.netEdgeIds
@@ -548,10 +576,28 @@ export function OrthogonalEdge({
       )}
       {promotedFanout ? (
         <>
+          <defs>
+            <linearGradient
+              id={promotedFanoutGradientId}
+              gradientUnits="userSpaceOnUse"
+              x1={promotedFanout.barStart.x}
+              y1={promotedFanout.barStart.y}
+              x2={promotedFanout.barEnd.x}
+              y2={promotedFanout.barEnd.y}
+            >
+              <stop offset="0%" className="svsch-stack-gradient-front-stop" />
+              <stop offset="50%" className="svsch-stack-gradient-middle-stop" />
+              <stop offset="100%" className="svsch-stack-gradient-back-stop" />
+            </linearGradient>
+          </defs>
           <path className={`svsch-edge svsch-edge-stacked${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={promotedFanout.trunk} />
-          <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} />
-          {promotedFanout.branches.map((branchPath, index) => (
-            <path key={`${id}-stack-branch-${index}`} className="svsch-edge svsch-edge-stacked-side" d={branchPath} />
+          <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} style={{ stroke: `url(#${promotedFanoutGradientId})` }} />
+          {promotedFanout.branches.map((branch, index) => (
+            <path
+              key={`${id}-stack-branch-${index}`}
+              className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`}
+              d={branch.path}
+            />
           ))}
         </>
       ) : (

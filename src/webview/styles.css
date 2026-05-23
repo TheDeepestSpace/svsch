@@ -1672,6 +1672,22 @@ select {
   pointer-events: none;
 }
 
+.svsch-edge-stacked-side {
+  pointer-events: none;
+}
+
+.svsch-stack-gradient-front-stop {
+  stop-color: var(--vscode-editor-foreground);
+}
+
+.svsch-stack-gradient-middle-stop {
+  stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 75%, var(--vscode-editor-background));
+}
+
+.svsch-stack-gradient-back-stop {
+  stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background));
+}
+
 .svsch-edge-struct {
   stroke-width: 4.5;
 }

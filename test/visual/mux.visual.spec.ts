@@ -198,6 +198,88 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   expect(byTargetLead[2].end?.x).toBeCloseTo(geometry.target.back!.left, 0);
 }
 
+async function expectPromotedStackFanoutPaint(
+  page: Page,
+  edgeId: string,
+  expectedOrder: { frontBeforeBackX?: boolean; frontBeforeBackY?: boolean } = {}
+): Promise<void> {
+  const fanout = await page.locator(`.react-flow__edge[data-id="${edgeId}"]`).evaluate((edge) => {
+    type Point = { x: number; y: number };
+
+    function pathPoints(path: Element): Point[] {
+      return [...(path.getAttribute('d') ?? '').matchAll(/[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)].map((match) => ({
+        x: Number(match[1]),
+        y: Number(match[2])
+      }));
+    }
+
+    const layers = ['front', 'middle', 'back'] as const;
+    const branches = layers.map((layer) => {
+      const path = edge.querySelector(`.svsch-edge-stacked-side-${layer}`);
+      const points = path ? pathPoints(path) : [];
+      return {
+        layer,
+        className: path?.getAttribute('class'),
+        stroke: path ? getComputedStyle(path).stroke : undefined,
+        start: points[0],
+        end: points[points.length - 1]
+      };
+    });
+    const bar = edge.querySelector('.svsch-edge-stacked-breakout');
+    const barPoints = bar ? pathPoints(bar) : [];
+    const gradient = edge.querySelector('linearGradient');
+    const stops = [...gradient?.querySelectorAll('stop') ?? []].map((stop) => ({
+      offset: stop.getAttribute('offset'),
+      color: getComputedStyle(stop).getPropertyValue('stop-color')
+    }));
+
+    return {
+      branches,
+      bar: {
+        style: bar?.getAttribute('style'),
+        start: barPoints[0],
+        end: barPoints[barPoints.length - 1]
+      },
+      gradient: gradient ? {
+        x1: Number(gradient.getAttribute('x1')),
+        y1: Number(gradient.getAttribute('y1')),
+        x2: Number(gradient.getAttribute('x2')),
+        y2: Number(gradient.getAttribute('y2'))
+      } : undefined,
+      stops
+    };
+  });
+
+  const [front, middle, back] = fanout.branches;
+  expect(front.className).toContain('svsch-edge-stacked-front');
+  expect(middle.className).toContain('svsch-edge-stacked');
+  expect(back.className).toContain('svsch-edge-stacked-back');
+  expect(fanout.stops.map((stop) => stop.offset)).toEqual(['0%', '50%', '100%']);
+  expect([front.stroke, middle.stroke, back.stroke]).toEqual(fanout.stops.map((stop) => stop.color));
+  expect(fanout.bar.style).toContain('url(');
+  expect(fanout.bar.start).toEqual(front.start);
+  expect(fanout.bar.end).toEqual(back.start);
+  expect(fanout.gradient?.x1).toBeCloseTo(front.start.x, 3);
+  expect(fanout.gradient?.y1).toBeCloseTo(front.start.y, 3);
+  expect(fanout.gradient?.x2).toBeCloseTo(back.start.x, 3);
+  expect(fanout.gradient?.y2).toBeCloseTo(back.start.y, 3);
+
+  if (expectedOrder.frontBeforeBackX !== undefined) {
+    if (expectedOrder.frontBeforeBackX) {
+      expect(front.start.x).toBeLessThan(back.start.x);
+    } else {
+      expect(front.start.x).toBeGreaterThan(back.start.x);
+    }
+  }
+  if (expectedOrder.frontBeforeBackY !== undefined) {
+    if (expectedOrder.frontBeforeBackY) {
+      expect(front.start.y).toBeLessThan(back.start.y);
+    } else {
+      expect(front.start.y).toBeGreaterThan(back.start.y);
+    }
+  }
+}
+
 async function expectMuxBodyMasksTopStackLead(page: Page, nodeId: string): Promise<void> {
   const clip = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
     const skin = node.querySelector('svg.node-skin.mux-skin') as SVGSVGElement | null;
@@ -445,10 +527,13 @@ test.describe('register visual rendering', () => {
       && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address')
     ));
     const arrayReg = view.nodes.find((node) => node.id === 'reg:array_address_write_register:storage');
+    const addressSelectEdge = view.edges.find((edge) => edge.source === 'port:array_address_write_register:address' && edge.target === addrMux?.id && edge.targetPort === 'sel' && edge.isStacked);
+    const clockStorageEdge = view.edges.find((edge) => edge.source === 'port:array_address_write_register:clk' && edge.target === arrayReg?.id && edge.isStacked);
     expect(addrMux).toBeDefined();
     expect(addrMux?.ports.some((port) => port.label === "2'b0" && port.connectedSignal === 'in_data')).toBe(true);
     expect(addrMux?.ports.some((port) => port.label === 'default' && port.connectedSignal === 'storage')).toBe(true);
-    expect(view.edges.some((edge) => edge.source === 'port:array_address_write_register:address' && edge.target === addrMux?.id && edge.targetPort === 'sel' && edge.isStacked)).toBe(true);
+    expect(addressSelectEdge).toBeDefined();
+    expect(clockStorageEdge).toBeDefined();
     expect(view.edges.some((edge) => edge.source === 'port:array_address_write_register:in_data' && edge.target === addrMux?.id && edge.isStacked)).toBe(true);
     expect(view.edges.some((edge) => edge.source === arrayReg?.id && edge.target === addrMux?.id && edge.isStacked)).toBe(true);
     expect(view.edges.some((edge) => edge.source === addrMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
@@ -485,6 +570,8 @@ test.describe('register visual rendering', () => {
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
     expect(await page.locator('.svsch-edge-junction-stacked-dot').count()).toBeGreaterThanOrEqual(3);
     await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id, { frontBeforeBackX: true, frontBeforeBackY: true });
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { frontBeforeBackY: true });
 
     await expect(page).toHaveScreenshot('array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
   });
