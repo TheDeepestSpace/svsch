@@ -48,6 +48,28 @@ function renderedAluInputCenterY(node: PositionedNode, index: number): number {
   return node.position.y + (index === 0 ? diagramSizing.gridSize : diagramSizing.gridSize * 3);
 }
 
+function routeCrossesNodeInterior(route: Array<{ x: number; y: number }>, node: PositionedNode): boolean {
+  const dimensions = diagramNodeDimensions(node);
+  const epsilon = 0.5;
+
+  return route.slice(0, -1).some((point, index) => {
+    const next = route[index + 1];
+    if (point.y === next.y) {
+      return point.y > node.position.y + epsilon
+        && point.y < node.position.y + dimensions.height - epsilon
+        && Math.min(point.x, next.x) < node.position.x + dimensions.width - epsilon
+        && Math.max(point.x, next.x) > node.position.x + epsilon;
+    }
+    if (point.x === next.x) {
+      return point.x > node.position.x + epsilon
+        && point.x < node.position.x + dimensions.width - epsilon
+        && Math.min(point.y, next.y) < node.position.y + dimensions.height - epsilon
+        && Math.max(point.y, next.y) > node.position.y + epsilon;
+    }
+    return false;
+  });
+}
+
 describe('layout merge', () => {
   it('uses node and port dimensions that align with the snap grid', () => {
     expect(diagramSizing.nodeWidth % diagramSizing.gridSize).toBe(0);
@@ -923,7 +945,7 @@ describe('layout merge', () => {
 
       expect(newYPos).toBeGreaterThan(originalYPos!);
     });
-    it('prevents auto-layout from moving nodes that are explicitly fixed', async () => {
+  it('prevents auto-layout from moving nodes that are explicitly fixed', async () => {
     const initialGraph: DesignGraph = {
       rootModules: ['top'],
       generatedAt: 'now',
@@ -978,5 +1000,251 @@ describe('layout merge', () => {
     const newYPos = expandedView.nodes.find((node) => node.id === 'y')?.position.x;
 
     expect(newYPos).toBe(originalYPos!);
+  });
+
+  it('gives stacked mux nodes enough bottom margin so backward edges clear the visual back-layer overhang', async () => {
+    // The back layer of a stacked node is rendered ARRAY_STACK_LANE_OFFSET (4 px) below the
+    // logical node boundary.  ELK routes edges outside ELK-node boundaries; the ELK node
+    // bottom = logical_bottom + bottom_margin.  If bottom_margin == 4 == ARRAY_STACK_LANE_OFFSET
+    // the route sits exactly on the back-layer skin, producing visible overlap.  We need
+    // bottom_margin > ARRAY_STACK_LANE_OFFSET so routes clear the skin entirely.
+    const ARRAY_STACK_LANE_OFFSET = 4; // mirror of arrayStackGeometry.ts
+
+    // Topology mirrors array_address_write_enable_register:
+    //   inputs → write_en mux → addr mux → array register → outputs
+    //   array register Q feeds back to write_en mux.false and addr_mux.default
+    const stackedFeedbackGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'wen_mux',
+              kind: 'mux',
+              label: 'if write_en',
+              ports: [
+                { id: 'wen_sel', name: 'sel', direction: 'input' },
+                { id: 'wen_true', name: 'true', direction: 'input' },
+                { id: 'wen_false', name: 'false', direction: 'input' },
+                { id: 'wen_out', name: 'out', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true }
+            },
+            {
+              id: 'addr_mux',
+              kind: 'mux',
+              label: 'write address',
+              ports: [
+                { id: 'addr_sel', name: 'sel', direction: 'input' },
+                { id: 'addr_data', name: "2'b0", direction: 'input' },
+                { id: 'addr_default', name: 'default', direction: 'input' },
+                { id: 'addr_out', name: 'out', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true }
+            },
+            {
+              id: 'reg',
+              kind: 'register',
+              label: 'storage',
+              ports: [
+                { id: 'reg_d', name: 'D', direction: 'input' },
+                { id: 'reg_clk', name: 'clk', direction: 'input' },
+                { id: 'reg_q', name: 'Q', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true, clockSignal: 'clk' }
+            }
+          ],
+          edges: [
+            { id: 'wen-addr', source: 'wen_mux', sourcePort: 'wen_out', target: 'addr_mux', targetPort: 'addr_data' },
+            { id: 'addr-reg', source: 'addr_mux', sourcePort: 'addr_out', target: 'reg', targetPort: 'reg_d' },
+            // Backward feedback edges: reg Q drives both mux hold inputs
+            { id: 'reg-wen-fb', source: 'reg', sourcePort: 'reg_q', target: 'wen_mux', targetPort: 'wen_false' },
+            { id: 'reg-addr-fb', source: 'reg', sourcePort: 'reg_q', target: 'addr_mux', targetPort: 'addr_default' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(stackedFeedbackGraph, 'top', { version: 1, modules: {} });
+
+    const wenMux = view.nodes.find((n) => n.id === 'wen_mux')!;
+    const addrMux = view.nodes.find((n) => n.id === 'addr_mux')!;
+    expect(wenMux).toBeDefined();
+    expect(addrMux).toBeDefined();
+
+    // Any route point that dips below a stacked mux's logical bottom must also clear the
+    // back-layer overhang.  With only 4 px bottom margin the route lands exactly at the
+    // back-layer skin; with edgeLeadLength margin it lands well below it.
+    for (const edge of view.edges) {
+      if (!edge.routePoints) continue;
+      for (const point of edge.routePoints) {
+        for (const mux of [wenMux, addrMux]) {
+          const muxLogicalBottom = mux.position.y + diagramNodeDimensions(mux).height;
+          if (point.y > muxLogicalBottom) {
+            expect(point.y).toBeGreaterThan(muxLogicalBottom + ARRAY_STACK_LANE_OFFSET);
+          }
+        }
+      }
+    }
+  });
+
+  it('keeps forward register fanout routes from backtracking through blocks', async () => {
+    const stackedFanoutGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'wen_mux',
+              kind: 'mux',
+              label: 'if write_en',
+              ports: [
+                { id: 'sel', name: 'sel', direction: 'input' },
+                { id: 'wen_true', name: 'true', direction: 'input' },
+                { id: 'wen_false', name: 'false', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true }
+            },
+            {
+              id: 'addr_mux',
+              kind: 'mux',
+              label: 'write address',
+              ports: [
+                { id: 'sel', name: 'sel', direction: 'input' },
+                { id: 'addr_data', name: "2'b0", direction: 'input' },
+                { id: 'addr_default', name: 'default', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true }
+            },
+            {
+              id: 'reg',
+              kind: 'register',
+              label: 'storage',
+              ports: [
+                { id: 'd', name: 'D', direction: 'input' },
+                { id: 'q', name: 'Q', direction: 'output' },
+                { id: 'clk', name: 'clk', direction: 'input' }
+              ],
+              metadata: { isArrayNode: true, clockSignal: 'clk' }
+            },
+            {
+              id: 'out_data',
+              kind: 'port',
+              label: 'out_data',
+              ports: [{ id: 'out_data', name: 'out_data', direction: 'output' }]
+            }
+          ],
+          edges: [
+            { id: 'wen-addr', source: 'wen_mux', sourcePort: 'out', target: 'addr_mux', targetPort: 'addr_data' },
+            { id: 'addr-reg', source: 'addr_mux', sourcePort: 'out', target: 'reg', targetPort: 'd' },
+            { id: 'reg-out', source: 'reg', sourcePort: 'q', target: 'out_data', targetPort: 'out_data' },
+            { id: 'reg-wen-fb', source: 'reg', sourcePort: 'q', target: 'wen_mux', targetPort: 'wen_false' },
+            { id: 'reg-addr-fb', source: 'reg', sourcePort: 'q', target: 'addr_mux', targetPort: 'addr_default' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(stackedFanoutGraph, 'top', {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            reg: { x: 360, y: 216, fixed: true },
+            wen_mux: { x: 768, y: 120, fixed: true },
+            addr_mux: { x: 1128, y: 120, fixed: true },
+            out_data: { x: 768, y: 252, fixed: true }
+          }
+        }
+      }
     });
+
+    const reg = view.nodes.find((node) => node.id === 'reg')!;
+    const wenMux = view.nodes.find((node) => node.id === 'wen_mux')!;
+    const outData = view.nodes.find((node) => node.id === 'out_data')!;
+    const qLeadX = reg.position.x + diagramNodeDimensions(reg).width + diagramSizing.edgeLeadLength;
+
+    for (const edge of view.edges.filter((candidate) => candidate.source === 'reg')) {
+      expect(edge.routePoints).toBeDefined();
+      expect(Math.min(...edge.routePoints!.map((point) => point.x))).toBeGreaterThanOrEqual(qLeadX);
+    }
+
+    const addrRoute = view.edges.find((edge) => edge.id === 'reg-addr-fb')!.routePoints!;
+    expect(routeCrossesNodeInterior(addrRoute, wenMux)).toBe(false);
+    expect(routeCrossesNodeInterior(addrRoute, outData)).toBe(false);
+    expect(Math.max(...addrRoute.map((point) => point.y))).toBeGreaterThan(outData.position.y + diagramNodeDimensions(outData).height);
+  });
+
+  it('keeps source-side fanout stems off the source lead', async () => {
+    const fanoutGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'data', kind: 'port', label: 'data', ports: [{ id: 'data', name: 'data', direction: 'input' }] },
+            {
+              id: 'upper',
+              kind: 'loop',
+              label: 'loop',
+              ports: [
+                { id: 'in', name: 'in', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ]
+            },
+            {
+              id: 'lower',
+              kind: 'loop',
+              label: 'loop',
+              ports: [
+                { id: 'in', name: 'in', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ]
+            }
+          ],
+          edges: [
+            { id: 'data-upper', source: 'data', sourcePort: 'data', target: 'upper', targetPort: 'in' },
+            { id: 'data-lower', source: 'data', sourcePort: 'data', target: 'lower', targetPort: 'in' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            data: { x: 24, y: 36, fixed: true },
+            upper: { x: 408, y: 24, fixed: true },
+            lower: { x: 408, y: 144, fixed: true }
+          }
+        }
+      }
     });
+
+    const source = view.nodes.find((node) => node.id === 'data')!;
+    const route = view.edges.find((edge) => edge.id === 'data-lower')!.routePoints!;
+    const sourceLeadX = source.position.x + diagramNodeDimensions(source).width + diagramSizing.edgeLeadLength;
+
+    expect(route[0].x).toBe(sourceLeadX);
+    expect(route[1].x).toBeGreaterThan(sourceLeadX);
+    expect(route.some((point) => point.x === sourceLeadX && point.y !== route[0].y)).toBe(false);
+  });
+});

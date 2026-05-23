@@ -637,6 +637,82 @@ test.describe('register visual rendering', () => {
     await expect(regStack.locator('.hdl-node-array-selection')).toHaveCSS('opacity', '1');
     await expect(page).toHaveScreenshot('array-address-write-register-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${arrayReg!.id}"]`) });
   });
+
+  test('renders a stacked write-enable mux chained upstream of the stacked address mux for a conditional array write', async ({ page }) => {
+    const view = await openFixture(page, 'array_address_write_enable_register.sv', 'auto');
+
+    const writeEnMux = view.nodes.find((node) => (
+      node.kind === 'mux'
+      && (node.isArrayNode || node.metadata?.isArrayNode)
+      && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'write_en')
+    ));
+    const addrMux = view.nodes.find((node) => (
+      node.kind === 'mux'
+      && (node.isArrayNode || node.metadata?.isArrayNode)
+      && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address')
+    ));
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_address_write_enable_register:storage');
+
+    expect(writeEnMux).toBeDefined();
+    expect(addrMux).toBeDefined();
+    expect(arrayReg).toBeDefined();
+
+    // write_en mux: true=in_data (write data), false=storage (hold whole array when disabled)
+    expect(writeEnMux?.ports.some((port) => port.name === 'true' && port.connectedSignal === 'in_data')).toBe(true);
+    expect(writeEnMux?.ports.some((port) => port.name === 'false' && port.connectedSignal === 'storage')).toBe(true);
+    // addr mux: default=storage (hold unaddressed elements)
+    expect(addrMux?.ports.some((port) => port.label === 'default' && port.connectedSignal === 'storage')).toBe(true);
+
+    // write_en mux output feeds the addr mux's addressed-write input (stacked chain)
+    const writeEnToAddrEdge = view.edges.find((edge) => edge.source === writeEnMux?.id && edge.target === addrMux?.id && edge.isStacked);
+    expect(writeEnToAddrEdge).toBeDefined();
+    // addr mux output feeds the array register
+    expect(view.edges.some((edge) => edge.source === addrMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+    // storage Q feeds both muxes' hold inputs
+    expect(view.edges.some((edge) => edge.source === arrayReg?.id && edge.target === writeEnMux?.id && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === arrayReg?.id && edge.target === addrMux?.id && edge.isStacked)).toBe(true);
+
+    // Scalar inputs promoted to stacked on entry to each stacked mux
+    const writeEnSelectEdge = view.edges.find((edge) => (
+      edge.source === 'port:array_address_write_enable_register:write_en'
+      && edge.target === writeEnMux?.id
+      && edge.targetPort === 'sel'
+      && edge.isStacked
+    ));
+    const addressSelectEdge = view.edges.find((edge) => (
+      edge.source === 'port:array_address_write_enable_register:address'
+      && edge.target === addrMux?.id
+      && edge.targetPort === 'sel'
+      && edge.isStacked
+    ));
+    const inDataEdge = view.edges.find((edge) => (
+      edge.source === 'port:array_address_write_enable_register:in_data'
+      && edge.target === writeEnMux?.id
+      && edge.isStacked
+    ));
+    expect(writeEnSelectEdge).toBeDefined();
+    expect(addressSelectEdge).toBeDefined();
+    expect(inDataEdge).toBeDefined();
+
+    // Both muxes render as stacked array nodes with isometric layers
+    await expect(page.locator(`[data-node-id="${writeEnMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+
+    // Each stacked mux has 3 layer leads at the top (front / middle / back)
+    await expect(page.locator(`[data-node-id="${writeEnMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
+
+    // Addr mux selector is 2-bit (address [1:0]) so shows 's[]'
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .mux-select-port`, { hasText: 's[]' })).toBeVisible();
+
+    await expectMuxBodyMasksTopStackLead(page, writeEnMux!.id);
+    await expectMuxBodyMasksTopStackLead(page, addrMux!.id);
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectPromotedStackFanoutPaint(page, writeEnSelectEdge!.id);
+    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id);
+
+    await expect(page).toHaveScreenshot('array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {

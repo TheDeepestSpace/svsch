@@ -1727,6 +1727,56 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
+    it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {
+      const graph = await runParser(backend, 'array_address_write_enable_register.sv', fixture('array_address_write_enable_register.sv'));
+      const mod = graph.modules.array_address_write_enable_register ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'storage');
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+
+      // Exactly two muxes: write_en (stacked) and addr (stacked). No spurious base-signal or
+      // read muxes from intermediate signal names like 'storage[address]_next'.
+      expect(mod.nodes.filter((n) => n.kind === 'mux')).toHaveLength(2);
+
+      // write_en mux must be stacked (promoted because it drives an array-indexed write)
+      const writeEnMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'write_en')
+      ));
+      expect(writeEnMux).toBeDefined();
+      // true input carries the write data; false input holds the whole-array value when disabled
+      expect(writeEnMux?.ports.find((p) => p.name === 'true')?.connectedSignal).toBe('in_data');
+      expect(writeEnMux?.ports.find((p) => p.name === 'false')?.connectedSignal).toBe('storage');
+
+      // addr mux must be stacked, fed by the write_en mux output
+      const addrMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'address')
+      ));
+      expect(addrMux).toBeDefined();
+      expect(addrMux?.ports.find((p) => p.label === 'default')?.connectedSignal).toBe('storage');
+
+      // write_en mux output feeds the addr mux's addressed-write input
+      const writeEnOut = writeEnMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
+      expect(addrMux?.ports.find((p) => p.direction === 'input' && p.connectedSignal === writeEnOut)).toBeDefined();
+
+      // addr mux output feeds the array register
+      expect(mod.edges.some((e) => e.source === addrMux?.id && e.target === arrayReg?.id)).toBe(true);
+
+      // scalar write_en promoted to stacked when entering the stacked write_en mux
+      expect(mod.edges.some((e) => e.signal === 'write_en' && e.target === writeEnMux?.id && e.isStacked)).toBe(true);
+      // in_data promoted to stacked (feeds stacked write_en mux)
+      expect(mod.edges.some((e) => e.signal === 'in_data' && e.target === writeEnMux?.id && e.isStacked)).toBe(true);
+      // storage Q (stacked array) feeds write_en mux false input
+      expect(mod.edges.some((e) => e.source === arrayReg?.id && e.target === writeEnMux?.id && e.signal === 'storage' && e.isStacked)).toBe(true);
+      // write_en mux to addr mux is stacked
+      expect(mod.edges.some((e) => e.source === writeEnMux?.id && e.target === addrMux?.id && e.isStacked)).toBe(true);
+      // addr mux to storage register is stacked
+      expect(mod.edges.some((e) => e.source === addrMux?.id && e.target === arrayReg?.id && e.isStacked)).toBe(true);
+    });
+
     it('emits a non-stacked read mux for variable-index array reads', async () => {
       const graph = await runParser(backend, 'array_register.sv', fixture('array_register.sv'));
       const mod = graph.modules.array_register;

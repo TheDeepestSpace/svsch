@@ -278,6 +278,10 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
     }
 
     for (const auto& sig : array_read_signals) {
+        // Skip internal lowering artifacts like 'storage[address]_next': a real array-read
+        // expression ends with ']', anything after that is a suffix added by lowering passes.
+        if (sig.empty() || sig.back() != ']') continue;
+
         size_t bracket = sig.find('[');
         std::string base = sig.substr(0, bracket);
         std::string index = sig.substr(bracket + 1);

@@ -154,48 +154,64 @@ async function autoLayoutMissingNodes(
     enforceMinimumBlockGaps(nodes, positions, moduleLayout);
     alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
 
-    const routeGraph = await elk.layout({
-      id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.interactive': 'true',
-        'elk.layered.concentrateEdges': 'true',
-        'elk.layered.improveHyperedgeRoutes': 'true',
-        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-        'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS',
-        'elk.layered.spacing.edgeEdge': (diagramSizing.gridSize / 2).toString(),
-        'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString()
-      },
-      children: nodes.map((node, index) => {
-        const graphChild = graph.children?.find((child) => child.id === node.id);
-        const saved = moduleLayout.nodes[node.id];
-        const fallback = defaultPosition(index, node.kind);
-        const position = saved?.fixed
-          ? { x: saved.x, y: saved.y }
-          : positions.get(node.id) ?? (saved ? { x: saved.x, y: saved.y } : undefined) ?? (graphChild?.x !== undefined && graphChild.y !== undefined
-            ? { x: graphChild.x, y: graphChild.y }
-            : fallback);
-        routePositions.set(node.id, position);
-        const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, true);
-        return {
-          ...elkNode,
-          x: position.x - layoutOffset.x,
-          y: position.y - layoutOffset.y,
-          properties: {
-            ...elkNode.properties,
-            'org.eclipse.elk.position': 'FIXED'
-          },
-          layoutOptions: {
-            ...elkNode.layoutOptions,
-            'elk.position': 'FIXED',
-            'org.eclipse.elk.position': 'FIXED'
-          }
-        };
-      }),
-      edges: buildRoutingElkEdges(edges, nodeIds)
+    const routeLayoutOptions = {
+      'elk.algorithm': 'layered',
+      'elk.direction': 'RIGHT',
+      'elk.edgeRouting': 'ORTHOGONAL',
+      'elk.interactive': 'true',
+      'elk.layered.concentrateEdges': 'true',
+      'elk.layered.improveHyperedgeRoutes': 'true',
+      'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
+      'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS',
+      'elk.layered.spacing.edgeEdge': (diagramSizing.gridSize / 2).toString(),
+      'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString()
+    };
+    const routeChildren = nodes.map((node, index) => {
+      const graphChild = graph.children?.find((child) => child.id === node.id);
+      const saved = moduleLayout.nodes[node.id];
+      const fallback = defaultPosition(index, node.kind);
+      const position = saved?.fixed
+        ? { x: saved.x, y: saved.y }
+        : positions.get(node.id) ?? (saved ? { x: saved.x, y: saved.y } : undefined) ?? (graphChild?.x !== undefined && graphChild.y !== undefined
+          ? { x: graphChild.x, y: graphChild.y }
+          : fallback);
+      routePositions.set(node.id, position);
+      const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, true);
+      return {
+        ...elkNode,
+        x: position.x - layoutOffset.x,
+        y: position.y - layoutOffset.y,
+        properties: {
+          ...elkNode.properties,
+          'org.eclipse.elk.position': 'FIXED'
+        },
+        layoutOptions: {
+          ...elkNode.layoutOptions,
+          'elk.position': 'FIXED',
+          'org.eclipse.elk.position': 'FIXED'
+        }
+      };
     });
+
+    let routeGraph;
+    try {
+      routeGraph = await elk.layout({
+        id: 'root',
+        layoutOptions: routeLayoutOptions,
+        children: routeChildren,
+        edges: buildRoutingElkEdges(edges, nodeIds)
+      });
+    } catch {
+      // Hyperedge routing can fail in FIXED-position mode for some fan-out topologies
+      // (e.g. a register Q port feeding multiple stacked mux inputs that ELK reversed
+      // into forward edges). Retry with individual edges so each edge still gets a route.
+      routeGraph = await elk.layout({
+        id: 'root',
+        layoutOptions: routeLayoutOptions,
+        children: routeChildren,
+        edges: buildNodePlacementElkEdges(edges, nodeIds)
+      });
+    }
 
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const projectedRoutes = projectElkRoutes(routeGraph.edges ?? [], edges);
@@ -213,6 +229,7 @@ async function autoLayoutMissingNodes(
         }
       }
     }
+    repairSourceStems(edges, routes, nodesById, routePositions);
   } catch {
     return { positions, routes };
   }
@@ -644,7 +661,13 @@ function routeWithRenderedLeads(
 
   const internal = route.slice(1, -1);
   if (internal.length === 0) {
-    return directLeadRoute(sourceLead, targetLead);
+    return repairForwardHorizontalRoute(
+      directLeadRoute(sourceLead, targetLead),
+      sourceLead,
+      targetLead,
+      nodesById,
+      nodePositions
+    );
   }
 
   const points = [sourceLead.point];
@@ -662,7 +685,13 @@ function routeWithRenderedLeads(
   }
   points.push(targetLead.point);
 
-  return removeRedundantRoutePoints(makeOrthogonalRoute(points));
+  return repairForwardHorizontalRoute(
+    removeRedundantRoutePoints(makeOrthogonalRoute(points)),
+    sourceLead,
+    targetLead,
+    nodesById,
+    nodePositions
+  );
 }
 
 function insetVerticalBoundaryLead(
@@ -724,6 +753,210 @@ function directLeadRoute(
   }
 
   return removeRedundantRoutePoints(makeOrthogonalRoute([sourceLead.point, targetLead.point]));
+}
+
+function repairForwardHorizontalRoute(
+  route: Array<{ x: number; y: number }>,
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide },
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): Array<{ x: number; y: number }> {
+  const direction = forwardHorizontalDirection(sourceLead, targetLead);
+  if (!direction) {
+    return route;
+  }
+
+  if (!routeIntersectsNodeInterior(route, nodesById, nodePositions)) {
+    return route;
+  }
+
+  const candidates = forwardHorizontalCandidates(sourceLead.point, targetLead.point, direction, nodesById, nodePositions);
+  return candidates.find((candidate) => !routeIntersectsNodeInterior(candidate, nodesById, nodePositions)) ?? route;
+}
+
+function repairSourceStems(
+  edges: DiagramEdge[],
+  routes: Map<string, Array<{ x: number; y: number }>>,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): void {
+  for (const edge of edges) {
+    const route = routes.get(edge.id);
+    const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions);
+    const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+    if (!route || !sourceLead || !targetLead) {
+      continue;
+    }
+
+    const repaired = repairSourceStem(route, sourceLead, targetLead, nodesById, nodePositions);
+    if (repaired) {
+      routes.set(edge.id, repaired);
+    }
+  }
+}
+
+function repairSourceStem(
+  route: Array<{ x: number; y: number }>,
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide },
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): Array<{ x: number; y: number }> | undefined {
+  const direction = forwardHorizontalDirection(sourceLead, targetLead);
+  if (!direction || route.length < 3) {
+    return undefined;
+  }
+
+  const source = sourceLead.point;
+  if (!pointsEqual(route[0], source)) {
+    return undefined;
+  }
+
+  const deduped = removeConsecutiveDuplicatePoints(route);
+  if (deduped.length < 3 || !pointsEqual(deduped[0], source)) {
+    return undefined;
+  }
+
+  const first = deduped[1];
+  if (first.x !== source.x || first.y === source.y) {
+    return undefined;
+  }
+
+  const stemX = source.x + direction * diagramSizing.gridSize * 2;
+  if ((direction > 0 && stemX >= targetLead.point.x) || (direction < 0 && stemX <= targetLead.point.x)) {
+    return undefined;
+  }
+
+  const candidate = removeRedundantRoutePoints(makeOrthogonalRoute([
+    source,
+    { x: stemX, y: source.y },
+    ...deduped.slice(1).map((point) => point.x === source.x ? { ...point, x: stemX } : point)
+  ]));
+
+  return routeIntersectsNodeInterior(candidate, nodesById, nodePositions) ? undefined : candidate;
+}
+
+function forwardHorizontalDirection(
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide }
+): 1 | -1 | undefined {
+  if (sourceLead.side === 'EAST' && targetLead.side === 'WEST' && sourceLead.point.x < targetLead.point.x) {
+    return 1;
+  }
+  if (sourceLead.side === 'WEST' && targetLead.side === 'EAST' && sourceLead.point.x > targetLead.point.x) {
+    return -1;
+  }
+  return undefined;
+}
+
+function forwardHorizontalCandidates(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+  direction: 1 | -1,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): Array<Array<{ x: number; y: number }>> {
+  const candidateXs = uniqueNumbers([
+    target.x,
+    snapToGrid((source.x + target.x) / 2),
+    source.x
+  ]);
+  const doglegs = candidateXs.map((x) => removeRedundantRoutePoints(makeOrthogonalRoute([
+    source,
+    { x, y: source.y },
+    { x, y: target.y },
+    target
+  ])));
+
+  const minX = Math.min(source.x, target.x);
+  const maxX = Math.max(source.x, target.x);
+  const obstacles = routeObstacles(nodesById, nodePositions)
+    .filter((rect) => rect.x < maxX && rect.x + rect.width > minX);
+  if (obstacles.length === 0) {
+    return doglegs;
+  }
+
+  const turnX = source.x + direction * diagramSizing.gridSize;
+  const laneYs = uniqueNumbers([
+    snapToGrid(Math.max(...obstacles.map((rect) => rect.y + rect.height)) + diagramSizing.gridSize),
+    snapToGrid(Math.min(...obstacles.map((rect) => rect.y)) - diagramSizing.gridSize)
+  ]);
+  const laneRoutes = laneYs
+    .map((laneY) => removeRedundantRoutePoints(makeOrthogonalRoute([
+      source,
+      { x: turnX, y: source.y },
+      { x: turnX, y: laneY },
+      { x: target.x, y: laneY },
+      target
+    ])))
+    .sort((a, b) => routeManhattanLength(a) - routeManhattanLength(b));
+
+  return [...doglegs, ...laneRoutes];
+}
+
+function routeManhattanLength(route: Array<{ x: number; y: number }>): number {
+  return route.slice(0, -1).reduce((total, point, index) => {
+    const next = route[index + 1];
+    return total + Math.abs(next.x - point.x) + Math.abs(next.y - point.y);
+  }, 0);
+}
+
+function uniqueNumbers(values: number[]): number[] {
+  return Array.from(new Set(values));
+}
+
+function routeIntersectsNodeInterior(
+  route: Array<{ x: number; y: number }>,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): boolean {
+  const obstacles = routeObstacles(nodesById, nodePositions);
+  return route.slice(0, -1).some((point, index) => {
+    const next = route[index + 1];
+    return obstacles.some((rect) => segmentIntersectsRectInterior(point, next, rect));
+  });
+}
+
+function routeObstacles(
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): Array<{ x: number; y: number; width: number; height: number }> {
+  const obstacles: Array<{ x: number; y: number; width: number; height: number }> = [];
+  for (const [nodeId, node] of nodesById) {
+    const position = nodePositions.get(nodeId);
+    if (!position) {
+      continue;
+    }
+    const dimensions = diagramNodeDimensions(node);
+    obstacles.push({ ...position, ...dimensions });
+  }
+  return obstacles;
+}
+
+function segmentIntersectsRectInterior(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  rect: { x: number; y: number; width: number; height: number }
+): boolean {
+  const epsilon = 0.5;
+  if (start.y === end.y) {
+    const y = start.y;
+    if (y <= rect.y + epsilon || y >= rect.y + rect.height - epsilon) {
+      return false;
+    }
+    return Math.min(start.x, end.x) < rect.x + rect.width - epsilon
+      && Math.max(start.x, end.x) > rect.x + epsilon;
+  }
+  if (start.x === end.x) {
+    const x = start.x;
+    if (x <= rect.x + epsilon || x >= rect.x + rect.width - epsilon) {
+      return false;
+    }
+    return Math.min(start.y, end.y) < rect.y + rect.height - epsilon
+      && Math.max(start.y, end.y) > rect.y + epsilon;
+  }
+  return false;
 }
 
 function renderedLeadPoint(
@@ -944,8 +1177,12 @@ function removeConsecutiveDuplicatePoints(points: Array<{ x: number; y: number }
       return true;
     }
     const previous = points[index - 1];
-    return previous.x !== point.x || previous.y !== point.y;
+    return !pointsEqual(previous, point);
   });
+}
+
+function pointsEqual(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
+  return a.x === b.x && a.y === b.y;
 }
 
 export function projectElkRoutes(

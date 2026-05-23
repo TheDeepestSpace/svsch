@@ -972,7 +972,21 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
     for (const auto& target : targets) {
         bool has_true = tvs.count(target) && tvs.at(target).assigned;
         bool has_false = fvs.count(target) && fvs.at(target).assigned;
-        
+
+        // Neither branch assigns this target — happens when collectAssignmentTargets adds a base
+        // signal (e.g. "storage") alongside an element assignment ("storage[address]"). Emitting
+        // a mux whose both branches return the hold value is a no-op; skip it. Still record the
+        // desired output name in result so same-base register D-signal inference can find it
+        // (needed when a reset clause covers the base array while a write clause covers elements).
+        if (!has_true && !has_false) {
+            if (desired_outputs.count(target) > 0) {
+                result[target] = {true, desired_outputs.at(target), getDeclaredSignalWidth(mod, target)};
+            } else if (current_drivers.count(target)) {
+                result[target] = current_drivers.at(target);
+            }
+            continue;
+        }
+
         LoweredValue true_val = has_true ? tvs.at(target) : (current_drivers.count(target) ? current_drivers.at(target) : LoweredValue{true, target, getDeclaredSignalWidth(mod, target)});
         LoweredValue false_val = has_false ? fvs.at(target) : (current_drivers.count(target) ? current_drivers.at(target) : LoweredValue{true, target, getDeclaredSignalWidth(mod, target)});
 
