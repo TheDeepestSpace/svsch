@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { PNG } from 'pngjs';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
@@ -123,17 +124,26 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
 
     const edge = document.querySelector(`.react-flow__edge[data-id="${currentEdgeId}"]`);
     const paths = [...edge?.querySelectorAll('.svsch-edge-stacked-back, .svsch-edge-stacked-front, .svsch-edge-stacked') ?? []];
+    const sourceLeadPaths = [...document.querySelectorAll(`[data-node-id="${currentSourceNodeId}"] .svsch-array-stack-lead-source-right`)];
     const targetLeadPaths = [...document.querySelectorAll(`[data-node-id="${currentTargetNodeId}"] .svsch-array-stack-lead-target-left`)];
     return {
       edgeId: currentEdgeId,
       lanes: paths.map((path) => ({
         className: path.getAttribute('class'),
+        stroke: getComputedStyle(path).stroke,
         d: path.getAttribute('d'),
+        start: pointFromPath(path, false),
+        end: pointFromPath(path, true)
+      })),
+      sourceLeads: sourceLeadPaths.map((path) => ({
+        className: path.getAttribute('class'),
+        stroke: getComputedStyle(path).stroke,
         start: pointFromPath(path, false),
         end: pointFromPath(path, true)
       })),
       targetLeads: targetLeadPaths.map((path) => ({
         className: path.getAttribute('class'),
+        stroke: getComputedStyle(path).stroke,
         start: pointFromPath(path, false),
         end: pointFromPath(path, true)
       })),
@@ -154,6 +164,21 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   expect(Math.abs((bySourceLayer[0].start?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(15);
   expect(Math.abs((bySourceLayer[1].start?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(15);
   expect(Math.abs((bySourceLayer[2].start?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(15);
+  const sourceLaneYs = bySourceLayer.map((lane) => lane.start?.y ?? 0);
+  const bySourceLead = geometry.sourceLeads
+    .filter((lead) => sourceLaneYs.some((y) => Math.abs((lead.start?.y ?? 0) - y) < 1))
+    .sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
+  const sourceStackRight = Math.max(geometry.source.front!.right, geometry.source.middle!.right, geometry.source.back!.right);
+  expect(bySourceLead).toHaveLength(3);
+  expect(bySourceLead[0].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  expect(bySourceLead[0].end?.x).toBeCloseTo(geometry.source.front!.right, 0);
+  expect(bySourceLead[0].stroke).toBe(bySourceLayer[0].stroke);
+  expect(bySourceLead[1].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  expect(bySourceLead[1].end?.x).toBeCloseTo(geometry.source.middle!.right, 0);
+  expect(bySourceLead[1].stroke).toBe(bySourceLayer[1].stroke);
+  expect(bySourceLead[2].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  expect(bySourceLead[2].end?.x).toBeCloseTo(geometry.source.back!.right, 0);
+  expect(bySourceLead[2].stroke).toBe(bySourceLayer[2].stroke);
 
   const byTargetLayer = [...geometry.lanes].sort((a, b) => (a.end?.y ?? 0) - (b.end?.y ?? 0));
   expect(Math.abs((byTargetLayer[0].end?.x ?? 0) - geometry.target.front!.left)).toBeLessThan(15);
@@ -171,6 +196,83 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   expect(byTargetLead[1].end?.x).toBeCloseTo(geometry.target.middle!.left, 0);
   expect(byTargetLead[2].start?.x).toBeCloseTo(byTargetLayer[2].end!.x, 0);
   expect(byTargetLead[2].end?.x).toBeCloseTo(geometry.target.back!.left, 0);
+}
+
+async function expectMuxBodyMasksTopStackLead(page: Page, nodeId: string): Promise<void> {
+  const clip = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
+    const skin = node.querySelector('svg.node-skin.mux-skin') as SVGSVGElement | null;
+    const matrix = skin?.getScreenCTM();
+    if (!skin || !matrix) {
+      throw new Error('Unable to find mux skin geometry');
+    }
+
+    const width = skin.viewBox.baseVal.width;
+    const height = skin.viewBox.baseVal.height;
+    const rightTop = (height - Math.min(height, 48)) / 2;
+    const localX = width / 2;
+    const localY = rightTop * 0.5 + 16;
+    const x = matrix.a * localX + matrix.c * localY + matrix.e;
+    const y = matrix.b * localX + matrix.d * localY + matrix.f;
+
+    return {
+      x: Math.floor(x - 4),
+      y: Math.floor(y - 4),
+      width: 8,
+      height: 8
+    };
+  });
+
+  const before = PNG.sync.read(await page.screenshot({ clip }));
+
+  async function changedPixelsWhenHidden(css: string): Promise<number> {
+    const style = await page.addStyleTag({ content: css });
+    const after = PNG.sync.read(await page.screenshot({ clip }));
+    await style.evaluate((node) => node.remove());
+
+    let changedPixels = 0;
+    for (let i = 0; i < before.data.length; i += 4) {
+      if (
+        before.data[i] !== after.data[i]
+        || before.data[i + 1] !== after.data[i + 1]
+        || before.data[i + 2] !== after.data[i + 2]
+        || before.data[i + 3] !== after.data[i + 3]
+      ) {
+        changedPixels += 1;
+      }
+    }
+    return changedPixels;
+  }
+
+  const topLeadChangedPixels = await changedPixelsWhenHidden(`
+    [data-node-id="${nodeId}"] .svsch-array-stack-leads-top {
+      visibility: hidden !important;
+    }
+  `);
+  const edgeChangedPixels = await changedPixelsWhenHidden(`
+    .react-flow__edge .svsch-edge,
+    .react-flow__edge .svsch-edge-jump-halo {
+      visibility: hidden !important;
+    }
+  `);
+  const layerInfo = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
+    const edgeSvg = document.querySelector('.react-flow__edge')?.closest('svg') as SVGSVGElement | null;
+    const nodeLayer = document.querySelector('.react-flow__nodes') as HTMLElement | null;
+    const edgeLayer = document.querySelector('.react-flow__edges') as HTMLElement | null;
+    return {
+      edgeSvgZIndex: edgeSvg ? getComputedStyle(edgeSvg).zIndex : undefined,
+      edgeLayerZIndex: edgeLayer ? getComputedStyle(edgeLayer).zIndex : undefined,
+      nodeLayerZIndex: nodeLayer ? getComputedStyle(nodeLayer).zIndex : undefined,
+      nodeZIndex: getComputedStyle(node.closest('.react-flow__node') as Element).zIndex
+    };
+  });
+
+  expect(layerInfo).toEqual({
+    edgeSvgZIndex: '1',
+    edgeLayerZIndex: '1',
+    nodeLayerZIndex: '2',
+    nodeZIndex: '2'
+  });
+  expect({ topLeadChangedPixels, edgeChangedPixels }).toEqual({ topLeadChangedPixels: 0, edgeChangedPixels: 0 });
 }
 
 test.describe('mux visual rendering', () => {
@@ -354,6 +456,31 @@ test.describe('register visual rendering', () => {
     await expect(page.locator(`[data-node-id="${addrMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .mux-select-port`, { hasText: 's[]' })).toBeVisible();
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
+    const muxTopLeadLayering = await page.locator(`[data-node-id="${addrMux!.id}"]`).evaluate((node) => {
+      const topLeadLayer = node.querySelector('.svsch-array-stack-leads-target.svsch-array-stack-leads-top');
+      const backSkinLayer = node.querySelector('.hdl-node-array-back');
+      const middleSkinLayer = node.querySelector('.hdl-node-array-middle');
+      const frontSkinLayer = node.querySelector('.hdl-node-array-front');
+      const regularSkin = node.querySelector(':scope > svg.node-skin.mux-skin');
+      if (!topLeadLayer || !backSkinLayer || !middleSkinLayer || !frontSkinLayer || !regularSkin) {
+        return undefined;
+      }
+      return {
+        topLeadZIndex: Number.parseInt(getComputedStyle(topLeadLayer).zIndex, 10),
+        backSkinZIndex: Number.parseInt(getComputedStyle(backSkinLayer).zIndex, 10),
+        middleSkinZIndex: Number.parseInt(getComputedStyle(middleSkinLayer).zIndex, 10),
+        frontSkinZIndex: Number.parseInt(getComputedStyle(frontSkinLayer).zIndex, 10),
+        regularSkinZIndex: getComputedStyle(regularSkin).zIndex
+      };
+    });
+    expect(muxTopLeadLayering).toEqual({
+      topLeadZIndex: 0,
+      backSkinZIndex: 0,
+      middleSkinZIndex: 1,
+      frontSkinZIndex: 2,
+      regularSkinZIndex: 'auto'
+    });
+    await expectMuxBodyMasksTopStackLead(page, addrMux!.id);
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-left`)).toHaveCount(6);
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
     expect(await page.locator('.svsch-edge-junction-stacked-dot').count()).toBeGreaterThanOrEqual(3);

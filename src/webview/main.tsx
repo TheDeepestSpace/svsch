@@ -34,6 +34,7 @@ import {
 } from '../diagram/interfaceGeometry';
 import { OrthogonalEdge, type OrthogonalPoint, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
+import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_EDGE_GAP, ARRAY_STACK_LEAD_LAYERS, ARRAY_STACK_SKIN_LAYERS, arrayStackLayerTrim } from './arrayStackGeometry';
 import type { 
   DiagramNodeKind, 
   DiagramNode, 
@@ -71,8 +72,8 @@ interface HdlNodeData {
 
 type HdlFlowNode = Node<HdlNodeData>;
 
-const ARRAY_NODE_Z_INDEX = 0;
 const EDGE_Z_INDEX = 1;
+const ARRAY_NODE_Z_INDEX = 2;
 const BLOCK_NODE_Z_INDEX = 2;
 
 interface ArrayStackConnection {
@@ -238,10 +239,10 @@ function MuxArrayLayers({ width, height }: { width: number; height: number }): R
 
   return (
     <>
-      {(['back', 'middle', 'front'] as const).map((layer) => (
+      {ARRAY_STACK_SKIN_LAYERS.map((layer) => (
         <svg
-          key={layer}
-          className={`hdl-node-array-layer hdl-node-array-${layer} mux-array-layer mux-skin`}
+          key={layer.id}
+          className={`hdl-node-array-layer hdl-node-array-${layer.id} mux-array-layer mux-skin`}
           viewBox={`0 0 ${width} ${height}`}
           style={{ overflow: 'visible' }}
           aria-hidden="true"
@@ -680,36 +681,35 @@ function ArrayStackLeads({
   x?: number;
   trimSink?: boolean;
 }): React.ReactElement {
-  const layers = [
-    { id: 'front', dx: -4, dy: -4, trim: diagramSizing.gridSize / 8 },
-    { id: 'middle', dx: 0, dy: 0, trim: diagramSizing.gridSize / 4 },
-    { id: 'back', dx: 4, dy: 4, trim: diagramSizing.gridSize * 3 / 8 }
-  ];
-
   return (
     <svg
       className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
       aria-hidden="true"
       focusable="false"
     >
-      {layers.map((layer) => {
+      {ARRAY_STACK_LEAD_LAYERS.map((layer) => {
+        const trim = arrayStackLayerTrim(layer.id);
         const shapeX = side === 'top'
           ? (x ?? width / 2) + layer.dx
           : side === 'left'
             ? layer.dx
             : width + layer.dx;
-        const shapeY = side === 'top' ? layer.dy : y + layer.dy;
+        const shapeY = y + layer.dy;
+        const endY = side === 'top' && trimSink ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP : shapeY;
+        const sourceRightExitX = width + ARRAY_STACK_LAYERS.back.dx + ARRAY_STACK_LEAD_EDGE_GAP;
         const leadX = side === 'top'
           ? shapeX
           : side === 'left'
-            ? shapeX - layer.trim
-            : shapeX + layer.trim;
-        const leadY = side === 'top' ? shapeY - layer.trim : shapeY;
+            ? shapeX - trim
+            : trimSink
+              ? shapeX + trim
+              : Math.max(shapeX + trim, sourceRightExitX);
+        const leadY = side === 'top' ? endY - trim : shapeY;
         return (
           <path
             key={layer.id}
             className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
-            d={`M ${leadX} ${leadY} L ${shapeX} ${shapeY}`}
+            d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
           />
         );
       })}
@@ -775,8 +775,8 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     return isArray && arrayConnections.some((connection) => connection.portId === portId && connection.role === role);
   };
 
-  // Array stacking: front layer (100% opacity, -4px/-4px) and back layer (50%, +4px/+4px)
-  // The node element itself is the "middle" layer (75% opacity) — actual ports and handles live here.
+  // Array stacking layers sit above the routed wires; cosmetic leads redraw the short
+  // connection pieces that would otherwise disappear under the skins.
   const arrayDim = nodeArrayDimension(node);
   const arrayLayers = isArray
     ? node.kind === 'mux'
@@ -1287,7 +1287,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             side="top"
             width={nodeWidth}
             x={nodeWidth * (index + 1) / (muxTopPorts.length + 1)}
-            y={0}
+            y={muxTopPortSkinEdgeY(index, muxTopPorts.length, nodeHeight)}
             trimSink
           />
         ) : null

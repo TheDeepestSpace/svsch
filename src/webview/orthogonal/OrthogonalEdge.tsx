@@ -21,6 +21,7 @@ import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender } from '../react-flow-line-jumps';
 import { InteractionContext } from '../main';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
+import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
 
 interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   onRouteChange?: RouteChangeHandler;
@@ -99,8 +100,6 @@ function offsetPoints(points: OrthogonalPoint[], dx: number, dy: number): Orthog
   return points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
 }
 
-const STACK_LANE_OFFSET = 4;
-
 function shortenStackTarget(points: OrthogonalPoint[], amount: number, targetPosition: HdlPosition): OrthogonalPoint[] {
   if (points.length === 0 || amount === 0) return points;
   const next = points.map((point) => ({ ...point }));
@@ -110,6 +109,11 @@ function shortenStackTarget(points: OrthogonalPoint[], amount: number, targetPos
   else if (targetPosition === HdlPosition.Top) last.y -= amount;
   else if (targetPosition === HdlPosition.Bottom) last.y += amount;
   return next;
+}
+
+function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId): OrthogonalPoint[] {
+  const layer = ARRAY_STACK_LAYERS[layerId];
+  return offsetPoints(points, layer.dx, layer.dy);
 }
 
 function shortenStackSource(points: OrthogonalPoint[], amount: number, sourcePosition: HdlPosition): OrthogonalPoint[] {
@@ -136,18 +140,16 @@ function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlP
   else split = { x: target.x, y: target.y + splitDistance };
 
   const trunkPoints = makeOrthogonal([...points.slice(0, -1), split]);
-  const barTop = { x: split.x - STACK_LANE_OFFSET, y: split.y - STACK_LANE_OFFSET };
-  const barBottom = { x: split.x + STACK_LANE_OFFSET, y: split.y + STACK_LANE_OFFSET };
-  const branchStarts = [barTop, split, barBottom];
-  const branchTargets = [
-    { x: target.x - STACK_LANE_OFFSET, y: target.y - STACK_LANE_OFFSET },
-    target,
-    { x: target.x + STACK_LANE_OFFSET, y: target.y + STACK_LANE_OFFSET }
-  ].map((point, index) => shortenStackTarget([point], diagramSizing.gridSize * (index + 1) / 8, targetPosition)[0]);
+  const branchStarts = ARRAY_STACK_LEAD_LAYERS.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
+  const branchTargets = ARRAY_STACK_LEAD_LAYERS.map((layer) => shortenStackTarget(
+    [{ x: target.x + layer.dx, y: target.y + layer.dy }],
+    arrayStackLayerTrim(layer.id),
+    targetPosition
+  )[0]);
 
   return {
     trunk: pathFromPoints(trunkPoints),
-    bar: `M ${barTop.x} ${barTop.y} L ${barBottom.x} ${barBottom.y}`,
+    bar: `M ${branchStarts[0].x} ${branchStarts[0].y} L ${branchStarts[branchStarts.length - 1].x} ${branchStarts[branchStarts.length - 1].y}`,
     branches: branchTargets.map((branchTarget, index) => `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`)
   };
 }
@@ -403,31 +405,31 @@ export function OrthogonalEdge({
   const sourceHdlPosition = sourcePosition as unknown as HdlPosition;
   const backStackPoints = shortenStackTarget(
     shortenStackSource(
-      makeOrthogonal(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET)),
-      sourceIsArray ? diagramSizing.gridSize * 3 / 8 : 0,
+      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
+      sourceIsArray ? arrayStackLayerTrim('back') : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? diagramSizing.gridSize * 3 / 8 : 0,
+    targetIsArray ? arrayStackLayerTrim('back') : 0,
     targetHdlPosition
   );
   const middleStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(points),
-      sourceIsArray ? diagramSizing.gridSize / 4 : 0,
+      sourceIsArray ? arrayStackLayerTrim('middle') : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? diagramSizing.gridSize / 4 : 0,
+    targetIsArray ? arrayStackLayerTrim('middle') : 0,
     targetHdlPosition
   );
   const backStackPath = pathFromPoints(backStackPoints);
   const middleStackPath = pathFromPoints(middleStackPoints);
   const frontStackPoints = shortenStackTarget(
     shortenStackSource(
-      makeOrthogonal(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET)),
-      sourceIsArray ? diagramSizing.gridSize / 8 : 0,
+      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
+      sourceIsArray ? arrayStackLayerTrim('front') : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? diagramSizing.gridSize / 8 : 0,
+    targetIsArray ? arrayStackLayerTrim('front') : 0,
     targetHdlPosition
   );
   const frontStackPath = pathFromPoints(frontStackPoints);
@@ -571,17 +573,17 @@ export function OrthogonalEdge({
         useStackedJunctionDots ? (
           <g key={`${id}-junction-${junction.id}`} className="svsch-edge-junction-stacked">
             {[
-              { dx: -STACK_LANE_OFFSET, dy: -STACK_LANE_OFFSET, opacity: 1 },
-              { dx: 0, dy: 0, opacity: 0.75 },
-              { dx: STACK_LANE_OFFSET, dy: STACK_LANE_OFFSET, opacity: 0.5 }
-            ].map((offset, index) => (
+              { layer: ARRAY_STACK_LAYERS.front, opacity: 1 },
+              { layer: ARRAY_STACK_LAYERS.middle, opacity: 0.75 },
+              { layer: ARRAY_STACK_LAYERS.back, opacity: 0.5 }
+            ].map(({ layer, opacity }, index) => (
               <circle
                 key={`${id}-junction-${junction.id}-${index}`}
                 className="svsch-edge-junction svsch-edge-junction-stacked-dot"
-                cx={junction.x + offset.dx}
-                cy={junction.y + offset.dy}
+                cx={junction.x + layer.dx}
+                cy={junction.y + layer.dy}
                 r={2.15}
-                style={{ opacity: offset.opacity }}
+                style={{ opacity }}
               />
             ))}
           </g>

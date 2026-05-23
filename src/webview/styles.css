@@ -249,6 +249,18 @@ select {
   width: 100%;
 }
 
+.react-flow .react-flow__edges {
+  z-index: 1;
+}
+
+.react-flow .react-flow__edges svg {
+  z-index: 1 !important;
+}
+
+.react-flow__nodes {
+  z-index: 2 !important;
+}
+
 .empty {
   align-items: center;
   display: flex;
