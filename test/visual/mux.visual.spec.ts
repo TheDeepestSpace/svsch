@@ -280,6 +280,43 @@ async function expectPromotedStackFanoutPaint(
   }
 }
 
+async function expectArrayStackSelectionCoversFullStack(page: Page, nodeId: string): Promise<void> {
+  const geometry = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
+    type Rect = { left: number; right: number; top: number; bottom: number; width: number; height: number };
+
+    function rectFor(selector: string): Rect | undefined {
+      const rect = node.querySelector(selector)?.getBoundingClientRect();
+      if (!rect) return undefined;
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    return {
+      selection: rectFor('.hdl-node-array-selection'),
+      front: rectFor('.hdl-node-array-front'),
+      middle: rectFor('.hdl-node-array-middle'),
+      back: rectFor('.hdl-node-array-back'),
+      hasMiddleMuxSelection: Boolean(node.querySelector(':scope > svg.node-skin.mux-skin .node-skin-selection'))
+    };
+  });
+
+  expect(geometry.selection).toBeDefined();
+  expect(geometry.front).toBeDefined();
+  expect(geometry.middle).toBeDefined();
+  expect(geometry.back).toBeDefined();
+  expect(geometry.selection!.left).toBeLessThanOrEqual(Math.min(geometry.front!.left, geometry.middle!.left, geometry.back!.left) + 0.5);
+  expect(geometry.selection!.top).toBeLessThanOrEqual(Math.min(geometry.front!.top, geometry.middle!.top, geometry.back!.top) + 0.5);
+  expect(geometry.selection!.right).toBeGreaterThanOrEqual(Math.max(geometry.front!.right, geometry.middle!.right, geometry.back!.right) - 0.5);
+  expect(geometry.selection!.bottom).toBeGreaterThanOrEqual(Math.max(geometry.front!.bottom, geometry.middle!.bottom, geometry.back!.bottom) - 0.5);
+  expect(geometry.hasMiddleMuxSelection).toBe(false);
+}
+
 async function expectMuxBodyMasksTopStackLead(page: Page, nodeId: string): Promise<void> {
   const clip = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
     const skin = node.querySelector('svg.node-skin.mux-skin') as SVGSVGElement | null;
@@ -574,6 +611,31 @@ test.describe('register visual rendering', () => {
     await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { frontBeforeBackY: true });
 
     await expect(page).toHaveScreenshot('array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
+  });
+
+  test('renders selected stack outlines for array address mux and storage register', async ({ page }) => {
+    const view = await openFixture(page, 'array_address_write_register.sv', 'array-address-write');
+
+    const addrMux = view.nodes.find((node) => (
+      node.kind === 'mux'
+      && (node.isArrayNode || node.metadata?.isArrayNode)
+      && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address')
+    ));
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_address_write_register:storage');
+    expect(addrMux).toBeDefined();
+    expect(arrayReg).toBeDefined();
+
+    await expectArrayStackSelectionCoversFullStack(page, addrMux!.id);
+    const muxStack = page.locator(`[data-node-id="${addrMux!.id}"]`);
+    await muxStack.focus();
+    await expect(muxStack.locator('.hdl-node-array-selection')).toHaveCSS('opacity', '1');
+    await expect(page).toHaveScreenshot('array-address-write-mux-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${addrMux!.id}"]`) });
+
+    await expectArrayStackSelectionCoversFullStack(page, arrayReg!.id);
+    const regStack = page.locator(`[data-node-id="${arrayReg!.id}"]`);
+    await regStack.focus();
+    await expect(regStack.locator('.hdl-node-array-selection')).toHaveCSS('opacity', '1');
+    await expect(page).toHaveScreenshot('array-address-write-register-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${arrayReg!.id}"]`) });
   });
 });
 

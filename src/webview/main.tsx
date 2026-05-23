@@ -116,7 +116,7 @@ function OutputPortSkin({ title, width, isArray = false }: { title: React.ReactN
   return <PortSkin title={title} direction="output" width={width} isArray={isArray} />;
 }
 
-function PortSkin({ title, direction, width, isArray = false }: { title: React.ReactNode; direction: 'input' | 'output'; width: number; isArray?: boolean }): React.ReactElement {
+function PortSkin({ title, direction, width, isArray = false }: { title: React.ReactNode; direction: 'input' | 'output' | 'harness'; width: number; isArray?: boolean }): React.ReactElement {
   const height = diagramSizing.portHeight;
   const skinHeight = diagramSizing.portSkinHeight;
   const noseLength = diagramSizing.portNoseLength;
@@ -138,34 +138,19 @@ function PortSkin({ title, direction, width, isArray = false }: { title: React.R
         )}
         <path className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''}`} d={path} />
         {isArray && <path className="port-skin-array-layer port-skin-array-front" d={path} />}
-        <path className="port-skin-selection" d={path} />
+        {isArray ? (
+          <path className="hdl-node-array-selection" d={arrayStackSelectionPath(direction, width, height)} />
+        ) : (
+          <path className="port-skin-selection" d={path} />
+        )}
       </svg>
       <div className="port-skin-label">{title}</div>
     </>
   );
 }
 
-function HarnessSkin({ title, width }: { title: React.ReactNode; width: number }): React.ReactElement {
-  const height = diagramSizing.portHeight;
-  const skinHeight = diagramSizing.portSkinHeight;
-  const noseLength = diagramSizing.portNoseLength;
-  const path = portSkinPath('harness', width, height, skinHeight, noseLength);
-
-  return (
-    <>
-      <svg
-        className="port-skin port-skin-harness"
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ overflow: 'visible' }}
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path className="port-skin-body" d={path} />
-        <path className="port-skin-selection" d={path} />
-      </svg>
-      <div className="port-skin-label">{title}</div>
-    </>
-  );
+function HarnessSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+  return <PortSkin title={title} direction="harness" width={width} isArray={isArray} />;
 }
 
 function InterfaceSkin({
@@ -217,7 +202,7 @@ function muxSkinPath(width: number, height: number): string {
   return `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
 }
 
-function MuxSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+function MuxSkin({ width, height, showSelection = true }: { width: number; height: number; showSelection?: boolean }): React.ReactElement {
   const path = muxSkinPath(width, height);
 
   return (
@@ -229,7 +214,7 @@ function MuxSkin({ width, height }: { width: number; height: number }): React.Re
       focusable="false"
     >
       <path className="node-skin-body" d={path} />
-      <path className="node-skin-selection" d={path} />
+      {showSelection && <path className="node-skin-selection" d={path} />}
     </svg>
   );
 }
@@ -252,6 +237,96 @@ function MuxArrayLayers({ width, height }: { width: number; height: number }): R
         </svg>
       ))}
     </>
+  );
+}
+
+function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output' | 'harness', width: number, height: number): string {
+  const front = ARRAY_STACK_LAYERS.front;
+  const back = ARRAY_STACK_LAYERS.back;
+
+  if (kind === 'mux') {
+    const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
+    const rightTop = (height - rightSideHeight) / 2;
+    const rightBottom = rightTop + rightSideHeight;
+    return [
+      `M ${front.dx} ${front.dy}`,
+      `L ${width + front.dx} ${rightTop + front.dy}`,
+      `L ${width + back.dx} ${rightTop + back.dy}`,
+      `V ${rightBottom + back.dy}`,
+      `L ${back.dx} ${height + back.dy}`,
+      `L ${front.dx} ${height + front.dy}`,
+      'Z'
+    ].join(' ');
+  }
+
+  if (kind === 'input' || kind === 'output' || kind === 'harness') {
+    const skinHeight = diagramSizing.portSkinHeight;
+    const noseLength = diagramSizing.portNoseLength;
+    const top = (height - skinHeight) / 2;
+    const midY = height / 2;
+    const bottom = top + skinHeight;
+
+    if (kind === 'input') {
+      return [
+        `M ${front.dx} ${top + front.dy}`,
+        `H ${width - noseLength + front.dx}`,
+        `L ${width + back.dx} ${midY + back.dy}`,
+        `L ${width - noseLength + back.dx} ${bottom + back.dy}`,
+        `H ${back.dx}`,
+        `L ${front.dx} ${bottom + front.dy}`,
+        'Z'
+      ].join(' ');
+    }
+
+    if (kind === 'output') {
+      return [
+        `M ${front.dx} ${midY + front.dy}`,
+        `L ${noseLength + front.dx} ${top + front.dy}`,
+        `H ${width + front.dx}`,
+        `L ${width + back.dx} ${top + back.dy}`,
+        `V ${bottom + back.dy}`,
+        `H ${noseLength + back.dx}`,
+        `L ${front.dx} ${midY + front.dy}`,
+        'Z'
+      ].join(' ');
+    }
+
+    if (kind === 'harness') {
+      return [
+        `M ${front.dx} ${midY + front.dy}`,
+        `L ${noseLength + front.dx} ${top + front.dy}`,
+        `H ${width - noseLength + front.dx}`,
+        `L ${width + back.dx} ${midY + back.dy}`,
+        `L ${width - noseLength + back.dx} ${bottom + back.dy}`,
+        `H ${noseLength + back.dx}`,
+        `L ${front.dx} ${midY + front.dy}`,
+        'Z'
+      ].join(' ');
+    }
+  }
+
+  return [
+    `M ${front.dx} ${front.dy}`,
+    `H ${width + front.dx}`,
+    `L ${width + back.dx} ${back.dy}`,
+    `V ${height + back.dy}`,
+    `H ${back.dx}`,
+    `L ${front.dx} ${height + front.dy}`,
+    'Z'
+  ].join(' ');
+}
+
+function ArrayStackSelection({ kind, width, height }: { kind: 'rect' | 'mux' | 'input' | 'output' | 'harness'; width: number; height: number }): React.ReactElement {
+  return (
+    <svg
+      className="hdl-node-array-selection-skin"
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ overflow: 'visible' }}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className="hdl-node-array-selection" d={arrayStackSelectionPath(kind, width, height)} />
+    </svg>
   );
 }
 
@@ -770,7 +845,9 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     '--svsch-port-width': `${node.kind === 'port' || isInterfacePortNode ? nodeWidth : diagramSizing.portWidth}px`
   } as React.CSSProperties;
 
-  const nodeSelection = <div className="hdl-node-selection-rect" aria-hidden="true" />;
+  const nodeSelection = isArray
+    ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+    : <div className="hdl-node-selection-rect" aria-hidden="true" />;
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean => {
     return isArray && arrayConnections.some((connection) => connection.portId === portId && connection.role === role);
   };
@@ -843,7 +920,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           />
         )}
         {isInterfacePort ? (
-          <HarnessSkin title={title} width={nodeWidth} />
+          <HarnessSkin title={title} width={nodeWidth} isArray={isArray} />
         ) : isInput ? (
           <InputPortSkin title={title} width={nodeWidth} isArray={isArray} />
         ) : isOutput ? (
@@ -1315,7 +1392,8 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       ))}
       {isArray && arrayLayers}
       {node.kind !== 'mux' && node.kind !== 'alu' && node.kind !== 'select' && nodeSelection}
-      {node.kind === 'mux' && <MuxSkin width={nodeWidth} height={nodeHeight} />}
+      {node.kind === 'mux' && <MuxSkin width={nodeWidth} height={nodeHeight} showSelection={!isArray} />}
+      {node.kind === 'mux' && isArray && <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'select' && <SelectSkin width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'alu' && <AluSkin width={nodeWidth} height={nodeHeight} />}
       {muxTopPorts.map((port: DiagramPort, index: number) => {

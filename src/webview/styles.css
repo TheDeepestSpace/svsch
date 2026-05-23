@@ -282,10 +282,32 @@ select {
   z-index: 10;
 }
 
+.hdl-node-array-selection-skin {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  z-index: 10;
+}
+
+.hdl-node-array-selection {
+  fill: none;
+  opacity: 0;
+  stroke: var(--svsch-selection-color);
+  stroke-linejoin: round;
+  stroke-width: var(--svsch-selection-width);
+}
+
 .react-flow__node.selected .hdl-node-selection-rect,
 .hdl-node:focus .hdl-node-selection-rect,
 .hdl-node:focus-visible .hdl-node-selection-rect,
 .hdl-bus-node:focus .hdl-node-selection-rect {
+  opacity: 1;
+}
+
+.react-flow__node.selected .hdl-node-array-selection,
+.hdl-node-array:focus .hdl-node-array-selection,
+.hdl-node-array:focus-visible .hdl-node-array-selection {
   opacity: 1;
 }
 
