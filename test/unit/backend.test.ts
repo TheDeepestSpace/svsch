@@ -1720,6 +1720,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(mod.edges.some((e) => e.signal === 'in_data' && e.target === addrMux?.id && e.isStacked)).toBe(true);
       expect(mod.edges.some((e) => e.source === arrayReg?.id && e.target === addrMux?.id && e.signal === 'storage' && e.isStacked)).toBe(true);
       expect(mod.edges.some((e) => e.source === addrMux?.id && e.target === arrayReg?.id && e.signal === 'storage_next' && e.isStacked)).toBe(true);
+
+      // Verify source mapping for the address mux points to the index expression [address]
+      expect(addrMux?.source?.startLine).toBe(10);
+      expect(addrMux?.source?.startColumn).toBe(16);
+      expect(addrMux?.source?.endColumn).toBe(24);
     });
 
     it('emits a non-stacked read mux for variable-index array reads', async () => {

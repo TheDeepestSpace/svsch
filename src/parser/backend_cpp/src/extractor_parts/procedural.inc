@@ -284,6 +284,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         bool is_array_reg = mod.arrayDimensions.count(reg_base) > 0;
         bool is_variable_index = false;
         std::string index_expr;
+        vpiHandle index_handle = nullptr;
         {
             size_t bracket = reg_name.find('[');
             if (bracket != std::string::npos) {
@@ -298,6 +299,15 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 if (!is_constant && !candidate.empty() && candidate != "?" && candidate != "idx" && candidate != "bit") {
                     is_variable_index = true;
                     index_expr = candidate;
+
+                    vpiHandle lhs_unwrapped = unwrapRef(lhs_first);
+                    int lhs_type = vpi_get(vpiType, lhs_unwrapped);
+                    if (lhs_type == vpiBitSelect) {
+                        index_handle = vpi_handle(vpiIndex, lhs_unwrapped);
+                    } else if (lhs_type == 606 || lhs_type == 607 || lhs_type == 130) {
+                        index_handle = vpi_handle(vpiBaseExpr, lhs_unwrapped);
+                    }
+
                     // Ensure base is a known declared signal (not a struct field or bus slice)
                     if (mod.internalSignals.find(reg_base) == mod.internalSignals.end()) {
                         is_variable_index = false;
@@ -510,7 +520,17 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             addr_mux.id = "mux:" + mod.name + ":" + reg_base + "_addr";
             addr_mux.kind = "mux";
             addr_mux.label = "write address";
-            addr_mux.source = n.source;
+            if (index_handle) {
+                addr_mux.source = getSourceInfo(index_handle);
+                // Try to include the closing bracket by taking the end position from the LHS select handle
+                vpiHandle lhs_unwrapped = unwrapRef(lhs_first);
+                SourceInfo lhs_src = getSourceInfo(lhs_unwrapped);
+                if (lhs_src.line == addr_mux.source.line && lhs_src.endLine == addr_mux.source.line) {
+                    addr_mux.source.endCol = lhs_src.endCol;
+                }
+            } else {
+                addr_mux.source = n.source;
+            }
             addr_mux.metadata.isArrayNode = true;
             addr_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
             addr_mux.metadata.arraySize = arr_size;
