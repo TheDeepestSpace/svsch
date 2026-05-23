@@ -116,7 +116,7 @@ function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlP
   if (points.length < 2) return undefined;
 
   const target = points[points.length - 1];
-  const splitDistance = diagramSizing.gridSize;
+  const splitDistance = diagramSizing.gridSize * 2;
   let split: OrthogonalPoint;
 
   if (targetPosition === HdlPosition.Left) split = { x: target.x - splitDistance, y: target.y };
@@ -124,14 +124,14 @@ function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlP
   else if (targetPosition === HdlPosition.Top) split = { x: target.x, y: target.y - splitDistance };
   else split = { x: target.x, y: target.y + splitDistance };
 
-  const trunkPoints = [...points.slice(0, -1), split];
-  const barTop = { x: split.x - 4, y: split.y - 4 };
-  const barBottom = { x: split.x + 4, y: split.y + 4 };
+  const trunkPoints = makeOrthogonal([...points.slice(0, -1), split]);
+  const barTop = { x: split.x - STACK_LANE_OFFSET, y: split.y - STACK_LANE_OFFSET };
+  const barBottom = { x: split.x + STACK_LANE_OFFSET, y: split.y + STACK_LANE_OFFSET };
   const branchStarts = [barTop, split, barBottom];
   const branchTargets = [
-    { x: target.x - 4, y: target.y - 4 },
+    { x: target.x - STACK_LANE_OFFSET, y: target.y - STACK_LANE_OFFSET },
     target,
-    { x: target.x + 4, y: target.y + 4 }
+    { x: target.x + STACK_LANE_OFFSET, y: target.y + STACK_LANE_OFFSET }
   ].map((point, index) => shortenStackTarget([point], diagramSizing.gridSize * (index + 1) / 8, targetPosition)[0]);
 
   return {
@@ -389,14 +389,21 @@ export function OrthogonalEdge({
     ? edgeRender.jumpPaths
     : jumpHaloPathsFromPath(edgeRender.path);
   const targetHdlPosition = targetPosition as unknown as HdlPosition;
-  const backStackPoints = shortenStackTarget(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET), diagramSizing.gridSize * 3 / 8, targetHdlPosition);
-  const middleStackPoints = shortenStackTarget(points, diagramSizing.gridSize / 4, targetHdlPosition);
+  const backStackPoints = shortenStackTarget(makeOrthogonal(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET)), diagramSizing.gridSize * 3 / 8, targetHdlPosition);
+  const middleStackPoints = shortenStackTarget(makeOrthogonal(points), diagramSizing.gridSize / 4, targetHdlPosition);
   const backStackPath = pathFromPoints(backStackPoints);
   const middleStackPath = pathFromPoints(middleStackPoints);
-  const frontStackPath = pathFromPoints(shortenStackTarget(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET), diagramSizing.gridSize / 8, targetHdlPosition));
+  const frontStackPath = pathFromPoints(shortenStackTarget(makeOrthogonal(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET)), diagramSizing.gridSize / 8, targetHdlPosition));
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const netGeometries = context && edgeData?.netEdgeIds
+    ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
+    : [];
+  const netJunctions = (isLeaderInNet || isInterfaceAggregate) && context
+    ? findNetJunctions(netGeometries)
+    : [];
+  const useStackedJunctionDots = isStacked && isLeaderInNet && !isInterfaceAggregate;
 
   const moveSegment = (event: React.PointerEvent, segmentIndex: number, commit: boolean) => {
     const flowPoint = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -523,14 +530,33 @@ export function OrthogonalEdge({
       {overlapHints.map((hint) => (
         <path key={hint.id} className="svsch-edge-overlap-hint" d={hint.path} style={hint.style} />
       ))}
-      {(isLeaderInNet || isInterfaceAggregate) && context && findNetJunctions(context.geometries.filter((geometry) => edgeData?.netEdgeIds?.includes(geometry.edgeId))).map((junction) => (
-        <circle
-          key={`${id}-junction-${junction.id}`}
-          className={`svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}`}
-          cx={junction.x}
-          cy={junction.y}
-          r={isInterfaceAggregate ? 6.5 : 4.75}
-        />
+      {netJunctions.map((junction) => (
+        useStackedJunctionDots ? (
+          <g key={`${id}-junction-${junction.id}`} className="svsch-edge-junction-stacked">
+            {[
+              { dx: -STACK_LANE_OFFSET, dy: -STACK_LANE_OFFSET, opacity: 1 },
+              { dx: 0, dy: 0, opacity: 0.75 },
+              { dx: STACK_LANE_OFFSET, dy: STACK_LANE_OFFSET, opacity: 0.5 }
+            ].map((offset, index) => (
+              <circle
+                key={`${id}-junction-${junction.id}-${index}`}
+                className="svsch-edge-junction svsch-edge-junction-stacked-dot"
+                cx={junction.x + offset.dx}
+                cy={junction.y + offset.dy}
+                r={2.15}
+                style={{ opacity: offset.opacity }}
+              />
+            ))}
+          </g>
+        ) : (
+          <circle
+            key={`${id}-junction-${junction.id}`}
+            className={`svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}`}
+            cx={junction.x}
+            cy={junction.y}
+            r={isInterfaceAggregate ? 6.5 : 4.75}
+          />
+        )
       ))}
       {points.slice(0, -1).map((point, index) => {
         const next = points[index + 1];

@@ -279,7 +279,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         std::string reg_base = getBaseSignalName(lhs_first);
         ensureDeclaredArray(mod, reg_base);
 
-        // Detect variable-index array write: bracket with non-constant index → stacked mux chain
+        // Detect variable-index array write: bracket with non-constant index -> stacked address mux
         // We check independently of mod.arrayDimensions since UHDM may store unpacked dims differently.
         bool is_array_reg = mod.arrayDimensions.count(reg_base) > 0;
         bool is_variable_index = false;
@@ -396,7 +396,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         if (!clk_signal.empty()) n.ports.push_back({clk_signal, "input", clk_signal, ""});
         if (!rst_signal.empty()) n.ports.push_back({rst_signal, "input", rst_signal, ""});
 
-        // Array handling: stacked mux chain for variable-index writes; tag array registers
+        // Array handling: stacked mux for variable-index writes; tag array registers
         if (is_variable_index) {
             int arr_size = mod.arraySizes.count(reg_base) ? mod.arraySizes.at(reg_base) : 1;
 
@@ -496,31 +496,31 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
             }
 
-            // Create N chained stacked addr muxes (one per array element)
-            // addr_mux[0]: sel=address, true=write_candidate, false=M.Q
-            // addr_mux[i]: sel=address, true=addr_mux[i-1].out, false=M.Q
-            // addr_mux[N-1].out = M_next (fed to M.D)
-            std::string prev_chain = d_signal_for_addr;
-            for (int idx = 0; idx < arr_size; idx++) {
-                bool is_last = (idx == arr_size - 1);
-                std::string out_signal = is_last ? reg_base + "_next"
-                                                 : reg_base + "_addr_chain_" + std::to_string(idx);
-                Node m_addr_i;
-                m_addr_i.id = "mux:" + mod.name + ":" + reg_base + "_addr_" + std::to_string(idx);
-                m_addr_i.kind = "mux";
-                m_addr_i.label = "addr==" + std::to_string(idx);
-                m_addr_i.source = n.source;
-                m_addr_i.metadata.isArrayNode = true;
-                m_addr_i.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                m_addr_i.metadata.arraySize = arr_size;
-                m_addr_i.metadata.arrayIndexSignal = std::to_string(idx);
-                m_addr_i.ports.push_back({"sel", "input", index_expr, ""});
-                m_addr_i.ports.push_back({"true", "input", prev_chain, reg_width, "match"});
-                m_addr_i.ports.push_back({"false", "input", reg_base, reg_width, "no match"});
-                m_addr_i.ports.push_back({"out", "output", out_signal, reg_width});
-                mod.nodes.push_back(m_addr_i);
-                prev_chain = out_signal;
+            std::string index_width = getDeclaredSignalWidth(mod, index_expr);
+            int index_bits = bitSizeFromWidth(index_width);
+            int min_index_bits = 1;
+            while ((1 << min_index_bits) < arr_size) min_index_bits++;
+            if (index_bits < min_index_bits) {
+                index_bits = min_index_bits;
+                index_width = "[" + std::to_string(index_bits - 1) + ":0]";
             }
+            std::string zero_match_label = std::to_string(index_bits) + "'b0";
+
+            Node addr_mux;
+            addr_mux.id = "mux:" + mod.name + ":" + reg_base + "_addr";
+            addr_mux.kind = "mux";
+            addr_mux.label = "write address";
+            addr_mux.source = n.source;
+            addr_mux.metadata.isArrayNode = true;
+            addr_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+            addr_mux.metadata.arraySize = arr_size;
+            addr_mux.metadata.arrayIndexSignal = "0";
+            std::string sel_label = index_bits > 1 ? "s[]" : "s";
+            addr_mux.ports.push_back({"sel", "input", index_expr, index_width, sel_label});
+            addr_mux.ports.push_back({zero_match_label, "input", d_signal_for_addr, reg_width, zero_match_label});
+            addr_mux.ports.push_back({"default", "input", reg_base, reg_width, "default"});
+            addr_mux.ports.push_back({"out", "output", reg_base + "_next", reg_width});
+            mod.nodes.push_back(addr_mux);
             // Skip pushing the per-element register node — represented by the array register
             continue;
         }

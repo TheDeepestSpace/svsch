@@ -1682,46 +1682,44 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       }
     });
 
-    it('emits N chained stacked addr muxes for variable-index writes', async () => {
+    it('emits a single stacked addr mux for variable-index writes', async () => {
       const graph = await arrayRegisterGraph();
       const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
       const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
-      const arrSize = arrayReg?.arraySize ?? arrayReg?.metadata?.arraySize ?? 0;
 
       const addrMuxes = mod.nodes.filter((n) => (
         n.kind === 'mux'
         && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
         && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'address')
       ));
-      expect(addrMuxes.length).toBe(arrSize);
+      expect(addrMuxes.length).toBe(1);
+      const addrMux = addrMuxes[0];
 
-      // Each addr mux has M as false input
-      for (const mux of addrMuxes) {
-        expect(mux.ports.some((p) => p.direction === 'input' && p.connectedSignal === 'M')).toBe(true);
-      }
+      expect(addrMux.ports.some((p) => p.direction === 'input' && p.label === "3'b0")).toBe(true);
+      expect(addrMux.ports.some((p) => p.direction === 'input' && p.connectedSignal === 'M' && p.label === 'default')).toBe(true);
 
-      // Last addr mux feeds M.D (the array register D port)
-      const lastMux = addrMuxes.at(-1);
-      expect(mod.edges.some((e) => e.source === lastMux?.id && e.target === arrayReg?.id)).toBe(true);
+      expect(mod.edges.some((e) => e.source === addrMux.id && e.target === arrayReg?.id)).toBe(true);
     });
 
-    it('addr muxes form a chain: each true input is previous output', async () => {
-      const graph = await arrayRegisterGraph();
-      const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
+    it('uses the address mux to broadcast scalar writes and hold stacked Q values', async () => {
+      const graph = await runParser(backend, 'array_address_write_register.sv', fixture('array_address_write_register.sv'));
+      const mod = graph.modules.array_address_write_register ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'storage');
 
-      const addrMuxes = mod.nodes.filter((n) => (
+      const addrMux = mod.nodes.find((n) => (
         n.kind === 'mux'
         && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
         && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'address')
       ));
-      expect(addrMuxes.length).toBeGreaterThan(1);
+      expect(addrMux).toBeDefined();
+      expect(addrMux?.ports.find((p) => p.label === "2'b0")?.connectedSignal).toBe('in_data');
+      expect(addrMux?.ports.find((p) => p.label === 'default')?.connectedSignal).toBe('storage');
+      expect(addrMux?.ports.find((p) => p.direction === 'output')?.connectedSignal).toBe('storage_next');
 
-      for (let i = 1; i < addrMuxes.length; i++) {
-        const prevOut = addrMuxes[i - 1].ports.find((p) => p.direction === 'output')?.connectedSignal;
-        const currTrue = addrMuxes[i].ports.find((p) => p.name === 'true')?.connectedSignal;
-        expect(prevOut).toBeDefined();
-        expect(currTrue).toBe(prevOut);
-      }
+      expect(mod.edges.some((e) => e.signal === 'address' && e.target === addrMux?.id && e.targetPort === 'sel' && e.isStacked)).toBe(true);
+      expect(mod.edges.some((e) => e.signal === 'in_data' && e.target === addrMux?.id && e.isStacked)).toBe(true);
+      expect(mod.edges.some((e) => e.source === arrayReg?.id && e.target === addrMux?.id && e.signal === 'storage' && e.isStacked)).toBe(true);
+      expect(mod.edges.some((e) => e.source === addrMux?.id && e.target === arrayReg?.id && e.signal === 'storage_next' && e.isStacked)).toBe(true);
     });
 
     it('emits a non-stacked read mux for variable-index array reads', async () => {

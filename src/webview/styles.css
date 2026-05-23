@@ -562,6 +562,12 @@ select {
   --svsch-array-border-color: var(--vscode-charts-purple);
 }
 
+.hdl-node-mux.hdl-node-array .mux-array-layer {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
 .hdl-node-port.hdl-node-array .hdl-node-array-layer,
 .hdl-node-port.hdl-node-array .port-skin-array-layer {
   --svsch-array-border-color: var(--vscode-charts-yellow);
@@ -576,11 +582,16 @@ select {
 .hdl-node-array .node-kind,
 .hdl-node-array .node-title,
 .hdl-node-array .node-ports,
+.hdl-node-array .mux-select-port,
 .hdl-node-array .mux-port-layer,
 .hdl-node-array .alu-port-layer,
 .hdl-node-array .register-port-layer,
 .hdl-node-array .instance-parameter-list {
   z-index: 3;
+}
+
+.hdl-node-array .mux-select-port {
+  z-index: 6;
 }
 
 .hdl-node-array .node-kind,
@@ -1708,6 +1719,11 @@ select {
 .svsch-edge-junction-interface {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 92%, var(--vscode-charts-blue));
   stroke-width: 2.5;
+}
+
+.svsch-edge-junction-stacked-dot {
+  fill: var(--vscode-editor-foreground);
+  stroke-width: 0.5;
 }
 
 .svsch-edge-label {

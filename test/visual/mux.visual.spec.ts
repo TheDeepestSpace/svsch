@@ -299,7 +299,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
-    await expect(page).toHaveScreenshot('array-register-canvas.png', { clip: await paddedGraphClip(page) });
+    await expect(page).toHaveScreenshot('array-register-canvas.png', { clip: await paddedLocatorClip(page, '[data-node-id="reg:array_register:M"]') });
   });
 
   test('renders an array input through a stacked register to an array output', async ({ page }) => {
@@ -333,6 +333,34 @@ test.describe('register visual rendering', () => {
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
 
     await expect(page).toHaveScreenshot('array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a scalar write through a stacked address mux into an array register', async ({ page }) => {
+    const view = await openFixture(page, 'array_address_write_register.sv', 'array-address-write');
+
+    const addrMux = view.nodes.find((node) => (
+      node.kind === 'mux'
+      && (node.isArrayNode || node.metadata?.isArrayNode)
+      && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address')
+    ));
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_address_write_register:storage');
+    expect(addrMux).toBeDefined();
+    expect(addrMux?.ports.some((port) => port.label === "2'b0" && port.connectedSignal === 'in_data')).toBe(true);
+    expect(addrMux?.ports.some((port) => port.label === 'default' && port.connectedSignal === 'storage')).toBe(true);
+    expect(view.edges.some((edge) => edge.source === 'port:array_address_write_register:address' && edge.target === addrMux?.id && edge.targetPort === 'sel' && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === 'port:array_address_write_register:in_data' && edge.target === addrMux?.id && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === arrayReg?.id && edge.target === addrMux?.id && edge.isStacked)).toBe(true);
+    expect(view.edges.some((edge) => edge.source === addrMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .mux-select-port`, { hasText: 's[]' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-left`)).toHaveCount(6);
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
+    expect(await page.locator('.svsch-edge-junction-stacked-dot').count()).toBeGreaterThanOrEqual(3);
+    await expectStackedEdgeSegmentsOrthogonal(page);
+
+    await expect(page).toHaveScreenshot('array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
   });
 });
 
@@ -808,7 +836,7 @@ test.describe('node sizing visual rendering', () => {
   });
 });
 
-type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'register-enable' | 'comb' | 'alu' | 'loop' | 'replicate';
+type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'register-enable' | 'array-address-write' | 'comb' | 'alu' | 'loop' | 'replicate';
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -862,8 +890,7 @@ async function paddedLocatorClip(page: Page, selector: string): Promise<{ x: num
   return paddedClipFromBox(page, box, padding);
 }
 
-async function paddedGraphClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
-  const padding = 48;
+async function paddedGraphClip(page: Page, padding = 48): Promise<{ x: number; y: number; width: number; height: number }> {
   const box = await page.locator('.react-flow__nodes').boundingBox();
   if (!box) {
     throw new Error('Unable to find rendered graph nodes');
@@ -961,11 +988,13 @@ async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMod
             ? createRegisterVisualLayout(graph, moduleName)
             : layoutMode === 'register-enable'
               ? createRegisterEnableVisualLayout(graph, moduleName)
-              : layoutMode === 'comb'
-                ? createCombVisualLayout(graph, moduleName)
-                : layoutMode === 'alu'
-                  ? createAluVisualLayout(graph, moduleName)
-                : { version: 1, modules: {} } as SavedLayout;
+              : layoutMode === 'array-address-write'
+                ? createArrayAddressWriteVisualLayout(graph, moduleName)
+                : layoutMode === 'comb'
+                  ? createCombVisualLayout(graph, moduleName)
+                  : layoutMode === 'alu'
+                    ? createAluVisualLayout(graph, moduleName)
+                    : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
@@ -1044,6 +1073,44 @@ function createRegisterEnableVisualLayout(graph: DesignGraph, moduleName: string
 
   outputPorts.forEach((port) => {
     nodes[port.id] = { x: regX + grid * 11, y: regY };
+  });
+
+  return { version: 1, modules: { [moduleName]: { nodes } } };
+}
+
+function createArrayAddressWriteVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const reg = designModule.nodes.find((node) => node.kind === 'register' && node.label === 'storage')
+    ?? designModule.nodes.find((node) => node.kind === 'register');
+  const mux = designModule.nodes.find((node) => (
+    node.kind === 'mux'
+    && (node.isArrayNode || node.metadata?.isArrayNode)
+    && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address')
+  ));
+  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
+  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const nodes: Record<string, { x: number; y: number }> = {};
+  const grid = 24;
+  const muxX = grid * 10;
+  const muxY = grid * 6;
+  const regX = grid * 22;
+  const regY = grid * 6;
+
+  if (mux) nodes[mux.id] = { x: muxX, y: muxY };
+  if (reg) nodes[reg.id] = { x: regX, y: regY };
+
+  inputPorts.forEach((port) => {
+    if (port.label === 'address') {
+      nodes[port.id] = { x: muxX - grid, y: muxY - grid * 5 };
+    } else if (port.label === 'clk') {
+      nodes[port.id] = { x: regX - grid * 7, y: regY + grid * 5 };
+    } else {
+      nodes[port.id] = { x: grid, y: muxY + grid };
+    }
+  });
+
+  outputPorts.forEach((port) => {
+    nodes[port.id] = { x: regX + grid * 3, y: regY };
   });
 
   return { version: 1, modules: { [moduleName]: { nodes } } };

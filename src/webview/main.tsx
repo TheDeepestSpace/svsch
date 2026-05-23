@@ -209,11 +209,15 @@ function InterfaceSkin({
   );
 }
 
-function MuxSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+function muxSkinPath(width: number, height: number): string {
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
   const rightTop = (height - rightSideHeight) / 2;
   const rightBottom = rightTop + rightSideHeight;
-  const path = `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
+  return `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
+}
+
+function MuxSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+  const path = muxSkinPath(width, height);
 
   return (
     <svg
@@ -226,6 +230,27 @@ function MuxSkin({ width, height }: { width: number; height: number }): React.Re
       <path className="node-skin-body" d={path} />
       <path className="node-skin-selection" d={path} />
     </svg>
+  );
+}
+
+function MuxArrayLayers({ width, height }: { width: number; height: number }): React.ReactElement {
+  const path = muxSkinPath(width, height);
+
+  return (
+    <>
+      {(['back', 'middle', 'front'] as const).map((layer) => (
+        <svg
+          key={layer}
+          className={`hdl-node-array-layer hdl-node-array-${layer} mux-array-layer mux-skin`}
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ overflow: 'visible' }}
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path className="node-skin-body" d={path} />
+        </svg>
+      ))}
+    </>
   );
 }
 
@@ -646,11 +671,13 @@ function ArrayStackLeads({
   side,
   width,
   y,
+  x,
   trimSink = false
 }: {
-  side: 'left' | 'right';
+  side: 'left' | 'right' | 'top';
   width: number;
   y: number;
+  x?: number;
   trimSink?: boolean;
 }): React.ReactElement {
   const layers = [
@@ -666,18 +693,23 @@ function ArrayStackLeads({
       focusable="false"
     >
       {layers.map((layer) => {
-        const shapeX = side === 'left' ? layer.dx : width + layer.dx;
-        const leadX = trimSink
-          ? side === 'left'
+        const shapeX = side === 'top'
+          ? (x ?? width / 2) + layer.dx
+          : side === 'left'
+            ? layer.dx
+            : width + layer.dx;
+        const shapeY = side === 'top' ? layer.dy : y + layer.dy;
+        const leadX = side === 'top'
+          ? shapeX
+          : side === 'left'
             ? shapeX - layer.trim
-            : shapeX + layer.trim
-          : shapeX;
-        const leadY = y + layer.dy;
+            : shapeX + layer.trim;
+        const leadY = side === 'top' ? shapeY - layer.trim : shapeY;
         return (
           <path
             key={layer.id}
             className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
-            d={`M ${leadX} ${leadY} L ${shapeX} ${leadY}`}
+            d={`M ${leadX} ${leadY} L ${shapeX} ${shapeY}`}
           />
         );
       })}
@@ -746,13 +778,17 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   // Array stacking: front layer (100% opacity, -4px/-4px) and back layer (50%, +4px/+4px)
   // The node element itself is the "middle" layer (75% opacity) — actual ports and handles live here.
   const arrayDim = nodeArrayDimension(node);
-  const arrayLayers = isArray ? (
-    <>
-      <div className="hdl-node-array-layer hdl-node-array-back" aria-hidden="true" />
-      <div className="hdl-node-array-layer hdl-node-array-middle" aria-hidden="true" />
-      <div className="hdl-node-array-layer hdl-node-array-front" aria-hidden="true" />
-    </>
-  ) : null;
+  const arrayLayers = isArray
+    ? node.kind === 'mux'
+      ? <MuxArrayLayers width={nodeWidth} height={nodeHeight} />
+      : (
+        <>
+          <div className="hdl-node-array-layer hdl-node-array-back" aria-hidden="true" />
+          <div className="hdl-node-array-layer hdl-node-array-middle" aria-hidden="true" />
+          <div className="hdl-node-array-layer hdl-node-array-front" aria-hidden="true" />
+        </>
+      )
+    : null;
   const arrayBadge = isArray && arrayDim ? (
     <div className="hdl-node-array-badge" aria-hidden="true">{arrayDim}</div>
   ) : null;
@@ -1244,6 +1280,39 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
       onDoubleClick={handleDoubleClick}
     >
+      {node.kind === 'mux' && muxTopPorts.map((port: DiagramPort, index: number) => (
+        hasArrayConnection(port.id, 'target') ? (
+          <ArrayStackLeads
+            key={`stack-leads-${port.id}`}
+            side="top"
+            width={nodeWidth}
+            x={nodeWidth * (index + 1) / (muxTopPorts.length + 1)}
+            y={0}
+            trimSink
+          />
+        ) : null
+      ))}
+      {node.kind === 'mux' && sideInputs.map((port: DiagramPort, index: number) => (
+        hasArrayConnection(port.id, 'target') ? (
+          <ArrayStackLeads
+            key={`stack-leads-${port.id}`}
+            side="left"
+            width={nodeWidth}
+            y={muxInputPortCenterY(index, sideInputs.length, nodeHeight)}
+            trimSink
+          />
+        ) : null
+      ))}
+      {node.kind === 'mux' && outputs.slice(0, 1).map((port: DiagramPort) => (
+        hasArrayConnection(port.id, 'source') ? (
+          <ArrayStackLeads
+            key={`stack-leads-${port.id}`}
+            side="right"
+            width={nodeWidth}
+            y={nodeHeight / 2}
+          />
+        ) : null
+      ))}
       {isArray && arrayLayers}
       {node.kind !== 'mux' && node.kind !== 'alu' && node.kind !== 'select' && nodeSelection}
       {node.kind === 'mux' && <MuxSkin width={nodeWidth} height={nodeHeight} />}
@@ -1260,8 +1329,11 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <div className="mux-select-port" key={port.id} style={{ left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%` }}>
             {leadLengthY > 0 && <i aria-hidden="true" className="mux-select-lead" style={{ height: `${leadLengthY}px` }} />}
             <Handle type="target" id={port.id} position={Position.Top} />
-            <span style={{ top: `${labelOffsetY}px` }}>
-              {node.kind === 'select' ? selectPortLabel(node, port.name === 'width' ? 'w' : 's') : 's'}
+            <span style={{
+              top: `${labelOffsetY}px`,
+              ...(node.kind === 'mux' && isArray ? { left: `${diagramSizing.gridSize * 0.7}px` } : {})
+            }}>
+              {node.kind === 'select' ? selectPortLabel(node, port.name === 'width' ? 'w' : 's') : port.label ?? 's'}
             </span>
           </div>
         );
