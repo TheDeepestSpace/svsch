@@ -662,15 +662,15 @@ select {
 }
 
 .svsch-array-stack-lead-back {
-  opacity: 0.5;
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background));
 }
 
 .svsch-array-stack-lead-middle {
-  opacity: 0.75;
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 75%, var(--vscode-editor-background));
 }
 
 .svsch-array-stack-lead-front {
-  opacity: 1;
+  stroke: var(--vscode-editor-foreground);
 }
 
 .hdl-node-mux:focus,
@@ -1641,14 +1641,12 @@ select {
 }
 
 .svsch-edge-stacked {
-  stroke: var(--vscode-editor-foreground);
-  opacity: 0.75;
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 75%, var(--vscode-editor-background));
 }
 
 .svsch-edge-stacked-back {
-  stroke: var(--vscode-editor-foreground);
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background));
   pointer-events: none;
-  opacity: 0.5;
 }
 
 .svsch-edge-stacked-front {
