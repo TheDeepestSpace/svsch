@@ -661,6 +661,18 @@ select {
   stroke-width: 1.5;
 }
 
+.svsch-array-stack-lead-back {
+  opacity: 0.5;
+}
+
+.svsch-array-stack-lead-middle {
+  opacity: 0.75;
+}
+
+.svsch-array-stack-lead-front {
+  opacity: 1;
+}
+
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus {

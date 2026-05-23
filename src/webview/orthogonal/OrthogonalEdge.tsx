@@ -112,6 +112,17 @@ function shortenStackTarget(points: OrthogonalPoint[], amount: number, targetPos
   return next;
 }
 
+function shortenStackSource(points: OrthogonalPoint[], amount: number, sourcePosition: HdlPosition): OrthogonalPoint[] {
+  if (points.length === 0 || amount === 0) return points;
+  const next = points.map((point) => ({ ...point }));
+  const first = next[0];
+  if (sourcePosition === HdlPosition.Left) first.x -= amount;
+  else if (sourcePosition === HdlPosition.Right) first.x += amount;
+  else if (sourcePosition === HdlPosition.Top) first.y -= amount;
+  else if (sourcePosition === HdlPosition.Bottom) first.y += amount;
+  return next;
+}
+
 function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): { trunk: string; bar: string; branches: string[] } | undefined {
   if (points.length < 2) return undefined;
 
@@ -389,11 +400,37 @@ export function OrthogonalEdge({
     ? edgeRender.jumpPaths
     : jumpHaloPathsFromPath(edgeRender.path);
   const targetHdlPosition = targetPosition as unknown as HdlPosition;
-  const backStackPoints = shortenStackTarget(makeOrthogonal(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET)), diagramSizing.gridSize * 3 / 8, targetHdlPosition);
-  const middleStackPoints = shortenStackTarget(makeOrthogonal(points), diagramSizing.gridSize / 4, targetHdlPosition);
+  const sourceHdlPosition = sourcePosition as unknown as HdlPosition;
+  const backStackPoints = shortenStackTarget(
+    shortenStackSource(
+      makeOrthogonal(offsetPoints(points, STACK_LANE_OFFSET, STACK_LANE_OFFSET)),
+      sourceIsArray ? diagramSizing.gridSize * 3 / 8 : 0,
+      sourceHdlPosition
+    ),
+    targetIsArray ? diagramSizing.gridSize * 3 / 8 : 0,
+    targetHdlPosition
+  );
+  const middleStackPoints = shortenStackTarget(
+    shortenStackSource(
+      makeOrthogonal(points),
+      sourceIsArray ? diagramSizing.gridSize / 4 : 0,
+      sourceHdlPosition
+    ),
+    targetIsArray ? diagramSizing.gridSize / 4 : 0,
+    targetHdlPosition
+  );
   const backStackPath = pathFromPoints(backStackPoints);
   const middleStackPath = pathFromPoints(middleStackPoints);
-  const frontStackPath = pathFromPoints(shortenStackTarget(makeOrthogonal(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET)), diagramSizing.gridSize / 8, targetHdlPosition));
+  const frontStackPoints = shortenStackTarget(
+    shortenStackSource(
+      makeOrthogonal(offsetPoints(points, -STACK_LANE_OFFSET, -STACK_LANE_OFFSET)),
+      sourceIsArray ? diagramSizing.gridSize / 8 : 0,
+      sourceHdlPosition
+    ),
+    targetIsArray ? diagramSizing.gridSize / 8 : 0,
+    targetHdlPosition
+  );
+  const frontStackPath = pathFromPoints(frontStackPoints);
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
