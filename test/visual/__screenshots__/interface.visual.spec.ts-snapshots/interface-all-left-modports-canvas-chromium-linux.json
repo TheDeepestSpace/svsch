@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_all_left_modports:u_arbiter",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 336
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_all_left_modports:u_requester",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 216
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_all_left_modports:request_bus",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 288,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "in:arbiter",
+            "name": "arbiter",
+            "direction": "input"
+          },
+          {
+            "id": "in:requester",
+            "name": "requester",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_all_left_modports:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_all_left_modports:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_all_left_modports:u_arbiter:interface:interface_all_left_modports:request_bus:request_bus",
+      "source": "instance:interface_all_left_modports:u_arbiter",
+      "target": "interface:interface_all_left_modports:request_bus",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:arbiter",
+      "path": "M 216 384 L 240 384 L 288 384 L 288 312 L 408 312 L 432 312"
+    },
+    {
+      "id": "edge:instance:interface_all_left_modports:u_requester:interface:interface_all_left_modports:request_bus:request_bus",
+      "source": "instance:interface_all_left_modports:u_requester",
+      "target": "interface:interface_all_left_modports:request_bus",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:requester",
+      "path": "M 216 264 L 240 264 L 408 264 L 432 264"
+    },
+    {
+      "id": "edge:port:interface_all_left_modports:clk:interface:interface_all_left_modports:request_bus:clk",
+      "source": "port:interface_all_left_modports:clk",
+      "target": "interface:interface_all_left_modports:request_bus",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 96 L 240 96 L 552 96 L 552 192 L 552 228"
+    },
+    {
+      "id": "edge:port:interface_all_left_modports:rst_n:interface:interface_all_left_modports:request_bus:rst_n",
+      "source": "port:interface_all_left_modports:rst_n",
+      "target": "interface:interface_all_left_modports:request_bus",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 216 48 L 240 48 L 600 48 L 600 192 L 600 228"
+    }
+  ]
+}

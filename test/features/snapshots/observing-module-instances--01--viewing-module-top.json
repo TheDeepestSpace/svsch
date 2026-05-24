@@ -1,0 +1,168 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:u_default",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 24
+      },
+      "width": 192,
+      "height": 144,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:u_override",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 192
+      },
+      "width": 192,
+      "height": 144,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:default_in",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 192,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:default_in",
+            "name": "default_in",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:default_out",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 108
+      },
+      "width": 192,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:default_out",
+            "name": "default_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:override_in",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 276
+      },
+      "width": 240,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:override_in",
+            "name": "override_in",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:override_out",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 276
+      },
+      "width": 240,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:override_out",
+            "name": "override_out",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:u_default:port:top:default_out:default_out",
+      "source": "instance:top:u_default",
+      "target": "port:top:default_out",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:default_out",
+      "path": "M 624 120 L 648 120 L 816 120 L 840 120"
+    },
+    {
+      "id": "edge:instance:top:u_override:port:top:override_out:override_out",
+      "source": "instance:top:u_override",
+      "target": "port:top:override_out",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:override_out",
+      "path": "M 672 288 L 696 288 L 864 288 L 888 288"
+    },
+    {
+      "id": "edge:port:top:default_in:instance:top:u_default:default_in",
+      "source": "port:top:default_in",
+      "target": "instance:top:u_default",
+      "sourceHandle": "port:default_in",
+      "targetHandle": "port:a",
+      "path": "M 216 120 L 240 120 L 408 120 L 432 120"
+    },
+    {
+      "id": "edge:port:top:override_in:instance:top:u_override:override_in",
+      "source": "port:top:override_in",
+      "target": "instance:top:u_override",
+      "sourceHandle": "port:override_in",
+      "targetHandle": "port:a",
+      "path": "M 264 288 L 288 288 L 456 288 L 480 288"
+    }
+  ]
+}

@@ -1,0 +1,219 @@
+{
+  "nodes": [
+    {
+      "id": "bus:top:aggregate_assign:2:9:n0:breakout",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 24
+      },
+      "width": 192,
+      "height": 149,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out:lhs0",
+            "name": "lhs0",
+            "direction": "output"
+          },
+          {
+            "id": "out:lhs1",
+            "name": "lhs1",
+            "direction": "output"
+          },
+          {
+            "id": "out:lhs2",
+            "name": "lhs2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:top:aggregate_assign:2:9:n0:compose",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:out",
+            "name": "out",
+            "direction": "output"
+          },
+          {
+            "id": "in:rhs0",
+            "name": "rhs0",
+            "direction": "input"
+          },
+          {
+            "id": "in:rhs1",
+            "name": "rhs1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:e",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:e",
+            "name": "e",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:top:aggregate_assign:2:9:n0:breakout:port:top:a:a",
+      "source": "bus:top:aggregate_assign:2:9:n0:breakout",
+      "target": "port:top:a",
+      "sourceHandle": "out:lhs0",
+      "targetHandle": "port:a",
+      "path": "M 960 48 L 984 48 L 1152 48 L 1176 48"
+    },
+    {
+      "id": "edge:bus:top:aggregate_assign:2:9:n0:breakout:port:top:b:b",
+      "source": "bus:top:aggregate_assign:2:9:n0:breakout",
+      "target": "port:top:b",
+      "sourceHandle": "out:lhs1",
+      "targetHandle": "port:b",
+      "path": "M 960 96 L 984 96 L 1152 96 L 1176 96"
+    },
+    {
+      "id": "edge:bus:top:aggregate_assign:2:9:n0:breakout:port:top:c:c",
+      "source": "bus:top:aggregate_assign:2:9:n0:breakout",
+      "target": "port:top:c",
+      "sourceHandle": "out:lhs2",
+      "targetHandle": "port:c",
+      "path": "M 960 144 L 984 144 L 1152 144 L 1176 144"
+    },
+    {
+      "id": "edge:bus:top:aggregate_assign:2:9:n0:compose:bus:top:aggregate_assign:2:9:n0:breakout:aggregate_assign_n0",
+      "source": "bus:top:aggregate_assign:2:9:n0:compose",
+      "target": "bus:top:aggregate_assign:2:9:n0:breakout",
+      "sourceHandle": "out:out",
+      "targetHandle": "in:in",
+      "path": "M 504 48 L 528 48 L 792 48 L 816 48"
+    },
+    {
+      "id": "edge:port:top:d:bus:top:aggregate_assign:2:9:n0:compose:d",
+      "source": "port:top:d",
+      "target": "bus:top:aggregate_assign:2:9:n0:compose",
+      "sourceHandle": "port:d",
+      "targetHandle": "in:rhs0",
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
+    },
+    {
+      "id": "edge:port:top:e:bus:top:aggregate_assign:2:9:n0:compose:e",
+      "source": "port:top:e",
+      "target": "bus:top:aggregate_assign:2:9:n0:compose",
+      "sourceHandle": "port:e",
+      "targetHandle": "in:rhs1",
+      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+    }
+  ]
+}

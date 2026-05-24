@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "comb:B:o:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:o",
+            "name": "o",
+            "direction": "output"
+          },
+          {
+            "id": "port:i",
+            "name": "i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:B:i",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:i",
+            "name": "i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:B:o",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:o",
+            "name": "o",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:B:o:expr:port:B:o:o",
+      "source": "comb:B:o:expr",
+      "target": "port:B:o",
+      "sourceHandle": "out:o",
+      "targetHandle": "port:o",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:B:i:comb:B:o:expr:i",
+      "source": "port:B:i",
+      "target": "comb:B:o:expr",
+      "sourceHandle": "port:i",
+      "targetHandle": "port:i",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    }
+  ]
+}

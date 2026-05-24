@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "comb:comb_connected:decoded:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:decoded",
+            "name": "decoded",
+            "direction": "output"
+          },
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:comb_connected:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:comb_connected:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:comb_connected:decoded",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:decoded",
+            "name": "decoded",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:comb_connected:decoded:expr:port:comb_connected:decoded:decoded",
+      "source": "comb:comb_connected:decoded:expr",
+      "target": "port:comb_connected:decoded",
+      "sourceHandle": "out:decoded",
+      "targetHandle": "port:decoded",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:comb_connected:a:comb:comb_connected:decoded:expr:a",
+      "source": "port:comb_connected:a",
+      "target": "comb:comb_connected:decoded:expr",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    },
+    {
+      "id": "edge:port:comb_connected:b:comb:comb_connected:decoded:expr:b",
+      "source": "port:comb_connected:b",
+      "target": "comb:comb_connected:decoded:expr",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:b",
+      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+    }
+  ]
+}

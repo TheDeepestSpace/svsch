@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:u_child",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 192,
+      "height": 144,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          },
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:top:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:master",
+            "name": "master",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:interface:top:d:instance:top:u_child:d",
+      "source": "interface:top:d",
+      "target": "instance:top:u_child",
+      "sourceHandle": "out:master",
+      "targetHandle": "port:d",
+      "path": "M 192 192 L 216 192 L 240 192 L 240 144 L 384 144 L 408 144"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:u_child:a",
+      "source": "port:top:a",
+      "target": "instance:top:u_child",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 192 48 L 216 48 L 264 48 L 264 72 L 384 72 L 408 72"
+    },
+    {
+      "id": "edge:port:top:b:instance:top:u_child:b",
+      "source": "port:top:b",
+      "target": "instance:top:u_child",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:b",
+      "path": "M 192 96 L 216 96 L 384 96 L 408 96"
+    },
+    {
+      "id": "edge:port:top:c:instance:top:u_child:c",
+      "source": "port:top:c",
+      "target": "instance:top:u_child",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:c",
+      "path": "M 192 144 L 216 144 L 264 144 L 264 120 L 384 120 L 408 120"
+    }
+  ]
+}

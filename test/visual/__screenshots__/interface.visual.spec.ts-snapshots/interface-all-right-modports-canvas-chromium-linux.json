@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_all_right_modports:u_observer",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 336
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_all_right_modports:u_sink",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 216
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_all_right_modports:event_bus",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 144
+      },
+      "width": 288,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "out:observer",
+            "name": "observer",
+            "direction": "output"
+          },
+          {
+            "id": "out:sink",
+            "name": "sink",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_all_right_modports:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_all_right_modports:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_observer:event_bus",
+      "source": "interface:interface_all_right_modports:event_bus",
+      "target": "instance:interface_all_right_modports:u_observer",
+      "sourceHandle": "out:observer",
+      "targetHandle": "port:bus",
+      "path": "M 624 312 L 648 312 L 672 312 L 672 384 L 816 384 L 840 384"
+    },
+    {
+      "id": "edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus",
+      "source": "interface:interface_all_right_modports:event_bus",
+      "target": "instance:interface_all_right_modports:u_sink",
+      "sourceHandle": "out:sink",
+      "targetHandle": "port:bus",
+      "path": "M 624 264 L 648 264 L 816 264 L 840 264"
+    },
+    {
+      "id": "edge:port:interface_all_right_modports:clk:interface:interface_all_right_modports:event_bus:clk",
+      "source": "port:interface_all_right_modports:clk",
+      "target": "interface:interface_all_right_modports:event_bus",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 144 96 L 168 96 L 456 96 L 456 192 L 456 228"
+    },
+    {
+      "id": "edge:port:interface_all_right_modports:rst_n:interface:interface_all_right_modports:event_bus:rst_n",
+      "source": "port:interface_all_right_modports:rst_n",
+      "target": "interface:interface_all_right_modports:event_bus",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 144 48 L 168 48 L 504 48 L 504 192 L 504 228"
+    }
+  ]
+}

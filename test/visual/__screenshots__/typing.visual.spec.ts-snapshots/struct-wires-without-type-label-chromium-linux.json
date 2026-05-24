@@ -1,0 +1,232 @@
+{
+  "nodes": [
+    {
+      "id": "port:struct_composition:clk",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:struct_composition:flat",
+      "type": "hdl",
+      "position": {
+        "x": 1224,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:flat",
+            "name": "flat",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:struct_composition:opcode_i",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:opcode_i",
+            "name": "opcode_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:struct_composition:valid_i",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 180
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:valid_i",
+            "name": "valid_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:struct_composition:pkt.opcode",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:struct_composition:pkt.valid",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "struct_comp:struct_composition:pkt",
+      "type": "hdl",
+      "position": {
+        "x": 816,
+        "y": 48
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "struct",
+        "ports": [
+          {
+            "id": "out:pkt",
+            "name": "pkt",
+            "direction": "output"
+          },
+          {
+            "id": "in:pkt.opcode",
+            "name": "pkt.opcode",
+            "direction": "input"
+          },
+          {
+            "id": "in:pkt.valid",
+            "name": "pkt.valid",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:struct_composition:clk:reg:struct_composition:pkt.opcode:clk",
+      "source": "port:struct_composition:clk",
+      "target": "reg:struct_composition:pkt.opcode",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 192 144 L 216 144 L 264 144 L 264 96 L 384 96 L 408 96"
+    },
+    {
+      "id": "edge:port:struct_composition:clk:reg:struct_composition:pkt.valid:clk",
+      "source": "port:struct_composition:clk",
+      "target": "reg:struct_composition:pkt.valid",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 192 144 L 216 144 L 264 144 L 264 216 L 408 216 L 432 216"
+    },
+    {
+      "id": "edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i",
+      "source": "port:struct_composition:opcode_i",
+      "target": "reg:struct_composition:pkt.opcode",
+      "sourceHandle": "port:opcode_i",
+      "targetHandle": "d",
+      "path": "M 192 72 L 216 72 L 384 72 L 408 72"
+    },
+    {
+      "id": "edge:port:struct_composition:valid_i:reg:struct_composition:pkt.valid:valid_i",
+      "source": "port:struct_composition:valid_i",
+      "target": "reg:struct_composition:pkt.valid",
+      "sourceHandle": "port:valid_i",
+      "targetHandle": "d",
+      "path": "M 192 192 L 216 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192"
+    },
+    {
+      "id": "edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode",
+      "source": "reg:struct_composition:pkt.opcode",
+      "target": "struct_comp:struct_composition:pkt",
+      "sourceHandle": "q",
+      "targetHandle": "in:pkt.opcode",
+      "path": "M 600 72 L 624 72 L 792 72 L 816 72"
+    },
+    {
+      "id": "edge:reg:struct_composition:pkt.valid:struct_comp:struct_composition:pkt:pkt.valid",
+      "source": "reg:struct_composition:pkt.valid",
+      "target": "struct_comp:struct_composition:pkt",
+      "sourceHandle": "q",
+      "targetHandle": "in:pkt.valid",
+      "path": "M 576 192 L 600 192 L 648 192 L 648 120 L 792 120 L 816 120"
+    },
+    {
+      "id": "edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt",
+      "source": "struct_comp:struct_composition:pkt",
+      "target": "port:struct_composition:flat",
+      "sourceHandle": "out:pkt",
+      "targetHandle": "port:flat",
+      "path": "M 960 72 L 984 72 L 1200 72 L 1224 72"
+    }
+  ]
+}

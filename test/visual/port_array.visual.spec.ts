@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { openFixture, paddedLocatorClip } from './helper';
+import { expectGraphAndScreenshot, openFixture, paddedLocatorClip } from './helper';
 
 test.describe('Stacked Port Visuals', () => {
   test('stacked port selection covers the entire stack', async ({ page }) => {
@@ -11,12 +11,12 @@ test.describe('Stacked Port Visuals', () => {
     // Check input port selection
     await page.click(`[data-node-id="${inDataId}"]`);
     await expectArrayStackPortSelectionCoversFullStack(page, inDataId);
-    await expect(page).toHaveScreenshot('array-input-port-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${inDataId}"]`) });
+    await expectGraphAndScreenshot(page, 'array-input-port-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${inDataId}"]`) });
 
     // Check output port selection
     await page.click(`[data-node-id="${outDataId}"]`);
     await expectArrayStackPortSelectionCoversFullStack(page, outDataId);
-    await expect(page).toHaveScreenshot('array-output-port-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${outDataId}"]`) });
+    await expectGraphAndScreenshot(page, 'array-output-port-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${outDataId}"]`) });
   });
 });
 

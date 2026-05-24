@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "bus:bus_three_taps:instr",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 24
+      },
+      "width": 192,
+      "height": 149,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:instr",
+            "name": "instr",
+            "direction": "input"
+          },
+          {
+            "id": "out:instr_6:0_",
+            "name": "instr[6:0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:instr_11:7_",
+            "name": "instr[11:7]",
+            "direction": "output"
+          },
+          {
+            "id": "out:instr_10:5_",
+            "name": "instr[10:5]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_three_taps:instr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:instr",
+            "name": "instr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_three_taps:opcode",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 36
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:opcode",
+            "name": "opcode",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_three_taps:overlap",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 132
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:overlap",
+            "name": "overlap",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_three_taps:rd",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rd",
+            "name": "rd",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:bus_three_taps:instr:port:bus_three_taps:opcode:opcode",
+      "source": "bus:bus_three_taps:instr",
+      "target": "port:bus_three_taps:opcode",
+      "sourceHandle": "out:instr_6:0_",
+      "targetHandle": "port:opcode",
+      "path": "M 576 48 L 600 48 L 768 48 L 792 48"
+    },
+    {
+      "id": "edge:bus:bus_three_taps:instr:port:bus_three_taps:overlap:overlap",
+      "source": "bus:bus_three_taps:instr",
+      "target": "port:bus_three_taps:overlap",
+      "sourceHandle": "out:instr_10:5_",
+      "targetHandle": "port:overlap",
+      "path": "M 576 144 L 600 144 L 768 144 L 792 144"
+    },
+    {
+      "id": "edge:bus:bus_three_taps:instr:port:bus_three_taps:rd:rd",
+      "source": "bus:bus_three_taps:instr",
+      "target": "port:bus_three_taps:rd",
+      "sourceHandle": "out:instr_11:7_",
+      "targetHandle": "port:rd",
+      "path": "M 576 96 L 600 96 L 768 96 L 792 96"
+    },
+    {
+      "id": "edge:port:bus_three_taps:instr:bus:bus_three_taps:instr:instr",
+      "source": "port:bus_three_taps:instr",
+      "target": "bus:bus_three_taps:instr",
+      "sourceHandle": "port:instr",
+      "targetHandle": "in:instr",
+      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+    }
+  ]
+}

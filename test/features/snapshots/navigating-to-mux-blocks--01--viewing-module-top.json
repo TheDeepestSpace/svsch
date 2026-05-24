@@ -1,0 +1,186 @@
+{
+  "nodes": [
+    {
+      "id": "literal:top:o_default:1_b0",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 204
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:o_default",
+            "name": "o_default",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:top:o:sel",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 144,
+      "height": 144,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:1_b0",
+            "name": "1'b0",
+            "direction": "input"
+          },
+          {
+            "id": "in:1_b1",
+            "name": "1'b1",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 156
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:o",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 156
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:o",
+            "name": "o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:sel",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:top:o_default:1_b0:mux:top:o:sel:o_default",
+      "source": "literal:top:o_default:1_b0",
+      "target": "mux:top:o:sel",
+      "sourceHandle": "port:o_default",
+      "targetHandle": "in:default",
+      "path": "M 143 216 L 168 216 L 216 216 L 216 192 L 336 192 L 360 192"
+    },
+    {
+      "id": "edge:mux:top:o:sel:port:top:o:o",
+      "source": "mux:top:o:sel",
+      "target": "port:top:o",
+      "sourceHandle": "out",
+      "targetHandle": "port:o",
+      "path": "M 504 168 L 528 168 L 696 168 L 720 168"
+    },
+    {
+      "id": "edge:port:top:a:mux:top:o:sel:a",
+      "source": "port:top:a",
+      "target": "mux:top:o:sel",
+      "sourceHandle": "port:a",
+      "targetHandle": "in:1_b0",
+      "path": "M 144 120 L 168 120 L 216 120 L 216 144 L 336 144 L 360 144"
+    },
+    {
+      "id": "edge:port:top:b:mux:top:o:sel:b",
+      "source": "port:top:b",
+      "target": "mux:top:o:sel",
+      "sourceHandle": "port:b",
+      "targetHandle": "in:1_b1",
+      "path": "M 144 168 L 168 168 L 336 168 L 360 168"
+    },
+    {
+      "id": "edge:port:top:sel:mux:top:o:sel:sel",
+      "source": "port:top:sel",
+      "target": "mux:top:o:sel",
+      "sourceHandle": "port:sel",
+      "targetHandle": "sel",
+      "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 120"
+    }
+  ]
+}

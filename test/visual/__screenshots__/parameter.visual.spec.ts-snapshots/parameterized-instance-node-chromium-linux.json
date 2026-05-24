@@ -1,0 +1,168 @@
+{
+  "nodes": [
+    {
+      "id": "instance:parameter_sizing_top:u_default",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 192,
+      "height": 144,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:data_i",
+            "name": "data_i",
+            "direction": "input"
+          },
+          {
+            "id": "port:data_o",
+            "name": "data_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:parameter_sizing_top:u_override",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 192
+      },
+      "width": 216,
+      "height": 144,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:data_i",
+            "name": "data_i",
+            "direction": "input"
+          },
+          {
+            "id": "port:data_o",
+            "name": "data_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:parameter_sizing_top:default_i",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:default_i",
+            "name": "default_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:parameter_sizing_top:default_o",
+      "type": "hdl",
+      "position": {
+        "x": 816,
+        "y": 108
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:default_o",
+            "name": "default_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:parameter_sizing_top:override_i",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 276
+      },
+      "width": 240,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:override_i",
+            "name": "override_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:parameter_sizing_top:override_o",
+      "type": "hdl",
+      "position": {
+        "x": 912,
+        "y": 276
+      },
+      "width": 240,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:override_o",
+            "name": "override_o",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:parameter_sizing_top:u_default:port:parameter_sizing_top:default_o:default_o",
+      "source": "instance:parameter_sizing_top:u_default",
+      "target": "port:parameter_sizing_top:default_o",
+      "sourceHandle": "port:data_o",
+      "targetHandle": "port:default_o",
+      "path": "M 600 120 L 624 120 L 792 120 L 816 120"
+    },
+    {
+      "id": "edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o",
+      "source": "instance:parameter_sizing_top:u_override",
+      "target": "port:parameter_sizing_top:override_o",
+      "sourceHandle": "port:data_o",
+      "targetHandle": "port:override_o",
+      "path": "M 696 288 L 720 288 L 888 288 L 912 288"
+    },
+    {
+      "id": "edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i",
+      "source": "port:parameter_sizing_top:default_i",
+      "target": "instance:parameter_sizing_top:u_default",
+      "sourceHandle": "port:default_i",
+      "targetHandle": "port:data_i",
+      "path": "M 192 120 L 216 120 L 384 120 L 408 120"
+    },
+    {
+      "id": "edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i",
+      "source": "port:parameter_sizing_top:override_i",
+      "target": "instance:parameter_sizing_top:u_override",
+      "sourceHandle": "port:override_i",
+      "targetHandle": "port:data_i",
+      "path": "M 264 288 L 288 288 L 456 288 L 480 288"
+    }
+  ]
+}

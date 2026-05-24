@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "mux:array_address_read:M_read_address",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 96
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_address_read:address",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:address",
+            "name": "address",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_address_read:M",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:M",
+            "name": "M",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_address_read:read_data",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 132
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:read_data",
+            "name": "read_data",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:mux:array_address_read:M_read_address:port:array_address_read:read_data:read_data",
+      "source": "mux:array_address_read:M_read_address",
+      "target": "port:array_address_read:read_data",
+      "sourceHandle": "out",
+      "targetHandle": "port:read_data",
+      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+    },
+    {
+      "id": "edge:port:array_address_read:address:mux:array_address_read:M_read_address:address",
+      "source": "port:array_address_read:address",
+      "target": "mux:array_address_read:M_read_address",
+      "sourceHandle": "port:address",
+      "targetHandle": "sel",
+      "path": "M 192 48 L 216 48 L 480 48 L 480 72 L 480 120"
+    },
+    {
+      "id": "edge:port:array_address_read:M:mux:array_address_read:M_read_address:M",
+      "source": "port:array_address_read:M",
+      "target": "mux:array_address_read:M_read_address",
+      "sourceHandle": "port:M",
+      "targetHandle": "in:in",
+      "path": "M 205 148 L 408 148"
+    }
+  ]
+}

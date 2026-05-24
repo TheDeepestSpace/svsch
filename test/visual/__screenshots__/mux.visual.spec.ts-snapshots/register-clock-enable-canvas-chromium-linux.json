@@ -1,0 +1,232 @@
+{
+  "nodes": [
+    {
+      "id": "mux:register_clock_enable:q:en",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_clock_enable:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 228
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_clock_enable:d",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_clock_enable:en",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:en",
+            "name": "en",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_clock_enable:q",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 204
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_clock_enable:rst",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 324
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:register_clock_enable:q",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 168
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:mux:register_clock_enable:q:en:reg:register_clock_enable:q:q_next",
+      "source": "mux:register_clock_enable:q:en",
+      "target": "reg:register_clock_enable:q",
+      "sourceHandle": "out",
+      "targetHandle": "d",
+      "path": "M 768 144 L 792 144 L 816 144 L 816 24 L 168 24 L 168 216 L 336 216 L 360 216"
+    },
+    {
+      "id": "edge:port:register_clock_enable:clk:reg:register_clock_enable:q:clk",
+      "source": "port:register_clock_enable:clk",
+      "target": "reg:register_clock_enable:q",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 144 240 L 168 240 L 336 240 L 360 240"
+    },
+    {
+      "id": "edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:d",
+      "source": "port:register_clock_enable:d",
+      "target": "mux:register_clock_enable:q:en",
+      "sourceHandle": "port:d",
+      "targetHandle": "in:true",
+      "path": "M 456 144 L 480 144 L 648 144 L 672 144"
+    },
+    {
+      "id": "edge:port:register_clock_enable:en:mux:register_clock_enable:q:en:en",
+      "source": "port:register_clock_enable:en",
+      "target": "mux:register_clock_enable:q:en",
+      "sourceHandle": "port:en",
+      "targetHandle": "sel",
+      "path": "M 456 48 L 480 48 L 720 48 L 720 72 L 720 120"
+    },
+    {
+      "id": "edge:port:register_clock_enable:rst:reg:register_clock_enable:q:rst",
+      "source": "port:register_clock_enable:rst",
+      "target": "reg:register_clock_enable:q",
+      "sourceHandle": "port:rst",
+      "targetHandle": "rst",
+      "path": "M 144 336 L 168 336 L 408 336 L 408 312 L 407.9921875 264"
+    },
+    {
+      "id": "edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q",
+      "source": "reg:register_clock_enable:q",
+      "target": "mux:register_clock_enable:q:en",
+      "sourceHandle": "q",
+      "targetHandle": "in:false",
+      "path": "M 456 216 L 480 216 L 504 216 L 504 168 L 648 168 L 672 168"
+    },
+    {
+      "id": "edge:reg:register_clock_enable:q:port:register_clock_enable:q:q",
+      "source": "reg:register_clock_enable:q",
+      "target": "port:register_clock_enable:q",
+      "sourceHandle": "q",
+      "targetHandle": "port:q",
+      "path": "M 456 216 L 480 216 L 648 216 L 672 216"
+    }
+  ]
+}

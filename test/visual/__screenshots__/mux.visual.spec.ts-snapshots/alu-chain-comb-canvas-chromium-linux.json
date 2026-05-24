@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "comb:alu_chain:y:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 120,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y",
+            "name": "y",
+            "direction": "output"
+          },
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:alu_chain:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:alu_chain:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:alu_chain:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:alu_chain:y",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:alu_chain:y:expr:port:alu_chain:y:y",
+      "source": "comb:alu_chain:y:expr",
+      "target": "port:alu_chain:y",
+      "sourceHandle": "out:y",
+      "targetHandle": "port:y",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:alu_chain:a:comb:alu_chain:y:expr:a",
+      "source": "port:alu_chain:a",
+      "target": "comb:alu_chain:y:expr",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 48 L 168 48 L 216 48 L 216 72 L 336 72 L 360 72"
+    },
+    {
+      "id": "edge:port:alu_chain:b:comb:alu_chain:y:expr:b",
+      "source": "port:alu_chain:b",
+      "target": "comb:alu_chain:y:expr",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:b",
+      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "edge:port:alu_chain:c:comb:alu_chain:y:expr:c",
+      "source": "port:alu_chain:c",
+      "target": "comb:alu_chain:y:expr",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:c",
+      "path": "M 144 144 L 168 144 L 216 144 L 216 120 L 336 120 L 360 120"
+    }
+  ]
+}

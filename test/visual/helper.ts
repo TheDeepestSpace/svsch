@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -7,8 +7,37 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+import { captureGraphState, compareGraphState } from '../graphRegression';
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
+
+export async function expectGraphAndScreenshot(
+  page: Page,
+  name: string,
+  options?: any
+) {
+  const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
+  
+  // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
+  const jsonName = name.endsWith('.png') ? name.replace('.png', '.json') : `${name}.json`;
+  const snapshotPath = test.info().snapshotPath(jsonName);
+  const snapshotsDir = path.dirname(snapshotPath);
+  const baseName = path.basename(snapshotPath, '.json');
+  
+  // 1. Graph Regression
+  const graphState = await captureGraphState(page);
+  
+  compareGraphState(
+    graphState,
+    baseName,
+    snapshotsDir,
+    resultsDir,
+    !!process.env.UPDATE_SNAPSHOTS
+  );
+
+  // 2. Image Regression
+  await expect(page).toHaveScreenshot(name, options);
+}
 
 export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu';
 

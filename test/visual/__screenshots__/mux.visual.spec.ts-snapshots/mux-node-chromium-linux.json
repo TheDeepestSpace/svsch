@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "mux:mux_only:y:sel",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:1_b0",
+            "name": "1'b0",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_only:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_only:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_only:sel",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_only:y",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:mux:mux_only:y:sel:port:mux_only:y:y",
+      "source": "mux:mux_only:y:sel",
+      "target": "port:mux_only:y",
+      "sourceHandle": "out",
+      "targetHandle": "port:y",
+      "path": "M 504 144 L 528 144 L 696 144 L 720 144"
+    },
+    {
+      "id": "edge:port:mux_only:a:mux:mux_only:y:sel:a",
+      "source": "port:mux_only:a",
+      "target": "mux:mux_only:y:sel",
+      "sourceHandle": "port:a",
+      "targetHandle": "in:1_b0",
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
+    },
+    {
+      "id": "edge:port:mux_only:b:mux:mux_only:y:sel:b",
+      "source": "port:mux_only:b",
+      "target": "mux:mux_only:y:sel",
+      "sourceHandle": "port:b",
+      "targetHandle": "in:default",
+      "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
+    },
+    {
+      "id": "edge:port:mux_only:sel:mux:mux_only:y:sel:sel",
+      "source": "port:mux_only:sel",
+      "target": "mux:mux_only:y:sel",
+      "sourceHandle": "port:sel",
+      "targetHandle": "sel",
+      "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 120"
+    }
+  ]
+}

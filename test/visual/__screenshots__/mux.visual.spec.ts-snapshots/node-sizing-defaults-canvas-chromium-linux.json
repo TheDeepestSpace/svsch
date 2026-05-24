@@ -1,0 +1,305 @@
+{
+  "nodes": [
+    {
+      "id": "alu",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 456
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "alu",
+        "ports": [
+          {
+            "id": "lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "sum",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 216
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in",
+            "name": "instr",
+            "direction": "input"
+          },
+          {
+            "id": "tap",
+            "name": "[14:12]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 216
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "y",
+            "name": "decoded",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 456
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:constant",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 336
+      },
+      "width": 72,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "out",
+            "name": "version_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:value",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 336
+      },
+      "width": 72,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "out",
+            "name": "literal_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "module",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 576
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "module",
+        "ports": [
+          {
+            "id": "a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "i0",
+            "name": "i0",
+            "direction": "input"
+          },
+          {
+            "id": "i1",
+            "name": "i1",
+            "direction": "input"
+          },
+          {
+            "id": "y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:in",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:out",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 0
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "register",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "unknown",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 696
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "unknown",
+        "ports": [
+          {
+            "id": "a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": []
+}

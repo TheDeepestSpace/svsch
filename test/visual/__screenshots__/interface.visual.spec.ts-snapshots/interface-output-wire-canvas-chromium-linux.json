@@ -1,0 +1,186 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_output_wire:u_sink",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_output_wire:u_source",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_output_wire:status",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 240,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "out:done",
+            "name": "done",
+            "direction": "output"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "out:consumer",
+            "name": "consumer",
+            "direction": "output"
+          },
+          {
+            "id": "in:producer",
+            "name": "producer",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_output_wire:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_output_wire:done",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 372
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:done",
+            "name": "done",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_output_wire:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_output_wire:u_source:interface:interface_output_wire:status:status",
+      "source": "instance:interface_output_wire:u_source",
+      "target": "interface:interface_output_wire:status",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:producer",
+      "path": "M 216 288 L 240 288 L 408 288 L 432 288"
+    },
+    {
+      "id": "edge:interface:interface_output_wire:status:instance:interface_output_wire:u_sink:status",
+      "source": "interface:interface_output_wire:status",
+      "target": "instance:interface_output_wire:u_sink",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 288 L 696 288 L 864 288 L 888 288"
+    },
+    {
+      "id": "edge:interface:interface_output_wire:status:port:interface_output_wire:done:done",
+      "source": "interface:interface_output_wire:status",
+      "target": "port:interface_output_wire:done",
+      "sourceHandle": "out:done",
+      "targetHandle": "port:done",
+      "path": "M 552 328 L 552 384 L 864 384 L 864 376 L 864 384 L 888 384"
+    },
+    {
+      "id": "edge:port:interface_output_wire:clk:interface:interface_output_wire:status:clk",
+      "source": "port:interface_output_wire:clk",
+      "target": "interface:interface_output_wire:status",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 96 L 240 96 L 528 96 L 528 216 L 528 252"
+    },
+    {
+      "id": "edge:port:interface_output_wire:rst_n:interface:interface_output_wire:status:rst_n",
+      "source": "port:interface_output_wire:rst_n",
+      "target": "interface:interface_output_wire:status",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 216 48 L 240 48 L 576 48 L 576 216 L 576 252"
+    }
+  ]
+}

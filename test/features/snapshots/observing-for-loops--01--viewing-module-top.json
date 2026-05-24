@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "literal:top:out_branch_n0:4_b0",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 108
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:out_branch_n0",
+            "name": "out_branch_n0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "loop:top:4:n1",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "loop",
+        "ports": [
+          {
+            "id": "port:in_i_",
+            "name": "in[i]",
+            "direction": "input"
+          },
+          {
+            "id": "port:out_in",
+            "name": "out_in",
+            "direction": "input"
+          },
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:in",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:out",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:top:out_branch_n0:4_b0:loop:top:4:n1:out_branch_n0",
+      "source": "literal:top:out_branch_n0:4_b0",
+      "target": "loop:top:4:n1",
+      "sourceHandle": "port:out_branch_n0",
+      "targetHandle": "port:out_in",
+      "path": "M 143 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "edge:loop:top:4:n1:port:top:out:out",
+      "source": "loop:top:4:n1",
+      "target": "port:top:out",
+      "sourceHandle": "port:out",
+      "targetHandle": "port:out",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:top:in:loop:top:4:n1:in",
+      "source": "port:top:in",
+      "target": "loop:top:4:n1",
+      "sourceHandle": "port:in",
+      "targetHandle": "port:in_i_",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    }
+  ]
+}

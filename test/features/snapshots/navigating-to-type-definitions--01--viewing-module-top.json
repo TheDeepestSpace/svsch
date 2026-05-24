@@ -1,0 +1,92 @@
+{
+  "nodes": [
+    {
+      "id": "port:top:in_state",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 192,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:in_state",
+            "name": "in_state",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:out_state",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 60
+      },
+      "width": 192,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:out_state",
+            "name": "out_state",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:top:current_state",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 24
+      },
+      "width": 240,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:top:in_state:reg:top:current_state:in_state",
+      "source": "port:top:in_state",
+      "target": "reg:top:current_state",
+      "sourceHandle": "port:in_state",
+      "targetHandle": "d",
+      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
+    },
+    {
+      "id": "edge:reg:top:current_state:port:top:out_state:out_state",
+      "source": "reg:top:current_state",
+      "target": "port:top:out_state",
+      "sourceHandle": "q",
+      "targetHandle": "port:out_state",
+      "path": "M 672 72 L 696 72 L 864 72 L 888 72"
+    }
+  ]
+}

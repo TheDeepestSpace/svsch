@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { expectGraphAndScreenshot } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DiagramViewModel } from '../../src/ir/types';
@@ -34,7 +35,7 @@ test.describe('Bus Composition Visual Rendering', () => {
     // 4 inputs to registers, 3 registers to bus comp, 1 bus comp to output = 8 edges
     expect(edgeCount).toBeGreaterThanOrEqual(8);
 
-    await expect(page).toHaveScreenshot('bus-composition-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'bus-composition-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 

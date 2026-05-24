@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
+import { expectGraphAndScreenshot } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
@@ -471,7 +472,7 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.mux-side-port >> text=1\'b0')).toBeVisible();
     await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('mux-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="mux"]') });
+    await expectGraphAndScreenshot(page, 'mux-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="mux"]') });
   });
 
   test('renders a connected mux canvas interpreted from SystemVerilog', async ({ page }) => {
@@ -485,7 +486,7 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.mux-side-port >> text=1\'b0')).toBeVisible();
     await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('mux-wired-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'mux-wired-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders muxes with different input counts', async ({ page }) => {
@@ -501,7 +502,7 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.mux-side-port >> text=2\'d1')).toBeVisible();
     await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('mux-three-inputs-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'mux-three-inputs-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders long mux signal names in the full webview', async ({ page }) => {
@@ -517,7 +518,7 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.mux-side-port >> text=2\'d1')).toBeVisible();
     await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('mux-long-names-webview.png', {
+    await expectGraphAndScreenshot(page, 'mux-long-names-webview.png', {
       fullPage: true,
       maxDiffPixels: 2
     });
@@ -533,7 +534,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.register-reset-port')).toBeVisible();
     await expect(page.locator('.register-reset-label >> text=R')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('register-async-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
+    await expectGraphAndScreenshot(page, 'register-async-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
   });
 
   test('renders a register with active-low reset bar', async ({ page }) => {
@@ -543,7 +544,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.register-reset-port')).toBeVisible();
     await expect(page.locator('.register-reset-label >> text=R\u0305')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('register-active-low-reset-node.png', {
+    await expectGraphAndScreenshot(page, 'register-active-low-reset-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
       maxDiffPixels: 50
     });
@@ -556,7 +557,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.register-clock-port')).toBeVisible();
     await expect(page.locator('.register-reset-port')).not.toBeVisible();
 
-    await expect(page).toHaveScreenshot('register-no-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
+    await expectGraphAndScreenshot(page, 'register-no-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
   });
 
   test('renders a clock-enabled register with feedback mux and reset', async ({ page }) => {
@@ -570,7 +571,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.mux-side-port >> text=true')).toBeVisible();
     await expect(page.locator('.mux-side-port >> text=false')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('register-clock-enable-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'register-clock-enable-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders an array register with isometric stacking layers and a dimension badge', async ({ page }) => {
@@ -581,7 +582,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
-    await expect(page).toHaveScreenshot('array-register-canvas.png', { clip: await paddedLocatorClip(page, '[data-node-id="reg:array_register:M"]') });
+    await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedLocatorClip(page, '[data-node-id="reg:array_register:M"]') });
   });
 
   test('renders an array input through a stacked register to an array output', async ({ page }) => {
@@ -614,7 +615,7 @@ test.describe('register visual rendering', () => {
     await expectArrayStackEdgeLayerCoordinates(page, dataInputEdge!.id, 'port:array_port_register:in_data', 'reg:array_port_register:storage');
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
 
-    await expect(page).toHaveScreenshot('array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders a variable-index array read as a flat mux fed by converging stacked wires', async ({ page }) => {
@@ -648,7 +649,7 @@ test.describe('register visual rendering', () => {
     await expectConvergingStackEdgePaint(page, arrayReadEdge!.id);
     await expectStackedEdgeSegmentsOrthogonal(page);
 
-    await expect(page).toHaveScreenshot('array-address-read-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'array-address-read-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders a scalar write through a stacked address mux into an array register', async ({ page }) => {
@@ -706,7 +707,7 @@ test.describe('register visual rendering', () => {
     await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id, { frontBeforeBackX: true, frontBeforeBackY: true });
     await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { frontBeforeBackY: true });
 
-    await expect(page).toHaveScreenshot('array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
+    await expectGraphAndScreenshot(page, 'array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
   });
 
   test('renders selected stack outlines for array address mux and storage register', async ({ page }) => {
@@ -725,13 +726,13 @@ test.describe('register visual rendering', () => {
     const muxStack = page.locator(`[data-node-id="${addrMux!.id}"]`);
     await muxStack.focus();
     await expect(muxStack.locator('.hdl-node-array-selection')).toHaveCSS('opacity', '1');
-    await expect(page).toHaveScreenshot('array-address-write-mux-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${addrMux!.id}"]`) });
+    await expectGraphAndScreenshot(page, 'array-address-write-mux-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${addrMux!.id}"]`) });
 
     await expectArrayStackSelectionCoversFullStack(page, arrayReg!.id);
     const regStack = page.locator(`[data-node-id="${arrayReg!.id}"]`);
     await regStack.focus();
     await expect(regStack.locator('.hdl-node-array-selection')).toHaveCSS('opacity', '1');
-    await expect(page).toHaveScreenshot('array-address-write-register-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${arrayReg!.id}"]`) });
+    await expectGraphAndScreenshot(page, 'array-address-write-register-stack-selection.png', { clip: await paddedLocatorClip(page, `[data-node-id="${arrayReg!.id}"]`) });
   });
 
   test('renders a stacked write-enable mux chained upstream of the stacked address mux for a conditional array write', async ({ page }) => {
@@ -807,7 +808,7 @@ test.describe('register visual rendering', () => {
     await expectPromotedStackFanoutPaint(page, writeEnSelectEdge!.id);
     await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id);
 
-    await expect(page).toHaveScreenshot('array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 
@@ -820,7 +821,7 @@ test.describe('bus visual rendering', () => {
       await expect(locator).toBeAttached();
     }
 
-    await expect(page).toHaveScreenshot('bus-one-tap-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'bus-one-tap-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders a bus with two breakouts', async ({ page }) => {
@@ -831,7 +832,7 @@ test.describe('bus visual rendering', () => {
       await expect(locator).toBeAttached();
     }
 
-    await expect(page).toHaveScreenshot('bus-two-taps-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'bus-two-taps-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders a bus with three overlapping breakouts', async ({ page }) => {
@@ -842,7 +843,7 @@ test.describe('bus visual rendering', () => {
       await expect(locator).toBeAttached();
     }
 
-    await expect(page).toHaveScreenshot('bus-three-taps-canvas.png', {
+    await expectGraphAndScreenshot(page, 'bus-three-taps-canvas.png', {
       clip: await paddedGraphClip(page),
       maxDiffPixels: 169
     });
@@ -911,7 +912,7 @@ test.describe('comb visual rendering', () => {
   test('renders connected combinational ports with flat orthogonal connectors', async ({ page }) => {
     const view = await openFixture(page, 'comb_connected.sv', 'comb');
 
-    await expect(page).toHaveScreenshot('comb-connected-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'comb-connected-canvas.png', { clip: await paddedGraphClip(page) });
 
     for (const edge of view.edges) {
       const locator = page.locator(`.react-flow__edge[data-id="${edge.id}"]`);
@@ -926,7 +927,7 @@ test.describe('ALU visual rendering', () => {
 
     await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
     await expect(page.locator('.alu-operation')).toHaveText('+');
-    await expect(page).toHaveScreenshot('alu-connected-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'alu-connected-canvas.png', { clip: await paddedGraphClip(page) });
 
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
@@ -938,7 +939,7 @@ test.describe('ALU visual rendering', () => {
 
     await expect(page.locator('[data-node-kind="comb"]')).toHaveCount(1);
     await expect(page.locator('[data-node-kind="alu"]')).toHaveCount(0);
-    await expect(page).toHaveScreenshot('alu-chain-comb-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'alu-chain-comb-canvas.png', { clip: await paddedGraphClip(page) });
 
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
@@ -990,7 +991,7 @@ test.describe('replication visual rendering', () => {
       source: { file: 'replication_expr.sv', startLine: 18 }
     });
 
-    await expect(page).toHaveScreenshot('replication-block-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'replication-block-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 
@@ -1001,7 +1002,7 @@ test.describe('loop visual rendering', () => {
     await expect(page.locator('[data-node-kind="loop"]').first()).toBeVisible();
     await expect(page.locator('[data-node-kind="loop"]').first()).toContainText('LOOP');
 
-    await expect(page).toHaveScreenshot('loop-node.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'loop-node.png', { clip: await paddedGraphClip(page) });
 
     for (const edge of view.edges) {
       const locator = page.locator(`.react-flow__edge[data-id="${edge.id}"]`);
@@ -1083,7 +1084,7 @@ test.describe('edge crossing and overlap extension', () => {
     }).toContain('Q');
     await expect(page.locator('.svsch-edge-jump-halo')).toHaveCount(1);
 
-    await expect(page).toHaveScreenshot('line-jumps-crossing-canvas.png', {
+    await expectGraphAndScreenshot(page, 'line-jumps-crossing-canvas.png', {
       clip: await paddedGraphClip(page)
     });
   });
@@ -1116,7 +1117,7 @@ test.describe('edge crossing and overlap extension', () => {
     expect(edgeStroke).not.toMatch(/rgba\([^)]*,\s*(?:0|0?\.\d+)/);
     expect(edgeStroke).not.toMatch(/\/\s*0?\.\d/);
 
-    await expect(page).toHaveScreenshot('line-overlap-hint-canvas.png', {
+    await expectGraphAndScreenshot(page, 'line-overlap-hint-canvas.png', {
       clip: await paddedGraphClip(page)
     });
   });
@@ -1205,7 +1206,7 @@ test.describe('edge route editing', () => {
     await expect(page.locator('.svsch-edge-junction')).toHaveCount(1);
     await expect(page.locator('.svsch-edge-junction')).toHaveAttribute('r', '4.75');
     await expect(page.locator('.svsch-edge-junction-interface')).toHaveCount(0);
-    await expect(page).toHaveScreenshot('branched-net-junctions-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'branched-net-junctions-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('moves same-net shared trunk segments together', async ({ page }) => {
@@ -1257,7 +1258,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders every current node kind widened for long labels', async ({ page }) => {
@@ -1279,7 +1280,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 

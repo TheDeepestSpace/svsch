@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "bus:bus_one_tap:instr",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 24
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:instr",
+            "name": "instr",
+            "direction": "input"
+          },
+          {
+            "id": "out:instr_6:0_",
+            "name": "instr[6:0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_one_tap:instr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:instr",
+            "name": "instr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:bus_one_tap:opcode",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 36
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:opcode",
+            "name": "opcode",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:bus_one_tap:instr:port:bus_one_tap:opcode:opcode",
+      "source": "bus:bus_one_tap:instr",
+      "target": "port:bus_one_tap:opcode",
+      "sourceHandle": "out:instr_6:0_",
+      "targetHandle": "port:opcode",
+      "path": "M 576 48 L 600 48 L 768 48 L 792 48"
+    },
+    {
+      "id": "edge:port:bus_one_tap:instr:bus:bus_one_tap:instr:instr",
+      "source": "port:bus_one_tap:instr",
+      "target": "bus:bus_one_tap:instr",
+      "sourceHandle": "port:instr",
+      "targetHandle": "in:instr",
+      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+    }
+  ]
+}

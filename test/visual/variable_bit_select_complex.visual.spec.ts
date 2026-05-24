@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openFixture, fitGraphView } from './helper';
+import { openFixture, fitGraphView, expectGraphAndScreenshot } from './helper';
 
 test.describe('variable bit select complex visual', () => {
   test('renders multiple variable bit select block combinations', async ({ page }) => {
@@ -17,6 +17,6 @@ test.describe('variable bit select complex visual', () => {
     // Two part selects (multi-bit output) should have 'out[]'
     await expect(page.locator('[data-node-kind="select"] >> text="out[]"')).toHaveCount(2);
 
-    await expect(page).toHaveScreenshot('variable-bit-select-complex.png');
+    await expectGraphAndScreenshot(page, 'variable-bit-select-complex.png');
   });
 });

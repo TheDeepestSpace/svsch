@@ -1,0 +1,150 @@
+{
+  "nodes": [
+    {
+      "id": "source:a",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:b",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 12
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:c",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 156
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:x",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "x",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:y",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 204
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:z",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 156
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "z",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-a-to-x",
+      "source": "source:a",
+      "target": "target:x",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 120 120 L 144 120 L 336 120 L 360 120"
+    },
+    {
+      "id": "edge-b-to-y",
+      "source": "source:b",
+      "target": "target:y",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 240 24 L 264 24 L 264 113 Q 271 120 264 127 L 264 216 L 336 216 L 360 216"
+    },
+    {
+      "id": "edge-c-to-z",
+      "source": "source:c",
+      "target": "target:z",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 120 168 L 144 168 L 144 216 L 336 216 L 336 168 L 360 168"
+    }
+  ]
+}

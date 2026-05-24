@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "port:register_async_reset:c_main",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c_main",
+            "name": "c_main",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_async_reset:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_async_reset:q",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:register_async_reset:rst",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 156
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:register_async_reset:q",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "c_main",
+            "name": "c_main",
+            "direction": "input"
+          },
+          {
+            "id": "rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:register_async_reset:c_main:reg:register_async_reset:q:c_main",
+      "source": "port:register_async_reset:c_main",
+      "target": "reg:register_async_reset:q",
+      "sourceHandle": "port:c_main",
+      "targetHandle": "c_main",
+      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "edge:port:register_async_reset:d:reg:register_async_reset:q:d",
+      "source": "port:register_async_reset:d",
+      "target": "reg:register_async_reset:q",
+      "sourceHandle": "port:d",
+      "targetHandle": "d",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    },
+    {
+      "id": "edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
+      "source": "port:register_async_reset:rst",
+      "target": "reg:register_async_reset:q",
+      "sourceHandle": "port:rst",
+      "targetHandle": "rst",
+      "path": "M 144 168 L 168 168 L 432 168 L 431.9921875 120"
+    },
+    {
+      "id": "edge:reg:register_async_reset:q:port:register_async_reset:q:q",
+      "source": "reg:register_async_reset:q",
+      "target": "port:register_async_reset:q",
+      "sourceHandle": "q",
+      "targetHandle": "port:q",
+      "path": "M 504 72 L 528 72 L 696 72 L 720 72"
+    }
+  ]
+}

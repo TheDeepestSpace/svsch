@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "port:top:bit_out",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bit_out",
+            "name": "bit_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:sel",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "select:top:bus[sel]",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "select",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:top:bus:select:top:bus_sel_:bus",
+      "source": "port:top:bus",
+      "target": "select:top:bus[sel]",
+      "sourceHandle": "port:bus",
+      "targetHandle": "port:in",
+      "path": "M 144.00030141362993 144.000030141363 L 168 144 L 336 144 L 360 144.00012056545197"
+    },
+    {
+      "id": "edge:port:top:sel:select:top:bus_sel_:sel",
+      "source": "port:top:sel",
+      "target": "select:top:bus[sel]",
+      "sourceHandle": "port:sel",
+      "targetHandle": "port:sel",
+      "path": "M 144.00030141362993 48.00003014136299 L 168 48 L 408 48 L 408 72 L 408.000120565452 120.00006028272598"
+    },
+    {
+      "id": "edge:select:top:bus_sel_:port:top:bit_out:bit_out",
+      "source": "select:top:bus[sel]",
+      "target": "port:top:bit_out",
+      "sourceHandle": "port:out",
+      "targetHandle": "port:bit_out",
+      "path": "M 456.00024113090393 144.00012056545197 L 480 144 L 648 144 L 672 144.000030141363"
+    }
+  ]
+}

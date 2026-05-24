@@ -1,0 +1,176 @@
+{
+  "nodes": [
+    {
+      "id": "interface_modport:pair_bridge:downstream",
+      "type": "hdl",
+      "position": {
+        "x": 960,
+        "y": 96
+      },
+      "width": 192,
+      "height": 293,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:slave",
+            "name": "slave",
+            "direction": "output"
+          },
+          {
+            "id": "out:clk",
+            "name": "clk",
+            "direction": "output"
+          },
+          {
+            "id": "out:rst_n",
+            "name": "rst_n",
+            "direction": "output"
+          },
+          {
+            "id": "out:ready",
+            "name": "ready",
+            "direction": "output"
+          },
+          {
+            "id": "in:data",
+            "name": "data",
+            "direction": "input"
+          },
+          {
+            "id": "in:valid",
+            "name": "valid",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface_modport:pair_bridge:upstream",
+      "type": "hdl",
+      "position": {
+        "x": 552,
+        "y": 144
+      },
+      "width": 192,
+      "height": 293,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:master",
+            "name": "master",
+            "direction": "input"
+          },
+          {
+            "id": "out:clk",
+            "name": "clk",
+            "direction": "output"
+          },
+          {
+            "id": "out:rst_n",
+            "name": "rst_n",
+            "direction": "output"
+          },
+          {
+            "id": "out:data",
+            "name": "data",
+            "direction": "output"
+          },
+          {
+            "id": "out:valid",
+            "name": "valid",
+            "direction": "output"
+          },
+          {
+            "id": "in:ready",
+            "name": "ready",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:pair_bridge:downstream",
+      "type": "hdl",
+      "position": {
+        "x": 1368,
+        "y": 36
+      },
+      "width": 312,
+      "height": 29,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:slave",
+            "name": "slave",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:pair_bridge:upstream",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 312,
+      "height": 29,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:master",
+            "name": "master",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:interface_modport:pair_bridge:downstream:interface_modport:pair_bridge:upstream:downstream.ready",
+      "source": "interface_modport:pair_bridge:downstream",
+      "target": "interface_modport:pair_bridge:upstream",
+      "sourceHandle": "out:ready",
+      "targetHandle": "in:ready",
+      "path": "M 1152 240 L 1176 240 L 1200 240 L 1200 456 L 528 456 L 528 384 L 552 384"
+    },
+    {
+      "id": "edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream",
+      "source": "interface_modport:pair_bridge:downstream",
+      "target": "interface:pair_bridge:downstream",
+      "sourceHandle": "out:slave",
+      "targetHandle": "in:slave",
+      "path": "M 1056 93 L 1056 48 L 1344 48 L 1368 48"
+    },
+    {
+      "id": "edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data",
+      "source": "interface_modport:pair_bridge:upstream",
+      "target": "interface_modport:pair_bridge:downstream",
+      "sourceHandle": "out:data",
+      "targetHandle": "in:data",
+      "path": "M 744 288 L 768 288 L 936 288 L 960 288"
+    },
+    {
+      "id": "edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid",
+      "source": "interface_modport:pair_bridge:upstream",
+      "target": "interface_modport:pair_bridge:downstream",
+      "sourceHandle": "out:valid",
+      "targetHandle": "in:valid",
+      "path": "M 744 336 L 768 336 L 936 336 L 960 336"
+    },
+    {
+      "id": "edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream",
+      "source": "interface:pair_bridge:upstream",
+      "target": "interface_modport:pair_bridge:upstream",
+      "sourceHandle": "out:master",
+      "targetHandle": "in:master",
+      "path": "M 336 96 L 360 96 L 648 96 L 648 141"
+    }
+  ]
+}

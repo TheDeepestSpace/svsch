@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_modport:u_consumer",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 192
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          },
+          {
+            "id": "port:observed",
+            "name": "observed",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_modport:u_producer",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 192
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_modport:link",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 96
+      },
+      "width": 192,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:master",
+            "name": "master",
+            "direction": "input"
+          },
+          {
+            "id": "out:slave",
+            "name": "slave",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_modport:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_modport:observed",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 228
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:observed",
+            "name": "observed",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_modport:u_consumer:port:interface_modport:observed:observed",
+      "source": "instance:interface_modport:u_consumer",
+      "target": "port:interface_modport:observed",
+      "sourceHandle": "port:observed",
+      "targetHandle": "port:observed",
+      "path": "M 1032 240 L 1056 240 L 1224 240 L 1248 240"
+    },
+    {
+      "id": "edge:instance:interface_modport:u_producer:interface:interface_modport:link:link",
+      "source": "instance:interface_modport:u_producer",
+      "target": "interface:interface_modport:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:master",
+      "path": "M 216 240 L 240 240 L 408 240 L 432 240"
+    },
+    {
+      "id": "edge:interface:interface_modport:link:instance:interface_modport:u_consumer:link",
+      "source": "interface:interface_modport:link",
+      "target": "instance:interface_modport:u_consumer",
+      "sourceHandle": "out:slave",
+      "targetHandle": "port:bus",
+      "path": "M 624 240 L 648 240 L 816 240 L 840 240"
+    },
+    {
+      "id": "edge:port:interface_modport:clk:interface:interface_modport:link:clk",
+      "source": "port:interface_modport:clk",
+      "target": "interface:interface_modport:link",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 48 L 240 48 L 528 48 L 528 168 L 528 204"
+    }
+  ]
+}

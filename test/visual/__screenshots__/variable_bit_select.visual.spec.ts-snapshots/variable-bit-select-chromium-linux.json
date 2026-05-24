@@ -1,0 +1,280 @@
+{
+  "nodes": [
+    {
+      "id": "comb:var_bit_select:bus[sel_wide * 8+:8]_sel:expr",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 72
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:bus_sel_wide_8_:8__sel",
+            "name": "bus[sel_wide * 8+:8]_sel",
+            "direction": "output"
+          },
+          {
+            "id": "port:sel_wide",
+            "name": "sel_wide",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:var_bit_select:8:8",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 36
+      },
+      "width": 72,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:8",
+            "name": "8",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:var_bit_select:bit_out",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 372
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bit_out",
+            "name": "bit_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:var_bit_select:bus",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 228
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:var_bit_select:byte_out",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 228
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:byte_out",
+            "name": "byte_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:var_bit_select:sel",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 276
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:var_bit_select:sel_wide",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel_wide",
+            "name": "sel_wide",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "select:var_bit_select:bus[sel_wide * 8+:8]",
+      "type": "hdl",
+      "position": {
+        "x": 816,
+        "y": 192
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "select",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:width",
+            "name": "width",
+            "direction": "input"
+          },
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "select:var_bit_select:bus[sel]",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 336
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "select",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:select:var_bit_select:bus_sel_wide_8_:8_:bus_sel_wide_8_:8__sel",
+      "source": "comb:var_bit_select:bus[sel_wide * 8+:8]_sel:expr",
+      "target": "select:var_bit_select:bus[sel_wide * 8+:8]",
+      "sourceHandle": "out:bus_sel_wide_8_:8__sel",
+      "targetHandle": "port:sel",
+      "path": "M 600 120 L 624 120 L 864 120 L 864 168 L 864 216"
+    },
+    {
+      "id": "edge:literal:var_bit_select:8:8:select:var_bit_select:bus_sel_wide_8_:8_:8",
+      "source": "literal:var_bit_select:8:8",
+      "target": "select:var_bit_select:bus[sel_wide * 8+:8]",
+      "sourceHandle": "port:8",
+      "targetHandle": "port:width",
+      "path": "M 599 48 L 624 48 L 912 48 L 912 168 L 912 216"
+    },
+    {
+      "id": "edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_:bus",
+      "source": "port:var_bit_select:bus",
+      "target": "select:var_bit_select:bus[sel]",
+      "sourceHandle": "port:bus",
+      "targetHandle": "port:in",
+      "path": "M 600 240 L 624 240 L 648 240 L 648 384 L 816 384 L 840 384"
+    },
+    {
+      "id": "edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_wide_8_:8_:bus",
+      "source": "port:var_bit_select:bus",
+      "target": "select:var_bit_select:bus[sel_wide * 8+:8]",
+      "sourceHandle": "port:bus",
+      "targetHandle": "port:in",
+      "path": "M 600 240 L 624 240 L 792 240 L 816 240"
+    },
+    {
+      "id": "edge:port:var_bit_select:sel_wide:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:sel_wide",
+      "source": "port:var_bit_select:sel_wide",
+      "target": "comb:var_bit_select:bus[sel_wide * 8+:8]_sel:expr",
+      "sourceHandle": "port:sel_wide",
+      "targetHandle": "port:sel_wide",
+      "path": "M 192 120 L 216 120 L 384 120 L 408 120"
+    },
+    {
+      "id": "edge:port:var_bit_select:sel:select:var_bit_select:bus_sel_:sel",
+      "source": "port:var_bit_select:sel",
+      "target": "select:var_bit_select:bus[sel]",
+      "sourceHandle": "port:sel",
+      "targetHandle": "port:sel",
+      "path": "M 600 288 L 624 288 L 641 288 Q 648 281 655 288 L 888 288 L 888 312 L 888 360"
+    },
+    {
+      "id": "edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out",
+      "source": "select:var_bit_select:bus[sel]",
+      "target": "port:var_bit_select:bit_out",
+      "sourceHandle": "port:out",
+      "targetHandle": "port:bit_out",
+      "path": "M 936 384 L 960 384 L 1152 384 L 1176 384"
+    },
+    {
+      "id": "edge:select:var_bit_select:bus_sel_wide_8_:8_:port:var_bit_select:byte_out:byte_out",
+      "source": "select:var_bit_select:bus[sel_wide * 8+:8]",
+      "target": "port:var_bit_select:byte_out",
+      "sourceHandle": "port:out",
+      "targetHandle": "port:byte_out",
+      "path": "M 960 240 L 984 240 L 1152 240 L 1176 240"
+    }
+  ]
+}

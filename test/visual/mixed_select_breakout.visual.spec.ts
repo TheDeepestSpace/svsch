@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openFixture, fitGraphView } from './helper';
+import { openFixture, fitGraphView, expectGraphAndScreenshot } from './helper';
 
 test.describe('mixed select and breakout visual', () => {
   test('renders both bus breakout and variable select from same input', async ({ page }) => {
@@ -24,6 +24,6 @@ test.describe('mixed select and breakout visual', () => {
     // Check the bus breakout tap
     await expect(page.locator('[data-node-kind="bus"] >> text="[7:0]"')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('mixed-select-breakout.png');
+    await expectGraphAndScreenshot(page, 'mixed-select-breakout.png');
   });
 });

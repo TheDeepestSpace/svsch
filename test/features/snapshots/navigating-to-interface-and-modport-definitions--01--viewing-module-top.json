@@ -1,0 +1,125 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:u_consumer",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 192
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          },
+          {
+            "id": "port:observed",
+            "name": "observed",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:top:link",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 192,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:master",
+            "name": "master",
+            "direction": "input"
+          },
+          {
+            "id": "out:slave",
+            "name": "slave",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:observed",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 228
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:observed",
+            "name": "observed",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:u_consumer:port:top:observed:observed",
+      "source": "instance:top:u_consumer",
+      "target": "port:top:observed",
+      "sourceHandle": "port:observed",
+      "targetHandle": "port:observed",
+      "path": "M 960 240 L 984 240 L 1152 240 L 1176 240"
+    },
+    {
+      "id": "edge:interface:top:link:instance:top:u_consumer:link",
+      "source": "interface:top:link",
+      "target": "instance:top:u_consumer",
+      "sourceHandle": "out:slave",
+      "targetHandle": "port:bus",
+      "path": "M 552 240 L 576 240 L 744 240 L 768 240"
+    },
+    {
+      "id": "edge:port:top:clk:interface:top:link:clk",
+      "source": "port:top:clk",
+      "target": "interface:top:link",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 144 48 L 168 48 L 456 48 L 456 168 L 456 204"
+    }
+  ]
+}

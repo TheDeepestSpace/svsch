@@ -1,0 +1,186 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_uneven_modport:u_controller",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 360
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_uneven_modport:u_sink",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 264
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_uneven_modport:u_source",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_uneven_modport:link",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 240,
+      "height": 233,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "out:consumer",
+            "name": "consumer",
+            "direction": "output"
+          },
+          {
+            "id": "in:controller",
+            "name": "controller",
+            "direction": "input"
+          },
+          {
+            "id": "in:producer",
+            "name": "producer",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_uneven_modport:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_uneven_modport:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_uneven_modport:u_controller:interface:interface_uneven_modport:link:link",
+      "source": "instance:interface_uneven_modport:u_controller",
+      "target": "interface:interface_uneven_modport:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:controller",
+      "path": "M 216 408 L 240 408 L 288 408 L 288 336 L 408 336 L 432 336"
+    },
+    {
+      "id": "edge:instance:interface_uneven_modport:u_source:interface:interface_uneven_modport:link:link",
+      "source": "instance:interface_uneven_modport:u_source",
+      "target": "interface:interface_uneven_modport:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:producer",
+      "path": "M 216 288 L 240 288 L 408 288 L 432 288"
+    },
+    {
+      "id": "edge:interface:interface_uneven_modport:link:instance:interface_uneven_modport:u_sink:link",
+      "source": "interface:interface_uneven_modport:link",
+      "target": "instance:interface_uneven_modport:u_sink",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 312 L 696 312 L 864 312 L 888 312"
+    },
+    {
+      "id": "edge:port:interface_uneven_modport:clk:interface:interface_uneven_modport:link:clk",
+      "source": "port:interface_uneven_modport:clk",
+      "target": "interface:interface_uneven_modport:link",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 48 L 240 48 L 528 48 L 528 216 L 528 252"
+    },
+    {
+      "id": "edge:port:interface_uneven_modport:rst_n:interface:interface_uneven_modport:link:rst_n",
+      "source": "port:interface_uneven_modport:rst_n",
+      "target": "interface:interface_uneven_modport:link",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 216 96 L 240 96 L 521 96 Q 528 89 535 96 L 576 96 L 576 216 L 576 252"
+    }
+  ]
+}

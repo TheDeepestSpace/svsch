@@ -1,0 +1,232 @@
+{
+  "nodes": [
+    {
+      "id": "literal:loop_logic:data_out_branch_n0:8_b0",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 156
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:data_out_branch_n0",
+            "name": "data_out_branch_n0",
+            "direction": "output"
+          },
+          {
+            "id": "port:parity_bits_branch_n2",
+            "name": "parity_bits_branch_n2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "loop:loop_logic:11:n1",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 144
+      },
+      "width": 216,
+      "height": 120,
+      "data": {
+        "kind": "loop",
+        "ports": [
+          {
+            "id": "port:data_in_i_",
+            "name": "data_in[i]",
+            "direction": "input"
+          },
+          {
+            "id": "port:shift_amt",
+            "name": "shift_amt",
+            "direction": "input"
+          },
+          {
+            "id": "port:data_out_in",
+            "name": "data_out_in",
+            "direction": "input"
+          },
+          {
+            "id": "port:data_out",
+            "name": "data_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "loop:loop_logic:20:n3",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 240,
+      "height": 96,
+      "data": {
+        "kind": "loop",
+        "ports": [
+          {
+            "id": "port:data_in",
+            "name": "data_in",
+            "direction": "input"
+          },
+          {
+            "id": "port:parity_bits_in",
+            "name": "parity_bits_in",
+            "direction": "input"
+          },
+          {
+            "id": "port:parity_bits",
+            "name": "parity_bits",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:loop_logic:data_in",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:data_in",
+            "name": "data_in",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:loop_logic:data_out",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 180
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:data_out",
+            "name": "data_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:loop_logic:parity_bits",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 60
+      },
+      "width": 192,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:parity_bits",
+            "name": "parity_bits",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:loop_logic:shift_amt",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 204
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:shift_amt",
+            "name": "shift_amt",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:11:n1:data_out_branch_n0",
+      "source": "literal:loop_logic:data_out_branch_n0:8_b0",
+      "target": "loop:loop_logic:11:n1",
+      "sourceHandle": "port:data_out_branch_n0",
+      "targetHandle": "port:data_out_in",
+      "path": "M 191 168 L 216 168 L 264 168 L 264 240 L 384 240 L 408 240"
+    },
+    {
+      "id": "edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2",
+      "source": "literal:loop_logic:data_out_branch_n0:8_b0",
+      "target": "loop:loop_logic:20:n3",
+      "sourceHandle": "port:parity_bits_branch_n2",
+      "targetHandle": "port:parity_bits_in",
+      "path": "M 191 168 L 216 168 L 240 168 L 240 96 L 384 96 L 408 96"
+    },
+    {
+      "id": "edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out",
+      "source": "loop:loop_logic:11:n1",
+      "target": "port:loop_logic:data_out",
+      "sourceHandle": "port:data_out",
+      "targetHandle": "port:data_out",
+      "path": "M 624 192 L 648 192 L 840 192 L 864 192"
+    },
+    {
+      "id": "edge:loop:loop_logic:20:n3:port:loop_logic:parity_bits:parity_bits",
+      "source": "loop:loop_logic:20:n3",
+      "target": "port:loop_logic:parity_bits",
+      "sourceHandle": "port:parity_bits",
+      "targetHandle": "port:parity_bits",
+      "path": "M 648 72 L 672 72 L 840 72 L 864 72"
+    },
+    {
+      "id": "edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in",
+      "source": "port:loop_logic:data_in",
+      "target": "loop:loop_logic:11:n1",
+      "sourceHandle": "port:data_in",
+      "targetHandle": "port:data_in_i_",
+      "path": "M 192 120 L 216 120 L 240 120 L 240 161 Q 247 168 240 175 L 240 192 L 257 192 Q 264 185 271 192 L 384 192 L 408 192"
+    },
+    {
+      "id": "edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in",
+      "source": "port:loop_logic:data_in",
+      "target": "loop:loop_logic:20:n3",
+      "sourceHandle": "port:data_in",
+      "targetHandle": "port:data_in",
+      "path": "M 192 120 L 216 120 L 240 120 L 240 72 L 384 72 L 408 72"
+    },
+    {
+      "id": "edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt",
+      "source": "port:loop_logic:shift_amt",
+      "target": "loop:loop_logic:11:n1",
+      "sourceHandle": "port:shift_amt",
+      "targetHandle": "port:shift_amt",
+      "path": "M 192 216 L 216 216 L 257 216 Q 264 209 271 216 L 384 216 L 408 216"
+    }
+  ]
+}

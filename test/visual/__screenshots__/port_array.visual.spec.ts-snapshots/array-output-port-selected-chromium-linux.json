@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "port:array_port_register:clk",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_port_register:in_data",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:in_data",
+            "name": "in_data",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_port_register:out_data",
+      "type": "hdl",
+      "position": {
+        "x": 816,
+        "y": 60
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:out_data",
+            "name": "out_data",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:array_port_register:storage",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:array_port_register:clk:reg:array_port_register:storage:clk",
+      "source": "port:array_port_register:clk",
+      "target": "reg:array_port_register:storage",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 192 120 L 240 120 L 240 96 L 384 96 L 360 96"
+    },
+    {
+      "id": "edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data",
+      "source": "port:array_port_register:in_data",
+      "target": "reg:array_port_register:storage",
+      "sourceHandle": "port:in_data",
+      "targetHandle": "d",
+      "path": "M 205 76 L 403 76"
+    },
+    {
+      "id": "edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data",
+      "source": "reg:array_port_register:storage",
+      "target": "port:array_port_register:out_data",
+      "sourceHandle": "q",
+      "targetHandle": "port:out_data",
+      "path": "M 613 76 L 811 76"
+    }
+  ]
+}

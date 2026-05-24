@@ -1,0 +1,242 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_consumer_fanout:u_controller",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 360
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_consumer_fanout:u_sink0",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 264
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_consumer_fanout:u_sink1",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 384
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_consumer_fanout:u_sink2",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 144
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_consumer_fanout:u_source",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_consumer_fanout:link",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 240,
+      "height": 233,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "out:consumer",
+            "name": "consumer",
+            "direction": "output"
+          },
+          {
+            "id": "in:controller",
+            "name": "controller",
+            "direction": "input"
+          },
+          {
+            "id": "in:producer",
+            "name": "producer",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_consumer_fanout:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_consumer_fanout:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_consumer_fanout:u_controller:interface:interface_consumer_fanout:link:link",
+      "source": "instance:interface_consumer_fanout:u_controller",
+      "target": "interface:interface_consumer_fanout:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:controller",
+      "path": "M 216 408 L 240 408 L 288 408 L 288 336 L 408 336 L 432 336"
+    },
+    {
+      "id": "edge:instance:interface_consumer_fanout:u_source:interface:interface_consumer_fanout:link:link",
+      "source": "instance:interface_consumer_fanout:u_source",
+      "target": "interface:interface_consumer_fanout:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:producer",
+      "path": "M 216 288 L 240 288 L 408 288 L 432 288"
+    },
+    {
+      "id": "edge:interface:interface_consumer_fanout:link:instance:interface_consumer_fanout:u_sink0:link",
+      "source": "interface:interface_consumer_fanout:link",
+      "target": "instance:interface_consumer_fanout:u_sink0",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 312 L 696 312 L 864 312 L 888 312"
+    },
+    {
+      "id": "edge:interface:interface_consumer_fanout:link:instance:interface_consumer_fanout:u_sink1:link",
+      "source": "interface:interface_consumer_fanout:link",
+      "target": "instance:interface_consumer_fanout:u_sink1",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 312 L 696 312 L 720 312 L 720 432 L 864 432 L 888 432"
+    },
+    {
+      "id": "edge:interface:interface_consumer_fanout:link:instance:interface_consumer_fanout:u_sink2:link",
+      "source": "interface:interface_consumer_fanout:link",
+      "target": "instance:interface_consumer_fanout:u_sink2",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 312 L 696 312 L 720 312 L 720 192 L 864 192 L 888 192"
+    },
+    {
+      "id": "edge:port:interface_consumer_fanout:clk:interface:interface_consumer_fanout:link:clk",
+      "source": "port:interface_consumer_fanout:clk",
+      "target": "interface:interface_consumer_fanout:link",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 96 L 240 96 L 528 96 L 528 216 L 528 252"
+    },
+    {
+      "id": "edge:port:interface_consumer_fanout:rst_n:interface:interface_consumer_fanout:link:rst_n",
+      "source": "port:interface_consumer_fanout:rst_n",
+      "target": "interface:interface_consumer_fanout:link",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 216 48 L 240 48 L 576 48 L 576 216 L 576 252"
+    }
+  ]
+}

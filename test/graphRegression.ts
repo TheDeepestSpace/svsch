@@ -1,0 +1,140 @@
+import { type Page, expect, test } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { diffLines } from 'diff';
+
+export interface GraphState {
+  nodes: Array<{
+    id: string;
+    type?: string;
+    position: { x: number; y: number };
+    width: number;
+    height: number;
+    data?: {
+      label?: string;
+      kind?: string;
+      ports?: Array<{
+        id: string;
+        name: string;
+        side: string;
+        direction?: string;
+        metadata?: any;
+      }>;
+    };
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+    path: string; // Captured SVG path data
+  }>;
+}
+
+export async function captureGraphState(page: Page): Promise<GraphState> {
+  return await page.evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    if (!rf) {
+      throw new Error('reactFlowInstance not found on window');
+    }
+    
+    const nodes = rf.getNodes().map((n: any) => ({
+      id: n.id,
+      type: n.type,
+      position: {
+        x: Math.round(n.position.x),
+        y: Math.round(n.position.y)
+      },
+      width: Math.round(n.measured?.width ?? n.width ?? 0),
+      height: Math.round(n.measured?.height ?? n.height ?? 0),
+      data: n.data ? {
+        label: n.data.label,
+        kind: n.data.node?.kind,
+        ports: n.data.node?.ports?.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          side: p.side,
+          direction: p.direction,
+          metadata: p.metadata
+        }))
+      } : undefined
+    }));
+
+    const edges = rf.getEdges().map((e: any) => {
+      // Use a more specific selector to find the path element for this specific edge
+      const edgeElement = document.querySelector(`.react-flow__edge[data-id="${e.id}"] path.svsch-edge`);
+      const pathData = edgeElement?.getAttribute('d') ?? '';
+      
+      return {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+        path: pathData
+      };
+    });
+
+    // Sort to ensure deterministic comparison
+    nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
+    edges.sort((a: any, b: any) => a.id.localeCompare(b.id));
+
+    return { nodes, edges };
+  });
+}
+
+export function compareGraphState(
+  actual: GraphState,
+  snapshotName: string,
+  snapshotsDir: string,
+  resultsDir: string,
+  updateSnapshots: boolean = false,
+  onFailure?: (expected: string, actual: string, diff: string) => void
+) {
+  const snapshotPath = path.join(snapshotsDir, `${snapshotName}.json`);
+  const actualJson = JSON.stringify(actual, null, 2);
+
+  if (!fs.existsSync(snapshotPath) || updateSnapshots) {
+    fs.writeFileSync(snapshotPath, actualJson);
+    console.log(`Created or updated baseline graph: ${snapshotPath}`);
+    return;
+  }
+
+  const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
+  
+  if (actualJson !== expectedJson) {
+    if (!fs.existsSync(resultsDir)) {
+      fs.mkdirSync(resultsDir, { recursive: true });
+    }
+
+    const actualPath = path.join(resultsDir, `${snapshotName}.actual.json`);
+    const expectedPath = path.join(resultsDir, `${snapshotName}.expected.json`);
+    const diffPath = path.join(resultsDir, `${snapshotName}.diff.txt`);
+
+    fs.writeFileSync(actualPath, actualJson);
+    fs.writeFileSync(expectedPath, expectedJson);
+
+    const diff = diffLines(expectedJson, actualJson);
+    let diffText = '';
+    diff.forEach((part) => {
+      const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
+      diffText += part.value.split('\n').map(line => line ? prefix + line : line).join('\n');
+    });
+    fs.writeFileSync(diffPath, diffText);
+
+    if (onFailure) {
+      onFailure(expectedJson, actualJson, diffText);
+    }
+
+    throw new Error(
+      `Graph regression failure for "${snapshotName}".\n` +
+      `Visual structure has changed from the baseline.\n\n` +
+      `Expected: ${expectedPath}\n` +
+      `Actual:   ${actualPath}\n` +
+      `Diff:     ${diffPath}\n\n` +
+      `Summary of changes:\n${diffText.split('\n').filter(l => l.startsWith('+') || l.startsWith('-')).slice(0, 20).join('\n')}\n...\n\n` +
+      `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update the baseline.`
+    );
+  }
+}

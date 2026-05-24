@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "literal:top:y:8_h42",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 36
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:top:y:8_h42:port:top:y:y",
+      "source": "literal:top:y:8_h42",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 143 48 L 168 48 L 336 48 L 360 48"
+    }
+  ]
+}

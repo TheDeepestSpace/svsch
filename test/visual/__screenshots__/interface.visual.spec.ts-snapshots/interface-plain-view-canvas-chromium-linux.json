@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "interface_type:packet_if",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 120
+      },
+      "width": 240,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:data",
+            "name": "data",
+            "direction": "inout"
+          },
+          {
+            "id": "out:valid",
+            "name": "valid",
+            "direction": "inout"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": []
+}

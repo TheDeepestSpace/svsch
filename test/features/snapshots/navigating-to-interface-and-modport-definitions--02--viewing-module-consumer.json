@@ -1,0 +1,143 @@
+{
+  "nodes": [
+    {
+      "id": "bus:consumer:data",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 168
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:data",
+            "name": "data",
+            "direction": "input"
+          },
+          {
+            "id": "out:data_0_",
+            "name": "data[0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface_modport:consumer:bus",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 96
+      },
+      "width": 192,
+      "height": 245,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:slave",
+            "name": "slave",
+            "direction": "input"
+          },
+          {
+            "id": "out:clk",
+            "name": "clk",
+            "direction": "output"
+          },
+          {
+            "id": "out:data",
+            "name": "data",
+            "direction": "output"
+          },
+          {
+            "id": "out:valid",
+            "name": "valid",
+            "direction": "output"
+          },
+          {
+            "id": "in:ready",
+            "name": "ready",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:consumer:bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 216,
+      "height": 29,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:slave",
+            "name": "slave",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:consumer:observed",
+      "type": "hdl",
+      "position": {
+        "x": 1296,
+        "y": 180
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:observed",
+            "name": "observed",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:consumer:data:port:consumer:observed:bus.data_0_",
+      "source": "bus:consumer:data",
+      "target": "port:consumer:observed",
+      "sourceHandle": "out:data_0_",
+      "targetHandle": "port:observed",
+      "path": "M 1080 192 L 1104 192 L 1272 192 L 1296 192"
+    },
+    {
+      "id": "edge:interface_modport:consumer:bus:bus:consumer:data:bus.data",
+      "source": "interface_modport:consumer:bus",
+      "target": "bus:consumer:data",
+      "sourceHandle": "out:data",
+      "targetHandle": "in:data",
+      "path": "M 672 192 L 696 192 L 912 192 L 936 192"
+    },
+    {
+      "id": "edge:interface_modport:consumer:bus:interface_modport:consumer:bus:bus.valid",
+      "source": "interface_modport:consumer:bus",
+      "target": "interface_modport:consumer:bus",
+      "sourceHandle": "out:valid",
+      "targetHandle": "in:ready",
+      "path": "M 672 240 L 696 240 L 720 240 L 720 360 L 456 360 L 456 288 L 480 288"
+    },
+    {
+      "id": "edge:interface:consumer:bus:interface_modport:consumer:bus:bus",
+      "source": "interface:consumer:bus",
+      "target": "interface_modport:consumer:bus",
+      "sourceHandle": "out:slave",
+      "targetHandle": "in:slave",
+      "path": "M 240 48 L 264 48 L 576 48 L 576 93"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import * as os from 'node:os';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { chromiumStabilizationArgs } from '../testConstants';
+import { captureGraphState, compareGraphState } from '../graphRegression';
 
 setDefaultTimeout(20000);
 
@@ -32,6 +33,7 @@ class CustomWorld extends World {
         await this.page.waitForTimeout(500);
       }
       const screenshot = await this.page.screenshot();
+      const graphState = await captureGraphState(this.page);
       this.attach(screenshot, 'image/png');
 
       if (this.scenarioName) {
@@ -39,7 +41,7 @@ class CustomWorld extends World {
         const safeScenarioName = this.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
         const safeLabel = label.replace(/[^a-z0-9]/gi, '-').toLowerCase();
         const snapshotName = `${safeScenarioName}--${this.stepCounter.toString().padStart(2, '0')}--${safeLabel}`;
-        await compareSnapshots(this, screenshot, snapshotName);
+        await compareSnapshots(this, screenshot, graphState, snapshotName);
       }
 
       return screenshot;
@@ -667,10 +669,26 @@ Then('the instance node {string} should have port {string} with blue suffix {str
   await expect(suffixLocator).toBeVisible();
 });
 
-async function compareSnapshots(world: CustomWorld, actualBuffer: Buffer, snapshotName: string) {
+async function compareSnapshots(world: CustomWorld, actualBuffer: Buffer, actualGraph: any, snapshotName: string) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
+  const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
 
+  // 1. Graph Regression Check
+  compareGraphState(
+    actualGraph,
+    snapshotName,
+    snapshotsDir,
+    resultsDir,
+    !!process.env.UPDATE_SNAPSHOTS,
+    (expected, actual, diff) => {
+      world.attach(expected, 'application/json');
+      world.attach(actual, 'application/json');
+      world.attach(diff, 'text/plain');
+    }
+  );
+
+  // 2. Image Regression Check
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
   if (!fs.existsSync(snapshotPath) || process.env.UPDATE_SNAPSHOTS) {
     fs.writeFileSync(snapshotPath, actualBuffer);
@@ -691,16 +709,15 @@ async function compareSnapshots(world: CustomWorld, actualBuffer: Buffer, snapsh
       console.log(`Updated baseline snapshot: ${snapshotPath}`);
       return;
     }
-    const diffDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
-    if (!fs.existsSync(diffDir)) fs.mkdirSync(diffDir, { recursive: true });
+    if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
     const diffBuffer = PNG.sync.write(diff);
-    fs.writeFileSync(path.join(diffDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-    fs.writeFileSync(path.join(diffDir, `${snapshotName}-actual.png`), actualBuffer);
-    fs.writeFileSync(path.join(diffDir, `${snapshotName}-diff.png`), diffBuffer);
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), diffBuffer);
     world.attach(fs.readFileSync(snapshotPath), 'image/png');
     world.attach(actualBuffer, 'image/png');
     world.attach(diffBuffer, 'image/png');
-    throw new Error(`Snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ. Diffs saved to ${diffDir}`);
+    throw new Error(`Snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ. Diffs saved to ${resultsDir}`);
   }
 }
 

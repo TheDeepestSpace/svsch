@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { openFixture, paddedGraphClip, paddedLocatorClip } from './helper';
+import { expectGraphAndScreenshot, openFixture, paddedGraphClip, paddedLocatorClip } from './helper';
 
 const parameterRow = (page: Page, name: string) => page
   .locator('.module-parameter-row')
@@ -19,7 +19,7 @@ test.describe('parameter visual rendering', () => {
     await expect(page.locator('[data-node-id="port:param_child:data_i"] .svsch-param-token', { hasText: 'WIDTH' })).toBeVisible();
     await expect(page.locator('[data-node-id="port:param_child:data_o"] .svsch-param-token', { hasText: 'WIDTH' })).toBeVisible();
 
-    await expect(page).toHaveScreenshot('parameter-symbolic-widths-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page,'parameter-symbolic-widths-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders parameter values and symbolic overrides on module instance blocks', async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe('parameter visual rendering', () => {
     await expect(overrideInstance.locator('.instance-parameter-chip', { hasText: 'DEPTH' })).toContainText('DEPTH_OVERRIDE');
     await expect(overrideInstance.locator('.instance-parameter-chip', { hasText: 'DEPTH' }).locator('.svsch-param-token', { hasText: 'DEPTH_OVERRIDE' })).toBeVisible();
 
-    await expect(page).toHaveScreenshot('parameterized-instance-node.png', {
+    await expectGraphAndScreenshot(page,'parameterized-instance-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-id="instance:parameter_sizing_top:u_override"]')
     });
   });
@@ -65,7 +65,7 @@ test.describe('parameter visual rendering', () => {
       expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);
     }
 
-    await expect(page).toHaveScreenshot('many-parameterized-instance-node.png', {
+    await expectGraphAndScreenshot(page,'many-parameterized-instance-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-id="instance:many_parameter_top:u_many"]')
     });
   });

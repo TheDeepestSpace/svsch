@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openFixture, paddedGraphClip } from './helper';
+import { openFixture, paddedGraphClip, expectGraphAndScreenshot } from './helper';
 
 test.describe('typing support visual rendering', () => {
   test('renders enum types instead of widths for ports and registers', async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe('typing support visual rendering', () => {
     await expect(page.locator('[data-node-kind="register"] >> text=current_state')).toBeVisible();
     await expect(page.locator('[data-node-kind="register"] >> .svsch-type-label:has-text("state_t")')).toBeVisible();
 
-    await expect(page).toHaveScreenshot('enum-types.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page,'enum-types.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders enum literal type links as clickable', async ({ page }) => {
@@ -60,6 +60,6 @@ test.describe('typing support visual rendering', () => {
     await expect(page.locator('path.svsch-edge-struct')).toHaveCount(1);
     await expect(page.locator('path.svsch-edge-struct').first()).toHaveAttribute('d', /M \d+ \d+ L/);
 
-    await expect(page).toHaveScreenshot('struct-wires-without-type-label.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page,'struct-wires-without-type-label.png', { clip: await paddedGraphClip(page) });
   });
 });
