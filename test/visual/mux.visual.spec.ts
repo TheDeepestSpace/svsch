@@ -583,6 +583,19 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedGraphClip(page) });
+    // Close-up with extra bottom padding to capture the leads extending below the R port
+    const regBox = await page.locator('[data-node-id="reg:array_register:M"]').first().boundingBox();
+    if (!regBox) throw new Error('Register node not found');
+    const viewport = page.viewportSize() ?? { width: 900, height: 640 };
+    const nodePad = 24;
+    const bottomPad = 72;
+    const nodeClip = {
+      x: Math.max(0, Math.floor(regBox.x - nodePad)),
+      y: Math.max(0, Math.floor(regBox.y - nodePad)),
+      width: Math.min(viewport.width, Math.ceil(regBox.x + regBox.width + nodePad)) - Math.max(0, Math.floor(regBox.x - nodePad)),
+      height: Math.min(viewport.height, Math.ceil(regBox.y + regBox.height + bottomPad)) - Math.max(0, Math.floor(regBox.y - nodePad))
+    };
+    await expectGraphAndScreenshot(page, 'array-register-node.png', { clip: nodeClip });
   });
 
   test('renders an array input through a stacked register to an array output', async ({ page }) => {

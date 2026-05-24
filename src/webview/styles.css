@@ -682,6 +682,10 @@ select {
   z-index: 0;
 }
 
+.svsch-array-stack-leads-bottom {
+  z-index: 4;
+}
+
 .svsch-array-stack-leads-source {
   z-index: 4;
 }
