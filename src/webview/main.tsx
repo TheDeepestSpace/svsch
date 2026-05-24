@@ -1551,6 +1551,44 @@ function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): 
       const notchBottomY = midY + deltaY;
       path = `M ${x} ${y} L ${x + width} ${rightTop} V ${rightBottom} L ${x} ${y + height} V ${notchBottomY} L ${x + notchX} ${midY} L ${x} ${notchTopY} Z`;
     }
+  } else if (node.kind === 'interface') {
+    const role = structRole(node);
+    const isInterfaceInstance = role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
+    if (isInterfaceInstance) {
+      const { width: actualWidth, height: actualHeight } = diagramNodeDimensions(node);
+      const scaleX = width / actualWidth;
+      const scaleY = height / actualHeight;
+      const aggregatePorts = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide);
+      const topPorts = aggregatePorts.filter(p => p.direction === 'input' && p.width !== 'interface');
+      const bottomPorts = aggregatePorts.filter(p => p.direction === 'output' && p.width !== 'interface');
+      const sidePorts = aggregatePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'));
+      const orderedSide = orderedInterfaceSidePorts(sidePorts);
+      const topHatHeight = interfaceTopHatHeight(topPorts.length > 0);
+      const bottomHatHeight = interfaceTopHatHeight(bottomPorts.length > 0);
+      const shiftY = diagramSizing.gridSize * 3 + diagramSizing.gridSize / 2;
+      const unshiftedHeight = Math.max(diagramSizing.gridSize, actualHeight - shiftY);
+      const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
+      const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
+      const { path: skinPath } = interfaceSkinPath({
+        width: actualWidth,
+        height: actualHeight,
+        leftCenters,
+        rightCenters,
+        topPortCount: topPorts.length,
+        bottomPortCount: bottomPorts.length
+      });
+      return (
+        <g transform={`translate(${x}, ${y}) scale(${scaleX}, ${scaleY})`}>
+          <path
+            d={skinPath}
+            className={className}
+            fill="var(--vscode-editor-foreground)"
+            stroke="var(--vscode-editor-foreground)"
+            strokeOpacity={0.4}
+          />
+        </g>
+      );
+    }
   }
 
   return (
