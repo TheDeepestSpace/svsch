@@ -582,7 +582,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedLocatorClip(page, '[data-node-id="reg:array_register:M"]') });
+    await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders an array input through a stacked register to an array output', async ({ page }) => {
