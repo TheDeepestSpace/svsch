@@ -1710,6 +1710,10 @@ select {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background));
 }
 
+.svsch-stack-gradient-regular-stop {
+  stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+}
+
 .svsch-edge-struct {
   stroke-width: 4.5;
 }

@@ -135,10 +135,23 @@ interface PromotedStackFanout {
   branches: Array<{ layerId: ArrayStackLayerId; path: string }>;
 }
 
+interface ConvergingStackPath {
+  layerId: ArrayStackLayerId;
+  path: string;
+  start: OrthogonalPoint;
+  end: OrthogonalPoint;
+}
+
 function stackedLayerEdgeClass(layerId: ArrayStackLayerId): string {
   if (layerId === 'front') return 'svsch-edge-stacked-front';
   if (layerId === 'back') return 'svsch-edge-stacked-back';
   return 'svsch-edge-stacked';
+}
+
+function stackedLayerGradientStopClass(layerId: ArrayStackLayerId): string {
+  if (layerId === 'front') return 'svsch-stack-gradient-front-stop';
+  if (layerId === 'back') return 'svsch-stack-gradient-back-stop';
+  return 'svsch-stack-gradient-middle-stop';
 }
 
 function stableFragmentId(value: string): string {
@@ -147,6 +160,63 @@ function stableFragmentId(value: string): string {
     hash = Math.imul(hash, 31) + value.charCodeAt(index);
   }
   return (hash >>> 0).toString(36);
+}
+
+function dropFinalApproachStub(points: OrthogonalPoint[], targetPosition: HdlPosition): OrthogonalPoint[] {
+  if (points.length < 3) return points;
+  const last = points[points.length - 1];
+  const penult = points[points.length - 2];
+  // For Left/Right targets the wire approaches horizontally; strip any trailing vertical
+  // segment (same x) so the wire stays as a clean horizontal line at its own y level.
+  if (
+    (targetPosition === HdlPosition.Left || targetPosition === HdlPosition.Right) &&
+    Math.abs(last.x - penult.x) < 0.5
+  ) {
+    return points.slice(0, -1);
+  }
+  // For Top/Bottom targets the wire approaches vertically; strip trailing horizontal stub.
+  if (
+    (targetPosition === HdlPosition.Top || targetPosition === HdlPosition.Bottom) &&
+    Math.abs(last.y - penult.y) < 0.5
+  ) {
+    return points.slice(0, -1);
+  }
+  return points;
+}
+
+function convergingStackPath(points: OrthogonalPoint[], layerId: ArrayStackLayerId, sourcePosition: HdlPosition, targetPosition: HdlPosition): ConvergingStackPath | undefined {
+  if (points.length < 2) return undefined;
+
+  const offsetted = offsetPointsForArrayStackLayer(points, layerId);
+  const rawTarget = points[points.length - 1];
+  const last = offsetted[offsetted.length - 1];
+
+  // Pin the target to the mux face (restore the parallel-to-wire axis of the offset)
+  // so all 3 wires arrive at the same x (Left/Right) or same y (Top/Bottom).
+  if (targetPosition === HdlPosition.Left || targetPosition === HdlPosition.Right) {
+    last.x = rawTarget.x;
+  } else {
+    last.y = rawTarget.y;
+  }
+
+  // Drop the trailing vertical (or horizontal) stub that makeOrthogonal would add when
+  // source.y != target.y — leaving each wire as a clean horizontal run at its own y.
+  const layerPoints = shortenStackSource(
+    dropFinalApproachStub(makeOrthogonal(points).map((p, i) => i === makeOrthogonal(points).length - 1 ? last : offsetPointsForArrayStackLayer([p], layerId)[0]), targetPosition),
+    arrayStackLayerTrim(layerId),
+    sourcePosition
+  );
+  const start = layerPoints[0];
+  const end = layerPoints[layerPoints.length - 1];
+
+  if (!start || !end) return undefined;
+
+  return {
+    layerId,
+    path: pathFromPoints(layerPoints),
+    start,
+    end
+  };
 }
 
 function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): PromotedStackFanout | undefined {
@@ -365,8 +435,7 @@ export function OrthogonalEdge({
   const sourceIsArray = sourceFlowNode?.data?.node ? nodeIsArrayNode(sourceFlowNode.data.node as any) : false;
   const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
-  // For stacked edges reaching a non-array target, suppress back/front lanes — they'd spill into the scalar block
-  const isConvergingStack = isStacked && !targetIsArray;
+  const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -462,6 +531,12 @@ export function OrthogonalEdge({
   const frontStackPath = pathFromPoints(frontStackPoints);
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
   const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
+  const convergingStackPaths = isConvergingStack
+    ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
+      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition))
+      .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
+    : [];
+  const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const netGeometries = context && edgeData?.netEdgeIds
@@ -470,7 +545,7 @@ export function OrthogonalEdge({
   const netJunctions = (isLeaderInNet || isInterfaceAggregate) && context
     ? findNetJunctions(netGeometries)
     : [];
-  const useStackedJunctionDots = isStacked && isLeaderInNet && !isInterfaceAggregate;
+  const useStackedJunctionDots = isStacked && isLeaderInNet && !isInterfaceAggregate && !isConvergingStack;
 
   const moveSegment = (event: React.PointerEvent, segmentIndex: number, commit: boolean) => {
     const flowPoint = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -597,6 +672,34 @@ export function OrthogonalEdge({
               key={`${id}-stack-branch-${index}`}
               className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`}
               d={branch.path}
+            />
+          ))}
+        </>
+      ) : isConvergingStack && convergingStackPaths.length > 0 ? (
+        <>
+          <defs>
+            {convergingStackPaths.map((stackPath) => (
+              <linearGradient
+                key={`${id}-stack-converge-gradient-${stackPath.layerId}`}
+                id={convergingStackGradientId(stackPath.layerId)}
+                gradientUnits="userSpaceOnUse"
+                x1={stackPath.start.x}
+                y1={stackPath.start.y}
+                x2={stackPath.end.x}
+                y2={stackPath.end.y}
+              >
+                <stop offset="0%" className={stackedLayerGradientStopClass(stackPath.layerId)} />
+                <stop offset="78%" className="svsch-stack-gradient-regular-stop" />
+                <stop offset="100%" className="svsch-stack-gradient-regular-stop" />
+              </linearGradient>
+            ))}
+          </defs>
+          {convergingStackPaths.map((stackPath) => (
+            <path
+              key={`${id}-stack-converge-${stackPath.layerId}`}
+              className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`}
+              d={stackPath.path}
+              style={{ stroke: `url(#${convergingStackGradientId(stackPath.layerId)})` }}
             />
           ))}
         </>

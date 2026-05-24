@@ -830,8 +830,10 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
   const showPortTypes = node.kind !== 'instance';
   const muxTopPorts = node.kind === 'select'
-    ? inputs.filter((port: DiagramPort, index: number) => index === 0 || port.name === 'width')
-    : (node.kind === 'mux' ? inputs.slice(0, 1) : []);
+    ? inputs.filter((port: DiagramPort) => port.name === 's' || port.name === 'sel' || port.name === 'width')
+    : (node.kind === 'mux'
+      ? (inputs.some((port: DiagramPort) => port.name === 'sel') ? inputs.filter((port: DiagramPort) => port.name === 'sel').slice(0, 1) : inputs.slice(0, 1))
+      : []);
   const muxSelectPort = muxTopPorts[0];
   const sideInputs = muxTopPorts.length > 0 ? inputs.filter((port: DiagramPort) => !muxTopPorts.some((topPort) => topPort.id === port.id)) : inputs;
   const portDirection = node.kind === 'port' ? node.ports[0]?.direction ?? 'unknown' : undefined;
@@ -849,7 +851,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
     : <div className="hdl-node-selection-rect" aria-hidden="true" />;
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean => {
-    return isArray && arrayConnections.some((connection) => connection.portId === portId && connection.role === role);
+    return arrayConnections.some((connection) => connection.portId === portId && connection.role === role);
   };
 
   // Array stacking layers sit above the routed wires; cosmetic leads redraw the short
@@ -911,7 +913,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {arrayBadge}
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={Position.Left} />}
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={Position.Left} />}
-        {isArray && isSkinnedPort && isOutput && hasArrayConnection(node.ports[0]?.id, 'target') && (
+        {isSkinnedPort && isOutput && hasArrayConnection(node.ports[0]?.id, 'target') && (
           <ArrayStackLeads
             side="left"
             width={nodeWidth}
@@ -931,7 +933,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             <div className="port-title">{title}</div>
           </>
         )}
-        {isArray && isSkinnedPort && !isOutput && hasArrayConnection(node.ports[0]?.id, 'source') && (
+        {isSkinnedPort && !isOutput && hasArrayConnection(node.ports[0]?.id, 'source') && (
           <ArrayStackLeads
             side="right"
             width={nodeWidth}
@@ -1357,7 +1359,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
       onDoubleClick={handleDoubleClick}
     >
-      {node.kind === 'mux' && muxTopPorts.map((port: DiagramPort, index: number) => (
+      {(node.kind === 'mux' || node.kind === 'select') && muxTopPorts.map((port: DiagramPort, index: number) => (
         hasArrayConnection(port.id, 'target') ? (
           <ArrayStackLeads
             key={`stack-leads-${port.id}`}
@@ -1369,7 +1371,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           />
         ) : null
       ))}
-      {node.kind === 'mux' && sideInputs.map((port: DiagramPort, index: number) => (
+      {(node.kind === 'mux' || node.kind === 'select') && sideInputs.map((port: DiagramPort, index: number) => (
         hasArrayConnection(port.id, 'target') ? (
           <ArrayStackLeads
             key={`stack-leads-${port.id}`}
@@ -1380,7 +1382,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           />
         ) : null
       ))}
-      {node.kind === 'mux' && outputs.slice(0, 1).map((port: DiagramPort) => (
+      {(node.kind === 'mux' || node.kind === 'select') && outputs.slice(0, 1).map((port: DiagramPort) => (
         hasArrayConnection(port.id, 'source') ? (
           <ArrayStackLeads
             key={`stack-leads-${port.id}`}
@@ -1397,7 +1399,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       {node.kind === 'select' && <SelectSkin width={nodeWidth} height={nodeHeight} />}
       {node.kind === 'alu' && <AluSkin width={nodeWidth} height={nodeHeight} />}
       {muxTopPorts.map((port: DiagramPort, index: number) => {
-        const leadLengthY = node.kind === 'mux' && (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
+        const leadLengthY = (node.kind === 'mux' || node.kind === 'select') && (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
           ? muxTopPortLeadLengthY(index, muxTopPorts.length, nodeHeight)
           : 0;
         const labelOffsetY = shouldLowerMuxTopPortLabel(node, port)
@@ -1673,13 +1675,13 @@ function DiagramApp(): React.ReactElement {
       const targetNode = nodeById.get(edge.target);
       const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
       const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
-      if (!targetIsArray) {
-        return;
-      }
       if (sourceIsArray) {
         addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source' });
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
       }
-      addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+      if (targetIsArray) {
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+      }
     });
 
     setNodes(view.nodes.map((node) => ({

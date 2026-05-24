@@ -615,6 +615,46 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
         return;
     }
 
+    int rhs_type = vpi_get(vpiType, rhs);
+    bool is_select_rhs = (rhs_type == vpiBitSelect || rhs_type == vpiPartSelect || rhs_type == 606 || rhs_type == 607 || rhs_type == 130);
+    if (is_select_rhs && !out_signal.empty() && out_signal == out_base && !rhs_base.empty() && mod.arrayDimensions.count(rhs_base)) {
+        vpiHandle index_h = vpi_handle(vpiIndex, rhs);
+        if (!index_h && (rhs_type == 606 || rhs_type == 607 || rhs_type == 130)) {
+            index_h = vpi_handle(vpiBaseExpr, rhs);
+        }
+
+        bool is_constant_index = index_h ? isLiteralExpr(index_h) : false;
+        std::string index_signal;
+        if (index_h) {
+            index_signal = getOrPromoteExpr(index_h, mod, rhs_signal + "_sel", is_procedural);
+        } else {
+            size_t bracket = rhs_signal.find('[');
+            if (bracket != std::string::npos) {
+                index_signal = rhs_signal.substr(bracket + 1);
+                if (!index_signal.empty() && index_signal.back() == ']') index_signal.pop_back();
+            }
+            is_constant_index = !index_signal.empty() && std::all_of(index_signal.begin(), index_signal.end(), [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
+        }
+
+        if (!is_constant_index && !index_signal.empty()) {
+            Node read_mux;
+            read_mux.id = sanitizeId("mux:" + mod.name + ":" + rhs_base + "_read_" + index_signal);
+            read_mux.kind = "mux";
+            read_mux.label = "read";
+            read_mux.source = getSourceInfo(rhs);
+            std::string index_width = getDeclaredSignalWidth(mod, index_signal);
+            int index_bits = bitSizeFromWidth(index_width);
+            std::string sel_label = index_bits > 1 ? "s[]" : "s";
+            std::string array_element_width = getDeclaredSignalWidth(mod, rhs_base);
+            if (array_element_width.empty()) array_element_width = getWidth(rhs);
+            read_mux.ports.push_back({"sel", "input", index_signal, index_width, sel_label});
+            read_mux.ports.push_back({"in", "input", rhs_base, array_element_width, "in"});
+            read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs), out_signal});
+            mod.nodes.push_back(read_mux);
+            return;
+        }
+    }
+
     auto lhs_field = getStructFieldRef(lhs, mod);
     auto rhs_field = getStructFieldRef(rhs, mod);
     if (lhs_field && !out_signal.empty()) {
@@ -737,9 +777,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     }
 
     // Check if RHS is a simple expression that doesn't need promotion.
-    int rhs_type = vpi_get(vpiType, rhs);
     bool is_constant = isLiteralExpr(rhs);
-    bool is_select_rhs = (rhs_type == vpiBitSelect || rhs_type == vpiPartSelect || rhs_type == 606 || rhs_type == 607 || rhs_type == 130);
     bool is_simple_rhs = (rhs_type == vpiNet || rhs_type == vpiReg || rhs_type == vpiPort || rhs_type == 608 || is_constant || is_select_rhs);
     std::string in_signal = getOrPromoteExpr(rhs, mod, out_base + (is_procedural ? "_next" : ""), is_procedural);
     if (isReplicationOperation(rhs)) {

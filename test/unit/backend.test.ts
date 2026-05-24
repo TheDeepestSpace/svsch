@@ -1787,6 +1787,38 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(mod.edges.some((e) => e.source === readMux?.id && e.signal === 'read_data')).toBe(true);
     });
 
+    it('emits a scalar read mux that consumes a stacked array port', async () => {
+      const graph = await runParser(backend, 'array_address_read.sv', fixture('array_address_read.sv'));
+      const mod = graph.modules.array_address_read;
+      expect(mod).toBeDefined();
+
+      const arrayPort = mod.nodes.find((n) => n.id === 'port:array_address_read:M');
+      const addressPort = mod.nodes.find((n) => n.id === 'port:array_address_read:address');
+      const outputPort = mod.nodes.find((n) => n.id === 'port:array_address_read:read_data');
+      const readMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'read');
+
+      expect(arrayPort?.isArrayNode ?? arrayPort?.metadata?.isArrayNode).toBe(true);
+      expect(addressPort?.isArrayNode ?? addressPort?.metadata?.isArrayNode).toBeFalsy();
+      expect(outputPort?.isArrayNode ?? outputPort?.metadata?.isArrayNode).toBeFalsy();
+      expect(readMux).toBeDefined();
+      expect(readMux?.isArrayNode ?? readMux?.metadata?.isArrayNode).toBeFalsy();
+      expect(mod.nodes.some((n) => n.kind === 'select' && n.label === 'M[address]')).toBe(false);
+      expect(readMux?.ports.find((p) => p.name === 'in')?.connectedSignal).toBe('M');
+      expect(readMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(readMux?.ports.find((p) => p.name === 'out')?.connectedSignal).toBe('read_data');
+
+      const arrayReadEdge = mod.edges.find((e) => e.source === arrayPort?.id && e.target === readMux?.id && e.signal === 'M');
+      const selectorEdge = mod.edges.find((e) => e.source === addressPort?.id && e.target === readMux?.id && e.targetPort === 'sel');
+      const outputEdge = mod.edges.find((e) => e.source === readMux?.id && e.target === outputPort?.id && e.signal === 'read_data');
+
+      expect(arrayReadEdge).toBeDefined();
+      expect(arrayReadEdge?.isStacked).toBe(true);
+      expect(selectorEdge).toBeDefined();
+      expect(selectorEdge?.isStacked).toBeFalsy();
+      expect(outputEdge).toBeDefined();
+      expect(outputEdge?.isStacked).toBeFalsy();
+    });
+
     it('marks edges between stacked nodes as isStacked', async () => {
       const graph = await arrayRegisterGraph();
       const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];

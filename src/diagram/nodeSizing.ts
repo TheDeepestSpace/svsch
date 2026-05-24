@@ -35,7 +35,7 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
   const topInputCount = node.kind === 'mux'
     ? 1
     : node.kind === 'select'
-      ? inputs.filter((port, index) => index === 0 || port.name === 'width').length
+      ? inputs.filter((port) => port.name === 's' || port.name === 'sel' || port.name === 'width').length
       : 0;
   const sideInputs = topInputCount > 0 ? inputs.slice(topInputCount) : inputs;
   const portRows = Math.max(sideInputs.length, outputs.length);

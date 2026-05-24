@@ -280,6 +280,68 @@ async function expectPromotedStackFanoutPaint(
   }
 }
 
+async function expectConvergingStackEdgePaint(page: Page, edgeId: string): Promise<void> {
+  const paint = await page.locator(`.react-flow__edge[data-id="${edgeId}"]`).evaluate((edge) => {
+    type Point = { x: number; y: number };
+    type LayerId = 'front' | 'middle' | 'back';
+
+    function pathPoints(path: Element): Point[] {
+      return [...(path.getAttribute('d') ?? '').matchAll(/[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)].map((match) => ({
+        x: Number(match[1]),
+        y: Number(match[2])
+      }));
+    }
+
+    function layerFromClass(className: string): LayerId {
+      if (className.includes('svsch-edge-stacked-front')) return 'front';
+      if (className.includes('svsch-edge-stacked-back')) return 'back';
+      return 'middle';
+    }
+
+    const paths = [...edge.querySelectorAll('.svsch-edge-stacked-converge')].map((path) => {
+      const points = pathPoints(path);
+      const className = path.getAttribute('class') ?? '';
+      return {
+        layer: layerFromClass(className),
+        className,
+        style: path.getAttribute('style') ?? '',
+        start: points[0],
+        end: points[points.length - 1]
+      };
+    });
+    const gradients = [...edge.querySelectorAll('linearGradient[id^="svsch-stack-converge-gradient"]')].map((gradient) => ({
+      id: gradient.id,
+      stops: [...gradient.querySelectorAll('stop')].map((stop) => ({
+        offset: stop.getAttribute('offset'),
+        className: stop.getAttribute('class')
+      }))
+    }));
+
+    return { paths, gradients };
+  });
+
+  expect(paint.paths).toHaveLength(3);
+  expect(paint.gradients).toHaveLength(3);
+  expect(paint.gradients.every((gradient) => gradient.stops.map((stop) => stop.offset).join(',') === '0%,78%,100%')).toBe(true);
+  expect(paint.gradients.every((gradient) => gradient.stops[1]?.className === 'svsch-stack-gradient-regular-stop')).toBe(true);
+  expect(paint.paths.every((path) => path.style.includes('url('))).toBe(true);
+
+  const byLayer = Object.fromEntries(paint.paths.map((path) => [path.layer, path])) as Record<'front' | 'middle' | 'back', typeof paint.paths[number]>;
+  expect(byLayer.front.className).toContain('svsch-edge-stacked-front');
+  expect(byLayer.middle.className).toContain('svsch-edge-stacked');
+  expect(byLayer.back.className).toContain('svsch-edge-stacked-back');
+  expect(byLayer.front.start.y).toBeLessThan(byLayer.middle.start.y);
+  expect(byLayer.middle.start.y).toBeLessThan(byLayer.back.start.y);
+  expect(byLayer.front.start.x).toBeLessThan(byLayer.middle.start.x);
+  expect(byLayer.middle.start.x).toBeLessThan(byLayer.back.start.x);
+  expect(byLayer.front.end.x).toBeCloseTo(byLayer.middle.end.x, 3);
+  expect(byLayer.back.end.x).toBeCloseTo(byLayer.middle.end.x, 3);
+  expect(byLayer.front.end.y).not.toBeCloseTo(byLayer.middle.end.y, 0);
+  expect(byLayer.back.end.y).not.toBeCloseTo(byLayer.middle.end.y, 0);
+  expect(byLayer.front.end.y).toBeLessThan(byLayer.middle.end.y);
+  expect(byLayer.back.end.y).toBeGreaterThan(byLayer.middle.end.y);
+}
+
 async function expectArrayStackSelectionCoversFullStack(page: Page, nodeId: string): Promise<void> {
   const geometry = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
     type Rect = { left: number; right: number; top: number; bottom: number; width: number; height: number };
@@ -553,6 +615,40 @@ test.describe('register visual rendering', () => {
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
 
     await expect(page).toHaveScreenshot('array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a variable-index array read as a flat mux fed by converging stacked wires', async ({ page }) => {
+    const view = await openFixture(page, 'array_address_read.sv', 'array-address-read');
+
+    const arrayPort = view.nodes.find((node) => node.id === 'port:array_address_read:M');
+    const readMux = view.nodes.find((node) => node.kind === 'mux' && node.label === 'read');
+    const outputPort = view.nodes.find((node) => node.id === 'port:array_address_read:read_data');
+    const arrayReadEdge = view.edges.find((edge) => edge.source === arrayPort?.id && edge.target === readMux?.id && edge.isStacked);
+    const selectorEdge = view.edges.find((edge) => edge.source === 'port:array_address_read:address' && edge.target === readMux?.id && edge.targetPort === 'sel');
+    const outputEdge = view.edges.find((edge) => edge.source === readMux?.id && edge.target === outputPort?.id && edge.signal === 'read_data');
+
+    expect(arrayPort?.isArrayNode ?? arrayPort?.metadata?.isArrayNode).toBe(true);
+    expect(readMux).toBeDefined();
+    expect(readMux?.isArrayNode ?? readMux?.metadata?.isArrayNode).toBeFalsy();
+    expect(outputPort?.isArrayNode ?? outputPort?.metadata?.isArrayNode).toBeFalsy();
+    expect(arrayReadEdge).toBeDefined();
+    expect(selectorEdge).toBeDefined();
+    expect(selectorEdge?.isStacked).toBeFalsy();
+    expect(outputEdge).toBeDefined();
+    expect(outputEdge?.isStacked).toBeFalsy();
+
+    await expect(page.locator(`[data-node-id="${arrayPort!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${readMux!.id}"].hdl-node-mux`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${readMux!.id}"]`)).not.toHaveClass(/hdl-node-array/);
+    await expect(page.locator(`[data-node-id="${readMux!.id}"] .mux-select-port`, { hasText: 's' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${readMux!.id}"] .mux-side-port`, { hasText: 'in' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayPort!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
+    await expect(page.locator(`[data-node-id="${readMux!.id}"] .svsch-array-stack-lead-target-left`)).toHaveCount(3);
+    await expect(page.locator(`.react-flow__edge[data-id="${arrayReadEdge!.id}"] .svsch-edge-stacked-converge`)).toHaveCount(3);
+    await expectConvergingStackEdgePaint(page, arrayReadEdge!.id);
+    await expectStackedEdgeSegmentsOrthogonal(page);
+
+    await expect(page).toHaveScreenshot('array-address-read-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders a scalar write through a stacked address mux into an array register', async ({ page }) => {
@@ -1187,7 +1283,7 @@ test.describe('node sizing visual rendering', () => {
   });
 });
 
-type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'register-enable' | 'array-address-write' | 'comb' | 'alu' | 'loop' | 'replicate';
+type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'register' | 'register-enable' | 'array-address-write' | 'array-address-read' | 'comb' | 'alu' | 'loop' | 'replicate';
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -1341,11 +1437,13 @@ async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMod
               ? createRegisterEnableVisualLayout(graph, moduleName)
               : layoutMode === 'array-address-write'
                 ? createArrayAddressWriteVisualLayout(graph, moduleName)
-                : layoutMode === 'comb'
-                  ? createCombVisualLayout(graph, moduleName)
-                  : layoutMode === 'alu'
-                    ? createAluVisualLayout(graph, moduleName)
-                    : { version: 1, modules: {} } as SavedLayout;
+                : layoutMode === 'array-address-read'
+                  ? createArrayAddressReadVisualLayout(graph, moduleName)
+                  : layoutMode === 'comb'
+                    ? createCombVisualLayout(graph, moduleName)
+                    : layoutMode === 'alu'
+                      ? createAluVisualLayout(graph, moduleName)
+                      : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
@@ -1462,6 +1560,36 @@ function createArrayAddressWriteVisualLayout(graph: DesignGraph, moduleName: str
 
   outputPorts.forEach((port) => {
     nodes[port.id] = { x: regX + grid * 3, y: regY };
+  });
+
+  return { version: 1, modules: { [moduleName]: { nodes } } };
+}
+
+function createArrayAddressReadVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const readMux = designModule.nodes.find((node) => node.kind === 'mux' && node.label === 'read')
+    ?? designModule.nodes.find((node) => node.kind === 'mux');
+  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
+  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const nodes: Record<string, { x: number; y: number }> = {};
+  const grid = 24;
+  const muxX = grid * 12;
+  const muxY = grid * 6;
+
+  if (readMux) {
+    nodes[readMux.id] = { x: muxX, y: muxY };
+  }
+
+  inputPorts.forEach((port) => {
+    if (port.label === 'address') {
+      nodes[port.id] = { x: muxX - grid, y: muxY - grid * 5 };
+    } else {
+      nodes[port.id] = { x: grid, y: muxY + grid * 2 };
+    }
+  });
+
+  outputPorts.forEach((port) => {
+    nodes[port.id] = { x: muxX + grid * 9, y: muxY + grid * 2 };
   });
 
   return { version: 1, modules: { [moduleName]: { nodes } } };

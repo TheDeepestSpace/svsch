@@ -107,8 +107,9 @@ async function autoLayoutMissingNodes(
         'elk.layered.crossingMinimization.semiInteractive': 'true',
         'elk.layered.concentrateEdges': 'true',
         'elk.layered.improveHyperedgeRoutes': 'true',
-        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-        'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS'
+        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+        'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
+        'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`
       },
       children: nodes.map((node) => {
         const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, true);
@@ -161,10 +162,13 @@ async function autoLayoutMissingNodes(
       'elk.interactive': 'true',
       'elk.layered.concentrateEdges': 'true',
       'elk.layered.improveHyperedgeRoutes': 'true',
-      'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-      'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
+      'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
+      'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
       'elk.layered.spacing.edgeEdge': (diagramSizing.gridSize / 2).toString(),
-      'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString()
+      'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString(),
+      'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`
     };
     const routeChildren = nodes.map((node, index) => {
       const graphChild = graph.children?.find((child) => child.id === node.id);
@@ -294,7 +298,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       }
     } else if (node.kind === 'select') {
       const allInputs = node.ports.filter(p => p.direction !== 'output');
-      const topPorts = allInputs.filter((p, i) => i === 0 || p.name === 'width');
+      const topPorts = allInputs.filter((p) => p.name === 's' || p.name === 'sel' || p.name === 'width');
       const portIndex = topPorts.indexOf(port);
       if (portIndex >= 0) {
         side = 'NORTH';
@@ -303,6 +307,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
+        const sideInputIndex = allInputs.filter(p => !topPorts.some(tp => tp.id === p.id)).indexOf(port);
         portY = height / 2;
       }
     } else if (node.kind === 'alu') {
@@ -331,7 +336,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
         const topPorts = visiblePorts.filter(p => p.direction === 'input' && p.width !== 'interface');
         const portIndex = topPorts.indexOf(port);
         portX = interfaceTopPortX(width, topPorts.length, portIndex, Math.max(topPorts.length, bottomPortsOnSide.length));
-        portY = shiftY;
+        portY = 0;
       } else if (isInterfaceInstance && port.direction === 'output' && port.width !== 'interface') {
         side = 'SOUTH';
         const portIndex = bottomPortsOnSide.indexOf(port);
