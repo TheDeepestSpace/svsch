@@ -598,6 +598,16 @@ test.describe('register visual rendering', () => {
     await expectGraphAndScreenshot(page, 'array-register-node.png', { clip: nodeClip });
   });
 
+  test('renders a whole-array reset as a stacked register reset', async ({ page }) => {
+    const view = await openFixture(page, 'array_complete_reset.sv', 'register');
+
+    await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
+    await expect(page.locator('.hdl-node-array').first()).toBeVisible();
+    await expect(page.locator('.register-reset-port >> text=R')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'array-complete-reset-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('renders an array input through a stacked register to an array output', async ({ page }) => {
     const view = await openFixture(page, 'array_port_register.sv', 'register');
 

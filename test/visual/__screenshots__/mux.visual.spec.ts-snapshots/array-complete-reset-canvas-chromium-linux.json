@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "port:array_complete_reset:clk",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_complete_reset:in_data",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:in_data",
+            "name": "in_data",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_complete_reset:out_data",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 168,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:out_data",
+            "name": "out_data",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_complete_reset:rst",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 180
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:array_complete_reset:arr",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk",
+      "source": "port:array_complete_reset:clk",
+      "target": "reg:array_complete_reset:arr",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 192 120 L 240 120 L 240 96 L 384 96 L 360 96"
+    },
+    {
+      "id": "edge:port:array_complete_reset:in_data:reg:array_complete_reset:arr:in_data",
+      "source": "port:array_complete_reset:in_data",
+      "target": "reg:array_complete_reset:arr",
+      "sourceHandle": "port:in_data",
+      "targetHandle": "d",
+      "path": "M 205 76 L 403 76"
+    },
+    {
+      "id": "edge:port:array_complete_reset:rst:reg:array_complete_reset:arr:rst",
+      "source": "port:array_complete_reset:rst",
+      "target": "reg:array_complete_reset:arr",
+      "sourceHandle": "port:rst",
+      "targetHandle": "rst",
+      "path": "M 192 192 L 480 192 L 480 168"
+    },
+    {
+      "id": "edge:reg:array_complete_reset:arr:port:array_complete_reset:out_data:out_data",
+      "source": "reg:array_complete_reset:arr",
+      "target": "port:array_complete_reset:out_data",
+      "sourceHandle": "q",
+      "targetHandle": "port:out_data",
+      "path": "M 565 76 L 763 76"
+    }
+  ]
+}

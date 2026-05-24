@@ -79,6 +79,33 @@ bool DesignExtractor::isNonZeroResetValue(vpiHandle handle) {
     vpiHandle actual = unwrapRef(handle);
     if (!actual) return false;
     int type = vpi_get(vpiType, actual);
+
+    if (type == vpiOperation) {
+        int opType = vpi_get(vpiOpType, actual);
+        if (opType == 75) { // vpiAssignmentPatternOp in UHDM
+            vpiHandle operand_itr = vpi_iterate(vpiOperand, actual);
+            if (operand_itr) {
+                bool all_zero = true;
+                bool found_any = false;
+                while (vpiHandle operand = vpi_scan(operand_itr)) {
+                    found_any = true;
+                    if (isNonZeroResetValue(operand)) {
+                        all_zero = false;
+                    }
+                }
+                vpi_release_handle(operand_itr);
+                if (found_any && all_zero) return false;
+            }
+        }
+    }
+
+    if (type == 668) { // vpiTaggedPattern in UHDM
+        vpiHandle pattern = vpi_handle(vpiPattern, actual);
+        if (pattern) {
+            return isNonZeroResetValue(pattern);
+        }
+    }
+
     if (type != vpiConstant) return true; // Complex logic is non-zero
 
     const char* val = vpi_get_str(vpiDecompile, actual);
