@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot } from './helper';
+import { expectGraphAndScreenshot, fitGraphView } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
@@ -575,6 +575,8 @@ test.describe('register visual rendering', () => {
   });
 
   test('renders an array register with isometric stacking layers and a dimension badge', async ({ page }) => {
+    // Wider viewport so the multi-mux chain fits without being cut off by paddedClipFromBox clamping
+    await page.setViewportSize({ width: 2200, height: 1100 });
     await openFixture(page, 'array_register.sv', 'register');
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
@@ -582,6 +584,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
 
+    await fitGraphView(page);
     await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedGraphClip(page) });
     // Close-up with extra bottom padding to capture the leads extending below the R port
     const regBox = await page.locator('[data-node-id="reg:array_register:M"]').first().boundingBox();
