@@ -7,7 +7,7 @@
         "x": 1128,
         "y": 120
       },
-      "width": 240,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -208,7 +208,7 @@
       "target": "reg:array_address_write_enable_register:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1381 172 L 1420 172 L 1420 28 L 172 28 L 172 268 L 355 268"
+      "path": "M 1285 172 L 1324 172 L 1324 28 L 172 28 L 172 268 L 355 268"
     },
     {
       "id": "edge:mux:array_address_write_enable_register:storage_address_:write_en:mux:array_address_write_enable_register:storage_addr:storage_address__next",
@@ -224,7 +224,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 912 48 L 1248 48 L 1248 96"
+      "path": "M 912 48 L 1200 48 L 1200 96"
     },
     {
       "id": "edge:port:array_address_write_enable_register:clk:reg:array_address_write_enable_register:storage:clk",
