@@ -460,7 +460,9 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 arr_reg.ports.push_back({"D", "input", reg_base + "_next", reg_width});
                 arr_reg.ports.push_back({"Q", "output", reg_base, reg_width});
                 if (!clk_signal.empty()) arr_reg.ports.push_back({clk_signal, "input", clk_signal, ""});
-                if (!rst_signal.empty()) arr_reg.ports.push_back({rst_signal, "input", rst_signal, ""});
+                // When reset is per-index (variable-index write), rst belongs in the mux chain,
+                // not as a direct R pin that would imply whole-array reset.
+                if (!rst_signal.empty() && !is_reset_condition) arr_reg.ports.push_back({rst_signal, "input", rst_signal, ""});
                 mod.nodes.push_back(arr_reg);
             }
 
@@ -531,6 +533,36 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                         d_signal_for_addr = write_candidate;
                     }
                 }
+            }
+
+            // For partial-reset array writes (rst only affects M[address], not the whole array),
+            // insert a rst mux between the write candidate and the addr mux.
+            // Chain: write_en_mux → rst_mux → addr_mux → register D
+            if (is_reset_condition && !rst_signal.empty() && reset_rhs) {
+                std::string reset_val_signal;
+                if (isLiteralExpr(reset_rhs)) {
+                    reset_val_signal = getLiteralLabel(reset_rhs);
+                    ensureLiteralNode(reset_rhs, mod, reset_val_signal, reg_width, reset_assign_handle, reset_val_signal);
+                } else {
+                    reset_val_signal = getOrPromoteExpr(reset_rhs, mod, reg_base + "_reset_val", true);
+                }
+                std::string rst_candidate = reg_base + "_rst_candidate";
+                Node rst_mux;
+                rst_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + rst_signal);
+                rst_mux.kind = "mux";
+                rst_mux.label = "if " + rst_signal;
+                rst_mux.source = n.source;
+                rst_mux.metadata.isArrayNode = true;
+                rst_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                rst_mux.metadata.arraySize = arr_size;
+                rst_mux.metadata.isProcedural = true;
+                std::string rst_sel_width = getDeclaredSignalWidth(mod, rst_signal);
+                rst_mux.ports.push_back({"sel", "input", rst_signal, rst_sel_width});
+                rst_mux.ports.push_back({"true", "input", reset_val_signal, reg_width, "true"});
+                rst_mux.ports.push_back({"false", "input", d_signal_for_addr, reg_width, "false"});
+                rst_mux.ports.push_back({"out", "output", rst_candidate, reg_width});
+                mod.nodes.push_back(rst_mux);
+                d_signal_for_addr = rst_candidate;
             }
 
             std::string index_width = getDeclaredSignalWidth(mod, index_expr);
