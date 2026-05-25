@@ -739,6 +739,7 @@ function repairResolvedExplicitBusCompositions(graph: DesignGraph): void {
   for (const module of Object.values(graph.modules)) {
     for (const node of module.nodes) {
       if (node.kind !== 'bus' || !node.id.startsWith(`bus_comp:${module.name}:`)) continue;
+      if (node.metadata?.aggregateKind === 'array') continue;
       const output = node.ports.find(port => port.direction === 'output');
       if (output?.connectedSignal) {
         const declaredWidth = module.ports.find(port => port.name === output.connectedSignal)?.width;
@@ -1365,6 +1366,7 @@ function concatSliceLabel(highBit: number, size: number): string {
 
 function isPromotedConcatBus(node: DiagramNode): boolean {
     if (node.kind !== 'bus') return false;
+    if (node.metadata?.aggregateKind === 'array') return false;
     if (node.metadata?.expression === '[aggregate-compose]' || node.metadata?.expression === '[aggregate-breakout]') return false;
     return node.ports.some(port => port.direction === 'output')
         && node.ports.filter(port => port.direction === 'input').length > 1;
@@ -1934,6 +1936,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
 
         for (const node of module.nodes) {
             if (node.kind !== 'bus' || !node.id.startsWith(`bus_comp:${modName}:`)) continue;
+            if (node.metadata?.aggregateKind === 'array') continue;
             const output = node.ports.find(port => port.direction === 'output');
             if (output?.connectedSignal) {
                 const declaredWidth = module.ports.find(port => port.name === output.connectedSignal)?.width

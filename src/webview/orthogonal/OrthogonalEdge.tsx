@@ -432,6 +432,7 @@ export function OrthogonalEdge({
   const sourceFlowNode = flowNodes.find((node) => node.id === source);
   const targetFlowNode = flowNodes.find((node) => node.id === target);
   const sourceIsArray = sourceFlowNode?.data?.node ? nodeIsArrayNode(sourceFlowNode.data.node as any) : false;
+  const sourceIsArrayComposition = sourceFlowNode?.data?.node?.kind === 'bus' && (sourceFlowNode.data.node as any).metadata?.aggregateKind === 'array' && (sourceFlowNode.data.node as any).metadata?.role === 'composition';
   const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
@@ -503,7 +504,7 @@ export function OrthogonalEdge({
   const backStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
-      sourceIsArray ? arrayStackLayerTrim('back') : 0,
+      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('back') : 0,
       sourceHdlPosition
     ),
     targetIsArray ? arrayStackLayerTrim('back') : 0,
@@ -512,7 +513,7 @@ export function OrthogonalEdge({
   const middleStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(points),
-      sourceIsArray ? arrayStackLayerTrim('middle') : 0,
+      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('middle') : 0,
       sourceHdlPosition
     ),
     targetIsArray ? arrayStackLayerTrim('middle') : 0,
@@ -523,7 +524,7 @@ export function OrthogonalEdge({
   const frontStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
-      sourceIsArray ? arrayStackLayerTrim('front') : 0,
+      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('front') : 0,
       sourceHdlPosition
     ),
     targetIsArray ? arrayStackLayerTrim('front') : 0,

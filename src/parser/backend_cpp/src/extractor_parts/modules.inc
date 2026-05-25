@@ -560,6 +560,290 @@ std::vector<InstanceParameter> DesignExtractor::collectInstanceParameters(vpiHan
     return parameters;
 }
 
+std::vector<std::string> splitArrayInitializerElements(const std::string& rhs_text) {
+    std::vector<std::string> elements;
+    std::string text = trimCopy(rhs_text);
+    if (text.empty()) return elements;
+
+    size_t open = text.find('{');
+    if (open == std::string::npos) return elements;
+    for (size_t i = 0; i < open; ++i) {
+        if (!std::isspace(static_cast<unsigned char>(text[i])) && text[i] != '\'') {
+            return elements;
+        }
+    }
+
+    size_t close = std::string::npos;
+    int brace_depth = 0;
+    bool in_string = false;
+    for (size_t i = open; i < text.size(); ++i) {
+        char ch = text[i];
+        if (ch == '"' && (i == 0 || text[i - 1] != '\\')) in_string = !in_string;
+        if (in_string) continue;
+        if (ch == '{') {
+            brace_depth++;
+        } else if (ch == '}') {
+            brace_depth--;
+            if (brace_depth == 0) {
+                close = i;
+                break;
+            }
+        }
+    }
+    if (close == std::string::npos || close <= open) return elements;
+
+    std::string body = text.substr(open + 1, close - open - 1);
+    int nested_braces = 0;
+    int nested_parens = 0;
+    int nested_brackets = 0;
+    in_string = false;
+    size_t start = 0;
+    for (size_t i = 0; i <= body.size(); ++i) {
+        char ch = i < body.size() ? body[i] : ',';
+        if (i < body.size() && ch == '"' && (i == 0 || body[i - 1] != '\\')) in_string = !in_string;
+        if (!in_string && i < body.size()) {
+            if (ch == '{') nested_braces++;
+            else if (ch == '}' && nested_braces > 0) nested_braces--;
+            else if (ch == '(') nested_parens++;
+            else if (ch == ')' && nested_parens > 0) nested_parens--;
+            else if (ch == '[') nested_brackets++;
+            else if (ch == ']' && nested_brackets > 0) nested_brackets--;
+        }
+
+        if ((i == body.size() || ch == ',') && !in_string && nested_braces == 0 && nested_parens == 0 && nested_brackets == 0) {
+            std::string element = trimCopy(body.substr(start, i - start));
+            if (!element.empty()) elements.push_back(element);
+            start = i + 1;
+        }
+    }
+
+    return elements;
+}
+
+std::optional<int> parseArrayIndexFromSignal(const std::string& signal, const std::string& base) {
+    if (signal.size() <= base.size() + 2) return std::nullopt;
+    if (signal.rfind(base + "[", 0) != 0 || signal.back() != ']') return std::nullopt;
+
+    std::string index = trimCopy(signal.substr(base.size() + 1, signal.size() - base.size() - 2));
+    if (index.empty()) return std::nullopt;
+    size_t start = (index[0] == '-' || index[0] == '+') ? 1 : 0;
+    if (start >= index.size()) return std::nullopt;
+    if (!std::all_of(index.begin() + static_cast<std::ptrdiff_t>(start), index.end(), [](char c) {
+        return std::isdigit(static_cast<unsigned char>(c));
+    })) {
+        return std::nullopt;
+    }
+
+    try {
+        return std::stoi(index);
+    } catch (...) {
+        return std::nullopt;
+    }
+}
+
+int topArrayIndexForLabels(const Module& mod, const std::string& base, int fallback_size) {
+    auto dim_it = mod.arrayDimensions.find(base);
+    if (dim_it == mod.arrayDimensions.end()) return std::max(0, fallback_size - 1);
+
+    std::smatch match;
+    if (std::regex_search(dim_it->second, match, std::regex(R"(\[\s*(-?\d+)\s*:\s*(-?\d+)\s*\])"))) {
+        int left = std::stoi(match[1].str());
+        int right = std::stoi(match[2].str());
+        return std::max(left, right);
+    }
+    return std::max(0, fallback_size - 1);
+}
+
+bool isLiteralTextValue(const std::string& text) {
+    std::string value = trimCopy(text);
+    return std::regex_match(value, std::regex(R"((?:\d+\s*)?'[sS]?[A-Za-z][A-Za-z0-9_xXzZ?]*|\d+)"));
+}
+
+bool isSimpleTextSignal(const std::string& text) {
+    return std::regex_match(trimCopy(text), std::regex(R"([A-Za-z_$][A-Za-z0-9_$]*(?:\[[^\]]+\])?(?:\.[A-Za-z_$][A-Za-z0-9_$]*)?)"));
+}
+
+std::string literalTextWidth(const std::string& text) {
+    std::smatch match;
+    if (std::regex_search(text, match, std::regex(R"(^\s*(\d+)\s*')"))) {
+        int bits = std::stoi(match[1].str());
+        return bits > 1 ? "[" + std::to_string(bits - 1) + ":0]" : "[0:0]";
+    }
+    return "";
+}
+
+std::string declaredArrayElementWidthFromSource(const Module& mod, const std::string& signal) {
+    if (signal.empty()) return "";
+
+    std::string source_file = mod.source.file;
+    if (source_file.empty()) {
+        for (const auto& port : mod.ports) {
+            if (!port.source.file.empty()) {
+                source_file = port.source.file;
+                break;
+            }
+        }
+    }
+    if (source_file.empty()) return "";
+
+    std::ifstream file(source_file);
+    if (!file.is_open()) return "";
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string text = buffer.str();
+
+    std::string escaped_signal;
+    for (char c : signal) {
+        if (std::string(R"(\.^$|()[]{}*+?)").find(c) != std::string::npos) escaped_signal.push_back('\\');
+        escaped_signal.push_back(c);
+    }
+
+    std::regex array_decl_re(
+        std::string(R"((?:^|[;,\(\n])\s*(?:(?:input|output|inout)\s+)?(?:logic|wire|reg)\s+(\[[^\]]+\])\s+[^;\)]*\b)")
+        + escaped_signal
+        + R"(\b\s*\[[^\]]+\])"
+    );
+    std::smatch match;
+    if (std::regex_search(text, match, array_decl_re)) return match[1].str();
+    return "";
+}
+
+std::string ensureTextLiteralNode(Module& mod, const std::string& literal, const std::string& width, SourceInfo source) {
+    if (literal.empty()) return "";
+    for (auto& n : mod.nodes) {
+        if (n.kind != "literal" || n.label != literal) continue;
+        for (const auto& port : n.ports) {
+            if (port.direction == "output" && port.signal == literal) return literal;
+        }
+        n.ports.push_back({literal, "output", literal, width, "", source});
+        return literal;
+    }
+
+    Node n;
+    n.id = sanitizeId("literal:" + mod.name + ":" + literal + ":" + literal);
+    n.kind = "literal";
+    n.label = literal;
+    n.source = source;
+    n.ports.push_back({literal, "output", literal, width, "", source});
+    mod.nodes.push_back(n);
+    return literal;
+}
+
+std::string ensureTextExpressionNode(Module& mod, const std::string& base, int index, const std::string& expression, const std::string& width, SourceInfo source, bool is_procedural) {
+    std::string output = sanitizeId(base + "_elem_" + std::to_string(index));
+    std::string node_id = sanitizeId("comb:" + mod.name + ":" + output + (is_procedural ? ":proc" : "") + ":array_expr");
+    for (const auto& n : mod.nodes) {
+        if (n.id == node_id) return output;
+    }
+
+    Node n;
+    n.id = node_id;
+    n.kind = "comb";
+    n.label = "";
+    n.source = source;
+    n.metadata.expression = expression;
+    n.metadata.isProcedural = is_procedural;
+    n.ports.push_back({output, "output", output, width, output, source});
+
+    std::set<std::string> seen_inputs;
+    std::regex id_re(R"([A-Za-z_$][A-Za-z0-9_$]*(?:\[[^\]]+\])?)");
+    for (std::sregex_iterator it(expression.begin(), expression.end(), id_re), end; it != end; ++it) {
+        std::string input = (*it).str();
+        size_t pos = static_cast<size_t>(it->position());
+        if (pos > 0 && expression[pos - 1] == '\'') continue;
+        if (input == "default" || input == "signed" || input == "unsigned") continue;
+        if (!seen_inputs.insert(input).second) continue;
+        std::string port_name = "in" + std::to_string(seen_inputs.size() - 1);
+        n.ports.push_back({port_name, "input", input, "", input, source});
+    }
+
+    mod.nodes.push_back(n);
+    return output;
+}
+
+bool DesignExtractor::tryProcessArrayCompositionAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural) {
+    vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
+    vpiHandle rhs = vpi_handle(vpiRhs, assign_handle);
+    if (!lhs || !rhs) return false;
+
+    std::string out_signal = getSignalName(lhs);
+    std::string out_base = getBaseSignalName(lhs);
+    if (out_base.empty()) out_base = out_signal;
+    ensureDeclaredArray(mod, out_base);
+    if (out_base.empty() || !mod.arrayDimensions.count(out_base)) return false;
+
+    std::string element_width = declaredArrayElementWidthFromSource(mod, out_base);
+    if (element_width.empty()) element_width = getDeclaredSignalWidth(mod, out_base);
+    if (element_width.empty()) element_width = getWidth(lhs);
+    if (element_width.empty()) element_width = "[0:0]";
+
+    SourceInfo source = getSourceInfo(assign_handle);
+
+    if (out_signal == out_base) {
+        std::vector<vpiHandle> operands = concatOperands(rhs);
+        if (!operands.empty()) {
+            int top_index = topArrayIndexForLabels(mod, out_base, static_cast<int>(operands.size()));
+            for (size_t i = 0; i < operands.size(); ++i) {
+                int index = top_index - static_cast<int>(i);
+                vpiHandle operand = operands[i];
+                std::string input_signal;
+                std::string width = getWidth(operand);
+                if (bitSizeFromWidth(element_width) > bitSizeFromWidth(width)) width = element_width;
+                if (width.empty()) width = element_width;
+
+                if (isLiteralExpr(operand)) {
+                    input_signal = getLiteralLabel(operand);
+                    ensureLiteralNode(operand, mod, input_signal, width, assign_handle, input_signal);
+                } else {
+                    input_signal = getOrPromoteExpr(operand, mod, out_base + "_elem_" + std::to_string(index), is_procedural);
+                }
+                ensureArrayCompositionInput(mod, out_base, "[" + std::to_string(index) + "]", input_signal, width, getSourceInfo(operand));
+            }
+            return true;
+        }
+
+        std::vector<std::string> elements = splitArrayInitializerElements(getAssignmentRhsText(assign_handle));
+        if (elements.empty()) return false;
+
+        int top_index = topArrayIndexForLabels(mod, out_base, static_cast<int>(elements.size()));
+        for (size_t i = 0; i < elements.size(); ++i) {
+            int index = top_index - static_cast<int>(i);
+            std::string element = trimCopy(elements[i]);
+            std::string width = literalTextWidth(element);
+            if (bitSizeFromWidth(element_width) > bitSizeFromWidth(width)) width = element_width;
+            if (width.empty()) width = element_width;
+
+            std::string input_signal;
+            if (isLiteralTextValue(element)) {
+                input_signal = ensureTextLiteralNode(mod, element, width, source);
+            } else if (isSimpleTextSignal(element)) {
+                input_signal = element;
+            } else {
+                input_signal = ensureTextExpressionNode(mod, out_base, index, element, width, source, is_procedural);
+            }
+
+            ensureArrayCompositionInput(mod, out_base, "[" + std::to_string(index) + "]", input_signal, width, source);
+        }
+        return true;
+    }
+
+    std::optional<int> element_index = parseArrayIndexFromSignal(out_signal, out_base);
+    if (!element_index) return false;
+
+    std::string input_signal;
+    if (isLiteralExpr(rhs)) {
+        input_signal = getLiteralLabel(rhs);
+        std::string label = getAssignmentRhsText(assign_handle);
+        if (label.empty()) label = input_signal;
+        ensureLiteralNode(rhs, mod, input_signal, element_width, assign_handle, label);
+    } else {
+        input_signal = getOrPromoteExpr(rhs, mod, out_base + "_elem_" + std::to_string(*element_index), is_procedural);
+    }
+
+    ensureArrayCompositionInput(mod, out_base, "[" + std::to_string(*element_index) + "]", input_signal, element_width, getSourceInfo(lhs));
+    return true;
+}
+
 void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool is_procedural) {
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
     vpiHandle rhs = vpi_handle(vpiRhs, assign_handle);
@@ -572,6 +856,10 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
 
     std::string out_signal = getSignalName(lhs);
     std::string out_base = getBaseSignalName(lhs);
+    ensureDeclaredArray(mod, out_base);
+    if (tryProcessArrayCompositionAssignment(assign_handle, mod, is_procedural)) {
+        return;
+    }
 
     auto interfaceFieldRef = [&](const std::string& signal) -> std::optional<std::pair<std::string, std::string>> {
         size_t dot = signal.find('.');

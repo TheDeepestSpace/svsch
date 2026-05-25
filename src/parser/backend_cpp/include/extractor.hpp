@@ -253,6 +253,7 @@ private:
     LoweredValue lowerAssignment(vpiHandle assign_handle, Module& mod, const std::string& preferred_signal, bool is_clocked, const std::map<std::string, LoweredValue>& current_drivers = {});
     std::map<std::string, LoweredValue> lowerAggregateAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {}, const std::string& output_suffix = "");
     void ensureInferredLatch(Module& mod, const std::string& target, const std::string& input_signal, const std::string& width, vpiHandle source_handle);
+    bool tryProcessArrayCompositionAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural);
     std::string processBusSelect(vpiHandle select_handle, Module& mod);
     std::optional<StructType> getStructType(vpiHandle handle);
     std::optional<StructType> getStructTypeFromTypespec(vpiHandle typespec);
@@ -262,6 +263,7 @@ private:
     std::string ensureStructBreakoutAlias(Module& mod, const std::string& base, const std::string& field, const std::string& output_signal, SourceInfo source);
     void ensureStructFieldCompositionInput(Module& mod, const std::string& base, const std::string& field, const std::string& input_signal, SourceInfo source);
     void ensureBusSliceCompositionInput(Module& mod, const std::string& base, const std::string& slice, const std::string& input_signal, SourceInfo source);
+    void ensureArrayCompositionInput(Module& mod, const std::string& base, const std::string& index_label, const std::string& input_signal, const std::string& width, SourceInfo source);
     std::string ensureStructComposition(Module& mod, const std::string& base);
     void synthesizePendingStructCompositions(Module& mod);
     std::string fieldWidth(const StructType& type, const std::string& field) const;

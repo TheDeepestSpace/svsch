@@ -836,6 +836,28 @@ select {
   right: calc(var(--svsch-grid) * 2);
 }
 
+.hdl-bus-node.hdl-bus-array-composition .bus-pipe {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
+  right: calc(var(--svsch-grid) * 2.5);
+}
+
+.hdl-bus-node.hdl-bus-composition.hdl-bus-array-composition .bus-tap {
+  right: calc(var(--svsch-grid) * 2.5);
+}
+
+.hdl-bus-node.hdl-bus-array-composition .bus-pipe::before {
+  background: linear-gradient(to right, color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background)), color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background)));
+  border-radius: 999px;
+  content: "";
+  height: 6px;
+  position: absolute;
+  left: 3px;
+  top: calc(100% - 3px);
+  transform-origin: left center;
+  transform: translateY(-50%) rotate(45deg);
+  width: 38px;
+}
+
 .bus-taps {
   inset: 0;
   pointer-events: none;

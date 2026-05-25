@@ -37,6 +37,52 @@ test.describe('Bus Composition Visual Rendering', () => {
 
     await expectGraphAndScreenshot(page, 'bus-composition-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders an always_comb array assignment pattern as stacked array composition', async ({ page }) => {
+    const view = await openFixture(page, 'array_stack_composition_literal.sv', 'auto');
+    const arrayComp = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+
+    expect(arrayComp).toBeDefined();
+    expect(arrayComp?.ports.filter(port => port.direction === 'input').map(port => [port.label, port.connectedSignal, port.width])).toEqual([
+      ['[3]', "8'hAB", '[7:0]'],
+      ['[2]', "8'hCD", '[7:0]'],
+      ['[1]', "8'hEF", '[7:0]'],
+      ['[0]', "8'h00", '[7:0]']
+    ]);
+    expect(view.edges.find(edge => edge.source === arrayComp?.id && edge.target === 'port:array_stack_composition_literal:arr')?.isStacked).toBe(true);
+    expect(view.edges.some(edge => edge.target === arrayComp?.id && edge.isStacked)).toBe(false);
+
+    const busCompNode = page.locator('.hdl-bus-array-composition');
+    await expect(busCompNode).toBeVisible();
+    await expect(busCompNode.locator('.bus-tap')).toHaveCount(4);
+
+    await expectGraphAndScreenshot(page, 'array-stack-composition-literal-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders per-element array assignments as stacked array composition', async ({ page }) => {
+    const view = await openFixture(page, 'array_stack_composition_elements.sv', 'auto');
+    const arrayComp = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+    const alu = view.nodes.find(node => node.kind === 'alu' && node.metadata?.expression === "seed + 8'h01");
+
+    expect(arrayComp).toBeDefined();
+    expect(alu).toBeDefined();
+    expect(arrayComp?.ports.filter(port => port.direction === 'input').map(port => [port.label, port.width])).toEqual([
+      ['[3]', '[7:0]'],
+      ['[2]', '[7:0]'],
+      ['[1]', '[7:0]'],
+      ['[0]', '[7:0]']
+    ]);
+    expect(arrayComp?.ports.find(port => port.label === '[2]')?.connectedSignal).toBe('seed');
+    expect(arrayComp?.ports.find(port => port.label === '[1]')?.connectedSignal).toBe(alu?.ports.find(port => port.direction === 'output')?.connectedSignal);
+    expect(view.edges.find(edge => edge.source === arrayComp?.id && edge.target === 'port:array_stack_composition_elements:arr')?.isStacked).toBe(true);
+    expect(view.edges.some(edge => edge.target === arrayComp?.id && edge.source === 'port:array_stack_composition_elements:seed' && edge.isStacked)).toBe(false);
+
+    const busCompNode = page.locator('.hdl-bus-array-composition');
+    await expect(busCompNode).toBeVisible();
+    await expect(busCompNode.locator('.bus-tap')).toHaveCount(4);
+
+    await expectGraphAndScreenshot(page, 'array-stack-composition-elements-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: 'auto' = 'auto', moduleName?: string): Promise<DiagramViewModel> {

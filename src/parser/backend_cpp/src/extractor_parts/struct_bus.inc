@@ -489,6 +489,98 @@ void DesignExtractor::ensureBusSliceCompositionInput(Module& mod, const std::str
     node->ports.push_back({slice, "input", input_signal, slice_width, slice, source});
 }
 
+void DesignExtractor::ensureArrayCompositionInput(Module& mod, const std::string& base, const std::string& index_label, const std::string& input_signal, const std::string& width, SourceInfo source) {
+    if (base.empty() || index_label.empty() || input_signal.empty()) return;
+
+    ensureDeclaredArray(mod, base);
+    auto dim_it = mod.arrayDimensions.find(base);
+    if (dim_it == mod.arrayDimensions.end()) return;
+
+    std::string node_id = "bus_comp:" + mod.name + ":" + base;
+    Node* node = nullptr;
+    for (auto& candidate : mod.nodes) {
+        if (candidate.id == node_id) {
+            node = &candidate;
+            break;
+        }
+    }
+
+    std::string output_width = width;
+    if (output_width.empty()) output_width = getDeclaredSignalWidth(mod, base);
+    if (output_width.empty()) output_width = "[0:0]";
+
+    if (!node) {
+        Node n;
+        n.id = node_id;
+        n.kind = "bus";
+        n.label = base;
+        n.source = source;
+        n.metadata.role = "composition";
+        n.metadata.aggregateKind = "array";
+        n.metadata.expression = base;
+        n.metadata.isArrayNode = true;
+        n.metadata.arrayDimension = dim_it->second;
+        n.metadata.arraySize = mod.arraySizes.count(base) ? mod.arraySizes[base] : 0;
+        n.ports.push_back({base, "output", base, output_width, base, source});
+        mod.nodes.push_back(n);
+        node = &mod.nodes.back();
+    } else {
+        node->metadata.role = "composition";
+        node->metadata.aggregateKind = "array";
+        node->metadata.expression = base;
+        node->metadata.isArrayNode = true;
+        node->metadata.arrayDimension = dim_it->second;
+        node->metadata.arraySize = mod.arraySizes.count(base) ? mod.arraySizes[base] : node->metadata.arraySize;
+    }
+
+    bool has_output = false;
+    for (auto& port : node->ports) {
+        if (port.direction == "output" && port.signal == base) {
+            has_output = true;
+            port.name = base;
+            if (port.width.empty() || bitSizeFromWidth(output_width) > bitSizeFromWidth(port.width)) port.width = output_width;
+            if (port.label.empty()) port.label = base;
+        }
+    }
+    if (!has_output) node->ports.push_back({base, "output", base, output_width, base, source});
+
+    bool updated = false;
+    for (auto& port : node->ports) {
+        if (port.direction == "input" && port.name == index_label) {
+            port.signal = input_signal;
+            port.width = width.empty() ? output_width : width;
+            port.label = index_label;
+            port.source = source;
+            updated = true;
+            break;
+        }
+    }
+    if (!updated) {
+        node->ports.push_back({index_label, "input", input_signal, width.empty() ? output_width : width, index_label, source});
+    }
+
+    std::vector<NodePort> outputs;
+    std::vector<NodePort> inputs;
+    for (const auto& port : node->ports) {
+        if (port.direction == "input") inputs.push_back(port);
+        else outputs.push_back(port);
+    }
+    auto label_index = [](const std::string& label) {
+        std::smatch match;
+        if (std::regex_search(label, match, std::regex(R"(\[\s*(-?\d+)\s*\])"))) {
+            return std::stoi(match[1].str());
+        }
+        return 0;
+    };
+    std::sort(inputs.begin(), inputs.end(), [&](const NodePort& a, const NodePort& b) {
+        return label_index(a.label.empty() ? a.name : a.label) > label_index(b.label.empty() ? b.name : b.label);
+    });
+
+    node->ports.clear();
+    node->ports.insert(node->ports.end(), outputs.begin(), outputs.end());
+    node->ports.insert(node->ports.end(), inputs.begin(), inputs.end());
+}
+
 std::string DesignExtractor::ensureStructComposition(Module& mod, const std::string& base) {
     auto signal_it = mod.structSignals.find(base);
     if (signal_it == mod.structSignals.end()) return "";

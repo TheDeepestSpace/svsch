@@ -8,6 +8,85 @@ function fixture(name: string): string {
 }
 
 describe('parser: concatenation as bus composition', () => {
+  it('represents whole-array aggregate assignments as stacked array bus compositions (UHDM)', async () => {
+    const graph = await runParser('uhdm', 'array_compose_literal.sv', `
+      module array_compose_literal(
+        output logic [7:0] arr [0:3]
+      );
+        always_comb begin
+          arr = '{8'hAB, 8'hCD, 8'hEF, 8'h00};
+        end
+      endmodule
+    `);
+    const mod = graph.modules.array_compose_literal;
+    const compose = mod.nodes.find(n => n.kind === 'bus' && n.metadata?.aggregateKind === 'array');
+    const outputPort = mod.nodes.find(n => n.id === 'port:array_compose_literal:arr');
+
+    expect(compose).toBeDefined();
+    expect(compose).toMatchObject({
+      label: 'arr',
+      metadata: expect.objectContaining({
+        role: 'composition',
+        aggregateKind: 'array',
+        isArrayNode: true,
+        arrayDimension: '[0:3]',
+        arraySize: 4
+      })
+    });
+    expect(compose?.ports.find(p => p.direction === 'output')).toMatchObject({ connectedSignal: 'arr', width: '[7:0]' });
+    expect(compose?.ports.filter(p => p.direction === 'input').map(p => [p.label, p.connectedSignal, p.width])).toEqual([
+      ['[3]', "8'hAB", '[7:0]'],
+      ['[2]', "8'hCD", '[7:0]'],
+      ['[1]', "8'hEF", '[7:0]'],
+      ['[0]', "8'h00", '[7:0]']
+    ]);
+
+    const inputEdges = mod.edges.filter(e => e.target === compose?.id && e.targetPort !== 'arr');
+    expect(inputEdges).toHaveLength(4);
+    expect(inputEdges.every(e => e.isStacked !== true)).toBe(true);
+    expect(mod.edges.find(e => e.source === compose?.id && e.target === outputPort?.id)).toMatchObject({ isStacked: true });
+  });
+
+  it('folds per-element array assignments into a stacked array bus composition (UHDM)', async () => {
+    const graph = await runParser('uhdm', 'array_compose_elements.sv', `
+      module array_compose_elements(
+        input logic [7:0] seed,
+        output logic [7:0] arr [0:3]
+      );
+        assign arr[0] = 8'h00;
+        assign arr[1] = seed + 8'h01;
+        assign arr[2] = seed;
+        assign arr[3] = 8'hAB;
+      endmodule
+    `);
+    const mod = graph.modules.array_compose_elements;
+    const compose = mod.nodes.find(n => n.kind === 'bus' && n.metadata?.aggregateKind === 'array');
+    const alu = mod.nodes.find(n => n.kind === 'alu' && n.metadata?.expression === "seed + 8'h01");
+
+    expect(compose).toBeDefined();
+    expect(alu).toBeDefined();
+    expect(compose).toMatchObject({
+      label: 'arr',
+      metadata: expect.objectContaining({
+        role: 'composition',
+        aggregateKind: 'array',
+        isArrayNode: true,
+        arrayDimension: '[0:3]',
+        arraySize: 4
+      })
+    });
+    expect(compose?.ports.filter(p => p.direction === 'input').map(p => [p.label, p.width])).toEqual([
+      ['[3]', '[7:0]'],
+      ['[2]', '[7:0]'],
+      ['[1]', '[7:0]'],
+      ['[0]', '[7:0]']
+    ]);
+    expect(compose?.ports.find(p => p.direction === 'input' && p.label === '[2]')).toMatchObject({ connectedSignal: 'seed' });
+    expect(compose?.ports.find(p => p.direction === 'input' && p.label === '[1]')?.connectedSignal).toBe(alu?.ports.find(p => p.direction === 'output')?.connectedSignal);
+    expect(mod.edges.some(e => e.source === 'port:array_compose_elements:seed' && e.target === compose?.id && e.isStacked === true)).toBe(false);
+    expect(mod.edges.find(e => e.source === compose?.id && e.target === 'port:array_compose_elements:arr')).toMatchObject({ isStacked: true });
+  });
+
   it('represents concatenation targets as compose-then-breakout bus nodes (UHDM)', async () => {
     const graph = await runParser('uhdm', 'aggregate_assign.sv', `
       module aggregate_assign(

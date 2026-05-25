@@ -21,7 +21,14 @@ void DesignExtractor::buildEdges(Module& mod) {
     auto endpoint_is_array = [&](const std::pair<std::string, std::string>& endpoint) {
         if (endpoint.first == "self") return mod.arrayDimensions.count(endpoint.second) > 0;
         for (const auto& n : mod.nodes) {
-            if (n.id == endpoint.first) return n.metadata.isArrayNode;
+            if (n.id == endpoint.first) {
+                if (n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role == "composition") {
+                    for (const auto& p : n.ports) {
+                        if (p.name == endpoint.second && p.direction == "input") return false;
+                    }
+                }
+                return n.metadata.isArrayNode;
+            }
         }
         return false;
     };
