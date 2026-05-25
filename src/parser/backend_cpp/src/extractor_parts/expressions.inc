@@ -521,8 +521,21 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
         }
     }
 
-    std::string lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
-    std::string rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+    std::string lhs_signal;
+    if (isLiteralExpr(operands[0])) {
+        lhs_signal = getLiteralLabel(operands[0]);
+        ensureLiteralNode(operands[0], mod, lhs_signal, getWidth(operands[0]), expr, lhs_signal);
+    } else {
+        lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+    }
+
+    std::string rhs_signal;
+    if (isLiteralExpr(operands[1])) {
+        rhs_signal = getLiteralLabel(operands[1]);
+        ensureLiteralNode(operands[1], mod, rhs_signal, getWidth(operands[1]), expr, rhs_signal);
+    } else {
+        rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+    }
 
     std::string expr_str = getExprText(expr);
     std::string width = getWidth(expr);
