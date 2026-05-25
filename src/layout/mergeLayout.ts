@@ -356,6 +356,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
             ? false
             : inputs.length > 1;
         const isArrayComposition = node.kind === 'bus' && isComposition && node.metadata?.aggregateKind === 'array';
+        const isArrayBreakout = node.kind === 'bus' && !isComposition && node.metadata?.aggregateKind === 'array';
 
         if (isInterfaceModport && port.width === 'interface') {
            const isModuleInterfaceModport = node.label !== node.metadata?.typeName;
@@ -387,7 +388,19 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
                side = port.direction === 'output' ? 'EAST' : 'WEST';
             }
             portX = side === 'EAST' ? width : 0;
-          } else if (node.kind === 'interface') {
+          }
+          
+          if (port.id === singlePort?.id) {
+            if (isArrayComposition) {
+              side = 'EAST';
+              portX = width - grid * 1.5;
+            } else if (isArrayBreakout) {
+              side = 'WEST';
+              portX = 0;
+            }
+          }
+
+          if (node.kind === 'interface') {
             side = 'EAST';
             portX = width;
           }
@@ -397,7 +410,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
               ? (interfaceSidePortCenters(sidePorts, unshiftedHeight, interfaceTopHatHeight(visiblePorts.some(p => p.direction === 'input' && p.width !== 'interface')), bottomHatHeight).get(port.id) ?? unshiftedHeight / 2) + shiftY
               : grid * (tapIndex * 2 + (isInterfaceModport ? 2 : 1));
           } else if (!isInterfaceModport && port.id === singlePort?.id) {
-            if (isArrayComposition) {
+            if (isArrayComposition || isArrayBreakout) {
               const lastTapCenter = grid * ((taps.length - 1) * 2 + 1);
               portY = lastTapCenter + grid;
             } else {

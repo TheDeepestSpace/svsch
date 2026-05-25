@@ -431,12 +431,22 @@ export function OrthogonalEdge({
   const isStacked = diagramEdge?.isStacked === true;
   const sourceFlowNode = flowNodes.find((node) => node.id === source);
   const targetFlowNode = flowNodes.find((node) => node.id === target);
-  const sourceIsArray = sourceFlowNode?.data?.node ? nodeIsArrayNode(sourceFlowNode.data.node as any) : false;
-  const sourceIsArrayComposition = sourceFlowNode?.data?.node?.kind === 'bus' && (sourceFlowNode.data.node as any).metadata?.aggregateKind === 'array' && (sourceFlowNode.data.node as any).metadata?.role === 'composition';
-  const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
+  const sourceNode = sourceFlowNode?.data?.node;
+  const sourceInputs = sourceNode?.ports.filter(p => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const sourceAggregateInputs = sourceInputs.filter(p => p.width !== 'interface');
+  const sourceIsComposition = sourceAggregateInputs.length > 1;
+  const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode as any) : false;
+  const sourceIsArrayComposition = sourceNode?.kind === 'bus' && sourceIsComposition && sourceNode.metadata?.aggregateKind === 'array';
+
+  const targetNode = targetFlowNode?.data?.node;
+  const targetInputs = targetNode?.ports.filter(p => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const targetAggregateInputs = targetInputs.filter(p => p.width !== 'interface');
+  const targetIsComposition = targetAggregateInputs.length > 1;
+  const targetIsArray = targetNode ? nodeIsArrayNode(targetNode as any) : false;
+  const targetIsArrayBreakout = targetNode?.kind === 'bus' && !targetIsComposition && targetNode.metadata?.aggregateKind === 'array';
+
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
-  const targetNode = targetFlowNode?.data?.node as { kind?: string } | undefined;
   const isMuxSelectorPromotion = targetNode?.kind === 'mux' && targetHandleId === 'sel';
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
@@ -504,19 +514,19 @@ export function OrthogonalEdge({
   const backStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
-      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('back') : 0,
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back')) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? arrayStackLayerTrim('back') : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back')) : 0,
     targetHdlPosition
   );
   const middleStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(points),
-      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('middle') : 0,
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle')) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? arrayStackLayerTrim('middle') : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle')) : 0,
     targetHdlPosition
   );
   const backStackPath = pathFromPoints(backStackPoints);
@@ -524,10 +534,10 @@ export function OrthogonalEdge({
   const frontStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
-      sourceIsArray && !sourceIsArrayComposition ? arrayStackLayerTrim('front') : 0,
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front')) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? arrayStackLayerTrim('front') : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front')) : 0,
     targetHdlPosition
   );
   const frontStackPath = pathFromPoints(frontStackPoints);

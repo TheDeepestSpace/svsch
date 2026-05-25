@@ -111,9 +111,24 @@ void DesignExtractor::buildEdges(Module& mod) {
                 // Mark stacked edges when either side participates in array transport. Scalar
                 // signals entering an array node are promoted; array sources stay stacked until
                 // a scalarizing consumer (such as the read mux output) emits a new scalar signal.
+                auto is_array_composition = [&](const std::pair<std::string, std::string>& endpoint) {
+                    if (endpoint.first == "self") return false;
+                    for (const auto& n : mod.nodes) {
+                        if (n.id == endpoint.first && n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role == "composition") return true;
+                    }
+                    return false;
+                };
+                auto is_array_breakout = [&](const std::pair<std::string, std::string>& endpoint) {
+                    if (endpoint.first == "self") return false;
+                    for (const auto& n : mod.nodes) {
+                        if (n.id == endpoint.first && n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role != "composition") return true;
+                    }
+                    return false;
+                };
+
                 e.isStacked = stacked_signals.count(signal) > 0
-                    || endpoint_is_array(d)
-                    || endpoint_is_array(l)
+                    || is_array_composition(d)
+                    || is_array_breakout(l)
                     || has_array_alias(signal);
 
                 bool duplicate = false;

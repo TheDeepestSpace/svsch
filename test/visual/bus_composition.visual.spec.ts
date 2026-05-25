@@ -83,6 +83,30 @@ test.describe('Bus Composition Visual Rendering', () => {
 
     await expectGraphAndScreenshot(page, 'array-stack-composition-elements-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders array element accesses as stacked array breakouts', async ({ page }) => {
+    // Force cpp backend for array breakouts since uhdm currently misses the aggregateKind tag
+    const originalBackend = process.env.SVSCH_BACKEND;
+    process.env.SVSCH_BACKEND = 'cpp';
+    try {
+      const view = await openFixture(page, 'array_stack_breakout.sv', 'auto');
+      const arrayBreakout = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+
+      expect(arrayBreakout).toBeDefined();
+
+      const busBreakoutNode = page.locator('.hdl-bus-array-breakout');
+      await expect(busBreakoutNode).toBeVisible();
+      await expect(busBreakoutNode.locator('.bus-tap')).toHaveCount(4);
+
+      await expectGraphAndScreenshot(page, 'array-stack-breakout-canvas.png', { clip: await paddedGraphClip(page) });
+    } finally {
+      if (originalBackend === undefined) {
+        delete process.env.SVSCH_BACKEND;
+      } else {
+        process.env.SVSCH_BACKEND = originalBackend;
+      }
+    }
+  });
 });
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: 'auto' = 'auto', moduleName?: string): Promise<DiagramViewModel> {

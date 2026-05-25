@@ -182,7 +182,7 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     const graph = await buildDesignGraph({
       workspaceRoot: tmpDir,
       projectFolder: '.',
-      backend: 'uhdm',
+      backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
       veriblePath: 'verible-verilog-syntax',
       surelogPath,
       backendPath,

@@ -83,6 +83,21 @@ export async function extractDesignWithUhdm(
     repairAggregateAssignmentBuses(graph);
     repairInterfaceAssignments(graph);
 
+    // Mark edges connected to array nodes as stacked appropriately
+    for (const module of Object.values(graph.modules)) {
+        for (const edge of module.edges) {
+            const sourceNode = module.nodes.find(n => n.id === edge.source);
+            const targetNode = module.nodes.find(n => n.id === edge.target);
+
+            const sourceIsArrayComp = sourceNode?.kind === 'bus' && sourceNode.metadata?.aggregateKind === 'array' && sourceNode.metadata?.role === 'composition';
+            const targetIsArrayBreakout = targetNode?.kind === 'bus' && targetNode.metadata?.aggregateKind === 'array' && targetNode.metadata?.role !== 'composition';
+
+            if (sourceIsArrayComp || targetIsArrayBreakout) {
+                edge.isStacked = true;
+            }
+        }
+    }
+
     // Pass: suppress unused modport breakout fields/nodes
     for (const module of Object.values(graph.modules)) {
         const finalUsedNodePorts = new Set<string>();

@@ -1021,6 +1021,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         ? false
         : aggregateInputs.length > 1;
     const isArrayComposition = node.kind === 'bus' && isComposition && node.metadata?.aggregateKind === 'array';
+    const isArrayBreakout = node.kind === 'bus' && !isComposition && node.metadata?.aggregateKind === 'array';
 
     const taps = isInterfaceModport ? [...sidePorts] : isInterfaceInstance ? [...leftSidePorts, ...rightSidePorts] : isInterface ? [...aggregateInputs, ...aggregateOutputs] : isComposition ? aggregateInputs : aggregateOutputs;
     const singlePort = isComposition ? aggregateOutputs[0] : aggregateInputs[0];
@@ -1038,7 +1039,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       : nodeHeight / 2;
     const busStyle = {
       ...nodeStyle,
-      '--svsch-bus-single-y': isArrayComposition ? `${lastTapCenter + diagramSizing.gridSize}px` : `${firstTapCenter}px`
+      '--svsch-bus-single-y': isArrayComposition || isArrayBreakout ? `${lastTapCenter + diagramSizing.gridSize}px` : `${firstTapCenter}px`
     } as React.CSSProperties;
     const navigatePortSource = (event: React.MouseEvent, port: DiagramPort) => {
       if (port.source) {
@@ -1063,7 +1064,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
     return (
       <button
-        className={`hdl-bus-node ${node.kind === 'struct' ? 'hdl-struct-node' : ''} ${isInterface ? 'hdl-interface-node' : ''} ${isInterfaceModport ? 'hdl-interface-modport' : ''} ${isInterfaceInstance ? 'hdl-interface-instance' : ''} ${isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout'} ${isArrayComposition ? 'hdl-bus-array-composition' : ''}`}
+        className={`hdl-bus-node ${node.kind === 'struct' ? 'hdl-struct-node' : ''} ${isInterface ? 'hdl-interface-node' : ''} ${isInterfaceModport ? 'hdl-interface-modport' : ''} ${isInterfaceInstance ? 'hdl-interface-instance' : ''} ${isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout'} ${isArrayComposition ? 'hdl-bus-array-composition' : ''} ${isArrayBreakout ? 'hdl-bus-array-breakout' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={busStyle}

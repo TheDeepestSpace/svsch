@@ -1,0 +1,186 @@
+{
+  "nodes": [
+    {
+      "id": "bus:array_stack_breakout:arr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 197,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:arr",
+            "name": "arr",
+            "direction": "input"
+          },
+          {
+            "id": "out:arr_0_",
+            "name": "arr[0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:arr_1_",
+            "name": "arr[1]",
+            "direction": "output"
+          },
+          {
+            "id": "out:arr_2_",
+            "name": "arr[2]",
+            "direction": "output"
+          },
+          {
+            "id": "out:arr_3_",
+            "name": "arr[3]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_breakout:arr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 204
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:arr",
+            "name": "arr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_breakout:elem0",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 36
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:elem0",
+            "name": "elem0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_breakout:elem1",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 84
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:elem1",
+            "name": "elem1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_breakout:elem2",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 132
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:elem2",
+            "name": "elem2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_breakout:elem3",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 180
+      },
+      "width": 144,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:elem3",
+            "name": "elem3",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem0:elem0",
+      "source": "bus:array_stack_breakout:arr",
+      "target": "port:array_stack_breakout:elem0",
+      "sourceHandle": "out:arr_0_",
+      "targetHandle": "port:elem0",
+      "path": "M 552 48 L 576 48 L 744 48 L 768 48"
+    },
+    {
+      "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem1:elem1",
+      "source": "bus:array_stack_breakout:arr",
+      "target": "port:array_stack_breakout:elem1",
+      "sourceHandle": "out:arr_1_",
+      "targetHandle": "port:elem1",
+      "path": "M 552 96 L 576 96 L 744 96 L 768 96"
+    },
+    {
+      "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem2:elem2",
+      "source": "bus:array_stack_breakout:arr",
+      "target": "port:array_stack_breakout:elem2",
+      "sourceHandle": "out:arr_2_",
+      "targetHandle": "port:elem2",
+      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+    },
+    {
+      "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem3:elem3",
+      "source": "bus:array_stack_breakout:arr",
+      "target": "port:array_stack_breakout:elem3",
+      "sourceHandle": "out:arr_3_",
+      "targetHandle": "port:elem3",
+      "path": "M 552 192 L 576 192 L 744 192 L 768 192"
+    },
+    {
+      "id": "edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr",
+      "source": "port:array_stack_breakout:arr",
+      "target": "bus:array_stack_breakout:arr",
+      "sourceHandle": "port:arr",
+      "targetHandle": "in:arr",
+      "path": "M 157 220 L 418 220"
+    }
+  ]
+}

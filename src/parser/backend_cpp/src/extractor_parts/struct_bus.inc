@@ -132,15 +132,34 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
     }
 
     if (!bus_node) {
+        ensureDeclaredArray(mod, base_name);
+        bool is_array = mod.arrayDimensions.count(base_name) > 0;
+        
         Node n;
         n.id = bus_node_id;
         n.kind = "bus";
         n.label = base_name;
         n.source = getSourceInfo(base ? base : select_handle);
         n.metadata.expression = base_name;
+        
+        if (is_array) {
+            n.metadata.aggregateKind = "array";
+            n.metadata.isArrayNode = true;
+            n.metadata.arrayDimension = mod.arrayDimensions[base_name];
+            n.metadata.arraySize = mod.arraySizes.count(base_name) ? mod.arraySizes[base_name] : 0;
+        }
+
         n.ports.push_back({base_name, "input", base_name, base ? getWidth(base) : ""});
         mod.nodes.push_back(n);
         bus_node = &mod.nodes.back();
+    } else {
+        ensureDeclaredArray(mod, base_name);
+        if (mod.arrayDimensions.count(base_name) > 0) {
+            bus_node->metadata.aggregateKind = "array";
+            bus_node->metadata.isArrayNode = true;
+            bus_node->metadata.arrayDimension = mod.arrayDimensions[base_name];
+            bus_node->metadata.arraySize = mod.arraySizes.count(base_name) ? mod.arraySizes[base_name] : bus_node->metadata.arraySize;
+        }
     }
 
     bool port_exists = false;
