@@ -4,7 +4,7 @@
       "id": "bus:consumer:data",
       "type": "hdl",
       "position": {
-        "x": 888,
+        "x": 864,
         "y": 168
       },
       "width": 192,
@@ -29,7 +29,7 @@
       "id": "interface_modport:consumer:bus",
       "type": "hdl",
       "position": {
-        "x": 480,
+        "x": 432,
         "y": 96
       },
       "width": 192,
@@ -89,7 +89,7 @@
       "id": "port:consumer:observed",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1272,
         "y": 180
       },
       "width": 120,
@@ -113,7 +113,7 @@
       "target": "port:consumer:observed",
       "sourceHandle": "out:data_0_",
       "targetHandle": "port:observed",
-      "path": "M 1080 192 L 1104 192 L 1272 192 L 1296 192"
+      "path": "M 1056 192 L 1080 192 L 1248 192 L 1272 192"
     },
     {
       "id": "edge:interface_modport:consumer:bus:bus:consumer:data:bus.data",
@@ -121,7 +121,7 @@
       "target": "bus:consumer:data",
       "sourceHandle": "out:data",
       "targetHandle": "in:data",
-      "path": "M 672 192 L 696 192 L 912 192 L 936 192"
+      "path": "M 624 192 L 648 192 L 888 192 L 912 192"
     },
     {
       "id": "edge:interface_modport:consumer:bus:interface_modport:consumer:bus:bus.valid",
@@ -129,7 +129,7 @@
       "target": "interface_modport:consumer:bus",
       "sourceHandle": "out:valid",
       "targetHandle": "in:ready",
-      "path": "M 672 240 L 696 240 L 720 240 L 720 360 L 456 360 L 456 288 L 480 288"
+      "path": "M 624 240 L 648 240 L 672 240 L 672 360 L 408 360 L 408 288 L 432 288"
     },
     {
       "id": "edge:interface:consumer:bus:interface_modport:consumer:bus:bus",
@@ -137,7 +137,7 @@
       "target": "interface_modport:consumer:bus",
       "sourceHandle": "out:slave",
       "targetHandle": "in:slave",
-      "path": "M 240 48 L 264 48 L 576 48 L 576 93"
+      "path": "M 240 48 L 264 48 L 528 48 L 528 93"
     }
   ]
 }

@@ -119,10 +119,10 @@
       "id": "mux:top:next_r:next_state_en",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1200,
         "y": 96
       },
-      "width": 192,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -157,7 +157,7 @@
         "x": 840,
         "y": 216
       },
-      "width": 240,
+      "width": 144,
       "height": 192,
       "data": {
         "kind": "mux",
@@ -224,7 +224,7 @@
       "id": "port:top:next_state_en",
       "type": "hdl",
       "position": {
-        "x": 912,
+        "x": 816,
         "y": 36
       },
       "width": 168,
@@ -328,7 +328,7 @@
       "target": "mux:top:next_r:next_state_en",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 243 168 L 264 168 L 288 168 L 288 24 L 1272 24 L 1272 168 L 1296 168"
+      "path": "M 243 168 L 264 168 L 288 168 L 288 24 L 1176 24 L 1176 168 L 1200 168"
     },
     {
       "id": "edge:latch:top:next_r:reg:top:r:next_r",
@@ -392,7 +392,7 @@
       "target": "latch:top:next_r",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1488 144 L 1512 144 L 1512 456 L 0 456 L 0 168 L 24 168 L 45 168"
+      "path": "M 1344 144 L 1368 144 L 1368 456 L 0 456 L 0 168 L 24 168 L 45 168"
     },
     {
       "id": "edge:mux:top:next_r:r:mux:top:next_r:next_state_en:next_r_if_true",
@@ -400,7 +400,7 @@
       "target": "mux:top:next_r:next_state_en",
       "sourceHandle": "out",
       "targetHandle": "in:true",
-      "path": "M 1080 312 L 1104 312 L 1152 312 L 1152 144 L 1272 144 L 1296 144"
+      "path": "M 984 312 L 1008 312 L 1056 312 L 1056 144 L 1176 144 L 1200 144"
     },
     {
       "id": "edge:port:top:clk:reg:top:r:clk",
@@ -416,7 +416,7 @@
       "target": "mux:top:next_r:next_state_en",
       "sourceHandle": "port:next_state_en",
       "targetHandle": "sel",
-      "path": "M 1080 48 L 1104 48 L 1265 48 Q 1272 41 1279 48 L 1392 48 L 1392 72 L 1392 120"
+      "path": "M 984 48 L 1008 48 L 1169 48 Q 1176 41 1183 48 L 1272 48 L 1272 72 L 1272 120"
     },
     {
       "id": "edge:port:top:rst_n:reg:top:r:rst_n",
@@ -432,7 +432,7 @@
       "target": "mux:top:next_r:r",
       "sourceHandle": "q",
       "targetHandle": "sel",
-      "path": "M 624 168 L 648 168 L 672 168 L 672 192 L 689 192 Q 696 185 703 192 L 960 192 L 960 240"
+      "path": "M 624 168 L 648 168 L 672 168 L 672 192 L 689 192 Q 696 185 703 192 L 912 192 L 912 240"
     },
     {
       "id": "edge:reg:top:r:port:top:state:state",
