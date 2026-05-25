@@ -313,7 +313,7 @@
       "target": "mux:array_register:M_address_:rst",
       "sourceHandle": "port:32_b0",
       "targetHandle": "in:true",
-      "path": "M 887 288 L 936 288 L 936 384 L 1104 384 L 1080 384"
+      "path": "M 887 288 L 936 288 L 936 384 L 1104 384"
     },
     {
       "id": "edge:mux:array_register:M_addr:reg:array_register:M:M_next",
@@ -369,7 +369,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144 456 L 360 456 L 336 456"
+      "path": "M 144 456 L 360 456"
     },
     {
       "id": "edge:port:array_register:rst:mux:array_register:M_address_:rst:rst",
@@ -385,7 +385,7 @@
       "target": "mux:array_register:M_address_:write_en",
       "sourceHandle": "port:write_data",
       "targetHandle": "in:true",
-      "path": "M 528 360 L 576 360 L 576 408 L 744 408 L 720 408"
+      "path": "M 528 360 L 576 360 L 576 408 L 744 408"
     },
     {
       "id": "edge:port:array_register:write_en:mux:array_register:M_address_:write_en:write_en",

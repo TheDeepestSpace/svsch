@@ -6,6 +6,7 @@ import { PNG } from 'pngjs';
 import { expectGraphAndScreenshot, fitGraphView } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
+import { diagramSizing } from '../../src/diagram/constants';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
@@ -202,7 +203,7 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
 async function expectPromotedStackFanoutPaint(
   page: Page,
   edgeId: string,
-  expectedOrder: { frontBeforeBackX?: boolean; frontBeforeBackY?: boolean } = {}
+  expectedOrder: { frontBeforeBackX?: boolean; frontBeforeBackY?: boolean; breakoutDistanceGridUnits?: number } = {}
 ): Promise<void> {
   const fanout = await page.locator(`.react-flow__edge[data-id="${edgeId}"]`).evaluate((edge) => {
     type Point = { x: number; y: number };
@@ -228,6 +229,9 @@ async function expectPromotedStackFanoutPaint(
     });
     const bar = edge.querySelector('.svsch-edge-stacked-breakout');
     const barPoints = bar ? pathPoints(bar) : [];
+    const bridge = edge.querySelector('.svsch-edge-bridge');
+    const bridgePoints = bridge ? pathPoints(bridge) : [];
+    const target = bridgePoints[bridgePoints.length - 1];
     const gradient = edge.querySelector('linearGradient');
     const stops = [...gradient?.querySelectorAll('stop') ?? []].map((stop) => ({
       offset: stop.getAttribute('offset'),
@@ -241,6 +245,7 @@ async function expectPromotedStackFanoutPaint(
         start: barPoints[0],
         end: barPoints[barPoints.length - 1]
       },
+      target,
       gradient: gradient ? {
         x1: Number(gradient.getAttribute('x1')),
         y1: Number(gradient.getAttribute('y1')),
@@ -264,6 +269,19 @@ async function expectPromotedStackFanoutPaint(
   expect(fanout.gradient?.y1).toBeCloseTo(front.start.y, 3);
   expect(fanout.gradient?.x2).toBeCloseTo(back.start.x, 3);
   expect(fanout.gradient?.y2).toBeCloseTo(back.start.y, 3);
+
+  if (expectedOrder.breakoutDistanceGridUnits !== undefined) {
+    const barCenter = {
+      x: (fanout.bar.start.x + fanout.bar.end.x) / 2,
+      y: (fanout.bar.start.y + fanout.bar.end.y) / 2
+    };
+    const branchDx = middle.end.x - middle.start.x;
+    const branchDy = middle.end.y - middle.start.y;
+    const breakoutDistance = Math.abs(branchDx) >= Math.abs(branchDy)
+      ? Math.abs(fanout.target.x - barCenter.x)
+      : Math.abs(fanout.target.y - barCenter.y);
+    expect(breakoutDistance).toBeCloseTo(diagramSizing.gridSize * expectedOrder.breakoutDistanceGridUnits, 0);
+  }
 
   if (expectedOrder.frontBeforeBackX !== undefined) {
     if (expectedOrder.frontBeforeBackX) {
@@ -577,12 +595,18 @@ test.describe('register visual rendering', () => {
   test('renders an array register with isometric stacking layers and a dimension badge', async ({ page }) => {
     // Wider viewport so the multi-mux chain fits without being cut off by paddedClipFromBox clamping
     await page.setViewportSize({ width: 2200, height: 1100 });
-    await openFixture(page, 'array_register.sv', 'register');
+    const view = await openFixture(page, 'array_register.sv', 'register');
+    const clockStorageEdge = view.edges.find((edge) => edge.source === 'port:array_register:clk' && edge.target === 'reg:array_register:M' && edge.isStacked);
+    const resetSelectEdge = view.edges.find((edge) => edge.source === 'port:array_register:rst' && edge.targetPort === 'sel' && edge.isStacked);
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.hdl-node-array-layer').first()).toBeVisible();
+    expect(clockStorageEdge).toBeDefined();
+    expect(resetSelectEdge).toBeDefined();
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
+    await expectPromotedStackFanoutPaint(page, resetSelectEdge!.id, { breakoutDistanceGridUnits: 2 });
 
     await fitGraphView(page);
     await expectGraphAndScreenshot(page, 'array-register-canvas.png', { clip: await paddedGraphClip(page) });
@@ -603,10 +627,16 @@ test.describe('register visual rendering', () => {
 
   test('renders a whole-array reset as a stacked register reset', async ({ page }) => {
     const view = await openFixture(page, 'array_complete_reset.sv', 'register');
+    const clockStorageEdge = view.edges.find((edge) => edge.source === 'port:array_complete_reset:clk' && edge.target === 'reg:array_complete_reset:arr' && edge.isStacked);
+    const resetStorageEdge = view.edges.find((edge) => edge.source === 'port:array_complete_reset:rst' && edge.target === 'reg:array_complete_reset:arr' && edge.isStacked);
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
     await expect(page.locator('.register-reset-port >> text=R')).toBeVisible();
+    expect(clockStorageEdge).toBeDefined();
+    expect(resetStorageEdge).toBeDefined();
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
+    await expectPromotedStackFanoutPaint(page, resetStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
 
     await expectGraphAndScreenshot(page, 'array-complete-reset-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -622,8 +652,10 @@ test.describe('register visual rendering', () => {
     expect(view.edges.some((edge) => edge.source === 'port:array_port_register:clk' && edge.target === 'reg:array_port_register:storage' && edge.isStacked)).toBe(true);
     const dataInputEdge = view.edges.find((edge) => edge.source === 'port:array_port_register:in_data' && edge.target === 'reg:array_port_register:storage' && edge.isStacked);
     const dataOutputEdge = view.edges.find((edge) => edge.source === 'reg:array_port_register:storage' && edge.target === 'port:array_port_register:out_data' && edge.isStacked);
+    const clockStorageEdge = view.edges.find((edge) => edge.source === 'port:array_port_register:clk' && edge.target === 'reg:array_port_register:storage' && edge.isStacked);
     expect(dataInputEdge).toBeDefined();
     expect(dataOutputEdge).toBeDefined();
+    expect(clockStorageEdge).toBeDefined();
 
     await expect(page.locator('[data-node-id="port:array_port_register:in_data"].hdl-node-array')).toBeVisible();
     await expect(page.locator('[data-node-id="reg:array_port_register:storage"].hdl-node-array')).toBeVisible();
@@ -640,6 +672,7 @@ test.describe('register visual rendering', () => {
     await expectArrayStackEdgeLanes(page, dataOutputEdge!.id);
     await expectArrayStackEdgeLayerCoordinates(page, dataInputEdge!.id, 'port:array_port_register:in_data', 'reg:array_port_register:storage');
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
 
     await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -730,8 +763,8 @@ test.describe('register visual rendering', () => {
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
     expect(await page.locator('.svsch-edge-junction-stacked-dot').count()).toBeGreaterThanOrEqual(3);
     await expectStackedEdgeSegmentsOrthogonal(page);
-    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id, { frontBeforeBackX: true, frontBeforeBackY: true });
-    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { frontBeforeBackY: true });
+    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id, { frontBeforeBackX: true, frontBeforeBackY: true, breakoutDistanceGridUnits: 2 });
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { frontBeforeBackY: true, breakoutDistanceGridUnits: 1 });
 
     await expectGraphAndScreenshot(page, 'array-address-write-register-canvas.png', { clip: await paddedGraphClip(page, 112) });
   });
@@ -813,9 +846,15 @@ test.describe('register visual rendering', () => {
       && edge.target === writeEnMux?.id
       && edge.isStacked
     ));
+    const clockStorageEdge = view.edges.find((edge) => (
+      edge.source === 'port:array_address_write_enable_register:clk'
+      && edge.target === arrayReg?.id
+      && edge.isStacked
+    ));
     expect(writeEnSelectEdge).toBeDefined();
     expect(addressSelectEdge).toBeDefined();
     expect(inDataEdge).toBeDefined();
+    expect(clockStorageEdge).toBeDefined();
 
     // Both muxes render as stacked array nodes with isometric layers
     await expect(page.locator(`[data-node-id="${writeEnMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
@@ -831,8 +870,10 @@ test.describe('register visual rendering', () => {
     await expectMuxBodyMasksTopStackLead(page, writeEnMux!.id);
     await expectMuxBodyMasksTopStackLead(page, addrMux!.id);
     await expectStackedEdgeSegmentsOrthogonal(page);
-    await expectPromotedStackFanoutPaint(page, writeEnSelectEdge!.id);
-    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id);
+    await expectPromotedStackFanoutPaint(page, writeEnSelectEdge!.id, { breakoutDistanceGridUnits: 2 });
+    await expectPromotedStackFanoutPaint(page, addressSelectEdge!.id, { breakoutDistanceGridUnits: 2 });
+    await expectPromotedStackFanoutPaint(page, inDataEdge!.id, { breakoutDistanceGridUnits: 1 });
+    await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
 
     await expectGraphAndScreenshot(page, 'array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
   });

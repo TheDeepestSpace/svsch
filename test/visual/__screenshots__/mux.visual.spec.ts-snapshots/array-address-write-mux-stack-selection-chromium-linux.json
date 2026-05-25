@@ -169,7 +169,7 @@
       "target": "reg:array_address_write_register:storage",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 552 48 L 600 48 L 600 192 L 744 192 L 720 192"
+      "path": "M 552 48 L 600 48 L 600 192 L 744 192"
     },
     {
       "id": "edge:port:array_address_write_register:in_data:mux:array_address_write_register:storage_addr:in_data",
@@ -177,7 +177,7 @@
       "target": "mux:array_address_write_register:storage_addr",
       "sourceHandle": "port:in_data",
       "targetHandle": "in:2_b0",
-      "path": "M 192 168 L 384 168 L 360 168"
+      "path": "M 192 168 L 384 168"
     },
     {
       "id": "edge:reg:array_address_write_register:storage:mux:array_address_write_register:storage_addr:storage",

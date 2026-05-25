@@ -123,7 +123,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 120 L 240 120 L 240 96 L 384 96 L 360 96"
+      "path": "M 192 120 L 240 120 L 240 96 L 384 96"
     },
     {
       "id": "edge:port:array_complete_reset:in_data:reg:array_complete_reset:arr:in_data",
@@ -139,7 +139,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:rst",
       "targetHandle": "rst",
-      "path": "M 192 192 L 480 192 L 480 168"
+      "path": "M 192 192 L 480 192 L 479.9921875 144"
     },
     {
       "id": "edge:reg:array_complete_reset:arr:port:array_complete_reset:out_data:out_data",

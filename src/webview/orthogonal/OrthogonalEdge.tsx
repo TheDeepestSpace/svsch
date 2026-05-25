@@ -219,11 +219,10 @@ function convergingStackPath(points: OrthogonalPoint[], layerId: ArrayStackLayer
   };
 }
 
-function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition): PromotedStackFanout | undefined {
+function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition, splitDistance: number): PromotedStackFanout | undefined {
   if (points.length < 2) return undefined;
 
   const target = points[points.length - 1];
-  const splitDistance = diagramSizing.gridSize * 2;
   let split: OrthogonalPoint;
 
   if (targetPosition === HdlPosition.Left) split = { x: target.x - splitDistance, y: target.y };
@@ -436,6 +435,8 @@ export function OrthogonalEdge({
   const targetIsArray = targetFlowNode?.data?.node ? nodeIsArrayNode(targetFlowNode.data.node as any) : false;
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
+  const targetNode = targetFlowNode?.data?.node as { kind?: string } | undefined;
+  const isMuxSelectorPromotion = targetNode?.kind === 'mux' && targetHandleId === 'sel';
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -529,7 +530,11 @@ export function OrthogonalEdge({
     targetHdlPosition
   );
   const frontStackPath = pathFromPoints(frontStackPoints);
-  const promotedFanout = isPromotedStack ? promotedStackFanoutPath(points, targetPosition as unknown as HdlPosition) : undefined;
+  const promotedFanout = isPromotedStack ? promotedStackFanoutPath(
+    points,
+    targetPosition as unknown as HdlPosition,
+    diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1)
+  ) : undefined;
   const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
   const convergingStackPaths = isConvergingStack
     ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
