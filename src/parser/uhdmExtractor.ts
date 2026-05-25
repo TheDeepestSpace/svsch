@@ -86,14 +86,23 @@ export async function extractDesignWithUhdm(
     // Mark edges connected to array nodes as stacked appropriately
     for (const module of Object.values(graph.modules)) {
         for (const edge of module.edges) {
+            if (edge.isStacked) continue;
+
             const sourceNode = module.nodes.find(n => n.id === edge.source);
             const targetNode = module.nodes.find(n => n.id === edge.target);
 
-            const sourceIsArrayComp = sourceNode?.kind === 'bus' && sourceNode.metadata?.aggregateKind === 'array' && sourceNode.metadata?.role === 'composition';
-            const targetIsArrayBreakout = targetNode?.kind === 'bus' && targetNode.metadata?.aggregateKind === 'array' && targetNode.metadata?.role !== 'composition';
+            const sourceIsArray = sourceNode?.isArrayNode || sourceNode?.metadata?.isArrayNode || (sourceNode?.kind === 'bus' && sourceNode.metadata?.aggregateKind === 'array' && sourceNode.metadata?.role === 'composition');
+            const targetIsArray = targetNode?.isArrayNode || targetNode?.metadata?.isArrayNode || (targetNode?.kind === 'bus' && targetNode.metadata?.aggregateKind === 'array' && targetNode.metadata?.role !== 'composition');
 
-            if (sourceIsArrayComp || targetIsArrayBreakout) {
-                edge.isStacked = true;
+            if (sourceIsArray || targetIsArray) {
+                const sourcePort = sourceNode?.ports.find(p => p.id === edge.sourcePort);
+                const targetPort = targetNode?.ports.find(p => p.id === edge.targetPort);
+                const sourceIsScalarTap = !!(sourceNode?.kind === 'bus' && (sourcePort?.label?.includes('[') || sourcePort?.name?.includes('[')));
+                const targetIsScalarTap = !!(targetNode?.kind === 'bus' && (targetPort?.label?.includes('[') || targetPort?.name?.includes('[')));
+
+                if (!sourceIsScalarTap && !targetIsScalarTap) {
+                    edge.isStacked = true;
+                }
             }
         }
     }

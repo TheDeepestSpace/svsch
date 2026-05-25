@@ -399,11 +399,6 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
               portX = 0;
             }
           }
-
-          if (node.kind === 'interface') {
-            side = 'EAST';
-            portX = width;
-          }
           
           if (tapIndex >= 0) {
             portY = isInterfaceInstance

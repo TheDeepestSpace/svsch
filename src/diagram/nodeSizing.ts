@@ -58,7 +58,7 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
       return diagramSizing.portHeight;
     }
 
-    const isInterfaceInstance = node.kind === 'interface' && role !== 'modport';
+    const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';
     const height = (node.kind === 'interface' && role === 'port')
       ? diagramSizing.gridSize
       : (node.kind === 'interface' && role === 'modport')
