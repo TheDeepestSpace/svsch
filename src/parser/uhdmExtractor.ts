@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { DesignGraph, DesignModule, DiagramNode, DiagramPort, DiagramEdge, DiagramNodeMetadata, DiagramEdgeMetadata, InstanceParameter, ParameterDecl, ParameterRef, SourceRange } from '../ir/types';
 import { edgeId, stableId } from '../ir/ids';
@@ -10,6 +10,95 @@ import { extractDesignFromText } from './textExtractor';
 
 const execFileAsync = promisify(execFile);
 
+// ---------------------------------------------------------------------------
+// UHDM cache helpers
+// ---------------------------------------------------------------------------
+
+interface CacheFingerprint {
+  version: number;
+  surelogPath: string;
+  files: Array<{ path: string; mtime: number }>;
+  includePaths: string[];
+  defines: Record<string, string>;
+}
+
+async function computeFingerprint(
+  surelogPath: string,
+  files: string[],
+  includePaths: string[],
+  defines: Record<string, string>
+): Promise<CacheFingerprint> {
+  const entries = await Promise.all(files.map(async f => ({
+    path: f,
+    mtime: (await fs.stat(f)).mtimeMs
+  })));
+  return { version: 1, surelogPath, files: entries, includePaths: [...includePaths].sort(), defines };
+}
+
+function fingerprintsMatch(a: CacheFingerprint, b: CacheFingerprint): boolean {
+  if (a.version !== b.version || a.surelogPath !== b.surelogPath) return false;
+  if (a.files.length !== b.files.length) return false;
+  if (JSON.stringify(a.includePaths) !== JSON.stringify(b.includePaths)) return false;
+  if (JSON.stringify(a.defines) !== JSON.stringify(b.defines)) return false;
+  return a.files.every((f, i) => f.path === b.files[i].path && f.mtime === b.files[i].mtime);
+}
+
+// Run Surelog as a spawned child process, streaming stderr to drive progress reports.
+// Progress callback receives (message, increment) where increment is 0-80 (Surelog's share).
+async function runSurelog(
+  surelogPath: string,
+  args: string[],
+  sourceFiles: string[],
+  onProgress?: (message: string, increment: number) => void
+): Promise<void> {
+  const basenames = sourceFiles.map(f => path.basename(f));
+  const seen = new Set<string>();
+  let reportedPct = 0;
+
+  return new Promise((resolve, reject) => {
+    const proc = spawn(surelogPath, args);
+    const stderrChunks: Buffer[] = [];
+    let buf = '';
+
+    const handleLine = (line: string) => {
+      if (!onProgress || sourceFiles.length === 0) return;
+      for (const bn of basenames) {
+        if (!seen.has(bn) && line.includes(bn)) {
+          seen.add(bn);
+          const targetPct = Math.round((seen.size / sourceFiles.length) * 80);
+          const inc = targetPct - reportedPct;
+          if (inc > 0) {
+            onProgress(`Parsing sources (${seen.size}/${sourceFiles.length})`, inc);
+            reportedPct = targetPct;
+          }
+          break;
+        }
+      }
+    };
+
+    proc.stderr.on('data', (chunk: Buffer) => {
+      stderrChunks.push(chunk);
+      buf += chunk.toString();
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+      for (const line of lines) handleLine(line);
+    });
+    proc.stdout.on('data', () => {});
+
+    proc.on('close', code => {
+      if (code !== 0) {
+        const stderr = Buffer.concat(stderrChunks).toString();
+        reject(new Error(`Surelog failed with exit code ${code}\nStderr:\n${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+    proc.on('error', reject);
+  });
+}
+
+// ---------------------------------------------------------------------------
+
 export async function extractDesignWithUhdm(
   files: string[],
   workspaceRoot: string,
@@ -17,23 +106,37 @@ export async function extractDesignWithUhdm(
   backendPath: string,
   includePaths?: string[],
   defines?: Record<string, string>,
-  moduleName?: string
+  moduleName?: string,
+  onProgress?: (message: string, increment: number) => void
 ): Promise<DesignGraph> {
-  const tmpDir = path.join(workspaceRoot, '.svsch', 'uhdm_tmp');
-  await fs.mkdir(tmpDir, { recursive: true });
+  const cacheDir = path.join(workspaceRoot, '.svsch', 'uhdm_cache');
+  const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
+  await fs.mkdir(cacheDir, { recursive: true });
 
+  // --- Cache check ---
+  let cacheHit = false;
+  const fingerprint = await computeFingerprint(surelogPath, files, includePaths ?? [], defines ?? {});
   try {
+    const saved = JSON.parse(await fs.readFile(fingerprintFile, 'utf-8')) as CacheFingerprint;
+    const uhdmFile = await findSurelogUhdmFile(cacheDir);
+    if (fingerprintsMatch(fingerprint, saved) && await fileExists(uhdmFile)) {
+      cacheHit = true;
+    }
+  } catch { /* no cache */ }
+
+  // --- Surelog (skipped on cache hit) ---
+  let surelogReportedPct = 0;
+  if (!cacheHit) {
     const surelogArgs = [
       '-parse',
       '-sverilog',
       '-fileunit',
       '-nopython',
-      '-o', tmpDir
+      '-o', cacheDir
     ];
 
     if (includePaths) {
       for (const inc of includePaths) {
-        // Resolve relative to workspace root if not absolute
         const absPath = path.isAbsolute(inc) ? inc : path.resolve(workspaceRoot, inc);
         surelogArgs.push('-I' + absPath);
       }
@@ -47,26 +150,34 @@ export async function extractDesignWithUhdm(
 
     surelogArgs.push(...files);
 
-    try {
-        await execFileAsync(surelogPath, surelogArgs);
-    } catch (e: any) {
-        const errorDetails = [
-            `Surelog failed with exit code ${e.code}`,
-            e.stderr ? `Stderr:\n${e.stderr}` : '',
-            e.stdout ? `Stdout:\n${e.stdout}` : ''
-        ].filter(Boolean).join('\n\n');
-        throw new Error(errorDetails);
-    }
+    onProgress?.('Elaborating project...', 0);
 
-    const uhdmFile = await findSurelogUhdmFile(tmpDir);
-    if (!(await fileExists(uhdmFile))) {
-      throw new Error(`Surelog failed to generate UHDM file under ${tmpDir}`);
-    }
+    await runSurelog(surelogPath, surelogArgs, files, (msg, inc) => {
+      surelogReportedPct += inc;
+      onProgress?.(msg, inc);
+    });
 
-    const backendArgs = [uhdmFile];
-    if (moduleName) {
-        backendArgs.push(moduleName);
-    }
+    // Ensure we've consumed Surelog's 80% budget before moving on
+    const surelogRemainder = 80 - surelogReportedPct;
+    if (surelogRemainder > 0) onProgress?.('Elaborating project...', surelogRemainder);
+
+    // Persist fingerprint only after successful Surelog run
+    await fs.writeFile(fingerprintFile, JSON.stringify(fingerprint), 'utf-8');
+  } else {
+    onProgress?.('Using cached design data', 80);
+  }
+
+  const uhdmFile = await findSurelogUhdmFile(cacheDir);
+  if (!(await fileExists(uhdmFile))) {
+    throw new Error(`Surelog failed to generate UHDM file under ${cacheDir}`);
+  }
+
+  onProgress?.('Extracting design graph...', 10);
+
+  const backendArgs = [uhdmFile];
+  if (moduleName) {
+      backendArgs.push(moduleName);
+  }
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
@@ -302,10 +413,8 @@ export async function extractDesignWithUhdm(
         }
     }
 
+    onProgress?.('Finalizing...', 10);
     return orderGraphModules(graph);
-  } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true });
-  }
 }
 
 async function extractSourceAwareGraph(files: string[], workspaceRoot: string): Promise<DesignGraph | undefined> {

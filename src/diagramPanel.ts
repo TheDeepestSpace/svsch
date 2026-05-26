@@ -154,18 +154,27 @@ export class DiagramPanel {
       includeExternalDiagnostics: !live
     };
 
-    try {
-      this.graph = await buildDesignGraph(commonOptions);
-    } catch (e: any) {
-      if (e.message.includes('maxBuffer length exceeded')) {
-        logger.warn('Full design too large for buffer, falling back to on-demand module loading.');
-        this.graph = await buildDesignGraph({ ...commonOptions, listOnly: true });
-      } else {
-        throw e;
-      }
-    }
+    await vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: 'SVSCH',
+      cancellable: false,
+    }, async (progress) => {
+      const onProgress = (message: string, increment: number) =>
+        progress.report({ message, increment });
 
-    if (version !== this.rebuildVersion) {
+      try {
+        this.graph = await buildDesignGraph({ ...commonOptions, onProgress });
+      } catch (e: any) {
+        if (e.message.includes('maxBuffer length exceeded')) {
+          logger.warn('Full design too large for buffer, falling back to on-demand module loading.');
+          this.graph = await buildDesignGraph({ ...commonOptions, listOnly: true, onProgress });
+        } else {
+          throw e;
+        }
+      }
+    });
+
+    if (version !== this.rebuildVersion || !this.graph) {
       return;
     }
     this.currentModule = this.currentModule && this.graph.modules[this.currentModule]

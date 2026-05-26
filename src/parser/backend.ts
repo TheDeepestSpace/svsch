@@ -16,6 +16,7 @@ export interface ParserOptions {
   defines?: Record<string, string>;
   moduleName?: string;
   listOnly?: boolean;
+  onProgress?: (message: string, increment: number) => void;
   overlays?: Array<{
     file: string;
     text: string;
@@ -58,7 +59,8 @@ export async function buildDesignGraph(options: ParserOptions): Promise<DesignGr
       options.backendPath,
       allIncludePaths,
       options.defines,
-      options.listOnly ? '--list-only' : options.moduleName
+      options.listOnly ? '--list-only' : options.moduleName,
+      options.onProgress
     );
   } catch (e: any) {
     logger.error('UHDM Extraction Crashed', e);

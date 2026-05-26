@@ -48,6 +48,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     };
 
     // (b) Intercept the SVSCH webview panel so tests can:
+    //     • record timestamps for each phase of the build pipeline
     //     • read the modules list sent from the extension to the webview
     //     • simulate the webview posting an openModule message back to the extension
     //     The webview lives in a cross-origin iframe so Playwright cannot touch it
@@ -56,13 +57,24 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     (vscode.window as any).createWebviewPanel = function (viewType: string, title: string, ...args: any[]) {
       const panel = (origCreatePanel as any).call(vscode.window, viewType, title, ...args);
       if (viewType === 'svsch.diagram') {
-        // Track modules list and graph revision counter via extension→webview messages.
         const origPostMessage = panel.webview.postMessage.bind(panel.webview);
         panel.webview.postMessage = (msg: any) => {
+          const now = Date.now();
+          if (msg?.type === 'status' && msg.status === 'rebuilding') {
+            if (!(global as any).__svschRebuildingAt) {
+              (global as any).__svschRebuildingAt = now;
+            }
+          }
           if (msg?.type === 'graph') {
+            if (!(global as any).__svschFirstGraphAt) {
+              (global as any).__svschFirstGraphAt = now;
+            }
             (global as any).__svschModules = msg.modules;
             (global as any).__svschCurrentModule = msg.view?.moduleName;
             (global as any).__svschGraphCount = ((global as any).__svschGraphCount ?? 0) + 1;
+          }
+          if (msg?.type === 'status' && msg.status === 'idle') {
+            (global as any).__svschIdleAt = now;
           }
           return origPostMessage(msg);
         };
@@ -83,33 +95,88 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     };
   });
 
-  // --- 4. Open the diagram and wait for the full rebuild pipeline to finish.
-  await evaluateInVSCode(vscode =>
-    vscode.commands.executeCommand('svsch.openDiagram')
-  );
+  // --- 4. Clear the UHDM cache so Surelog always runs and the progress
+  //     notification is guaranteed to appear during this test.
+  await evaluateInVSCode(vscode => {
+    const ws = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (ws) {
+      const cacheUri = vscode.Uri.joinPath(ws, '.svsch', 'uhdm_cache');
+      return vscode.workspace.fs.delete(cacheUri, { recursive: true, useTrash: false }).then(
+        () => {}, () => {} // ignore "not found" errors
+      );
+    }
+  });
 
-  // --- 5. Confirm the SVSCH panel tab opened.
+  // --- 5. Fire openDiagram WITHOUT awaiting its returned Promise.
+  //     executeCommand resolves only when the full rebuild finishes (~18 s),
+  //     so returning it would block until Surelog completes and we'd never
+  //     catch the progress notification mid-flight.
+  await evaluateInVSCode(vscode => {
+    (global as any).__svschOpenRequestedAt = Date.now();
+    void vscode.commands.executeCommand('svsch.openDiagram');
+  });
+
+  // --- 6. Screenshot during elaboration: take it ~2 s after the command so
+  //     Surelog is running and the progress notification is visible.
+  await workbox.waitForTimeout(2_000);
+  await expect(workbox).toHaveScreenshot('progress-notification.png');
+
+  // --- 7. Confirm the SVSCH panel tab opened.
   await workbox.waitForSelector(
     '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
     { timeout: 30_000 }
   );
 
-  // Wait for the webview renderer to finish painting after data arrives.
-  await workbox.waitForTimeout(2_000);
+  // --- 8. Poll until the first graph arrives (Surelog can take ~18 s cold).
+  for (let i = 0; i < 60; i++) {
+    const loaded: boolean = await evaluateInVSCode(vscode => {
+      void vscode;
+      return ((global as any).__svschGraphCount ?? 0) > 0;
+    });
+    if (loaded) break;
+    await workbox.waitForTimeout(500);
+  }
+  // Let the React render settle before snapshotting.
+  await workbox.waitForTimeout(1_000);
 
   // Dismiss any notifications that appeared during parsing.
   for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
     await button.click().catch(() => {});
   }
 
-  // --- 6. Snapshot the full VSCode window for the first module.
+  // --- 9. Snapshot the full VSCode window for the first module.
   //     Note: VSCode webview panels render in cross-origin iframes
   //     (vscode-webview:// vs vscode-file://) which Playwright cannot
   //     access from the main page context. The full-window snapshot is
   //     the primary visual regression artifact for system tests.
   await expect(workbox).toHaveScreenshot('full-window.png');
 
-  // --- 7. Switch to a different module via the dropdown.
+  // --- 10. Report load timing.
+  const timing = await evaluateInVSCode(vscode => {
+    void vscode;
+    const openedAt: number = (global as any).__svschOpenRequestedAt ?? 0;
+    const rebuildingAt: number = (global as any).__svschRebuildingAt ?? 0;
+    const firstGraphAt: number = (global as any).__svschFirstGraphAt ?? 0;
+    const idleAt: number = (global as any).__svschIdleAt ?? 0;
+    return { openedAt, rebuildingAt, firstGraphAt, idleAt };
+  });
+
+  const toMs = (a: number, b: number) => b > 0 && a > 0 ? b - a : -1;
+  const startup  = toMs(timing.openedAt, timing.rebuildingAt);
+  const parse    = toMs(timing.rebuildingAt, timing.firstGraphAt);
+  const total    = toMs(timing.openedAt, timing.firstGraphAt);
+  const settle   = toMs(timing.firstGraphAt, timing.idleAt);
+
+  const timingLines = [
+    `[timing] openDiagram → rebuilding status : ${startup  >= 0 ? startup  + ' ms' : 'n/a'}`,
+    `[timing] rebuilding  → first graph data  : ${parse    >= 0 ? parse    + ' ms' : 'n/a'}`,
+    `[timing] openDiagram → diagram visible   : ${total    >= 0 ? total    + ' ms' : 'n/a'} (total)`,
+    `[timing] first graph → idle status       : ${settle   >= 0 ? settle   + ' ms' : 'n/a'}`,
+  ];
+  for (const line of timingLines) console.log(line);
+  fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
+
+  // --- 11. Switch to a different module via the dropdown.
   //     We fire an openModule message into the extension's handler directly
   //     (same path as the webview <select> onChange) and poll until the
   //     extension sends a new graph back to the webview.
@@ -140,7 +207,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
   await expect(workbox).toHaveScreenshot('full-window-second-module.png');
 
-  // --- 8. Collect captured log lines.
+  // --- 12. Collect captured log lines.
   const logs: string[] = await evaluateInVSCode(vscode => {
     void vscode;
     return (global as any).__svschLogs ?? [];
