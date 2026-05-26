@@ -5,5 +5,7 @@ media/
 *.vsix
 coverage/
 test-results/
+playwright-report/
 src/parser/backend_cpp/build/
 build_sv*/
+.vscode-test/

@@ -1,0 +1,27 @@
+diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
+index 5570b9f..988cb80 100644
+--- a/node_modules/vscode-test-playwright/dist/index.js
++++ b/node_modules/vscode-test-playwright/dist/index.js
+@@ -196,17 +196,12 @@ exports.test = test_1.test.extend({
+     },
+     page: ({ workbox }, use) => use(workbox),
+     context: ({ electronApp }, use) => use(electronApp.context()),
+-    _evaluator: async ({ playwright, electronApp, workbox, vscodeTrace }, use, testInfo) => {
+-        const electronAppImpl = await playwright._toImpl(electronApp);
+-        const pageImpl = await playwright._toImpl(workbox);
+-        // check recent logs or wait for URL to access VSCode test server
++    _evaluator: async ({ electronApp, workbox, vscodeTrace }, use, testInfo) => {
++        // Use the public Playwright API — playwright._toImpl() was removed in Playwright 1.48+.
+         const vscodeTestServerRegExp = /^VSCodeTestServer listening on (http:\/\/.*)$/;
+-        const process = electronAppImpl._process;
+-        const recentLogs = electronAppImpl._nodeConnection._browserLogsCollector.recentLogs();
+-        let [match] = recentLogs.map(s => s.match(vscodeTestServerRegExp)).filter(Boolean);
+-        if (!match) {
+-            match = await waitForLine(process, vscodeTestServerRegExp);
+-        }
++        const proc = electronApp.process();
++        const match = await waitForLine(proc, vscodeTestServerRegExp);
++        const pageImpl = undefined;
+         const ws = new ws_1.WebSocket(match[1]);
+         await new Promise(r => ws.once('open', r));
+         const traceMode = getTraceMode(vscodeTrace);

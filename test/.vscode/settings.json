@@ -1,3 +1,7 @@
 {
-  "svsch.projectFolder": "./visual/fixtures"
+  "svsch.projectFolder": "./visual/fixtures",
+  "git.openRepositoryInParentFolders": "never",
+  "extensions.ignoreRecommendations": true,
+  "workbench.tips.enabled": false,
+  "workbench.startupEditor": "none"
 }

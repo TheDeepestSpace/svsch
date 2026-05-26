@@ -95,8 +95,10 @@
     "test:visual:update": "playwright test --update-snapshots",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
-    "postinstall": "node scripts/install-surelog.js || true",
+    "postinstall": "node scripts/install-surelog.js || true && patch-package",
     "test:bdd": "./scripts/test-bdd.sh",
+    "test:system": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts",
+    "test:system:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts --update-snapshots",
     "docs:generate": "ts-node test/scripts/generate-docs.ts && ts-node test/scripts/html-to-pdf.ts",
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
@@ -120,13 +122,15 @@
     "diff": "^9.0.0",
     "jsdom": "^29.1.0",
     "multiple-cucumber-html-reporter": "^3.10.0",
+    "patch-package": "^8.0.1",
     "pixelmatch": "^7.1.0",
     "pngjs": "^7.0.0",
     "start-server-and-test": "^3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.0",
     "vite": "^7.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "vscode-test-playwright": "^0.0.1-beta2"
   },
   "overrides": {
     "semver": "^7.5.2",

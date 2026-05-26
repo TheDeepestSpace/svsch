@@ -90,4 +90,8 @@ RUN cd /tmp && \
 # install uhdm from builder
 COPY --from=uhdm-builder /opt/uhdm /usr/local
 
+# add libs for testing with vscode
+USER root
+RUN apt update && apt install -y libgtk-3-0 libgbm1 libasound2 libxss1
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
