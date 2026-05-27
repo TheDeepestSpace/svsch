@@ -561,7 +561,7 @@ export function OrthogonalEdge({
   const netJunctions = (isLeaderInNet || isInterfaceAggregate) && context
     ? findNetJunctions(netGeometries)
     : [];
-  const useStackedJunctionDots = isStacked && isLeaderInNet && !isInterfaceAggregate && !isConvergingStack;
+  const useStackedJunctionDots = sourceIsArray && isLeaderInNet && !isInterfaceAggregate;
 
   const moveSegment = (event: React.PointerEvent, segmentIndex: number, commit: boolean) => {
     const flowPoint = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
