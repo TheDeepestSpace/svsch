@@ -208,7 +208,7 @@
       "target": "reg:array_address_write_enable_register:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1285 172 L 1324 172 L 1324 28 L 172 28 L 172 268 L 355 268"
+      "path": "M 1285 172 L 1372 172 L 1372 388 L 340 388 L 340 268 L 355 268"
     },
     {
       "id": "edge:mux:array_address_write_enable_register:storage_address_:write_en:mux:array_address_write_enable_register:storage_addr:storage_address__next",

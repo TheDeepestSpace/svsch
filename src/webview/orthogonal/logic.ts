@@ -1,6 +1,14 @@
 import { diagramSizing } from '../../diagram/constants';
 import { HdlPosition, type OrthogonalPoint, type SerializableOrthogonalRoute } from './types';
 
+export interface NodeObstacle {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export function normalizeRoutePoints(
   route: SerializableOrthogonalRoute | undefined,
   sourceX: number,
@@ -340,4 +348,118 @@ export function midpoint(a: OrthogonalPoint, b: OrthogonalPoint): OrthogonalPoin
     x: (a.x + b.x) / 2,
     y: (a.y + b.y) / 2
   };
+}
+
+function horizontalOverlap(rect: NodeObstacle, minX: number, maxX: number): boolean {
+  return rect.x < maxX && rect.x + rect.width > minX;
+}
+
+function verticalOverlap(rect: NodeObstacle, minY: number, maxY: number): boolean {
+  return rect.y < maxY && rect.y + rect.height > minY;
+}
+
+function segmentIntersectsObstacle(start: OrthogonalPoint, end: OrthogonalPoint, rect: NodeObstacle): boolean {
+  const epsilon = 0.5;
+  if (Math.abs(start.y - end.y) < epsilon) {
+    return start.y > rect.y + epsilon
+      && start.y < rect.y + rect.height - epsilon
+      && Math.min(start.x, end.x) < rect.x + rect.width - epsilon
+      && Math.max(start.x, end.x) > rect.x + epsilon;
+  }
+
+  if (Math.abs(start.x - end.x) < epsilon) {
+    return start.x > rect.x + epsilon
+      && start.x < rect.x + rect.width - epsilon
+      && Math.min(start.y, end.y) < rect.y + rect.height - epsilon
+      && Math.max(start.y, end.y) > rect.y + epsilon;
+  }
+
+  return false;
+}
+
+function routeIntersectsAnyObstacle(points: OrthogonalPoint[], obstacles: NodeObstacle[]): boolean {
+  return points.slice(0, -1).some((point, index) => {
+    const next = points[index + 1];
+    return obstacles.some((obstacle) => segmentIntersectsObstacle(point, next, obstacle));
+  });
+}
+
+export function avoidFeedbackObstacles(
+  points: OrthogonalPoint[],
+  obstacles: NodeObstacle[],
+  sourcePosition: HdlPosition,
+  targetPosition: HdlPosition
+): OrthogonalPoint[] {
+  if (points.length < 2 || obstacles.length === 0) {
+    return points;
+  }
+
+  const sourceLead = points[0];
+  const targetLead = points[points.length - 1];
+  const grid = diagramSizing.gridSize;
+  const isRightFeedback = sourcePosition === HdlPosition.Right
+    && targetPosition === HdlPosition.Left
+    && sourceLead.x >= targetLead.x;
+  const isLeftFeedback = sourcePosition === HdlPosition.Left
+    && targetPosition === HdlPosition.Right
+    && sourceLead.x <= targetLead.x;
+
+  if (isRightFeedback || isLeftFeedback) {
+    const minX = Math.min(sourceLead.x, targetLead.x);
+    const maxX = Math.max(sourceLead.x, targetLead.x);
+    const crossed = obstacles.filter((rect) => horizontalOverlap(rect, minX, maxX));
+    if (crossed.length === 0 || !routeIntersectsAnyObstacle(points, crossed)) {
+      return points;
+    }
+
+    const maxY = Math.max(...crossed.map((rect) => rect.y + rect.height));
+    const direction = isRightFeedback ? 1 : -1;
+    const outerX = direction > 0
+      ? Math.max(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x + rect.width)) + grid
+      : Math.min(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x)) - grid;
+    const loopX = snapToGrid(outerX);
+    const loopY = snapToGrid(maxY + grid);
+
+    return makeOrthogonal([
+      sourceLead,
+      { x: loopX, y: sourceLead.y },
+      { x: loopX, y: loopY },
+      { x: targetLead.x, y: loopY },
+      targetLead
+    ]);
+  }
+
+  const isBottomFeedback = sourcePosition === HdlPosition.Bottom
+    && targetPosition === HdlPosition.Top
+    && sourceLead.y >= targetLead.y;
+  const isTopFeedback = sourcePosition === HdlPosition.Top
+    && targetPosition === HdlPosition.Bottom
+    && sourceLead.y <= targetLead.y;
+
+  if (isBottomFeedback || isTopFeedback) {
+    const minY = Math.min(sourceLead.y, targetLead.y);
+    const maxY = Math.max(sourceLead.y, targetLead.y);
+    const crossed = obstacles.filter((rect) => verticalOverlap(rect, minY, maxY));
+    if (crossed.length === 0 || !routeIntersectsAnyObstacle(points, crossed)) {
+      return points;
+    }
+
+    const maxX = Math.max(...crossed.map((rect) => rect.x + rect.width));
+    const direction = isBottomFeedback ? 1 : -1;
+    const outerY = direction > 0
+      ? Math.max(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y + rect.height)) + grid
+      : Math.min(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y)) - grid;
+    const loopY = snapToGrid(outerY);
+    const loopX = snapToGrid(maxX + grid);
+
+    return makeOrthogonal([
+      sourceLead,
+      { x: sourceLead.x, y: loopY },
+      { x: loopX, y: loopY },
+      { x: loopX, y: targetLead.y },
+      targetLead
+    ]);
+  }
+
+  return points;
 }

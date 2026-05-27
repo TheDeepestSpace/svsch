@@ -14,8 +14,8 @@ import {
   makeOrthogonal,
   segmentOrientation,
   midpoint,
-  snapToGrid,
-  snapPoint
+  avoidFeedbackObstacles,
+  type NodeObstacle
 } from './logic';
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender } from '../react-flow-line-jumps';
@@ -28,14 +28,6 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   edge?: DiagramEdge;
   isNetLeader?: boolean;
   netEdgeIds?: string[];
-}
-
-interface NodeObstacle {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }
 
 import { getVscodeApi } from '../vscodeApi';
@@ -264,142 +256,6 @@ function nodeObstacle(node: any): NodeObstacle | undefined {
     width,
     height
   };
-}
-
-function horizontalOverlap(rect: NodeObstacle, minX: number, maxX: number): boolean {
-  return rect.x < maxX && rect.x + rect.width > minX;
-}
-
-function verticalOverlap(rect: NodeObstacle, minY: number, maxY: number): boolean {
-  return rect.y < maxY && rect.y + rect.height > minY;
-}
-
-function routeHasClearHorizontalFeedbackLeg(
-  points: OrthogonalPoint[],
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number
-): boolean {
-  return points.slice(0, -1).some((point, index) => {
-    const next = points[index + 1];
-    if (Math.abs(point.y - next.y) >= 0.5) {
-      return false;
-    }
-    if (Math.max(point.x, next.x) < maxX || Math.min(point.x, next.x) > minX) {
-      return false;
-    }
-    return point.y < minY || point.y > maxY;
-  });
-}
-
-function routeHasClearVerticalFeedbackLeg(
-  points: OrthogonalPoint[],
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number
-): boolean {
-  return points.slice(0, -1).some((point, index) => {
-    const next = points[index + 1];
-    if (Math.abs(point.x - next.x) >= 0.5) {
-      return false;
-    }
-    if (Math.max(point.y, next.y) < maxY || Math.min(point.y, next.y) > minY) {
-      return false;
-    }
-    return point.x < minX || point.x > maxX;
-  });
-}
-
-function avoidFeedbackObstacles(
-  points: OrthogonalPoint[],
-  obstacles: NodeObstacle[],
-  sourcePosition: HdlPosition,
-  targetPosition: HdlPosition
-): OrthogonalPoint[] {
-  if (points.length < 2 || obstacles.length === 0) {
-    return points;
-  }
-
-  const sourceLead = points[0];
-  const targetLead = points[points.length - 1];
-  const grid = diagramSizing.gridSize;
-  const isRightFeedback = sourcePosition === HdlPosition.Right
-    && targetPosition === HdlPosition.Left
-    && sourceLead.x >= targetLead.x;
-  const isLeftFeedback = sourcePosition === HdlPosition.Left
-    && targetPosition === HdlPosition.Right
-    && sourceLead.x <= targetLead.x;
-
-  if (isRightFeedback || isLeftFeedback) {
-    const minX = Math.min(sourceLead.x, targetLead.x);
-    const maxX = Math.max(sourceLead.x, targetLead.x);
-    const crossed = obstacles.filter((rect) => horizontalOverlap(rect, minX, maxX));
-    if (crossed.length === 0) {
-      return points;
-    }
-
-    const minY = Math.min(...crossed.map((rect) => rect.y));
-    const maxY = Math.max(...crossed.map((rect) => rect.y + rect.height));
-    if (routeHasClearHorizontalFeedbackLeg(points, minX, maxX, minY, maxY)) {
-      return points;
-    }
-
-    const direction = isRightFeedback ? 1 : -1;
-    const outerX = direction > 0
-      ? Math.max(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x + rect.width)) + grid
-      : Math.min(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x)) - grid;
-    const loopX = snapToGrid(outerX);
-    const loopY = snapToGrid(maxY + grid);
-
-    return makeOrthogonal([
-      sourceLead,
-      { x: loopX, y: sourceLead.y },
-      { x: loopX, y: loopY },
-      { x: targetLead.x, y: loopY },
-      targetLead
-    ]);
-  }
-
-  const isBottomFeedback = sourcePosition === HdlPosition.Bottom
-    && targetPosition === HdlPosition.Top
-    && sourceLead.y >= targetLead.y;
-  const isTopFeedback = sourcePosition === HdlPosition.Top
-    && targetPosition === HdlPosition.Bottom
-    && sourceLead.y <= targetLead.y;
-
-  if (isBottomFeedback || isTopFeedback) {
-    const minY = Math.min(sourceLead.y, targetLead.y);
-    const maxY = Math.max(sourceLead.y, targetLead.y);
-    const crossed = obstacles.filter((rect) => verticalOverlap(rect, minY, maxY));
-    if (crossed.length === 0) {
-      return points;
-    }
-
-    const minX = Math.min(...crossed.map((rect) => rect.x));
-    const maxX = Math.max(...crossed.map((rect) => rect.x + rect.width));
-    if (routeHasClearVerticalFeedbackLeg(points, minX, maxX, minY, maxY)) {
-      return points;
-    }
-
-    const direction = isBottomFeedback ? 1 : -1;
-    const outerY = direction > 0
-      ? Math.max(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y + rect.height)) + grid
-      : Math.min(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y)) - grid;
-    const loopY = snapToGrid(outerY);
-    const loopX = snapToGrid(Math.max(...crossed.map((rect) => rect.x + rect.width)) + grid);
-
-    return makeOrthogonal([
-      sourceLead,
-      { x: sourceLead.x, y: loopY },
-      { x: loopX, y: loopY },
-      { x: loopX, y: targetLead.y },
-      targetLead
-    ]);
-  }
-
-  return points;
 }
 
 export function OrthogonalEdge({

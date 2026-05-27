@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moveRouteSegment, normalizeRoutePoints } from '../../src/webview/orthogonal/logic';
+import { moveRouteSegment, normalizeRoutePoints, avoidFeedbackObstacles, type NodeObstacle } from '../../src/webview/orthogonal/logic';
 import { HdlPosition } from '../../src/webview/orthogonal/types';
 import { diagramSizing } from '../../src/diagram/constants';
 
@@ -383,5 +383,125 @@ describe('orthogonal edge routing', () => {
     // Orthogonality check
     expect(moved[2].y).toBe(moved[1].y); // Horizontal segment 1 preserved
     expect(moved[3].y).toBe(moved[4].y); // Horizontal segment 3 preserved
+  });
+});
+
+describe('avoidFeedbackObstacles', () => {
+  const obstacles: NodeObstacle[] = [
+    { id: 'A', x: 100, y: 0, width: 100, height: 48 },
+    { id: 'B', x: 100, y: 200, width: 100, height: 48 }
+  ];
+
+  it('preserves a manually dragged clear route for Right-to-Left feedback', () => {
+    const sourceLead = { x: 224, y: 24 };
+    const targetLead = { x: 76, y: 224 };
+
+    const draggedPoints = [
+      sourceLead,
+      { x: 300, y: 24 },
+      { x: 300, y: 300 },
+      { x: 76, y: 300 },
+      targetLead
+    ];
+
+    const result = avoidFeedbackObstacles(
+      draggedPoints,
+      obstacles,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(result).toEqual(draggedPoints);
+  });
+
+  it('preserves a manually dragged clear route that goes to the LEFT', () => {
+    const sourceLead = { x: 224, y: 24 };
+    const targetLead = { x: 76, y: 224 };
+
+    const draggedPoints = [
+      sourceLead,
+      { x: 224, y: -24 },
+      { x: 0, y: -24 },
+      { x: 0, y: 300 },
+      { x: 76, y: 300 },
+      targetLead
+    ];
+
+    const result = avoidFeedbackObstacles(
+      draggedPoints,
+      obstacles,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(result).toEqual(draggedPoints);
+  });
+
+  it('overwrites a route that is NOT clear', () => {
+    const sourceLead = { x: 224, y: 24 };
+    const targetLead = { x: 76, y: 224 };
+
+    const blockedPoints = [
+      sourceLead,
+      { x: 224, y: 224 },
+      targetLead
+    ];
+
+    const result = avoidFeedbackObstacles(
+      blockedPoints,
+      obstacles,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(result).not.toEqual(blockedPoints);
+    expect(result[result.length - 2].y).toBeGreaterThan(248);
+  });
+
+  it('preserves a complex bypass where no single segment spans the obstacles', () => {
+    const sourceLead = { x: 224, y: 24 };
+    const targetLead = { x: 76, y: 224 };
+
+    const complexPoints = [
+      sourceLead,
+      { x: 250, y: 24 },
+      { x: 250, y: 300 },
+      { x: 150, y: 300 },
+      { x: 150, y: 400 },
+      { x: 50, y: 400 },
+      { x: 50, y: 224 },
+      targetLead
+    ];
+
+    const result = avoidFeedbackObstacles(
+      complexPoints,
+      obstacles,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(result).toEqual(complexPoints);
+  });
+
+  it('overwrites a default zig-zag route that hits nodes', () => {
+    const sourceLead = { x: 224, y: 24 };
+    const targetLead = { x: 76, y: 224 };
+
+    const zigZag = [
+      sourceLead,
+      { x: 150, y: 24 },
+      { x: 150, y: 224 },
+      targetLead
+    ];
+
+    const result = avoidFeedbackObstacles(
+      zigZag,
+      obstacles,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(result).not.toEqual(zigZag);
+    expect(result[result.length - 2].y).toBeGreaterThan(248);
   });
 });

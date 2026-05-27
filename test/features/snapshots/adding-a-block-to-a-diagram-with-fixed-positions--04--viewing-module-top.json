@@ -98,7 +98,7 @@
       "target": "port:top:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 552 72 L 576 72 L 600 72 L 600 144 L 312 144 L 312 96 L 336 96"
+      "path": "M 552 72 L 576 72 L 648 72 L 648 192 L 312 192 L 312 96 L 336 96"
     },
     {
       "id": "edge:port:top:a:comb:top:y:expr:a",
