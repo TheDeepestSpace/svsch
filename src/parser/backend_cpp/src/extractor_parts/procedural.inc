@@ -1,3 +1,29 @@
+bool containsEdgeEvent(vpiHandle handle) {
+    if (!handle) return false;
+    if (vpi_get(vpiType, handle) == vpiOperation) {
+        int op_type = vpi_get(vpiOpType, handle);
+        if (op_type == vpiPosedgeOp || op_type == vpiNegedgeOp) return true;
+    }
+
+    vpiHandle operand_itr = vpi_iterate(vpiOperand, handle);
+    if (operand_itr) {
+        while (vpiHandle operand = vpi_scan(operand_itr)) {
+            if (containsEdgeEvent(operand)) {
+                vpi_release_handle(operand_itr);
+                return true;
+            }
+        }
+        vpi_release_handle(operand_itr);
+    }
+    return false;
+}
+
+bool isEdgeTriggeredAlways(vpiHandle process_handle) {
+    vpiHandle stmt = vpi_handle(vpiStmt, process_handle);
+    if (!stmt || vpi_get(vpiType, stmt) != vpiEventControl) return false;
+    return containsEdgeEvent(vpi_handle(vpiCondition, stmt));
+}
+
 void DesignExtractor::processProcess(vpiHandle process_handle, Module& mod) {
     int type = vpi_get(vpiType, process_handle);
     vpiHandle stmt = vpi_handle(vpiStmt, process_handle);
@@ -5,7 +31,7 @@ void DesignExtractor::processProcess(vpiHandle process_handle, Module& mod) {
     if (type == vpiAlways) {
         int always_type = vpi_get(vpiAlwaysType, process_handle);
 
-        if (always_type == 3) { // always_ff
+        if (always_type == 3 || isEdgeTriggeredAlways(process_handle)) { // always_ff or plain edge-triggered always
             processAlwaysFf(process_handle, mod);
             return;
         } else if (always_type == 2 || always_type == 1) { // always_comb or always

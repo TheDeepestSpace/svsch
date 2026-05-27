@@ -28,6 +28,12 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
     }
 
     if (is_variable) {
+        std::string base_name = getBaseSignalName(select_handle);
+        ensureDeclaredArray(mod, base_name);
+        if (!base_name.empty() && mod.arrayDimensions.count(base_name) > 0) {
+            return select_str;
+        }
+
         std::string select_node_id = "select:" + mod.name + ":" + select_str;
         bool exists = false;
         for (const auto& n : mod.nodes) {
@@ -35,7 +41,6 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
         }
 
         if (!exists) {
-            std::string base_name = getBaseSignalName(select_handle);
             std::string sel_name = index_h ? getOrPromoteExpr(index_h, mod, select_str + "_sel") : "idx";
             bool is_indexed_part_select = (type == 606 || type == 607 || type == 130);
 

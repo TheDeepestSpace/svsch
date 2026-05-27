@@ -1701,6 +1701,62 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(mod.edges.some((e) => e.source === addrMux.id && e.target === arrayReg?.id)).toBe(true);
     });
 
+    it('treats edge-triggered plain always array writes as stacked register updates', async () => {
+      const graph = await runParser(backend, [{ file: 'register_file.sv', text: `
+        module register_file
+          ( input clk
+          , input reset
+          , input logic [4:0] addr
+          , input logic [31:0] val_in
+          , output logic [31:0] val_out
+          );
+
+          reg [31:0] M [0:31];
+
+          always @(posedge clk) begin
+            if (reset) begin
+              M[addr] <= 32'b0;
+            end else begin
+              M[addr] <= val_in;
+            end
+          end
+
+          assign val_out = M[addr];
+        endmodule
+      ` }]);
+      const mod = graph.modules.register_file ?? Object.values(graph.modules)[0];
+      expect(mod).toBeDefined();
+
+      const arrayReg = mod.nodes.find((n) => n.kind === 'register' && n.label === 'M');
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+
+      const addrMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'addr')
+        && n.label === 'write address'
+      ));
+      expect(addrMux).toBeDefined();
+      expect(addrMux?.ports.find((p) => p.label === 'default')?.connectedSignal).toBe('M');
+      expect(mod.edges.some((e) => e.source === addrMux?.id && e.target === arrayReg?.id && e.isStacked)).toBe(true);
+
+      const resetMux = mod.nodes.find((n) => (
+        n.kind === 'mux'
+        && (n.isArrayNode === true || n.metadata?.isArrayNode === true)
+        && n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'reset')
+      ));
+      expect(resetMux).toBeDefined();
+
+      const readMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMux).toBeDefined();
+      expect(readMux?.ports.find((p) => p.name === 'in')?.connectedSignal).toBe('M');
+      expect(readMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('addr');
+
+      expect(mod.nodes.some((n) => n.kind === 'select' && n.label === 'M[addr]')).toBe(false);
+      expect(mod.nodes.some((n) => n.id === 'bus_comp:register_file:M')).toBe(false);
+    });
+
     it('uses the address mux to broadcast scalar writes and hold stacked Q values', async () => {
       const graph = await runParser(backend, 'array_address_write_register.sv', fixture('array_address_write_register.sv'));
       const mod = graph.modules.array_address_write_register ?? Object.values(graph.modules)[0];
