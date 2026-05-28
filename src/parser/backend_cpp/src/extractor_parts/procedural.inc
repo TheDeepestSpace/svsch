@@ -393,7 +393,21 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         n.metadata.resetSignal = rst_signal;
         n.metadata.typeName = getTypeName(lhs_first);
         if (!n.metadata.typeName.empty()) n.metadata.typeSource = getTypeSource(lhs_first);
-        std::string reg_width = getDeclaredSignalWidth(mod, reg_base);
+        // For constant part/bit selects (r[3:2], r[0], etc.) the register name
+        // already encodes the bit range — don't use the base signal's declared width
+        // (which would be the full bus width) as the cell width.
+        std::string reg_width = "";
+        {
+            size_t bracket = reg_name.find('[');
+            if (bracket != std::string::npos) {
+                std::string sel = reg_name.substr(bracket + 1);
+                if (!sel.empty() && sel.back() == ']') sel.pop_back();
+                bool is_const = !sel.empty() && std::all_of(sel.begin(), sel.end(),
+                    [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
+                if (is_const) reg_width = "[0:0]"; // suppresses width label; name has the range
+            }
+        }
+        if (reg_width.empty()) reg_width = getDeclaredSignalWidth(mod, reg_base);
         if (reg_width.empty()) reg_width = getWidth(lhs_first);
         auto lhs_field = getStructFieldRef(lhs_first, mod);
         if (lhs_field) {

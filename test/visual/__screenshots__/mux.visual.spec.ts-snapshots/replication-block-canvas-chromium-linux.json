@@ -53,12 +53,12 @@
             "direction": "output"
           },
           {
-            "id": "in:_1_",
+            "id": "in:_2_",
             "name": "[2]",
             "direction": "input"
           },
           {
-            "id": "in:_0_",
+            "id": "in:_1:0_",
             "name": "[1:0]",
             "direction": "input"
           }
@@ -429,7 +429,7 @@
       "source": "port:replication_expr:head",
       "target": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "sourceHandle": "port:head",
-      "targetHandle": "in:_1_",
+      "targetHandle": "in:_2_",
       "path": "M 456 192 L 480 192 L 648 192 L 672 192"
     },
     {
@@ -437,7 +437,7 @@
       "source": "port:replication_expr:pair",
       "target": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "sourceHandle": "port:pair",
-      "targetHandle": "in:_0_",
+      "targetHandle": "in:_1:0_",
       "path": "M 456 120 L 480 120 L 504 120 L 504 185 Q 511 192 504 199 L 504 240 L 648 240 L 672 240"
     },
     {
