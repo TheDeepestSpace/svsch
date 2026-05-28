@@ -368,6 +368,68 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(proceduralInv?.ports.find((port) => port.direction === 'output')?.width).toBe('[7:0]');
   });
 
+  it('promotes logical NOT to inverter for 1-bit signals but keeps it as comb for multi-bit and compound operands', async () => {
+    const graph = await runParser(backend, [{ file: 'logical_not.sv', text: `
+      // 1-bit !: identical semantics to ~, should become an inverter
+      module lnot_scalar(
+        input logic a,
+        output logic y
+      );
+        assign y = !a;
+      endmodule
+
+      // multi-bit !: zero-test reduction (1-bit output, 8-bit input), NOT an inverter
+      module lnot_vector(
+        input logic [7:0] data,
+        output logic is_zero
+      );
+        assign is_zero = !data;
+      endmodule
+
+      // ! of a compound expression: the operand is not a simple signal ref → comb
+      module lnot_expr(
+        input logic a,
+        input logic b,
+        output logic y
+      );
+        assign y = !(a & b);
+      endmodule
+
+      // procedural 1-bit !: should become an inverter like the continuous case
+      module lnot_proc(
+        input logic n_en,
+        output logic en
+      );
+        always_comb en = !n_en;
+      endmodule
+    ` }]);
+
+    // 1-bit scalar: must be an inverter, never a comb
+    const scalar = graph.modules.lnot_scalar;
+    expect(scalar.nodes.filter((n) => n.kind === 'inverter')).toHaveLength(1);
+    expect(scalar.nodes.some((n) => n.kind === 'comb')).toBe(false);
+    const scalarInv = scalar.nodes.find((n) => n.kind === 'inverter');
+    // operation is '!' (the original SV operator), not '~'
+    expect(scalarInv?.metadata?.operation).toBe('!');
+
+    // multi-bit: must stay as a comb (logical zero-test, not a gate inversion)
+    const vector = graph.modules.lnot_vector;
+    expect(vector.nodes.some((n) => n.kind === 'inverter')).toBe(false);
+    expect(vector.nodes.some((n) => n.kind === 'comb')).toBe(true);
+
+    // compound operand: must stay as comb even though a and b are 1-bit
+    const expr = graph.modules.lnot_expr;
+    expect(expr.nodes.some((n) => n.kind === 'inverter')).toBe(false);
+    expect(expr.nodes.some((n) => n.kind === 'comb')).toBe(true);
+
+    // procedural 1-bit !: inverter
+    const proc = graph.modules.lnot_proc;
+    expect(proc.nodes.filter((n) => n.kind === 'inverter')).toHaveLength(1);
+    expect(proc.nodes.some((n) => n.kind === 'comb')).toBe(false);
+    const procInv = proc.nodes.find((n) => n.kind === 'inverter');
+    expect(procInv?.metadata?.operation).toBe('!');
+  });
+
   it('promotes simple arithmetic assignments to ALU blocks but keeps chains as combs', async () => {
     const graph = await runParser(backend, [{ file: 'alu_simple.sv', text: `
       module alu_add(input logic a, input logic b, output logic y);

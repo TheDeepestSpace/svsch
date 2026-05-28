@@ -1880,6 +1880,19 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             });
         }
 
+        // Downgrade `!`-tagged inverters whose input is wider than 1 bit to
+        // comb nodes.  The C++ backend can't reliably check port widths for
+        // logical NOT from UHDM metadata, so we do it here where the source
+        // text is available for an accurate declared-width lookup.
+        for (const node of nodes) {
+            if (node.kind !== 'inverter' || node.metadata?.operation !== '!') continue;
+            const inputPort = node.ports.find((p) => p.direction === 'input');
+            if (inputPort && bitSizeFromWidth(inputPort.width) > 1) {
+                (node as any).kind = 'comb';
+                if (node.metadata) (node.metadata as any).operation = undefined;
+            }
+        }
+
         repairBusCompositionSlices(nodes, rawMod, sourceTextCache);
 
         const module: DesignModule = {

@@ -563,7 +563,29 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
 }
 
 bool DesignExtractor::isInverterOperation(vpiHandle expr) {
-    return expr && vpi_get(vpiType, expr) == vpiOperation && vpi_get(vpiOpType, expr) == vpiBitNegOp;
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
+    int op = vpi_get(vpiOpType, expr);
+    if (op == vpiBitNegOp) return true;
+
+    // `!` (vpiNotOp=3) is logical NOT: it reduces any operand to 1-bit.
+    // Promote to inverter only when the operand is a simple 1-bit signal so
+    // the semantics are identical to `~`.  Multi-bit operands stay as combs.
+    if (op == vpiNotOp) {
+        // Promote `!` to an inverter only when the operand is a simple signal
+        // reference (not a compound expression).  The width check is deferred
+        // to promoteInverterExpr where Module context is available for a
+        // reliable declared-width lookup.
+        vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+        if (!op_itr) return false;
+        vpiHandle operand = vpi_scan(op_itr);
+        bool more = operand && vpi_scan(op_itr) != nullptr;
+        vpi_release_handle(op_itr);
+        if (!operand || more) return false;
+
+        int t = vpi_get(vpiType, operand);
+        return (t == vpiNet || t == vpiReg || t == vpiPort || t == 608);
+    }
+    return false;
 }
 
 std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
@@ -606,6 +628,7 @@ std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, co
         if (inferred_input_size > 1) input_width = "[" + std::to_string(inferred_input_size - 1) + ":0]";
     }
 
+
     std::string width = getWidth(expr);
     std::string declared_output_width = getDeclaredSignalWidth(mod, out_signal);
     if (declared_output_width.empty() && out_signal.size() > 5 && out_signal.compare(out_signal.size() - 5, 5, "_next") == 0) {
@@ -631,7 +654,7 @@ std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, co
     refineSourceInfo(n.source, expr);
     if (n.source.col > 0) n.source.col--;
     n.metadata.expression = getExprText(expr);
-    n.metadata.operation = "~";
+    n.metadata.operation = (vpi_get(vpiOpType, expr) == vpiNotOp) ? "!" : "~";
     n.metadata.isProcedural = is_procedural;
     n.metadata.parameterRefs = collectParameterRefs(expr, mod);
 
