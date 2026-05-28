@@ -193,7 +193,6 @@ export async function extractDesignWithUhdm(
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);
     mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
-    repairResolvedExplicitBusCompositions(graph);
     repairResolvedBusCompositionSlices(graph);
     repairAggregateAssignmentBuses(graph);
     repairInterfaceAssignments(graph);
@@ -870,34 +869,7 @@ function repairInterfaceAssignments(graph: DesignGraph): void {
   }
 }
 
-function repairResolvedExplicitBusCompositions(graph: DesignGraph): void {
-  for (const module of Object.values(graph.modules)) {
-    for (const node of module.nodes) {
-      if (node.kind !== 'bus' || !node.id.startsWith(`bus_comp:${module.name}:`)) continue;
-      if (node.metadata?.aggregateKind === 'array') continue;
-      const output = node.ports.find(port => port.direction === 'output');
-      if (output?.connectedSignal) {
-        const declaredWidth = module.ports.find(port => port.name === output.connectedSignal)?.width;
-        if (declaredWidth) output.width = declaredWidth;
-      }
-      for (const port of node.ports) {
-        if (port.direction !== 'input') continue;
-        const sliceWidth = widthFromSlice(port.name);
-        if (sliceWidth) port.width = sliceWidth;
-      }
-      for (const edge of module.edges) {
-        if (edge.target === node.id && edge.targetPort) {
-          const targetPort = node.ports.find(port => port.id === edge.targetPort || port.name === edge.targetPort);
-          if (targetPort?.width) edge.width = targetPort.width;
-        }
-        if (edge.source === node.id && edge.sourcePort) {
-          const sourcePort = node.ports.find(port => port.id === edge.sourcePort || port.name === edge.sourcePort);
-          if (sourcePort?.width) edge.width = sourcePort.width;
-        }
-      }
-    }
-  }
-}
+
 
 function repairAggregateAssignmentBuses(graph: DesignGraph): void {
   for (const module of Object.values(graph.modules)) {

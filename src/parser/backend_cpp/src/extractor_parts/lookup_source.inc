@@ -151,6 +151,7 @@ void DesignExtractor::buildEdges(Module& mod) {
     }
 
     removeUnconnectedLiteralNodes(mod);
+    repairResolvedExplicitBusCompositions(mod);
 }
 
 std::string DesignExtractor::getSignalName(vpiHandle handle, const std::map<std::string, LoweredValue>& current_drivers) {
@@ -1059,4 +1060,71 @@ void DesignExtractor::removeUnconnectedLiteralNodes(Module& mod) {
         }
     }
     mod.nodes = filtered_nodes;
+}
+
+std::string getWidthFromSlice(const std::string& slice) {
+    std::regex re(R"(\[(\d+):(\d+)\])");
+    std::smatch match;
+    if (std::regex_search(slice, match, re)) {
+        int a = std::stoi(match[1].str());
+        int b = std::stoi(match[2].str());
+        int w = std::abs(a - b) + 1;
+        return "[" + std::to_string(w - 1) + ":0]";
+    }
+    return "";
+}
+
+void DesignExtractor::repairResolvedExplicitBusCompositions(Module& mod) {
+    for (auto& node : mod.nodes) {
+        if (node.kind != "bus" || node.id.rfind("bus_comp:" + mod.name + ":", 0) != 0) continue;
+        if (node.metadata.aggregateKind == "array") continue;
+
+        NodePort* output_port = nullptr;
+        for (auto& port : node.ports) {
+            if (port.direction == "output") {
+                output_port = &port;
+                break;
+            }
+        }
+
+        if (output_port && !output_port->signal.empty()) {
+            std::string declared_width = "";
+            for (const auto& p : mod.ports) {
+                if (p.name == output_port->signal) {
+                    declared_width = p.width;
+                    break;
+                }
+            }
+            if (!declared_width.empty()) {
+                output_port->width = declared_width;
+            }
+        }
+
+        for (auto& port : node.ports) {
+            if (port.direction != "input") continue;
+            std::string slice_width = getWidthFromSlice(port.name);
+            if (!slice_width.empty()) {
+                port.width = slice_width;
+            }
+        }
+
+        for (auto& edge : mod.edges) {
+            if (edge.target == node.id && !edge.targetPort.empty()) {
+                for (const auto& p : node.ports) {
+                    if (p.name == edge.targetPort) {
+                        if (!p.width.empty()) edge.width = p.width;
+                        break;
+                    }
+                }
+            }
+            if (edge.source == node.id && !edge.sourcePort.empty()) {
+                for (const auto& p : node.ports) {
+                    if (p.name == edge.sourcePort) {
+                        if (!p.width.empty()) edge.width = p.width;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
