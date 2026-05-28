@@ -313,11 +313,51 @@ std::string DesignExtractor::getBaseSignalName(vpiHandle handle) {
     }
     return "";
 }
+// Extract width from a port/io_decl handle using the UHDM C++ object API.
+// The VPI layer doesn't surface the typespec range via vpiTypespec or
+// vpiLeftRange on port handles; the data lives at port::Typespec() instead.
+static std::string widthFromPortTypespec(vpiHandle handle) {
+    auto* h = reinterpret_cast<const uhdm_handle*>(handle);
+    if (!h || !h->object) return "";
+    const auto* port_obj = static_cast<const UHDM::ports*>(h->object);
+    const UHDM::ref_typespec* ref_ts = port_obj->Typespec();
+    if (!ref_ts) return "";
+    const auto* lts = ref_ts->Actual_typespec<UHDM::logic_typespec>();
+    if (!lts) return "";
+
+    // Prefer Ranges() (packed range declarations like [3:0])
+    if (const UHDM::VectorOfrange* ranges = lts->Ranges()) {
+        if (!ranges->empty()) {
+            const UHDM::range* r0 = (*ranges)[0];
+            if (r0 && r0->Left_expr() && r0->Right_expr()) {
+                std::string l = std::string(r0->Left_expr()->VpiDecompile());
+                std::string r = std::string(r0->Right_expr()->VpiDecompile());
+                if (!l.empty() && !r.empty() && (l != "0" || r != "0"))
+                    return "[" + l + ":" + r + "]";
+            }
+        }
+    }
+    // Fallback: Left_expr/Right_expr directly on the typespec
+    if (lts->Left_expr() && lts->Right_expr()) {
+        std::string l = std::string(lts->Left_expr()->VpiDecompile());
+        std::string r = std::string(lts->Right_expr()->VpiDecompile());
+        if (!l.empty() && !r.empty() && (l != "0" || r != "0"))
+            return "[" + l + ":" + r + "]";
+    }
+    return "";
+}
+
 std::string DesignExtractor::getWidth(vpiHandle handle) {
     if (!handle || width_depth_ > 10) return "";
     width_depth_++;
     int type = vpi_get(vpiType, handle);
-    // std::cerr << "[DEBUG] getWidth type=" << type << " name=" << (vpi_get_str(vpiName, handle) ? vpi_get_str(vpiName, handle) : "?") << std::endl;
+
+    // For port handles the VPI range queries return 0/0; use the UHDM object API.
+    if (type == vpiPort) {
+        std::string w = widthFromPortTypespec(handle);
+        width_depth_--;
+        return w; // empty means scalar — callers handle that correctly
+    }
 
     if (type == 608) { // vpiRefObj
         vpiHandle actual = vpi_handle(vpiActual, handle);

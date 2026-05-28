@@ -41,6 +41,12 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             vpiHandle low = vpi_handle(vpiLowConn, port_handle);
             p.source = getSourceInfo(low ? low : port_handle);
             p.width = getWidth(low ? low : port_handle);
+            // lowConn (ref_obj) doesn't carry typespec range info; fall back to
+            // the port handle directly where the UHDM object API surfaces it.
+            if ((p.width.empty() || p.width == "[0:0]") && low) {
+                std::string ts_w = getWidth(port_handle);
+                if (!ts_w.empty() && ts_w != "[0:0]") p.width = ts_w;
+            }
             p.widthExpression = getRangeExpression(low ? low : port_handle);
             if (p.widthExpression.empty() && std::regex_search(p.width, std::regex(R"([A-Za-z_$])"))) {
                 p.widthExpression = p.width;
