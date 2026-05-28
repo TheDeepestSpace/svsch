@@ -18,7 +18,7 @@ import {
   snapPoint
 } from './logic';
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
-import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender } from '../react-flow-line-jumps';
+import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender, type LineJumpHalo } from '../react-flow-line-jumps';
 import { InteractionContext } from '../main';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
@@ -476,12 +476,17 @@ export function OrthogonalEdge({
     () => flowNodes.map(nodeObstacle).filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),
     [flowNodes]
   );
-  const officialPoints = React.useMemo(() => avoidFeedbackObstacles(
-    normalizedOfficialPoints,
-    obstacles,
-    sourcePosition as unknown as HdlPosition,
-    targetPosition as unknown as HdlPosition
-  ), [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition]);
+  const officialPoints = React.useMemo(() => {
+    if (diagramEdge?.metadata?.forceStraight === true || (diagramEdge?.routePoints && diagramEdge.routePoints.length > 0)) {
+      return normalizedOfficialPoints;
+    }
+    return avoidFeedbackObstacles(
+      normalizedOfficialPoints,
+      obstacles,
+      sourcePosition as unknown as HdlPosition,
+      targetPosition as unknown as HdlPosition
+    );
+  }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
 
   // Use localPoints if we are dragging, otherwise use officialPoints.
   // We MUST prepend and append the actual handle coordinates to officialPoints 
@@ -495,22 +500,14 @@ export function OrthogonalEdge({
     { x: targetX, y: targetY }
   ];
   const rawEdgePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-  const edgeGeometry = React.useMemo(() => ({
-    edgeId: id,
-    points,
-    sourceId: netKey ?? source,
-    targetId: `${target}:${targetHandleId ?? ''}`,
-    netKey,
-    sourceHandlePoint: { x: sourceX, y: sourceY },
-    targetHandlePoint: { x: targetX, y: targetY }
-  }), [id, points, source, target, targetHandleId, netKey, sourceX, sourceY, targetX, targetY]);
-  const edgeRender = useLineJumpRender(edgeGeometry);
-  const overlapHints = useEdgeOverlapHints(edgeGeometry);
-  const jumpHaloPaths = edgeRender.jumpPaths.length > 0
-    ? edgeRender.jumpPaths
-    : jumpHaloPathsFromPath(edgeRender.path);
-  const targetHdlPosition = targetPosition as unknown as HdlPosition;
-  const sourceHdlPosition = sourcePosition as unknown as HdlPosition;
+  const forceStraight = diagramEdge?.metadata?.forceStraight === true;
+  const isVertical = Math.abs(sourceX - targetX) < 1;
+  const targetHdlPosition = forceStraight && isVertical
+    ? HdlPosition.Top
+    : targetPosition as unknown as HdlPosition;
+  const sourceHdlPosition = forceStraight && isVertical
+    ? HdlPosition.Bottom
+    : sourcePosition as unknown as HdlPosition;
   const backStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
@@ -529,8 +526,6 @@ export function OrthogonalEdge({
     targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle')) : 0,
     targetHdlPosition
   );
-  const backStackPath = pathFromPoints(backStackPoints);
-  const middleStackPath = pathFromPoints(middleStackPoints);
   const frontStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
@@ -540,7 +535,92 @@ export function OrthogonalEdge({
     targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front')) : 0,
     targetHdlPosition
   );
-  const frontStackPath = pathFromPoints(frontStackPoints);
+
+  const edgeGeometry = React.useMemo(() => ({
+    edgeId: id,
+    points,
+    sourceId: netKey ?? source,
+    targetId: `${target}:${targetHandleId ?? ''}`,
+    netKey,
+    sourceHandlePoint: { x: sourceX, y: sourceY },
+    targetHandlePoint: { x: targetX, y: targetY },
+    isStruct: isStructAggregate,
+    isInterface: isInterfaceAggregate,
+    isStacked: isStacked && !isPromotedStack && !isConvergingStack
+  }), [
+    id, points, source, target, targetHandleId, netKey, sourceX, sourceY, targetX, targetY,
+    isStructAggregate, isInterfaceAggregate, isStacked, isPromotedStack, isConvergingStack
+  ]);
+
+  const edgeRender = useLineJumpRender(edgeGeometry);
+  const overlapHints = useEdgeOverlapHints(edgeGeometry);
+
+  const backRender = React.useMemo(() => {
+    if (!isStacked || isPromotedStack || isConvergingStack) return null;
+    const geom = {
+      ...edgeGeometry,
+      points: backStackPoints,
+      isStacked: false,
+      isStruct: isStructAggregate,
+      isInterface: isInterfaceAggregate
+    };
+    return context
+      ? buildLineJumpRender(geom, context.geometries, context.options)
+      : { path: pathFromPoints(backStackPoints), jumpPaths: [], jumpHalos: [] };
+  }, [edgeGeometry, backStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+
+  const middleRender = React.useMemo(() => {
+    if (!isStacked || isPromotedStack || isConvergingStack) return null;
+    const geom = {
+      ...edgeGeometry,
+      points: middleStackPoints,
+      isStacked: false,
+      isStruct: isStructAggregate,
+      isInterface: isInterfaceAggregate
+    };
+    return context
+      ? buildLineJumpRender(geom, context.geometries, context.options)
+      : { path: pathFromPoints(middleStackPoints), jumpPaths: [], jumpHalos: [] };
+  }, [edgeGeometry, middleStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+
+  const frontRender = React.useMemo(() => {
+    if (!isStacked || isPromotedStack || isConvergingStack) return null;
+    const geom = {
+      ...edgeGeometry,
+      points: frontStackPoints,
+      isStacked: false,
+      isStruct: isStructAggregate,
+      isInterface: isInterfaceAggregate
+    };
+    return context
+      ? buildLineJumpRender(geom, context.geometries, context.options)
+      : { path: pathFromPoints(frontStackPoints), jumpPaths: [], jumpHalos: [] };
+  }, [edgeGeometry, frontStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+
+  const backStackPath = backRender ? backRender.path : pathFromPoints(backStackPoints);
+  const middleStackPath = middleRender ? middleRender.path : pathFromPoints(middleStackPoints);
+  const frontStackPath = frontRender ? frontRender.path : pathFromPoints(frontStackPoints);
+
+  const jumpHalos = React.useMemo(() => {
+    if (isStacked && !isPromotedStack && !isConvergingStack) {
+      return [
+        ...(backRender?.jumpHalos ?? []),
+        ...(middleRender?.jumpHalos ?? []),
+        ...(frontRender?.jumpHalos ?? [])
+      ];
+    }
+    if (edgeRender.jumpHalos && edgeRender.jumpHalos.length > 0) {
+      return edgeRender.jumpHalos;
+    }
+    const paths = edgeRender.jumpPaths.length > 0
+      ? edgeRender.jumpPaths
+      : jumpHaloPathsFromPath(edgeRender.path);
+    
+    return paths.map(p => ({ path: p, strokeWidth: 12 }));
+  }, [
+    isStacked, isPromotedStack, isConvergingStack, backRender, middleRender, frontRender,
+    edgeRender, isInterfaceAggregate, isStructAggregate
+  ]);
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(
     points,
     targetPosition as unknown as HdlPosition,
@@ -637,8 +717,13 @@ export function OrthogonalEdge({
           </pattern>
         </defs>
       )}
-      {jumpHaloPaths.map((path, index) => (
-        <path key={`${id}-jump-halo-${index}`} className="svsch-edge-jump-halo" d={path} />
+      {jumpHalos.map((halo, index) => (
+        <path
+          key={`${id}-jump-halo-${index}`}
+          className="svsch-edge-jump-halo"
+          d={halo.path}
+          style={{ strokeWidth: halo.strokeWidth }}
+        />
       ))}
       {isNetHovered && isLeaderInNet && context && (
         <g className="svsch-edge-net-highlight-group">

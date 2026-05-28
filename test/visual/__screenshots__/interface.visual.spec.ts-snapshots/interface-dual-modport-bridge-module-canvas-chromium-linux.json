@@ -98,7 +98,7 @@
         "y": 36
       },
       "width": 312,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "interface",
         "ports": [
@@ -118,7 +118,7 @@
         "y": 84
       },
       "width": 312,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "interface",
         "ports": [
@@ -138,7 +138,7 @@
       "target": "interface_modport:pair_bridge:upstream",
       "sourceHandle": "out:ready",
       "targetHandle": "in:ready",
-      "path": "M 1152 240 L 1176 240 L 1200 240 L 1200 456 L 528 456 L 528 384 L 552 384"
+      "path": "M 1152 240 L 1176 240 L 1200 240 L 1200 432 L 360 432 L 360 384 L 528 384 L 552 384"
     },
     {
       "id": "edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream",

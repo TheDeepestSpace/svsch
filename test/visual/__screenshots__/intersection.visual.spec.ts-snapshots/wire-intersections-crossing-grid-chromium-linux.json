@@ -1,0 +1,774 @@
+{
+  "nodes": [
+    {
+      "id": "g1_h_int_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_int_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_reg_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_stk_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_stk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_str_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_h_str_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_int_src",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": -108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_int_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 312,
+        "y": 516
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": -96,
+        "y": -204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_reg_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 612
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_stk_src",
+      "type": "hdl",
+      "position": {
+        "x": 192,
+        "y": -60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_stk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 468
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_str_src",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": -156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g1_v_str_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 216,
+        "y": 564
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_int_src",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_int_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_reg_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_stk_src",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_stk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_str_src",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_h_str_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_int_src",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": -108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_int_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1056,
+        "y": 516
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "int_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": 648,
+        "y": -204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_reg_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 612
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "reg_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_stk_src",
+      "type": "hdl",
+      "position": {
+        "x": 936,
+        "y": -60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_stk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 468
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "stk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_str_src",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": -156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g2_v_str_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 960,
+        "y": 564
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "str_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "a_h2_int",
+      "source": "g2_h_int_src",
+      "target": "g2_h_int_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 792 312 L 816 312 L 1176 312 L 1200 312"
+    },
+    {
+      "id": "a_h2_reg",
+      "source": "g2_h_reg_src",
+      "target": "g2_h_reg_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 792 120 L 816 120 L 1176 120 L 1200 120"
+    },
+    {
+      "id": "a_h2_stk",
+      "source": "g2_h_stk_src",
+      "target": "g2_h_stk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 805 412 L 1195 412"
+    },
+    {
+      "id": "a_h2_str",
+      "source": "g2_h_str_src",
+      "target": "g2_h_str_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 792 216 L 816 216 L 1176 216 L 1200 216"
+    },
+    {
+      "id": "a_v1_int",
+      "source": "g1_v_int_src",
+      "target": "g1_v_int_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 216 -96 L 216 -96 L 264 -96 L 264 528 L 312 528 L 312 528"
+    },
+    {
+      "id": "a_v1_reg",
+      "source": "g1_v_reg_src",
+      "target": "g1_v_reg_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 24 -192 L 24 -192 L 72 -192 L 72 624 L 120 624 L 120 624"
+    },
+    {
+      "id": "a_v1_stk",
+      "source": "g1_v_stk_src",
+      "target": "g1_v_stk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 325 -44 L 364 -44 L 364 484 L 403 484"
+    },
+    {
+      "id": "a_v1_str",
+      "source": "g1_v_str_src",
+      "target": "g1_v_str_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 120 -144 L 120 -144 L 168 -144 L 168 576 L 216 576 L 216 576"
+    },
+    {
+      "id": "z_h1_int",
+      "source": "g1_h_int_src",
+      "target": "g1_h_int_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M -24 312 L 0 312 L 60 312 Q 72 300 84 312 L 156 312 Q 168 300 180 312 L 252 312 Q 264 300 276 312 L 348 312 Q 360 300 372 312 L 480 312 L 504 312"
+    },
+    {
+      "id": "z_h1_reg",
+      "source": "g1_h_reg_src",
+      "target": "g1_h_reg_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M -24 120 L 0 120 L 65 120 Q 72 113 79 120 L 159 120 Q 168 111 177 120 L 252 120 Q 264 108 276 120 L 348 120 Q 360 108 372 120 L 480 120 L 504 120"
+    },
+    {
+      "id": "z_h1_stk",
+      "source": "g1_h_stk_src",
+      "target": "g1_h_stk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M -11 412 L 65 412 Q 72 405 79 412 L 159 412 Q 168 403 177 412 L 252 412 Q 264 400 276 412 L 348 412 Q 360 400 372 412 L 499 412"
+    },
+    {
+      "id": "z_h1_str",
+      "source": "g1_h_str_src",
+      "target": "g1_h_str_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M -24 216 L 0 216 L 63 216 Q 72 207 81 216 L 159 216 Q 168 207 177 216 L 252 216 Q 264 204 276 216 L 348 216 Q 360 204 372 216 L 480 216 L 504 216"
+    },
+    {
+      "id": "z_v2_int",
+      "source": "g2_v_int_src",
+      "target": "g2_v_int_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 960 -96 L 960 -96 L 1008 -96 L 1008 108 Q 1020 120 1008 132 L 1008 204 Q 1020 216 1008 228 L 1008 300 Q 1020 312 1008 324 L 1008 396 Q 1020 408 1008 420 L 1008 528 L 1056 528 L 1056 528"
+    },
+    {
+      "id": "z_v2_reg",
+      "source": "g2_v_reg_src",
+      "target": "g2_v_reg_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 768 -192 L 768 -192 L 816 -192 L 816 624 L 864 624 L 864 624"
+    },
+    {
+      "id": "z_v2_stk",
+      "source": "g2_v_stk_src",
+      "target": "g2_v_stk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 1069 -44 L 1108 -44 L 1108 113 Q 1115 120 1108 127 L 1108 207 Q 1117 216 1108 225 L 1108 300 Q 1120 312 1108 324 L 1108 396 Q 1120 408 1108 420 L 1108 484 L 1147 484"
+    },
+    {
+      "id": "z_v2_str",
+      "source": "g2_v_str_src",
+      "target": "g2_v_str_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 864 -144 L 864 -144 L 912 -144 L 912 111 Q 921 120 912 129 L 912 207 Q 921 216 912 225 L 912 300 Q 924 312 912 324 L 912 396 Q 924 408 912 420 L 912 576 L 960 576 L 960 576"
+    }
+  ]
+}

@@ -8,7 +8,7 @@
         "y": 108
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -28,7 +28,7 @@
         "y": 60
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -48,7 +48,7 @@
         "y": 60
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -98,7 +98,7 @@
       "target": "reg:top:q_new",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144.00030141362993 120.000030141363 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96.00019924500596"
+      "path": "M 144.00030141362993 120.000030141363 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96.00018084817796"
     },
     {
       "id": "edge:port:top:d:reg:top:q_new:d",

@@ -13,8 +13,9 @@ export function normalizeRoutePoints(
   targetHandleId?: string | null,
   simplify = true
 ): OrthogonalPoint[] {
-  const sourceLeadLen = leadLengthForHandle(sourcePosition, sourceHandleId);
-  const targetLeadLen = leadLengthForHandle(targetPosition, targetHandleId);
+  const forceStraight = (route as any)?.edge?.metadata?.forceStraight === true;
+  const sourceLeadLen = forceStraight ? 0 : leadLengthForHandle(sourcePosition, sourceHandleId);
+  const targetLeadLen = forceStraight ? 0 : leadLengthForHandle(targetPosition, targetHandleId);
   const sourceLead = snapPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen));
   const targetLead = snapPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen));
   const saved = route?.routePoints?.length
