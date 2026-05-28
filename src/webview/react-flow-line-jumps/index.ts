@@ -16,5 +16,6 @@ export type {
   LineJumpOptions,
   OverlapHint,
   Point,
-  PolylineEdgeGeometry
+  PolylineEdgeGeometry,
+  LineJumpHalo
 } from './types';

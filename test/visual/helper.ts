@@ -100,6 +100,28 @@ export async function paddedGraphClip(page: Page): Promise<{ x: number; y: numbe
   return paddedClipFromBox(page, box, padding);
 }
 
+// Union-based clip: queries every rendered node's getBoundingClientRect so nodes
+// above canvas y=0 (which fall above the .react-flow__nodes container bbox) are
+// included correctly.
+export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  const padding = 48;
+  const box = await page.evaluate(() => {
+    const rects = Array.from(document.querySelectorAll('.react-flow__node'))
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+    if (rects.length === 0) return null;
+    const minX = Math.min(...rects.map((r) => r.left));
+    const minY = Math.min(...rects.map((r) => r.top));
+    const maxX = Math.max(...rects.map((r) => r.right));
+    const maxY = Math.max(...rects.map((r) => r.bottom));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  });
+  if (!box) {
+    throw new Error('Unable to find rendered graph nodes');
+  }
+  return paddedClipFromBox(page, box, padding);
+}
+
 export async function canvasClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
   const box = await page.locator('.canvas').boundingBox();
   if (!box) {

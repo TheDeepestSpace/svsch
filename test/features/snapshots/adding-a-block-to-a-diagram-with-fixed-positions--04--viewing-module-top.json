@@ -38,7 +38,7 @@
         "y": 84
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -58,7 +58,7 @@
         "y": 108
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -78,7 +78,7 @@
         "y": 84
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -98,7 +98,7 @@
       "target": "port:top:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 552 72 L 576 72 L 600 72 L 600 144 L 312 144 L 312 96 L 336 96"
+      "path": "M 552 72 L 576 72 L 456 72 L 456 96 L 312 96 L 336 96"
     },
     {
       "id": "edge:port:top:a:comb:top:y:expr:a",

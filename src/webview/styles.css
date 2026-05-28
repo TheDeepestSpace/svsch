@@ -753,7 +753,9 @@ select {
 
 .hdl-node-port {
   align-items: center;
-  display: inline-grid;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: 2px;
   height: var(--svsch-port-height);
   min-height: var(--svsch-port-height);
@@ -1708,7 +1710,7 @@ select {
   stroke: var(--vscode-editor-background);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 7;
+  stroke-width: 12;
 }
 
 .svsch-edge {

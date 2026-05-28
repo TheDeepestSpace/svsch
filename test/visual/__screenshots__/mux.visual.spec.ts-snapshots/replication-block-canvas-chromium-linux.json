@@ -93,7 +93,7 @@
         "y": 300
       },
       "width": 240,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -113,7 +113,7 @@
         "y": 36
       },
       "width": 168,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -133,7 +133,7 @@
         "y": 180
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -153,7 +153,7 @@
         "y": 180
       },
       "width": 216,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -173,7 +173,7 @@
         "y": 108
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -193,7 +193,7 @@
         "y": 444
       },
       "width": 168,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -213,7 +213,7 @@
         "y": 108
       },
       "width": 216,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -233,7 +233,7 @@
         "y": 324
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -253,7 +253,7 @@
         "y": 396
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [

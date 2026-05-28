@@ -13,6 +13,9 @@ export interface PolylineEdgeGeometry {
   netKey?: string;
   sourceHandlePoint?: Point;
   targetHandlePoint?: Point;
+  isStruct?: boolean;
+  isInterface?: boolean;
+  isStacked?: boolean;
 }
 
 export interface LineJumpOptions {
@@ -27,9 +30,15 @@ export interface OverlapHint {
   style?: React.CSSProperties;
 }
 
+export interface LineJumpHalo {
+  path: string;
+  strokeWidth: number;
+}
+
 export interface LineJumpRender {
   path: string;
   jumpPaths: string[];
+  jumpHalos?: LineJumpHalo[];
 }
 
 export interface ResolvedLineJumpOptions {

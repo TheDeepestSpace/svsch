@@ -4,7 +4,8 @@ import type {
   OverlapHint,
   Point,
   PolylineEdgeGeometry,
-  ResolvedLineJumpOptions
+  ResolvedLineJumpOptions,
+  LineJumpHalo
 } from './types';
 
 const EPSILON = 0.5;
@@ -38,6 +39,32 @@ interface Crossing {
   segmentIndex: number;
   point: Point;
   distance: number;
+  jumpSize: number;
+  haloWidth: number;
+}
+
+function getJumpSizeForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: PolylineEdgeGeometry): number {
+  let requiredClearance = 7;
+  if (otherGeometry.isInterface) {
+    requiredClearance = 12;
+  } else if (otherGeometry.isStacked) {
+    requiredClearance = 12;
+  } else if (otherGeometry.isStruct) {
+    requiredClearance = 9;
+  }
+
+  let minJump = 7;
+  if (geometry.isInterface) {
+    minJump = 12;
+  } else if (geometry.isStruct) {
+    minJump = 9;
+  }
+
+  return Math.max(minJump, requiredClearance);
+}
+
+function getHaloWidthForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: PolylineEdgeGeometry): number {
+  return 12;
 }
 
 function resolveOptions(options?: LineJumpOptions): ResolvedLineJumpOptions {
@@ -165,7 +192,9 @@ export function buildLineJumpRender(
         const crossing = {
           segmentIndex: ownSegment.index,
           point,
-          distance: segmentDistance(ownSegment, point)
+          distance: segmentDistance(ownSegment, point),
+          jumpSize: getJumpSizeForCrossing(geometry, otherGeometry),
+          haloWidth: getHaloWidthForCrossing(geometry, otherGeometry)
         };
         const key = crossingKey(crossing);
 
@@ -180,7 +209,8 @@ export function buildLineJumpRender(
   if (crossings.length === 0) {
     return {
       path: pathFromPoints(geometry.points),
-      jumpPaths: []
+      jumpPaths: [],
+      jumpHalos: []
     };
   }
 
@@ -193,6 +223,7 @@ export function buildLineJumpRender(
 
   const commands: string[] = [];
   const jumpPaths: string[] = [];
+  const jumpHalos: LineJumpHalo[] = [];
   for (let index = 0; index < geometry.points.length - 1; index += 1) {
     const start = geometry.points[index];
     const end = geometry.points[index + 1];
@@ -214,20 +245,29 @@ export function buildLineJumpRender(
       : Math.sign(end.y - start.y);
 
     for (const crossing of segmentCrossings) {
+      const currentJumpSize = crossing.jumpSize;
       if (orientation === 'horizontal') {
-        const before = { x: crossing.point.x - direction * resolved.jumpSize, y: crossing.point.y };
-        const after = { x: crossing.point.x + direction * resolved.jumpSize, y: crossing.point.y };
-        const control = { x: crossing.point.x, y: crossing.point.y - resolved.jumpSize };
+        const before = { x: crossing.point.x - direction * currentJumpSize, y: crossing.point.y };
+        const after = { x: crossing.point.x + direction * currentJumpSize, y: crossing.point.y };
+        const control = { x: crossing.point.x, y: crossing.point.y - currentJumpSize };
         commands.push(`L ${before.x} ${before.y}`);
         commands.push(`Q ${control.x} ${control.y} ${after.x} ${after.y}`);
         jumpPaths.push(`M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`);
+        jumpHalos.push({
+          path: `M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`,
+          strokeWidth: crossing.haloWidth
+        });
       } else {
-        const before = { x: crossing.point.x, y: crossing.point.y - direction * resolved.jumpSize };
-        const after = { x: crossing.point.x, y: crossing.point.y + direction * resolved.jumpSize };
-        const control = { x: crossing.point.x + resolved.jumpSize, y: crossing.point.y };
+        const before = { x: crossing.point.x, y: crossing.point.y - direction * currentJumpSize };
+        const after = { x: crossing.point.x, y: crossing.point.y + direction * currentJumpSize };
+        const control = { x: crossing.point.x + currentJumpSize, y: crossing.point.y };
         commands.push(`L ${before.x} ${before.y}`);
         commands.push(`Q ${control.x} ${control.y} ${after.x} ${after.y}`);
         jumpPaths.push(`M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`);
+        jumpHalos.push({
+          path: `M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`,
+          strokeWidth: crossing.haloWidth
+        });
       }
     }
 
@@ -236,7 +276,8 @@ export function buildLineJumpRender(
 
   return {
     path: commands.join(' '),
-    jumpPaths
+    jumpPaths,
+    jumpHalos
   };
 }
 

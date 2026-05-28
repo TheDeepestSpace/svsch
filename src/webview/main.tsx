@@ -901,6 +901,13 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const isInput = portDirection === 'input';
     const isInterfacePort = Boolean(node.ports[0]?.typeName && node.ports[0]?.modportName !== undefined || node.ports[0]?.typeName?.endsWith('_if') || node.ports[0]?.typeName?.endsWith('if'));
     const isSkinnedPort = isInput || isOutput || isInterfacePort;
+    const handlePositionOverride = node.metadata?.handlePosition as Position | undefined;
+    const leadSide = handlePositionOverride === Position.Bottom
+      ? 'bottom'
+      : handlePositionOverride === Position.Top
+        ? 'top'
+        : isOutput ? 'left' : 'right';
+
     return (
       <button
         className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ' hdl-node-array' : ''}`}
@@ -918,11 +925,11 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray && !isSkinnedPort && arrayLayers}
         {!isSkinnedPort && nodeSelection}
         {arrayBadge}
-        {isOutput && <Handle type="target" id={node.ports[0]?.id} position={Position.Left} />}
-        {isOutput && <Handle type="source" id={node.ports[0]?.id} position={Position.Left} />}
+        {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
+        {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {isSkinnedPort && isOutput && hasArrayConnection(node.ports[0]?.id, 'target') && (
           <ArrayStackLeads
-            side="left"
+            side={leadSide}
             width={nodeWidth}
             y={diagramSizing.portHeight / 2}
             trimSink
@@ -942,12 +949,12 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         )}
         {isSkinnedPort && !isOutput && hasArrayConnection(node.ports[0]?.id, 'source') && (
           <ArrayStackLeads
-            side="right"
+            side={leadSide}
             width={nodeWidth}
             y={diagramSizing.portHeight / 2}
           />
         )}
-        {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={Position.Right} />}
+        {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
       </button>
     );
   }
@@ -1761,7 +1768,8 @@ function DiagramApp(): React.ReactElement {
       netToLeader.set(netKey, ids.sort()[0]);
     });
 
-    setEdges(view.edges.map((edge) => {
+    const sortedEdges = [...view.edges].sort((a, b) => a.id.localeCompare(b.id));
+    setEdges(sortedEdges.map((edge) => {
       const netKey = edgeNetKey(edge);
       const isNetLeader = netToLeader.get(netKey) === edge.id;
       const netEdgeIds = Array.from(edgesByNet.get(netKey) || []);

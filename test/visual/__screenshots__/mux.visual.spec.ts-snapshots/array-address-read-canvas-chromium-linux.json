@@ -38,7 +38,7 @@
         "y": 36
       },
       "width": 168,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -58,7 +58,7 @@
         "y": 132
       },
       "width": 120,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [
@@ -78,7 +78,7 @@
         "y": 132
       },
       "width": 168,
-      "height": 29,
+      "height": 24,
       "data": {
         "kind": "port",
         "ports": [

@@ -96,6 +96,10 @@ export function compareGraphState(
   const actualJson = JSON.stringify(actual, null, 2);
 
   if (!fs.existsSync(snapshotPath) || updateSnapshots) {
+    const parentDir = path.dirname(snapshotPath);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
     fs.writeFileSync(snapshotPath, actualJson);
     console.log(`Created or updated baseline graph: ${snapshotPath}`);
     return;
