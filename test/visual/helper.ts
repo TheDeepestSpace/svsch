@@ -39,7 +39,7 @@ export async function expectGraphAndScreenshot(
   await expect(page).toHaveScreenshot(name, options);
 }
 
-export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu';
+export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter';
 
 export async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -57,6 +57,8 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
             ? '[data-node-kind="comb"]'
             : layoutMode === 'alu'
               ? '[data-node-kind="alu"]'
+              : layoutMode === 'inverter'
+                ? '[data-node-kind="inverter"]'
               : '.react-flow__node';
   await page.waitForSelector(readySelector);
   await waitForViewportTransformToSettle(page);
@@ -226,6 +228,8 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
                 ? createCombVisualLayout(graph, moduleName)
                 : layoutMode === 'alu'
                   ? createAluVisualLayout(graph, moduleName)
+                  : layoutMode === 'inverter'
+                    ? createInverterVisualLayout(graph, moduleName)
                   : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
@@ -530,6 +534,36 @@ function createAluVisualLayout(graph: DesignGraph, moduleName: string): SavedLay
 
   outputPorts.forEach((node, index) => {
     nodes[node.id] = { x: aluX + grid * (alus.length > 1 ? 17 : 10), y: aluY + grid * index * 2 };
+  });
+
+  return {
+    version: 1,
+    modules: {
+      [moduleName]: { nodes }
+    }
+  };
+}
+
+function createInverterVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const inverters = designModule.nodes.filter((node) => node.kind === 'inverter');
+  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
+  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const nodes: Record<string, { x: number; y: number }> = {};
+  const grid = 24;
+  const invX = grid * 10;
+  const invY = grid * 4;
+
+  inverters.forEach((node, index) => {
+    nodes[node.id] = { x: invX, y: invY + grid * index * 4 };
+  });
+
+  inputPorts.forEach((node, index) => {
+    nodes[node.id] = { x: invX - grid * 8, y: invY + grid * index * 4 + grid / 2 };
+  });
+
+  outputPorts.forEach((node, index) => {
+    nodes[node.id] = { x: invX + grid * 10, y: invY + grid * index * 4 + grid / 2 };
   });
 
   return {

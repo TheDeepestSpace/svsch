@@ -562,6 +562,120 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
     return out_signal;
 }
 
+bool DesignExtractor::isInverterOperation(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
+    int op = vpi_get(vpiOpType, expr);
+    if (op == vpiBitNegOp) return true;
+
+    // `!` (vpiNotOp=3) is logical NOT: it reduces any operand to 1-bit.
+    // Promote to inverter only when the operand is a simple 1-bit signal so
+    // the semantics are identical to `~`.  Multi-bit operands stay as combs.
+    if (op == vpiNotOp) {
+        // Promote `!` to an inverter only when the operand is a simple signal
+        // reference (not a compound expression).  The width check is deferred
+        // to promoteInverterExpr where Module context is available for a
+        // reliable declared-width lookup.
+        vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+        if (!op_itr) return false;
+        vpiHandle operand = vpi_scan(op_itr);
+        bool more = operand && vpi_scan(op_itr) != nullptr;
+        vpi_release_handle(op_itr);
+        if (!operand || more) return false;
+
+        int t = vpi_get(vpiType, operand);
+        return (t == vpiNet || t == vpiReg || t == vpiPort || t == 608);
+    }
+    return false;
+}
+
+std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
+    if (!expr || !isInverterOperation(expr)) return "";
+
+    std::vector<vpiHandle> operands;
+    vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+    if (op_itr) {
+        while (vpiHandle operand = vpi_scan(op_itr)) {
+            operands.push_back(operand);
+        }
+        vpi_release_handle(op_itr);
+    }
+    if (operands.size() != 1) return "";
+
+    std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
+    std::string node_id = sanitizeId("inverter:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":expr");
+    if (!is_procedural) {
+        for (const auto& n : mod.nodes) {
+            if (n.id == node_id) return out_signal;
+        }
+    }
+
+    vpiHandle operand = operands[0];
+    std::string input_signal;
+    if (isLiteralExpr(operand)) {
+        input_signal = getLiteralLabel(operand);
+        ensureLiteralNode(operand, mod, input_signal, getWidth(operand), expr, input_signal);
+    } else {
+        input_signal = getOrPromoteExpr(operand, mod, out_signal + "_in", is_procedural, current_drivers);
+    }
+
+    std::string input_width = getWidth(operand);
+    std::string declared_input_width = getDeclaredSignalWidth(mod, input_signal);
+    if (bitSizeFromWidth(declared_input_width) > bitSizeFromWidth(input_width)) {
+        input_width = declared_input_width;
+    }
+    if (input_width.empty()) {
+        int inferred_input_size = expressionBitSize(operand);
+        if (inferred_input_size > 1) input_width = "[" + std::to_string(inferred_input_size - 1) + ":0]";
+    }
+
+
+    std::string width = getWidth(expr);
+    std::string declared_output_width = getDeclaredSignalWidth(mod, out_signal);
+    if (declared_output_width.empty() && out_signal.size() > 5 && out_signal.compare(out_signal.size() - 5, 5, "_next") == 0) {
+        declared_output_width = getDeclaredSignalWidth(mod, out_signal.substr(0, out_signal.size() - 5));
+    }
+    if (bitSizeFromWidth(declared_output_width) > bitSizeFromWidth(width)) {
+        width = declared_output_width;
+    }
+    if (width.empty()) {
+        int inferred_size = expressionBitSize(expr);
+        if (inferred_size > 1) {
+            width = "[" + std::to_string(inferred_size - 1) + ":0]";
+        } else {
+            width = input_width;
+        }
+    }
+
+    Node n;
+    n.id = node_id;
+    n.kind = "inverter";
+    n.label = "";
+    n.source = getSourceInfo(expr);
+    refineSourceInfo(n.source, expr);
+    if (n.source.col > 0) n.source.col--;
+    n.metadata.expression = getExprText(expr);
+    n.metadata.operation = (vpi_get(vpiOpType, expr) == vpiNotOp) ? "!" : "~";
+    n.metadata.isProcedural = is_procedural;
+    n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+
+    std::string input_name = input_signal;
+    std::string input_label = "";
+    size_t bracket = input_signal.find('[');
+    if (bracket != std::string::npos) {
+        input_name = input_signal.substr(0, bracket);
+        input_label = input_signal.substr(bracket);
+    }
+    n.ports.push_back({input_name, "input", input_signal, input_width, input_label});
+
+    std::string display_label = out_signal;
+    if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
+        display_label = display_label.substr(0, display_label.size() - 5);
+    }
+    n.ports.push_back({out_signal, "output", out_signal, width, display_label});
+    mod.nodes.push_back(n);
+    return out_signal;
+}
+
 std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
     if (!expr) return "";
     int type = vpi_get(vpiType, expr);
@@ -573,6 +687,11 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
     if (isReplicationOperation(expr)) {
         std::string replicated_signal = promoteReplicationExpr(expr, mod, preferred_name, is_procedural, current_drivers);
         if (!replicated_signal.empty()) return replicated_signal;
+    }
+
+    if (isInverterOperation(expr)) {
+        std::string inverted_signal = promoteInverterExpr(expr, mod, preferred_name, is_procedural, current_drivers);
+        if (!inverted_signal.empty()) return inverted_signal;
     }
 
     // Simple types that don't need promotion

@@ -1,0 +1,411 @@
+{
+  "nodes": [
+    {
+      "id": "inverter:inverter_expr:bus_y:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 240
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:bus",
+            "name": "bus",
+            "direction": "input"
+          },
+          {
+            "id": "out:bus_y",
+            "name": "bus_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:inverter_expr:is_nonzero:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 312
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "in:bus4",
+            "name": "bus4",
+            "direction": "input"
+          },
+          {
+            "id": "out:is_nonzero",
+            "name": "is_nonzero",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:inverter_expr:s_y:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:s",
+            "name": "s",
+            "direction": "input"
+          },
+          {
+            "id": "out:s_y",
+            "name": "s_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:inverter_expr:valid_out:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 168
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:n_valid",
+            "name": "n_valid",
+            "direction": "input"
+          },
+          {
+            "id": "out:valid_out",
+            "name": "valid_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:inverter_expr:y:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "out:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:bus_y",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 252
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bus_y",
+            "name": "bus_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:bus4",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bus4",
+            "name": "bus4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:is_nonzero",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:is_nonzero",
+            "name": "is_nonzero",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:n_valid",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:n_valid",
+            "name": "n_valid",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:s",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:s",
+            "name": "s",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:s_y",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:s_y",
+            "name": "s_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:valid_out",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:valid_out",
+            "name": "valid_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inverter_expr:y",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:inverter:inverter_expr:bus_y:expr:port:inverter_expr:bus_y:bus_y",
+      "source": "inverter:inverter_expr:bus_y:expr",
+      "target": "port:inverter_expr:bus_y",
+      "sourceHandle": "out:bus_y",
+      "targetHandle": "port:bus_y",
+      "path": "M 390.796875 264 L 408 264 L 600 264 L 624 264"
+    },
+    {
+      "id": "edge:inverter:inverter_expr:is_nonzero:expr:port:inverter_expr:is_nonzero:is_nonzero",
+      "source": "inverter:inverter_expr:is_nonzero:expr",
+      "target": "port:inverter_expr:is_nonzero",
+      "sourceHandle": "out:is_nonzero",
+      "targetHandle": "port:is_nonzero",
+      "path": "M 552 360 L 576 360 L 744 360 L 768 360"
+    },
+    {
+      "id": "edge:inverter:inverter_expr:s_y:expr:port:inverter_expr:s_y:s_y",
+      "source": "inverter:inverter_expr:s_y:expr",
+      "target": "port:inverter_expr:s_y",
+      "sourceHandle": "out:s_y",
+      "targetHandle": "port:s_y",
+      "path": "M 390.796875 120 L 408 120 L 600 120 L 624 120"
+    },
+    {
+      "id": "edge:inverter:inverter_expr:valid_out:expr:port:inverter_expr:valid_out:valid_out",
+      "source": "inverter:inverter_expr:valid_out:expr",
+      "target": "port:inverter_expr:valid_out",
+      "sourceHandle": "out:valid_out",
+      "targetHandle": "port:valid_out",
+      "path": "M 390.796875 192 L 408 192 L 600 192 L 624 192"
+    },
+    {
+      "id": "edge:inverter:inverter_expr:y:expr:port:inverter_expr:y:y",
+      "source": "inverter:inverter_expr:y:expr",
+      "target": "port:inverter_expr:y",
+      "sourceHandle": "out:y",
+      "targetHandle": "port:y",
+      "path": "M 390.796875 48 L 408 48 L 600 48 L 624 48"
+    },
+    {
+      "id": "edge:port:inverter_expr:a:inverter:inverter_expr:y:expr:a",
+      "source": "port:inverter_expr:a",
+      "target": "inverter:inverter_expr:y:expr",
+      "sourceHandle": "port:a",
+      "targetHandle": "in:a",
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
+    },
+    {
+      "id": "edge:port:inverter_expr:bus:inverter:inverter_expr:bus_y:expr:bus",
+      "source": "port:inverter_expr:bus",
+      "target": "inverter:inverter_expr:bus_y:expr",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:bus",
+      "path": "M 144 264 L 168 264 L 336 264 L 360 264"
+    },
+    {
+      "id": "edge:port:inverter_expr:bus4:inverter:inverter_expr:is_nonzero:expr:bus4",
+      "source": "port:inverter_expr:bus4",
+      "target": "inverter:inverter_expr:is_nonzero:expr",
+      "sourceHandle": "port:bus4",
+      "targetHandle": "in:bus4",
+      "path": "M 144 360 L 168 360 L 336 360 L 360 360"
+    },
+    {
+      "id": "edge:port:inverter_expr:n_valid:inverter:inverter_expr:valid_out:expr:n_valid",
+      "source": "port:inverter_expr:n_valid",
+      "target": "inverter:inverter_expr:valid_out:expr",
+      "sourceHandle": "port:n_valid",
+      "targetHandle": "in:n_valid",
+      "path": "M 144 192 L 168 192 L 336 192 L 360 192"
+    },
+    {
+      "id": "edge:port:inverter_expr:s:inverter:inverter_expr:s_y:expr:s",
+      "source": "port:inverter_expr:s",
+      "target": "inverter:inverter_expr:s_y:expr",
+      "sourceHandle": "port:s",
+      "targetHandle": "in:s",
+      "path": "M 144 120 L 168 120 L 336 120 L 360 120"
+    }
+  ]
+}

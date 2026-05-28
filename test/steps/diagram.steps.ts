@@ -416,6 +416,14 @@ Then('I should not see a combinational block', async function (this: CustomWorld
   await expect(this.page!.locator('[data-node-kind="comb"]')).not.toBeVisible();
 });
 
+Then('I should see an inverter node', async function (this: CustomWorld) {
+  await expect(this.page!.locator('[data-node-kind="inverter"]').first()).toBeVisible();
+});
+
+Then('I should not see an inverter node', async function (this: CustomWorld) {
+  await expect(this.page!.locator('[data-node-kind="inverter"]')).not.toBeVisible();
+});
+
 Then('I should see an ALU block', async function (this: CustomWorld) {
   await expect(this.page!.locator('[data-node-kind="alu"]')).toBeVisible();
 });
@@ -531,6 +539,20 @@ Then('there should be a connection between the combinational block and {string}'
   const sourceId = await this.page?.evaluate(() => document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id'));
   const targetId = await findNodeIdByLabel(this.page!, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: comb=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.page!, sourceId, targetId);
+});
+
+Then('there should be a connection between {string} and the inverter node', async function (this: CustomWorld, source: string) {
+  const sourceId = await findNodeIdByLabel(this.page!, source);
+  const targetId = await this.page?.evaluate(() => document.querySelector('[data-node-kind="inverter"]')?.closest('.react-flow__node')?.getAttribute('data-id'));
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, inverter=${targetId}`);
+  await checkConnection(this.page!, sourceId, targetId);
+});
+
+Then('there should be a connection between the inverter node and {string}', async function (this: CustomWorld, target: string) {
+  const sourceId = await this.page?.evaluate(() => document.querySelector('[data-node-kind="inverter"]')?.closest('.react-flow__node')?.getAttribute('data-id'));
+  const targetId = await findNodeIdByLabel(this.page!, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: inverter=${sourceId}, ${target}=${targetId}`);
   await checkConnection(this.page!, sourceId, targetId);
 });
 
@@ -850,6 +872,15 @@ When('I double-click on the combinational block for {string}', async function (t
   await this.page!.waitForTimeout(200);
 });
 
+When('I double-click on the inverter node for {string}', async function (this: CustomWorld, name: string) {
+  const module = this.lastGraph.modules[this.lastViewModel.moduleName];
+  const node = module.nodes.find((n: any) => n.kind === 'inverter' && n.id.includes(`:${name}:`));
+  const id = node?.id;
+  if (!id) throw new Error(`Could not find inverter node for "${name}"`);
+  await this.page!.locator(`.react-flow__node[data-id="${id}"]`).dblclick({ force: true });
+  await this.page!.waitForTimeout(200);
+});
+
 When('I double-click on the mux block for {string}', async function (this: CustomWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => n.kind === 'mux' && n.id.includes(`:${name}:`));
@@ -1002,7 +1033,7 @@ Then('the editor should highlight the text {string}', async function (this: Cust
       if (messages.length === 0 && port?.source) {
         messages = [{ type: 'navigateToSource', source: port.source }];
       } else if (messages.length === 0) {
-        const sourceNode = module.nodes.find((n: any) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu'));
+        const sourceNode = module.nodes.find((n: any) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter'));
         if (sourceNode?.source) {
           messages = [{ type: 'navigateToSource', source: sourceNode.source }];
         }
@@ -1039,7 +1070,7 @@ Then('a warning notification should be shown with {string}', async function (thi
   const module = this.lastGraph.modules[moduleName];
 
   const port = module.ports.find((p: any) => p.name === edge.signal);
-  const sourceNode = module.nodes.find((n: any) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu'));
+  const sourceNode = module.nodes.find((n: any) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter'));
 
   if (port?.source || sourceNode?.source) {
     throw new Error('Expected no source to be found for signal, but found one.');

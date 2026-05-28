@@ -78,6 +78,10 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
     return muxHeightForPortRows(2);
   }
 
+  if (node.kind === 'inverter') {
+    return diagramSizing.gridSize * 2;
+  }
+
   if (node.kind === 'register') {
     return nodeHeightForPortRows(Math.max(2, outputsCount, registerVisibleInputRows(node)));
   }
@@ -173,6 +177,13 @@ function nodeWidthForKind(
     );
   }
 
+  if (node.kind === 'inverter') {
+    const g = diagramSizing.gridSize;
+    const bubbleRadius = Math.min(g / 4, g / 6);
+    const geometryWidth = g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
+    return snapUpToEvenGrid(geometryWidth);
+  }
+
   if (node.kind === 'register') {
     return snappedWidth(
       diagramSizing.registerWidth,
@@ -254,7 +265,7 @@ function visiblePortLabels(
   outputs: DiagramNode['ports'],
   showPortTypes: boolean
 ): string[] {
-  if (node.kind === 'comb' || node.kind === 'loop') {
+  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop') {
     return [];
   }
 
@@ -302,7 +313,7 @@ function nodeTitle(node: DiagramNode): string {
   const typeName = nodeTypeName(node);
   const base = node.label;
   const suffix = typeName || width;
-  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
+  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
 }
 
 function portNodeLabel(node: DiagramNode): string {

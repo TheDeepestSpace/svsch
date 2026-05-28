@@ -321,6 +321,15 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
         const inputIndex = Math.max(0, inputs.indexOf(port));
         portY = inputIndex === 0 ? grid : grid * 3;
       }
+    } else if (node.kind === 'inverter') {
+      if (port.direction === 'output') {
+        side = 'EAST';
+        portX = width;
+      } else {
+        side = 'WEST';
+        portX = 0;
+      }
+      portY = height / 2;
     } else if (node.kind === 'port' || (node.kind === 'interface' && role === 'port')) {
       portY = height / 2;
     } else if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {

@@ -8,7 +8,7 @@
         "y": 24
       },
       "width": 192,
-      "height": 72,
+      "height": 96,
       "data": {
         "kind": "comb",
         "ports": [
@@ -20,6 +20,11 @@
           {
             "id": "port:a",
             "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:c",
+            "name": "c",
             "direction": "input"
           }
         ]
@@ -64,6 +69,26 @@
           }
         ]
       }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
     }
   ],
   "edges": [
@@ -82,6 +107,14 @@
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
       "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    },
+    {
+      "id": "edge:port:top:c:comb:top:b:expr:c",
+      "source": "port:top:c",
+      "target": "comb:top:b:expr",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:c",
+      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
     }
   ]
 }

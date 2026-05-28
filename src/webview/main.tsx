@@ -386,6 +386,33 @@ function AluSkin({ width, height }: { width: number; height: number }): React.Re
   );
 }
 
+function InverterSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+  const side = diagramSizing.gridSize;
+  const bubbleRadius = Math.min(diagramSizing.gridSize / 4, side / 6);
+  const bubbleGap = 2;
+  const bodyRight = side * Math.sqrt(3) / 2;
+  const midY = height / 2;
+  const triTop = midY - side / 2;
+  const triBottom = midY + side / 2;
+  const path = `M 0 ${triTop} L ${bodyRight} ${midY} L 0 ${triBottom} Z`;
+  const bubbleCx = bodyRight + bubbleGap + bubbleRadius;
+
+  return (
+    <svg
+      className="node-skin inverter-skin"
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ overflow: 'visible' }}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path className="node-skin-body" d={path} />
+      <circle className="node-skin-body inverter-bubble" cx={bubbleCx} cy={midY} r={bubbleRadius} />
+      <path className="node-skin-selection" d={path} />
+      <circle className="node-skin-selection inverter-bubble-selection" cx={bubbleCx} cy={midY} r={bubbleRadius} />
+    </svg>
+  );
+}
+
 function muxInputPortCenterY(index: number, count: number, height: number): number {
   const grid = diagramSizing.gridSize;
   const heightUnits = Math.max(1, Math.round(height / grid));
@@ -725,6 +752,7 @@ function structFieldAnnotation(node: DiagramNode, port: DiagramPort): React.Reac
 
 function formatNodeKind(node: DiagramNode): string {
   if (node.kind === 'alu') return 'ALU';
+  if (node.kind === 'inverter') return 'INVERTER';
   if (node.kind === 'comb') return 'COMBINATIONAL';
   if (node.kind === 'replicate') return node.label;
   if (node.kind === 'bus') return 'BUS';
@@ -819,6 +847,7 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const nodeRole = structRole(node);
   const instanceParameters = node.kind === 'instance' ? (node.instanceParameters ?? node.metadata?.instanceParameters ?? []) : [];
   const showTitleTypeLabel = node.kind !== 'comb'
+    && node.kind !== 'inverter'
     && node.kind !== 'bus'
     && node.kind !== 'struct'
     && (node.kind !== 'interface' || nodeRole === 'port');
@@ -1373,6 +1402,32 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     );
   }
 
+  if (node.kind === 'inverter') {
+    const invG = diagramSizing.gridSize;
+    const invBubbleRadius = Math.min(invG / 4, invG / 6);
+    const invGeometryWidth = invG * Math.sqrt(3) / 2 + 2 + invBubbleRadius * 2;
+    const invOutputOffset = nodeWidth - invGeometryWidth;
+    return (
+      <button
+        className="hdl-node hdl-node-inverter"
+        data-node-id={node.id}
+        data-node-kind={node.kind}
+        style={nodeStyle}
+        title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+        onDoubleClick={handleDoubleClick}
+      >
+        <InverterSkin width={nodeWidth} height={nodeHeight} />
+        {sideInputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+        ))}
+        {outputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="source" id={port.id} position={Position.Right}
+            style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
+        ))}
+      </button>
+    );
+  }
+
 
   return (
     <button
@@ -1575,6 +1630,22 @@ function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): 
       const notchBottomY = midY + deltaY;
       path = `M ${x} ${y} L ${x + width} ${rightTop} V ${rightBottom} L ${x} ${y + height} V ${notchBottomY} L ${x + notchX} ${midY} L ${x} ${notchTopY} Z`;
     }
+  } else if (node.kind === 'inverter') {
+    const side = height / 2;
+    const bubbleRadius = Math.min(width / 12, side / 3);
+    const bodyRight = x + side * Math.sqrt(3) / 2;
+    const bubbleCx = bodyRight + bubbleRadius;
+    const triTop = midY - side / 2;
+    const triBottom = midY + side / 2;
+    path = [
+      `M ${x} ${triTop}`,
+      `L ${bodyRight} ${midY}`,
+      `L ${x} ${triBottom}`,
+      'Z',
+      `M ${bubbleCx - bubbleRadius} ${midY}`,
+      `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${bubbleRadius * 2} 0`,
+      `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${-bubbleRadius * 2} 0`
+    ].join(' ');
   } else if (node.kind === 'interface') {
     const role = structRole(node);
     const isInterfaceInstance = role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');

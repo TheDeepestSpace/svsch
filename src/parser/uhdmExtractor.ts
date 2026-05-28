@@ -496,11 +496,11 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
         }
         
         // Special matching for combinational/bus/struct blocks if no label match
-        if (!targetNode && (sourceNode.kind === 'comb' || sourceNode.kind === 'alu' || sourceNode.kind === 'bus' || sourceNode.kind === 'struct')) {
+        if (!targetNode && (sourceNode.kind === 'comb' || sourceNode.kind === 'alu' || sourceNode.kind === 'inverter' || sourceNode.kind === 'bus' || sourceNode.kind === 'struct')) {
             const sourceOutput = sourceNode.ports.find(p => p.direction === 'output')?.name;
             if (sourceOutput) {
                 targetNode = targetModule.nodes.find(n => 
-                    (n.kind === 'comb' || n.kind === 'alu' || n.kind === 'bus' || n.kind === 'struct') && 
+                    (n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter' || n.kind === 'bus' || n.kind === 'struct') &&
                     n.ports.some(p => {
                         if (p.direction !== 'output') return false;
                         if (p.name === sourceOutput) return true;
@@ -1462,10 +1462,41 @@ function findDeclaredWidth(cache: Map<string, string>, sourceFile: string | unde
     const text = getSourceText(cache, sourceFile);
     if (!text || !name) return undefined;
 
-    const pattern = new RegExp(`(?:input|output|inout|logic|wire|reg|localparam|parameter)\\b[^;\\n)]*?(\\[[^\\]]+\\])[^;\\n)]*?\\b${escapeRegExp(name)}\\b`, 'g');
-    const match = pattern.exec(text);
-    return match?.[1];
+    return findDeclaredWidthInText(text, name);
 }
+
+function findDeclaredWidthInModule(
+    cache: Map<string, string>,
+    sourceFile: string | undefined,
+    moduleName: string | undefined,
+    name: string | undefined
+): string | undefined {
+    const text = getSourceText(cache, sourceFile);
+    if (!text || !moduleName || !name) return undefined;
+
+    const normalizedName = moduleName.replace(/^work@/, '');
+    const modulePattern = new RegExp(`\\bmodule\\s+(?:automatic\\s+)?${escapeRegExp(normalizedName)}\\b[\\s\\S]*?\\bendmodule\\b`, 'm');
+    const moduleMatch = modulePattern.exec(text);
+    return findDeclaredWidthInText(moduleMatch?.[0] ?? text, name);
+}
+
+function findDeclaredWidthInText(text: string, name: string): string | undefined {
+    const pattern = new RegExp(`(?:input|output|inout|logic|wire|reg|localparam|parameter)\\b[^,;\\n)]*?(\\[[^\\]]+\\])[^,;\\n)]*?\\b${escapeRegExp(name)}\\b`, 'g');
+    const keywords = ['input', 'output', 'inout', 'logic', 'wire', 'reg', 'localparam', 'parameter'];
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+        const fullMatch = match[0];
+        const widthPart = match[1];
+        const widthIndex = fullMatch.indexOf(widthPart);
+        const intermediate = fullMatch.slice(widthIndex + widthPart.length);
+        const hasKeyword = keywords.some(kw => new RegExp(`\\b${kw}\\b`).test(intermediate));
+        if (!hasKeyword) {
+            return widthPart;
+        }
+    }
+    return undefined;
+}
+
 
 function bitSizeFromWidth(width: string | undefined): number {
     if (!width) return 1;
@@ -1604,6 +1635,9 @@ function resolveLiteralDetails(
 function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGraph {
     const graph: DesignGraph = emptyGraph();
     const sourceTextCache = new Map<string, string>();
+    const structTypeNames = new Set(
+        raw.modules.filter(m => m.name.startsWith('struct ')).map(m => m.name.slice(7))
+    );
 
     for (const rawMod of raw.modules) {
         // Remove 'work@' prefix if present
@@ -1614,6 +1648,44 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             usedNodePorts.add(`${e.source}:${e.sourcePort}`);
             usedNodePorts.add(`${e.target}:${e.targetPort}`);
         }
+
+        const moduleFile = rawMod.file ? path.relative(workspaceRoot, rawMod.file) : '';
+        const parameters = rawMod.parameters?.map((param) => parameterDeclFromRaw(param, workspaceRoot));
+        const ports: DiagramPort[] = (rawMod.ports || []).map((p, i) => {
+            const declaredWidth = findDeclaredWidthInModule(sourceTextCache, rawMod.file, modName, p.name);
+            const width = p.width && p.width !== '[0:0]' ? p.width : (declaredWidth ?? p.width);
+            const widthExpression = p.widthExpression || (declaredWidth && /[A-Za-z_$]/.test(declaredWidth) ? declaredWidth : undefined);
+            const rawParameterRefs = p.parameterRefs?.map((ref) => parameterRefFromRaw(ref, workspaceRoot));
+            return {
+                id: stableId('port', p.name),
+                name: p.name,
+                direction: p.direction as any,
+                position: i,
+                width: width || undefined,
+                widthExpression,
+                parameterRefs: rawParameterRefs?.length
+                    ? rawParameterRefs
+                    : (widthExpression ? refsForWidthExpression(widthExpression, parameters) : undefined),
+                typeName: p.typeName,
+                typeSource: sourceRangeFromRaw(
+                    resolveTypeSource(sourceTextCache, p.typeSource, p.source?.file || rawMod.file, p.typeName),
+                    workspaceRoot
+                ),
+                modportName: p.modportName,
+                modportSource: sourceRangeFromRaw(p.modportSource, workspaceRoot),
+                preferredSide: (p as any).preferredSide || undefined,
+                isArrayNode: p.isArrayNode,
+                arrayDimension: p.arrayDimension,
+                arraySize: p.arraySize,
+                source: p.source ? {
+                    file: path.relative(workspaceRoot, p.source.file),
+                    startLine: p.source.line,
+                    startColumn: p.source.col,
+                    endLine: p.source.endLine,
+                    endColumn: p.source.endCol
+                } : undefined
+            };
+        });
 
         const nodes: DiagramNode[] = (rawMod.nodes || []).map(n => {
             const rawMetadata = rawNodeMetadata(n);
@@ -1687,10 +1759,12 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                         let portId = p.name;
                         if (n.kind === 'instance') {
                             portId = stableId('port', p.name);
-                        } else if ((n.kind === 'comb' || n.kind === 'alu') && p.direction === 'output') {
+                        } else if ((n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter') && p.direction === 'output') {
                             portId = stableId('out', p.name);
                         } else if (n.kind === 'alu') {
                             portId = p.name;
+                        } else if (n.kind === 'inverter') {
+                            portId = stableId('in', p.name);
                         } else if (n.kind === 'register' || n.kind === 'latch') {
                             const lowName = p.name.toLowerCase();
                             if (lowName === 'rv') {
@@ -1719,18 +1793,28 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                         }
                         seenIds.add(portId);
 
+                        const modulePortWidth = ports.find((port) => port.name === p.signal || port.name === p.name)?.width;
+                        const rawPortWidth = modulePortWidth
+                            ?? (rawMod.ports || []).find((port) => port.name === p.signal || port.name === p.name)?.width;
+                        const sourceDeclaredWidth = findDeclaredWidthInModule(sourceTextCache, n.source?.file || rawMod.file, modName, p.signal || p.name);
+                        const declaredSignalWidth = rawPortWidth && rawPortWidth !== '[0:0]'
+                            ? rawPortWidth
+                            : (sourceDeclaredWidth ?? rawPortWidth);
+
                         const common = {
                             name: p.name,
                             direction: p.direction as any,
                             width: n.kind === 'literal'
                                 ? (literalDetails?.width
-                                    ?? findDeclaredWidth(sourceTextCache, n.source?.file || rawMod.file, p.signal || p.name)
-                                    ?? (rawMod.ports || []).find((port) => port.name === p.signal || port.name === p.name)?.width
+                                    ?? declaredSignalWidth
                                     ?? p.width
                                     ?? undefined)
                                 : n.kind === 'replicate'
-                                    ? ((rawMod.ports || []).find((port) => port.name === p.signal || port.name === p.name)?.width
-                                        ?? findDeclaredWidth(sourceTextCache, n.source?.file || rawMod.file, p.signal || p.name)
+                                    ? (declaredSignalWidth
+                                        ?? p.width
+                                        ?? undefined)
+                                : n.kind === 'inverter'
+                                    ? (declaredSignalWidth
                                         ?? p.width
                                         ?? undefined)
                                 : (p.width || undefined),
@@ -1782,36 +1866,6 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             return node;
         });
 
-        const moduleFile = rawMod.file ? path.relative(workspaceRoot, rawMod.file) : '';
-
-        const ports: DiagramPort[] = (rawMod.ports || []).map((p, i) => ({
-            id: stableId('port', p.name),
-            name: p.name,
-            direction: p.direction as any,
-            position: i,
-            width: p.width || undefined,
-            widthExpression: p.widthExpression || undefined,
-            parameterRefs: p.parameterRefs?.map((ref) => parameterRefFromRaw(ref, workspaceRoot)),
-            typeName: p.typeName,
-            typeSource: sourceRangeFromRaw(
-                resolveTypeSource(sourceTextCache, p.typeSource, p.source?.file || rawMod.file, p.typeName),
-                workspaceRoot
-            ),
-            modportName: p.modportName,
-            modportSource: sourceRangeFromRaw(p.modportSource, workspaceRoot),
-            preferredSide: (p as any).preferredSide || undefined,
-            isArrayNode: p.isArrayNode,
-            arrayDimension: p.arrayDimension,
-            arraySize: p.arraySize,
-            source: p.source ? {
-                file: path.relative(workspaceRoot, p.source.file),
-                startLine: p.source.line,
-                startColumn: p.source.col,
-                endLine: p.source.endLine,
-                endColumn: p.source.endCol
-            } : undefined
-        }));
-
         // Add port nodes for the module ports themselves (matching textExtractor behavior)
         for (const p of ports) {
             if (p.typeName && p.modportName) {
@@ -1830,12 +1884,25 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             });
         }
 
+        // Downgrade `!`-tagged inverters whose input is wider than 1 bit to
+        // comb nodes.  The C++ backend can't reliably check port widths for
+        // logical NOT from UHDM metadata, so we do it here where the source
+        // text is available for an accurate declared-width lookup.
+        for (const node of nodes) {
+            if (node.kind !== 'inverter' || node.metadata?.operation !== '!') continue;
+            const inputPort = node.ports.find((p) => p.direction === 'input');
+            if (inputPort && bitSizeFromWidth(inputPort.width) > 1) {
+                (node as any).kind = 'comb';
+                if (node.metadata) (node.metadata as any).operation = undefined;
+            }
+        }
+
         repairBusCompositionSlices(nodes, rawMod, sourceTextCache);
 
         const module: DesignModule = {
             name: modName,
             file: moduleFile,
-            parameters: rawMod.parameters?.map((param) => parameterDeclFromRaw(param, workspaceRoot)),
+            parameters,
             ports: ports,
             nodes: nodes,
             edges: (rawMod.edges || []).map((e, i) => {
@@ -1881,11 +1948,13 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 const isStructComposition = sourceNode?.kind === 'struct' && sourceNode?.metadata?.role === 'composition';
                 const srcPort = sourceNode?.ports.find(p => p.id === sourcePortId);
                 const tgtPort = targetNode?.ports.find(p => p.id === targetPortId);
-                const isStructType = (typeName?: string) => typeName && raw.modules.some(m => {
-                    const name = m.name.replace(/^work@/, '');
-                    return name === `struct ${typeName}` || name === typeName;
-                });
-                const isStructEdge = isStructComposition || isStructType(srcPort?.typeName) || isStructType(tgtPort?.typeName);
+                const hasStructTypedPort = (node: DiagramNode | undefined) =>
+                    node?.kind === 'port' && node.ports.some(p => p.typeName && !p.modportName && structTypeNames.has(p.typeName));
+                const isStructEdge = isStructComposition
+                    || (srcPort?.typeName && structTypeNames.has(srcPort.typeName))
+                    || (tgtPort?.typeName && structTypeNames.has(tgtPort.typeName))
+                    || hasStructTypedPort(sourceNode)
+                    || hasStructTypedPort(targetNode);
 
                 const edge: DiagramEdge = {
                     id: edgeId(sourceNodeId, targetNodeId, edgeLabel),
