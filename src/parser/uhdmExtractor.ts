@@ -394,8 +394,6 @@ export async function extractDesignWithUhdm(
         }
     }
 
-    removeUnconnectedLiteralNodes(graph);
-
     // Multi-driver check
     for (const module of Object.values(graph.modules)) {
         const drivers = new Map<string, string[]>();
@@ -1057,19 +1055,7 @@ function pruneDuplicateAggregateInputDrivers(module: DesignModule, aggregateNode
   }
 }
 
-function removeUnconnectedLiteralNodes(graph: DesignGraph): void {
-  for (const module of Object.values(graph.modules)) {
-    const connectedNodeIds = new Set<string>();
-    for (const edge of module.edges) {
-      connectedNodeIds.add(edge.source);
-      connectedNodeIds.add(edge.target);
-    }
-    module.nodes = module.nodes.filter(node => (
-      node.kind !== 'literal'
-      || connectedNodeIds.has(node.id)
-    ));
-  }
-}
+
 
 function emptyGraph(): DesignGraph {
   return {

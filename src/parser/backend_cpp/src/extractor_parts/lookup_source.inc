@@ -149,6 +149,8 @@ void DesignExtractor::buildEdges(Module& mod) {
             }
         }
     }
+
+    removeUnconnectedLiteralNodes(mod);
 }
 
 std::string DesignExtractor::getSignalName(vpiHandle handle, const std::map<std::string, LoweredValue>& current_drivers) {
@@ -1041,4 +1043,20 @@ std::string DesignExtractor::getDeclaredLiteralWidth(const Module& mod, const st
     }
 
     return getDeclaredSignalWidth(mod, literal);
+}
+
+void DesignExtractor::removeUnconnectedLiteralNodes(Module& mod) {
+    std::set<std::string> connected_node_ids;
+    for (const auto& e : mod.edges) {
+        connected_node_ids.insert(e.source);
+        connected_node_ids.insert(e.target);
+    }
+    
+    std::vector<Node> filtered_nodes;
+    for (const auto& n : mod.nodes) {
+        if (n.kind != "literal" || connected_node_ids.count(n.id)) {
+            filtered_nodes.push_back(n);
+        }
+    }
+    mod.nodes = filtered_nodes;
 }

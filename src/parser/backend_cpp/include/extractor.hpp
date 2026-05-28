@@ -281,6 +281,7 @@ private:
     std::string normalizedParameterName(vpiHandle handle);
     SourceInfo getParameterDeclarationSource(vpiHandle handle);
     void buildEdges(Module& mod);
+    void removeUnconnectedLiteralNodes(Module& mod);
     
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});
     bool isReplicationOperation(vpiHandle expr);
