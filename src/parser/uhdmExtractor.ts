@@ -716,7 +716,6 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
   }
 }
 
-
 function repairInterfaceAssignments(graph: DesignGraph): void {
   for (const module of Object.values(graph.modules)) {
     const busNodes = module.nodes.filter((node) => node.kind === 'bus');
@@ -811,8 +810,6 @@ function repairInterfaceAssignments(graph: DesignGraph): void {
     module.edges.push(...additions);
   }
 }
-
-
 
 
 function emptyGraph(): DesignGraph {
