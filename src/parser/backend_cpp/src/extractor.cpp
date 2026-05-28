@@ -35,6 +35,7 @@ namespace svsch {
 #include "extractor_parts/procedural.inc"
 #include "extractor_parts/struct_bus.inc"
 #include "extractor_parts/lookup_source.inc"
+#include "extractor_parts/aggregate.inc"
 #include "extractor_parts/expressions.inc"
 
 } // namespace svsch

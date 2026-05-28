@@ -293,6 +293,10 @@ private:
     void removeUnconnectedLiteralNodes(Module& mod);
     void repairResolvedExplicitBusCompositions(Module& mod);
     void repairResolvedBusCompositionSlices(Module& mod);
+    void repairAggregateReplicationWidths(Module& mod);
+    void pruneDuplicateAggregateInputDrivers(Module& mod, Node& aggregate_node);
+    void repairAggregateAssignmentBuses(Module& mod);
+    std::string resolveSignalWidth(const Module& mod, const std::string& signal, const std::string& fallback_width);
 
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});
     bool isReplicationOperation(vpiHandle expr);
