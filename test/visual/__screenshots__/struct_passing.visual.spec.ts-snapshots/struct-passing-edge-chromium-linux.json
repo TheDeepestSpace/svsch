@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 24
+      },
+      "width": 216,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:in_struct",
+            "name": "in_struct",
+            "direction": "input"
+          },
+          {
+            "id": "port:a_out",
+            "name": "a_out",
+            "direction": "output"
+          },
+          {
+            "id": "port:b_out",
+            "name": "b_out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:p",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:out_struct",
+            "name": "out_struct",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 60
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 108
+      },
+      "width": 120,
+      "height": 29,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:c:port:top:a:a",
+      "source": "instance:top:c",
+      "target": "port:top:a",
+      "sourceHandle": "port:a_out",
+      "targetHandle": "port:a",
+      "path": "M 648 72 L 672 72 L 840 72 L 864 72"
+    },
+    {
+      "id": "edge:instance:top:c:port:top:b:b",
+      "source": "instance:top:c",
+      "target": "port:top:b",
+      "sourceHandle": "port:b_out",
+      "targetHandle": "port:b",
+      "path": "M 648 96 L 672 96 L 696 96 L 696 120 L 840 120 L 864 120"
+    },
+    {
+      "id": "edge:instance:top:p:instance:top:c:s",
+      "source": "instance:top:p",
+      "target": "instance:top:c",
+      "sourceHandle": "port:out_struct",
+      "targetHandle": "port:in_struct",
+      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
+    }
+  ]
+}

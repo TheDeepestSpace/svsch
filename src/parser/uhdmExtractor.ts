@@ -58,6 +58,7 @@ async function runSurelog(
   return new Promise((resolve, reject) => {
     const proc = spawn(surelogPath, args);
     const stderrChunks: Buffer[] = [];
+    const stdoutChunks: Buffer[] = [];
     let buf = '';
 
     const handleLine = (line: string) => {
@@ -83,12 +84,15 @@ async function runSurelog(
       buf = lines.pop() ?? '';
       for (const line of lines) handleLine(line);
     });
-    proc.stdout.on('data', () => {});
+    proc.stdout.on('data', (chunk: Buffer) => {
+      stdoutChunks.push(chunk);
+    });
 
     proc.on('close', code => {
       if (code !== 0) {
         const stderr = Buffer.concat(stderrChunks).toString();
-        reject(new Error(`Surelog failed with exit code ${code}\nStderr:\n${stderr}`));
+        const stdout = Buffer.concat(stdoutChunks).toString();
+        reject(new Error(`Surelog failed with exit code ${code}\nStdout:\n${stdout}\nStderr:\n${stderr}`));
       } else {
         resolve();
       }
@@ -1875,6 +1879,13 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     : e.signal || i.toString();
 
                 const isStructComposition = sourceNode?.kind === 'struct' && sourceNode?.metadata?.role === 'composition';
+                const srcPort = sourceNode?.ports.find(p => p.id === sourcePortId);
+                const tgtPort = targetNode?.ports.find(p => p.id === targetPortId);
+                const isStructType = (typeName?: string) => typeName && raw.modules.some(m => {
+                    const name = m.name.replace(/^work@/, '');
+                    return name === `struct ${typeName}` || name === typeName;
+                });
+                const isStructEdge = isStructComposition || isStructType(srcPort?.typeName) || isStructType(tgtPort?.typeName);
 
                 const edge: DiagramEdge = {
                     id: edgeId(sourceNodeId, targetNodeId, edgeLabel),
@@ -1894,7 +1905,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     } : undefined,
                     metadata: {
                         ...e.metadata,
-                        aggregate: (isInterfaceInstanceSource || isInterfaceInstanceTarget) && (e.source !== 'self' && e.target !== 'self') ? 'interface' : (isStructComposition ? 'struct' : e.metadata?.aggregate)
+                        aggregate: (isInterfaceInstanceSource || isInterfaceInstanceTarget) && (e.source !== 'self' && e.target !== 'self') ? 'interface' : (isStructEdge ? 'struct' : e.metadata?.aggregate)
                     }
                 };
                 return edge;
