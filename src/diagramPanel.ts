@@ -353,7 +353,7 @@ export class DiagramPanel {
     }
 
     // Try finding an internal node representing this signal.
-    const sourceNode = module.nodes.find((n) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu'));
+    const sourceNode = module.nodes.find((n) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter'));
     if (sourceNode?.source) {
       await this.navigateToSource(sourceNode.source);
       return;

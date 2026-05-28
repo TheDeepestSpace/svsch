@@ -1,4 +1,4 @@
-export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown';
+export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown';
 
 export interface SourceRange {
   file: string;
@@ -140,6 +140,7 @@ export interface BaseDiagramNode {
 export interface RegisterDiagramNode extends BaseDiagramNode { kind: 'register'; }
 export interface LatchDiagramNode extends BaseDiagramNode { kind: 'latch'; }
 export interface AluDiagramNode extends BaseDiagramNode { kind: 'alu'; }
+export interface InverterDiagramNode extends BaseDiagramNode { kind: 'inverter'; }
 export interface CombDiagramNode extends BaseDiagramNode { kind: 'comb'; }
 export interface MuxDiagramNode extends BaseDiagramNode { kind: 'mux'; }
 export interface SelectDiagramNode extends BaseDiagramNode { kind: 'select'; }
@@ -158,6 +159,7 @@ export type DiagramNode =
   | RegisterDiagramNode
   | LatchDiagramNode
   | AluDiagramNode
+  | InverterDiagramNode
   | CombDiagramNode
   | MuxDiagramNode
   | SelectDiagramNode

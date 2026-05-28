@@ -1067,7 +1067,8 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     // Check if RHS is a simple expression that doesn't need promotion.
     bool is_constant = isLiteralExpr(rhs);
     bool is_simple_rhs = (rhs_type == vpiNet || rhs_type == vpiReg || rhs_type == vpiPort || rhs_type == 608 || is_constant || is_select_rhs);
-    std::string in_signal = getOrPromoteExpr(rhs, mod, out_base + (is_procedural ? "_next" : ""), is_procedural);
+    std::string preferred_output = out_base + (is_procedural && !isInverterOperation(rhs) ? "_next" : "");
+    std::string in_signal = getOrPromoteExpr(rhs, mod, preferred_output, is_procedural);
     if (isReplicationOperation(rhs)) {
         std::string lhs_width = getWidth(lhs);
         std::string declared_lhs_width = getDeclaredSignalWidth(mod, out_base);

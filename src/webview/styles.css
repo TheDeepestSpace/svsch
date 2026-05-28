@@ -545,9 +545,14 @@ select {
 
 .hdl-node-mux,
 .hdl-node-select,
-.hdl-node-alu {
+.hdl-node-alu,
+.hdl-node-inverter {
   background: transparent;
   box-shadow: none;
+}
+
+.hdl-node-inverter {
+  padding: 0;
 }
 
 /* ── Array stacking layers ─────────────────────────────── */
@@ -713,7 +718,8 @@ select {
 
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
-.hdl-node-alu:focus {
+.hdl-node-alu:focus,
+.hdl-node-inverter:focus {
   outline: none;
 }
 
@@ -722,7 +728,9 @@ select {
 .hdl-node-select>.node-kind,
 .hdl-node-select>.node-title,
 .hdl-node-alu>.node-kind,
-.hdl-node-alu>.node-title {
+.hdl-node-alu>.node-title,
+.hdl-node-inverter>.node-kind,
+.hdl-node-inverter>.node-title {
   display: none;
 }
 
@@ -1299,6 +1307,17 @@ select {
   stroke-width: 1.5;
 }
 
+.inverter-skin .node-skin-body {
+  fill: none;
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.inverter-skin .inverter-bubble {
+  fill: none;
+}
+
 .node-skin-selection {
   fill: none;
   opacity: 0;
@@ -1313,7 +1332,9 @@ select {
 .hdl-node-select:focus .node-skin-selection,
 .hdl-node-select:focus-visible .node-skin-selection,
 .hdl-node-alu:focus .node-skin-selection,
-.hdl-node-alu:focus-visible .node-skin-selection {
+.hdl-node-alu:focus-visible .node-skin-selection,
+.hdl-node-inverter:focus .node-skin-selection,
+.hdl-node-inverter:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1636,7 +1657,9 @@ select {
 .mux-side-port .react-flow__handle-left,
 .mux-output-port .react-flow__handle-right,
 .alu-input-port .react-flow__handle-left,
-.alu-output-port .react-flow__handle-right {
+.alu-output-port .react-flow__handle-right,
+.hdl-node-inverter>.react-flow__handle-left,
+.hdl-node-inverter>.react-flow__handle-right {
   background: transparent;
   border: 0;
   height: 0;
@@ -1657,6 +1680,14 @@ select {
 
 .alu-input-port .react-flow__handle-left {
   left: 0;
+}
+
+.hdl-node-inverter>.react-flow__handle-left {
+  left: 0;
+}
+
+.hdl-node-inverter>.react-flow__handle-right {
+  right: 0;
 }
 
 .hdl-node-port .react-flow__handle-left {

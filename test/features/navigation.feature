@@ -15,10 +15,10 @@ Feature: Navigation
     And I should see a port node "o"
     And I should not see a combinational block
     When I select module "B" from the dropdown
-    Then I should see a combinational block
-    And there should be a connection between "i" and the combinational block
+    Then I should see an inverter node
+    And there should be a connection between "i" and the inverter node
     When I select module "A" from the dropdown
-    Then I should not see a combinational block
+    Then I should not see an inverter node
     And there should be a connection between "i" and "o"
 
   Scenario: Navigating to IO port declarations
@@ -42,8 +42,15 @@ Feature: Navigation
   Scenario: Navigating to combinational blocks
     Given the following SystemVerilog files:
       | file   | content |
-      | top.sv | module top(input a, output wire b);\n  assign b = ~a;\nendmodule |
+      | top.sv | module top(input a, input c, output wire b);\n  assign b = a & c;\nendmodule |
     When I double-click on the combinational block for "b"
+    Then the editor should highlight the text "assign b = a & c;"
+
+  Scenario: Navigating to inverter nodes
+    Given the following SystemVerilog files:
+      | file   | content |
+      | top.sv | module top(input a, output wire b);\n  assign b = ~a;\nendmodule |
+    When I double-click on the inverter node for "b"
     Then the editor should highlight the text "assign b = ~a;"
 
   Scenario: Navigating to mux blocks

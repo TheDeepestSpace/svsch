@@ -322,6 +322,52 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(assignCombChain.edges.some((edge) => edge.source === midBlock?.id && edge.target === yBlock?.id && edge.signal === 'mid')).toBe(true);
   });
 
+  it('promotes unary bitwise inversions to inverter nodes for scalar and vector signals', async () => {
+    const graph = await runParser(backend, [{ file: 'inverters.sv', text: `
+      module inv_scalar(input logic a, output logic y);
+        assign y = ~a;
+      endmodule
+
+      module inv_vector(input logic [3:0] a, output logic [3:0] y);
+        assign y = ~a;
+      endmodule
+
+      module inv_proc(input logic [7:0] a, output logic [7:0] y);
+        always_comb begin
+          y = ~a;
+        end
+      endmodule
+    ` }]);
+
+    const scalar = graph.modules.inv_scalar;
+    const scalarInv = scalar.nodes.find((node) => node.kind === 'inverter');
+    expect(scalar.nodes.filter((node) => node.kind === 'inverter')).toHaveLength(1);
+    expect(scalar.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expect(scalarInv?.metadata?.operation).toBe('~');
+    expect(scalarInv?.ports.map((port) => [port.name, port.direction]).sort()).toEqual([
+      ['a', 'input'],
+      ['y', 'output']
+    ]);
+    expect(scalar.edges.some((edge) => edge.source === 'port:inv_scalar:a' && edge.target === scalarInv?.id)).toBe(true);
+    expect(scalar.edges.some((edge) => edge.source === scalarInv?.id && edge.target === 'port:inv_scalar:y')).toBe(true);
+
+    const vector = graph.modules.inv_vector;
+    const vectorInv = vector.nodes.find((node) => node.kind === 'inverter');
+    const vectorInput = vectorInv?.ports.find((port) => port.direction === 'input');
+    const vectorOutput = vectorInv?.ports.find((port) => port.direction === 'output');
+    expect(vector.nodes.filter((node) => node.kind === 'inverter')).toHaveLength(1);
+    expect(vector.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expect(vectorInput?.width).toBe('[3:0]');
+    expect(vectorOutput?.width).toBe('[3:0]');
+
+    const procedural = graph.modules.inv_proc;
+    const proceduralInv = procedural.nodes.find((node) => node.kind === 'inverter');
+    expect(procedural.nodes.filter((node) => node.kind === 'inverter')).toHaveLength(1);
+    expect(procedural.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expect(proceduralInv?.ports.find((port) => port.direction === 'input')?.width).toBe('[7:0]');
+    expect(proceduralInv?.ports.find((port) => port.direction === 'output')?.width).toBe('[7:0]');
+  });
+
   it('promotes simple arithmetic assignments to ALU blocks but keeps chains as combs', async () => {
     const graph = await runParser(backend, [{ file: 'alu_simple.sv', text: `
       module alu_add(input logic a, input logic b, output logic y);

@@ -13,6 +13,7 @@ describe('diagram node sizing', () => {
     ['port', diagramSizing.portWidth],
     ['comb', diagramSizing.nodeWidth],
     ['alu', diagramSizing.muxWidth],
+    ['inverter', diagramSizing.gridSize * 2],
     ['bus', diagramSizing.nodeWidth],
     ['unknown', diagramSizing.nodeWidth]
   ] satisfies Array<[DiagramNodeKind, number]>)('keeps the default %s width', (kind, expectedWidth) => {
@@ -278,6 +279,15 @@ describe('diagram node sizing', () => {
 
     expect(dimensions.width).toBe(diagramSizing.muxWidth);
     expect(dimensions.height).toBe(diagramSizing.gridSize * 4);
+    expect(dimensions.width % diagramSizing.gridSize).toBe(0);
+    expect(dimensions.height % diagramSizing.gridSize).toBe(0);
+  });
+
+  test('keeps inverter dimensions compact and snapped to the grid', () => {
+    const dimensions = diagramNodeDimensions(nodeOfKind('inverter'));
+
+    expect(dimensions.width).toBe(diagramSizing.gridSize * 2);
+    expect(dimensions.height).toBe(diagramSizing.gridSize * 2);
     expect(dimensions.width % diagramSizing.gridSize).toBe(0);
     expect(dimensions.height % diagramSizing.gridSize).toBe(0);
   });
