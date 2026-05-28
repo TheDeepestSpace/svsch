@@ -164,7 +164,7 @@
       "target": "port:interface_output_wire:done",
       "sourceHandle": "out:done",
       "targetHandle": "port:done",
-      "path": "M 552 328 L 552 384 L 864 384 L 888 384"
+      "path": "M 552 328 L 552 384 L 864 384 L 864 376 L 864 384 L 888 384"
     },
     {
       "id": "edge:port:interface_output_wire:clk:interface:interface_output_wire:status:clk",

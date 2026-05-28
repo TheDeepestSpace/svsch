@@ -1275,6 +1275,19 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
   return next;
 }
 
+export function mergeRerouteLayout(layout: SavedLayout, moduleName: string, nodes: PositionedNode[]): SavedLayout {
+  const fixedNodes = nodes.map((node) => ({
+    ...node,
+    fixed: true
+  }));
+  const next = mergeNodePositions(layout, moduleName, fixedNodes);
+  const existing = next.modules[moduleName] ?? { nodes: {} };
+  const { edges: _edges, ...withoutEdges } = existing;
+
+  next.modules[moduleName] = withoutEdges;
+  return next;
+}
+
 export function mergeEdgeWaypoint(
   layout: SavedLayout,
   moduleName: string,

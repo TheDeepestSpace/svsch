@@ -392,7 +392,7 @@
       "target": "latch:top:next_r",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1344 144 L 1368 144 L 1440 144 L 1440 480 L 24 480 L 24 168 L 45 168"
+      "path": "M 1344 144 L 1368 144 L 1368 456 L 0 456 L 0 168 L 24 168 L 45 168"
     },
     {
       "id": "edge:mux:top:next_r:r:mux:top:next_r:next_state_en:next_r_if_true",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions, mergeRerouteLayout } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, PositionedNode } from '../../src/ir/types';
@@ -181,6 +181,36 @@ describe('layout merge', () => {
       { x: 10, y: 21 },
       { x: 30, y: 41 }
     ]);
+  });
+
+  it('freezes active nodes and clears manual edge routes for rerouting', () => {
+    const layout = mergeEdgeRoutePoints({
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            old: { x: 1, y: 2, fixed: true }
+          },
+          viewport: { x: 4, y: 5, zoom: 1.25 }
+        }
+      }
+    }, 'top', 'e-a-u', [
+      { x: 10, y: 20 },
+      { x: 30, y: 40 }
+    ]);
+
+    const rerouted = mergeRerouteLayout(layout, 'top', [
+      { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 120, y: 132 } },
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 } }
+    ]);
+
+    expect(rerouted.modules.top.nodes).toEqual({
+      a: { x: 120, y: 132, fixed: true },
+      u: { x: 360, y: 240, fixed: true },
+      old: { x: 1, y: 2, fixed: true, stale: true }
+    });
+    expect(rerouted.modules.top.edges).toBeUndefined();
+    expect(rerouted.modules.top.viewport).toEqual({ x: 4, y: 5, zoom: 1.25 });
   });
 
   it('uses ELK routes for ordinary feedback edges so wires wrap around default node boxes', async () => {

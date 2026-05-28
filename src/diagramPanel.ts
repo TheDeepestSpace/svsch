@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions, mergeRerouteLayout } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 
 type WebviewMessage =
@@ -15,6 +15,7 @@ type WebviewMessage =
   | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }> }
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
+  | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToSignal'; edge: DiagramEdge };
 
@@ -277,6 +278,11 @@ export class DiagramPanel {
       await this.resetLayoutForCurrentModule();
       return;
     }
+    if (message.type === 'rerouteLayout') {
+      this.currentModule = message.moduleName;
+      await this.rerouteCurrentModule(message.moduleName, message.nodes);
+      return;
+    }
     if (message.type === 'layoutChanged') {
       await this.saveLayout(message.moduleName, message.nodes);
       return;
@@ -371,6 +377,18 @@ export class DiagramPanel {
     const base = await store.read();
     this.layout = mergeNodePositions(base, moduleName, nodes);
     await store.write(this.layout);
+  }
+
+  private async rerouteCurrentModule(moduleName: string, nodes: PositionedNode[]): Promise<void> {
+    const workspaceRoot = workspaceRootPath();
+    if (!workspaceRoot) {
+      return;
+    }
+    const store = new LayoutStore(workspaceRoot);
+    const base = await store.read();
+    this.layout = mergeRerouteLayout(base, moduleName, nodes);
+    await store.write(this.layout);
+    await this.postView();
   }
 
   private async saveEdgeLayout(moduleName: string, edgeId: string, waypoint: { x: number; y: number }): Promise<void> {

@@ -1,7 +1,7 @@
 import { Given, When, Then, Before, After, setWorldConstructor, World, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, type Browser, type Page, expect } from '@playwright/test';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeNodePositions, mergeRerouteLayout } from '../../src/layout/mergeLayout';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -22,6 +22,7 @@ class CustomWorld extends World {
   lastViewModel?: any;
   layout: any = { version: 1, modules: {} };
   notedPositions: Map<string, { x: number, y: number }> = new Map();
+  notedRoutes: Map<string, string> = new Map();
   scenarioName?: string;
   stepCounter: number = 0;
 
@@ -243,6 +244,91 @@ When('I reset the layout', async function (this: CustomWorld) {
   await this.page?.waitForSelector('.react-flow__node');
   await this.page?.waitForTimeout(500);
   await this.takeScreenshot('After reset');
+});
+
+When('I reroute the diagram', async function (this: CustomWorld) {
+  await this.page!.click('button:has-text("Reroute")');
+
+  const moduleName = this.lastViewModel.moduleName;
+  const flowNodes = await this.page!.evaluate(() => {
+    const instance = (window as any).reactFlowInstance;
+    return instance.getNodes().map((node: any) => ({
+      id: node.id,
+      position: node.position
+    }));
+  });
+  const positionById = new Map(flowNodes.map((node: any) => [node.id, node.position]));
+  const frozenNodes = this.lastViewModel.nodes.map((node: any) => ({
+    ...node,
+    position: positionById.get(node.id) ?? node.position,
+    fixed: true
+  }));
+
+  this.layout = mergeRerouteLayout(this.layout, moduleName, frozenNodes);
+
+  const graph = this.lastGraph;
+  const viewModel = await buildViewModel(graph, moduleName, this.layout);
+  this.lastViewModel = viewModel;
+
+  await this.page?.evaluate(({ view, modules }) => {
+    (window as any).postMessage({
+      type: 'graph',
+      view: view,
+      modules: modules
+    }, '*');
+  }, { view: viewModel, modules: Object.keys(graph.modules) });
+
+  await this.page?.waitForSelector('.react-flow__node');
+  await this.page?.waitForTimeout(500);
+  await this.takeScreenshot('After reroute');
+});
+
+When('I force the connection between {string} and {string} to pass through \\({int}, {int}\\)', async function (this: CustomWorld, source: string, target: string, x: number, y: number) {
+  const sourceId = await findNodeIdByLabel(this.page!, source);
+  const targetId = await findNodeIdByLabel(this.page!, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+
+  const moduleName = this.lastViewModel.moduleName;
+  const edge = this.lastViewModel.edges.find((candidate: any) => candidate.source === sourceId && candidate.target === targetId);
+  if (!edge?.routePoints?.length) throw new Error(`Could not find routed edge between ${sourceId} and ${targetId}`);
+
+  const first = edge.routePoints[0];
+  const last = edge.routePoints[edge.routePoints.length - 1];
+  const manualRoute = [
+    first,
+    { x: first.x, y },
+    { x, y },
+    { x: last.x, y },
+    last
+  ];
+
+  this.layout = mergeEdgeRoutePoints(this.layout, moduleName, edge.id, manualRoute);
+  const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
+  this.lastViewModel = viewModel;
+
+  await this.page?.evaluate(({ view, modules }) => {
+    (window as any).postMessage({
+      type: 'graph',
+      view: view,
+      modules: modules
+    }, '*');
+  }, { view: viewModel, modules: Object.keys(this.lastGraph.modules) });
+
+  await this.page?.waitForSelector('.react-flow__node');
+  await this.page?.waitForTimeout(500);
+  await this.takeScreenshot('After manual route');
+});
+
+Given('I note the route of the connection between {string} and {string}', async function (this: CustomWorld, source: string, target: string) {
+  const route = await connectionRoutePath(this.page!, source, target);
+  this.notedRoutes.set(routeKey(source, target), route);
+});
+
+Then('the route of the connection between {string} and {string} should have changed', async function (this: CustomWorld, source: string, target: string) {
+  const initialRoute = this.notedRoutes.get(routeKey(source, target));
+  if (!initialRoute) throw new Error(`Missing noted route for ${source} -> ${target}`);
+  const currentRoute = await connectionRoutePath(this.page!, source, target);
+  expect(currentRoute).not.toBe(initialRoute);
 });
 
 Then('I should see a port node {string}', async function (this: CustomWorld, name: string) {
@@ -782,6 +868,22 @@ async function findEdgeIdBetween(page: Page, sourceId: string, targetId: string)
     });
     return found?.getAttribute('data-id') ?? null;
   }, { s: sourceId, t: targetId });
+}
+
+function routeKey(source: string, target: string): string {
+  return `${source}->${target}`;
+}
+
+async function connectionRoutePath(page: Page, source: string, target: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(page, source);
+  const targetId = await findNodeIdByLabel(page, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(page, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${targetId}`);
+
+  const route = await page.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
 }
 
 When('I double-click on the connection between the {word} node {string} and the {word} node {string}', async function (this: CustomWorld, kind1: string, name1: string, kind2: string, name2: string) {

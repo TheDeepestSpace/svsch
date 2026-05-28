@@ -321,7 +321,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1645 436 L 1732 436 L 1732 556 L 364 556 L 364 436 L 379 436"
+      "path": "M 1645 436 L 1684 436 L 1684 508 L 172 508 L 172 436 L 379 436"
     },
     {
       "id": "edge:mux:array_register:M_address_:rst:mux:array_register:M_addr:M_rst_candidate",

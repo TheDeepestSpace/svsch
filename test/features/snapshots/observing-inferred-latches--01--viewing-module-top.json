@@ -144,7 +144,7 @@
       "target": "latch:top:q",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 576 144 L 600 144 L 672 144 L 672 360 L 24 360 L 24 240 L 45 240"
+      "path": "M 576 144 L 600 144 L 600 288 L 0 288 L 0 240 L 24 240 L 45 240"
     },
     {
       "id": "edge:port:top:d:mux:top:q:en:d",

@@ -1811,6 +1811,18 @@ function DiagramApp(): React.ReactElement {
     [view]
   );
 
+  const rerouteLayout = useCallback(() => {
+    if (!view) {
+      return;
+    }
+    const positioned = nodes.map((node) => ({
+      ...node.data.node,
+      position: node.position,
+      fixed: true
+    }));
+    vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
+  }, [nodes, view]);
+
   const nodeTypes = useMemo(() => ({ hdl: HdlNode }), []);
   const edgeTypes = useMemo(() => ({ svsch: OrthogonalEdge }), []);
   const diagramStyle = useMemo(() => ({
@@ -1850,6 +1862,7 @@ function DiagramApp(): React.ReactElement {
               </option>
             ))}
           </select>
+          <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute</button>
           <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
         </header>
         {view.diagnostics.length > 0 && (
