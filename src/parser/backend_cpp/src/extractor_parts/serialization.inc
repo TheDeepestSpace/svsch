@@ -1,4 +1,5 @@
 json DesignExtractor::extract(const std::string& targetModule) {
+    if (!design_) return json::object();
     collectInterfaceTypesFromDesign();
 
     if (!targetModule.empty()) {
@@ -7,7 +8,9 @@ json DesignExtractor::extract(const std::string& targetModule) {
         if (all_mod_itr) {
             while (vpiHandle mod_handle = vpi_scan(all_mod_itr)) {
                 const char* def_name = vpi_get_str(vpiDefName, mod_handle);
-                if (def_name && std::string(def_name) == targetModule) {
+                std::string mod_name = def_name ? def_name : "unnamed";
+                if (mod_name.rfind("work@", 0) == 0) mod_name = mod_name.substr(5);
+                if (mod_name == targetModule) {
                     processModule(mod_handle);
                     break;
                 }
@@ -28,6 +31,8 @@ json DesignExtractor::extract(const std::string& targetModule) {
         if (all_mod_itr) {
             while (vpiHandle mod_handle = vpi_scan(all_mod_itr)) {
                 const char* def_name = vpi_get_str(vpiDefName, mod_handle);
+                std::string mod_name = def_name ? def_name : "unnamed";
+                if (mod_name.rfind("work@", 0) == 0) mod_name = mod_name.substr(5);
                 if (def_name) {
                     bool already_processed = false;
                     for (const auto& m : modules_) {

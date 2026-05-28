@@ -181,7 +181,10 @@ export async function extractDesignWithUhdm(
   const backendArgs = [uhdmFile];
   if (moduleName) {
       backendArgs.push(moduleName);
+  } else {
+      backendArgs.push(""); // empty targetModule means extract all
   }
+  backendArgs.push(workspaceRoot);
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
@@ -193,7 +196,6 @@ export async function extractDesignWithUhdm(
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);
     mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
-    repairResolvedBusCompositionSlices(graph);
     repairAggregateAssignmentBuses(graph);
     repairInterfaceAssignments(graph);
 
@@ -715,64 +717,6 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
   }
 }
 
-function repairResolvedBusCompositionSlices(graph: DesignGraph): void {
-  for (const module of Object.values(graph.modules)) {
-    for (const node of module.nodes) {
-      if (!isPromotedConcatBus(node)) continue;
-      const inputPorts = node.ports.filter(port => port.direction === 'input');
-      if (inputPorts.length === 0) continue;
-
-      const inputWidths = inputPorts.map(port => (
-        module.ports.find(modulePort => modulePort.name === port.connectedSignal)?.width
-        ?? findNodeOutputWidth(module.nodes, port.connectedSignal)
-        ?? port.width
-        ?? '[0:0]'
-      ));
-      const totalSize = inputWidths.reduce((sum, width) => sum + bitSizeFromWidth(width), 0);
-      if (totalSize <= 0) continue;
-
-      const outputPort = node.ports.find(port => port.direction === 'output');
-      if (outputPort && bitSizeFromWidth(outputPort.width) < totalSize) {
-        outputPort.width = widthFromBitSize(totalSize);
-      }
-      const outputWidth = outputPort?.width;
-      if (outputPort?.connectedSignal && outputWidth) {
-        for (const consumer of module.nodes) {
-          for (const port of consumer.ports) {
-            if (port.direction === 'input' && port.connectedSignal === outputPort.connectedSignal) {
-              port.width = outputWidth;
-            }
-          }
-        }
-      }
-
-      let currentBit = totalSize - 1;
-      inputPorts.forEach((port, index) => {
-        const width = inputWidths[index];
-        const size = bitSizeFromWidth(width);
-        const label = concatSliceLabel(currentBit, size);
-        if (port.name !== label) {
-          (port as DiagramPort & { rawName?: string }).rawName = (port as DiagramPort & { rawName?: string }).rawName ?? port.name;
-          port.name = label;
-        }
-        port.label = label;
-        port.width = width;
-        currentBit -= size;
-      });
-
-      for (const edge of module.edges) {
-        if (edge.target === node.id && edge.targetPort) {
-          const targetPort = inputPorts.find(port => port.id === edge.targetPort);
-          if (targetPort?.width) edge.width = targetPort.width;
-        }
-        if (edge.source === node.id && edge.sourcePort && outputWidth) {
-          const sourcePort = node.ports.find(port => port.id === edge.sourcePort);
-          if (sourcePort?.direction === 'output') edge.width = outputWidth;
-        }
-      }
-    }
-  }
-}
 
 function repairInterfaceAssignments(graph: DesignGraph): void {
   for (const module of Object.values(graph.modules)) {
@@ -1490,13 +1434,6 @@ function concatSliceLabel(highBit: number, size: number): string {
     return size > 1 ? `[${highBit}:${highBit - size + 1}]` : `[${highBit}]`;
 }
 
-function isPromotedConcatBus(node: DiagramNode): boolean {
-    if (node.kind !== 'bus') return false;
-    if (node.metadata?.aggregateKind === 'array') return false;
-    if (node.metadata?.expression === '[aggregate-compose]' || node.metadata?.expression === '[aggregate-breakout]') return false;
-    return node.ports.some(port => port.direction === 'output')
-        && node.ports.filter(port => port.direction === 'input').length > 1;
-}
 
 function findNodeOutputWidth(nodes: DiagramNode[], signal: string | undefined): string | undefined {
     if (!signal) return undefined;
@@ -1514,46 +1451,6 @@ function findNodeOutputWidth(nodes: DiagramNode[], signal: string | undefined): 
     return bestWidth;
 }
 
-function repairBusCompositionSlices(
-    nodes: DiagramNode[],
-    rawMod: RawModule,
-    cache: Map<string, string>
-): void {
-    for (const node of nodes) {
-        if (!isPromotedConcatBus(node)) continue;
-        const inputPorts = node.ports.filter(port => port.direction === 'input');
-        if (inputPorts.length === 0) continue;
-
-        const inputWidths = inputPorts.map(port => (
-            (rawMod.ports || []).find(modulePort => modulePort.name === port.connectedSignal)?.width
-            ?? findDeclaredWidth(cache, rawMod.file, port.connectedSignal)
-            ?? findNodeOutputWidth(nodes, port.connectedSignal)
-            ?? port.width
-            ?? '[0:0]'
-        ));
-        const totalSize = inputWidths.reduce((sum, width) => sum + bitSizeFromWidth(width), 0);
-        if (totalSize <= 0) continue;
-
-        const outputPort = node.ports.find(port => port.direction === 'output');
-        if (outputPort && bitSizeFromWidth(outputPort.width) < totalSize) {
-            outputPort.width = widthFromBitSize(totalSize);
-        }
-
-        let currentBit = totalSize - 1;
-        inputPorts.forEach((port, index) => {
-            const width = inputWidths[index];
-            const size = bitSizeFromWidth(width);
-            const label = concatSliceLabel(currentBit, size);
-            if (port.name !== label) {
-                (port as DiagramPort & { rawName?: string }).rawName = port.name;
-                port.name = label;
-            }
-            port.label = label;
-            port.width = width;
-            currentBit -= size;
-        });
-    }
-}
 
 function resolveLiteralDetails(
     cache: Map<string, string>,
@@ -1854,8 +1751,6 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 if (node.metadata) (node.metadata as any).operation = undefined;
             }
         }
-
-        repairBusCompositionSlices(nodes, rawMod, sourceTextCache);
 
         const module: DesignModule = {
             name: modName,

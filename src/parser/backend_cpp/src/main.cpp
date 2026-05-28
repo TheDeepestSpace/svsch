@@ -16,8 +16,9 @@ int main(int argc, char** argv) {
 
     std::string filename = argv[1];
     std::string targetModule = (argc >= 3) ? argv[2] : "";
+    std::string workspaceRoot = (argc >= 4) ? argv[3] : "";
     bool listOnly = (targetModule == "--list-only");
-
+    
     UHDM::Serializer serializer;
     std::vector<vpiHandle> designs = serializer.Restore(filename);
 
@@ -67,6 +68,7 @@ int main(int argc, char** argv) {
     }
 
     svsch::DesignExtractor extractor(designs[0]);
+    extractor.workspace_root = workspaceRoot;
     json output = extractor.extract(targetModule);
 
     std::cout << output.dump(2) << std::endl;

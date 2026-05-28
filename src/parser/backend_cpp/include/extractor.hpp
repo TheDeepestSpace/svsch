@@ -222,8 +222,10 @@ struct AggregateSegment {
 
 class DesignExtractor {
 public:
+    DesignExtractor() = default;
     DesignExtractor(vpiHandle design);
     json extract(const std::string& targetModule = "");
+    std::string workspace_root;
 
 private:
     void processModule(vpiHandle module_handle);
@@ -233,9 +235,16 @@ private:
     void processModuleInterfaces(vpiHandle module_handle, Module& mod);
     void collectInterfacePortsFromSource(Module& mod);
     void synthesizeInterfaceHarnesses(Module& mod);
+    std::string fallbackDeclaredTypeName(const SourceInfo& source, const std::string& name) const;
+    SourceInfo fallbackDeclarationSource(const SourceInfo& source, const std::string& keyword, const std::string& name) const;
+    std::string getModportPositionFromComment(const SourceInfo& src) const;
     std::optional<InterfaceSignal> interfacePortInfoForModule(const std::string& moduleName, const std::string& portName) const;
+    std::string sourceLineText(const SourceInfo& source) const;
+    std::string sourceSnippet(const SourceInfo& source) const;
+    std::string declaredArrayElementWidthFromSource(const Module& mod, const std::string& signal) const;
     SourceInfo getSourceInfo(const UHDM::BaseClass* object);
     std::string getWidth(const UHDM::BaseClass* object);
+    std::ifstream openSourceFile(const std::string& source_file) const;
     std::string directionString(int direction) const;
     void processNet(vpiHandle net_handle, Module& mod);
     void processAssign(vpiHandle assign_handle, Module& mod, bool is_procedural = false);
@@ -283,7 +292,8 @@ private:
     void buildEdges(Module& mod);
     void removeUnconnectedLiteralNodes(Module& mod);
     void repairResolvedExplicitBusCompositions(Module& mod);
-    
+    void repairResolvedBusCompositionSlices(Module& mod);
+
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});
     bool isReplicationOperation(vpiHandle expr);
     bool isConcatOperation(vpiHandle expr);

@@ -109,3 +109,12 @@ int rangeWidthInBits(const std::string& width) {
         return 1;
     }
 }
+
+std::ifstream DesignExtractor::openSourceFile(const std::string& source_file) const {
+    if (source_file.empty()) return std::ifstream();
+    std::string path = source_file;
+    if (path.length() > 0 && path[0] != '/' && !workspace_root.empty()) {
+        path = workspace_root + "/" + path;
+    }
+    return std::ifstream(path);
+}

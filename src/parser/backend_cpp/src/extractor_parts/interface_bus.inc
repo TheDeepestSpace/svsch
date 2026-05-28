@@ -54,9 +54,9 @@ static std::string fieldNameFromIoDecl(const UHDM::io_decl* io) {
     return name;
 }
 
-static std::string fallbackDeclaredTypeName(const SourceInfo& source, const std::string& name) {
+std::string DesignExtractor::fallbackDeclaredTypeName(const SourceInfo& source, const std::string& name) const {
     if (source.file.empty() || source.line <= 0 || name.empty()) return "";
-    std::ifstream file(source.file);
+    std::ifstream file = openSourceFile(source.file);
     if (!file.is_open()) return "";
 
     std::string line;
@@ -72,9 +72,9 @@ static std::string fallbackDeclaredTypeName(const SourceInfo& source, const std:
     return "";
 }
 
-static SourceInfo fallbackDeclarationSource(const SourceInfo& source, const std::string& keyword, const std::string& name) {
+SourceInfo DesignExtractor::fallbackDeclarationSource(const SourceInfo& source, const std::string& keyword, const std::string& name) const {
     if (source.file.empty() || name.empty()) return source;
-    std::ifstream file(source.file);
+    std::ifstream file = openSourceFile(source.file);
     if (!file.is_open()) return source;
 
     std::string line;
@@ -92,9 +92,9 @@ static SourceInfo fallbackDeclarationSource(const SourceInfo& source, const std:
     return source;
 }
 
-std::string getModportPositionFromComment(const SourceInfo& src) {
+std::string DesignExtractor::getModportPositionFromComment(const SourceInfo& src) const {
     if (src.file.empty() || src.line <= 0) return "";
-    std::ifstream file(src.file);
+    std::ifstream file = openSourceFile(src.file);
     if (!file.is_open()) return "";
     
     std::vector<std::string> lines;
@@ -266,7 +266,7 @@ void DesignExtractor::processModuleInterfaces(vpiHandle module_handle, Module& m
 
 void DesignExtractor::collectInterfacePortsFromSource(Module& mod) {
     if (mod.source.file.empty()) return;
-    std::ifstream file(mod.source.file);
+    std::ifstream file = openSourceFile(mod.source.file);
     if (!file.is_open()) return;
     std::stringstream buffer;
     buffer << file.rdbuf();

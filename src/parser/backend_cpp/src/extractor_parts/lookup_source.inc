@@ -152,6 +152,7 @@ void DesignExtractor::buildEdges(Module& mod) {
 
     removeUnconnectedLiteralNodes(mod);
     repairResolvedExplicitBusCompositions(mod);
+    repairResolvedBusCompositionSlices(mod);
 }
 
 std::string DesignExtractor::getSignalName(vpiHandle handle, const std::map<std::string, LoweredValue>& current_drivers) {
@@ -875,7 +876,7 @@ std::string DesignExtractor::getAssignmentRhsText(vpiHandle assignment_handle) {
     SourceInfo source = getSourceInfo(assignment_handle);
     if (source.file.empty() || source.line <= 0) return "";
 
-    std::ifstream file(source.file);
+    std::ifstream file = openSourceFile(source.file);
     if (!file.is_open()) return "";
 
     std::stringstream buffer;
@@ -915,7 +916,7 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
     if (signal.empty()) return "";
 
     for (const auto& port : mod.ports) {
-        if (port.name == signal && !port.width.empty()) return port.width;
+        if (port.name == signal && !port.width.empty() && port.width != "[0:0]") return port.width;
     }
 
     std::string source_file = mod.source.file;
@@ -927,9 +928,10 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
             }
         }
     }
+    
     if (source_file.empty()) return "";
 
-    std::ifstream file(source_file);
+    std::ifstream file = openSourceFile(source_file);
     if (!file.is_open()) return "";
 
     std::stringstream buffer;
@@ -937,16 +939,21 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
     std::string text = buffer.str();
     std::string escaped_signal;
     for (char c : signal) {
-        if (std::string(R"(\.^$|()[]{}*+?)").find(c) != std::string::npos) escaped_signal.push_back('\\');
-        escaped_signal.push_back(c);
+        if (std::string(".^$|()[]{}*+?_\\").find(c) != std::string::npos) escaped_signal += "\\";
+        escaped_signal += c;
     }
 
-    std::regex signal_vector_re(
-        std::string(R"((?:input|output|inout)?\s*(?:logic|wire|reg)\s+(\[[^\]]+\])\s+[^;\)]*\b)") + escaped_signal + R"(\b)"
-    );
-    std::smatch signal_match;
-    if (std::regex_search(text, signal_match, signal_vector_re)) {
-        return signal_match[1].str();
+    std::regex decl_re(R"((?:input|output|inout)?\s*(?:logic|wire|reg)\s+(\[[^\]]+\])([^,;\)\n]*))");
+    std::sregex_iterator next(text.begin(), text.end(), decl_re);
+    std::sregex_iterator end;
+    while (next != end) {
+        std::string range = (*next)[1].str();
+        std::string vars = (*next)[2].str();
+        std::regex var_re(R"(\b)" + escaped_signal + R"(\b)");
+        if (std::regex_search(vars, var_re)) {
+            return range;
+        }
+        next++;
     }
 
     std::map<std::string, std::string> type_widths;
@@ -977,7 +984,7 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
 std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const std::string& signal) {
     if (signal.empty() || mod.source.file.empty()) return "";
 
-    std::ifstream file(mod.source.file);
+    std::ifstream file = openSourceFile(mod.source.file);
     if (!file.is_open()) return "";
     std::stringstream buffer;
     buffer << file.rdbuf();
@@ -1028,7 +1035,7 @@ void DesignExtractor::ensureDeclaredArray(Module& mod, const std::string& signal
 std::string DesignExtractor::getDeclaredLiteralWidth(const Module& mod, const std::string& literal) {
     if (literal.empty() || mod.source.file.empty()) return "";
 
-    std::ifstream file(mod.source.file);
+    std::ifstream file = openSourceFile(mod.source.file);
     if (!file.is_open()) return "";
 
     std::stringstream buffer;
@@ -1122,6 +1129,173 @@ void DesignExtractor::repairResolvedExplicitBusCompositions(Module& mod) {
                     if (p.name == edge.sourcePort) {
                         if (!p.width.empty()) edge.width = p.width;
                         break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool isPromotedConcatBus(const Node& node) {
+    if (node.kind != "bus") return false;
+    if (node.metadata.aggregateKind == "array") return false;
+    if (node.metadata.expression == "[aggregate-compose]" || node.metadata.expression == "[aggregate-breakout]") return false;
+    
+    bool has_output = false;
+    int num_inputs = 0;
+    for (const auto& port : node.ports) {
+        if (port.direction == "output") has_output = true;
+        else if (port.direction == "input") num_inputs++;
+    }
+    return has_output && num_inputs > 1;
+}
+
+std::string widthFromBitSize(int size) {
+    if (size <= 0) return "[0:0]";
+    return "[" + std::to_string(size - 1) + ":0]";
+}
+
+std::string concatSliceLabel(int highBit, int size) {
+    if (size == 1) return "[" + std::to_string(highBit) + "]";
+    return "[" + std::to_string(highBit) + ":" + std::to_string(highBit - size + 1) + "]";
+}
+
+std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::string& signal) {
+    if (signal.empty()) return "";
+    
+    for (const auto& n : nodes) {
+        for (const auto& p : n.ports) {
+            if (p.direction == "output" && p.signal == signal && !p.width.empty()) {
+                return p.width;
+            }
+        }
+    }
+    
+    for (const auto& n : nodes) {
+        for (const auto& p : n.ports) {
+            if (p.direction == "output" && p.signal == signal) {
+                return p.width;
+            }
+        }
+    }
+    return "";
+}
+
+void DesignExtractor::repairResolvedBusCompositionSlices(Module& mod) {
+    bool changed = true;
+    int max_iters = 10;
+
+    while (changed && max_iters-- > 0) {
+        changed = false;
+        for (auto& node : mod.nodes) {
+            if (!isPromotedConcatBus(node)) continue;
+            
+            std::vector<NodePort*> input_ports;
+            for (auto& port : node.ports) {
+                if (port.direction == "input") input_ports.push_back(&port);
+            }
+            if (input_ports.empty()) continue;
+
+            std::vector<std::string> input_widths;
+            int total_size = 0;
+            for (auto* port : input_ports) {
+                std::string width = "";
+                for (const auto& p : mod.ports) {
+                    if (p.name == port->signal) {
+                        width = p.width;
+                        break;
+                    }
+                }
+                if (width.empty() || width == "[0:0]") width = getDeclaredSignalWidth(mod, port->signal);
+                if (width.empty()) width = findNodeOutputWidth(mod.nodes, port->signal);
+                if (width.empty()) width = port->width;
+                if (width.empty()) width = "[0:0]";
+                
+                input_widths.push_back(width);
+                total_size += bitSizeFromWidth(width);
+            }
+            
+            if (total_size <= 0) continue;
+
+            NodePort* output_port = nullptr;
+            for (auto& port : node.ports) {
+                if (port.direction == "output") {
+                    output_port = &port;
+                    break;
+                }
+            }
+
+            std::string new_output_width = widthFromBitSize(total_size);
+            if (total_size > 1) {
+                new_output_width = "[" + std::to_string(total_size - 1) + ":0]";
+            } else if (total_size == 1) {
+                new_output_width = "[0:0]";
+            }
+            if (output_port && bitSizeFromWidth(output_port->width) < total_size) {
+                if (output_port->width != new_output_width) {
+                    output_port->width = new_output_width;
+                    changed = true;
+                }
+            }
+        
+        std::string output_width = output_port ? output_port->width : "";
+        
+            if (output_port && !output_port->signal.empty() && !output_width.empty()) {
+                for (auto& consumer : mod.nodes) {
+                    for (auto& port : consumer.ports) {
+                        if (port.direction == "input" && port.signal == output_port->signal) {
+                            if (port.width != output_width) {
+                                port.width = output_width;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            int current_bit = total_size - 1;
+            for (size_t i = 0; i < input_ports.size(); i++) {
+                auto* port = input_ports[i];
+                std::string width = input_widths[i];
+                int size = bitSizeFromWidth(width);
+                std::string label = concatSliceLabel(current_bit, size);
+                
+                std::string old_name = port->name;
+                if (old_name != label) {
+                    port->name = label;
+                    for (auto& edge : mod.edges) {
+                        if (edge.target == node.id && edge.targetPort == old_name) {
+                            edge.targetPort = label;
+                        }
+                    }
+                }
+                if (port->label != label || port->width != width) changed = true;
+                port->label = label;
+                port->width = width;
+                current_bit -= size;
+            }
+
+            for (auto& edge : mod.edges) {
+                if (edge.target == node.id && !edge.targetPort.empty()) {
+                    for (auto* port : input_ports) {
+                        if (port->name == edge.targetPort) {
+                            if (!port->width.empty() && edge.width != port->width) {
+                                edge.width = port->width;
+                                changed = true;
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (edge.source == node.id && !edge.sourcePort.empty() && !output_width.empty()) {
+                    for (auto& port : node.ports) {
+                        if (port.name == edge.sourcePort && port.direction == "output") {
+                            if (edge.width != output_width) {
+                                edge.width = output_width;
+                                changed = true;
+                            }
+                            break;
+                        }
                     }
                 }
             }

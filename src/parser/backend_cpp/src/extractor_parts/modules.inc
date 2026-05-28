@@ -209,7 +209,16 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         vpiHandle low = vpi_handle(vpiLowConn, p_handle);
                         np.signal = getSignalName(high);
                         np.width = getWidth(low);
-                        if (np.width.empty()) np.width = getWidth(p_handle);
+                        if (np.width.empty() || np.width == "[0:0]") {
+                            std::string w = getWidth(p_handle);
+                            if (!w.empty() && w != "[0:0]") np.width = w;
+                        }
+                        if (np.width.empty() || np.width == "[0:0]") {
+                            std::string w = getDeclaredSignalWidth(mod, np.signal.empty() ? np.name : np.signal);
+                            if (!w.empty()) np.width = w;
+                        }
+                        if (np.width.empty()) np.width = "[0:0]";
+                        
                         np.widthExpression = getRangeExpression(low ? low : p_handle);
                         if (np.widthExpression.empty() && std::regex_search(np.width, std::regex(R"([A-Za-z_$])"))) {
                             np.widthExpression = np.width;
@@ -311,12 +320,11 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
     processing_modules_.erase(mod_name);
 }
 
-std::string sourceSnippet(const SourceInfo& source);
 
-std::string sourceLineText(const SourceInfo& source) {
+std::string DesignExtractor::sourceLineText(const SourceInfo& source) const {
     if (source.file.empty() || source.line <= 0) return "";
 
-    std::ifstream file(source.file);
+    std::ifstream file = openSourceFile(source.file);
     if (!file.is_open()) return "";
 
     std::string line;
@@ -421,10 +429,10 @@ void DesignExtractor::collectModuleParameters(vpiHandle module_handle, Module& m
     }
 }
 
-std::string sourceSnippet(const SourceInfo& source) {
+std::string DesignExtractor::sourceSnippet(const SourceInfo& source) const {
     if (source.file.empty() || source.line <= 0) return "";
 
-    std::ifstream file(source.file);
+    std::ifstream file = openSourceFile(source.file);
     if (!file.is_open()) return "";
 
     std::stringstream buffer;
@@ -672,7 +680,7 @@ std::string literalTextWidth(const std::string& text) {
     return "";
 }
 
-std::string declaredArrayElementWidthFromSource(const Module& mod, const std::string& signal) {
+std::string DesignExtractor::declaredArrayElementWidthFromSource(const Module& mod, const std::string& signal) const {
     if (signal.empty()) return "";
 
     std::string source_file = mod.source.file;
@@ -686,7 +694,7 @@ std::string declaredArrayElementWidthFromSource(const Module& mod, const std::st
     }
     if (source_file.empty()) return "";
 
-    std::ifstream file(source_file);
+    std::ifstream file = openSourceFile(source_file);
     if (!file.is_open()) return "";
     std::stringstream buffer;
     buffer << file.rdbuf();
@@ -1008,7 +1016,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
             repeat_count = std::stoi(count_text);
         } catch (...) {
             SourceInfo src = getSourceInfo(assign_handle);
-            std::ifstream file(src.file);
+            std::ifstream file = openSourceFile(src.file);
             if (file.is_open()) {
                 std::stringstream buffer;
                 buffer << file.rdbuf();
@@ -1040,7 +1048,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
             n.label = repeat_label;
             n.source = getSourceInfo(assign_handle);
             if (!rhs_text.empty() && !n.source.file.empty() && n.source.line > 0) {
-                std::ifstream source_file(n.source.file);
+                std::ifstream source_file = openSourceFile(n.source.file);
                 std::string source_line;
                 for (int line_no = 1; std::getline(source_file, source_line); ++line_no) {
                     if (line_no != n.source.line) continue;
