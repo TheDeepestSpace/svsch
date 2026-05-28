@@ -30,11 +30,24 @@ export class DiagramPanel {
   private currentModule?: string;
   private lastSurelogPath?: string;
   private lastBackendPath?: string;
+  private store?: LayoutStore;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly onDispose: () => void
   ) { }
+
+  private getStore(): LayoutStore | undefined {
+    if (this.store) {
+      return this.store;
+    }
+    const root = workspaceRootPath();
+    if (!root) {
+      return undefined;
+    }
+    this.store = new LayoutStore(root);
+    return this.store;
+  }
 
   async open(): Promise<void> {
     if (this.panel) {
@@ -51,6 +64,13 @@ export class DiagramPanel {
     }
 
     this.ensureWatcher();
+    
+    // Initialize layout from store
+    const store = this.getStore();
+    if (store) {
+        this.layout = await store.read();
+    }
+
     await this.rebuild();
   }
 
@@ -138,9 +158,10 @@ export class DiagramPanel {
     this.lastSurelogPath = surelogPath;
     this.lastBackendPath = backendPath;
 
-    const store = new LayoutStore(workspaceRoot);
-
-    this.layout = await store.read();
+    const store = this.getStore();
+    if (store && !this.layout) {
+      this.layout = await store.read();
+    }
 
     const commonOptions = {
       workspaceRoot,
@@ -236,11 +257,10 @@ export class DiagramPanel {
     if (!this.currentModule) {
       return;
     }
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
     const layout = this.layout ?? await store.read();
     delete layout.modules[this.currentModule];
     await store.write(layout);
@@ -369,13 +389,14 @@ export class DiagramPanel {
   }
 
   private async saveLayout(moduleName: string, nodes: PositionedNode[]): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeNodePositions(base, moduleName, nodes);
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.layout = mergeNodePositions(this.layout, moduleName, nodes);
     await store.write(this.layout);
   }
 
@@ -392,35 +413,39 @@ export class DiagramPanel {
   }
 
   private async saveEdgeLayout(moduleName: string, edgeId: string, waypoint: { x: number; y: number }): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeEdgeWaypoint(base, moduleName, edgeId, waypoint);
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.layout = mergeEdgeWaypoint(this.layout, moduleName, edgeId, waypoint);
     await store.write(this.layout);
   }
 
   private async saveEdgeRoute(moduleName: string, edgeId: string, routePoints: Array<{ x: number; y: number }>): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeEdgeRoutePoints(base, moduleName, edgeId, routePoints);
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.layout = mergeEdgeRoutePoints(this.layout, moduleName, edgeId, routePoints);
     await store.write(this.layout);
     await this.postView(); // Send updated view back to webview immediately
   }
 
   private async saveEdgeRoutes(moduleName: string, changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    let layout = await store.read();
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    let layout = this.layout;
     for (const change of changes) {
       layout = mergeEdgeRoutePoints(layout, moduleName, change.edgeId, change.routePoints);
     }

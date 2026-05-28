@@ -39,6 +39,12 @@ export interface SavedLayout {
 }
 
 export class LayoutStore {
+  private writeQueue: Promise<void> = Promise.resolve();
+  private pendingLayout: SavedLayout | null = null;
+  private syncTimer: NodeJS.Timeout | null = null;
+  private pendingResolves: Array<() => void> = [];
+  private readonly SYNC_DEBOUNCE_MS = 100;
+
   constructor(private readonly workspaceRoot: string) {}
 
   get layoutPath(): string {
@@ -61,8 +67,69 @@ export class LayoutStore {
     }
   }
 
+  /**
+   * Schedules a layout write. This is debounced and serialized.
+   */
   async write(layout: SavedLayout): Promise<void> {
-    await fs.mkdir(path.dirname(this.layoutPath), { recursive: true });
-    await fs.writeFile(this.layoutPath, `${JSON.stringify(layout, null, 2)}\n`, 'utf8');
+    this.pendingLayout = layout;
+    
+    if (this.syncTimer) {
+      clearTimeout(this.syncTimer);
+    }
+
+    return new Promise((resolve) => {
+      this.pendingResolves.push(resolve);
+      this.syncTimer = setTimeout(() => {
+        this.syncTimer = null;
+        const resolves = this.pendingResolves;
+        this.pendingResolves = [];
+        this.writeQueue = this.writeQueue
+          .then(() => this.performWrite())
+          .then(() => {
+            for (const r of resolves) r();
+          });
+      }, this.SYNC_DEBOUNCE_MS);
+    });
+  }
+
+  /**
+   * Immediately writes the layout to disk, bypassing debounce but still serialized.
+   */
+  async flush(): Promise<void> {
+    if (this.syncTimer) {
+      clearTimeout(this.syncTimer);
+      this.syncTimer = null;
+      const resolves = this.pendingResolves;
+      this.pendingResolves = [];
+      this.writeQueue = this.writeQueue
+        .then(() => this.performWrite())
+        .then(() => {
+          for (const r of resolves) r();
+        });
+    }
+    return this.writeQueue;
+  }
+
+  private async performWrite(): Promise<void> {
+    if (!this.pendingLayout) {
+      return;
+    }
+
+    const layout = this.pendingLayout;
+    this.pendingLayout = null;
+
+    const dir = path.dirname(this.layoutPath);
+    const tmpPath = `${this.layoutPath}.tmp`;
+
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const content = `${JSON.stringify(layout, null, 2)}\n`;
+      await fs.writeFile(tmpPath, content, 'utf8');
+      await fs.rename(tmpPath, this.layoutPath);
+    } catch (error) {
+      console.error(`Failed to write SVSCH layout: ${(error as Error).message}`);
+      // Try to clean up tmp file
+      await fs.unlink(tmpPath).catch(() => {});
+    }
   }
 }
