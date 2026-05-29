@@ -1413,10 +1413,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(outputs[0].connectedSignal).toBe('r');
 
     // Verify output edge to port node
+    // Port IDs follow the bus stableId scheme: out:name for outputs, in:sanitized(name) for inputs.
     const outEdge = top.edges.find(e => e.source === compNode?.id && e.target === 'port:bus_composition:r');
     expect(outEdge).toBeDefined();
     expect(outEdge?.targetPort).toBe('port:r');
-    expect(outEdge?.sourcePort).toBe('r');
+    expect(outEdge?.sourcePort).toBe('out:r');
     expect(outEdge?.signal).toBe('r');
 
     // Ensure register nodes exist and connect to the composition node
@@ -1427,9 +1428,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(r1).toBeDefined();
     expect(r32).toBeDefined();
 
-    expect(top.edges.some(e => e.source === r0?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === '[0]' && e.signal === 'r[0]')).toBe(true);
-    expect(top.edges.some(e => e.source === r1?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === '[1]' && e.signal === 'r[1]')).toBe(true);
-    expect(top.edges.some(e => e.source === r32?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === '[3:2]' && e.signal === 'r[3:2]')).toBe(true);
+    // Input port IDs: stableId('in', slice) where special chars are sanitized to '_'
+    expect(top.edges.some(e => e.source === r0?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === 'in:_0_' && e.signal === 'r[0]')).toBe(true);
+    expect(top.edges.some(e => e.source === r1?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === 'in:_1_' && e.signal === 'r[1]')).toBe(true);
+    expect(top.edges.some(e => e.source === r32?.id && e.sourcePort === 'q' && e.target === compNode?.id && e.targetPort === 'in:_3:2_' && e.signal === 'r[3:2]')).toBe(true);
 
     expect(top.edges.some(e => e.source === r0?.id && e.target === 'port:bus_composition:r')).toBe(false);
     expect(top.edges.some(e => e.source === r1?.id && e.target === 'port:bus_composition:r')).toBe(false);

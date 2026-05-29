@@ -154,6 +154,8 @@ void DesignExtractor::buildEdges(Module& mod) {
     repairResolvedExplicitBusCompositions(mod);
     repairResolvedBusCompositionSlices(mod);
     repairAggregateAssignmentBuses(mod);
+    collapseAliasCombNodes(mod);
+    synthesizeBusCompositionNodes(mod);
 }
 
 std::string DesignExtractor::getSignalName(vpiHandle handle, const std::map<std::string, LoweredValue>& current_drivers) {

@@ -257,3 +257,203 @@ void DesignExtractor::repairAggregateAssignmentBuses(Module& mod) {
         }
     }
 }
+
+// Collapse non-procedural [alias] comb nodes: a node with one input and one output
+// that is only a wire rename. Replace every incoming×outgoing edge pair with a
+// direct edge, then remove the node and its original edges.
+void DesignExtractor::collapseAliasCombNodes(Module& mod) {
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (size_t ni = 0; ni < mod.nodes.size(); ++ni) {
+            const Node& node = mod.nodes[ni];
+            if (node.kind != "comb" || node.metadata.expression != "[alias]" || node.metadata.isProcedural) continue;
+
+            const NodePort* in_port  = nullptr;
+            const NodePort* out_port = nullptr;
+            for (const auto& p : node.ports) {
+                if (p.direction == "input")  in_port  = &p;
+                if (p.direction == "output") out_port = &p;
+            }
+            if (!in_port || !out_port) continue;
+
+            // Copy edges by value BEFORE any push_back (which could reallocate the vector).
+            std::vector<Edge> incoming_copy, outgoing_copy;
+            for (const auto& e : mod.edges) {
+                if (e.target == node.id && e.targetPort == in_port->name)  incoming_copy.push_back(e);
+                if (e.source == node.id && e.sourcePort == out_port->name) outgoing_copy.push_back(e);
+            }
+            if (incoming_copy.empty()) continue;
+
+            // Bypass: for each incoming×outgoing pair, create a direct edge.
+            std::vector<Edge> new_edges;
+            for (const auto& inc : incoming_copy) {
+                for (const auto& outg : outgoing_copy) {
+                    Edge ne;
+                    ne.source     = inc.source;
+                    ne.sourcePort = inc.sourcePort;
+                    ne.target     = outg.target;
+                    ne.targetPort = outg.targetPort;
+                    ne.signal    = outg.signal.empty() ? inc.signal : outg.signal;
+                    ne.width     = outg.width.empty()  ? inc.width  : outg.width;
+                    // Do not inherit isStacked from the incoming edge: the output side
+                    // of an alias determines whether the bypass is stacked (e.g. array
+                    // breakout outputs are scalar even though the input is stacked).
+                    new_edges.push_back(ne);
+                }
+            }
+
+            // Remove original edges by matching source/target/port against copied values.
+            auto is_original = [&](const Edge& e) {
+                for (const auto& orig : incoming_copy) {
+                    if (e.source == orig.source && e.target == orig.target &&
+                        e.sourcePort == orig.sourcePort && e.targetPort == orig.targetPort) return true;
+                }
+                for (const auto& orig : outgoing_copy) {
+                    if (e.source == orig.source && e.target == orig.target &&
+                        e.sourcePort == orig.sourcePort && e.targetPort == orig.targetPort) return true;
+                }
+                return false;
+            };
+            mod.edges.erase(std::remove_if(mod.edges.begin(), mod.edges.end(), is_original), mod.edges.end());
+            mod.edges.insert(mod.edges.end(), new_edges.begin(), new_edges.end());
+            mod.nodes.erase(mod.nodes.begin() + ni);
+            changed = true;
+            break; // restart after any modification
+        }
+    }
+}
+
+// Synthesize bus_comp:mod:base nodes for signals driven by multiple slice sub-nodes.
+// Mirrors the TS transformToDesignGraph bus composition synthesis pass.
+void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {
+    // Build map: base_signal → [{node_id, port_name, slice, width}]
+    struct SliceDriver { std::string nodeId, portName, slice, width; };
+    std::map<std::string, std::vector<SliceDriver>> sliceDrivers;
+
+    for (const auto& n : mod.nodes) {
+        if (n.kind == "bus") continue;
+        if (n.kind == "comb" && n.metadata.expression == "[alias]" && !n.metadata.isProcedural) continue;
+        for (const auto& p : n.ports) {
+            if (p.direction != "output" || p.signal.empty()) continue;
+            size_t bracket = p.signal.find('[');
+            if (bracket == std::string::npos) continue;
+            std::string base  = p.signal.substr(0, bracket);
+            std::string slice = p.signal.substr(bracket);
+            sliceDrivers[base].push_back({n.id, p.name, slice, p.width});
+        }
+    }
+
+    for (auto& [base, drivers] : sliceDrivers) {
+        // Skip if something already drives the full base signal.
+        bool has_full_driver =
+            std::any_of(mod.ports.begin(), mod.ports.end(),
+                [&](const Port& p){ return p.name == base && p.direction == "input"; })
+            || std::any_of(mod.nodes.begin(), mod.nodes.end(), [&](const Node& n){
+                return std::any_of(n.ports.begin(), n.ports.end(), [&](const NodePort& p){
+                    return p.direction == "output" && p.signal == base;
+                });
+               });
+        if (has_full_driver) continue;
+
+        if (drivers.size() <= 1 &&
+            !std::any_of(mod.ports.begin(), mod.ports.end(),
+                [&](const Port& p){ return p.name == base; })) continue;
+
+        // Check that there is a consumer of the full base signal.
+        bool has_full_consumer =
+            std::any_of(mod.nodes.begin(), mod.nodes.end(), [&](const Node& n){
+                return std::any_of(n.ports.begin(), n.ports.end(), [&](const NodePort& p){
+                    return p.direction == "input" && p.signal == base;
+                });
+               })
+            || std::any_of(mod.ports.begin(), mod.ports.end(),
+                [&](const Port& p){ return p.name == base && p.direction == "output"; });
+        if (!has_full_consumer) continue;
+
+        std::string comp_id = "bus_comp:" + mod.name + ":" + base;
+        if (std::any_of(mod.nodes.begin(), mod.nodes.end(),
+                [&](const Node& n){ return n.id == comp_id; })) continue;
+
+        // Determine output port width.
+        std::string out_width = resolveSignalWidth(mod, base, "[0:0]");
+
+        Node comp;
+        comp.id   = comp_id;
+        comp.kind = "bus";
+        comp.label = base;
+        comp.metadata.expression = base;
+        comp.ports.push_back({base, "output", base, out_width, base});
+
+        // Add input ports and driver edges (deduplicate by slice).
+        std::set<std::string> seen_slices;
+        for (const auto& driver : drivers) {
+            if (!seen_slices.insert(driver.slice).second) continue;
+            std::string port_width = widthFromSignalSlice(driver.slice);
+            if (port_width.empty()) port_width = driver.width;
+            comp.ports.push_back({driver.slice, "input", base + driver.slice, port_width, driver.slice});
+
+            Edge e;
+            e.source     = driver.nodeId;
+            e.sourcePort = driver.portName;
+            e.target     = comp_id;
+            e.targetPort = driver.slice;
+            e.signal     = base + driver.slice;
+            e.width      = port_width;
+            mod.edges.push_back(e);
+        }
+
+        // Sort input ports: high bit first, output last.
+        std::sort(comp.ports.begin(), comp.ports.end(), [](const NodePort& a, const NodePort& b) {
+            if (a.direction == "output") return false;
+            if (b.direction == "output") return true;
+            std::smatch ma, mb;
+            static const std::regex re(R"(\[(\d+))");
+            bool ha = std::regex_search(a.name, ma, re);
+            bool hb = std::regex_search(b.name, mb, re);
+            if (ha && hb) return std::stoi(ma[1]) > std::stoi(mb[1]);
+            return a.name > b.name;
+        });
+
+        mod.nodes.push_back(comp);
+
+        // Edges from comp output to full-bus consumers (nodes).
+        for (const auto& n : mod.nodes) {
+            if (n.id == comp_id) continue;
+            for (const auto& p : n.ports) {
+                if (p.direction != "input" || p.signal != base) continue;
+                Edge e;
+                e.source     = comp_id;
+                e.sourcePort = base;
+                e.target     = n.id;
+                e.targetPort = p.name;
+                e.signal     = base;
+                e.width      = out_width;
+                mod.edges.push_back(e);
+            }
+        }
+        // Edges from comp output to module output ports ("self").
+        for (const auto& p : mod.ports) {
+            if (p.direction != "output" || p.name != base) continue;
+            Edge e;
+            e.source     = comp_id;
+            e.sourcePort = base;
+            e.target     = "self";
+            e.targetPort = base;
+            e.signal     = base;
+            e.width      = out_width;
+            mod.edges.push_back(e);
+        }
+
+        // Remove old direct edges from slice drivers to full-bus consumers.
+        std::set<std::string> driver_ids;
+        for (const auto& d : drivers) driver_ids.insert(d.nodeId);
+        mod.edges.erase(std::remove_if(mod.edges.begin(), mod.edges.end(),
+            [&](const Edge& e) {
+                return driver_ids.count(e.source) && e.target != comp_id
+                    && (e.signal == base ||
+                        (e.signal.size() > base.size() && e.signal.rfind(base, 0) == 0));
+            }),
+            mod.edges.end());
+    }
+}
