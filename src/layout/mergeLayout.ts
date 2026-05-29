@@ -1,6 +1,7 @@
-import type { DesignGraph, DiagramEdge, DiagramNode, DiagramViewModel, PositionedNode } from '../ir/types';
+import type { DesignGraph, DesignModule, DiagramEdge, DiagramNode, DiagramViewModel, PositionedNode } from '../ir/types';
 import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
-import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
+import { edgeNetKey, endpointKey } from '../ir/edgeNet';
+import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
 import {
@@ -47,7 +48,10 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   }
 
   const moduleLayout = layout.modules[designModule.name] ?? { nodes: {} };
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, designModule.edges, moduleLayout);
+  const activeCuts = activeNetCuts(designModule, moduleLayout);
+  const activeCutKeys = new Set(activeCuts.keys());
+  const routedDesignEdges = designModule.edges.filter((edge) => !activeCutKeys.has(edgeNetKey(edge)));
+  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout);
   const positioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
@@ -64,17 +68,291 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     };
   });
 
+  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+
   return {
     moduleName: designModule.name,
     parameters: designModule.parameters,
-    nodes: positioned,
-    edges: designModule.edges.map((edge) => ({
-      ...edge,
-      waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
-      routePoints: moduleLayout.edges?.[edge.id]?.routePoints ?? elkLayout.routes.get(edge.id)
-    })),
+    nodes: [...positioned, ...cutProjection.nodes],
+    edges: [
+      ...routedDesignEdges.map((edge) => ({
+        ...edge,
+        waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
+        routePoints: moduleLayout.edges?.[edge.id]?.routePoints ?? elkLayout.routes.get(edge.id)
+      })),
+      ...cutProjection.edges
+    ],
     diagnostics: graph.diagnostics
   };
+}
+
+interface ActiveNetCut {
+  cut: SavedNetCut;
+  edges: DiagramEdge[];
+}
+
+function activeNetCuts(designModule: DesignModule, moduleLayout: SavedModuleLayout): Map<string, ActiveNetCut> {
+  const active = new Map<string, ActiveNetCut>();
+
+  for (const [netKey, cut] of Object.entries(moduleLayout.netCuts ?? {})) {
+    const sourceNode = designModule.nodes.find((node) => node.id === cut.source.nodeId);
+    if (!sourceNode || (cut.source.portId && !sourceNode.ports.some((port) => port.id === cut.source.portId || port.name === cut.source.portId))) {
+      continue;
+    }
+
+    const edges = designModule.edges.filter((edge) => (
+      edgeNetKey(edge) === netKey
+      && edge.source === cut.source.nodeId
+      && edge.sourcePort === cut.source.portId
+    ));
+    if (edges.length > 0) {
+      active.set(netKey, { cut, edges });
+    }
+  }
+
+  return active;
+}
+
+function buildNetCutProjection(
+  designModule: DesignModule,
+  moduleLayout: SavedModuleLayout,
+  activeCuts: Map<string, ActiveNetCut>,
+  positionedNodes: PositionedNode[]
+): { nodes: PositionedNode[]; edges: DiagramEdge[] } {
+  const nodes: PositionedNode[] = [];
+  const edges: DiagramEdge[] = [];
+  const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
+  const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
+
+  for (const [netKey, { cut, edges: cutEdges }] of activeCuts) {
+    const sortedCutEdges = [...cutEdges].sort((a, b) => a.id.localeCompare(b.id));
+    const firstEdge = sortedCutEdges[0];
+    if (!firstEdge) {
+      continue;
+    }
+
+    const sourceLead = renderedLeadPoint(cut.source.nodeId, cut.source.portId, nodesById, nodePositions);
+    if (!sourceLead) {
+      continue;
+    }
+
+    const sourceNode = nodesById.get(cut.source.nodeId);
+    const isSourceStacked = sourceNode ? nodeIsArrayNode(sourceNode) : false;
+
+    const sourceLabelId = cutLabelNodeId(netKey, 'source');
+    const sourceHandleSide = oppositeHandleSide(elkSideToHandleSide(sourceLead.side));
+    const sourceLabelNode = makeCutLabelNode(
+      sourceLabelId,
+      cut.label,
+      designModule.name,
+      {
+        netKey,
+        role: 'source',
+        align: 'end',
+        originalEdgeId: firstEdge.id,
+        handleSide: sourceHandleSide,
+        edgeStyle: cutLabelEdgeStyle(firstEdge),
+        isSourceStacked
+      },
+      moduleLayout,
+      labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
+    );
+    nodes.push(sourceLabelNode);
+
+    edges.push(makeCutStubEdge({
+      id: cutStubEdgeId(netKey, 'source'),
+      template: firstEdge,
+      source: cut.source.nodeId,
+      sourcePort: cut.source.portId,
+      target: sourceLabelId,
+      targetPort: 'cut',
+      netKey,
+      role: 'source',
+      originalEdgeId: firstEdge.id,
+      moduleLayout
+    }));
+
+    for (const edge of sortedCutEdges) {
+      const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+      if (!targetLead) {
+        continue;
+      }
+
+      const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
+      const sinkHandleSide = oppositeHandleSide(elkSideToHandleSide(targetLead.side));
+      const sinkLabelNode = makeCutLabelNode(
+        sinkLabelId,
+        cut.label,
+        designModule.name,
+        {
+          netKey,
+          role: 'sink',
+          align: 'start',
+          originalEdgeId: edge.id,
+          handleSide: sinkHandleSide,
+          edgeStyle: cutLabelEdgeStyle(edge),
+          isSourceStacked
+        },
+        moduleLayout,
+        labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
+      );
+      nodes.push(sinkLabelNode);
+
+      edges.push(makeCutStubEdge({
+        id: cutStubEdgeId(netKey, 'sink', edge.id),
+        template: edge,
+        source: sinkLabelId,
+        sourcePort: 'cut',
+        target: edge.target,
+        targetPort: edge.targetPort,
+        netKey,
+        role: 'sink',
+        originalEdgeId: edge.id,
+        moduleLayout
+      }));
+    }
+  }
+
+  return { nodes, edges };
+}
+
+function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
+  return role === 'source'
+    ? `cut-label:${netKey}:source`
+    : `cut-label:${netKey}:sink:${edgeId ?? ''}`;
+}
+
+function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
+  return role === 'source'
+    ? `cut-stub:${netKey}:source`
+    : `cut-stub:${netKey}:sink:${edgeId ?? ''}`;
+}
+
+function cutLabelEdgeStyle(edge: DiagramEdge): NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'] | undefined {
+  const aggregate = edge.metadata?.aggregate;
+  const isStacked = edge.isStacked === true;
+  if (!aggregate && !isStacked) {
+    return undefined;
+  }
+  return {
+    ...(aggregate ? { aggregate } : {}),
+    ...(isStacked ? { isStacked } : {})
+  };
+}
+
+function makeCutLabelNode(
+  id: string,
+  label: string,
+  moduleName: string,
+  cutNet: NonNullable<DiagramNode['metadata']>['cutNet'],
+  moduleLayout: SavedModuleLayout,
+  fallbackPosition: { x: number; y: number }
+): PositionedNode {
+  const saved = moduleLayout.nodes[id];
+  const position = saved
+    ? { x: saved.x, y: saved.y }
+    : fallbackPosition;
+
+  return {
+    id,
+    kind: 'netLabel',
+    label,
+    parentModule: moduleName,
+    ports: [
+      {
+        id: 'cut',
+        name: 'cut',
+        direction: cutNet?.role === 'source' ? 'input' : 'output'
+      }
+    ],
+    metadata: { cutNet },
+    position,
+    fixed: saved?.fixed
+  };
+}
+
+function makeCutStubEdge({
+  id,
+  template,
+  source,
+  sourcePort,
+  target,
+  targetPort,
+  netKey,
+  role,
+  originalEdgeId,
+  moduleLayout
+}: {
+  id: string;
+  template: DiagramEdge;
+  source: string;
+  sourcePort?: string;
+  target: string;
+  targetPort?: string;
+  netKey: string;
+  role: 'source' | 'sink';
+  originalEdgeId?: string;
+  moduleLayout: SavedModuleLayout;
+}): DiagramEdge {
+  return {
+    id,
+    source,
+    target,
+    sourcePort,
+    targetPort,
+    signal: template.signal,
+    width: template.width,
+    isStacked: template.isStacked,
+    sourceRange: template.sourceRange,
+    metadata: {
+      ...(template.metadata ?? {}),
+      forceStraight: true,
+      cutStub: {
+        netKey,
+        role,
+        originalEdgeId
+      }
+    },
+    routePoints: moduleLayout.edges?.[id]?.routePoints
+  };
+}
+
+function elkSideToHandleSide(side: ElkPortSide): 'left' | 'right' | 'top' | 'bottom' {
+  if (side === 'WEST') return 'left';
+  if (side === 'EAST') return 'right';
+  if (side === 'NORTH') return 'top';
+  return 'bottom';
+}
+
+function oppositeHandleSide(side: 'left' | 'right' | 'top' | 'bottom'): 'left' | 'right' | 'top' | 'bottom' {
+  if (side === 'left') return 'right';
+  if (side === 'right') return 'left';
+  if (side === 'top') return 'bottom';
+  return 'top';
+}
+
+function labelPositionForHandlePoint(
+  point: { x: number; y: number },
+  handleSide: 'left' | 'right' | 'top' | 'bottom',
+  label: string
+): { x: number; y: number } {
+  const dimensions = diagramNodeDimensions({
+    id: 'label',
+    kind: 'netLabel',
+    label,
+    ports: []
+  });
+
+  if (handleSide === 'left') {
+    return { x: point.x, y: point.y - dimensions.height / 2 };
+  }
+  if (handleSide === 'right') {
+    return { x: point.x - dimensions.width, y: point.y - dimensions.height / 2 };
+  }
+  if (handleSide === 'top') {
+    return { x: point.x - dimensions.width / 2, y: point.y };
+  }
+  return { x: point.x - dimensions.width / 2, y: point.y - dimensions.height };
 }
 
 async function autoLayoutMissingNodes(
@@ -1077,11 +1355,11 @@ function removeRedundantRoutePoints(points: Array<{ x: number; y: number }>): Ar
 }
 
 function endpointId(nodeId: string, portId?: string): string {
-  return portId ? `${nodeId}:${portId}` : nodeId;
+  return endpointKey(nodeId, portId);
 }
 
 function netKey(edge: DiagramEdge): string {
-  return endpointId(edge.source, edge.sourcePort);
+  return edgeNetKey(edge);
 }
 
 function buildNodePlacementElkEdges(edges: DiagramEdge[], nodeIds: Set<string>): Array<{ id: string; sources: string[]; targets: string[] }> {
@@ -1251,6 +1529,164 @@ export function projectElkRoutes(
   return routes;
 }
 
+export function defaultNetCutLabel(edge: DiagramEdge, designModule: DesignModule, moduleLayout: SavedModuleLayout): string {
+  const sourceNode = designModule.nodes.find((node) => node.id === edge.source);
+  const sourcePort = sourceNode ? sourcePortForEdge(sourceNode, edge) : undefined;
+  const sourcePortLabel = cleanVisualLabel(sourcePort?.label ?? sourcePort?.name ?? edge.sourcePort);
+
+  if (sourceNode?.kind === 'port' && sourcePortLabel) {
+    return sourcePortLabel;
+  }
+
+  if (sourceNode?.kind === 'instance') {
+    const instanceLabel = cleanVisualLabel(sourceNode.label);
+    if (instanceLabel && sourcePortLabel) {
+      return `${instanceLabel}.${sourcePortLabel}`;
+    }
+  }
+
+  if (sourceNode?.kind === 'register' || sourceNode?.kind === 'latch') {
+    const label = cleanVisualLabel(sourceNode.label) ?? cleanVisualLabel(sourcePort?.connectedSignal);
+    if (label) {
+      return label;
+    }
+  }
+
+  if (sourceNode?.kind === 'bus' || sourceNode?.kind === 'struct' || sourceNode?.kind === 'interface') {
+    const label = cleanVisualLabel(edge.signal) ?? cleanVisualLabel(sourcePort?.connectedSignal) ?? cleanVisualLabel(sourceNode.label);
+    if (label) {
+      return label;
+    }
+  }
+
+  return allocateNetLabel(moduleLayout);
+}
+
+export function mergeNetCut(
+  layout: SavedLayout,
+  moduleName: string,
+  edge: DiagramEdge,
+  designModule: DesignModule,
+  nodes: PositionedNode[]
+): SavedLayout {
+  const netKey = edgeNetKey(edge);
+  const existing = layout.modules[moduleName] ?? { nodes: {} };
+  if (existing.netCuts?.[netKey]) {
+    return layout;
+  }
+
+  const frozenNodes = nodes.map((node) => ({
+    ...node,
+    fixed: true
+  }));
+  const next = mergeNodePositions(layout, moduleName, frozenNodes);
+  const nextModule = next.modules[moduleName] ?? { nodes: {} };
+  next.modules[moduleName] = {
+    ...nextModule,
+    netCuts: {
+      ...(nextModule.netCuts ?? {}),
+      [netKey]: {
+        label: defaultNetCutLabel(edge, designModule, nextModule),
+        source: {
+          nodeId: edge.source,
+          ...(edge.sourcePort ? { portId: edge.sourcePort } : {})
+        }
+      }
+    }
+  };
+
+  return next;
+}
+
+export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: string, label: string): SavedLayout {
+  const trimmed = label.trim();
+  if (!trimmed) {
+    return layout;
+  }
+
+  const existing = layout.modules[moduleName];
+  const cut = existing?.netCuts?.[netKey];
+  if (!existing || !cut) {
+    return layout;
+  }
+
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        netCuts: {
+          ...(existing.netCuts ?? {}),
+          [netKey]: {
+            ...cut,
+            label: trimmed
+          }
+        }
+      }
+    }
+  };
+}
+
+export function removeNetCut(layout: SavedLayout, moduleName: string, netKey: string): SavedLayout {
+  const existing = layout.modules[moduleName];
+  if (!existing?.netCuts?.[netKey]) {
+    return layout;
+  }
+
+  const netCuts = { ...(existing.netCuts ?? {}) };
+  delete netCuts[netKey];
+
+  const sourceLabelId = cutLabelNodeId(netKey, 'source');
+  const sinkLabelPrefix = cutLabelNodeId(netKey, 'sink');
+  const sourceStubId = cutStubEdgeId(netKey, 'source');
+  const sinkStubPrefix = cutStubEdgeId(netKey, 'sink');
+
+  const nodes = Object.fromEntries(Object.entries(existing.nodes).filter(([id]) => (
+    id !== sourceLabelId && !id.startsWith(sinkLabelPrefix)
+  )));
+  const edges = existing.edges
+    ? Object.fromEntries(Object.entries(existing.edges).filter(([id]) => (
+      id !== sourceStubId && !id.startsWith(sinkStubPrefix)
+    )))
+    : undefined;
+
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        nodes,
+        ...(Object.keys(netCuts).length > 0 ? { netCuts } : { netCuts: undefined }),
+        ...(edges && Object.keys(edges).length > 0 ? { edges } : { edges: undefined })
+      }
+    }
+  };
+}
+
+function sourcePortForEdge(node: DiagramNode, edge: DiagramEdge): DiagramNode['ports'][number] | undefined {
+  return node.ports.find((port) => port.id === edge.sourcePort)
+    ?? node.ports.find((port) => port.name === edge.sourcePort)
+    ?? node.ports.find((port) => port.direction === 'output')
+    ?? node.ports[0];
+}
+
+function cleanVisualLabel(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function allocateNetLabel(moduleLayout: SavedModuleLayout): string {
+  const used = new Set(Object.values(moduleLayout.netCuts ?? {}).map((cut) => cut.label.trim()));
+  for (let index = 1; ; index += 1) {
+    const candidate = `NET_${index}`;
+    if (!used.has(candidate)) {
+      return candidate;
+    }
+  }
+}
+
 export function mergeNodePositions(layout: SavedLayout, moduleName: string, nodes: PositionedNode[]): SavedLayout {
   const next: SavedLayout = {
     version: 1,
@@ -1270,8 +1706,7 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
     const isFixed = node.fixed || existing.nodes[node.id]?.fixed;
     if (isFixed) {
       mergedNodes[node.id] = {
-        x: snapToGrid(node.position.x),
-        y: snapToGrid(node.position.y, node.kind, structRole(node)),
+        ...snapPosition(node.position, node.kind, structRole(node)),
         fixed: true
       };
     }
@@ -1366,6 +1801,7 @@ export const diagramNodeSize = {
 
 function snapToGrid(value: number, kind?: string, role?: string): number {
   const grid = diagramSizing.gridSize;
+  // port/literal nodes snap to half-grid (same formula as the webview snap formula).
   const isHalfGrid = kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
   if (isHalfGrid) {
     return Math.round((value - grid / 2) / grid) * grid + grid / 2;

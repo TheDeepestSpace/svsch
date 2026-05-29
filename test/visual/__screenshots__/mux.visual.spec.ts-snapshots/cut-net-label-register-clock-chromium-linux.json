@@ -1,0 +1,117 @@
+{
+  "nodes": [
+    {
+      "id": "cut-label:clk_n",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:clk_sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:target",
+      "type": "hdl",
+      "position": {
+        "x": 192,
+        "y": 48
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "port:D",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "port:Q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "port:reset",
+            "name": "reset",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:clk",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:clk:sink",
+      "source": "cut-label:clk_sink",
+      "target": "reg:target",
+      "sourceHandle": "cut",
+      "targetHandle": "port:clk",
+      "path": "M 528 168 L 600 168 L 600 120 L 168 120"
+    },
+    {
+      "id": "cut-stub:clk:source",
+      "source": "source:clk",
+      "target": "cut-label:clk_n",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 168 L 120 168 L 168 168 L 168 168"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
 import { expectGraphAndScreenshot, fitGraphView } from './helper';
-import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
@@ -1235,6 +1235,155 @@ test.describe('edge route editing', () => {
     await expect(page.locator('.svsch-edge-net-highlight')).toHaveCount(3);
   });
 
+  test('posts cut, rename, and tie messages for visual net labels', async ({ page }) => {
+    await installMessageCapture(page);
+    await openView(page, createBranchedNetHighlightView());
+    await page.waitForSelector('[data-node-id="source:a"]');
+    await waitForViewportTransformToSettle(page);
+
+    await page.locator('.react-flow__edge[data-id="edge-a-to-x"] path.svsch-edge-bridge').hover({ force: true });
+    await page.locator('.react-flow__edge[data-id="edge-a-to-x"] .svsch-edge-cut-control button').click();
+
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'cutNet',
+      moduleName: 'branched_net_highlight',
+      edge: expect.objectContaining({ id: 'edge-a-to-x' })
+    }));
+
+    await postView(page, createCutBranchedNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await expect(page.locator('[data-node-kind="netLabel"]')).toHaveCount(3);
+
+    await page.locator('[data-node-id="cut-label:source:a:p:source"]').dblclick();
+    const input = page.locator('[data-node-id="cut-label:source:a:p:source"] .hdl-net-label-input');
+    await input.fill('renamed_a');
+    await input.press('Enter');
+
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'renameCutNet',
+      moduleName: 'branched_net_highlight',
+      netKey: 'source:a:p',
+      label: 'renamed_a'
+    }));
+
+    const tieTarget = page.locator('[data-node-id="cut-label:source:a:p:sink:edge-a-to-x"]');
+    const tieButton = tieTarget.locator('.hdl-net-label-tie');
+    await expect(tieButton).toBeHidden();
+    await tieTarget.hover({ force: true });
+    await expect(tieButton).toBeVisible();
+    await tieButton.click();
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'tieNet',
+      moduleName: 'branched_net_highlight',
+      netKey: 'source:a:p'
+    }));
+  });
+
+  test('renders cut labels above struct, interface, and stacked wire stubs', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expect(page.locator('.hdl-net-label-struct')).toHaveCount(2);
+    await expect(page.locator('.hdl-net-label-interface')).toHaveCount(2);
+    await expect(page.locator('.hdl-net-label-stacked')).toHaveCount(2);
+
+    for (const nodeId of [
+      'cut-label:styled:struct:source',
+      'cut-label:styled:struct:sink',
+      'cut-label:styled:interface:source',
+      'cut-label:styled:interface:sink',
+      'cut-label:styled:stacked:source',
+      'cut-label:styled:stacked:sink'
+    ]) {
+      await expectCutLabelAboveWire(page, nodeId);
+    }
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'cut-net-label-styled-stubs-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('matches cut label segment paint to decorated wire styles', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const structPaint = await cutLabelPaint(page, 'cut-label:styled:struct:source', 'cut-stub:styled:struct:source', '.svsch-edge-struct');
+    expect(structPaint.wireStrokeWidth).toBeCloseTo(structPaint.edgeStrokeWidth, 1);
+    expect(structPaint.wireStroke).toBe(structPaint.edgeStroke);
+
+    const interfacePaint = await cutLabelPaint(page, 'cut-label:styled:interface:source', 'cut-stub:styled:interface:source', '.svsch-edge-interface-bg');
+    expect(interfacePaint.wireStrokeWidth).toBeCloseTo(interfacePaint.edgeStrokeWidth, 1);
+    expect(interfacePaint.wireStroke).toBe(interfacePaint.edgeStroke);
+
+    const stackedPaint = await cutLabelPaint(page, 'cut-label:styled:stacked:source', 'cut-stub:styled:stacked:source', '.svsch-edge-stacked');
+    expect(stackedPaint.wireStroke).toBe(stackedPaint.edgeStroke);
+    await expect(page.locator('.react-flow__edge[data-id="cut-stub:styled:stacked:source"] .svsch-edge-stacked-back, .react-flow__edge[data-id="cut-stub:styled:stacked:source"] .svsch-edge-stacked-front')).toHaveCount(2);
+  });
+
+  test('renders cut labels for vertical reset connections on registers', async ({ page }) => {
+    // Let ELK position everything, then cut the rst reset net
+    const graph = await buildGraphFromFixture('register_async_reset.sv');
+    const moduleName = graph.rootModules[0];
+    const designModule = graph.modules[moduleName];
+    const emptyLayout: SavedLayout = { version: 1, modules: {} };
+
+    const baseView = await buildViewModel(graph, moduleName, emptyLayout);
+    const rstEdge = baseView.edges.find((e) => e.signal === 'rst');
+    if (!rstEdge) throw new Error('rst edge not found in auto-layout view');
+
+    const cutLayout = mergeNetCut(emptyLayout, moduleName, rstEdge, designModule, baseView.nodes);
+    const cutView = await buildViewModel(graph, moduleName, cutLayout);
+
+    await openView(page, cutView);
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset.png', { clip: await paddedGraphClip(page) });
+
+    // Drag the source cut label and verify it snaps to the half-grid
+    const sourceLabelNode = cutView.nodes.find(
+      (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source'
+    );
+    if (!sourceLabelNode) throw new Error('source cut label node not found');
+
+    const labelLocator = page.locator(`.react-flow__node[data-id="${sourceLabelNode.id}"]`);
+    const box = await labelLocator.boundingBox();
+    if (!box) throw new Error('cut label bounding box not found');
+
+    const grid = diagramSizing.gridSize;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      box.x + box.width / 2 + grid * 3,
+      box.y + box.height / 2 + grid * 2,
+      { steps: 10 }
+    );
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // Position must be on the grid (x ≡ 0 mod grid, same for y)
+    const pos = await page.evaluate((nodeId) => {
+      const instance = (window as any).reactFlowInstance;
+      return instance?.getNodes().find((n: any) => n.id === nodeId)?.position ?? null;
+    }, sourceLabelNode.id);
+    expect(pos).toBeTruthy();
+    const xMod = ((Math.round(pos.x) % grid) + grid) % grid;
+    const yMod = ((Math.round(pos.y) % grid) + grid) % grid;
+    expect(xMod).toBe(0);
+    expect(yMod).toBe(0);
+
+    await waitForViewportTransformToSettle(page);
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
+    await openView(page, createRegisterClockCutView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-clock.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('keeps an over-dragged assignment segment editable after clamping to the target lead', async ({ page }) => {
     await openView(page, createSingleAssignmentRouteEditView());
     await page.waitForSelector('[data-node-id="source:a"]');
@@ -1386,6 +1535,65 @@ async function openView(page: Page, view: DiagramViewModel): Promise<void> {
   await postView(page, view);
 }
 
+async function installMessageCapture(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    (window as any).__svschMessages = [];
+    window.acquireVsCodeApi = () => ({
+      postMessage: (message: unknown) => {
+        (window as any).__svschMessages.push(message);
+      }
+    });
+  });
+}
+
+async function capturedMessages(page: Page): Promise<unknown[]> {
+  return page.evaluate(() => (window as any).__svschMessages ?? []);
+}
+
+async function expectCutLabelAboveWire(page: Page, nodeId: string): Promise<void> {
+  const metrics = await page.locator(`[data-node-id="${nodeId}"]`).evaluate((node) => {
+    const text = node.querySelector('.hdl-net-label-text');
+    const svg = node.querySelector('.hdl-net-label-wire-svg');
+    if (!text || !svg) {
+      throw new Error(`Missing net label text or wire for ${node.getAttribute('data-node-id')}`);
+    }
+    const textBox = text.getBoundingClientRect();
+    const svgBox = svg.getBoundingClientRect();
+    return {
+      textBottom: textBox.bottom,
+      wireMiddle: svgBox.top + svgBox.height / 2
+    };
+  });
+
+  expect(metrics.textBottom).toBeLessThanOrEqual(metrics.wireMiddle);
+}
+
+async function cutLabelPaint(page: Page, nodeId: string, edgeId: string, edgeSelector: string, wireSelector = 'path:not(.svsch-edge-stacked-back):not(.svsch-edge-stacked-front)'): Promise<{
+  edgeStroke: string;
+  edgeStrokeWidth: number;
+  wireFill: string;
+  wireStroke: string;
+  wireStrokeWidth: number;
+}> {
+  return page.evaluate(({ nodeId: id, edgeId: edge, selector, wirePathSelector }) => {
+    const wire = document.querySelector(`[data-node-id="${id}"] .hdl-net-label-wire-svg ${wirePathSelector}`);
+    const path = document.querySelector(`.react-flow__edge[data-id="${edge}"] ${selector}`);
+    if (!wire || !path) {
+      throw new Error(`Missing paint target for ${id}/${edge} (wire: ${!!wire}, edge: ${!!path})`);
+    }
+
+    const wireStyle = getComputedStyle(wire);
+    const pathStyle = getComputedStyle(path);
+    return {
+      edgeStroke: pathStyle.stroke,
+      edgeStrokeWidth: Number.parseFloat(pathStyle.strokeWidth),
+      wireFill: wireStyle.fill,
+      wireStroke: wireStyle.stroke,
+      wireStrokeWidth: Number.parseFloat(wireStyle.strokeWidth)
+    };
+  }, { nodeId, edgeId, selector: edgeSelector, wirePathSelector: wireSelector });
+}
+
 async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   await page.evaluate((fixtureView) => {
     window.postMessage({
@@ -1468,6 +1676,28 @@ async function hoverEdgeBridge(page: Page, edgeId: string): Promise<void> {
   });
 
   await page.mouse.move(point.x, point.y);
+}
+
+async function buildGraphFromFixture(fixtureName: string): Promise<DesignGraph> {
+  const fixturePath = path.join(fixtureRoot, fixtureName);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-visual-'));
+  try {
+    const tmpFile = path.join(tmpDir, path.basename(fixtureName));
+    fs.writeFileSync(tmpFile, fs.readFileSync(fixturePath));
+    const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+    const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
+    return await buildDesignGraph({
+      workspaceRoot: tmpDir,
+      projectFolder: '.',
+      backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
+      veriblePath: 'verible-verilog-syntax',
+      surelogPath,
+      backendPath,
+      includeExternalDiagnostics: false
+    });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
@@ -1831,13 +2061,15 @@ function createAluVisualLayout(graph: DesignGraph, moduleName: string): SavedLay
   };
 }
 
-function visualPort(id: string, label: string, direction: 'input' | 'output', x: number, y: number): DiagramViewModel['nodes'][number] {
+function visualPort(id: string, label: string, direction: 'input' | 'output', x: number, y: number, isArray = false): DiagramViewModel['nodes'][number] {
   return {
     id,
     kind: 'port',
     label,
-    ports: [{ id: 'p', name: label, direction }],
-    position: { x, y }
+    ports: [{ id: 'p', name: label, direction, isArrayNode: isArray }],
+    position: { x, y },
+    isArrayNode: isArray,
+    metadata: { isArrayNode: isArray }
   };
 }
 
@@ -2054,6 +2286,278 @@ function createBranchedNetHighlightView(): DiagramViewModel {
         targetPort: 'p',
         signal: 'b'
       }
+    ],
+    diagnostics: []
+  };
+}
+
+function createCutBranchedNetView(): DiagramViewModel {
+  const netKey = 'source:a:p';
+  return {
+    moduleName: 'branched_net_highlight',
+    nodes: [
+      visualPort('source:a', 'a', 'input', 0, 108),
+      visualPort('target:x', 'x', 'output', 360, 60),
+      visualPort('target:y', 'y', 'output', 360, 156),
+      {
+        id: 'cut-label:source:a:p:source',
+        kind: 'netLabel',
+        label: 'a',
+        parentModule: 'branched_net_highlight',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        position: { x: 144, y: 108 },
+        metadata: {
+          cutNet: {
+            netKey,
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-a-to-x'
+          }
+        }
+      },
+      {
+        id: 'cut-label:source:a:p:sink:edge-a-to-x',
+        kind: 'netLabel',
+        label: 'a',
+        parentModule: 'branched_net_highlight',
+        ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
+        position: { x: 216, y: 60 },
+        metadata: {
+          cutNet: {
+            netKey,
+            role: 'sink',
+            align: 'start',
+            handleSide: 'right',
+            originalEdgeId: 'edge-a-to-x'
+          }
+        }
+      },
+      {
+        id: 'cut-label:source:a:p:sink:edge-a-to-y',
+        kind: 'netLabel',
+        label: 'a',
+        parentModule: 'branched_net_highlight',
+        ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
+        position: { x: 216, y: 156 },
+        metadata: {
+          cutNet: {
+            netKey,
+            role: 'sink',
+            align: 'start',
+            handleSide: 'right',
+            originalEdgeId: 'edge-a-to-y'
+          }
+        }
+      }
+    ],
+    edges: [
+      {
+        id: 'cut-stub:source:a:p:source',
+        source: 'source:a',
+        sourcePort: 'p',
+        target: 'cut-label:source:a:p:source',
+        targetPort: 'cut',
+        signal: 'a',
+        metadata: { forceStraight: true, cutStub: { netKey, role: 'source', originalEdgeId: 'edge-a-to-x' } }
+      },
+      {
+        id: 'cut-stub:source:a:p:sink:edge-a-to-x',
+        source: 'cut-label:source:a:p:sink:edge-a-to-x',
+        sourcePort: 'cut',
+        target: 'target:x',
+        targetPort: 'p',
+        signal: 'a',
+        metadata: { forceStraight: true, cutStub: { netKey, role: 'sink', originalEdgeId: 'edge-a-to-x' } }
+      },
+      {
+        id: 'cut-stub:source:a:p:sink:edge-a-to-y',
+        source: 'cut-label:source:a:p:sink:edge-a-to-y',
+        sourcePort: 'cut',
+        target: 'target:y',
+        targetPort: 'p',
+        signal: 'a',
+        metadata: { forceStraight: true, cutStub: { netKey, role: 'sink', originalEdgeId: 'edge-a-to-y' } }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createStyledCutNetView(): DiagramViewModel {
+  return {
+    moduleName: 'styled_cut_net_labels',
+    nodes: [
+      visualPort('source:struct', 'pkt_i', 'input', 0, 60),
+      visualPort('target:struct', 'pkt_o', 'output', 600, 60),
+      styledCutLabelNode('cut-label:styled:struct:source', 'packet_bus', 'styled:struct', 'source', 168, 48, 'end', 'left', { aggregate: 'struct' }),
+      styledCutLabelNode('cut-label:styled:struct:sink', 'packet_bus', 'styled:struct', 'sink', 432, 48, 'start', 'right', { aggregate: 'struct' }),
+
+      visualPort('source:interface', 'if_m', 'input', 0, 132),
+      visualPort('target:interface', 'if_s', 'output', 600, 132),
+      styledCutLabelNode('cut-label:styled:interface:source', 'if_link', 'styled:interface', 'source', 168, 120, 'end', 'left', { aggregate: 'interface' }),
+      styledCutLabelNode('cut-label:styled:interface:sink', 'if_link', 'styled:interface', 'sink', 432, 120, 'start', 'right', { aggregate: 'interface' }),
+
+      visualPort('source:stacked', 'arr_i', 'input', 0, 204, true),
+      visualPort('target:stacked', 'arr_o', 'output', 600, 204, true),
+      styledCutLabelNode('cut-label:styled:stacked:source', 'array_lane', 'styled:stacked', 'source', 168, 192, 'end', 'left', { isStacked: true }, true),
+      styledCutLabelNode('cut-label:styled:stacked:sink', 'array_lane', 'styled:stacked', 'sink', 432, 192, 'start', 'right', { isStacked: true }, true)
+    ],
+    edges: [
+      styledCutStubEdge('cut-stub:styled:struct:source', 'source:struct', 'cut-label:styled:struct:source', 'styled:struct', 'source', { aggregate: 'struct' }),
+      styledCutStubEdge('cut-stub:styled:struct:sink', 'cut-label:styled:struct:sink', 'target:struct', 'styled:struct', 'sink', { aggregate: 'struct' }),
+      styledCutStubEdge('cut-stub:styled:interface:source', 'source:interface', 'cut-label:styled:interface:source', 'styled:interface', 'source', { aggregate: 'interface' }),
+      styledCutStubEdge('cut-stub:styled:interface:sink', 'cut-label:styled:interface:sink', 'target:interface', 'styled:interface', 'sink', { aggregate: 'interface' }),
+      styledCutStubEdge('cut-stub:styled:stacked:source', 'source:stacked', 'cut-label:styled:stacked:source', 'styled:stacked', 'source', { isStacked: true }),
+      styledCutStubEdge('cut-stub:styled:stacked:sink', 'cut-label:styled:stacked:sink', 'target:stacked', 'styled:stacked', 'sink', { isStacked: true })
+    ],
+    diagnostics: []
+  };
+}
+
+function styledCutLabelNode(
+  id: string,
+  label: string,
+  netKey: string,
+  role: 'source' | 'sink',
+  x: number,
+  y: number,
+  align: 'start' | 'end',
+  handleSide: 'left' | 'right' | 'top' | 'bottom',
+  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean },
+  isSourceStacked?: boolean
+): DiagramViewModel['nodes'][number] {
+  return {
+    id,
+    kind: 'netLabel',
+    label,
+    parentModule: 'styled_cut_net_labels',
+    ports: [{
+      id: 'cut',
+      name: 'cut',
+      direction: role === 'source' ? 'input' : 'output'
+    }],
+    position: { x, y },
+    isArrayNode: !!isSourceStacked,
+    metadata: {
+      cutNet: {
+        netKey,
+        role,
+        align,
+        handleSide,
+        edgeStyle,
+        isSourceStacked: !!isSourceStacked
+      }
+    }
+  };
+}
+
+function styledCutStubEdge(
+  id: string,
+  source: string,
+  target: string,
+  netKey: string,
+  role: 'source' | 'sink',
+  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean },
+  customPort?: string
+): DiagramViewModel['edges'][number] {
+  return {
+    id,
+    source,
+    target,
+    sourcePort: role === 'source' ? (customPort && role === 'source' ? customPort : 'p') : 'cut',
+    targetPort: role === 'source' ? 'cut' : (customPort && role === 'sink' ? customPort : 'p'),
+    signal: netKey,
+    isStacked: edgeStyle.isStacked,
+    metadata: {
+      ...(edgeStyle.aggregate ? { aggregate: edgeStyle.aggregate } : {}),
+      forceStraight: true,
+      cutStub: { netKey, role, originalEdgeId: `edge:${netKey}` }
+    }
+  };
+}
+
+function createRegisterResetCutView(): DiagramViewModel {
+  const grid = 24;
+  const regX = grid * 8; // 192
+  const regY = grid * 2; // 48
+  const regWidth = 144; // 6 grid units
+  const regCenter = regX + regWidth / 2; // 264 (grid aligned)
+
+  const labelWidth = 96; // 4 grid units
+  const labelX = regCenter - labelWidth / 2; // 216 (grid aligned)
+
+  const portX = 120; // 5 grid units. Right handle is at 120+120=240. Lead goes exactly to 264.
+
+  return {
+    moduleName: 'register_reset_cut_visual',
+    nodes: [
+      {
+        id: 'reg:target',
+        kind: 'register',
+        label: 'state_reg',
+        ports: [
+          { id: 'port:D', name: 'D', direction: 'input' },
+          { id: 'port:Q', name: 'Q', direction: 'output' },
+          { id: 'port:clk', name: 'clk', direction: 'input' },
+          { id: 'port:reset', name: 'reset', direction: 'input' }
+        ],
+        metadata: {
+          resetSignal: 'reset',
+          clockSignal: 'clk'
+        },
+        position: { x: regX, y: regY }
+      },
+      visualPort('source:rst', 'rst', 'input', portX, grid * 12), // 288
+      styledCutLabelNode('cut-label:rst_n', 'rst_n', 'reset_net', 'source', labelX, grid * 10, 'end', 'bottom', {}), // 240
+      styledCutLabelNode('cut-label:rst_sink', 'rst_n', 'reset_net', 'sink', labelX, grid * 7, 'start', 'top', {}) // 168
+    ],
+    edges: [
+      styledCutStubEdge('cut-stub:rst:source', 'source:rst', 'cut-label:rst_n', 'reset_net', 'source', {}),
+      styledCutStubEdge('cut-stub:rst:sink', 'cut-label:rst_sink', 'reg:target', 'reset_net', 'sink', {}, 'port:reset')
+    ],
+    diagnostics: []
+  };
+}
+
+
+function createRegisterClockCutView(): DiagramViewModel {
+  const grid = 24;
+  const regX = grid * 8; // 192
+  const regY = grid * 2; // 48
+  const regWidth = 144;
+  const regCenter = regX + regWidth / 2; // 264
+
+  const labelWidth = 96;
+  const labelX = regCenter - labelWidth / 2; // 216
+
+  return {
+    moduleName: 'register_clock_cut_visual',
+    nodes: [
+      {
+        id: 'reg:target',
+        kind: 'register',
+        label: 'state_reg',
+        ports: [
+          { id: 'port:D', name: 'D', direction: 'input' },
+          { id: 'port:Q', name: 'Q', direction: 'output' },
+          { id: 'port:clk', name: 'clk', direction: 'input', isArray: true },
+          { id: 'port:reset', name: 'reset', direction: 'input' }
+        ],
+        metadata: {
+          resetSignal: 'reset',
+          clockSignal: 'clk'
+        },
+        isArrayNode: true,
+        position: { x: regX, y: regY }
+      },
+      visualPort('source:clk', 'clk', 'input', 0, 156),
+      styledCutLabelNode('cut-label:clk_n', 'clk', 'clock_net', 'source', 168, 144, 'end', 'left', { isStacked: true }, false), // isSourceStacked: false
+      styledCutLabelNode('cut-label:clk_sink', 'clk', 'clock_net', 'sink', 432, 144, 'start', 'right', { isStacked: true }, false) // isSourceStacked: false
+    ],
+    edges: [
+      styledCutStubEdge('cut-stub:clk:source', 'source:clk', 'cut-label:clk_n', 'clock_net', 'source', { isStacked: true }),
+      styledCutStubEdge('cut-stub:clk:sink', 'cut-label:clk_sink', 'reg:target', 'clock_net', 'sink', { isStacked: true }, 'port:clk')
     ],
     diagnostics: []
   };

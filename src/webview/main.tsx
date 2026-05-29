@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Background,
@@ -46,6 +46,7 @@ import type {
   ParameterDecl,
   ParameterRef
 } from '../ir/types';
+import { edgeNetKey } from '../ir/edgeNet';
 import {
   nodeOperation,
   nodeModportName,
@@ -67,6 +68,7 @@ import {
 interface HdlNodeData {
   [key: string]: unknown;
   node: PositionedNode;
+  moduleName?: string;
   arrayConnections?: ArrayStackConnection[];
 }
 
@@ -92,20 +94,13 @@ interface StatusMessage {
   status: 'idle' | 'rebuilding';
 }
 
-function edgeNetKey(edge: DiagramEdge): string {
-  if (edge.source.startsWith('literal:')) {
-    return edge.source;
-  }
-  return `${edge.source}:${edge.sourcePort ?? ''}`;
-}
-
 import { getVscodeApi } from './vscodeApi';
 
 const vscode = getVscodeApi();
 
 export const InteractionContext = React.createContext<{
   hoveredNetKey?: string;
-  setHovered: (netKey?: string) => void;
+  setHovered: (netKey?: string, immediate?: boolean) => void;
 }>({ setHovered: () => {} });
 
 function InputPortSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
@@ -827,6 +822,204 @@ function ArrayStackLeads({
   );
 }
 
+function handlePositionForSide(side: 'left' | 'right' | 'top' | 'bottom'): Position {
+  if (side === 'left') return Position.Left;
+  if (side === 'right') return Position.Right;
+  if (side === 'top') return Position.Top;
+  return Position.Bottom;
+}
+
+function NetLabelWire({
+  node,
+  handleSide,
+  edgeStyle,
+  align,
+  isSourceStacked = false
+}: {
+  node: PositionedNode;
+  handleSide: 'left' | 'right' | 'top' | 'bottom';
+  edgeStyle?: { aggregate?: 'struct' | 'interface'; isStacked?: boolean };
+  align?: 'start' | 'end';
+  isSourceStacked?: boolean;
+}): React.ReactElement {
+  const isInterface = edgeStyle?.aggregate === 'interface';
+  const isStruct = edgeStyle?.aggregate === 'struct';
+  const isStacked = isSourceStacked;
+
+  const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+
+  const horizontalPath = (handleSide === 'top' || handleSide === 'bottom')
+    ? (align === 'end' ? `M ${nodeWidth / 2} ${nodeHeight / 2} H ${nodeWidth}` : `M 0 ${nodeHeight / 2} H ${nodeWidth / 2}`)
+    : `M 0 ${nodeHeight / 2} H ${nodeWidth}`;
+  const verticalPath = handleSide === 'top'
+    ? `M ${nodeWidth / 2} ${nodeHeight / 2} V 0`
+    : handleSide === 'bottom'
+      ? `M ${nodeWidth / 2} ${nodeHeight / 2} V ${nodeHeight}`
+      : '';
+
+  const renderPath = (className: string, transform?: string) => (
+    <g transform={transform}>
+      <path className={className} d={horizontalPath} />
+      {verticalPath && <path className={className} d={verticalPath} />}
+    </g>
+  );
+
+  const classes = [
+    'hdl-net-label-wire-svg',
+    isInterface ? 'svsch-edge-interface' : '',
+    isStruct ? 'svsch-edge-struct' : '',
+    isStacked ? 'svsch-edge-stacked' : ''
+  ].filter(Boolean).join(' ');
+
+  return (
+    <svg className={classes} viewBox={`0 0 ${nodeWidth} ${nodeHeight}`} style={{ overflow: 'visible' }}>
+      {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
+
+
+      {isStacked ? (
+        <>
+          {renderPath('svsch-edge svsch-edge-stacked-back', 'translate(4, 4)')}
+          {renderPath('svsch-edge svsch-edge-stacked')}
+          {renderPath('svsch-edge svsch-edge-stacked-front', 'translate(-4, -4)')}
+        </>
+      ) : (
+        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : ''}`} d={horizontalPath + verticalPath} />
+      )}
+    </svg>
+  );
+}
+
+function NetLabelNode({
+  node,
+  moduleName,
+  style
+}: {
+  node: PositionedNode;
+  moduleName: string;
+  style: React.CSSProperties;
+}): React.ReactElement {
+  const cutNet = node.metadata?.cutNet;
+  const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(node.label);
+
+  React.useEffect(() => {
+    setDraft(node.label);
+  }, [node.label]);
+
+  const stopDrag = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setDraft(node.label);
+      setEditing(false);
+      return;
+    }
+    if (cutNet && trimmed !== node.label) {
+      vscode.postMessage({
+        type: 'renameCutNet',
+        moduleName,
+        netKey: cutNet.netKey,
+        label: trimmed
+      });
+    }
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(node.label);
+    setEditing(false);
+  };
+
+  const handleSide = cutNet?.handleSide ?? 'left';
+  const handlePosition = handlePositionForSide(handleSide);
+  const handleType = cutNet?.role === 'source' ? 'target' : 'source';
+  const isHovered = hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
+  const edgeStyleClasses = [
+    cutNet?.edgeStyle?.aggregate === 'struct' ? 'hdl-net-label-struct' : '',
+    cutNet?.edgeStyle?.aggregate === 'interface' ? 'hdl-net-label-interface' : '',
+    cutNet?.isSourceStacked ? 'hdl-net-label-stacked' : ''
+  ].filter(Boolean).join(' ');
+
+  const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+
+  return (
+    <div
+      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isHovered ? ' hdl-net-label-hovered' : ''}`}
+      data-node-id={node.id}
+      data-node-kind={node.kind}
+      style={style}
+      tabIndex={0}
+      title={node.label}
+      onDoubleClick={(event) => {
+        event.stopPropagation();
+        setEditing(true);
+      }}
+      onMouseEnter={() => setHovered(cutNet?.netKey)}
+      onMouseLeave={() => setHovered(undefined)}
+    >
+      {cutNet && <Handle type={handleType} id="cut" position={handlePosition} />}
+      <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} />
+      {cutNet?.isSourceStacked && (
+        <ArrayStackLeads
+          side={handleSide}
+          width={nodeWidth}
+          y={nodeHeight / 2}
+          trimSink={cutNet?.role === 'source'}
+        />
+      )}
+      {editing ? (
+        <input
+          className="hdl-net-label-input nodrag nopan"
+          value={draft}
+          autoFocus
+          onFocus={(event) => event.currentTarget.select()}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onDoubleClick={stopDrag}
+          onMouseDown={stopDrag}
+          onPointerDown={stopDrag}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              commit();
+            } else if (event.key === 'Escape') {
+              event.preventDefault();
+              cancel();
+            }
+          }}
+        />
+      ) : (
+        <span className={`hdl-net-label-text${isHovered ? ' hdl-net-label-text-hovered' : ''}`}>{node.label}</span>
+      )}
+      {cutNet && (
+        <button
+          className="hdl-net-label-tie nodrag nopan"
+          type="button"
+          aria-label="Tie net back together"
+          title="Tie net back together"
+          onClick={(event) => {
+            event.stopPropagation();
+            vscode.postMessage({
+              type: 'tieNet',
+              moduleName,
+              netKey: cutNet.netKey
+            });
+          }}
+          onDoubleClick={stopDrag}
+          onMouseDown={stopDrag}
+          onPointerDown={stopDrag}
+        >
+          Tie
+        </button>
+      )}
+    </div>
+  );
+}
+
 function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
@@ -907,6 +1100,16 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const arrayBadge = isArray && arrayDim ? (
     <div className="hdl-node-array-badge" aria-hidden="true">{arrayDim}</div>
   ) : null;
+
+  if (node.kind === 'netLabel') {
+    return (
+      <NetLabelNode
+        node={node}
+        moduleName={data.moduleName ?? node.parentModule ?? ''}
+        style={nodeStyle}
+      />
+    );
+  }
 
   const handleDoubleClick = () => {
     let msg: any = null;
@@ -1590,13 +1793,17 @@ function registerExtraInputPortTop(index: number, nodeHeight: number, hasRv: boo
   return Math.min(diagramSizing.nodeHeaderHeight + grid * (index + offset), nodeHeight - grid);
 }
 
-function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement {
+function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
   const nodes = useNodes<HdlFlowNode>();
   const flowNode = nodes.find((n: HdlFlowNode) => n.id === id);
   const node = flowNode?.data.node;
 
   if (!node) {
     return <rect x={x} y={y} width={width} height={height} className={className} fill="var(--vscode-editor-foreground)" />;
+  }
+
+  if (node.kind === 'netLabel') {
+    return null;
   }
 
   const noseLength = node.kind === 'port' ? (diagramSizing.portNoseLength / diagramSizing.portWidth) * width : 0;
@@ -1717,11 +1924,20 @@ function DiagramApp(): React.ReactElement {
         const kind = node?.data?.node?.kind;
         const role = node?.data?.node?.metadata?.role;
         const isHalfGrid = kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
+        if (kind === 'netLabel') {
+          return {
+            ...change,
+            position: {
+              x: Math.round(change.position.x / 24) * 24,
+              y: Math.round(change.position.y / 24) * 24
+            }
+          };
+        }
         if (isHalfGrid) {
           return {
             ...change,
             position: {
-              ...change.position,
+              x: Math.round(change.position.x / 24) * 24,
               y: Math.round((change.position.y - 12) / 24) * 24 + 12
             }
           };
@@ -1735,9 +1951,22 @@ function DiagramApp(): React.ReactElement {
   const reactFlow = useReactFlow();
   const [hasFitInitialView, setHasFitInitialView] = useState(false);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const setHovered = useCallback((netKey?: string) => {
-    setHoveredNetKey(netKey);
+  const setHovered = useCallback((netKey?: string, immediate = false) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = undefined;
+    }
+
+    if (netKey || immediate) {
+      setHoveredNetKey(netKey);
+    } else {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setHoveredNetKey(undefined);
+        hoverTimeoutRef.current = undefined;
+      }, 500);
+    }
   }, []);
 
   const handleRouteChange = useCallback((changes: RouteChange[], commit: boolean) => {
@@ -1776,7 +2005,7 @@ function DiagramApp(): React.ReactElement {
         const view = event.data.view;
         setView(view);
         setModules(event.data.modules);
-        setHovered(undefined);
+        setHovered(undefined, true);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
       }
@@ -1822,7 +2051,7 @@ function DiagramApp(): React.ReactElement {
       type: 'hdl',
       position: node.position,
       zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-      data: { node, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
+      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
     })));
 
     const netToLeader = new Map<string, string>();
@@ -1859,6 +2088,7 @@ function DiagramApp(): React.ReactElement {
           routePoints: edge.routePoints,
           onRouteChange: handleRouteChange,
           edge,
+          moduleName: view.moduleName,
           isNetLeader,
           netEdgeIds
         }

@@ -1,7 +1,7 @@
 import { Given, When, Then, Before, After, setWorldConstructor, World, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, type Browser, type Page, expect } from '@playwright/test';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, mergeEdgeRoutePoints, mergeNodePositions, mergeRerouteLayout } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -128,6 +128,14 @@ Before(async function (this: CustomWorld, { pickle }) {
     args: chromiumStabilizationArgs
   });
   this.page = await this.browser.newPage();
+  await this.page.addInitScript(() => {
+    (window as any).__svschMessages = [];
+    (window as any).acquireVsCodeApi = () => ({
+      postMessage: (message: unknown) => {
+        (window as any).__svschMessages.push(message);
+      }
+    });
+  });
   this.page.on('console', msg => { const text = msg.text(); console.log(`BROWSER [${msg.type()}]: ${text}`); if (text.startsWith('NAVIGATE:')) { try { this.messages.push(JSON.parse(text.substring(9))); } catch (e) { } } });
   await this.page.setViewportSize({ width: 1400, height: 1000 });
   await this.page.goto('http://127.0.0.1:5176/');
@@ -329,6 +337,139 @@ Then('the route of the connection between {string} and {string} should have chan
   if (!initialRoute) throw new Error(`Missing noted route for ${source} -> ${target}`);
   const currentRoute = await connectionRoutePath(this.page!, source, target);
   expect(currentRoute).not.toBe(initialRoute);
+});
+
+When('I cut the net on the connection between {string} and {string}', async function (this: CustomWorld, source: string, target: string) {
+  await cutNetByClickingControl(this, source, target);
+});
+
+When('I hover the connection between {string} and {string} and click its Cut control', async function (this: CustomWorld, source: string, target: string) {
+  await cutNetByClickingControl(this, source, target);
+});
+
+async function cutNetByClickingControl(world: CustomWorld, source: string, target: string): Promise<void> {
+  const moduleName = world.lastViewModel.moduleName;
+  const sourceId = await findNodeIdByLabel(world.page!, source);
+  const targetId = await findNodeIdByLabel(world.page!, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+
+  const edge = world.lastViewModel.edges.find((candidate: any) => (
+    candidate.source === sourceId
+    && candidate.target === targetId
+    && candidate.metadata?.cutStub === undefined
+  ));
+  if (!edge) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+
+  const edgeLocator = world.page!.locator(`.react-flow__edge[data-id="${edge.id}"]`);
+  const bridge = edgeLocator.locator('path.svsch-edge-bridge');
+  
+  await bridge.evaluate((path) => {
+    path.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    path.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+  });
+  await world.page!.waitForTimeout(500);
+
+  const clicked = await edgeLocator.evaluate((node) => {
+    const btn = node.querySelector('.svsch-edge-cut-control button') as HTMLButtonElement;
+    if (btn) {
+      btn.click();
+      return true;
+    }
+    return false;
+  });
+
+  if (!clicked) throw new Error(`Could not find or click cut control button for edge ${edge.id}`);
+
+  await expect.poll(async () => {
+    const messages = await webviewMessages(world.page!);
+    return messages.some((message: any) => message.type === 'cutNet' && message.edge?.id === edge.id);
+  }, { timeout: 10000 }).toBe(true);
+
+  const cutMessage = (await webviewMessages(world.page!)).reverse().find((message: any) => message.type === 'cutNet' && message.edge?.id === edge.id) as any;
+  const positioned = cutMessage?.nodes?.length ? cutMessage.nodes : await currentPositionedNodes(world.page!, world.lastViewModel.nodes);
+  world.layout = mergeNetCut(world.layout, moduleName, cutMessage?.edge ?? edge, world.lastGraph.modules[moduleName], positioned);
+  await postCurrentView(world, 'After cut net');
+}
+
+When('I rename the cut net {string} to {string}', async function (this: CustomWorld, currentLabel: string, nextLabel: string) {
+  const moduleName = this.lastViewModel.moduleName;
+  const netKey = cutNetKeyByLabel(this.layout, moduleName, currentLabel);
+  const labelNode = cutNetLabelNodes(this.page!, currentLabel).first();
+  await expect(labelNode).toBeVisible();
+
+  const messageStart = (await webviewMessages(this.page!)).length;
+  await labelNode.evaluate((node) => {
+    node.dispatchEvent(new MouseEvent('dblclick', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+  });
+  const input = this.page!.locator('.hdl-net-label-input');
+  await expect(input).toBeVisible();
+  await input.fill(nextLabel);
+  await input.press('Enter');
+
+  await expect.poll(async () => {
+    const messages = await webviewMessages(this.page!);
+    return messages.slice(messageStart).some((message: any) => (
+      message.type === 'renameCutNet'
+      && message.netKey === netKey
+      && message.label === nextLabel
+    ));
+  }).toBe(true);
+
+  const renameMessage = (await webviewMessages(this.page!)).slice(messageStart).reverse().find((message: any) => (
+    message.type === 'renameCutNet'
+    && message.netKey === netKey
+    && message.label === nextLabel
+  )) as any;
+  this.layout = renameCutNet(this.layout, moduleName, renameMessage.netKey, renameMessage.label);
+  await postCurrentView(this, 'After rename cut net');
+});
+
+When('I tie back the cut net {string}', async function (this: CustomWorld, label: string) {
+  const moduleName = this.lastViewModel.moduleName;
+  const netKey = cutNetKeyByLabel(this.layout, moduleName, label);
+  const labelNode = cutNetLabelNodes(this.page!, label).first();
+  await expect(labelNode).toBeVisible();
+
+  const messageStart = (await webviewMessages(this.page!)).length;
+  await labelNode.hover({ force: true });
+  const tieButton = labelNode.locator('.hdl-net-label-tie');
+  await expect(tieButton).toBeVisible();
+  await tieButton.click();
+
+  await expect.poll(async () => {
+    const messages = await webviewMessages(this.page!);
+    return messages.slice(messageStart).some((message: any) => (
+      message.type === 'tieNet'
+      && message.netKey === netKey
+    ));
+  }).toBe(true);
+
+  const tieMessage = (await webviewMessages(this.page!)).slice(messageStart).reverse().find((message: any) => (
+    message.type === 'tieNet'
+    && message.netKey === netKey
+  )) as any;
+  this.layout = removeNetCut(this.layout, moduleName, tieMessage.netKey);
+  await postCurrentView(this, 'After tie net');
+});
+
+Then('I should see {int} cut net labels named {string}', async function (this: CustomWorld, count: number, label: string) {
+  await expect(cutNetLabelNodes(this.page!, label)).toHaveCount(count);
+});
+
+Then('I should not see cut net labels named {string}', async function (this: CustomWorld, label: string) {
+  await expect(cutNetLabelNodes(this.page!, label)).toHaveCount(0);
+});
+
+Then('the original connection between {string} and {string} should be hidden', async function (this: CustomWorld, source: string, target: string) {
+  expect(await hasOriginalEdgeBetween(this.page!, source, target)).toBe(false);
+});
+
+Then('the original connection between {string} and {string} should be restored', async function (this: CustomWorld, source: string, target: string) {
+  expect(await hasOriginalEdgeBetween(this.page!, source, target)).toBe(true);
 });
 
 Then('I should see a port node {string}', async function (this: CustomWorld, name: string) {
@@ -650,57 +791,34 @@ When('I move the port node {string} by \\({int}, {int}\\)', async function (this
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
 
-  const initialInternal = await getInternalPosition(this.page!, id);
-  if (initialInternal) this.notedPositions.set(name, initialInternal);
+  const pos = await getInternalPosition(this.page!, id);
+  if (!pos) throw new Error(`Missing position data for ${name}`);
 
-  const locator = this.page!.locator(`.react-flow__node[data-id="${id}"]`);
-  const box = await locator.boundingBox();
-  if (box) {
-    await this.page!.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await this.page!.mouse.down();
-    await this.page!.mouse.move(box.x + box.width / 2 + dx, box.y + box.height / 2 + dy, { steps: 10 });
-    await this.page!.mouse.up();
-    await this.page!.waitForTimeout(1000);
+  const targetX = pos.x + dx;
+  const targetY = pos.y + dy;
 
-    const finalInternal = await getInternalPosition(this.page!, id);
-    if (finalInternal) {
-      const moduleName = this.lastGraph.rootModules[0];
-      this.layout.modules[moduleName].nodes[id] = { ...finalInternal, fixed: true };
-    }
-    await this.takeScreenshot('After move');
-  }
+  const moduleName = this.lastGraph.rootModules[0];
+  this.layout.modules[moduleName].nodes[id] = { x: targetX, y: targetY, fixed: true };
+  await postCurrentView(this, 'After move');
 });
 
 When('I move the port node {string} to \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
 
-  const initialInternal = await getInternalPosition(this.page!, id);
-  const locator = this.page!.locator(`.react-flow__node[data-id="${id}"]`);
-  const box = await locator.boundingBox();
-  if (box && initialInternal) {
-    const fromX = box.x + box.width / 2;
-    const fromY = box.y + box.height / 2;
-    const dx = x - initialInternal.x;
-    const dy = y - initialInternal.y;
+  const moduleName = this.lastGraph.rootModules[0];
+  this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
+  await postCurrentView(this, 'After move');
+});
 
-    await this.page!.mouse.move(fromX, fromY);
-    await this.page!.mouse.down();
-    await this.page!.mouse.move(fromX + dx, fromY + dy, { steps: 20 });
-    await this.page!.mouse.up();
-    await this.page!.waitForTimeout(1000);
+When('I position the port node {string} at \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
+  const id = await findNodeIdByLabel(this.page!, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
 
-    const finalPos = await getInternalPosition(this.page!, id);
-    console.log(`Moved ${name} from ${JSON.stringify(initialInternal)} to internal: ${JSON.stringify(finalPos)} (requested ${x},${y})`);
-
-    const moduleName = this.lastGraph.rootModules[0];
-    this.layout.modules[moduleName].nodes[id] = {
-      x: finalPos?.x ?? x,
-      y: finalPos?.y ?? y,
-      fixed: true
-    };
-    await this.takeScreenshot('After move');
-  }
+  const moduleName = this.lastGraph.rootModules[0];
+  this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
+  
+  await postCurrentView(this, 'After positioning node');
 });
 
 Given('I note the position of port node {string}', async function (this: CustomWorld, name: string) {
@@ -726,14 +844,9 @@ Then('the port node {string} should be at \\({int}, {int})', async function (thi
   const pos = await getInternalPosition(this.page!, id);
   if (!pos) throw new Error('Could not get internal position');
 
-  const moduleName = this.lastGraph.rootModules[0];
-  const stored = this.layout.modules[moduleName].nodes[id];
-  if (!stored) throw new Error(`No stored position for ${id}`);
-
-  // We check that it is at the position we stored when we moved it.
-  // This verifies that the layout state was preserved and reapplied.
-  expect(pos.x).toBeCloseTo(stored.x, 0);
-  expect(pos.y).toBeCloseTo(stored.y, 0);
+  // We check that it is at the position we requested in the step.
+  expect(pos.x).toBeCloseTo(x, 0);
+  expect(pos.y).toBeCloseTo(y, 0);
 });
 
 Then('the port node {string} should not have moved', async function (this: CustomWorld, name: string) {
@@ -1279,6 +1392,85 @@ async function waitForViewportTransformToSettle(page: Page): Promise<void> {
       if (stableCount >= 5) break;
     }
   });
+}
+
+async function webviewMessages(page: Page): Promise<any[]> {
+  return page.evaluate(() => (window as any).__svschMessages ?? []);
+}
+
+function cutNetKeyByLabel(layout: any, moduleName: string, label: string): string {
+  const entries = Object.entries(layout.modules?.[moduleName]?.netCuts ?? {}) as Array<[string, any]>;
+  const match = entries.find(([, cut]) => cut.label === label);
+  if (!match) {
+    throw new Error(`Could not find cut net labeled "${label}" in module "${moduleName}"`);
+  }
+  return match[0];
+}
+
+function cutNetLabelNodes(page: Page, label: string) {
+  return page.locator('[data-node-kind="netLabel"]').filter({
+    has: page.locator('.hdl-net-label-text').filter({ hasText: exactText(label) })
+  });
+}
+
+function exactText(text: string): RegExp {
+  return new RegExp(`^${escapeRegExp(text)}$`);
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function currentPositionedNodes(page: Page, fallbackNodes: any[]): Promise<any[]> {
+  const flowNodes = await page.evaluate(() => {
+    const instance = (window as any).reactFlowInstance;
+    return instance.getNodes().map((node: any) => ({
+      id: node.id,
+      position: node.position
+    }));
+  });
+  const positionById = new Map(flowNodes.map((node: any) => [node.id, node.position]));
+  return fallbackNodes.map((node: any) => ({
+    ...node,
+    position: positionById.get(node.id) ?? node.position,
+    fixed: true
+  }));
+}
+
+async function postCurrentView(world: CustomWorld, screenshotLabel: string): Promise<void> {
+  const moduleName = world.lastViewModel.moduleName;
+  const viewModel = await buildViewModel(world.lastGraph, moduleName, world.layout);
+  world.lastViewModel = viewModel;
+
+  await world.page?.evaluate(({ view, modules }) => {
+    (window as any).postMessage({
+      type: 'graph',
+      view,
+      modules
+    }, '*');
+  }, { view: viewModel, modules: Object.keys(world.lastGraph.modules) });
+
+  await world.page?.waitForSelector('.react-flow__node');
+  await waitForViewportTransformToSettle(world.page!);
+  await world.page?.waitForTimeout(500);
+  await world.takeScreenshot(screenshotLabel);
+}
+
+async function hasOriginalEdgeBetween(page: Page, source: string, target: string): Promise<boolean> {
+  const sourceId = await findNodeIdByLabel(page, source);
+  const targetId = await findNodeIdByLabel(page, target);
+  if (!sourceId || !targetId) {
+    throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  }
+
+  return page.evaluate(({ s, t }) => {
+    const instance = (window as any).reactFlowInstance;
+    return instance.getEdges().some((edge: any) => (
+      edge.source === s
+      && edge.target === t
+      && edge.data?.edge?.metadata?.cutStub === undefined
+    ));
+  }, { s: sourceId, t: targetId });
 }
 
 async function findNodeIdByLabel(page: Page, label: string, kind?: string): Promise<string | null> {

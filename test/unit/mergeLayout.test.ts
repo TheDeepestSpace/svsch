@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions, mergeRerouteLayout } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
@@ -20,6 +21,43 @@ const graph: DesignGraph = {
       nodes: [
         { id: 'a', kind: 'port', label: 'a', ports: [] },
         { id: 'u', kind: 'instance', label: 'u', ports: [] }
+      ]
+    }
+  }
+};
+
+const fanoutGraph: DesignGraph = {
+  rootModules: ['top'],
+  generatedAt: 'now',
+  diagnostics: [],
+  modules: {
+    top: {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        {
+          id: 'clk',
+          kind: 'port',
+          label: 'clk',
+          ports: [{ id: 'p', name: 'clk', direction: 'input' }]
+        },
+        {
+          id: 'u1',
+          kind: 'instance',
+          label: 'u1',
+          ports: [{ id: 'in', name: 'in', direction: 'input' }]
+        },
+        {
+          id: 'u2',
+          kind: 'instance',
+          label: 'u2',
+          ports: [{ id: 'in', name: 'in', direction: 'input' }]
+        }
+      ],
+      edges: [
+        { id: 'e-clk-u1', source: 'clk', sourcePort: 'p', target: 'u1', targetPort: 'in', signal: 'clk' },
+        { id: 'e-clk-u2', source: 'clk', sourcePort: 'p', target: 'u2', targetPort: 'in', signal: 'clk' }
       ]
     }
   }
@@ -211,6 +249,146 @@ describe('layout merge', () => {
     });
     expect(rerouted.modules.top.edges).toBeUndefined();
     expect(rerouted.modules.top.viewport).toEqual({ x: 4, y: 5, zoom: 1.25 });
+  });
+
+  it('uses shared net keys for ordinary, literal, and cut stub edges', () => {
+    expect(edgeNetKey({ id: 'e', source: 'n1', sourcePort: 'out', target: 'n2' } as any)).toBe('n1:out');
+    expect(edgeNetKey({ id: 'lit', source: 'literal:1', sourcePort: 'out', target: 'n2' } as any)).toBe('literal:1');
+    expect(edgeNetKey({
+      id: 'stub',
+      source: 'cut-label:n1:out:sink:e',
+      sourcePort: 'cut',
+      target: 'n2',
+      metadata: { cutStub: { netKey: 'n1:out', role: 'sink', originalEdgeId: 'e' } }
+    })).toBe('n1:out');
+  });
+
+  it('generates default cut labels from source endpoint context', () => {
+    const module = fanoutGraph.modules.top;
+    expect(defaultNetCutLabel(module.edges[0], module, { nodes: {} })).toBe('clk');
+
+    const instanceModule = {
+      ...module,
+      nodes: [
+        {
+          id: 'u_alu',
+          kind: 'instance' as const,
+          label: 'u_alu',
+          ports: [{ id: 'result', name: 'result', direction: 'output' as const }]
+        }
+      ],
+      edges: [
+        { id: 'result-y', source: 'u_alu', sourcePort: 'result', target: 'y' }
+      ]
+    };
+    expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe('u_alu.result');
+
+    const anonymousModule = {
+      ...module,
+      nodes: [
+        { id: 'comb:1', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] }
+      ],
+      edges: [
+        { id: 'comb-y', source: 'comb:1', sourcePort: 'out', target: 'y' }
+      ]
+    };
+    expect(defaultNetCutLabel(anonymousModule.edges[0], anonymousModule, {
+      nodes: {},
+      netCuts: {
+        'old:out': { label: 'NET_1', source: { nodeId: 'old', portId: 'out' } }
+      }
+    })).toBe('NET_2');
+  });
+
+  it('adds, renames, removes, and reroutes net cuts without discarding the cut state', () => {
+    const module = fanoutGraph.modules.top;
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 240, y: 0 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const cut = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+
+    expect(cut.modules.top.nodes.clk).toEqual({ x: 0, y: 12, fixed: true });
+    expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
+      label: 'clk',
+      source: { nodeId: 'clk', portId: 'p' }
+    });
+
+    const duplicateCut = mergeNetCut(cut, 'top', module.edges[0], module, positioned);
+    expect(duplicateCut).toBe(cut);
+
+    const renamed = renameCutNet(cut, 'top', 'clk:p', ' data_clk ');
+    expect(renamed.modules.top.netCuts?.['clk:p'].label).toBe('data_clk');
+    expect(renameCutNet(renamed, 'top', 'clk:p', '   ')).toBe(renamed);
+
+    const withSyntheticLayouts: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          ...renamed.modules.top,
+          nodes: {
+            ...renamed.modules.top.nodes,
+            'cut-label:clk:p:source': { x: 24, y: 12, fixed: true },
+            'cut-label:clk:p:sink:e-clk-u1': { x: 180, y: 12, fixed: true }
+          },
+          edges: {
+            'cut-stub:clk:p:source': { routePoints: [{ x: 0, y: 0 }] },
+            'cut-stub:clk:p:sink:e-clk-u1': { routePoints: [{ x: 1, y: 1 }] },
+            'e-clk-u1': { routePoints: [{ x: 2, y: 2 }] }
+          }
+        }
+      }
+    };
+
+    const removed = removeNetCut(withSyntheticLayouts, 'top', 'clk:p');
+    expect(removed.modules.top.netCuts).toBeUndefined();
+    expect(removed.modules.top.nodes['cut-label:clk:p:source']).toBeUndefined();
+    expect(removed.modules.top.edges?.['cut-stub:clk:p:source']).toBeUndefined();
+    expect(removed.modules.top.edges?.['e-clk-u1']).toEqual({ routePoints: [{ x: 2, y: 2 }] });
+
+    const rerouted = mergeRerouteLayout(renamed, 'top', positioned);
+    expect(rerouted.modules.top.netCuts).toEqual(renamed.modules.top.netCuts);
+    expect(rerouted.modules.top.edges).toBeUndefined();
+  });
+
+  it('projects active fanout cuts into source and sink label stubs', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', layout);
+    const edgeIds = view.edges.map((edge) => edge.id);
+    expect(edgeIds).not.toContain('e-clk-u1');
+    expect(edgeIds).not.toContain('e-clk-u2');
+    expect(view.nodes.filter((node) => node.kind === 'netLabel').map((node) => node.id).sort()).toEqual([
+      'cut-label:clk:p:sink:e-clk-u1',
+      'cut-label:clk:p:sink:e-clk-u2',
+      'cut-label:clk:p:source'
+    ]);
+
+    const stubs = view.edges.filter((edge) => edge.metadata?.cutStub);
+    expect(stubs).toHaveLength(3);
+    expect(stubs.every((edge) => edge.metadata?.forceStraight === true)).toBe(true);
+    expect(stubs.every((edge) => edgeNetKey(edge) === 'clk:p')).toBe(true);
+    expect(stubs.find((edge) => edge.metadata?.cutStub?.role === 'source')?.target).toBe('cut-label:clk:p:source');
+    expect(stubs.filter((edge) => edge.metadata?.cutStub?.role === 'sink').map((edge) => edge.source).sort()).toEqual([
+      'cut-label:clk:p:sink:e-clk-u1',
+      'cut-label:clk:p:sink:e-clk-u2'
+    ]);
   });
 
   it('uses ELK routes for ordinary feedback edges so wires wrap around default node boxes', async () => {

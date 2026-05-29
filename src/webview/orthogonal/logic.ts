@@ -24,8 +24,16 @@ export function normalizeRoutePoints(
   const forceStraight = (route as any)?.edge?.metadata?.forceStraight === true;
   const sourceLeadLen = forceStraight ? 0 : leadLengthForHandle(sourcePosition, sourceHandleId);
   const targetLeadLen = forceStraight ? 0 : leadLengthForHandle(targetPosition, targetHandleId);
-  const sourceLead = snapPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen));
-  const targetLead = snapPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen));
+  // For forceStraight stubs the handle may land on a half-grid coordinate (e.g. the
+  // centre of a port node). Snapping to the nearest full grid would shift the lead 12 px
+  // in both axes, producing a visible 45-degree entry segment. Use the exact handle
+  // coordinates so the stub wire departs orthogonally from the actual handle.
+  const sourceLead = forceStraight
+    ? { x: sourceX, y: sourceY }
+    : snapPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen));
+  const targetLead = forceStraight
+    ? { x: targetX, y: targetY }
+    : snapPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen));
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
     : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);

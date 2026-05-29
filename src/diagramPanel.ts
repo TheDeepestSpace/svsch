@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNodePositions, mergeRerouteLayout } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 
 type WebviewMessage =
@@ -16,6 +16,9 @@ type WebviewMessage =
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
+  | { type: 'cutNet'; moduleName: string; edge: DiagramEdge; nodes: PositionedNode[] }
+  | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
+  | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToSignal'; edge: DiagramEdge };
 
@@ -319,6 +322,18 @@ export class DiagramPanel {
       await this.saveEdgeRoutes(message.moduleName, message.changes);
       return;
     }
+    if (message.type === 'cutNet') {
+      await this.saveNetCut(message.moduleName, message.edge, message.nodes);
+      return;
+    }
+    if (message.type === 'renameCutNet') {
+      await this.renameNetCut(message.moduleName, message.netKey, message.label);
+      return;
+    }
+    if (message.type === 'tieNet') {
+      await this.tieNet(message.moduleName, message.netKey);
+      return;
+    }
     if (message.type === 'navigateToSource') {
       await this.navigateToSource(message.source);
       return;
@@ -450,6 +465,49 @@ export class DiagramPanel {
       layout = mergeEdgeRoutePoints(layout, moduleName, change.edgeId, change.routePoints);
     }
     this.layout = layout;
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async saveNetCut(moduleName: string, edge: DiagramEdge, nodes: PositionedNode[]): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = mergeNetCut(this.layout, moduleName, edge, designModule, nodes);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async renameNetCut(moduleName: string, netKey: string, label: string): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = renameCutNet(this.layout, moduleName, netKey, label);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async tieNet(moduleName: string, netKey: string): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = removeNetCut(this.layout, moduleName, netKey);
     await store.write(this.layout);
     await this.postView();
   }

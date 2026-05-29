@@ -1,6 +1,46 @@
 {
   "nodes": [
     {
+      "id": "cut-label:port:register_async_reset:rst:port:rst:sink:edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:register_async_reset:rst:port:rst:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "port:register_async_reset:c_main",
       "type": "hdl",
       "position": {
@@ -118,6 +158,22 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:port:register_async_reset:rst:port:rst:sink:edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
+      "source": "cut-label:port:register_async_reset:rst:port:rst:sink:edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
+      "target": "reg:register_async_reset:q",
+      "sourceHandle": "cut",
+      "targetHandle": "rst",
+      "path": "M 432 168 L 432 168 L 432 120 L 432 120"
+    },
+    {
+      "id": "cut-stub:port:register_async_reset:rst:port:rst:source",
+      "source": "port:register_async_reset:rst",
+      "target": "cut-label:port:register_async_reset:rst:port:rst:source",
+      "sourceHandle": "port:rst",
+      "targetHandle": "cut",
+      "path": "M 144 168 L 144 168 L 168 168 L 168 168"
+    },
+    {
       "id": "edge:port:register_async_reset:c_main:reg:register_async_reset:q:c_main",
       "source": "port:register_async_reset:c_main",
       "target": "reg:register_async_reset:q",
@@ -132,14 +188,6 @@
       "sourceHandle": "port:d",
       "targetHandle": "d",
       "path": "M 144 72 L 168 72 L 336 72 L 360 72"
-    },
-    {
-      "id": "edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
-      "source": "port:register_async_reset:rst",
-      "target": "reg:register_async_reset:q",
-      "sourceHandle": "port:rst",
-      "targetHandle": "rst",
-      "path": "M 144 168 L 168 168 L 432 168 L 432 120"
     },
     {
       "id": "edge:reg:register_async_reset:q:port:register_async_reset:q:q",

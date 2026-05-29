@@ -1,4 +1,4 @@
-export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown';
+export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown' | 'netLabel';
 
 export interface SourceRange {
   file: string;
@@ -93,6 +93,18 @@ export interface DiagramNodeMetadata {
   arraySize?: number;
   arrayIndexSignal?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
+  cutNet?: {
+    netKey: string;
+    role: 'source' | 'sink';
+    align: 'start' | 'end';
+    originalEdgeId?: string;
+    handleSide: 'left' | 'right' | 'top' | 'bottom';
+    edgeStyle?: {
+      aggregate?: 'struct' | 'interface' | string;
+      isStacked?: boolean;
+    };
+    isSourceStacked?: boolean;
+  };
 }
 
 export interface BaseDiagramNode {
@@ -156,6 +168,7 @@ export interface PortDiagramNode extends BaseDiagramNode { kind: 'port'; }
 export interface LoopDiagramNode extends BaseDiagramNode { kind: 'loop'; }
 export interface UnknownDiagramNode extends BaseDiagramNode { kind: 'unknown'; }
 export interface ModuleDiagramNode extends BaseDiagramNode { kind: 'module'; }
+export interface NetLabelDiagramNode extends BaseDiagramNode { kind: 'netLabel'; }
 
 export type DiagramNode =
   | RegisterDiagramNode
@@ -175,11 +188,17 @@ export type DiagramNode =
   | LoopDiagramNode
   | UnknownDiagramNode
   | ModuleDiagramNode
+  | NetLabelDiagramNode
  ;
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
   forceStraight?: boolean;
+  cutStub?: {
+    netKey: string;
+    role: 'source' | 'sink';
+    originalEdgeId?: string;
+  };
 }
 
 export interface DiagramEdge {

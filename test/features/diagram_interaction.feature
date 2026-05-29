@@ -81,6 +81,27 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
+  Scenario: Cutting, renaming, and tying back a fanout net
+    Given a SystemVerilog module:
+      """
+      module top(input a, output x, output y);
+        assign x = a;
+        assign y = a;
+      endmodule
+      """
+    And I position the port node "a" at (24, -36)
+    Then the port node "a" should be at (24, -36)
+    When I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 3 cut net labels named "a"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "a" and "y" should be hidden
+    When I rename the cut net "a" to "data_a"
+    Then I should see 3 cut net labels named "data_a"
+    When I tie back the cut net "data_a"
+    Then the original connection between "a" and "x" should be restored
+    And the original connection between "a" and "y" should be restored
+    And I should not see cut net labels named "data_a"
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually

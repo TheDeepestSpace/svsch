@@ -6,7 +6,8 @@ import {
   useReactFlow
 } from '@xyflow/react';
 import { HdlPosition, type OrthogonalPoint, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
-import type { DiagramEdge, DiagramPort } from '../../ir/types';
+import type { DiagramEdge, DiagramPort, PositionedNode } from '../../ir/types';
+import { edgeNetKey } from '../../ir/edgeNet';
 import { diagramSizing } from '../../diagram/constants';
 import {
   moveRouteSegment,
@@ -23,10 +24,12 @@ import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, bui
 import { InteractionContext } from '../main';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
+import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 
 interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   onRouteChange?: RouteChangeHandler;
   edge?: DiagramEdge;
+  moduleName?: string;
   isNetLeader?: boolean;
   netEdgeIds?: string[];
 }
@@ -34,13 +37,6 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
 import { getVscodeApi } from '../vscodeApi';
 
 const vscode = getVscodeApi();
-
-function edgeNetKey(edge: DiagramEdge): string {
-  if (edge.source.startsWith('literal:')) {
-    return edge.source;
-  }
-  return `${edge.source}:${edge.sourcePort ?? ''}`;
-}
 
 export { moveRouteSegment, normalizeRoutePoints };
 
@@ -87,6 +83,28 @@ function routePointsFromFullPoints(points: OrthogonalPoint[]): OrthogonalPoint[]
 
 function pathFromPoints(points: OrthogonalPoint[]): string {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function routeControlPoint(points: OrthogonalPoint[]): OrthogonalPoint {
+  if (points.length < 2) {
+    return points[0] ?? { x: 0, y: 0 };
+  }
+
+  let bestStart = points[0];
+  let bestEnd = points[1];
+  let bestLength = -1;
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    const length = Math.abs(end.x - start.x) + Math.abs(end.y - start.y);
+    if (length > bestLength) {
+      bestLength = length;
+      bestStart = start;
+      bestEnd = end;
+    }
+  }
+
+  return midpoint(bestStart, bestEnd);
 }
 
 function offsetPoints(points: OrthogonalPoint[], dx: number, dy: number): OrthogonalPoint[] {
@@ -259,6 +277,22 @@ function nodeObstacle(node: any): NodeObstacle | undefined {
   };
 }
 
+function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
+  return flowNodes
+    .map((node): PositionedNode | undefined => {
+      const diagramNode = node.data?.node as PositionedNode | undefined;
+      if (!diagramNode || !node.position) {
+        return undefined;
+      }
+      return {
+        ...diagramNode,
+        position: node.position,
+        fixed: true
+      };
+    })
+    .filter((node): node is PositionedNode => node !== undefined);
+}
+
 export function OrthogonalEdge({
   id,
   source,
@@ -292,14 +326,14 @@ export function OrthogonalEdge({
   const sourceInputs = sourceNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
   const sourceAggregateInputs = sourceInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const sourceIsComposition = sourceAggregateInputs.length > 1;
-  const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
+  const sourceIsArray = sourceNode ? (nodeIsArrayNode(sourceNode) || (sourceNode.kind === 'netLabel' && sourceNode.metadata?.cutNet?.isSourceStacked)) : false;
   const sourceIsArrayComposition = sourceNode?.kind === 'bus' && sourceIsComposition && sourceNode.metadata?.aggregateKind === 'array';
 
   const targetNode = targetFlowNode?.data?.node;
   const targetInputs = targetNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
   const targetAggregateInputs = targetInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const targetIsComposition = targetAggregateInputs.length > 1;
-  const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
+  const targetIsArray = targetNode ? (nodeIsArrayNode(targetNode) || (targetNode.kind === 'netLabel' && targetNode.metadata?.cutNet?.isSourceStacked)) : false;
   const targetIsArrayBreakout = targetNode?.kind === 'bus' && !targetIsComposition && targetNode.metadata?.aggregateKind === 'array';
 
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
@@ -310,10 +344,12 @@ export function OrthogonalEdge({
   const isLeaderInNet = edgeData?.isNetLeader === true;
   
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = React.useState<number | null>(null);
+  const [isEdgeHovered, setIsEdgeHovered] = React.useState(false);
   // localPoints represents the "structured" path during a drag
   const [localPoints, setLocalPoints] = React.useState<OrthogonalPoint[] | null>(null);
   const dragOffsetRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const activeSegmentIndexRef = React.useRef<number>(0);
+  const hoverClearTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const isDragging = localPoints !== null;
 
@@ -493,6 +529,9 @@ export function OrthogonalEdge({
   const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const cutButtonPoint = routeControlPoint(points);
+  const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
+  const showCutButton = isEdgeHovered && diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub;
   const netGeometries = context && edgeData?.netEdgeIds
     ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
     : [];
@@ -500,6 +539,32 @@ export function OrthogonalEdge({
     ? findNetJunctions(netGeometries)
     : [];
   const useStackedJunctionDots = sourceIsArray && isLeaderInNet && !isInterfaceAggregate;
+
+  const keepEdgeHover = React.useCallback(() => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current);
+      hoverClearTimeoutRef.current = undefined;
+    }
+    setIsEdgeHovered(true);
+    setHovered(netKey);
+  }, [netKey, setHovered]);
+
+  const releaseEdgeHover = React.useCallback(() => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current);
+    }
+    setHovered(undefined);
+    hoverClearTimeoutRef.current = setTimeout(() => {
+      setIsEdgeHovered(false);
+      hoverClearTimeoutRef.current = undefined;
+    }, 500);
+  }, [setHovered]);
+
+  React.useEffect(() => () => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current);
+    }
+  }, []);
 
   const moveSegment = (event: React.PointerEvent, segmentIndex: number, commit: boolean) => {
     const flowPoint = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -571,7 +636,10 @@ export function OrthogonalEdge({
   };
 
   return (
-    <>
+    <g
+      onMouseEnter={keepEdgeHover}
+      onMouseLeave={releaseEdgeHover}
+    >
       {isInterfaceAggregate && (
         <defs>
           <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
@@ -591,7 +659,7 @@ export function OrthogonalEdge({
         <g className="svsch-edge-net-highlight-group">
           {(() => {
             const netEdgeIds = new Set(edgeData?.netEdgeIds || []);
-            return context.geometries
+            const edgePaths = context.geometries
               .filter(g => netEdgeIds.has(g.edgeId))
               .map(g => {
                 const render = buildLineJumpRender(g, context.geometries, context.options);
@@ -603,80 +671,134 @@ export function OrthogonalEdge({
                   />
                 );
               });
+
+            // Collect the internal wire segments of any netLabel nodes in this net
+            // and place them in the same <g> so the group buffer composites everything
+            // at full opacity before the single group opacity is applied — preventing
+            // additive brightness where the stub halo and label wire halo would otherwise
+            // overlap at the handle point.
+            const labelPaths: React.ReactElement[] = [];
+            for (const fn of flowNodes) {
+              const dn = fn.data?.node;
+              if (dn?.kind !== 'netLabel' || dn.metadata?.cutNet?.netKey !== netKey) {
+                continue;
+              }
+              const pos = (fn as any).positionAbsolute ?? fn.position;
+              if (!pos) continue;
+              const { width: lw, height: lh } = diagramNodeDimensions(dn);
+              const handleSide = dn.metadata?.cutNet?.handleSide ?? 'left';
+              const align = dn.metadata?.cutNet?.align ?? 'start';
+              const mx = pos.x;
+              const my = pos.y;
+              const midY = my + lh / 2;
+              const midX = mx + lw / 2;
+
+              let hPath: string;
+              let vPath = '';
+              if (handleSide === 'top' || handleSide === 'bottom') {
+                hPath = align === 'end'
+                  ? `M ${midX} ${midY} H ${mx + lw}`
+                  : `M ${mx} ${midY} H ${midX}`;
+                vPath = handleSide === 'top'
+                  ? `M ${midX} ${midY} V ${my}`
+                  : `M ${midX} ${midY} V ${my + lh}`;
+              } else {
+                hPath = `M ${mx} ${midY} H ${mx + lw}`;
+              }
+
+              labelPaths.push(
+                <path
+                  key={`halo-label-${dn.id}`}
+                  className="svsch-edge-net-highlight"
+                  d={hPath + (vPath ? ' ' + vPath : '')}
+                />
+              );
+            }
+
+            return [...edgePaths, ...labelPaths];
           })()}
         </g>
       )}
-      {isStacked && !isPromotedStack && !isConvergingStack && (
-        <path className="svsch-edge svsch-edge-stacked-back" d={backStackPath} />
-      )}
-      {isInterfaceAggregate && (
-        <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
-      )}
-      {promotedFanout ? (
+      {isStacked && (sourceIsArray || targetIsArray) ? (
         <>
-          <defs>
-            <linearGradient
-              id={promotedFanoutGradientId}
-              gradientUnits="userSpaceOnUse"
-              x1={promotedFanout.barStart.x}
-              y1={promotedFanout.barStart.y}
-              x2={promotedFanout.barEnd.x}
-              y2={promotedFanout.barEnd.y}
-            >
-              <stop offset="0%" className="svsch-stack-gradient-front-stop" />
-              <stop offset="50%" className="svsch-stack-gradient-middle-stop" />
-              <stop offset="100%" className="svsch-stack-gradient-back-stop" />
-            </linearGradient>
-          </defs>
-          <path className={`svsch-edge svsch-edge-stacked${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={promotedFanout.trunk} />
-          <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} style={{ stroke: `url(#${promotedFanoutGradientId})` }} />
-          {promotedFanout.branches.map((branch, index) => (
-            <path
-              key={`${id}-stack-branch-${index}`}
-              className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`}
-              d={branch.path}
-            />
-          ))}
-        </>
-      ) : isConvergingStack && convergingStackPaths.length > 0 ? (
-        <>
-          <defs>
-            {convergingStackPaths.map((stackPath) => (
-              <linearGradient
-                key={`${id}-stack-converge-gradient-${stackPath.layerId}`}
-                id={convergingStackGradientId(stackPath.layerId)}
-                gradientUnits="userSpaceOnUse"
-                x1={stackPath.start.x}
-                y1={stackPath.start.y}
-                x2={stackPath.end.x}
-                y2={stackPath.end.y}
-              >
-                <stop offset="0%" className={stackedLayerGradientStopClass(stackPath.layerId)} />
-                <stop offset="78%" className="svsch-stack-gradient-regular-stop" />
-                <stop offset="100%" className="svsch-stack-gradient-regular-stop" />
-              </linearGradient>
-            ))}
-          </defs>
-          {convergingStackPaths.map((stackPath) => (
-            <path
-              key={`${id}-stack-converge-${stackPath.layerId}`}
-              className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`}
-              d={stackPath.path}
-              style={{ stroke: `url(#${convergingStackGradientId(stackPath.layerId)})` }}
-            />
-          ))}
+          {isInterfaceAggregate && (
+            <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
+          )}
+          {!isPromotedStack && !isConvergingStack && (
+            <path className="svsch-edge svsch-edge-stacked-back" d={backStackPath} />
+          )}
+          {promotedFanout ? (
+            <>
+              <defs>
+                <linearGradient
+                  id={promotedFanoutGradientId}
+                  gradientUnits="userSpaceOnUse"
+                  x1={promotedFanout.barStart.x}
+                  y1={promotedFanout.barStart.y}
+                  x2={promotedFanout.barEnd.x}
+                  y2={promotedFanout.barEnd.y}
+                >
+                  <stop offset="0%" className="svsch-stack-gradient-front-stop" />
+                  <stop offset="50%" className="svsch-stack-gradient-middle-stop" />
+                  <stop offset="100%" className="svsch-stack-gradient-back-stop" />
+                </linearGradient>
+              </defs>
+              <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={promotedFanout.trunk} />
+              <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} style={{ stroke: `url(#${promotedFanoutGradientId})` }} />
+              {promotedFanout.branches.map((branch, index) => (
+                <path
+                  key={`${id}-stack-branch-${index}`}
+                  className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`}
+                  d={branch.path}
+                />
+              ))}
+            </>
+          ) : isConvergingStack && convergingStackPaths.length > 0 ? (
+            <>
+              <defs>
+                {convergingStackPaths.map((stackPath) => (
+                  <linearGradient
+                    key={`${id}-stack-converge-gradient-${stackPath.layerId}`}
+                    id={convergingStackGradientId(stackPath.layerId)}
+                    gradientUnits="userSpaceOnUse"
+                    x1={stackPath.start.x}
+                    y1={stackPath.start.y}
+                    x2={stackPath.end.x}
+                    y2={stackPath.end.y}
+                  >
+                    <stop offset="0%" className={stackedLayerGradientStopClass(stackPath.layerId)} />
+                    <stop offset="78%" className="svsch-stack-gradient-regular-stop" />
+                    <stop offset="100%" className="svsch-stack-gradient-regular-stop" />
+                  </linearGradient>
+                ))}
+              </defs>
+              {convergingStackPaths.map((stackPath) => (
+                <path
+                  key={`${id}-stack-converge-${stackPath.layerId}`}
+                  className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`}
+                  d={stackPath.path}
+                  style={{ stroke: `url(#${convergingStackGradientId(stackPath.layerId)})` }}
+                />
+              ))}
+            </>
+          ) : (
+            <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
+          )}
+          {!isPromotedStack && !isConvergingStack && (
+            <path className="svsch-edge svsch-edge-stacked-front" d={frontStackPath} />
+          )}
         </>
       ) : (
-        <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
-      )}
-      {isStacked && !isPromotedStack && !isConvergingStack && (
-        <path className="svsch-edge svsch-edge-stacked-front" d={frontStackPath} />
+        <>
+          {isInterfaceAggregate && (
+            <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
+          )}
+          <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={edgeRender.path} />
+        </>
       )}
       <path
         className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}`}
         d={rawEdgePath}
-        onMouseEnter={() => setHovered(netKey)}
-        onMouseLeave={() => setHovered(undefined)}
       />
       {overlapHints.map((hint) => (
         <path key={hint.id} className="svsch-edge-overlap-hint" d={hint.path} style={hint.style} />
@@ -752,11 +874,44 @@ export function OrthogonalEdge({
           </React.Fragment>
         );
       })}
+      {showCutButton && (
+        <foreignObject
+          width={42}
+          height={24}
+          x={cutButtonPoint.x - 21}
+          y={cutButtonPoint.y - 34}
+          className="svsch-edge-cut-control"
+          onMouseEnter={keepEdgeHover}
+          onMouseLeave={releaseEdgeHover}
+        >
+          <button
+            type="button"
+            title="Cut net"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!diagramEdge || !edgeData?.moduleName) {
+                return;
+              }
+              vscode.postMessage({
+                type: 'cutNet',
+                moduleName: edgeData.moduleName,
+                edge: diagramEdge,
+                nodes: positionedNodesFromFlowNodes(flowNodes)
+              });
+            }}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Cut
+          </button>
+        </foreignObject>
+      )}
       {label && (
         <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">
           <div>{label}</div>
         </foreignObject>
       )}
-    </>
+    </g>
   );
 }

@@ -26,11 +26,20 @@ export interface SavedViewport {
   zoom: number;
 }
 
+export interface SavedNetCut {
+  label: string;
+  source: {
+    nodeId: string;
+    portId?: string;
+  };
+}
+
 export interface SavedModuleLayout {
   nodes: Record<string, SavedNodeLayout>;
   edges?: Record<string, SavedEdgeLayout>;
   viewport?: SavedViewport;
   expanded?: Record<string, boolean>;
+  netCuts?: Record<string, SavedNetCut>;
 }
 
 export interface SavedLayout {

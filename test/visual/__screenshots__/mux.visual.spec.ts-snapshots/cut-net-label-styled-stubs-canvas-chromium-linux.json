@@ -1,0 +1,294 @@
+{
+  "nodes": [
+    {
+      "id": "cut-label:styled:interface:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 120
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:interface:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 120
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:stacked:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:stacked:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:struct:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 48
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:struct:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 48
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:interface",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "if_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:stacked",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "arr_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:struct",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "pkt_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:interface",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "if_s",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:stacked",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "arr_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:struct",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "pkt_o",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:styled:interface:sink",
+      "source": "cut-label:styled:interface:sink",
+      "target": "target:interface",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 528 144 L 528 144 L 600 144 L 600 144"
+    },
+    {
+      "id": "cut-stub:styled:interface:source",
+      "source": "source:interface",
+      "target": "cut-label:styled:interface:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 144 L 120 144 L 168 144 L 168 144"
+    },
+    {
+      "id": "cut-stub:styled:stacked:sink",
+      "source": "cut-label:styled:stacked:sink",
+      "target": "target:stacked",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 541 220 L 595 220"
+    },
+    {
+      "id": "cut-stub:styled:stacked:source",
+      "source": "source:stacked",
+      "target": "cut-label:styled:stacked:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 133 220 L 163 220"
+    },
+    {
+      "id": "cut-stub:styled:struct:sink",
+      "source": "cut-label:styled:struct:sink",
+      "target": "target:struct",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 528 72 L 528 72 L 600 72 L 600 72"
+    },
+    {
+      "id": "cut-stub:styled:struct:source",
+      "source": "source:struct",
+      "target": "cut-label:styled:struct:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 72 L 120 72 L 168 72 L 168 72"
+    }
+  ]
+}

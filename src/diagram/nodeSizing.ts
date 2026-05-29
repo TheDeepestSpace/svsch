@@ -48,6 +48,10 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
 }
 
 function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount: number, portRows: number): number {
+  if (node.kind === 'netLabel') {
+    return diagramSizing.gridSize * 2;
+  }
+
   if (node.kind === 'port') {
     return diagramSizing.portHeight;
   }
@@ -150,6 +154,13 @@ function nodeWidthForKind(
     ? (bottomPorts.length * 2 - 1) * diagramSizing.gridSize + Math.max(...bottomPorts.map(p => measureText(p.label ?? p.name)))
     : 0;
   const tbWidth = Math.max(topLabelWidth, bottomLabelWidth) + diagramSizing.nodeHorizontalPadding * 2;
+
+  if (node.kind === 'netLabel') {
+    return snappedWidth(
+      diagramSizing.gridSize * 4,
+      measureText(node.label) + diagramSizing.gridSize / 2
+    );
+  }
 
   if (node.kind === 'port') {
     return snappedWidth(
