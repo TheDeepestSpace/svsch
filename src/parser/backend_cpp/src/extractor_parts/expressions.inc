@@ -24,7 +24,30 @@ std::string DesignExtractor::ensureLiteralNode(vpiHandle handle, Module& mod, co
     n.id = sanitizeId("literal:" + mod.name + ":" + signal + ":" + label);
     n.kind = "literal";
     n.label = label;
-    n.source = getSourceInfo(source_handle ? source_handle : handle);
+
+    // Enrich source location and metadata based on the actual UHDM object type.
+    vpiHandle actual = unwrapRef(handle);
+    int actual_type = actual ? vpi_get(vpiType, actual) : 0;
+
+    if (actual_type == vpiEnumConst) {
+        // For enum members use the declaration source (inside the typedef).
+        SourceInfo decl_src = getSourceInfo(actual);
+        n.source = (!decl_src.file.empty() && decl_src.line > 0)
+            ? decl_src
+            : getSourceInfo(source_handle ? source_handle : handle);
+        // Attach enum type info from the pre-built module enum map.
+        auto it = mod.enumMemberTypes.find(label);
+        if (it != mod.enumMemberTypes.end()) {
+            n.metadata.typeName = it->second.typeName;
+            n.metadata.typeSource = it->second.typeSource;
+        }
+    } else if (actual_type == vpiParameter || (actual && vpi_get(vpiLocalParam, actual))) {
+        // For parameters use the declaration location, not the usage site.
+        n.source = getParameterDeclarationSource(actual ? actual : handle);
+    } else {
+        n.source = getSourceInfo(source_handle ? source_handle : handle);
+    }
+
     n.ports.push_back({signal, "output", signal, width});
     mod.nodes.push_back(n);
     return signal;
@@ -475,6 +498,19 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
     n.metadata.expression = getExprText(expr);
     n.metadata.repeatCount = repeat_count;
     n.metadata.repeatExpression = repeat_expr;
+    if (symbolic_count) {
+        // Look up the declaration source from mod.parameters (which has declaration-site info).
+        for (const auto& param : mod.parameters) {
+            if (param.name == repeat_expr && !param.source.file.empty() && param.source.line > 0) {
+                n.metadata.repeatExpressionSource = param.source;
+                break;
+            }
+        }
+        // Fallback to VPI if not found in module params (e.g., package-level parameter).
+        if (n.metadata.repeatExpressionSource.file.empty()) {
+            n.metadata.repeatExpressionSource = getParameterDeclarationSource(repeat_handle);
+        }
+    }
     n.metadata.isProcedural = is_procedural;
     n.metadata.parameterRefs = collectParameterRefs(repeat_handle, mod);
 

@@ -1263,33 +1263,6 @@ function widthFromSlice(slice: string | undefined): string | undefined {
     return widthFromBitSize(Math.abs(left - right) + 1);
 }
 
-function widthFromSignalSlice(signal: string | undefined): string | undefined {
-    if (!signal) return undefined;
-    const match = signal.replace(/\s+/g, '').match(/(\[-?\d+(?::-?\d+)?\])(?:_\w+)?$/);
-    return widthFromSlice(match?.[1]);
-}
-
-function concatSliceLabel(highBit: number, size: number): string {
-    return size > 1 ? `[${highBit}:${highBit - size + 1}]` : `[${highBit}]`;
-}
-
-
-function findNodeOutputWidth(nodes: DiagramNode[], signal: string | undefined): string | undefined {
-    if (!signal) return undefined;
-    let bestWidth: string | undefined;
-    for (const node of nodes) {
-        const output = node.ports.find(port => (
-            port.direction === 'output'
-            && (port.connectedSignal === signal || port.name === signal)
-            && port.width
-        ));
-        if (output?.width && bitSizeFromWidth(output.width) > bitSizeFromWidth(bestWidth)) {
-            bestWidth = output.width;
-        }
-    }
-    return bestWidth;
-}
-
 
 function resolveLiteralDetails(
     cache: Map<string, string>,
@@ -1346,9 +1319,21 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
         const moduleFile = rawMod.file ? path.relative(workspaceRoot, rawMod.file) : '';
         const parameters = rawMod.parameters?.map((param) => parameterDeclFromRaw(param, workspaceRoot));
         const ports: DiagramPort[] = (rawMod.ports || []).map((p, i) => {
-            const declaredWidth = findDeclaredWidthInModule(sourceTextCache, rawMod.file, modName, p.name);
-            const width = p.width && p.width !== '[0:0]' ? p.width : (declaredWidth ?? p.width);
-            const widthExpression = p.widthExpression || (declaredWidth && /[A-Za-z_$]/.test(declaredWidth) ? declaredWidth : undefined);
+            // C++ typespec fix now provides accurate widths for constant-ranged ports.
+            // For parametric widths (e.g. [WIDTH-1:0]) the symbolic expression must still
+            // come from source text, since UHDM evaluates parameters at elaboration time.
+            // Derive widthExpression from source text when C++ didn't provide it.
+            // C++ evaluates parametric ranges (e.g. [WIDTH-1:0] → [7:0]), so we need
+            // source text to recover the symbolic form for IDE navigation and display.
+            const declaredWidth = !p.widthExpression
+                ? findDeclaredWidthInModule(sourceTextCache, rawMod.file, modName, p.name)
+                : undefined;
+            // Use C++ width when it's a real constant range; fall back to declared for
+            // ports where C++ still reports [0:0] (unevaluated or scalar).
+            const width = (p.width && p.width !== '[0:0]') ? p.width : (declaredWidth ?? p.width);
+            const widthExpression = p.widthExpression
+                || (declaredWidth && /[A-Za-z_$]/.test(declaredWidth) ? declaredWidth : undefined)
+                || (p.width && /[A-Za-z_$]/.test(p.width) ? p.width : undefined);
             const rawParameterRefs = p.parameterRefs?.map((ref) => parameterRefFromRaw(ref, workspaceRoot));
             return {
                 id: stableId('port', p.name),
@@ -1405,14 +1390,19 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             if (rawMetadata?.instanceParameters) {
                 metadata!.instanceParameters = rawMetadata.instanceParameters.map((param) => instanceParameterFromRaw(param, workspaceRoot));
             }
-            if (metadata?.repeatExpression && /^[A-Za-z_$][\w$]*$/.test(metadata.repeatExpression)) {
+            // repeatExpressionSource: C++ backend now emits this directly for symbolic repeat counts.
+            // Only fall back to source-text search when C++ didn't provide it.
+            if (metadata?.repeatExpression && /^[A-Za-z_$][\w$]*$/.test(metadata.repeatExpression)
+                && !metadata.repeatExpressionSource) {
                 const repeatSourceFile = rawMod.file || (n.source?.file && fsSync.existsSync(n.source.file) ? n.source.file : undefined);
                 const repeatDecl = findIdentifierDeclaration(sourceTextCache, repeatSourceFile, metadata.repeatExpression, 'parameter');
                 if (repeatDecl) {
                     metadata.repeatExpressionSource = sourceRangeFromRaw(repeatDecl.source, workspaceRoot);
                 }
             }
-            const literalDetails = n.kind === 'literal'
+            // For literal nodes: C++ now provides typeName, typeSource, and accurate declaration
+            // source for enum members and parameter literals. Merge with any remaining TS resolution.
+            const literalDetails = n.kind === 'literal' && (!metadata?.typeName || !isValidRawSource(n.source))
                 ? resolveLiteralDetails(sourceTextCache, workspaceRoot, n.source?.file || rawMod.file, n.label, n.source)
                 : undefined;
             const nodeMetadata = literalDetails?.metadata

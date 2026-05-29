@@ -75,6 +75,30 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             mod.internalSignals.insert(p.name);
         }
     }
+    // Build enum member → typedef name/source/width map for literal node enrichment.
+    {
+        vpiHandle ti = vpi_iterate(vpiTypedef, mod_handle);
+        if (ti) {
+            while (vpiHandle td = vpi_scan(ti)) {
+                const char* nm = vpi_get_str(vpiName, td);
+                if (!nm || strlen(nm) == 0) continue;
+                std::string type_name = nm;
+                if (type_name.rfind("work@", 0) == 0) type_name = type_name.substr(5);
+                SourceInfo type_src = getSourceInfo(td);
+                std::string enum_width = getWidth(td);
+                vpiHandle mi2 = vpi_iterate(vpiEnumConst, td);
+                if (!mi2) continue;
+                while (vpiHandle ec = vpi_scan(mi2)) {
+                    const char* mnm = vpi_get_str(vpiName, ec);
+                    if (!mnm) continue;
+                    std::string member = mnm;
+                    if (member.rfind("work@", 0) == 0) member = member.substr(5);
+                    mod.enumMemberTypes[member] = {type_name, type_src, enum_width};
+                }
+            }
+        }
+    }
+
     collectInterfacePortsFromSource(mod);
     processModuleInterfaces(mod_handle, mod);
 

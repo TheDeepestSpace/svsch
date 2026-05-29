@@ -301,7 +301,18 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (!n.metadata.reason.empty()) j_meta["reason"] = n.metadata.reason;
             if (!n.metadata.role.empty()) j_meta["role"] = n.metadata.role;
             if (n.metadata.repeatCount > 0) j_meta["repeatCount"] = n.metadata.repeatCount;
-            if (!n.metadata.repeatExpression.empty()) j_meta["repeatExpression"] = n.metadata.repeatExpression;
+            if (!n.metadata.repeatExpression.empty()) {
+                j_meta["repeatExpression"] = n.metadata.repeatExpression;
+                if (!n.metadata.repeatExpressionSource.file.empty() && n.metadata.repeatExpressionSource.line > 0) {
+                    j_meta["repeatExpressionSource"] = {
+                        {"file", n.metadata.repeatExpressionSource.file},
+                        {"line", n.metadata.repeatExpressionSource.line},
+                        {"col", n.metadata.repeatExpressionSource.col},
+                        {"endLine", n.metadata.repeatExpressionSource.endLine},
+                        {"endCol", n.metadata.repeatExpressionSource.endCol}
+                    };
+                }
+            }
             if (!n.metadata.typeName.empty()) {
                 j_meta["typeName"] = n.metadata.typeName;
                 j_meta["typeSource"] = {

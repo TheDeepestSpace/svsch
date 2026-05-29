@@ -143,6 +143,7 @@ struct Node {
         std::string role;
         int repeatCount = 0;
         std::string repeatExpression;
+        SourceInfo repeatExpressionSource;
         std::string typeName;
         SourceInfo typeSource;
         std::string modportName;
@@ -186,6 +187,12 @@ struct PendingArrayAlias {
     SourceInfo source;
 };
 
+struct EnumMemberInfo {
+    std::string typeName;
+    SourceInfo typeSource;
+    std::string width;
+};
+
 struct Module {
     std::string name;
     std::vector<ParameterDecl> parameters;
@@ -200,6 +207,7 @@ struct Module {
     std::vector<PendingArrayAlias> pendingArrayAliases;
     std::map<std::string, std::string> arrayDimensions;
     std::map<std::string, int> arraySizes;
+    std::map<std::string, EnumMemberInfo> enumMemberTypes; // enum member name → typedef info
 };
 
 struct LoweredValue {
