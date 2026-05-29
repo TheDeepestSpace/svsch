@@ -506,12 +506,17 @@ function handleMatches(actual: string | undefined, expectedLabel: string): boole
   if (!actual) return false;
   const portName = actual.includes(':') ? actual.slice(actual.lastIndexOf(':') + 1) : actual;
   const fieldName = portName.includes('.') ? portName.slice(portName.lastIndexOf('.') + 1) : portName;
+  // stableId sanitizes special chars (e.g. '[', ']') to '_', so "[0]" → "_0_".
+  const sanitized = expectedLabel.replace(/[^A-Za-z0-9_$.\-:]+/g, '_');
   return actual === expectedLabel
     || actual.toLowerCase() === expectedLabel.toLowerCase()
     || actual === `port:${expectedLabel}`
     || actual === `in:${expectedLabel}`
     || actual === `out:${expectedLabel}`
+    || actual === `in:${sanitized}`
+    || actual === `out:${sanitized}`
     || portName === expectedLabel
+    || portName === sanitized
     || fieldName === expectedLabel;
 }
 

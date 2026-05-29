@@ -1,3 +1,4 @@
+#include <fstream>
 // Extracts the normalized bit-width from a signal name that embeds a slice at
 // its tail, e.g. "foo[3:0]", "foo[2]", "foo[1:0]_next".  Returns "" when no
 // such slice is present.
@@ -328,18 +329,31 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
 // Returns the node (creating it in mod.nodes if absent).
 static Node& ensureInterfaceBreakoutBus(Module& mod,
     const std::string& field_name, const std::string& full_signal,
-    const std::string& field_width)
+    const std::string& field_width, const std::string& tap_name,
+    const std::string& tap_label)
 {
     std::string bus_id = "bus:" + mod.name + ":" + field_name;
     for (auto& n : mod.nodes) {
-        if (n.id == bus_id) return n;
+        if (n.id == bus_id) {
+            bool found_out = false;
+            for (auto& p : n.ports) {
+                if (p.direction == "output" && p.name == tap_name) {
+                    found_out = true;
+                    break;
+                }
+            }
+            if (!found_out) {
+                n.ports.push_back({tap_name, "output", full_signal, field_width, tap_label});
+            }
+            return n;
+        }
     }
     Node bus;
     bus.id    = bus_id;
     bus.kind  = "bus";
     bus.label = field_name;
     bus.ports.push_back({field_name, "input",  full_signal, field_width, field_name});
-    bus.ports.push_back({field_name, "output", full_signal, field_width, field_name});
+    bus.ports.push_back({tap_name, "output", full_signal, field_width, tap_label});
     mod.nodes.push_back(bus);
     return mod.nodes.back();
 }
@@ -369,15 +383,9 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
         if (!src || (src->kind != "interface" && src->kind != "bus")) continue;
         if (!tgt || tgt->kind != "comb") continue;
 
-        // Extract field name from signal (e.g. "bus.data" → "data").
+        // Extract field name from signal (e.g. "bus.data[0]" → "data[0]").
         size_t dot = edge.signal.rfind('.');
         if (dot == std::string::npos) continue;
-        std::string field_name = edge.signal.substr(dot + 1);
-        {
-            size_t br = field_name.find('[');
-            if (br != std::string::npos) field_name = field_name.substr(0, br);
-        }
-        if (field_name.empty()) continue;
 
         // Copy all data needed from src and tgt BEFORE any push_back that
         // could reallocate mod.nodes (invalidating the raw pointers).
@@ -421,6 +429,22 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
              && expr.back() == ']')
         );
 
+        if (is_redundant && expr.size() > tap_signal.size() && expr.compare(0, tap_signal.size(), tap_signal) == 0 && expr[tap_signal.size()] == '[') {
+            tap_signal = expr;
+        }
+
+        std::string tap_name = tap_signal.substr(dot + 1);
+        std::string field_name = tap_name;
+        std::string tap_label = tap_name;
+        {
+            size_t br = field_name.find('[');
+            if (br != std::string::npos) {
+                field_name = field_name.substr(0, br);
+                tap_label = tap_name.substr(br);
+            }
+        }
+        if (field_name.empty()) continue;
+
         if (is_redundant && is_direct) {
             // Direct forwarding (e.g. assign downstream.data = upstream.data):
             // short-circuit — reroute downstream to come from the original source,
@@ -440,7 +464,7 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
 
         // For slice/complex accesses: create the breakout bus. This may push_back
         // to mod.nodes, invalidating src and tgt — they must not be used after this.
-        ensureInterfaceBreakoutBus(mod, field_name, edge.signal, field_width);
+        ensureInterfaceBreakoutBus(mod, field_name, edge.signal, field_width, tap_name, tap_label);
         std::string breakout_id = "bus:" + mod.name + ":" + field_name;
 
         // Redirect the current edge to target the breakout bus input.
@@ -453,7 +477,7 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
                 auto& de = mod.edges[ej];
                 if (de.source == orig_target_id) {
                     de.source     = breakout_id;
-                    de.sourcePort = field_name;
+                    de.sourcePort = tap_name;
                     de.signal     = !expr.empty() ? expr : tap_signal;
                 }
             }
@@ -462,7 +486,7 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
             // Non-redundant comb: add edge from breakout output to the comb.
             bool already = false;
             for (const auto& e : mod.edges) {
-                if (e.source == breakout_id && e.sourcePort == field_name &&
+                if (e.source == breakout_id && e.sourcePort == tap_name &&
                     e.target == orig_target_id && e.targetPort == orig_target_port) {
                     already = true; break;
                 }
@@ -470,7 +494,7 @@ void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
             if (!already) {
                 Edge ne;
                 ne.source     = breakout_id;
-                ne.sourcePort = field_name;
+                ne.sourcePort = tap_name;
                 ne.target     = orig_target_id;
                 ne.targetPort = orig_target_port;
                 ne.signal     = tap_signal;

@@ -1504,7 +1504,8 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     sourcePortId = stableId('port', e.sourcePort);
                 } else {
                     if (sourceNode) {
-                        const srcPort = sourceNode.ports.find(p => p.name === e.sourcePort || (p as DiagramPort & { rawName?: string }).rawName === e.sourcePort);
+                        const srcPort = sourceNode.ports.find(p => (p.name === e.sourcePort || (p as DiagramPort & { rawName?: string }).rawName === e.sourcePort) && p.direction !== 'input')
+                                     || sourceNode.ports.find(p => p.name === e.sourcePort || (p as DiagramPort & { rawName?: string }).rawName === e.sourcePort);
                         if (srcPort) sourcePortId = srcPort.id;
                     }
                 }
@@ -1514,7 +1515,8 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     targetPortId = stableId('port', e.targetPort);
                 } else {
                     if (targetNode) {
-                        const tgtPort = targetNode.ports.find(p => p.name === e.targetPort || (p as DiagramPort & { rawName?: string }).rawName === e.targetPort);
+                        const tgtPort = targetNode.ports.find(p => (p.name === e.targetPort || (p as DiagramPort & { rawName?: string }).rawName === e.targetPort) && p.direction !== 'output')
+                                     || targetNode.ports.find(p => p.name === e.targetPort || (p as DiagramPort & { rawName?: string }).rawName === e.targetPort);
                         if (tgtPort) targetPortId = tgtPort.id;
                     }
                 }

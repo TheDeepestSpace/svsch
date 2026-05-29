@@ -4,10 +4,10 @@
       "id": "literal:top:out_branch_n0:4_b0",
       "type": "hdl",
       "position": {
-        "x": 96,
+        "x": 48,
         "y": 108
       },
-      "width": 48,
+      "width": 96,
       "height": 24,
       "data": {
         "kind": "literal",
@@ -27,7 +27,7 @@
         "x": 360,
         "y": 24
       },
-      "width": 192,
+      "width": 216,
       "height": 96,
       "data": {
         "kind": "loop",
@@ -74,7 +74,7 @@
       "id": "port:top:out",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 792,
         "y": 60
       },
       "width": 120,
@@ -106,7 +106,7 @@
       "target": "port:top:out",
       "sourceHandle": "port:out",
       "targetHandle": "port:out",
-      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+      "path": "M 576 72 L 600 72 L 768 72 L 792 72"
     },
     {
       "id": "edge:port:top:in:loop:top:4:n1:in",

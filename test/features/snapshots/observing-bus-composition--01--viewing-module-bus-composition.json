@@ -13,22 +13,22 @@
         "kind": "bus",
         "ports": [
           {
-            "id": "[3:2]",
+            "id": "in:_3:2_",
             "name": "[3:2]",
             "direction": "input"
           },
           {
-            "id": "[1]",
+            "id": "in:_1_",
             "name": "[1]",
             "direction": "input"
           },
           {
-            "id": "[0]",
+            "id": "in:_0_",
             "name": "[0]",
             "direction": "input"
           },
           {
-            "id": "r",
+            "id": "out:r",
             "name": "r",
             "direction": "output"
           }
@@ -231,7 +231,7 @@
       "id": "edge:bus_comp:bus_composition:r:port:bus_composition:r:r",
       "source": "bus_comp:bus_composition:r",
       "target": "port:bus_composition:r",
-      "sourceHandle": "r",
+      "sourceHandle": "out:r",
       "targetHandle": "port:r",
       "path": "M 864 144 L 888 144 L 1104 144 L 1128 144"
     },
@@ -288,7 +288,7 @@
       "source": "reg:bus_composition:r[0]",
       "target": "bus_comp:bus_composition:r",
       "sourceHandle": "q",
-      "targetHandle": "[0]",
+      "targetHandle": "in:_0_",
       "path": "M 480 312 L 504 312 L 552 312 L 552 240 L 696 240 L 720 240"
     },
     {
@@ -296,7 +296,7 @@
       "source": "reg:bus_composition:r[1]",
       "target": "bus_comp:bus_composition:r",
       "sourceHandle": "q",
-      "targetHandle": "[1]",
+      "targetHandle": "in:_1_",
       "path": "M 480 192 L 504 192 L 696 192 L 720 192"
     },
     {
@@ -304,7 +304,7 @@
       "source": "reg:bus_composition:r[3:2]",
       "target": "bus_comp:bus_composition:r",
       "sourceHandle": "q",
-      "targetHandle": "[3:2]",
+      "targetHandle": "in:_3:2_",
       "path": "M 504 72 L 528 72 L 552 72 L 552 144 L 696 144 L 720 144"
     }
   ]
