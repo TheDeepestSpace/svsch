@@ -324,6 +324,181 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
     }
 }
 
+// Create or find the interface field breakout bus for a given interface signal and field.
+// Returns the node (creating it in mod.nodes if absent).
+static Node& ensureInterfaceBreakoutBus(Module& mod,
+    const std::string& field_name, const std::string& full_signal,
+    const std::string& field_width)
+{
+    std::string bus_id = "bus:" + mod.name + ":" + field_name;
+    for (auto& n : mod.nodes) {
+        if (n.id == bus_id) return n;
+    }
+    Node bus;
+    bus.id    = bus_id;
+    bus.kind  = "bus";
+    bus.label = field_name;
+    bus.ports.push_back({field_name, "input",  full_signal, field_width, field_name});
+    bus.ports.push_back({field_name, "output", full_signal, field_width, field_name});
+    mod.nodes.push_back(bus);
+    return mod.nodes.back();
+}
+
+// Reroute interface field access edges through breakout bus nodes, and remove
+// redundant intermediate comb nodes (those that just tap a single field or slice).
+// Mirrors the TS repairInterfaceAssignments pass, but also creates the breakout
+// bus nodes so the TS version becomes a no-op.
+void DesignExtractor::repairInterfaceAssignmentsC(Module& mod) {
+    // Snapshot: process only original edges (not ones we add during this pass).
+    const size_t n_orig = mod.edges.size();
+    std::set<size_t>   edges_to_remove;
+    std::set<std::string> nodes_to_remove;
+    std::vector<Edge>  additions;
+
+    for (size_t ei = 0; ei < n_orig; ++ei) {
+        Edge& edge = mod.edges[ei];
+        if (edge.signal.find('.') == std::string::npos) continue;
+
+        // Source must be an interface node; target must be a comb node.
+        const Node* src = nullptr;
+        const Node* tgt = nullptr;
+        for (const auto& n : mod.nodes) {
+            if (n.id == edge.source) src = &n;
+            if (n.id == edge.target) tgt = &n;
+        }
+        if (!src || (src->kind != "interface" && src->kind != "bus")) continue;
+        if (!tgt || tgt->kind != "comb") continue;
+
+        // Extract field name from signal (e.g. "bus.data" → "data").
+        size_t dot = edge.signal.rfind('.');
+        if (dot == std::string::npos) continue;
+        std::string field_name = edge.signal.substr(dot + 1);
+        {
+            size_t br = field_name.find('[');
+            if (br != std::string::npos) field_name = field_name.substr(0, br);
+        }
+        if (field_name.empty()) continue;
+
+        // Copy all data needed from src and tgt BEFORE any push_back that
+        // could reallocate mod.nodes (invalidating the raw pointers).
+        std::string src_kind        = src->kind;
+        std::string orig_target_id  = tgt->id;
+        std::string orig_target_port = tgt->metadata.expression; // unused below but keep for clarity
+        std::string expr            = tgt->metadata.expression;
+        std::string field_width     = "[0:0]";
+        for (const auto& p : src->ports) {
+            if (p.name == edge.sourcePort && !p.width.empty() && p.width != "interface") {
+                field_width = p.width;
+                break;
+            }
+        }
+        orig_target_port = edge.targetPort; // reset to actual targetPort
+
+        // The comb's expression must match the signal (direct or slice).
+        bool is_direct = (expr == edge.signal);
+        bool is_slice  = false;
+        if (!is_direct) {
+            size_t br = edge.signal.find('[');
+            std::string base = (br != std::string::npos) ? edge.signal.substr(0, br) : edge.signal;
+            is_slice = (expr.find(base + "[") != std::string::npos);
+        }
+        if (!is_direct && !is_slice) continue;
+
+        // Check if comb has other incoming edges (still using pre-push_back data).
+        bool has_other_inputs = false;
+        for (size_t ej = 0; ej < n_orig; ++ej) {
+            if (ej != ei && mod.edges[ej].target == orig_target_id) {
+                has_other_inputs = true; break;
+            }
+        }
+
+        std::string tap_signal = edge.signal;
+
+        bool is_redundant = !has_other_inputs && (
+            expr == tap_signal ||
+            (expr.size() > tap_signal.size() + 1
+             && expr.compare(0, tap_signal.size() + 1, tap_signal + "[") == 0
+             && expr.back() == ']')
+        );
+
+        if (is_redundant && is_direct) {
+            // Direct forwarding (e.g. assign downstream.data = upstream.data):
+            // short-circuit — reroute downstream to come from the original source,
+            // no breakout bus needed. Mirrors the TS no-breakout else-branch.
+            for (size_t ej = 0; ej < n_orig; ++ej) {
+                auto& de = mod.edges[ej];
+                if (de.source == orig_target_id) {
+                    de.source     = edge.source;
+                    de.sourcePort = edge.sourcePort;
+                    de.signal     = !expr.empty() ? expr : tap_signal;
+                }
+            }
+            edges_to_remove.insert(ei);
+            nodes_to_remove.insert(orig_target_id);
+            continue;
+        }
+
+        // For slice/complex accesses: create the breakout bus. This may push_back
+        // to mod.nodes, invalidating src and tgt — they must not be used after this.
+        ensureInterfaceBreakoutBus(mod, field_name, edge.signal, field_width);
+        std::string breakout_id = "bus:" + mod.name + ":" + field_name;
+
+        // Redirect the current edge to target the breakout bus input.
+        edge.target     = breakout_id;
+        edge.targetPort = field_name;
+
+        if (is_redundant) {
+            // Reroute downstream edges (from comb output) to come from breakout output.
+            for (size_t ej = 0; ej < n_orig; ++ej) {
+                auto& de = mod.edges[ej];
+                if (de.source == orig_target_id) {
+                    de.source     = breakout_id;
+                    de.sourcePort = field_name;
+                    de.signal     = !expr.empty() ? expr : tap_signal;
+                }
+            }
+            nodes_to_remove.insert(orig_target_id);
+        } else {
+            // Non-redundant comb: add edge from breakout output to the comb.
+            bool already = false;
+            for (const auto& e : mod.edges) {
+                if (e.source == breakout_id && e.sourcePort == field_name &&
+                    e.target == orig_target_id && e.targetPort == orig_target_port) {
+                    already = true; break;
+                }
+            }
+            if (!already) {
+                Edge ne;
+                ne.source     = breakout_id;
+                ne.sourcePort = field_name;
+                ne.target     = orig_target_id;
+                ne.targetPort = orig_target_port;
+                ne.signal     = tap_signal;
+                ne.width      = field_width;
+                additions.push_back(ne);
+            }
+        }
+    }
+
+    // Apply edge and node removals, then add new edges.
+    if (!edges_to_remove.empty() || !nodes_to_remove.empty()) {
+        std::vector<Edge> kept;
+        kept.reserve(mod.edges.size());
+        for (size_t i = 0; i < mod.edges.size(); ++i) {
+            const auto& e = mod.edges[i];
+            if (edges_to_remove.count(i)) continue;
+            if (nodes_to_remove.count(e.source) || nodes_to_remove.count(e.target)) continue;
+            kept.push_back(e);
+        }
+        mod.edges = std::move(kept);
+        if (!nodes_to_remove.empty()) {
+            mod.nodes.erase(std::remove_if(mod.nodes.begin(), mod.nodes.end(),
+                [&](const Node& n) { return nodes_to_remove.count(n.id); }), mod.nodes.end());
+        }
+    }
+    mod.edges.insert(mod.edges.end(), additions.begin(), additions.end());
+}
+
 // Synthesize bus_comp:mod:base nodes for signals driven by multiple slice sub-nodes.
 // Mirrors the TS transformToDesignGraph bus composition synthesis pass.
 void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {

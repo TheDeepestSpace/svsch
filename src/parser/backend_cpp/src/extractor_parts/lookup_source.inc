@@ -155,6 +155,7 @@ void DesignExtractor::buildEdges(Module& mod) {
     repairResolvedBusCompositionSlices(mod);
     repairAggregateAssignmentBuses(mod);
     collapseAliasCombNodes(mod);
+    repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
 }
 

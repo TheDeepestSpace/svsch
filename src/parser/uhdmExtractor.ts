@@ -196,7 +196,6 @@ export async function extractDesignWithUhdm(
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);
     mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
-    repairInterfaceAssignments(graph);
 
     // Mark edges connected to array nodes as stacked appropriately
     for (const module of Object.values(graph.modules)) {
@@ -716,100 +715,6 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
   }
 }
 
-function repairInterfaceAssignments(graph: DesignGraph): void {
-  for (const module of Object.values(graph.modules)) {
-    const busNodes = module.nodes.filter((node) => node.kind === 'bus');
-
-    const additions: DiagramEdge[] = [];
-    for (const edge of [...module.edges]) {
-      if (!edge.signal?.includes('.')) continue;
-      const sourceNode = module.nodes.find((node) => node.id === edge.source);
-      const targetNode = module.nodes.find((node) => node.id === edge.target);
-
-      if (sourceNode?.kind !== 'interface' && sourceNode?.kind !== 'bus') continue;
-      if (targetNode?.kind !== 'comb') continue;
-
-      const fieldName = edge.signal.split('.').pop()?.split('[')[0];
-      if (!fieldName) continue;
-
-      const isDirectMatch = targetNode.metadata?.expression === edge.signal;
-      const isSliceMatch = targetNode.metadata?.expression?.includes(`${edge.signal.split('[')[0]}[`);
-      if (!isDirectMatch && !isSliceMatch) continue;
-
-      const breakout = busNodes.find((node) => (
-        node.label === fieldName
-        && node.ports.some((port) => port.direction === 'input')
-        && node.ports.some((port) => port.direction === 'output')
-      ));
-
-      const input = breakout?.ports.find((port) => port.direction === 'input');
-      const output = breakout?.ports.find((port) => port.direction === 'output');
-
-      const originalTargetId = edge.target;
-      const originalTargetPortId = edge.targetPort;
-
-      const hasOtherInputs = module.edges.some(e => e !== edge && e.target === originalTargetId);
-
-      const tapSignal = (output && output.name.includes('[')) ? `${edge.signal}${output.name.slice(output.name.indexOf('['))}` : edge.signal;
-
-      const isRedundantComb = !hasOtherInputs &&
-                              (targetNode.metadata?.expression === tapSignal ||
-                               (targetNode.metadata?.expression?.startsWith(tapSignal + '[') && targetNode.metadata?.expression?.endsWith(']')));
-
-      if (isRedundantComb) {
-        if (breakout && input && output) {
-          edge.target = breakout.id;
-          edge.targetPort = input.id;
-          edge.id = edgeId(edge.source, edge.target, edge.signal);
-
-          for (const downstream of module.edges) {
-            if (downstream.source === originalTargetId) {
-              downstream.source = breakout.id;
-              downstream.sourcePort = output.id;
-              downstream.signal = targetNode.metadata?.expression || tapSignal;
-              downstream.id = edgeId(downstream.source, downstream.target, downstream.signal);
-            }
-          }
-        } else {
-          for (const downstream of module.edges) {
-            if (downstream.source === originalTargetId) {
-              downstream.source = edge.source;
-              downstream.sourcePort = edge.sourcePort;
-              downstream.signal = targetNode.metadata?.expression || tapSignal;
-              downstream.id = edgeId(downstream.source, downstream.target, downstream.signal);
-            }
-          }
-          module.edges = module.edges.filter(e => e.id !== edge.id);
-        }
-        module.nodes = module.nodes.filter(n => n.id !== originalTargetId);
-      } else if (breakout && input && output) {
-        edge.target = breakout.id;
-        edge.targetPort = input.id;
-        edge.id = edgeId(edge.source, edge.target, edge.signal);
-
-        if (!module.edges.some((candidate) => (
-          candidate.source === breakout.id
-          && candidate.sourcePort === output.id
-          && candidate.target === originalTargetId
-          && candidate.targetPort === originalTargetPortId
-        ))) {
-          additions.push({
-            id: edgeId(breakout.id, originalTargetId, tapSignal),
-            source: breakout.id,
-            sourcePort: output.id,
-            target: originalTargetId,
-            targetPort: originalTargetPortId,
-            signal: tapSignal,
-            width: output.width ?? edge.width,
-            metadata: { aggregate: undefined }
-          });
-        }
-      }
-    }
-
-    module.edges.push(...additions);
-  }
-}
 
 
 function emptyGraph(): DesignGraph {

@@ -49,65 +49,44 @@ TEST(ExtractorTest, BusBreakoutOutputsExpectedNodes) {
 
     EXPECT_EQ(result["rootModules"], nlohmann::json::array({"bus_breakout"}));
 
-    bool found_comb_a = false;
-    bool found_comb_b = false;
-    bool found_edge_a_to_output = false;
-    bool found_edge_b_to_output = false;
+    // collapseAliasCombNodes removes the [alias] comb wire-rename nodes and
+    // creates direct bus-tap → module-output-port edges instead.
+    bool found_bus_node = false;
     bool found_edge_bus_to_a = false;
     bool found_edge_bus_to_b = false;
 
     for (const auto& node : (*bus_breakout)["nodes"]) {
-        if (node["id"] == "comb:bus_breakout:a:alias") {
-            found_comb_a = true;
-            EXPECT_EQ(node["kind"], "comb");
-            EXPECT_EQ(node["metadata"]["expression"], "[alias]");
-            bool has_output_a = false;
-            bool has_input_bus = false;
+        if (node["id"] == "bus:bus_breakout:bus_in") {
+            found_bus_node = true;
+            EXPECT_EQ(node["kind"], "bus");
+            bool has_tap0 = false, has_tap1 = false, has_input = false;
             for (const auto& port : node["ports"]) {
-                if (port["name"] == "a" && port["direction"] == "output") has_output_a = true;
-                if (port["name"] == "bus_in" && port["direction"] == "input") has_input_bus = true;
+                if (port["name"] == "[0]" && port["direction"] == "output") has_tap0 = true;
+                if (port["name"] == "[1]" && port["direction"] == "output") has_tap1 = true;
+                if (port["name"] == "bus_in" && port["direction"] == "input") has_input = true;
             }
-            EXPECT_TRUE(has_output_a);
-            EXPECT_TRUE(has_input_bus);
+            EXPECT_TRUE(has_tap0);
+            EXPECT_TRUE(has_tap1);
+            EXPECT_TRUE(has_input);
         }
-        if (node["id"] == "comb:bus_breakout:b:alias") {
-            found_comb_b = true;
-            EXPECT_EQ(node["kind"], "comb");
-            EXPECT_EQ(node["metadata"]["expression"], "[alias]");
-            bool has_output_b = false;
-            bool has_input_bus = false;
-            for (const auto& port : node["ports"]) {
-                if (port["name"] == "b" && port["direction"] == "output") has_output_b = true;
-                if (port["name"] == "bus_in" && port["direction"] == "input") has_input_bus = true;
-            }
-            EXPECT_TRUE(has_output_b);
-            EXPECT_TRUE(has_input_bus);
-        }
+        // Alias combs are collapsed; they should NOT appear as nodes.
+        EXPECT_NE(node["id"], "comb:bus_breakout:a:alias");
+        EXPECT_NE(node["id"], "comb:bus_breakout:b:alias");
     }
 
     for (const auto& edge : (*bus_breakout)["edges"]) {
-        if (edge["source"] == "comb:bus_breakout:a:alias" && edge["target"] == "self" &&
-            edge["sourcePort"] == "a" && edge["targetPort"] == "a") {
-            found_edge_a_to_output = true;
-        }
-        if (edge["source"] == "comb:bus_breakout:b:alias" && edge["target"] == "self" &&
-            edge["sourcePort"] == "b" && edge["targetPort"] == "b") {
-            found_edge_b_to_output = true;
-        }
-        if (edge["source"] == "bus:bus_breakout:bus_in" && edge["target"] == "comb:bus_breakout:a:alias" &&
-            edge["sourcePort"] == "[0]" && edge["targetPort"] == "bus_in") {
+        // After alias collapse: bus taps wire directly to module output ports.
+        if (edge["source"] == "bus:bus_breakout:bus_in" && edge["target"] == "self" &&
+            edge["sourcePort"] == "[0]" && edge["targetPort"] == "a") {
             found_edge_bus_to_a = true;
         }
-        if (edge["source"] == "bus:bus_breakout:bus_in" && edge["target"] == "comb:bus_breakout:b:alias" &&
-            edge["sourcePort"] == "[1]" && edge["targetPort"] == "bus_in") {
+        if (edge["source"] == "bus:bus_breakout:bus_in" && edge["target"] == "self" &&
+            edge["sourcePort"] == "[1]" && edge["targetPort"] == "b") {
             found_edge_bus_to_b = true;
         }
     }
 
-    EXPECT_TRUE(found_comb_a);
-    EXPECT_TRUE(found_comb_b);
-    EXPECT_TRUE(found_edge_a_to_output);
-    EXPECT_TRUE(found_edge_b_to_output);
+    EXPECT_TRUE(found_bus_node);
     EXPECT_TRUE(found_edge_bus_to_a);
     EXPECT_TRUE(found_edge_bus_to_b);
 }

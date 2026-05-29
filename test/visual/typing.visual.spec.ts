@@ -62,4 +62,27 @@ test.describe('typing support visual rendering', () => {
 
     await expectGraphAndScreenshot(page,'struct-wires-without-type-label.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders parametric port widths as clickable parameter tokens', async ({ page }) => {
+    // Verify that WIDTH in data_o [WIDTH-1:0] renders as a svsch-param-token
+    // (clickable link that navigates to the parameter declaration).
+    await openFixture(page, 'parameter_sizing.sv', 'auto', 'many_param_child');
+
+    const dataOutPort = page.locator('[data-node-id="port:many_param_child:data_o"]');
+    await expect(dataOutPort).toBeVisible();
+    // The port width should show [WIDTH-1:0] with WIDTH as a clickable token.
+    await expect(dataOutPort).toContainText('[WIDTH-1:0]');
+    const widthToken = dataOutPort.locator('.svsch-param-token', { hasText: 'WIDTH' }).first();
+    await expect(widthToken).toBeVisible();
+
+    // Clicking the token should fire a NAVIGATE message to the parameter declaration.
+    const messagePromise = page.waitForEvent('console', (message) => message.text().startsWith('NAVIGATE:'));
+    await widthToken.click();
+    const message = await messagePromise;
+    const posted = JSON.parse(message.text().slice('NAVIGATE:'.length).trim());
+    expect(posted).toMatchObject({
+      type: 'navigateToSource',
+      source: { file: 'parameter_sizing.sv' }
+    });
+  });
 });
