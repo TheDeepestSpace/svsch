@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 
 type WebviewMessage =
@@ -16,6 +16,7 @@ type WebviewMessage =
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
+  | { type: 'rerouteEdge'; moduleName: string; edgeId: string; nodes: PositionedNode[] }
   | { type: 'cutNet'; moduleName: string; edge: DiagramEdge; nodes: PositionedNode[] }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
@@ -306,6 +307,11 @@ export class DiagramPanel {
       await this.rerouteCurrentModule(message.moduleName, message.nodes);
       return;
     }
+    if (message.type === 'rerouteEdge') {
+      this.currentModule = message.moduleName;
+      await this.rerouteSingleEdge(message.moduleName, message.edgeId, message.nodes);
+      return;
+    }
     if (message.type === 'layoutChanged') {
       await this.saveLayout(message.moduleName, message.nodes);
       return;
@@ -423,6 +429,18 @@ export class DiagramPanel {
     const store = new LayoutStore(workspaceRoot);
     const base = await store.read();
     this.layout = mergeRerouteLayout(base, moduleName, nodes);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async rerouteSingleEdge(moduleName: string, edgeId: string, nodes: PositionedNode[]): Promise<void> {
+    const workspaceRoot = workspaceRootPath();
+    if (!workspaceRoot) {
+      return;
+    }
+    const store = new LayoutStore(workspaceRoot);
+    const base = await store.read();
+    this.layout = mergeRerouteSingleEdge(base, moduleName, edgeId, nodes);
     await store.write(this.layout);
     await this.postView();
   }

@@ -2224,7 +2224,7 @@ function DiagramApp(): React.ReactElement {
               </option>
             ))}
           </select>
-          <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute</button>
+          <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
           <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
         </header>
         {view.diagnostics.length > 0 && (

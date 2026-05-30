@@ -1732,6 +1732,22 @@ export function mergeRerouteLayout(layout: SavedLayout, moduleName: string, node
   return next;
 }
 
+export function mergeRerouteSingleEdge(layout: SavedLayout, moduleName: string, edgeId: string, nodes: PositionedNode[]): SavedLayout {
+  const fixedNodes = nodes.map((node) => ({
+    ...node,
+    fixed: true
+  }));
+  const next = mergeNodePositions(layout, moduleName, fixedNodes);
+  const existing = next.modules[moduleName] ?? { nodes: {} };
+  const { [edgeId]: _removed, ...remainingEdges } = existing.edges ?? {};
+
+  next.modules[moduleName] = {
+    ...existing,
+    edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined
+  };
+  return next;
+}
+
 export function mergeEdgeWaypoint(
   layout: SavedLayout,
   moduleName: string,

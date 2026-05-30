@@ -58,6 +58,28 @@ Feature: Diagram Interaction
     And I reset the layout
     Then the port node "a" should not have moved
 
+  Scenario: Rerouting a single connection without affecting other routes or positions
+    Given a SystemVerilog module:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = b;
+        assign y = a;
+      endmodule
+      """
+    When I move the port node "a" to (120, 132)
+    And I move the port node "y" to (480, 252)
+    And I force the connection between "a" and "y" to pass through (240, 468)
+    And I force the connection between "b" and "x" to pass through (240, 100)
+    And I note the route of the connection between "a" and "y"
+    And I note the route of the connection between "b" and "x"
+    And I note the position of port node "a"
+    And I note the position of port node "y"
+    And I hover the connection between "a" and "y" and click its Reroute control
+    Then the route of the connection between "a" and "y" should have changed
+    And the route of the connection between "b" and "x" should not have changed
+    And the port node "a" should not have moved
+    And the port node "y" should not have moved
+
   Scenario: Rerouting without moving blocks
     Given a SystemVerilog module:
       """

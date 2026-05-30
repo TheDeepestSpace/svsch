@@ -1242,7 +1242,7 @@ test.describe('edge route editing', () => {
     await waitForViewportTransformToSettle(page);
 
     await page.locator('.react-flow__edge[data-id="edge-a-to-x"] path.svsch-edge-bridge').hover({ force: true });
-    await page.locator('.react-flow__edge[data-id="edge-a-to-x"] .svsch-edge-cut-control button').click();
+    await page.locator('.react-flow__edge[data-id="edge-a-to-x"] .svsch-edge-cut-control').click();
 
     await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
       type: 'cutNet',
@@ -1389,6 +1389,18 @@ test.describe('edge route editing', () => {
     await waitForViewportTransformToSettle(page);
 
     await expectGraphAndScreenshot(page, 'cut-net-label-register-clock.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('shows joined reroute and cut controls on edge hover', async ({ page }) => {
+    await openView(page, createSingleAssignmentRouteEditView());
+    await page.waitForSelector('[data-node-id="source:a"]');
+    await waitForViewportTransformToSettle(page);
+
+    await hoverEdgeBridge(page, 'edge-a-to-y');
+    await page.waitForSelector('.svsch-edge-connection-controls');
+    await page.waitForTimeout(100);
+
+    await expectGraphAndScreenshot(page, 'edge-connection-controls-hover.png', { clip: await paddedGraphClip(page) });
   });
 
   test('keeps an over-dragged assignment segment editable after clamping to the target lead', async ({ page }) => {

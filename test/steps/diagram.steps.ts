@@ -1,7 +1,7 @@
 import { Given, When, Then, Before, After, setWorldConstructor, World, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium, type Browser, type Page, expect } from '@playwright/test';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -255,7 +255,7 @@ When('I reset the layout', async function (this: CustomWorld) {
 });
 
 When('I reroute the diagram', async function (this: CustomWorld) {
-  await this.page!.click('button:has-text("Reroute")');
+  await this.page!.click('button:has-text("Reroute All")');
 
   const moduleName = this.lastViewModel.moduleName;
   const flowNodes = await this.page!.evaluate(() => {
@@ -370,7 +370,7 @@ async function cutNetByClickingControl(world: CustomWorld, source: string, targe
   await world.page!.waitForTimeout(500);
 
   const clicked = await edgeLocator.evaluate((node) => {
-    const btn = node.querySelector('.svsch-edge-cut-control button') as HTMLButtonElement;
+    const btn = node.querySelector('.svsch-edge-cut-control') as HTMLButtonElement;
     if (btn) {
       btn.click();
       return true;
@@ -390,6 +390,57 @@ async function cutNetByClickingControl(world: CustomWorld, source: string, targe
   world.layout = mergeNetCut(world.layout, moduleName, cutMessage?.edge ?? edge, world.lastGraph.modules[moduleName], positioned);
   await postCurrentView(world, 'After cut net');
 }
+
+When('I hover the connection between {string} and {string} and click its Reroute control', async function (this: CustomWorld, source: string, target: string) {
+  const moduleName = this.lastViewModel.moduleName;
+  const sourceId = await findNodeIdByLabel(this.page!, source);
+  const targetId = await findNodeIdByLabel(this.page!, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+
+  const edge = this.lastViewModel.edges.find((candidate: any) => (
+    candidate.source === sourceId
+    && candidate.target === targetId
+    && candidate.metadata?.cutStub === undefined
+  ));
+  if (!edge) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+
+  const edgeLocator = this.page!.locator(`.react-flow__edge[data-id="${edge.id}"]`);
+  const bridge = edgeLocator.locator('path.svsch-edge-bridge');
+
+  await bridge.evaluate((path) => {
+    path.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    path.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+  });
+  await this.page!.waitForTimeout(500);
+
+  const clicked = await edgeLocator.evaluate((node) => {
+    const btn = node.querySelector('.svsch-edge-reroute-control') as HTMLButtonElement;
+    if (btn) {
+      btn.click();
+      return true;
+    }
+    return false;
+  });
+
+  if (!clicked) throw new Error(`Could not find or click reroute control button for edge ${edge.id}`);
+
+  await expect.poll(async () => {
+    const messages = await webviewMessages(this.page!);
+    return messages.some((message: any) => message.type === 'rerouteEdge' && message.edgeId === edge.id);
+  }, { timeout: 10000 }).toBe(true);
+
+  const rerouteMessage = (await webviewMessages(this.page!)).reverse().find((message: any) => message.type === 'rerouteEdge' && message.edgeId === edge.id) as any;
+  const positioned = rerouteMessage?.nodes?.length ? rerouteMessage.nodes : await currentPositionedNodes(this.page!, this.lastViewModel.nodes);
+  this.layout = mergeRerouteSingleEdge(this.layout, moduleName, edge.id, positioned);
+  await postCurrentView(this, 'After reroute single edge');
+});
+
+Then('the route of the connection between {string} and {string} should not have changed', async function (this: CustomWorld, source: string, target: string) {
+  const initialRoute = this.notedRoutes.get(routeKey(source, target));
+  if (!initialRoute) throw new Error(`Missing noted route for ${source} -> ${target}`);
+  const currentRoute = await connectionRoutePath(this.page!, source, target);
+  expect(currentRoute).toBe(initialRoute);
+});
 
 When('I rename the cut net {string} to {string}', async function (this: CustomWorld, currentLabel: string, nextLabel: string) {
   const moduleName = this.lastViewModel.moduleName;

@@ -880,35 +880,60 @@ export function OrthogonalEdge({
       })}
       {showCutButton && (
         <foreignObject
-          width={42}
+          width={110}
           height={24}
-          x={cutButtonPoint.x - 21}
+          x={cutButtonPoint.x - 55}
           y={cutButtonPoint.y - 34}
-          className="svsch-edge-cut-control"
+          className="svsch-edge-connection-controls"
           onMouseEnter={keepEdgeHover}
           onMouseLeave={releaseEdgeHover}
         >
-          <button
-            type="button"
-            title="Cut net"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (!diagramEdge || !edgeData?.moduleName) {
-                return;
-              }
-              vscode.postMessage({
-                type: 'cutNet',
-                moduleName: edgeData.moduleName,
-                edge: diagramEdge,
-                nodes: positionedNodesFromFlowNodes(flowNodes)
-              });
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Cut
-          </button>
+          <div className="svsch-edge-connection-controls-inner">
+            <button
+              type="button"
+              className="svsch-edge-reroute-control"
+              title="Reroute this connection"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                vscode.postMessage({
+                  type: 'rerouteEdge',
+                  moduleName: edgeData.moduleName,
+                  edgeId: diagramEdge.id,
+                  nodes: positionedNodesFromFlowNodes(flowNodes)
+                });
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Reroute
+            </button>
+            <button
+              type="button"
+              className="svsch-edge-cut-control"
+              title="Cut net"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                vscode.postMessage({
+                  type: 'cutNet',
+                  moduleName: edgeData.moduleName,
+                  edge: diagramEdge,
+                  nodes: positionedNodesFromFlowNodes(flowNodes)
+                });
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Cut
+            </button>
+          </div>
         </foreignObject>
       )}
       {label && (
