@@ -4,7 +4,11 @@
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
   "version": "0.0.1",
   "publisher": "svsch",
-  "license": "MIT",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheDeepestSpace/vscode-svsch"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
