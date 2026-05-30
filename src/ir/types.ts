@@ -92,6 +92,7 @@ export interface DiagramNodeMetadata {
   arrayDimension?: string;
   arraySize?: number;
   arrayIndexSignal?: string;
+  handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
 }
 
 export interface BaseDiagramNode {
@@ -132,6 +133,7 @@ export interface BaseDiagramNode {
   arrayDimension?: string;
   arraySize?: number;
   arrayIndexSignal?: string;
+  handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
 
   /** Legacy backend payload. Prefer the typed fields above for new code. */
   metadata?: DiagramNodeMetadata;
@@ -177,6 +179,7 @@ export type DiagramNode =
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
+  forceStraight?: boolean;
 }
 
 export interface DiagramEdge {
