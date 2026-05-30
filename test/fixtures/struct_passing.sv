@@ -1,29 +1,29 @@
 typedef struct packed {
-  logic [3:0] a;
-  logic b;
+    logic [7:0] a;
+    logic [7:0] b;
 } my_struct_t;
 
-module producer(
-  output my_struct_t out_struct
+module struct_mux (
+    input sel,
+    input my_struct_t in1,
+    input my_struct_t in2,
+    output my_struct_t out
 );
-  assign out_struct.a = 4'hA;
-  assign out_struct.b = 1'b1;
+
+// Using a slightly more complex expression to force promotion to a comb node
+assign out = (sel) ? in1 : in2;
+
 endmodule
 
-module consumer(
-  input my_struct_t in_struct,
-  output logic [3:0] a_out,
-  output logic b_out
+module struct_complex (
+    input sel,
+    input my_struct_t in1,
+    input my_struct_t in2,
+    output my_struct_t out
 );
-  assign a_out = in_struct.a;
-  assign b_out = in_struct.b;
-endmodule
 
-module top(
-  output logic [3:0] a,
-  output logic b
-);
-  my_struct_t s;
-  producer p(s);
-  consumer c(s, a, b);
+// Complex expression that is NOT a mux but results in a struct
+// (Packed structs can be XORed)
+assign out = in1 ^ in2;
+
 endmodule

@@ -525,6 +525,7 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
     }
     n.ports.push_back({out_signal, "output", out_signal, width, display_label});
     mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
     return out_signal;
 }
 
@@ -595,6 +596,7 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
     }
     n.ports.push_back({out_signal, "output", out_signal, width, display_label});
     mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
     return out_signal;
 }
 
@@ -709,6 +711,7 @@ std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, co
     }
     n.ports.push_back({out_signal, "output", out_signal, width, display_label});
     mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
     return out_signal;
 }
 

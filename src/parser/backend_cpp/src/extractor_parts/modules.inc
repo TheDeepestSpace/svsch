@@ -1126,6 +1126,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     }
 
     if (in_signal != out_signal && !in_signal.empty()) {
+        propagateStruct(mod, in_signal, out_signal);
         if (!is_simple_rhs) {
             bool already_driven = false;
             if (!is_procedural) {

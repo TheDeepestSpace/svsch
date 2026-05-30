@@ -1018,7 +1018,8 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerStatement(
             std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
             result[target] = lowerAssignment(stmt, mod, branch_pref, is_clocked, result);
         }
-    } else if (type == vpiEventControl) {
+    }
+ else if (type == vpiEventControl) {
         result = lowerStatement(vpi_handle(vpiStmt, stmt), mod, is_clocked, desired_outputs, source_handle, result);
     } else {
         std::vector<vpiHandle> assigns;
@@ -1057,14 +1058,15 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
 
     std::map<std::string, std::string> true_outputs, false_outputs;
     for (const auto& target : targets) {
-        true_outputs[target] = target + "_if_true";
-        false_outputs[target] = target + "_if_false";
+        std::string nid = nextId();
+        true_outputs[target] = target + "_if_true_" + nid;
+        false_outputs[target] = target + "_if_false_" + nid;
     }
 
     auto tvs = lowerStatement(true_stmt, mod, is_clocked, true_outputs, source_handle, current_drivers);
     auto fvs = lowerStatement(false_stmt, mod, is_clocked, false_outputs, source_handle, current_drivers);
 
-    std::string sel_signal = getOrPromoteExpr(cond, mod, "if_sel_" + nextId(), is_clocked);
+    std::string sel_signal = getOrPromoteExpr(cond, mod, "if_sel_" + nextId(), is_clocked, current_drivers);
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
@@ -1103,7 +1105,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
         }
 
         Node mux;
-        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal);
+        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
         mux.label = "if " + sel_signal;
         mux.source = getSourceInfo(stmt);
@@ -1115,6 +1117,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
         mux.ports.push_back({"false", "input", false_val.signal, false_val.width, "false"});
         mux.ports.push_back({"out", "output", output_signal, target_width});
         mod.nodes.push_back(mux);
+        propagateStruct(mod, target, output_signal);
 
         if (!is_clocked && missing_branch && final_output && !current_drivers.count(target)) {
             ensureInferredLatch(mod, target, output_signal, target_width, source_handle ? source_handle : stmt);
@@ -1157,37 +1160,41 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     if (targets.empty()) return result;
 
     std::map<vpiHandle, std::map<std::string, LoweredValue>> item_results;
-    std::map<vpiHandle, std::string> item_labels;
+    std::map<vpiHandle, std::vector<std::string>> item_labels;
 
     for (vpiHandle item : items) {
         vpiHandle expr_itr = vpi_iterate(vpiExpr, item);
-        std::string label = "default";
+        std::vector<std::string> labels;
         if (expr_itr) {
-            vpiHandle e = vpi_scan(expr_itr);
-            if (e) {
+            while (vpiHandle e = vpi_scan(expr_itr)) {
                 const char* d = vpi_get_str(vpiDecompile, e);
-                if (d) label = d; else label = getSignalName(e);
+                if (d) labels.push_back(d); else labels.push_back(getSignalName(e));
             }
             vpi_release_handle(expr_itr);
         }
-        item_labels[item] = label;
+        if (labels.empty()) labels.push_back("default");
+        item_labels[item] = labels;
 
+        std::string label_ref = labels[0];
         std::map<std::string, std::string> branch_outputs;
-        for (const auto& target : targets) branch_outputs[target] = target + "_" + sanitize(label);
+        for (const auto& target : targets) branch_outputs[target] = target + "_" + sanitize(label_ref);
         item_results[item] = lowerStatement(vpi_handle(vpiStmt, item), mod, is_clocked, branch_outputs, source_handle, current_drivers);
     }
 
     std::string sel_pref = "";
     if (!targets.empty()) sel_pref = *targets.begin() + "_sel";
-    std::string sel_signal = getOrPromoteExpr(cond, mod, sel_pref, is_clocked);
+    std::string sel_signal = getOrPromoteExpr(cond, mod, sel_pref, is_clocked, current_drivers);
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
     for (const auto& target : targets) {
         std::string target_width = getDeclaredSignalWidth(mod, target);
         
+        bool final_output = desired_outputs.count(target) > 0;
+        std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
+        
         Node mux;
-        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal);
+        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
         mux.label = "case " + sel_signal;
         mux.source = getSourceInfo(stmt);
@@ -1197,14 +1204,16 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
         mux.ports.push_back({"sel", "input", sel_signal, sel_width});
 
         for (vpiHandle item : items) {
-            std::string label = item_labels[item];
+            auto const& labels = item_labels[item];
             auto const& branch_values = item_results[item];
             LoweredValue branch_val = branch_values.count(target) ? branch_values.at(target) : (current_drivers.count(target) ? current_drivers.at(target) : LoweredValue{true, target, target_width});
             
             if (target_width.empty() && !branch_val.width.empty()) target_width = branch_val.width;
             if (branch_val.width.empty()) branch_val.width = target_width;
 
-            mux.ports.push_back({label, "input", branch_val.signal, branch_val.width, label});
+            for (const auto& label : labels) {
+                mux.ports.push_back({label, "input", branch_val.signal, branch_val.width, label});
+            }
         }
 
         if (!has_default && current_drivers.count(target)) {
@@ -1213,15 +1222,13 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
              has_default = true;
         }
 
-        bool final_output = desired_outputs.count(target) > 0;
-        std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
-        
         if (!is_clocked && !has_default && final_output && !current_drivers.count(target)) {
              output_signal = target + "_latch_d";
         }
 
         mux.ports.push_back({"out", "output", output_signal, target_width});
         mod.nodes.push_back(mux);
+        propagateStruct(mod, target, output_signal);
 
         if (!is_clocked && !has_default && final_output && !current_drivers.count(target)) {
             ensureInferredLatch(mod, target, output_signal, target_width, source_handle ? source_handle : stmt);
