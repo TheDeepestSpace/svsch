@@ -1064,7 +1064,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
     auto tvs = lowerStatement(true_stmt, mod, is_clocked, true_outputs, source_handle, current_drivers);
     auto fvs = lowerStatement(false_stmt, mod, is_clocked, false_outputs, source_handle, current_drivers);
 
-    std::string sel_signal = getOrPromoteExpr(cond, mod, "if_sel_" + nextId(), is_clocked);
+    std::string sel_signal = getOrPromoteExpr(cond, mod, "if_sel_" + nextId(), is_clocked, current_drivers);
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
@@ -1179,7 +1179,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
 
     std::string sel_pref = "";
     if (!targets.empty()) sel_pref = *targets.begin() + "_sel";
-    std::string sel_signal = getOrPromoteExpr(cond, mod, sel_pref, is_clocked);
+    std::string sel_signal = getOrPromoteExpr(cond, mod, sel_pref, is_clocked, current_drivers);
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
