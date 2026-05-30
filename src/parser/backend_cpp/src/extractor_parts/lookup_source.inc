@@ -160,6 +160,105 @@ void DesignExtractor::buildEdges(Module& mod) {
     collapseAliasCombNodes(mod);
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
+    unifyNetPropagation(mod);
+}
+
+void DesignExtractor::unifyNetPropagation(Module& mod) {
+    struct DriverInfo {
+        std::string nodeId;
+        std::string portId;
+        std::string width;
+    };
+    std::map<std::string, DriverInfo> signalDrivers;
+
+    // 1. Module input ports are drivers.
+    for (const auto& p : mod.ports) {
+        if (p.direction == "input" || p.direction == "inout") {
+            signalDrivers[p.name] = {"self", p.name, p.width};
+        }
+    }
+
+    // 2. Identify drivers for each signal from existing edges.
+    // If an edge targets a module output port, its source is the driver for that port's signal.
+    for (const auto& edge : mod.edges) {
+        if (edge.target == "self") {
+            for (const auto& p : mod.ports) {
+                if (p.name == edge.targetPort && p.direction == "output") {
+                    signalDrivers[p.name] = {edge.source, edge.sourcePort, edge.width};
+                }
+            }
+        }
+    }
+
+    // 3. Also consider any edge as a potential driver for its signal if not already known.
+    for (const auto& edge : mod.edges) {
+        if (!edge.signal.empty() && signalDrivers.find(edge.signal) == signalDrivers.end()) {
+             // If source is not "self" or it's an input port, it's a driver.
+             bool source_is_output_port = false;
+             if (edge.source == "self") {
+                 for (const auto& p : mod.ports) {
+                     if (p.name == edge.sourcePort && p.direction == "output") {
+                         source_is_output_port = true;
+                         break;
+                     }
+                 }
+             }
+             if (!source_is_output_port) {
+                 signalDrivers[edge.signal] = {edge.source, edge.sourcePort, edge.width};
+             }
+        }
+    }
+
+    // 4. Re-route edges that incorrectly use an output port as a source.
+    for (auto& edge : mod.edges) {
+        if (edge.source == "self") {
+            bool is_output = false;
+            for (const auto& p : mod.ports) {
+                if (p.name == edge.sourcePort && p.direction == "output") {
+                    is_output = true;
+                    break;
+                }
+            }
+
+            if (is_output) {
+                auto it = signalDrivers.find(edge.sourcePort);
+                if (it != signalDrivers.end() && it->second.nodeId != "self") {
+                    edge.source = it->second.nodeId;
+                    edge.sourcePort = it->second.portId;
+                }
+            }
+        }
+    }
+
+    // 5. Handle "floating" nodes (bus, struct, select, replicate) with signal matching.
+    for (const auto& node : mod.nodes) {
+        if (node.kind != "bus" && node.kind != "struct" && node.kind != "select" && node.kind != "replicate") continue;
+        for (const auto& port : node.ports) {
+            if (port.direction != "input" || port.signal.empty()) continue;
+
+            bool has_incoming = false;
+            for (const auto& e : mod.edges) {
+                if (e.target == node.id && e.targetPort == port.name) {
+                    has_incoming = true;
+                    break;
+                }
+            }
+
+            if (!has_incoming) {
+                auto it = signalDrivers.find(port.signal);
+                if (it != signalDrivers.end()) {
+                    Edge e;
+                    e.source = it->second.nodeId;
+                    e.sourcePort = it->second.portId;
+                    e.target = node.id;
+                    e.targetPort = port.name;
+                    e.signal = port.signal;
+                    e.width = it->second.width.empty() ? port.width : it->second.width;
+                    mod.edges.push_back(e);
+                }
+            }
+        }
+    }
 }
 
 std::string DesignExtractor::getSignalName(vpiHandle handle, const std::map<std::string, LoweredValue>& current_drivers) {

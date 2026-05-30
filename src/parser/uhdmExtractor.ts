@@ -1570,38 +1570,18 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             })
         };
         for (const node of module.nodes) {
-            if (node.kind !== 'replicate') continue;
-            for (const port of node.ports) {
-                const declaredWidth = module.ports.find((modulePort) => modulePort.name === port.connectedSignal)?.width
-                    ?? findDeclaredWidth(sourceTextCache, rawMod.file, port.connectedSignal);
-                if (declaredWidth && (!port.width || port.width === '[0:0]')) {
-                    port.width = declaredWidth;
-                }
-            }
-        }
-
-        for (const node of module.nodes) {
-            if (node.kind !== 'select') continue;
-            for (const port of node.ports) {
-                if (port.direction === 'input' && port.connectedSignal) {
-                    const declaredWidth = module.ports.find((modulePort) => modulePort.name === port.connectedSignal)?.width
-                        ?? findDeclaredWidth(sourceTextCache, rawMod.file, port.connectedSignal);
-                    if (declaredWidth && (!port.width || port.width === '[0:0]')) {
-                        port.width = declaredWidth;
+            if (node.kind === 'replicate' || node.kind === 'select') {
+                for (const port of node.ports) {
+                    if (port.direction === 'input' && port.connectedSignal) {
+                        const declaredWidth = module.ports.find((modulePort) => modulePort.name === port.connectedSignal)?.width
+                            ?? findDeclaredWidth(sourceTextCache, rawMod.file, port.connectedSignal);
+                        if (declaredWidth && (!port.width || port.width === '[0:0]')) {
+                            port.width = declaredWidth;
+                        }
                     }
                 }
             }
-        }
 
-        for (const edge of module.edges) {
-            const sourceNode = module.nodes.find((node) => node.id === edge.source);
-            const sourcePort = sourceNode?.ports.find((port) => port.id === edge.sourcePort || port.name === edge.sourcePort);
-            if (sourcePort?.width) {
-                edge.width = sourcePort.width;
-            }
-        }
-
-        for (const node of module.nodes) {
             if (node.kind === 'latch' && node.metadata?.inferred) {
                 graph.diagnostics.push({
                     severity: 'warning',
@@ -1611,21 +1591,12 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             }
         }
 
-
-        for (const node of module.nodes) {
-            if (node.kind !== 'select') continue;
-            for (const port of node.ports) {
-                if (port.direction === 'input' && port.connectedSignal) {
-                    const declaredWidth = module.ports.find((modulePort) => modulePort.name === port.connectedSignal)?.width
-                        ?? findDeclaredWidth(sourceTextCache, rawMod.file, port.connectedSignal);
-                    if (declaredWidth && (!port.width || port.width === '[0:0]')) port.width = declaredWidth;
-                }
-            }
-        }
         for (const edge of module.edges) {
             const sourceNode = module.nodes.find((node) => node.id === edge.source);
             const sourcePort = sourceNode?.ports.find((port) => port.id === edge.sourcePort || port.name === edge.sourcePort);
-            if (sourcePort?.width) edge.width = sourcePort.width;
+            if (sourcePort?.width) {
+                edge.width = sourcePort.width;
+            }
         }
         
         graph.modules[modName] = module;

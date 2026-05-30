@@ -308,6 +308,7 @@ private:
     void collapseAliasCombNodes(Module& mod);
     void repairInterfaceAssignmentsC(Module& mod);
     void synthesizeBusCompositionNodes(Module& mod);
+    void unifyNetPropagation(Module& mod);
     std::string resolveSignalWidth(const Module& mod, const std::string& signal, const std::string& fallback_width);
 
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});
