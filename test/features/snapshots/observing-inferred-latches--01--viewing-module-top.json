@@ -26,7 +26,7 @@
       }
     },
     {
-      "id": "mux:top:q:en",
+      "id": "mux:top:q:en:q_latch_d",
       "type": "hdl",
       "position": {
         "x": 480,
@@ -123,9 +123,9 @@
   ],
   "edges": [
     {
-      "id": "edge:latch:top:q:mux:top:q:en:q",
+      "id": "edge:latch:top:q:mux:top:q:en:q_latch_d:q",
       "source": "latch:top:q",
-      "target": "mux:top:q:en",
+      "target": "mux:top:q:en:q_latch_d",
       "sourceHandle": "q",
       "targetHandle": "in:false",
       "path": "M 243 240 L 264 240 L 288 240 L 288 168 L 456 168 L 480 168"
@@ -139,25 +139,25 @@
       "path": "M 243 240 L 264 240 L 456 240 L 480 240"
     },
     {
-      "id": "edge:mux:top:q:en:latch:top:q:q_latch_d",
-      "source": "mux:top:q:en",
+      "id": "edge:mux:top:q:en:q_latch_d:latch:top:q:q_latch_d",
+      "source": "mux:top:q:en:q_latch_d",
       "target": "latch:top:q",
       "sourceHandle": "out",
       "targetHandle": "d",
       "path": "M 576 144 L 600 144 L 600 288 L 0 288 L 0 240 L 24 240 L 45 240"
     },
     {
-      "id": "edge:port:top:d:mux:top:q:en:d",
+      "id": "edge:port:top:d:mux:top:q:en:q_latch_d:d",
       "source": "port:top:d",
-      "target": "mux:top:q:en",
+      "target": "mux:top:q:en:q_latch_d",
       "sourceHandle": "port:d",
       "targetHandle": "in:true",
       "path": "M 240 144 L 264 144 L 456 144 L 480 144"
     },
     {
-      "id": "edge:port:top:en:mux:top:q:en:en",
+      "id": "edge:port:top:en:mux:top:q:en:q_latch_d:en",
       "source": "port:top:en",
-      "target": "mux:top:q:en",
+      "target": "mux:top:q:en:q_latch_d",
       "sourceHandle": "port:en",
       "targetHandle": "sel",
       "path": "M 240 48 L 264 48 L 528 48 L 528 72 L 528 120"

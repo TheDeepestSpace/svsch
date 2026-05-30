@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "mux:mux_wired:y:sel",
+      "id": "mux:mux_wired:y:sel:y",
       "type": "hdl",
       "position": {
         "x": 360,
@@ -118,33 +118,33 @@
   ],
   "edges": [
     {
-      "id": "edge:mux:mux_wired:y:sel:port:mux_wired:y:y",
-      "source": "mux:mux_wired:y:sel",
+      "id": "edge:mux:mux_wired:y:sel:y:port:mux_wired:y:y",
+      "source": "mux:mux_wired:y:sel:y",
       "target": "port:mux_wired:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
       "path": "M 504 144 L 528 144 L 696 144 L 720 144"
     },
     {
-      "id": "edge:port:mux_wired:a:mux:mux_wired:y:sel:a_wire",
+      "id": "edge:port:mux_wired:a:mux:mux_wired:y:sel:y:a_wire",
       "source": "port:mux_wired:a",
-      "target": "mux:mux_wired:y:sel",
+      "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
       "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
-      "id": "edge:port:mux_wired:b:mux:mux_wired:y:sel:b_wire",
+      "id": "edge:port:mux_wired:b:mux:mux_wired:y:sel:y:b_wire",
       "source": "port:mux_wired:b",
-      "target": "mux:mux_wired:y:sel",
+      "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:default",
       "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
     },
     {
-      "id": "edge:port:mux_wired:sel:mux:mux_wired:y:sel:sel",
+      "id": "edge:port:mux_wired:sel:mux:mux_wired:y:sel:y:sel",
       "source": "port:mux_wired:sel",
-      "target": "mux:mux_wired:y:sel",
+      "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
       "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 120"

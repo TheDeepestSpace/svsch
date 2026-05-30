@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "mux:mux_three_inputs:y:sel",
+      "id": "mux:mux_three_inputs:y:sel:y",
       "type": "hdl",
       "position": {
         "x": 360,
@@ -143,41 +143,41 @@
   ],
   "edges": [
     {
-      "id": "edge:mux:mux_three_inputs:y:sel:port:mux_three_inputs:y:y",
-      "source": "mux:mux_three_inputs:y:sel",
+      "id": "edge:mux:mux_three_inputs:y:sel:y:port:mux_three_inputs:y:y",
+      "source": "mux:mux_three_inputs:y:sel:y",
       "target": "port:mux_three_inputs:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
       "path": "M 504 168 L 528 168 L 696 168 L 720 168"
     },
     {
-      "id": "edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:a",
+      "id": "edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a",
       "source": "port:mux_three_inputs:a",
-      "target": "mux:mux_three_inputs:y:sel",
+      "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:2_d0",
       "path": "M 144 120 L 168 120 L 216 120 L 216 144 L 336 144 L 360 144"
     },
     {
-      "id": "edge:port:mux_three_inputs:b:mux:mux_three_inputs:y:sel:b",
+      "id": "edge:port:mux_three_inputs:b:mux:mux_three_inputs:y:sel:y:b",
       "source": "port:mux_three_inputs:b",
-      "target": "mux:mux_three_inputs:y:sel",
+      "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:2_d1",
       "path": "M 144 168 L 168 168 L 336 168 L 360 168"
     },
     {
-      "id": "edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:c",
+      "id": "edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c",
       "source": "port:mux_three_inputs:c",
-      "target": "mux:mux_three_inputs:y:sel",
+      "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:c",
       "targetHandle": "in:default",
       "path": "M 144 216 L 168 216 L 216 216 L 216 192 L 336 192 L 360 192"
     },
     {
-      "id": "edge:port:mux_three_inputs:sel:mux:mux_three_inputs:y:sel:sel",
+      "id": "edge:port:mux_three_inputs:sel:mux:mux_three_inputs:y:sel:y:sel",
       "source": "port:mux_three_inputs:sel",
-      "target": "mux:mux_three_inputs:y:sel",
+      "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
       "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 120"

@@ -532,7 +532,8 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
                 if (en_cond) {
                     std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
-                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal);
+                    std::string write_candidate = reg_base + "_write_candidate";
+                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + reg_name + "_next");
                     bool write_en_mux_exists = false;
                     for (auto& existing : mod.nodes) {
                         if (existing.id == candidate_id) {
@@ -554,10 +555,8 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                         }
                     }
                     if (!write_en_mux_exists) {
-                        std::string write_candidate = reg_base + "_write_candidate";
-                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
                         Node write_en_mux;
-                        write_en_mux.id = candidate_id;
+                        write_en_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + write_candidate);
                         write_en_mux.kind = "mux";
                         write_en_mux.label = "if " + enable_signal;
                         write_en_mux.source = n.source;
@@ -565,6 +564,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                         write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
                         write_en_mux.metadata.arraySize = arr_size;
                         write_en_mux.metadata.isProcedural = true;
+                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
                         write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
                         write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
                         write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
@@ -588,7 +588,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
                 std::string rst_candidate = reg_base + "_rst_candidate";
                 Node rst_mux;
-                rst_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + rst_signal);
+                rst_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + rst_signal + ":" + rst_candidate);
                 rst_mux.kind = "mux";
                 rst_mux.label = "if " + rst_signal;
                 rst_mux.source = n.source;

@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "mux:mux_only:y:sel",
+      "id": "mux:mux_only:y:sel:y",
       "type": "hdl",
       "position": {
         "x": 360,
@@ -118,33 +118,33 @@
   ],
   "edges": [
     {
-      "id": "edge:mux:mux_only:y:sel:port:mux_only:y:y",
-      "source": "mux:mux_only:y:sel",
+      "id": "edge:mux:mux_only:y:sel:y:port:mux_only:y:y",
+      "source": "mux:mux_only:y:sel:y",
       "target": "port:mux_only:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
       "path": "M 504 144 L 528 144 L 696 144 L 720 144"
     },
     {
-      "id": "edge:port:mux_only:a:mux:mux_only:y:sel:a",
+      "id": "edge:port:mux_only:a:mux:mux_only:y:sel:y:a",
       "source": "port:mux_only:a",
-      "target": "mux:mux_only:y:sel",
+      "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
       "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
-      "id": "edge:port:mux_only:b:mux:mux_only:y:sel:b",
+      "id": "edge:port:mux_only:b:mux:mux_only:y:sel:y:b",
       "source": "port:mux_only:b",
-      "target": "mux:mux_only:y:sel",
+      "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:default",
       "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
     },
     {
-      "id": "edge:port:mux_only:sel:mux:mux_only:y:sel:sel",
+      "id": "edge:port:mux_only:sel:mux:mux_only:y:sel:y:sel",
       "source": "port:mux_only:sel",
-      "target": "mux:mux_only:y:sel",
+      "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
       "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 120"
