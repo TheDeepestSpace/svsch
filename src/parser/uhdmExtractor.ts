@@ -614,11 +614,16 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
               const matchingTargetEdge = targetModule.edges.find(e => e.source === existing.id && e.target === sourceEdge.target);
               if (matchingTargetEdge) {
                   // Found a match! The UHDM tap is likely a lower-quality version of the text tap.
-                  // Update the UHDM edge to use the text parser's port ID and info.
+                  // Update all UHDM edges using this tap to use the text parser's port ID and info.
                   const oldPortId = matchingTargetEdge.sourcePort;
-                  matchingTargetEdge.sourcePort = sourcePort.id;
-                  matchingTargetEdge.signal = sourceEdge.signal || matchingTargetEdge.signal;
-                  matchingTargetEdge.width = sourcePort.width || matchingTargetEdge.width;
+                  
+                  for (const e of targetModule.edges) {
+                      if (e.source === existing.id && e.sourcePort === oldPortId) {
+                          e.sourcePort = sourcePort.id;
+                          e.signal = sourceEdge.signal || e.signal;
+                          e.width = sourcePort.width || e.width;
+                      }
+                  }
 
                   // Update or replace the port on the bus node
                   const existingPortIndex = existing.ports.findIndex(p => p.id === oldPortId);
