@@ -61,6 +61,10 @@ RUN cd /tmp && \
     sudo tar -xJf ${NODE_STANDALONE_NAME} -C /usr/local --strip-components=1 --no-same-owner && \
     rm ${NODE_STANDALONE_NAME}
 
+# for pacakging vvscode extension
+USER dev
+RUN sudo npm install -g @vscode/vsce
+
 # install verible (TODO: only x86 for now, add arm64 version)
 USER dev
 ARG VERIBLE_VERSION=v0.0-4053-g89d4d98a
