@@ -1,0 +1,417 @@
+{
+  "nodes": [
+    {
+      "id": "bus:write_enable_decode:mem_write_enable_sel:expr",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 24
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:mem_write_enable_sel",
+            "name": "mem_write_enable_sel",
+            "direction": "output"
+          },
+          {
+            "id": "in:_3:2_",
+            "name": "[3:2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1:0_",
+            "name": "[1:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_BYTE_2_d0:4_b0001",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_BYTE_2_d0",
+            "name": "mem_write_enable_BYTE_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_BYTE_2_d1:4_b0010",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_BYTE_2_d1",
+            "name": "mem_write_enable_BYTE_2_d1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_BYTE_2_d2:4_b0100",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_BYTE_2_d2",
+            "name": "mem_write_enable_BYTE_2_d2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_BYTE_2_d3:4_b1000",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_BYTE_2_d3",
+            "name": "mem_write_enable_BYTE_2_d3",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_default:4_bxxxx",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_default",
+            "name": "mem_write_enable_default",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_HALF_2_d0:4_b0011",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_HALF_2_d0",
+            "name": "mem_write_enable_HALF_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_HALF_2_d2:4_b1100",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_HALF_2_d2",
+            "name": "mem_write_enable_HALF_2_d2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:write_enable_decode:mem_write_enable_WORD_2_d0:4_b1111",
+      "type": "hdl",
+      "position": {
+        "x": 504,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:mem_write_enable_WORD_2_d0",
+            "name": "mem_write_enable_WORD_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 192
+      },
+      "width": 192,
+      "height": 240,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d0_",
+            "name": "{BYTE, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d1_",
+            "name": "{BYTE, 2'd1}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d2_",
+            "name": "{BYTE, 2'd2}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d3_",
+            "name": "{BYTE, 2'd3}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_HALF_2_d0_",
+            "name": "{HALF, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_HALF_2_d2_",
+            "name": "{HALF, 2'd2}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_WORD_2_d0_",
+            "name": "{WORD, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:write_enable_decode:byte_index",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:byte_index",
+            "name": "byte_index",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:write_enable_decode:mem_write_enable",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 300
+      },
+      "width": 240,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:mem_write_enable",
+            "name": "mem_write_enable",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:write_enable_decode:transfersize",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:transfersize",
+            "name": "transfersize",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:write_enable_decode:mem_write_enable_sel:expr:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_sel",
+      "source": "bus:write_enable_decode:mem_write_enable_sel:expr",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "out:mem_write_enable_sel",
+      "targetHandle": "sel",
+      "path": "M 576 48 L 600 48 L 936 48 L 936 168 L 936 216"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d0:4_b0001:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d0",
+      "source": "literal:write_enable_decode:mem_write_enable_BYTE_2_d0:4_b0001",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_BYTE_2_d0",
+      "targetHandle": "in:_BYTE_2_d0_",
+      "path": "M 623 168 L 648 168 L 672 168 L 672 240 L 816 240 L 840 240"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d1:4_b0010:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d1",
+      "source": "literal:write_enable_decode:mem_write_enable_BYTE_2_d1:4_b0010",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_BYTE_2_d1",
+      "targetHandle": "in:_BYTE_2_d1_",
+      "path": "M 623 216 L 648 216 L 672 216 L 672 264 L 816 264 L 840 264"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d2:4_b0100:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d2",
+      "source": "literal:write_enable_decode:mem_write_enable_BYTE_2_d2:4_b0100",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_BYTE_2_d2",
+      "targetHandle": "in:_BYTE_2_d2_",
+      "path": "M 623 264 L 648 264 L 672 264 L 672 288 L 816 288 L 840 288"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d3:4_b1000:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d3",
+      "source": "literal:write_enable_decode:mem_write_enable_BYTE_2_d3:4_b1000",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_BYTE_2_d3",
+      "targetHandle": "in:_BYTE_2_d3_",
+      "path": "M 623 312 L 648 312 L 816 312 L 840 312"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_default:4_bxxxx:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_default",
+      "source": "literal:write_enable_decode:mem_write_enable_default:4_bxxxx",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_default",
+      "targetHandle": "in:default",
+      "path": "M 623 504 L 648 504 L 696 504 L 696 408 L 816 408 L 840 408"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_HALF_2_d0:4_b0011:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_HALF_2_d0",
+      "source": "literal:write_enable_decode:mem_write_enable_HALF_2_d0:4_b0011",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_HALF_2_d0",
+      "targetHandle": "in:_HALF_2_d0_",
+      "path": "M 623 360 L 648 360 L 672 360 L 672 336 L 816 336 L 840 336"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_HALF_2_d2:4_b1100:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_HALF_2_d2",
+      "source": "literal:write_enable_decode:mem_write_enable_HALF_2_d2:4_b1100",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_HALF_2_d2",
+      "targetHandle": "in:_HALF_2_d2_",
+      "path": "M 623 408 L 648 408 L 672 408 L 672 360 L 816 360 L 840 360"
+    },
+    {
+      "id": "edge:literal:write_enable_decode:mem_write_enable_WORD_2_d0:4_b1111:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_WORD_2_d0",
+      "source": "literal:write_enable_decode:mem_write_enable_WORD_2_d0:4_b1111",
+      "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "sourceHandle": "port:mem_write_enable_WORD_2_d0",
+      "targetHandle": "in:_WORD_2_d0_",
+      "path": "M 623 456 L 648 456 L 672 456 L 672 384 L 816 384 L 840 384"
+    },
+    {
+      "id": "edge:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:port:write_enable_decode:mem_write_enable:mem_write_enable",
+      "source": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
+      "target": "port:write_enable_decode:mem_write_enable",
+      "sourceHandle": "out",
+      "targetHandle": "port:mem_write_enable",
+      "path": "M 1032 312 L 1056 312 L 1224 312 L 1248 312"
+    },
+    {
+      "id": "edge:port:write_enable_decode:byte_index:bus:write_enable_decode:mem_write_enable_sel:expr:byte_index",
+      "source": "port:write_enable_decode:byte_index",
+      "target": "bus:write_enable_decode:mem_write_enable_sel:expr",
+      "sourceHandle": "port:byte_index",
+      "targetHandle": "in:_1:0_",
+      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
+    },
+    {
+      "id": "edge:port:write_enable_decode:transfersize:bus:write_enable_decode:mem_write_enable_sel:expr:transfersize",
+      "source": "port:write_enable_decode:transfersize",
+      "target": "bus:write_enable_decode:mem_write_enable_sel:expr",
+      "sourceHandle": "port:transfersize",
+      "targetHandle": "in:_3:2_",
+      "path": "M 216 48 L 240 48 L 408 48 L 432 48"
+    }
+  ]
+}

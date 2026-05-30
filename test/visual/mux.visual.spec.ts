@@ -541,6 +541,20 @@ test.describe('mux visual rendering', () => {
       maxDiffPixels: 2
     });
   });
+
+  test('renders a mux with complex literal expressions on side ports (write-enable decode case)', async ({ page }) => {
+    await openFixture(page, 'write_enable_decode.sv');
+    await page.waitForSelector('[data-node-kind="mux"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('.mux-side-port >> text="{BYTE, 2\'d0}"')).toBeVisible();
+    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'mux-complex-case-literal.png', {
+      clip: await paddedLocatorClip(page, '[data-node-kind="mux"]')
+    });
+  });
 });
 
 test.describe('register visual rendering', () => {

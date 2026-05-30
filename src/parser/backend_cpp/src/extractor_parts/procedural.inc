@@ -654,6 +654,52 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     }
 }
 
+// Strips the "work@" scope prefix that UHDM sometimes emits in decompiled strings.
+static std::string stripWorkPrefix(const std::string& s) {
+    if (s.rfind("work@", 0) == 0) return s.substr(5);
+    return s;
+}
+
+// Extracts a human-readable label from a VPI expression handle.
+// Preferred path: vpiDecompile.  Fallback for vpiOperation: reconstruct from operands
+// so that concatenation patterns like {BYTE, 2'd0} are preserved rather than "expr".
+static std::string decompileExprLabel(vpiHandle e) {
+    if (!e) return "expr";
+    const char* d = vpi_get_str(vpiDecompile, e);
+    if (d && strlen(d) > 0) return stripWorkPrefix(d);
+
+    int type = vpi_get(vpiType, e);
+    if (type == vpiOperation) {
+        int op_type = vpi_get(vpiOpType, e);
+        if (op_type == vpiConcatOp || op_type == vpiMultiConcatOp) {
+            vpiHandle op_itr = vpi_iterate(vpiOperand, e);
+            if (op_itr) {
+                std::string result = "{";
+                bool first = true;
+                while (vpiHandle op = vpi_scan(op_itr)) {
+                    if (!first) result += ", ";
+                    first = false;
+                    const char* od = vpi_get_str(vpiDecompile, op);
+                    if (od && strlen(od) > 0) {
+                        result += stripWorkPrefix(od);
+                    } else {
+                        const char* name = vpi_get_str(vpiName, op);
+                        result += (name ? stripWorkPrefix(name) : "?");
+                    }
+                    vpi_release_handle(op);
+                }
+                vpi_release_handle(op_itr);
+                result += "}";
+                return result;
+            }
+        }
+    }
+    // For non-operation expressions (references, enum values, etc.) try vpiName.
+    const char* name = vpi_get_str(vpiName, e);
+    if (name && strlen(name) > 0) return stripWorkPrefix(name);
+    return "expr";
+}
+
 void DesignExtractor::processMux(vpiHandle case_handle, Module& mod, vpiHandle always_handle) {
     vpiHandle cond = vpi_handle(vpiCondition, case_handle);
 
@@ -695,8 +741,7 @@ void DesignExtractor::processMux(vpiHandle case_handle, Module& mod, vpiHandle a
                         if (expr_itr) {
                             vpiHandle e = vpi_scan(expr_itr);
                             if (e) {
-                                const char* d = vpi_get_str(vpiDecompile, e);
-                                if (d) label = d; else label = getSignalName(e);
+                                label = decompileExprLabel(e);
                             }
                             vpi_release_handle(expr_itr);
                         }
@@ -1167,8 +1212,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
         std::vector<std::string> labels;
         if (expr_itr) {
             while (vpiHandle e = vpi_scan(expr_itr)) {
-                const char* d = vpi_get_str(vpiDecompile, e);
-                if (d) labels.push_back(d); else labels.push_back(getSignalName(e));
+                labels.push_back(decompileExprLabel(e));
             }
             vpi_release_handle(expr_itr);
         }
