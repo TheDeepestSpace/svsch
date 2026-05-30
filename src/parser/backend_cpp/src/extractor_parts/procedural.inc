@@ -1058,8 +1058,9 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
 
     std::map<std::string, std::string> true_outputs, false_outputs;
     for (const auto& target : targets) {
-        true_outputs[target] = target + "_if_true";
-        false_outputs[target] = target + "_if_false";
+        std::string nid = nextId();
+        true_outputs[target] = target + "_if_true_" + nid;
+        false_outputs[target] = target + "_if_false_" + nid;
     }
 
     auto tvs = lowerStatement(true_stmt, mod, is_clocked, true_outputs, source_handle, current_drivers);
