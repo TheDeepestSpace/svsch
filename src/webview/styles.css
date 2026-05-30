@@ -1997,6 +1997,16 @@ select {
   stroke-width: 12;
 }
 
+.svsch-edge-group-selected {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-focusBorder);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 8;
+  opacity: 0.4;
+}
+
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;

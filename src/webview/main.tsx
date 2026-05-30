@@ -1917,6 +1917,10 @@ function DiagramApp(): React.ReactElement {
   const [modules, setModules] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'rebuilding'>('idle');
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
+  const groupDragRef = useRef<{
+    startPos: { x: number; y: number };
+    originalRoutes: Map<string, Array<{ x: number; y: number }>>;
+  } | null>(null);
   const onNodesChange = useCallback((changes: any[]) => {
     const adjusted = changes.map((change) => {
       if (change.type === 'position' && change.position) {
@@ -2105,6 +2109,40 @@ function DiagramApp(): React.ReactElement {
     }
   }, [hasFitInitialView, nodes.length, reactFlow]);
 
+  const onNodeDragStart = useCallback(
+    (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
+      const movedIds = new Set(allNodes.map((n) => n.id));
+      if (movedIds.size < 2) return;
+      const originalRoutes = new Map<string, Array<{ x: number; y: number }>>();
+      for (const e of edges) {
+        const pts = e.data?.routePoints as Array<{ x: number; y: number }> | undefined;
+        if (movedIds.has(e.source) && movedIds.has(e.target) && pts && pts.length > 0) {
+          originalRoutes.set(e.id, pts.map((pt) => ({ ...pt })));
+        }
+      }
+      groupDragRef.current = {
+        startPos: { x: dragged.position.x, y: dragged.position.y },
+        originalRoutes,
+      };
+    },
+    [edges]
+  );
+
+  const onNodeDrag = useCallback(
+    (_: React.MouseEvent, dragged: HdlFlowNode) => {
+      const state = groupDragRef.current;
+      if (!state || state.originalRoutes.size === 0) return;
+      const dx = dragged.position.x - state.startPos.x;
+      const dy = dragged.position.y - state.startPos.y;
+      const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
+        edgeId,
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+      }));
+      handleRouteChange(changes, false);
+    },
+    [handleRouteChange]
+  );
+
   const onNodeDragStop = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
       if (!view) {
@@ -2113,11 +2151,25 @@ function DiagramApp(): React.ReactElement {
       const positioned = allNodes.map((node) => ({
         ...node.data.node,
         position: node.id === dragged.id ? dragged.position : node.position,
-        fixed: node.data.node.fixed || node.id === dragged.id
+        fixed: node.data.node.fixed || node.selected || node.id === dragged.id
       }));
       vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned });
+
+      const state = groupDragRef.current;
+      groupDragRef.current = null;
+      if (!state || state.originalRoutes.size === 0) return;
+
+      const dx = dragged.position.x - state.startPos.x;
+      const dy = dragged.position.y - state.startPos.y;
+      if (dx === 0 && dy === 0) return;
+
+      const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
+        edgeId,
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+      }));
+      handleRouteChange(changes, true);
     },
-    [view]
+    [view, handleRouteChange]
   );
 
   const rerouteLayout = useCallback(() => {
@@ -2194,6 +2246,8 @@ function DiagramApp(): React.ReactElement {
                 edgeTypes={edgeTypes}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeDragStart={onNodeDragStart}
+                onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
                 onEdgeMouseEnter={onEdgeMouseEnter}
                 onEdgeMouseLeave={onEdgeMouseLeave}
@@ -2212,6 +2266,9 @@ function DiagramApp(): React.ReactElement {
                 }}
                 nodesConnectable={false}
                 deleteKeyCode={null}
+                selectionOnDrag
+                panOnDrag={[1, 2]}
+                selectionMode="partial"
                 snapToGrid
                 snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
                 zIndexMode="manual"

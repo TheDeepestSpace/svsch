@@ -811,6 +811,50 @@ When('I move the port node {string} to \\({int}, {int}\\)', async function (this
   await postCurrentView(this, 'After move');
 });
 
+When('I drag port nodes {string} and {string} together', async function (this: CustomWorld, name1: string, name2: string) {
+  const id1 = await findNodeIdByLabel(this.page!, name1, 'port');
+  const id2 = await findNodeIdByLabel(this.page!, name2, 'port');
+  if (!id1 || !id2) throw new Error(`Nodes not found: ${name1}=${id1}, ${name2}=${id2}`);
+
+  // Programmatically select both nodes via the RF instance
+  await this.page!.evaluate(({ nodeId1, nodeId2 }) => {
+    const rf = (window as any).reactFlowInstance;
+    rf.setNodes((nodes: any[]) => nodes.map((n: any) => ({
+      ...n,
+      selected: n.id === nodeId1 || n.id === nodeId2
+    })));
+  }, { nodeId1: id1, nodeId2: id2 });
+  await this.page!.waitForTimeout(100);
+
+  const msgsBefore = (await webviewMessages(this.page!)).length;
+
+  // Drag the first node; the second follows because it is selected
+  const nodeLocator = this.page!.locator(`.react-flow__node[data-id="${id1}"]`);
+  const box = await nodeLocator.boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for node ${id1}`);
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await this.page!.mouse.move(cx, cy);
+  await this.page!.mouse.down();
+  await this.page!.mouse.move(cx + 96, cy, { steps: 10 });
+  await this.page!.mouse.up();
+  await this.page!.waitForTimeout(500);
+
+  // Wait for the layoutChanged message and apply it to the local layout store
+  await expect.poll(async () => {
+    const messages = await webviewMessages(this.page!);
+    return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
+  }, { timeout: 5000 }).toBe(true);
+
+  const allMessages = await webviewMessages(this.page!);
+  const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
+  if (layoutMsg) {
+    this.layout = mergeNodePositions(this.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  }
+
+  await this.takeScreenshot('After group drag');
+});
+
 When('I position the port node {string} at \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);

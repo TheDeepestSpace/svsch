@@ -342,6 +342,7 @@ export function OrthogonalEdge({
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
+  const isGroupSelected = (sourceFlowNode?.selected === true) && (targetFlowNode?.selected === true);
   
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = React.useState<number | null>(null);
   const [isEdgeHovered, setIsEdgeHovered] = React.useState(false);
@@ -718,6 +719,9 @@ export function OrthogonalEdge({
             return [...edgePaths, ...labelPaths];
           })()}
         </g>
+      )}
+      {isGroupSelected && isLeaderInNet && (
+        <path className="svsch-edge-group-selected" d={edgeRender.path} />
       )}
       {isStacked && (sourceIsArray || targetIsArray) ? (
         <>

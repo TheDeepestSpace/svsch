@@ -102,6 +102,21 @@ Feature: Diagram Interaction
     And the original connection between "a" and "y" should be restored
     And I should not see cut net labels named "data_a"
 
+  Scenario: Moving multiple blocks as a group preserves all positions on reload
+    Given a SystemVerilog module:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    And I note the position of port node "a"
+    And I note the position of port node "b"
+    When I drag port nodes "a" and "b" together
+    And I close and reopen the diagram
+    Then the port node "a" should have moved
+    And the port node "b" should have moved
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually
