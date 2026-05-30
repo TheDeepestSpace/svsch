@@ -1103,7 +1103,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
         }
 
         Node mux;
-        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal);
+        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
         mux.label = "if " + sel_signal;
         mux.source = getSourceInfo(stmt);
@@ -1186,8 +1186,11 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     for (const auto& target : targets) {
         std::string target_width = getDeclaredSignalWidth(mod, target);
         
+        bool final_output = desired_outputs.count(target) > 0;
+        std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
+        
         Node mux;
-        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal);
+        mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
         mux.label = "case " + sel_signal;
         mux.source = getSourceInfo(stmt);
@@ -1213,9 +1216,6 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
              has_default = true;
         }
 
-        bool final_output = desired_outputs.count(target) > 0;
-        std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
-        
         if (!is_clocked && !has_default && final_output && !current_drivers.count(target)) {
              output_signal = target + "_latch_d";
         }
