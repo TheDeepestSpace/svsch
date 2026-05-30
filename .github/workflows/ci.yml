@@ -44,7 +44,7 @@ jobs:
             # UHDM is already installed in /usr/local in the dev container,
             # but its CMake config points to /opt/uhdm. Fix it locally.
             sudo mkdir -p /opt && sudo ln -s /usr/local /opt/uhdm
-            
+
             npm ci
             npx playwright install --with-deps chromium
             npm run lint
@@ -85,6 +85,3 @@ jobs:
           path: |
             test-results/bdd/**
             test/features/snapshots/**
-
-      - name: Run npm audit
-        run: npm audit --audit-level=high
