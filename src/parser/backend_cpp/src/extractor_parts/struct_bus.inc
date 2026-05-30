@@ -104,10 +104,11 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
     }
 
     // Literal select logic (Bus Breakout)
+    std::string base_name = getBaseSignalName(select_handle);
     vpiHandle base = vpi_handle(vpiParent, select_handle);
     if (!base) base = vpi_handle(vpiExpr, select_handle);
-    std::string base_name;
-    if (base) {
+    
+    if (base_name.empty() && base) {
         base_name = getSignalName(base);
     }
     
