@@ -838,7 +838,7 @@ function NetLabelWire({
 }: {
   node: PositionedNode;
   handleSide: 'left' | 'right' | 'top' | 'bottom';
-  edgeStyle?: { aggregate?: 'struct' | 'interface'; isStacked?: boolean };
+  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean };
   align?: 'start' | 'end';
   isSourceStacked?: boolean;
 }): React.ReactElement {
