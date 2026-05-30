@@ -902,6 +902,7 @@ function NetLabelNode({
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(node.label);
+  const [isDirectlyHovered, setIsDirectlyHovered] = React.useState(false);
 
   React.useEffect(() => {
     setDraft(node.label);
@@ -948,7 +949,7 @@ function NetLabelNode({
 
   return (
     <div
-      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isHovered ? ' hdl-net-label-hovered' : ''}`}
+      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
       style={style}
@@ -958,8 +959,8 @@ function NetLabelNode({
         event.stopPropagation();
         setEditing(true);
       }}
-      onMouseEnter={() => setHovered(cutNet?.netKey)}
-      onMouseLeave={() => setHovered(undefined)}
+      onMouseEnter={() => { setHovered(cutNet?.netKey); setIsDirectlyHovered(true); }}
+      onMouseLeave={() => { setHovered(undefined); setIsDirectlyHovered(false); }}
     >
       {cutNet && <Handle type={handleType} id="cut" position={handlePosition} />}
       <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} />
