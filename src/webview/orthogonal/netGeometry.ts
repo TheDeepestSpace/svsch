@@ -1,8 +1,9 @@
-import { moveRouteSegment, segmentOrientation } from './logic';
+import { moveRouteSegment, segmentOrientation, dominantOrientation } from './logic';
 import type { OrthogonalPoint } from './types';
 import type { PolylineEdgeGeometry } from '../react-flow-line-jumps';
 
 const EPSILON = 0.5;
+const ALIGN_EPSILON = 2.0;
 
 interface Segment {
   edgeId: string;
@@ -28,6 +29,11 @@ export interface SharedRouteMove {
   points: OrthogonalPoint[];
 }
 
+export interface SharedNetMoveResult {
+  moves: SharedRouteMove[];
+  newDraggedIndex: number;
+}
+
 function pointsEqual(a: OrthogonalPoint, b: OrthogonalPoint): boolean {
   return Math.abs(a.x - b.x) <= EPSILON && Math.abs(a.y - b.y) <= EPSILON;
 }
@@ -51,8 +57,8 @@ function segmentsFor(geometry: PolylineEdgeGeometry): Segment[] {
   for (let index = 0; index < geometry.points.length - 1; index += 1) {
     const start = geometry.points[index];
     const end = geometry.points[index + 1];
-    const orientation = segmentOrientation(start, end);
-    if (!orientation || pointsEqual(start, end)) {
+    const orientation = segmentOrientation(start, end) ?? dominantOrientation(start, end);
+    if (pointsEqual(start, end)) {
       continue;
     }
     segments.push({
@@ -87,11 +93,13 @@ function overlaps(a: Segment, b: Segment): boolean {
     return false;
   }
   if (a.orientation === 'horizontal') {
-    return Math.abs(a.start.y - b.start.y) <= EPSILON
-      && Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX) > EPSILON;
+    const overlapLen = Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX);
+    return Math.abs(a.start.y - b.start.y) <= ALIGN_EPSILON
+      && overlapLen > -EPSILON;
   }
-  return Math.abs(a.start.x - b.start.x) <= EPSILON
-    && Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY) > EPSILON;
+  const overlapLen = Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY);
+  return Math.abs(a.start.x - b.start.x) <= ALIGN_EPSILON
+    && overlapLen > -EPSILON;
 }
 
 function isEditableSegment(segment: Segment, geometry: PolylineEdgeGeometry): boolean {
@@ -187,17 +195,19 @@ export function moveSharedNetSegments(
   draggedEdgeId: string,
   segmentIndex: number,
   pointer: OrthogonalPoint
-): SharedRouteMove[] {
+): SharedNetMoveResult {
   const dragged = geometries.find((geometry) => geometry.edgeId === draggedEdgeId);
   if (!dragged) {
-    return [];
+    return { moves: [], newDraggedIndex: segmentIndex };
   }
   const draggedSegment = segmentsFor(dragged).find((segment) => segment.index === segmentIndex);
   if (!draggedSegment || !isEditableSegment(draggedSegment, dragged)) {
-    return [];
+    return { moves: [], newDraggedIndex: segmentIndex };
   }
 
   const moves: SharedRouteMove[] = [];
+  let finalDraggedIndex = segmentIndex;
+
   for (const geometry of geometries) {
     const sharedSegments = segmentsFor(geometry).filter((segment) => {
       if (!isEditableSegment(segment, geometry)) return false;
@@ -221,19 +231,29 @@ export function moveSharedNetSegments(
       continue;
     }
 
-    // Always move the dragged edge's segment, even if it has no netKey
-    const segmentsToMove = geometry.edgeId === draggedEdgeId 
-      ? Array.from(new Set([...sharedSegments, draggedSegment]))
-      : sharedSegments;
+    // Always move the dragged edge's segment, even if it has no netKey.
+    // Deduplicate by index since segmentsFor returns new objects.
+    const segmentsToMoveMap = new Map<number, Segment>();
+    for (const s of sharedSegments) segmentsToMoveMap.set(s.index, s);
+    if (geometry.edgeId === draggedEdgeId) {
+      segmentsToMoveMap.set(draggedSegment.index, draggedSegment);
+    }
+    const segmentsToMove = Array.from(segmentsToMoveMap.values());
 
     if (segmentsToMove.length === 0) continue;
 
     let points = geometry.points.map((point) => ({ ...point }));
-    for (const segment of segmentsToMove) {
-      points = moveRouteSegment(points, segment.index, pointer);
+    // Process descending to minimize index shift impact, although moveRouteSegment
+    // expansion should ideally be handled at a higher level (one move per run).
+    for (const segment of segmentsToMove.sort((a, b) => b.index - a.index)) {
+      const result = moveRouteSegment(points, segment.index, pointer);
+      points = result.points;
+      if (geometry.edgeId === draggedEdgeId && segment.index === segmentIndex) {
+        finalDraggedIndex = result.newIndex;
+      }
     }
     moves.push({ edgeId: geometry.edgeId, points });
   }
 
-  return moves;
+  return { moves, newDraggedIndex: finalDraggedIndex };
 }

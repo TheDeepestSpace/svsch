@@ -89,15 +89,15 @@ describe('same-net junctions and shared dragging', () => {
   });
 
   it('moves only same-net overlapping editable segments together', () => {
-    const moves = moveSharedNetSegments([
+    const { moves } = moveSharedNetSegments([
       geometry('edge-a-to-x', [{ x: 0, y: 0 }, { x: 24, y: 0 }, { x: 120, y: 0 }, { x: 120, y: 96 }, { x: 240, y: 96 }]),
       geometry('edge-a-to-y', [{ x: 0, y: 0 }, { x: 24, y: 0 }, { x: 120, y: 0 }, { x: 120, y: 168 }, { x: 240, y: 168 }]),
       geometry('edge-b-to-z', [{ x: 0, y: 0 }, { x: 24, y: 0 }, { x: 120, y: 0 }, { x: 120, y: 240 }], 'source:b:p')
     ], 'edge-a-to-x', 1, { x: 60, y: 48 });
 
     expect(moves.map((move) => move.edgeId).sort()).toEqual(['edge-a-to-x', 'edge-a-to-y', 'edge-b-to-z']);
-    expect(moves.find((move) => move.edgeId === 'edge-a-to-x')?.points[1].y).toBe(48);
-    expect(moves.find((move) => move.edgeId === 'edge-a-to-y')?.points[1].y).toBe(48);
-    expect(moves.find((move) => move.edgeId === 'edge-b-to-z')?.points[1].y).toBe(48);
+    expect(moves.find((move) => move.edgeId === 'edge-a-to-x')?.points[2].y).toBe(48);
+    expect(moves.find((move) => move.edgeId === 'edge-a-to-y')?.points[2].y).toBe(48);
+    expect(moves.find((move) => move.edgeId === 'edge-b-to-z')?.points[2].y).toBe(48);
   });
 });

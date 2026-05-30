@@ -13,6 +13,7 @@ import {
   normalizeRoutePoints,
   makeOrthogonal,
   segmentOrientation,
+  dominantOrientation,
   midpoint,
   avoidFeedbackObstacles,
   type NodeObstacle
@@ -312,6 +313,7 @@ export function OrthogonalEdge({
   // localPoints represents the "structured" path during a drag
   const [localPoints, setLocalPoints] = React.useState<OrthogonalPoint[] | null>(null);
   const dragOffsetRef = React.useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const activeSegmentIndexRef = React.useRef<number>(0);
 
   const isDragging = localPoints !== null;
 
@@ -515,8 +517,10 @@ export function OrthogonalEdge({
         x: initialPoint.x - flowPoint.x,
         y: initialPoint.y - flowPoint.y
       };
+      activeSegmentIndexRef.current = segmentIndex;
     }
 
+    const currentSegmentIndex = activeSegmentIndexRef.current;
     const adjustedPoint = {
       x: flowPoint.x + dragOffsetRef.current.x,
       y: flowPoint.y + dragOffsetRef.current.y
@@ -526,9 +530,11 @@ export function OrthogonalEdge({
     const dragGeometries = availableGeometries.map((geometry) => (
       geometry.edgeId === id ? { ...edgeGeometry, points: currentStructuredPoints } : geometry
     ));
-    const sharedMoves = moveSharedNetSegments(dragGeometries, id, segmentIndex, adjustedPoint);
+    const { moves: sharedMoves, newDraggedIndex } = moveSharedNetSegments(dragGeometries, id, currentSegmentIndex, adjustedPoint);
+    activeSegmentIndexRef.current = newDraggedIndex;
+
     const ownMove = sharedMoves.find((move) => move.edgeId === id);
-    const nextPoints = ownMove?.points ?? moveRouteSegment(currentStructuredPoints, segmentIndex, adjustedPoint);
+    const nextPoints = ownMove?.points ?? moveRouteSegment(currentStructuredPoints, currentSegmentIndex, adjustedPoint).points;
     
     if (commit) {
       setLocalPoints(null);
@@ -705,8 +711,8 @@ export function OrthogonalEdge({
       ))}
       {points.slice(0, -1).map((point, index) => {
         const next = points[index + 1];
-        const orientation = segmentOrientation(point, next);
-        if (!orientation || index === 0 || index === points.length - 2) {
+        const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
+        if (index === 0 || index === points.length - 2) {
           return null;
         }
         return (
@@ -728,11 +734,11 @@ export function OrthogonalEdge({
               }}
               onPointerMove={(event) => {
                 if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  moveSegment(event, index, false);
+                  moveSegment(event, activeSegmentIndexRef.current, false);
                 }
               }}
               onPointerUp={(event) => {
-                moveSegment(event, index, true);
+                moveSegment(event, activeSegmentIndexRef.current, true);
                 setHoveredSegmentIndex(null);
                 event.currentTarget.releasePointerCapture(event.pointerId);
               }}

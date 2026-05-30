@@ -201,7 +201,7 @@ describe('orthogonal edge routing', () => {
       { x: 400, y: 200 }
     ];
 
-    const moved = moveRouteSegment(points, 2, { x: 201, y: 130 });
+    const { points: moved } = moveRouteSegment(points, 2, { x: 201, y: 130 });
 
     expect(moved.length).toBe(points.length);
     expect(moved[2].x).toBe(192);
@@ -248,7 +248,7 @@ describe('orthogonal edge routing', () => {
       { x: 408, y: 192 }
     ];
 
-    const moved = moveRouteSegment(points, 2, { x: 251, y: 130 });
+    const { points: moved } = moveRouteSegment(points, 2, { x: 251, y: 130 });
 
     expect(moved[2].x % diagramSizing.gridSize).toBe(0);
     expect(moved[3].x % diagramSizing.gridSize).toBe(0);
@@ -373,7 +373,7 @@ describe('orthogonal edge routing', () => {
     ];
 
     // Drag vertical segment (index 2) to X=250
-    const moved = moveRouteSegment(points, 2, { x: 250, y: 150 });
+    const { points: moved } = moveRouteSegment(points, 2, { x: 250, y: 150 });
 
     // The vertical segment is between points[2] and points[3].
     // Both should have their X coordinate updated to the snapped pointer (240).

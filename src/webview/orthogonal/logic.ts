@@ -302,34 +302,66 @@ export function segmentOrientation(a: OrthogonalPoint, b: OrthogonalPoint): 'hor
   return undefined;
 }
 
-export function moveRouteSegment(points: OrthogonalPoint[], segmentIndex: number, pointer: OrthogonalPoint): OrthogonalPoint[] {
+export function dominantOrientation(a: OrthogonalPoint, b: OrthogonalPoint): 'horizontal' | 'vertical' {
+  return Math.abs(a.x - b.x) >= Math.abs(a.y - b.y) ? 'horizontal' : 'vertical';
+}
+
+export interface MoveResult {
+  points: OrthogonalPoint[];
+  newIndex: number;
+}
+
+export function moveRouteSegment(points: OrthogonalPoint[], segmentIndex: number, pointer: OrthogonalPoint): MoveResult {
   const next = points.map((point) => ({ ...point }));
-  const orientation = segmentOrientation(next[segmentIndex], next[segmentIndex + 1]);
+  const orientation = segmentOrientation(next[segmentIndex], next[segmentIndex + 1])
+    ?? dominantOrientation(next[segmentIndex], next[segmentIndex + 1]);
   const snappedPointer = snapPoint(pointer);
 
+  let startIndex = segmentIndex;
+  let endIndex = segmentIndex + 1;
+
+  // Expand start of the collinear run
+  while (startIndex > 0 && segmentOrientation(next[startIndex - 1], next[startIndex]) === orientation) {
+    startIndex -= 1;
+  }
+  // Expand end of the collinear run
+  while (endIndex < next.length - 1 && segmentOrientation(next[endIndex], next[endIndex + 1]) === orientation) {
+    endIndex += 1;
+  }
+
+  let finalSegmentIndex = segmentIndex;
+
+  // Smart Split at Start: If we expanded to index 0, it means we are slanting the handle attachment.
+  if (startIndex === 0) {
+    // Insert a copy of the lead point to become the new bend.
+    next.splice(1, 0, { ...next[1] });
+    startIndex = 2;
+    endIndex += 1;
+    finalSegmentIndex += 1;
+  }
+
+  // Smart Split at End: Same for the trailing lead.
+  if (endIndex === next.length - 1) {
+    // Insert a copy of the lead point before the last point.
+    next.splice(next.length - 1, 0, { ...next[next.length - 2] });
+    endIndex -= 1; // Stop update before the last point (which is now the target handle)
+  }
+
   if (orientation === 'horizontal') {
-    // If we're moving a horizontal segment, we change its Y coordinate.
-    // The segments before and after it are vertical, so we only need to update 
-    // the points at segmentIndex and segmentIndex + 1.
-    // We don't update the very first or very last point of the WHOLE route 
-    // (points[0] and points[last]) because those are tied to handles.
-    if (segmentIndex > 0) {
-      next[segmentIndex].y = snappedPointer.y;
-    }
-    if (segmentIndex + 1 < next.length - 1) {
-      next[segmentIndex + 1].y = snappedPointer.y;
+    for (let i = startIndex; i <= endIndex; i += 1) {
+      if (i > 0 && i < next.length - 1) {
+        next[i].y = snappedPointer.y;
+      }
     }
   } else if (orientation === 'vertical') {
-    // Same for vertical segments and X coordinate.
-    if (segmentIndex > 0) {
-      next[segmentIndex].x = snappedPointer.x;
-    }
-    if (segmentIndex + 1 < next.length - 1) {
-      next[segmentIndex + 1].x = snappedPointer.x;
+    for (let i = startIndex; i <= endIndex; i += 1) {
+      if (i > 0 && i < next.length - 1) {
+        next[i].x = snappedPointer.x;
+      }
     }
   }
 
-  return next;
+  return { points: next, newIndex: finalSegmentIndex };
 }
 
 export function snapPoint(point: OrthogonalPoint): OrthogonalPoint {
