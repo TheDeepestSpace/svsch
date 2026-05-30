@@ -1266,6 +1266,7 @@ test.describe('edge route editing', () => {
       label: 'renamed_a'
     }));
 
+    await page.mouse.move(0, 0);
     const tieTarget = page.locator('[data-node-id="cut-label:source:a:p:sink:edge-a-to-x"]');
     const tieButton = tieTarget.locator('.hdl-net-label-tie');
     await expect(tieButton).toBeHidden();
@@ -1359,6 +1360,7 @@ test.describe('edge route editing', () => {
       { steps: 10 }
     );
     await page.mouse.up();
+    await page.mouse.move(0, 0);
     await page.waitForTimeout(500);
 
     // Position must be on the grid (x ≡ 0 mod grid, same for y)
@@ -1371,6 +1373,11 @@ test.describe('edge route editing', () => {
     const yMod = ((Math.round(pos.y) % grid) + grid) % grid;
     expect(xMod).toBe(0);
     expect(yMod).toBe(0);
+
+    // Hover over the moved source label to show the net highlight in the screenshot
+    const movedLabelLocator = page.locator(`.react-flow__node[data-id="${sourceLabelNode.id}"]`);
+    await movedLabelLocator.hover({ force: true });
+    await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
     await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
