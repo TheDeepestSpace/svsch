@@ -20,9 +20,9 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 120)
+    When I move the port node "a" to (120, 132)
     And I close and reopen the diagram
-    Then the port node "a" should be at (120, 120)
+    Then the port node "a" should be at (120, 132)
 
   Scenario: Manual positions are remembered even if the node is temporarily removed
     Given a SystemVerilog module:
@@ -31,7 +31,7 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 120)
+    When I move the port node "a" to (120, 132)
     And I update the code to remove node "a":
       """
       module top(output y);
@@ -44,7 +44,7 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    Then the port node "a" should be at (120, 120)
+    Then the port node "a" should be at (120, 132)
 
   Scenario: Resetting the layout
     Given a SystemVerilog module:

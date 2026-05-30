@@ -790,25 +790,14 @@ async function getInternalPosition(page: Page, nodeId: string): Promise<{ x: num
 When('I move the port node {string} by \\({int}, {int}\\)', async function (this: CustomWorld, name: string, dx: number, dy: number) {
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
-
   const pos = await getInternalPosition(this.page!, id);
   if (!pos) throw new Error(`Missing position data for ${name}`);
-
-  const targetX = pos.x + dx;
-  const targetY = pos.y + dy;
-
-  const moduleName = this.lastGraph.rootModules[0];
-  this.layout.modules[moduleName].nodes[id] = { x: targetX, y: targetY, fixed: true };
-  await postCurrentView(this, 'After move');
+  this.notedPositions.set(name, pos);
+  await dragPortNodeTo(this, name, pos.x + dx, pos.y + dy, 'After move');
 });
 
 When('I move the port node {string} to \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
-  const id = await findNodeIdByLabel(this.page!, name, 'port');
-  if (!id) throw new Error(`Node not found: ${name}`);
-
-  const moduleName = this.lastGraph.rootModules[0];
-  this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
-  await postCurrentView(this, 'After move');
+  await dragPortNodeTo(this, name, x, y, 'After move');
 });
 
 When('I drag port nodes {string} and {string} together', async function (this: CustomWorld, name1: string, name2: string) {
@@ -858,10 +847,8 @@ When('I drag port nodes {string} and {string} together', async function (this: C
 When('I position the port node {string} at \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
-
   const moduleName = this.lastGraph.rootModules[0];
   this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
-  
   await postCurrentView(this, 'After positioning node');
 });
 
@@ -1413,6 +1400,42 @@ Then('the entire net for {string} should be highlighted', async function (this: 
   console.log('HALO: Final Count:', highlightedCount);
   expect(highlightedCount).toBeGreaterThanOrEqual(1);
 });
+
+async function dragPortNodeTo(world: CustomWorld, name: string, x: number, y: number, screenshotLabel: string): Promise<void> {
+  const id = await findNodeIdByLabel(world.page!, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
+
+  const pos = await getInternalPosition(world.page!, id);
+  if (!pos) throw new Error(`Missing position data for ${name}`);
+
+  const zoom = await world.page!.evaluate(() => ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number);
+  const nodeLocator = world.page!.locator(`.react-flow__node[data-id="${id}"]`);
+  const box = await nodeLocator.boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${name}`);
+
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  const msgsBefore = (await webviewMessages(world.page!)).length;
+  await world.page!.mouse.move(cx, cy);
+  await world.page!.mouse.down();
+  await world.page!.mouse.move(cx + (x - pos.x) * zoom, cy + (y - pos.y) * zoom, { steps: 10 });
+  await world.page!.mouse.up();
+  await world.page!.waitForTimeout(500);
+
+  await expect.poll(async () => {
+    const messages = await webviewMessages(world.page!);
+    return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
+  }, { timeout: 5000 }).toBe(true);
+
+  const allMessages = await webviewMessages(world.page!);
+  const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
+  if (layoutMsg) {
+    world.layout = mergeNodePositions(world.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  }
+
+  await world.takeScreenshot(screenshotLabel);
+}
 
 async function waitForViewportTransformToSettle(page: Page): Promise<void> {
   await page.evaluate(async () => {

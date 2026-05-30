@@ -424,7 +424,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 240 264 L 264 264 L 281 264 Q 288 257 295 264 L 353 264 Q 360 257 367 264 L 552 264 L 552 288 L 551.9921875 240"
+      "path": "M 240 264 L 264 264 L 281 264 Q 288 257 295 264 L 353 264 Q 360 257 367 264 L 552 264 L 552 288 L 552 240"
     },
     {
       "id": "edge:reg:top:r:mux:top:next_r:r:r",
