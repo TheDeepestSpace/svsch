@@ -1018,7 +1018,8 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerStatement(
             std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
             result[target] = lowerAssignment(stmt, mod, branch_pref, is_clocked, result);
         }
-    } else if (type == vpiEventControl) {
+    }
+ else if (type == vpiEventControl) {
         result = lowerStatement(vpi_handle(vpiStmt, stmt), mod, is_clocked, desired_outputs, source_handle, result);
     } else {
         std::vector<vpiHandle> assigns;
@@ -1115,6 +1116,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
         mux.ports.push_back({"false", "input", false_val.signal, false_val.width, "false"});
         mux.ports.push_back({"out", "output", output_signal, target_width});
         mod.nodes.push_back(mux);
+        propagateStruct(mod, target, output_signal);
 
         if (!is_clocked && missing_branch && final_output && !current_drivers.count(target)) {
             ensureInferredLatch(mod, target, output_signal, target_width, source_handle ? source_handle : stmt);
@@ -1222,6 +1224,7 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
 
         mux.ports.push_back({"out", "output", output_signal, target_width});
         mod.nodes.push_back(mux);
+        propagateStruct(mod, target, output_signal);
 
         if (!is_clocked && !has_default && final_output && !current_drivers.count(target)) {
             ensureInferredLatch(mod, target, output_signal, target_width, source_handle ? source_handle : stmt);

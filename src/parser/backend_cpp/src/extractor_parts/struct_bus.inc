@@ -396,6 +396,17 @@ std::string DesignExtractor::ensureStructBreakoutAlias(Module& mod, const std::s
     return output_signal;
 }
 
+void DesignExtractor::propagateStruct(Module& mod, const std::string& from, const std::string& to) {
+    if (from == to || to.empty()) return;
+    auto it = mod.structSignals.find(from);
+    if (it != mod.structSignals.end()) {
+        if (mod.structSignals.find(to) == mod.structSignals.end()) {
+            mod.structSignals[to] = it->second;
+            mod.structSignals[to].name = to;
+        }
+    }
+}
+
 void DesignExtractor::ensureStructFieldCompositionInput(Module& mod, const std::string& base, const std::string& field, const std::string& input_signal, SourceInfo source) {
     if (base.empty() || field.empty() || input_signal.empty()) return;
 

@@ -90,6 +90,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const editedMux = edited.modules.top_clean.nodes.find((node) => node.kind === 'mux');
 
     expect(originalMux?.id).toBe('mux:top_clean:y:sel:y');
+
     expect(editedMux?.id).toBe(originalMux?.id);
   });
 

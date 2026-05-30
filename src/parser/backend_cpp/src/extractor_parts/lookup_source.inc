@@ -107,6 +107,9 @@ void DesignExtractor::buildEdges(Module& mod) {
                 if (mod.interfaceSignals.count(signal)) {
                     e.aggregateKind = "interface";
                 }
+                if (mod.structSignals.count(signal)) {
+                    e.aggregateKind = "struct";
+                }
 
                 // Mark stacked edges when either side participates in array transport. Scalar
                 // signals entering an array node are promoted; array sources stay stacked until

@@ -278,6 +278,7 @@ private:
     std::optional<std::pair<std::string, std::string>> getStructFieldRef(vpiHandle handle, const Module& mod);
     std::string ensureStructBreakout(Module& mod, const std::string& base, const std::string& field, SourceInfo source);
     std::string ensureStructBreakoutAlias(Module& mod, const std::string& base, const std::string& field, const std::string& output_signal, SourceInfo source);
+    void propagateStruct(Module& mod, const std::string& from, const std::string& to);
     void ensureStructFieldCompositionInput(Module& mod, const std::string& base, const std::string& field, const std::string& input_signal, SourceInfo source);
     void ensureBusSliceCompositionInput(Module& mod, const std::string& base, const std::string& slice, const std::string& input_signal, SourceInfo source);
     void ensureArrayCompositionInput(Module& mod, const std::string& base, const std::string& index_label, const std::string& input_signal, const std::string& width, SourceInfo source);
