@@ -60,9 +60,6 @@ RUN ln -s /opt/uhdm/include/uhdm /usr/local/include/uhdm && \
     ln -s /opt/uhdm/lib/uhdm /usr/local/lib/uhdm && \
     ln -s /opt/uhdm/bin/uhdm-dump /usr/local/bin/uhdm-dump
 
-# Global npm packages needed for CI
-RUN npm install -g @vscode/vsce patch-package
-
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Devcontainer image (adds developer conveniences)
