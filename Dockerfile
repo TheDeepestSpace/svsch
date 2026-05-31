@@ -63,13 +63,6 @@ RUN ln -s /opt/uhdm/include/uhdm /usr/local/include/uhdm && \
 # Global npm packages needed for CI
 RUN npm install -g @vscode/vsce patch-package
 
-# Install Playwright dependencies and Chromium (globally accessible)
-ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/ms-playwright
-RUN mkdir -p ${PLAYWRIGHT_BROWSERS_PATH} && \
-    npx playwright install-deps chromium && \
-    npx playwright install chromium && \
-    chmod -R 777 ${PLAYWRIGHT_BROWSERS_PATH}
-
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Devcontainer image (adds developer conveniences)
