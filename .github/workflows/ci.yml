@@ -11,57 +11,6 @@ permissions:
   contents: read
   packages: write
 
-# Common job configurations
-x-common:
-  container: &container
-    image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
-
-  steps:
-    - &checkout
-      name: Checkout
-      uses: actions/checkout@v4
-
-    - &restore_npm
-      name: Restore node modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-
-    - &download_dist
-      name: Download Dist
-      uses: actions/download-artifact@v4
-      with:
-        name: extension-dist
-        path: dist
-
-    - &download_backend
-      name: Download Backend
-      uses: actions/download-artifact@v4
-      with:
-        name: backend-binary
-        path: dist
-
-    - &fix_permissions
-      name: Fix Binary Permissions
-      run: |
-        chmod +x dist/svsch_backend
-        chmod +x dist/surelog/bin/surelog
-
-    - &playwright_setup
-      - name: Get Playwright version
-        id: playwright-version
-        run: echo "version=$(npx playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-      - name: Install Playwright Browsers and Deps
-        run: npx playwright install --with-deps chromium
-
 jobs:
   prep:
     runs-on: ubuntu-latest
@@ -107,11 +56,15 @@ jobs:
     needs: [prep, build_ci_image]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
-    container: *container
+    container: &container_config
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
     steps:
-      - *checkout
+      - &checkout_step
+        name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Cache node modules
+      - &restore_npm_step
+        name: Restore node modules
         id: cache-npm
         uses: actions/cache@v4
         with:
@@ -128,10 +81,10 @@ jobs:
     needs: [prep, build_ci_image, setup]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
+      - *checkout_step
+      - *restore_npm_step
 
       - name: Compile Backend
         run: npm run compile:backend
@@ -146,10 +99,10 @@ jobs:
     needs: [prep, build_ci_image, setup]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
+      - *checkout_step
+      - *restore_npm_step
 
       - name: Lint
         run: npm run lint
@@ -172,10 +125,10 @@ jobs:
     needs: [prep, build_ci_image, setup]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
+      - *checkout_step
+      - *restore_npm_step
 
       - name: Run Backend Tests
         run: npm run test:backend
@@ -183,13 +136,30 @@ jobs:
   test_unit:
     needs: [prep, build_ci_image, setup, build_extension, build_backend]
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
-      - *download_dist
-      - *download_backend
-      - *fix_permissions
+      - *checkout_step
+      - *restore_npm_step
+
+      - &download_dist_step
+        name: Download Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: dist
+
+      - &download_backend_step
+        name: Download Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: dist
+
+      - &fix_perms_step
+        name: Fix Binary Permissions
+        run: |
+          chmod +x dist/svsch_backend
+          chmod +x dist/surelog/bin/surelog
 
       - name: Run Unit Tests
         run: npm test
@@ -197,14 +167,31 @@ jobs:
   test_visual:
     needs: [prep, build_ci_image, setup, build_extension, build_backend]
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
-      - *download_dist
-      - *download_backend
-      - *fix_permissions
-      - <<: *playwright_setup
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *fix_perms_step
+
+      - &pw_version_step
+        name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(npx playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
+
+      - &pw_cache_step
+        name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - &pw_install_step
+        name: Install Playwright Browsers and Deps
+        run: npx playwright install --with-deps chromium
 
       - name: Run Visual Tests
         run: npm run test:visual
@@ -222,14 +209,16 @@ jobs:
   test_bdd:
     needs: [prep, build_ci_image, setup, build_extension, build_backend]
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
-      - *download_dist
-      - *download_backend
-      - *fix_permissions
-      - <<: *playwright_setup
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *fix_perms_step
+      - *pw_version_step
+      - *pw_cache_step
+      - *pw_install_step
 
       - name: Run BDD Tests
         run: npm run test:bdd
@@ -246,10 +235,10 @@ jobs:
   security_audit:
     needs: [prep, build_ci_image, setup]
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
+      - *checkout_step
+      - *restore_npm_step
 
       - name: Run npm audit
         run: npm audit --audit-level=high
@@ -257,13 +246,13 @@ jobs:
   package:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, security_audit]
     runs-on: ubuntu-latest
-    container: *container
+    container: *container_config
     steps:
-      - *checkout
-      - *restore_npm
-      - *download_dist
-      - *download_backend
-      - *fix_permissions
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *fix_perms_step
 
       - name: Package Extension
         run: npm run package
