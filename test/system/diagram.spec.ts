@@ -116,16 +116,19 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     void vscode.commands.executeCommand('svsch.openDiagram');
   });
 
-  // --- 6. Screenshot during elaboration: take it ~2 s after the command so
-  //     Surelog is running and the progress notification is visible.
-  await workbox.waitForTimeout(2_000);
-  await expect(workbox).toHaveScreenshot('progress-notification.png');
-
-  // --- 7. Confirm the SVSCH panel tab opened.
+  // --- 6. Confirm the SVSCH panel tab opened.
+  //     This ensures the webview is created and visible before we snapshot
+  //     the progress notification.
   await workbox.waitForSelector(
     '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
     { timeout: 30_000 }
   );
+
+  // --- 7. Screenshot during elaboration: take it after a short delay so
+  //     React inside the webview has time to render "Building diagram..."
+  //     and Surelog is still running with the progress notification visible.
+  await workbox.waitForTimeout(2_000);
+  await expect(workbox).toHaveScreenshot('progress-notification.png');
 
   // --- 8. Poll until the first graph arrives (Surelog can take ~18 s cold).
   for (let i = 0; i < 60; i++) {
