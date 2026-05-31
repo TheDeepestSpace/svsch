@@ -57,7 +57,7 @@ jobs:
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
     container: &container_config
-      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}
     steps:
       - &checkout_step
         name: Checkout
