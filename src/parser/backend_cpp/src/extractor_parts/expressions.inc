@@ -856,6 +856,9 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
                 is_procedural,
                 current_drivers
             );
+            if (isLiteralExpr(in)) {
+                ensureLiteralNode(in, mod, sig, getWidth(in), in, sig);
+            }
             std::string input_width = getWidth(in);
             std::string declared_width = getDeclaredSignalWidth(mod, sig);
             if (bitSizeFromWidth(declared_width) > bitSizeFromWidth(input_width)) {

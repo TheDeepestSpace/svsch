@@ -314,6 +314,31 @@ describe('parser: concatenation as bus composition', () => {
     expect(mod.edges.some(e => e.source === busFf?.id && e.target === regFf?.id && e.targetPort === 'd')).toBe(true);
   });
 
+  it('represents literals in bus compositions as literal nodes with edges (UHDM)', async () => {
+    const graph = await runParser('uhdm', 'literal_composition.sv', `
+      module literal_composition(
+        input [19:0] instr_31_12,
+        output logic [31:0] imm_ext
+      );
+        assign imm_ext = {instr_31_12, 12'h000};
+      endmodule
+    `);
+    const mod = graph.modules.literal_composition;
+
+    const busComp = mod.nodes.find(n => n.kind === 'bus' && n.label === 'imm_ext');
+    expect(busComp).toBeDefined();
+
+    const literalNode = mod.nodes.find(n => n.kind === 'literal' && n.label === "12'h000");
+    expect(literalNode).toBeDefined();
+
+    const edge = mod.edges.find(e => e.source === literalNode?.id && e.target === busComp?.id);
+    expect(edge).toBeDefined();
+    expect(edge?.targetPort).toBeDefined();
+    
+    const port = busComp?.ports.find(p => p.id === edge?.targetPort);
+    expect(port?.name).toBe('[11:0]');
+  });
+
   it('preserves explicit bus-composition slices and widths from slice assignments (UHDM)', async () => {
     const graph = await runParser('uhdm', 'bus_composition.sv', fixture('bus_composition.sv'));
     const mod = graph.modules.bus_composition;
