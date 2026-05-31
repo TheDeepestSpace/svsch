@@ -3,10 +3,11 @@ import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwri
 import path from 'path';
 
 const root = path.resolve(__dirname, '../..');
+const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   testDir: __dirname,
-  snapshotDir: path.join(__dirname, '__screenshots__'),
+  snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
   timeout: 120_000,
   reporter: [
@@ -27,7 +28,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     baseDir: path.join(root, 'test'),
     // Pin to Electron 30 era. VSCode 1.121 uses Electron 35+ which
     // drops --remote-debugging-port=0 support that Playwright 1.59 requires.
-    vscodeVersion: '1.91.0',
+    vscodeVersion,
     vscodeTrace: 'retain-on-failure',
   },
 });

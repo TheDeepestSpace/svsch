@@ -60,6 +60,11 @@ RUN ln -s /opt/uhdm/include/uhdm /usr/local/include/uhdm && \
     ln -s /opt/uhdm/lib/uhdm /usr/local/lib/uhdm && \
     ln -s /opt/uhdm/bin/uhdm-dump /usr/local/bin/uhdm-dump
 
+# Install libraries for system testing (VS Code UI requirements)
+RUN apt update && \
+    apt install -y xvfb libgtk-3-0 libgbm1 libasound2 libxss1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Devcontainer image (adds developer conveniences)

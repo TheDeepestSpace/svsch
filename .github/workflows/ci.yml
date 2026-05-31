@@ -232,6 +232,37 @@ jobs:
             test-results/bdd/**
             test/features/snapshots/**
 
+  test_system:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    runs-on: ubuntu-latest
+    container: *container_config
+    strategy:
+      matrix:
+        vscode_version: ['1.90.0', '1.91.0', 'stable']
+      fail-fast: false
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *fix_perms_step
+      - *pw_version_step
+      - *pw_cache_step
+      - *pw_install_step
+
+      - name: Run System Tests (${{ matrix.vscode_version }})
+        run: npm run test:system
+        env:
+          VSCODE_VERSION: ${{ matrix.vscode_version }}
+      - name: Upload System Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-test-results-${{ matrix.vscode_version }}
+          path: |
+            playwright-report/system/**
+            test/system/__screenshots__/**
+
   security_audit:
     needs: [prep, build_ci_image, setup]
     runs-on: ubuntu-latest
@@ -244,7 +275,7 @@ jobs:
         run: npm audit --audit-level=high
 
   package:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
