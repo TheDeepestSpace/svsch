@@ -169,6 +169,10 @@ jobs:
         with:
           name: backend-binary
           path: dist
+      - name: Fix Binary Permissions
+        run: |
+          chmod +x dist/svsch_backend
+          chmod +x dist/surelog/bin/surelog
       - name: Run Unit Tests
         run: npm test
 
@@ -195,6 +199,10 @@ jobs:
         with:
           name: backend-binary
           path: dist
+      - name: Fix Binary Permissions
+        run: |
+          chmod +x dist/svsch_backend
+          chmod +x dist/surelog/bin/surelog
       - name: Get Playwright version
         id: playwright-version
         run: echo "version=$(npx playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
@@ -242,6 +250,10 @@ jobs:
         with:
           name: backend-binary
           path: dist
+      - name: Fix Binary Permissions
+        run: |
+          chmod +x dist/svsch_backend
+          chmod +x dist/surelog/bin/surelog
       - name: Get Playwright version
         id: playwright-version
         run: echo "version=$(npx playwright --version | cut -d' ' -f2)" >> $GITHUB_OUTPUT
@@ -304,6 +316,10 @@ jobs:
         with:
           name: backend-binary
           path: dist
+      - name: Fix Binary Permissions
+        run: |
+          chmod +x dist/svsch_backend
+          chmod +x dist/surelog/bin/surelog
       - name: Package Extension
         run: npm run package
         env:
