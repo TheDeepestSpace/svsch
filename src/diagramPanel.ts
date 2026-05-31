@@ -185,8 +185,10 @@ export class DiagramPanel {
       title: 'SVSCH',
       cancellable: false,
     }, async (progress) => {
-      const onProgress = (message: string, increment: number) =>
+      const onProgress = (message: string, increment: number) => {
+        logger.log(`Progress: ${message} (${increment}%)`);
         progress.report({ message, increment });
+      };
 
       try {
         this.graph = await buildDesignGraph({ ...commonOptions, onProgress });
@@ -195,6 +197,10 @@ export class DiagramPanel {
           logger.warn('Full design too large for buffer, falling back to on-demand module loading.');
           this.graph = await buildDesignGraph({ ...commonOptions, listOnly: true, onProgress });
         } else {
+          logger.error(`Rebuild failed: ${e.message}`);
+          if (e.stack) {
+            logger.error(e.stack);
+          }
           throw e;
         }
       }
@@ -203,6 +209,7 @@ export class DiagramPanel {
     if (version !== this.rebuildVersion || !this.graph) {
       return;
     }
+
     this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
       ? this.currentModule
       : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
@@ -576,6 +583,7 @@ export class DiagramPanel {
   private html(webview: vscode.Webview): string {
     const scriptUri = this.webviewMediaUri(webview, 'webview.js');
     const styleUri = this.webviewMediaUri(webview, 'webview.css');
+    logger.log(`Webview URIs: script=${scriptUri.toString()}, style=${styleUri.toString()}`);
     const nonce = String(Date.now());
     return `<!DOCTYPE html>
 <html lang="en">
