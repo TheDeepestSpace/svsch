@@ -8,80 +8,280 @@ on:
   pull_request:
 
 jobs:
-  checks:
+  prep:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      packages: write
+    outputs:
+      ci_image_name: ${{ steps.names.outputs.ci_image_name }}
+      dev_image_name: ${{ steps.names.outputs.dev_image_name }}
+    steps:
+      - name: Set lower case image names
+        id: names
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "ci_image_name=ghcr.io/${REPO_LOWER}-ci" >> $GITHUB_OUTPUT
+          echo "dev_image_name=ghcr.io/${REPO_LOWER}-dev" >> $GITHUB_OUTPUT
 
+  build_ci_image:
+    needs: prep
+    # do this during a push to a branch (e.g. to main) or on a non-fork PR
+    if: >
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/docker-image.yml
+    with:
+      image-name: ${{ needs.prep.outputs.ci_image_name }}
+      dockerfile: ./Dockerfile
+      target: ci
+      tag-prefix: ci-
+    secrets: inherit
+
+  build_dev_image:
+    needs: [prep, build_ci_image]
+    if: >
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/docker-image.yml
+    with:
+      image-name: ${{ needs.prep.outputs.dev_image_name }}
+      dockerfile: ./Dockerfile
+      target: dev
+      tag-prefix: dev-
+    secrets: inherit
+
+  # Common setup job to install dependencies and cache them
+  setup:
+    needs: [prep, build_ci_image]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Set lower case image name
-        id: prep
-        run: |
-          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository }}-ci" | tr '[:upper:]' '[:lower:]')
-          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          echo "Generated IMAGE_NAME: $IMAGE_NAME"
+      - name: Install dependencies
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm ci
 
-      - name: Build and Run in Dev Container
-        uses: devcontainers/ci@v0.3
+  build_backend:
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
         with:
-          imageName: ${{ steps.prep.outputs.image_name }}
-          cacheFrom: ${{ steps.prep.outputs.image_name }}
-          push: filter
-          runCmd: |
-            set -e
-            # UHDM is already installed in /usr/local in the dev container,
-            # but its CMake config points to /opt/uhdm. Fix it locally.
-            sudo mkdir -p /opt && sudo ln -s /usr/local /opt/uhdm
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 
-            npm ci
-            npx playwright install --with-deps chromium
-            npm run lint
-            npm run compile
-            npm run test:backend
-            npm test
-            npm run test:visual
-            npm run test:bdd
-            npm run package
-            npm audit --audit-level=high
+      - name: Compile Backend
+        run: npm run compile:backend
 
-      - name: Upload VSIX
+      - name: Upload Backend Binary
         uses: actions/upload-artifact@v4
         with:
-          name: extension-vsix-${{ github.run_id }}
-          retention-days: 14
-          path: "*.vsix"
+          name: backend-binary
+          path: dist/svsch_backend
 
+  build_extension:
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Lint
+        run: npm run lint
+      - name: Compile Extension and Webview
+        run: |
+          CI=true npx vite build
+          npx tsc -p tsconfig.extension.json
+          SURELOG_AUTO_INSTALL=1 npm run install-surelog
+      - name: Upload Dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-dist
+          path: |
+            dist/
+            !dist/svsch_backend
+
+  test_backend:
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Run Backend Tests
+        run: npm run test:backend
+
+  test_unit:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Download Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: dist
+      - name: Download Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: dist
+      - name: Run Unit Tests
+        run: npm test
+
+  test_visual:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Download Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: dist
+      - name: Download Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: dist
+      - name: Run Visual Tests
+        run: npm run test:visual
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-artifacts-${{ github.run_id }}
-          retention-days: 14
-          if-no-files-found: warn
+          name: playwright-artifacts
           path: |
             test-results/visual/**
             playwright-report/**
             test/visual/__screenshots__/**
 
-      - name: Upload BDD Documentation and Visual Diffs
+  test_bdd:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Download Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: dist
+      - name: Download Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: dist
+      - name: Run BDD Tests
+        run: npm run test:bdd
+      - name: Upload BDD Documentation
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bdd-documentation-${{ github.run_id }}
-          retention-days: 14
-          if-no-files-found: warn
+          name: bdd-documentation
           path: |
             test-results/bdd/**
             test/features/snapshots/**
+
+  security_audit:
+    needs: [prep, build_ci_image, setup]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+
+  package:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, security_audit]
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.build_ci_image.outputs.image-primary-tag || needs.prep.outputs.ci_image_name }}:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+      - name: Download Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-dist
+          path: dist
+      - name: Download Backend
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-binary
+          path: dist
+      - name: Package Extension
+        run: npm run package
+        env:
+          SURELOG_AUTO_INSTALL: 1
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-vsix
+          path: "*.vsix"
