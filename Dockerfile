@@ -18,8 +18,13 @@ RUN apt update && apt upgrade -y && \
     apt install -y \
     build-essential cmake ninja-build git curl wget ca-certificates zip \
     software-properties-common dumb-init \
-    python3-pip unzip && \
+    python3-pip unzip sudo && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Create dev sudo user
+RUN useradd --create-home dev && \
+    usermod --append --groups sudo dev && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Install node
 ARG NODE_VERSION=24.15.0
@@ -65,26 +70,26 @@ RUN apt update && \
     apt install -y xvfb libgtk-3-0 libgbm1 libasound2 libxss1 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Global Playwright browser path
+ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/ms-playwright
+RUN mkdir -p ${PLAYWRIGHT_BROWSERS_PATH} && chmod -R 777 ${PLAYWRIGHT_BROWSERS_PATH}
+
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Devcontainer image (adds developer conveniences)
 FROM ci AS dev
 
+USER root
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install dev-specific tools
 RUN apt update && \
     apt install -y \
-    man make zsh vim procps gnupg gnupg2 sudo && \
+    man make zsh vim procps gnupg gnupg2 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Unminimize the system
 RUN bash -c "yes | unminimize"
-
-# Create dev sudo user
-RUN useradd --create-home dev && \
-    usermod --append --groups sudo dev && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Setup oh-my-zsh
 USER dev

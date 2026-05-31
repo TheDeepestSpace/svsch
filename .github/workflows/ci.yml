@@ -251,7 +251,14 @@ jobs:
       - *pw_install_step
 
       - name: Run System Tests (${{ matrix.vscode_version }})
-        run: npm run test:system
+        run: |
+          # Ensure all tools are readable/executable by the dev user
+          chmod -R a+rX /usr/local
+          mkdir -p /home/dev/tmp
+          # Ensure dev can traverse the parent directories of the workspace
+          chmod 755 /__w /__w/vscode-svsch
+          chown -R dev:dev . /home/dev/tmp
+          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
       - name: Upload System Test Artifacts
