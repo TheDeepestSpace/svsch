@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "port:top:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:q",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:top:edited_state",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:top:clk:reg:top:edited_state:clk",
+      "source": "port:top:clk",
+      "target": "reg:top:edited_state",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 144.00034317639847 119.99999326970192 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96.00019417785681"
+    },
+    {
+      "id": "edge:port:top:d:reg:top:edited_state:d",
+      "source": "port:top:d",
+      "target": "reg:top:edited_state",
+      "sourceHandle": "port:d",
+      "targetHandle": "d",
+      "path": "M 144.00034317639847 72.00005190961325 L 168 72 L 336 72 L 360 72.00014899854165"
+    },
+    {
+      "id": "edge:reg:top:edited_state:port:top:q:q",
+      "source": "reg:top:edited_state",
+      "target": "port:top:q",
+      "sourceHandle": "q",
+      "targetHandle": "port:q",
+      "path": "M 552.0005569008924 72.00014899854165 L 576 72 L 744 72 L 768 72.00005190961325"
+    }
+  ]
+}

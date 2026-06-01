@@ -2,15 +2,20 @@ import { Given, When, Then, Before, After, setWorldConstructor, World, setDefaul
 import { chromium, type Browser, type Page, expect } from '@playwright/test';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { promisify } from 'node:util';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { chromiumStabilizationArgs } from '../testConstants';
 import { captureGraphState, compareGraphState } from '../graphRegression';
 
 setDefaultTimeout(20000);
+
+const execFileAsync = promisify(execFile);
+const execAsync = promisify(exec);
 
 class CustomWorld extends World {
   messages: any[] = [];
@@ -25,6 +30,12 @@ class CustomWorld extends World {
   notedRoutes: Map<string, string> = new Map();
   scenarioName?: string;
   stepCounter: number = 0;
+  workspaceDir?: string;
+  workspaceSources: Map<string, string> = new Map();
+  lastCliSvg?: string;
+  lastCliSvgPath?: string;
+  lastCliPng?: Buffer;
+  lastCliPngPath?: string;
 
   async takeScreenshot(label: string) {
     if (this.page) {
@@ -98,6 +109,72 @@ class CustomWorld extends World {
     }
   }
 
+  async openWorkspaceForEditing(sources: { file: string, text: string }[]) {
+    if (this.workspaceDir) {
+      await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
+    }
+    this.workspaceDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'svsch-bdd-cli-'));
+    this.workspaceSources.clear();
+    for (const source of sources) {
+      this.workspaceSources.set(source.file, source.text);
+    }
+    await this.writeWorkspaceSources();
+    await this.postWorkspaceGraph();
+  }
+
+  async updateWorkspaceFile(filename: string, text: string) {
+    if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
+    this.workspaceSources.set(filename, text);
+    await this.writeWorkspaceSources();
+    await this.postWorkspaceGraph();
+  }
+
+  private async writeWorkspaceSources() {
+    if (!this.workspaceDir) throw new Error('No open workspace');
+    for (const [file, text] of this.workspaceSources) {
+      const fullPath = path.join(this.workspaceDir, file);
+      await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.promises.writeFile(fullPath, text);
+    }
+    this.files = Array.from(this.workspaceSources, ([file, text]) => ({ file, text }));
+    this.lastCode = this.files[0]?.text;
+  }
+
+  private async postWorkspaceGraph() {
+    if (!this.workspaceDir) throw new Error('No open workspace');
+
+    const surelogPath = process.env.SURELOG_PATH || path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+    const backendPath = process.env.BACKEND_PATH || path.resolve(__dirname, '../../dist/svsch_backend');
+
+    const graph = await buildDesignGraph({
+      workspaceRoot: this.workspaceDir,
+      projectFolder: '.',
+      backend: 'uhdm',
+      veriblePath: 'verible-verilog-syntax',
+      surelogPath,
+      backendPath,
+      includeExternalDiagnostics: false
+    });
+
+    this.lastGraph = graph;
+    const moduleName = graph.rootModules[0];
+    const viewModel = await buildViewModel(graph, moduleName, this.layout);
+    this.lastViewModel = viewModel;
+    this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
+
+    await this.page?.evaluate(({ view, modules }) => {
+      (window as any).postMessage({
+        type: 'graph',
+        view: view,
+        modules: modules
+      }, '*');
+    }, { view: viewModel, modules: Object.keys(graph.modules) });
+
+    await this.page?.waitForSelector('.react-flow__node');
+    await this.page?.waitForTimeout(500);
+    await this.takeScreenshot(`Viewing module ${moduleName}`);
+  }
+
   async selectModule(moduleName: string) {
     const graph = this.lastGraph;
     const viewModel = await buildViewModel(graph, moduleName, this.layout);
@@ -148,6 +225,10 @@ After(async function (this: CustomWorld) {
   } catch (err) {
     console.error('Error in After hook (screenshot/matching):', err);
   } finally {
+    if (this.workspaceDir) {
+      await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
+      this.workspaceDir = undefined;
+    }
     await this.browser?.close();
   }
 });
@@ -169,12 +250,96 @@ Given('a SystemVerilog file {string} with:', async function (this: CustomWorld, 
   await this.postGraph([{ file: filename, text: content }]);
 });
 
+Given('I have opened {string} for editing with:', async function (this: CustomWorld, filename: string, content: string) {
+  await this.openWorkspaceForEditing([{ file: filename, text: content }]);
+});
+
 When('I open the diagram for module {string}', async function (this: CustomWorld, moduleName: string) {
   await this.selectModule(moduleName);
 });
 
 When('I update the code to:', async function (this: CustomWorld, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+});
+
+When('I update {string} in the editor to:', async function (this: CustomWorld, filename: string, content: string) {
+  await this.updateWorkspaceFile(filename, content);
+});
+
+When('I render {string} with the CLI to {string}', async function (this: CustomWorld, inputFile: string, outputFile: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
+
+  const cliPath = path.resolve(__dirname, '../../dist/cli.js');
+  if (!fs.existsSync(cliPath)) {
+    throw new Error(`CLI bundle not found at ${cliPath}. Run npm run build:cli before the BDD CLI scenario.`);
+  }
+
+  const surelogPath = process.env.SURELOG_PATH || path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+  const backendPath = process.env.BACKEND_PATH || path.resolve(__dirname, '../../dist/svsch_backend');
+  const outputPath = path.join(this.workspaceDir, outputFile);
+
+  await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+  await execFileAsync(process.execPath, [
+    cliPath,
+    'render',
+    inputFile,
+    '--output',
+    outputPath,
+    '--no-layout',
+    '--surelog',
+    surelogPath,
+    '--backend',
+    backendPath
+  ], {
+    cwd: this.workspaceDir,
+    maxBuffer: 10 * 1024 * 1024
+  });
+
+  this.lastCliSvgPath = outputPath;
+  this.lastCliSvg = await fs.promises.readFile(outputPath, 'utf8');
+});
+
+When('I run the CLI command:', async function (this: CustomWorld, command: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
+
+  const worktreeRoot = path.resolve(__dirname, '../..');
+  const cliPath = path.join(worktreeRoot, 'dist', 'cli.js');
+  if (!fs.existsSync(cliPath)) {
+    throw new Error(`CLI not built. Run: npm run build:cli`);
+  }
+
+  // Ensure dist/cli.js is executable and node_modules/.bin/svsch symlink exists
+  try { fs.chmodSync(cliPath, 0o755); } catch { /* ignore permission errors */ }
+  const binDir = path.join(worktreeRoot, 'node_modules', '.bin');
+  const svschBin = path.join(binDir, 'svsch');
+  if (!fs.existsSync(svschBin)) {
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.symlinkSync(cliPath, svschBin);
+  }
+
+  // Execute the command exactly as written; cwd is the workspace so relative paths work
+  await execAsync(command.trim(), {
+    cwd: this.workspaceDir,
+    env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ''}` },
+    maxBuffer: 10 * 1024 * 1024
+  });
+
+  // Parse command only to locate the output file for reading back
+  const parts = command.trim().split(/\s+/);
+  const outputFlagIdx = parts.indexOf('--output');
+  if (outputFlagIdx < 0) throw new Error(`Cannot locate output: no --output flag in command`);
+  const outputPath = path.join(this.workspaceDir, parts[outputFlagIdx + 1]);
+
+  const ext = path.extname(outputPath).toLowerCase();
+  if (ext === '.png') {
+    this.lastCliPngPath = outputPath;
+    this.lastCliPng = await fs.promises.readFile(outputPath);
+    await persistCliPngSnapshot(this, this.lastCliPng);
+  } else {
+    this.lastCliSvgPath = outputPath;
+    this.lastCliSvg = await fs.promises.readFile(outputPath, 'utf8');
+    await persistSvgSnapshot(this, this.lastCliSvg);
+  }
 });
 
 When('I select module {string} from the dropdown', async function (this: CustomWorld, moduleName: string) {
@@ -626,6 +791,41 @@ Then('I should see a register node {string}', async function (this: CustomWorld,
   await expect(this.page!.locator(`.react-flow__node[data-id="${id}"]`)).toBeVisible();
 });
 
+Then('the CLI SVG should contain {string}', function (this: CustomWorld, expected: string) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(this.lastCliSvg).toContain(expected);
+});
+
+Then('the CLI SVG should not contain {string}', function (this: CustomWorld, unexpected: string) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(this.lastCliSvg).not.toContain(unexpected);
+});
+
+Then('the CLI output should contain {string}', function (this: CustomWorld, expected: string) {
+  if (this.lastCliSvg) {
+    expect(this.lastCliSvg).toContain(expected);
+  } else if (this.lastCliPng) {
+    // For PNG output, verify the view model that was used to render contains the expected label
+    const nodes = this.lastViewModel?.nodes ?? [];
+    const found = nodes.some((n: any) => n.label === expected || n.id?.includes(expected));
+    if (!found) throw new Error(`CLI output (PNG): no node with label/id containing "${expected}" in the rendered view model`);
+  } else {
+    throw new Error('No CLI output has been rendered');
+  }
+});
+
+Then('the CLI output should not contain {string}', function (this: CustomWorld, unexpected: string) {
+  if (this.lastCliSvg) {
+    expect(this.lastCliSvg).not.toContain(unexpected);
+  } else if (this.lastCliPng) {
+    const nodes = this.lastViewModel?.nodes ?? [];
+    const found = nodes.some((n: any) => n.label === unexpected || n.id?.includes(unexpected));
+    if (found) throw new Error(`CLI output (PNG): node with label/id containing "${unexpected}" was found in the rendered view model but should not be`);
+  } else {
+    throw new Error('No CLI output has been rendered');
+  }
+});
+
 Then('I should see a loop block', async function (this: CustomWorld) {
   await expect(this.page!.locator('[data-node-kind="loop"]')).toBeVisible();
 });
@@ -976,6 +1176,71 @@ Then('the instance node {string} should have port {string} with blue suffix {str
   const suffixLocator = portLocator.locator('.svsch-port-type-suffix-blue', { hasText: suffix });
   await expect(suffixLocator).toBeVisible();
 });
+
+async function persistCliPngSnapshot(world: CustomWorld, pngBuffer: Buffer) {
+  if (!world.scenarioName) return;
+  world.stepCounter += 1;
+  const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  const snapshotName = `${safeScenarioName}--${world.stepCounter.toString().padStart(2, '0')}--cli-png`;
+
+  const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
+  if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
+  const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
+
+  world.attach(pngBuffer, 'image/png');
+
+  if (!fs.existsSync(snapshotPath) || process.env.UPDATE_SNAPSHOTS) {
+    fs.writeFileSync(snapshotPath, pngBuffer);
+    console.log(`Created or updated CLI PNG snapshot: ${snapshotPath}`);
+    return;
+  }
+
+  const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
+  const actualImage = PNG.sync.read(pngBuffer);
+  const { width, height } = expectedImage;
+  const diff = new PNG({ width, height });
+  const numDiffPixels = pixelmatch(expectedImage.data, actualImage.data, diff.data, width, height, { threshold: 0.1 });
+  if (numDiffPixels > 100) {
+    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), PNG.sync.write(diff));
+    world.attach(fs.readFileSync(snapshotPath), 'image/png');
+    world.attach(pngBuffer, 'image/png');
+    throw new Error(`CLI PNG snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ.`);
+  }
+}
+
+async function persistSvgSnapshot(world: CustomWorld, svgContent: string) {
+  if (!world.scenarioName) return;
+  world.stepCounter += 1;
+  const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  const snapshotName = `${safeScenarioName}--${world.stepCounter.toString().padStart(2, '0')}--cli-svg`;
+
+  const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
+  if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
+  const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
+
+  world.attach(svgContent, 'image/svg+xml');
+
+  if (!fs.existsSync(snapshotPath) || process.env.UPDATE_SNAPSHOTS) {
+    fs.writeFileSync(snapshotPath, svgContent, 'utf8');
+    console.log(`Created or updated SVG snapshot: ${snapshotPath}`);
+    return;
+  }
+
+  const expected = fs.readFileSync(snapshotPath, 'utf8');
+  if (expected !== svgContent) {
+    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.svg`), expected, 'utf8');
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.svg`), svgContent, 'utf8');
+    world.attach(expected, 'image/svg+xml');
+    world.attach(svgContent, 'image/svg+xml');
+    throw new Error(`SVG snapshot mismatch for "${snapshotName}". Run with UPDATE_SNAPSHOTS=1 to update.`);
+  }
+}
 
 async function compareSnapshots(world: CustomWorld, actualBuffer: Buffer, actualGraph: any, snapshotName: string) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');

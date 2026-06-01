@@ -5,10 +5,11 @@ import {
   useNodes,
   useReactFlow
 } from '@xyflow/react';
-import { HdlPosition, type OrthogonalPoint, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
+import { HdlPosition, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
 import type { DiagramEdge, DiagramPort, PositionedNode } from '../../ir/types';
 import { edgeNetKey } from '../../ir/edgeNet';
 import { diagramSizing } from '../../diagram/constants';
+import { pathFromPoints, type OrthogonalPoint } from '../../core/pathUtils';
 import {
   moveRouteSegment,
   normalizeRoutePoints,
@@ -79,10 +80,6 @@ function routePointsWithAnchoredLeads(points: OrthogonalPoint[], officialPoints:
 
 function routePointsFromFullPoints(points: OrthogonalPoint[]): OrthogonalPoint[] {
   return points.slice(1, -1).map((point) => ({ ...point }));
-}
-
-function pathFromPoints(points: OrthogonalPoint[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 }
 
 function routeControlPoint(points: OrthogonalPoint[]): OrthogonalPoint {

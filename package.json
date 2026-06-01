@@ -5,6 +5,14 @@
   "version": "0.0.1",
   "publisher": "svsch",
   "license": "AGPL-3.0",
+  "bin": {
+    "svsch": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "media/",
+    "out/"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TheDeepestSpace/vscode-svsch"
@@ -88,7 +96,9 @@
   },
   "scripts": {
     "clean": "rm -rf media dist node_modules/.vite src/parser/backend_cpp/build",
-    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog",
+    "build": "npm run compile",
+    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
+    "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && vsce package",
     "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
