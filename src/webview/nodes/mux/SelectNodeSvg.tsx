@@ -40,7 +40,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <path
           key={layer.id}
-          className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
           transform={`translate(${layer.dx}, ${layer.dy})`}
           d={trapPath}
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
@@ -127,6 +127,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads side="right" width={width} y={height / 2} />
       )}
+      <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />
     </>
   );
 }

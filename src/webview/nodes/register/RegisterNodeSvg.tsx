@@ -55,19 +55,19 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeS
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <rect
           key={layer.id}
-          className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
           transform={`translate(${layer.dx}, ${layer.dy})`}
-          width={width} height={height} rx={4}
+          width={width} height={height}
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
 
       {/* Background */}
-      <rect className="svsch-node-shape hdl-node-register" width={width} height={height} rx={4} />
+      <rect className="svsch-node-shape" width={width} height={height} />
 
       {/* Kind + title in header */}
-      <text className="svsch-node-kind" x={width / 2} y={8} textAnchor="middle" dominantBaseline="middle">REGISTER</text>
-      <text className="svsch-node-title" x={width / 2} y={26} textAnchor="middle" dominantBaseline="middle">{node.label}</text>
+      <text className="svsch-node-kind" x={10} y={14} textAnchor="start" dominantBaseline="middle">REGISTER</text>
+      <text className="svsch-node-title" x={10} y={26} textAnchor="start" dominantBaseline="middle">{node.label}</text>
 
       {/* D port label (left side) */}
       {dPort && (

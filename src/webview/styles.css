@@ -2225,10 +2225,15 @@ select {
 .svsch-node-kind {
   fill: var(--vscode-descriptionForeground);
   font-size: 10px;
-  font-family: var(--vscode-editor-font-family, monospace);
+  font-family: var(--vscode-font-family, sans-serif);  /* UI font, matches old .node-kind */
   text-transform: uppercase;
   pointer-events: none;
   user-select: none;
+}
+/* Instance/module kind uses monospace (matches old CSS rule) */
+.hdl-node-instance .svsch-node-kind,
+.hdl-node-module .svsch-node-kind {
+  font-family: var(--vscode-editor-font-family, monospace);
 }
 .svsch-node-title {
   fill: var(--vscode-editor-foreground);
@@ -2326,4 +2331,10 @@ path.port-skin-body.port-skin-harness {
   stroke: var(--vscode-charts-blue);
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Hide handle circles on SVG-rendered nodes — handles stay functional but invisible */
+.hdl-node:has(> .hdl-node-svg) .react-flow__handle {
+  background: transparent;
+  border: 0;
 }

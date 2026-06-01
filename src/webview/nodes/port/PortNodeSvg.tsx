@@ -42,13 +42,14 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <path
           key={layer.id}
-          className={`port-skin-body svsch-array-layer-${layer.id}`}
+          className={`port-skin-body port-skin-array-layer port-skin-array-${layer.id} svsch-array-layer-${layer.id}`}
           transform={`translate(${layer.dx}, ${layer.dy})`}
           d={d}
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
       <path className="port-skin-body" d={d} />
+      <path className="port-skin-selection" d={d} />
       <text
         className="svsch-node-title"
         x={width / 2}

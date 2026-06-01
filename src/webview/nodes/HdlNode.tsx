@@ -33,6 +33,7 @@ import {
   PortLabel,
   structFieldAnnotation,
 } from './shared/labels';
+import { ArrayStackSelection } from './shared/skins';
 import { NetLabelNode } from './NetLabelNode';
 import type { HdlFlowNode } from './types';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
@@ -153,7 +154,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray && isSkinnedPort
+          ? <ArrayStackSelection kind={isOutput ? 'output' : 'input'} width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -387,7 +390,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
                 style={{ opacity: 0, pointerEvents: 'none' }}
               >
                 {isInterfaceInstance && port.width === 'interface'
-                  ? port.label ?? port.name
+                  ? <span className="interface-side-modport-label">{port.label ?? port.name}</span>
                   : <PortLabel port={port} showWidth={false} />}
                 {(node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface')) && structFieldAnnotation(node, port) && (
                   <span className="struct-field-annotation"> {structFieldAnnotation(node, port)}</span>
@@ -465,7 +468,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <Handle key={port.id} type="target" id={port.id} position={Position.Left}
             style={{ top: registerExtraInputPortTop(index, nodeHeight, hasRv) + diagramSizing.gridSize / 2 }} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -554,7 +559,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         style={nodeStyle}
         onDoubleClick={handleDoubleClick}
       >
-        <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
+        <svg className="hdl-node-svg node-skin mux-skin" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <SvgComp node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
         {/* Hidden label for test findNodeIdByLabel compatibility */}
@@ -571,7 +576,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={{ top: nodeHeight / 2 }} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray
+          ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }

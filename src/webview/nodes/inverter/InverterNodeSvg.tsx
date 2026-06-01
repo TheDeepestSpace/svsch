@@ -27,7 +27,7 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
     <>
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <g key={layer.id}
-           className={`svsch-array-layer-${layer.id}`}
+           className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
            transform={`translate(${layer.dx}, ${layer.dy})`}
            opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}>
           <path className="svsch-node-shape" d={path} />
@@ -44,6 +44,8 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads side="right" width={_width} y={height / 2} />
       )}
+      <path className="node-skin-selection" d={path} />
+      <circle className="node-skin-selection inverter-bubble-selection" cx={bubbleCx} cy={midY} r={bubbleRadius} />
     </>
   );
 }
