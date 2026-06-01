@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import * as fs_sync from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { buildDesignGraph } from '../src/parser/backend';
@@ -25,7 +26,10 @@ export async function runParser(
   }
 
   const surelogPath = process.env.SURELOG_PATH || path.resolve(__dirname, '../dist/surelog/bin/surelog');
-  const backendPath = path.resolve(__dirname, '../src/parser/backend_cpp/build/svsch_backend');
+  const backendPath = process.env.BACKEND_PATH || 
+                     (fs_sync.existsSync(path.resolve(__dirname, '../dist/svsch_backend')) ? 
+                      path.resolve(__dirname, '../dist/svsch_backend') : 
+                      path.resolve(__dirname, '../src/parser/backend_cpp/build/svsch_backend'));
 
   try {
     return await buildDesignGraph({

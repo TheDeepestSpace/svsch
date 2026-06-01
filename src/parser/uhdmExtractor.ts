@@ -7,6 +7,7 @@ import type { DesignGraph, DesignModule, DiagramNode, DiagramPort, DiagramEdge, 
 import { edgeId, stableId } from '../ir/ids';
 import { orderGraphModules } from './moduleOrdering';
 import { extractDesignFromText } from './textExtractor';
+import { logger } from '../logger';
 
 const execFileAsync = promisify(execFile);
 
@@ -188,7 +189,7 @@ export async function extractDesignWithUhdm(
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
-        console.error(`[SVSCH] Backend Stderr: ${stderr}`);
+        logger.error(`Backend Stderr: ${stderr}`);
     }
 
     const raw: RawUhdmIr = JSON.parse(stdout);
