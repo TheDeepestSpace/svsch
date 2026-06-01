@@ -32,6 +32,9 @@ import {
   orderedInterfaceSidePorts,
   portSkinPath
 } from '../diagram/interfaceGeometry';
+import { registerPortTop, registerExtraInputPortTop } from '../diagram/registerGeometry';
+import { muxInputPortCenterY, muxTopPortSkinEdgeY, muxTopPortLabelOffsetY, muxTopPortLeadLengthY } from '../diagram/muxGeometry';
+import { busTapPortCenterY } from '../diagram/busGeometry';
 import { OrthogonalEdge, type OrthogonalPoint, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_EDGE_GAP, ARRAY_STACK_LEAD_LAYERS, ARRAY_STACK_SKIN_LAYERS, arrayStackLayerTrim } from './arrayStackGeometry';
@@ -408,37 +411,12 @@ function InverterSkin({ width, height }: { width: number; height: number }): Rea
   );
 }
 
-function muxInputPortCenterY(index: number, count: number, height: number): number {
-  const grid = diagramSizing.gridSize;
-  const heightUnits = Math.max(1, Math.round(height / grid));
-  const startUnit = Math.max(1, Math.ceil((heightUnits - count + 1) / 2));
-  return grid * (startUnit + index);
-}
-
-function muxTopPortSkinEdgeY(index: number, count: number, height: number): number {
-  const xFraction = (index + 1) / (count + 1);
-  const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
-  const rightTop = (height - rightSideHeight) / 2;
-  return rightTop * xFraction;
-}
-
-function muxTopPortLabelOffsetY(index: number, count: number, height: number): number {
-  return Math.max(0, muxTopPortSkinEdgeY(index, count, height) - diagramSizing.gridSize) + 8;
-}
-
-function muxTopPortLeadLengthY(index: number, count: number, height: number): number {
-  return Math.max(0, muxTopPortSkinEdgeY(index, count, height) - diagramSizing.gridSize);
-}
-
 function shouldLowerMuxTopPortLabel(node: DiagramNode, port: DiagramPort): boolean {
   return node.kind === 'select'
     || Boolean(normalizeWidth(port.width))
     || (node.kind === 'mux' && (node.label.startsWith('if ') || (port.connectedSignal?.length ?? 0) > 24));
 }
 
-function busTapPortCenterY(index: number, startUnits = 1): number {
-  return diagramSizing.gridSize * (index * 2 + startUnits);
-}
 
 function TypeLabel({ typeName, width, source, modportName, modportSource, parameterRefs }: { typeName?: string; width?: string; source?: any; modportName?: string; modportSource?: any; parameterRefs?: ParameterRef[] }) {
   const stopDrag = (e: React.SyntheticEvent) => {
@@ -1772,26 +1750,6 @@ function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       )}
     </button>
   );
-}
-
-function registerPortTop(role: 'd' | 'q' | 'clock' | 'reset' | 'rv', nodeHeight: number, _hasReset: boolean, hasRv: boolean): number {
-  const grid = diagramSizing.gridSize;
-  if (role === 'd' || role === 'q') {
-    return diagramSizing.nodeHeaderHeight;
-  }
-  if (role === 'clock') {
-    return diagramSizing.nodeHeaderHeight + grid;
-  }
-  if (role === 'rv') {
-    return diagramSizing.nodeHeaderHeight + grid * 2;
-  }
-  return nodeHeight - grid;
-}
-
-function registerExtraInputPortTop(index: number, nodeHeight: number, hasRv: boolean): number {
-  const grid = diagramSizing.gridSize;
-  const offset = hasRv ? 3 : 2;
-  return Math.min(diagramSizing.nodeHeaderHeight + grid * (index + offset), nodeHeight - grid);
 }
 
 function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
