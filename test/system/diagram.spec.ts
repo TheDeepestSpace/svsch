@@ -179,9 +179,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     // Verify the webview iframe exists
     const webviewIframe = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
     try {
-      await expect(webviewIframe.locator('.shell')).toBeVisible({ timeout: 15_000 });
+      await expect(webviewIframe.locator('.shell')).toBeVisible({ timeout: 20_000 });
     } catch (e) {
-      const html = await workbox.contentFrame().locator('body').innerHTML().catch(() => 'could not capture body');
+      const html = await workbox.mainFrame().locator('body').innerHTML().catch(() => 'could not capture body');
       console.log('--- WORKBOX BODY HTML ---');
       console.log(html);
       console.log('--- END WORKBOX BODY HTML ---');

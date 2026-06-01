@@ -119,6 +119,7 @@ jobs:
           name: extension-dist
           path: |
             dist/
+            media/
             !dist/svsch_backend
 
   test_backend:
