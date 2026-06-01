@@ -147,7 +147,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: extension-dist
-          path: dist
+          path: .
 
       - &download_backend_step
         name: Download Backend
