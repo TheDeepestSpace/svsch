@@ -2,11 +2,17 @@ import { test, expect } from 'vscode-test-playwright';
 import path from 'path';
 import fs from 'fs';
 
-const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
+  const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
+  const webviewLogs: string[] = [];
 
-test.beforeEach(async () => {
-  fs.mkdirSync(logDir, { recursive: true });
-});
+  test.beforeEach(async ({ workbox }) => {
+    fs.mkdirSync(logDir, { recursive: true });
+    workbox.on('console', msg => {
+      const line = `[WEBVIEW CONSOLE] [${msg.type()}] ${msg.text()}`;
+      webviewLogs.push(line);
+      if (msg.type() === 'error') console.error(line);
+    });
+  });
 
 test('opens svsch diagram and captures screenshot + output logs', async ({
   workbox,
@@ -172,7 +178,20 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // Verify the webview iframe exists
     const webviewIframe = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
-    await expect(webviewIframe.locator('.shell')).toBeVisible({ timeout: 10_000 });
+    try {
+      await expect(webviewIframe.locator('.shell')).toBeVisible({ timeout: 15_000 });
+    } catch (e) {
+      const html = await workbox.contentFrame().locator('body').innerHTML().catch(() => 'could not capture body');
+      console.log('--- WORKBOX BODY HTML ---');
+      console.log(html);
+      console.log('--- END WORKBOX BODY HTML ---');
+      
+      const webviewHtml = await workbox.frameLocator('iframe.webview').locator('body').innerHTML().catch(() => 'could not capture webview body');
+      console.log('--- WEBVIEW BODY HTML ---');
+      console.log(webviewHtml);
+      console.log('--- END WEBVIEW BODY HTML ---');
+      throw e;
+    }
 
     // Dismiss any notifications that appeared during parsing.
     for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
@@ -249,12 +268,19 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
       return (global as any).__svschLogs ?? [];
     }).catch(() => []);
 
-    fs.writeFileSync(path.join(logDir, 'svsch-output.log'), logs.join('\n'), 'utf8');
+    const combinedLogs = [...logs, ...webviewLogs];
+    fs.writeFileSync(path.join(logDir, 'svsch-output.log'), combinedLogs.join('\n'), 'utf8');
 
     if (logs.length) {
       console.log('--- SVSCH OUTPUT LOGS ---');
       console.log(logs.join('\n'));
       console.log('--- END SVSCH OUTPUT LOGS ---');
+    }
+
+    if (webviewLogs.length) {
+      console.log('--- WEBVIEW CONSOLE LOGS ---');
+      console.log(webviewLogs.join('\n'));
+      console.log('--- END WEBVIEW CONSOLE LOGS ---');
     }
   }
 });
