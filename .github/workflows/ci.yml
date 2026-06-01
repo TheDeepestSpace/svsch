@@ -17,7 +17,13 @@ jobs:
     outputs:
       ci_image_name: ${{ steps.names.outputs.ci_image_name }}
       dev_image_name: ${{ steps.names.outputs.dev_image_name }}
+      vscode_versions: ${{ steps.versions.outputs.vscode_versions }}
     steps:
+      - uses: actions/checkout@v4
+      - id: versions
+        run: |
+          VERSIONS=$(cat vscode-versions.json | tr -d '\n ' )
+          echo "vscode_versions=$VERSIONS" >> $GITHUB_OUTPUT
       - name: Set lower case image names
         id: names
         run: |
@@ -239,7 +245,7 @@ jobs:
     container: *container_config
     strategy:
       matrix:
-        vscode_version: ['1.90.0', '1.91.0', 'stable']
+        vscode_version: ${{ fromJson(needs.prep.outputs.vscode_versions) }}
       fail-fast: false
     steps:
       - *checkout_step
