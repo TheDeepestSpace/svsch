@@ -1,11 +1,13 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
-import { structRole } from '../../../ir/nodeMetadata';
+import { structRole, nodeIsArrayNode } from '../../../ir/nodeMetadata';
+import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { busTapPortCenterY } from '../../../diagram/busGeometry';
 import type { DiagramPort } from '../../../ir/types';
 
 export function BusNodeSvg({ node, width, height }: NodeSvgProps): React.ReactElement {
+  const isArray = nodeIsArrayNode(node);
   const g = diagramSizing.gridSize;
   const role = structRole(node);
   const isInterface = node.kind === 'interface';
@@ -53,6 +55,15 @@ export function BusNodeSvg({ node, width, height }: NodeSvgProps): React.ReactEl
   if (taps.length === 0) {
     return (
       <>
+        {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+          <rect
+            key={layer.id}
+            className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+            transform={`translate(${layer.dx}, ${layer.dy})`}
+            width={width} height={height}
+            opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+          />
+        ))}
         <rect className="svsch-node-shape" width={width} height={height} />
       </>
     );
@@ -73,6 +84,15 @@ export function BusNodeSvg({ node, width, height }: NodeSvgProps): React.ReactEl
 
   return (
     <>
+      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+        <rect
+          key={layer.id}
+          className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+          transform={`translate(${layer.dx}, ${layer.dy})`}
+          width={width} height={height}
+          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+        />
+      ))}
       <rect
         className={`svsch-node-shape hdl-bus-node ${isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout'}`}
         width={width}

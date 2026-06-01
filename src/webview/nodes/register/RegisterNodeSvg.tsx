@@ -9,9 +9,13 @@ import {
   nodeArrayDimension,
   nodeIsArrayNode,
 } from '../../../ir/nodeMetadata';
+import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
-export function RegisterNodeSvg({ node, width, height }: NodeSvgProps): React.ReactElement {
+export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+  const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const g = diagramSizing.gridSize;
 
   const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
@@ -47,6 +51,17 @@ export function RegisterNodeSvg({ node, width, height }: NodeSvgProps): React.Re
 
   return (
     <>
+      {/* Array stack layers (back→middle→front for correct z-order) */}
+      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+        <rect
+          key={layer.id}
+          className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+          transform={`translate(${layer.dx}, ${layer.dy})`}
+          width={width} height={height} rx={4}
+          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+        />
+      ))}
+
       {/* Background */}
       <rect className="svsch-node-shape hdl-node-register" width={width} height={height} rx={4} />
 
@@ -102,6 +117,20 @@ export function RegisterNodeSvg({ node, width, height }: NodeSvgProps): React.Re
         <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
           {arrayDim}
         </text>
+      )}
+
+      {/* Array stack leads */}
+      {isArray && dPort && hasArrayConnection(dPort.id, 'target') && (
+        <SvgArrayStackLeads side="left" width={width} y={dTop + g / 2} trimSink />
+      )}
+      {isArray && clockPort && hasArrayConnection(clockPort.id, 'target') && (
+        <SvgArrayStackLeads side="left" width={width} y={clkTop + g / 2} trimSink />
+      )}
+      {isArray && resetPort && hasArrayConnection(resetPort.id, 'target') && (
+        <SvgArrayStackLeads side="bottom" width={width} y={rstTop + g} trimSink />
+      )}
+      {isArray && qPort && hasArrayConnection(qPort.id, 'source') && (
+        <SvgArrayStackLeads side="right" width={width} y={qTop + g / 2} />
       )}
     </>
   );
