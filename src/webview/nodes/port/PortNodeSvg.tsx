@@ -1,7 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { portSkinPath } from '../../../diagram/interfaceGeometry';
-import { diagramSizing } from '../../../diagram/constants';
+import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
@@ -32,22 +32,23 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   );
 
   const leadSide = skinDirection === 'output' ? 'left' : 'right';
+  const portWidth = normalizeWidth(port?.widthExpression ?? port?.width);
+  const displayLabel = portWidth ? `${node.label} ${portWidth}` : node.label;
 
   return (
-    <>
+    // Wrap in <g> with direction class so existing CSS rules
+    // (.port-skin-input .port-skin-body) apply via descendant selector
+    <g className={`port-skin port-skin-${skinDirection}`}>
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <path
           key={layer.id}
-          className={`svsch-node-shape svsch-array-layer-${layer.id}`}
+          className={`port-skin-body svsch-array-layer-${layer.id}`}
           transform={`translate(${layer.dx}, ${layer.dy})`}
           d={d}
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <path
-        className={`svsch-node-shape port-skin-body port-skin-${skinDirection}`}
-        d={d}
-      />
+      <path className="port-skin-body" d={d} />
       <text
         className="svsch-node-title"
         x={width / 2}
@@ -55,25 +56,16 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
         textAnchor="middle"
         dominantBaseline="middle"
       >
-        {node.label}
+        {displayLabel}
       </text>
 
       {/* Array stack leads */}
       {isArray && skinDirection === 'output' && port && hasArrayConnection(port.id, 'target') && (
-        <SvgArrayStackLeads
-          side={leadSide}
-          width={width}
-          y={diagramSizing.portHeight / 2}
-          trimSink
-        />
+        <SvgArrayStackLeads side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (
-        <SvgArrayStackLeads
-          side={leadSide}
-          width={width}
-          y={diagramSizing.portHeight / 2}
-        />
+        <SvgArrayStackLeads side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
       )}
-    </>
+    </g>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
+import { normalizeWidth } from '../../../diagram/constants';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
@@ -10,6 +11,9 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections }: NodeSv
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
+  const outputPort = outputs[0];
+  const portWidth = normalizeWidth(outputPort?.widthExpression ?? outputPort?.width);
+  const displayLabel = portWidth ? `${node.label} ${portWidth}` : node.label;
 
   return (
     <>
@@ -24,7 +28,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections }: NodeSv
       ))}
       <rect className="svsch-node-shape hdl-node-literal" width={width} height={height} rx={4} />
       <text className="svsch-node-title" x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
-        {node.label}
+        {displayLabel}
       </text>
 
       {/* Array stack leads */}

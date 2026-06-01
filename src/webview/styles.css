@@ -2137,3 +2137,193 @@ select {
   fill-opacity: 0.8;
   stroke-width: 2;
 }
+
+/* ── SVG-native node components ─────────────────────────── */
+
+/* Node background rect/path */
+.svsch-node-shape {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--vscode-panel-border);
+  stroke-width: 1;
+}
+
+/* Per-kind stroke colors — match existing box-shadow: inset colors */
+.hdl-node-register .svsch-node-shape,
+.hdl-node-latch .svsch-node-shape,
+.svsch-node-shape.hdl-node-register,
+.svsch-node-shape.hdl-node-latch {
+  stroke: var(--vscode-charts-green);
+}
+.hdl-node-instance .svsch-node-shape,
+.hdl-node-module .svsch-node-shape,
+.svsch-node-shape.hdl-node-instance {
+  stroke: var(--vscode-charts-blue);
+}
+.hdl-node-comb .svsch-node-shape,
+.svsch-node-shape.hdl-node-comb {
+  stroke: var(--vscode-charts-red);
+}
+.hdl-node-loop .svsch-node-shape,
+.svsch-node-shape.hdl-node-loop {
+  stroke: var(--vscode-charts-purple);
+}
+.hdl-bus-node .svsch-node-shape,
+.svsch-node-shape.hdl-bus-node {
+  stroke: var(--vscode-descriptionForeground);
+}
+
+/* Shaped nodes (mux/select/alu/inverter) override fill+stroke */
+.hdl-node-mux .svsch-node-shape,
+.hdl-node-select .svsch-node-shape,
+.svsch-node-shape.hdl-node-mux,
+.svsch-node-shape.hdl-node-select {
+  fill: color-mix(in srgb, var(--vscode-charts-purple) 12%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-purple);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-alu .svsch-node-shape,
+.svsch-node-shape.hdl-node-alu {
+  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-orange);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-inverter .svsch-node-shape,
+.svsch-node-shape.hdl-node-inverter {
+  fill: none;
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+/* Array stack layers */
+.svsch-array-layer-back {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--svsch-array-border-color, var(--vscode-panel-border));
+  stroke-width: 1;
+}
+.svsch-array-layer-middle {
+  fill: var(--vscode-editorWidget-background);
+  stroke: var(--svsch-array-border-color, var(--vscode-panel-border));
+  stroke-width: 1;
+}
+.hdl-node-register .svsch-array-layer-back,
+.hdl-node-register .svsch-array-layer-middle,
+.hdl-node-latch .svsch-array-layer-back,
+.hdl-node-latch .svsch-array-layer-middle {
+  --svsch-array-border-color: var(--vscode-charts-green);
+}
+.hdl-node-mux .svsch-array-layer-back,
+.hdl-node-mux .svsch-array-layer-middle,
+.hdl-node-select .svsch-array-layer-back,
+.hdl-node-select .svsch-array-layer-middle {
+  --svsch-array-border-color: var(--vscode-charts-purple);
+}
+
+/* Text elements */
+.svsch-node-kind {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+.svsch-node-title {
+  fill: var(--vscode-editor-foreground);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--vscode-editor-font-family, monospace);
+  pointer-events: none;
+  user-select: none;
+}
+.svsch-port-label {
+  fill: var(--vscode-editor-foreground);
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  pointer-events: none;
+  user-select: none;
+}
+.svsch-instance-param {
+  fill: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  pointer-events: none;
+  user-select: none;
+}
+.svsch-array-badge {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+/* Bus elements */
+.svsch-bus-pipe {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
+}
+.svsch-bus-tap-line {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
+  stroke-width: 2;
+  fill: none;
+}
+.svsch-bus-tap-label {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Mux select lead */
+.svsch-mux-select-lead {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  stroke-width: 1.5;
+  fill: none;
+}
+
+/* Array stack leads */
+.svsch-array-stack-lead {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.5;
+}
+
+/* Register clock glyph (already exists in CSS, adding SVG path rule) */
+.register-clock-glyph path {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+/* SVG container inside node button */
+.hdl-node-svg {
+  display: block;
+  overflow: visible;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* SVG components own the border — suppress the HTML button's box-shadow */
+.hdl-node:has(> .hdl-node-svg) {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Port skin: in SVG the direction class and body class are on the same element,
+   not ancestor+descendant as in the HTML skin. Add combined selectors. */
+path.port-skin-body.port-skin-input,
+path.port-skin-body.port-skin-output {
+  fill: color-mix(in srgb, var(--vscode-charts-yellow) 36%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-yellow);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+path.port-skin-body.port-skin-harness {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 28%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-blue);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}

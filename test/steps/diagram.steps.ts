@@ -1603,7 +1603,7 @@ async function findNodeIdByLabel(page: Page, label: string, kind?: string): Prom
       return true;
     });
 
-    const nodeLabels = (node: Element) => Array.from(node.querySelectorAll('.port-skin-label, .node-title, .node-kind, .mux-side-port span, .mux-output-port span, .register-port span, .bus-title, .literal-content'))
+    const nodeLabels = (node: Element) => Array.from(node.querySelectorAll('.port-skin-label, .node-title, .node-kind, .mux-side-port span, .mux-output-port span, .register-port span, .bus-title, .literal-content, .svsch-node-title, .svsch-node-kind, .svsch-port-label, .svsch-bus-tap-label'))
       .map(l => l.textContent?.trim() ?? '')
       .filter(Boolean);
 
