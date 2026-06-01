@@ -116,7 +116,7 @@
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.8.2",
-    "@playwright/test": "1.59.0",
+    "@playwright/test": "1.60.0",
     "@types/diff": "^7.0.2",
     "@types/node": "^22.0.0",
     "@types/pixelmatch": "^5.2.6",
