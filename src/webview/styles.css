@@ -2368,3 +2368,30 @@ path.port-skin-body.port-skin-harness {
   font-size: 18px;
   font-weight: 700;
 }
+
+/* ── Fix double-rendering: suppress HTML content that duplicates SVG rendering ── */
+
+/* Literal/replicate nodes have their own border+background — clear them when SVG is present */
+.hdl-node-literal:has(> .hdl-node-svg),
+.hdl-node-replicate:has(> .hdl-node-svg) {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Bus tap lines are drawn via ::before pseudo-elements — SVG now draws them instead */
+.hdl-bus-node:has(> .hdl-node-svg) .bus-tap::before,
+.hdl-bus-node:has(> .hdl-node-svg) .bus-pipe {
+  display: none;
+}
+
+/* Bus tap span backgrounds show through transparent SVG areas — clear them */
+.hdl-bus-node:has(> .hdl-node-svg) .bus-tap span {
+  background: transparent;
+}
+
+/* Interface modport tap line ::before elements (colored blue) */
+.hdl-bus-node:has(> .hdl-node-svg) .bus-tap-left::before,
+.hdl-bus-node:has(> .hdl-node-svg) .bus-tap-right::before {
+  display: none;
+}
