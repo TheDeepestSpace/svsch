@@ -253,13 +253,19 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     );
   }
 
-  const pipeY = tapCenters[0] - g / 2;
-  const pipeH = tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
+  const isModuleInterfaceModport = isInterfaceModport && node.label !== nodeTypeName(node);
+  const pipeY = isModuleInterfaceModport ? 0 : tapCenters[0] - g / 2;
+  const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
   // Interface modport: pipe is centered (matching original CSS left:50% translateX(-50%))
   // Bus breakout: pipe on left (g*2). Bus composition: pipe on right (width - g*2 - 6).
   const pipeX = isInterfaceModport
     ? Math.round(width / 2) - 3
     : isComposition ? width - g * 2 - 6 : g * 2;
+
+  // HTML CSS: .bus-tap padding was 14px, span padding 4px.
+  const textOffsetLeft = isInterfaceModport ? 15 : 12;
+  const textOffsetRight = isInterfaceModport ? 21 : 18;
+
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
   const modportSource = isInterfaceModport ? nodeModportSource(node) : undefined;
   const shouldShowModportHeader = isInterfaceModport && modportName && node.label === nodeTypeName(node);
@@ -297,11 +303,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
-            <rect x={pipeX - 6 - Math.max(20, label.length * 7 + 8) + 4} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
+            <rect x={pipeX - textOffsetLeft - Math.max(20, label.length * 7 + 8) + 4} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={pipeX - 6}
+              x={pipeX - textOffsetLeft}
               y={cy}
               textAnchor="end"
               dominantBaseline="middle"
@@ -311,17 +317,17 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             >
               {label}
             </text>
-            {isLink && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - 6, cy, 12, 'svsch-interface-field-link-underline', 'end')}
+            {isLink && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - textOffsetLeft, cy, 12, 'svsch-interface-field-link-underline', 'end')}
           </g>
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
-            <rect x={pipeX + 8} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
+            <rect x={pipeX + textOffsetRight - 4} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={pipeX + 12}
+              x={pipeX + textOffsetRight}
               y={cy}
               dominantBaseline="middle"
               onDoubleClick={(event) => navigateSvgSource(event, port.source)}
@@ -330,7 +336,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             >
               {label}
             </text>
-            {isLink && dottedUnderline(`field-right-underline-${port.id}`, label, pipeX + 12, cy, 12, 'svsch-interface-field-link-underline')}
+            {isLink && dottedUnderline(`field-right-underline-${port.id}`, label, pipeX + textOffsetRight, cy, 12, 'svsch-interface-field-link-underline')}
           </g>
         );
       })}
