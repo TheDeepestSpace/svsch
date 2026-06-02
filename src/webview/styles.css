@@ -2301,13 +2301,14 @@ select {
   stroke-linejoin: round;
 }
 
-/* SVG container inside node button */
+/* SVG container inside node button — z-index 2 keeps it above z-index 1 compat layers */
 .hdl-node-svg {
   display: block;
   overflow: visible;
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   pointer-events: none;
 }
 

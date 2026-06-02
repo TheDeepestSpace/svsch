@@ -3,7 +3,7 @@ import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { portSkinPath } from '../../../diagram/interfaceGeometry';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { ARRAY_STACK_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 
 export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
@@ -39,16 +39,28 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
     // Wrap in <g> with direction class so existing CSS rules
     // (.port-skin-input .port-skin-body) apply via descendant selector
     <g className={`port-skin port-skin-${skinDirection}`}>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+      {/* Array back layer */}
+      {isArray && (
         <path
-          key={layer.id}
-          className={`port-skin-body port-skin-array-layer port-skin-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
+          className={`port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back`}
+          transform={`translate(${ARRAY_STACK_LAYERS.back.dx}, ${ARRAY_STACK_LAYERS.back.dy})`}
           d={d}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+          opacity={0.5}
         />
-      ))}
-      <path className="port-skin-body" d={d} />
+      )}
+      {/* Main body (also serves as middle array layer) */}
+      <path
+        className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''} svsch-array-layer-middle`}
+        d={d}
+      />
+      {/* Array front layer */}
+      {isArray && (
+        <path
+          className={`port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front`}
+          transform={`translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`}
+          d={d}
+        />
+      )}
       <path className="port-skin-selection" d={d} />
       <text
         className="svsch-node-title"
