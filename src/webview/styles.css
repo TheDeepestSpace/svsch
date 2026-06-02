@@ -2279,6 +2279,75 @@ select {
   user-select: none;
 }
 
+.hdl-interface-node .svsch-bus-pipe {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 72%, var(--vscode-editor-foreground));
+}
+
+.hdl-interface-node .svsch-bus-tap-line {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 72%, var(--vscode-editor-foreground));
+}
+
+.hdl-interface-node .svsch-bus-tap-label,
+.hdl-interface-node .svsch-interface-side-label {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 36%, var(--vscode-editor-foreground));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hdl-interface-node .svsch-interface-port-label {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 45%, var(--vscode-editor-foreground));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hdl-interface-instance .svsch-interface-instance-title {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hdl-interface-instance .svsch-interface-type-label {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.hdl-interface-node .svsch-interface-modport-title {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 45%, var(--vscode-editor-foreground));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hdl-interface-node .svsch-svg-link {
+  cursor: pointer;
+  pointer-events: all;
+  text-decoration: none;
+}
+
+.hdl-interface-node .svsch-svg-link-underline {
+  fill: none;
+  pointer-events: none;
+  stroke-dasharray: 1 2;
+  stroke-linecap: round;
+  stroke-width: 1;
+}
+
+.hdl-interface-node .svsch-interface-side-link-underline,
+.hdl-interface-node .svsch-interface-field-link-underline,
+.hdl-interface-node .svsch-interface-modport-link-underline {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 36%, var(--vscode-editor-foreground));
+}
+
+.hdl-interface-node .svsch-interface-type-link-underline {
+  stroke: var(--vscode-descriptionForeground);
+}
+
 /* Mux select lead */
 .svsch-mux-select-lead {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
@@ -2385,9 +2454,12 @@ path.port-skin-body.port-skin-harness {
   display: none;
 }
 
-/* Bus tap span backgrounds show through transparent SVG areas — clear them */
+/* Bus tap spans: hide text+background — SVG svsch-bus-tap-label provides visual */
 .hdl-bus-node:has(> .hdl-node-svg) .bus-tap span {
   background: transparent;
+  color: transparent;
+  pointer-events: auto;
+  user-select: none;
 }
 
 /* Interface modport tap line ::before elements (colored blue) */

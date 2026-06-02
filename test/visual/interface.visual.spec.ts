@@ -14,13 +14,13 @@ test.describe('interface visual rendering', () => {
     await expect(busPort.locator('.port-skin-harness')).toBeVisible();
     await expect(busPort.locator('.port-skin-label .svsch-type-label', { hasText: 'simple_if' }).first()).toBeVisible();
     await expect(busPort.locator('.port-skin-label .svsch-modport-label', { hasText: 'slave' }).first()).toBeVisible();
-    await expect(busModport.locator('.bus-tap-right', { hasText: 'valid' })).toBeVisible();
-    await expect(busModport.locator('.bus-tap-left', { hasText: 'ready' })).toBeVisible();
+    await expect(busModport.locator('.svsch-interface-field-right', { hasText: 'valid' })).toBeVisible();
+    await expect(busModport.locator('.svsch-interface-field-left', { hasText: 'ready' })).toBeVisible();
 
-    const tapStyle = await busModport.locator('.bus-tap', { hasText: 'valid' }).first().evaluate((element) => {
-      const style = getComputedStyle(element.querySelector('span') ?? element);
-      const pipe = getComputedStyle(element, '::before');
-      return { color: style.color, pipeColor: pipe.backgroundColor };
+    const tapStyle = await busModport.locator('.svsch-interface-field-right', { hasText: 'valid' }).first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      const line = element.previousElementSibling;
+      return { color: style.fill, pipeColor: line ? getComputedStyle(line).stroke : '' };
     });
     expect(tapStyle.color).not.toBe('rgb(214, 214, 214)');
     expect(tapStyle.pipeColor).not.toBe('rgba(0, 0, 0, 0)');
@@ -30,9 +30,9 @@ test.describe('interface visual rendering', () => {
     const linkNode = page.locator('[data-node-id="interface:interface_modport:link"]');
     await expect(linkNode).toBeVisible();
     await expect(linkNode).toHaveClass(/hdl-interface-instance/);
-    await expect(linkNode.locator('.interface-top-port', { hasText: 'clk' })).toBeVisible();
-    await expect(linkNode.locator('.bus-tap-left .interface-side-modport-label')).toHaveText('master');
-    await expect(linkNode.locator('.bus-tap-right .interface-side-modport-label')).toHaveText('slave');
+    await expect(linkNode.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
+    await expect(linkNode.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText('master');
+    await expect(linkNode.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText('slave');
     await expect(linkNode.locator('.bus-tap', { hasText: 'simple_if' })).toHaveCount(0);
     await expect(linkNode.locator('.hdl-interface-skin')).toBeVisible();
 
@@ -72,7 +72,7 @@ test.describe('interface visual rendering', () => {
     await expectGraphAndScreenshot(page,'interface-patterned-edge-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
 
     const masterLabelMessagePromise = page.waitForEvent('console', (message) => message.text().startsWith('NAVIGATE:'));
-    await linkNode.locator('.bus-tap-left .interface-side-modport-label', { hasText: 'master' }).click();
+    await linkNode.locator('.svsch-interface-side-left.svsch-interface-side-modport-label', { hasText: 'master' }).click();
     const masterLabelMessage = await masterLabelMessagePromise;
     const masterPosted = JSON.parse(masterLabelMessage.text().slice('NAVIGATE:'.length).trim());
     expect(masterPosted).toMatchObject({
@@ -88,9 +88,9 @@ test.describe('interface visual rendering', () => {
     const interfaceNode = page.locator('[data-node-kind="interface"]');
     await expect(interfaceNode).toBeVisible();
     await expect(interfaceNode).toHaveClass(/hdl-interface-node/);
-    await expect(interfaceNode.locator('.bus-tap', { hasText: 'data' })).toBeVisible();
-    await expect(interfaceNode.locator('.bus-tap', { hasText: 'valid' })).toBeVisible();
-    await expect(interfaceNode.locator('.interface-modport-title-button')).toHaveCount(0);
+    await expect(interfaceNode.locator('.svsch-interface-field-label', { hasText: 'data' })).toBeVisible();
+    await expect(interfaceNode.locator('.svsch-interface-field-label', { hasText: 'valid' })).toBeVisible();
+    await expect(interfaceNode.locator('.svsch-interface-modport-title')).toHaveCount(0);
 
     await expectGraphAndScreenshot(page,'interface-plain-view-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -103,18 +103,18 @@ test.describe('interface visual rendering', () => {
     const slave = page.locator('[data-node-id="interface_modport:simple_if:slave"]');
     await expect(master).toBeVisible();
     await expect(slave).toBeVisible();
-    await expect(master.locator('.interface-modport-title-button')).toHaveText('master');
-    await expect(slave.locator('.interface-modport-title-button')).toHaveText('slave');
-    await expect(master.locator('.bus-tap-left', { hasText: 'clk' })).toBeVisible();
-    await expect(master.locator('.bus-tap-left', { hasText: 'ready' })).toBeVisible();
-    await expect(master.locator('.bus-tap-right', { hasText: 'data' })).toBeVisible();
-    await expect(master.locator('.bus-tap-right', { hasText: 'valid' })).toBeVisible();
-    await expect(slave.locator('.bus-tap-left', { hasText: 'data' })).toBeVisible();
-    await expect(slave.locator('.bus-tap-left', { hasText: 'valid' })).toBeVisible();
-    await expect(slave.locator('.bus-tap-right', { hasText: 'ready' })).toBeVisible();
+    await expect(master.locator('.svsch-interface-modport-title')).toHaveText('master');
+    await expect(slave.locator('.svsch-interface-modport-title')).toHaveText('slave');
+    await expect(master.locator('.svsch-interface-field-left', { hasText: 'clk' })).toBeVisible();
+    await expect(master.locator('.svsch-interface-field-left', { hasText: 'ready' })).toBeVisible();
+    await expect(master.locator('.svsch-interface-field-right', { hasText: 'data' })).toBeVisible();
+    await expect(master.locator('.svsch-interface-field-right', { hasText: 'valid' })).toBeVisible();
+    await expect(slave.locator('.svsch-interface-field-left', { hasText: 'data' })).toBeVisible();
+    await expect(slave.locator('.svsch-interface-field-left', { hasText: 'valid' })).toBeVisible();
+    await expect(slave.locator('.svsch-interface-field-right', { hasText: 'ready' })).toBeVisible();
     await expect(page.locator('[data-node-id="port:interface_simple_if:clk"]')).toBeVisible();
-    await expect(master.locator('.bus-tap')).toHaveText(['clk', 'data', 'valid', 'ready']);
-    await expect(slave.locator('.bus-tap')).toHaveText(['clk', 'data', 'valid', 'ready']);
+    await expect(master.locator('.svsch-interface-field-label')).toHaveText(['clk', 'data', 'valid', 'ready']);
+    await expect(slave.locator('.svsch-interface-field-label')).toHaveText(['clk', 'data', 'valid', 'ready']);
     await expect(page.locator('.svsch-edge-junction')).toHaveCount(1);
     await expect(page.locator('.svsch-edge-junction')).toHaveAttribute('r', '4.75');
     await expect(page.locator('.svsch-edge-junction-interface')).toHaveCount(0);
@@ -129,14 +129,14 @@ test.describe('interface visual rendering', () => {
     await expect(stream).toBeVisible();
     await expect(stream).toHaveClass(/hdl-interface-instance/);
     await expect(stream.locator('.hdl-interface-skin-with-tophat')).toBeVisible();
-    await expect(stream.locator('.interface-top-port', { hasText: 'clk' })).toBeVisible();
-    await expect(stream.locator('.interface-top-port', { hasText: 'rst_n' })).toBeVisible();
+    await expect(stream.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
+    await expect(stream.locator('.svsch-interface-top-label', { hasText: 'rst_n' })).toBeVisible();
     await expect(stream.locator('.hdl-interface-top-feed')).toHaveCount(0);
 
-    const topPortY = await stream.locator('.interface-top-port', { hasText: 'clk' }).evaluate((port) => {
+    const topPortY = await stream.locator('.interface-top-port[data-port-id$="clk"]').evaluate((port) => {
       return Number.parseFloat((port as HTMLElement).style.top);
     });
-    const topHandleGeometry = await stream.locator('.interface-top-port .react-flow__handle-top').first().evaluate((handle) => {
+    const topHandleGeometry = await stream.locator('.interface-top-port[data-port-id$="clk"] .react-flow__handle-top').first().evaluate((handle) => {
       const box = handle.getBoundingClientRect();
       const portBox = handle.closest('.interface-top-port')?.getBoundingClientRect();
       return {
@@ -160,18 +160,17 @@ test.describe('interface visual rendering', () => {
     expect(topEdgeEndYs.length).toBeGreaterThan(0);
     expect(topEdgeEndYs).toContain(expectedTopEdgeY);
 
-    const leftLabels = stream.locator('.bus-tap-left .interface-side-modport-label');
-    const rightLabels = stream.locator('.bus-tap-right .interface-side-modport-label');
+    const leftLabels = stream.locator('.svsch-interface-side-left.svsch-interface-side-modport-label');
+    const rightLabels = stream.locator('.svsch-interface-side-right.svsch-interface-side-modport-label');
     await expect(leftLabels).toHaveText(['producer', 'controller']);
     await expect(rightLabels).toHaveText(['consumer', 'monitor']);
 
-    const tapBoxes = await stream.locator('.bus-tap .interface-side-modport-label').evaluateAll((labels) => {
+    const tapBoxes = await stream.locator('.svsch-interface-side-modport-label').evaluateAll((labels) => {
       return labels.map((label) => {
-        const tap = label.closest('.bus-tap') as HTMLElement;
-        const box = tap.getBoundingClientRect();
+        const box = label.getBoundingClientRect();
         return {
           text: label.textContent?.trim(),
-          left: tap.classList.contains('bus-tap-left'),
+          left: label.classList.contains('svsch-interface-side-left'),
           top: Math.round(box.top)
         };
       });
@@ -194,18 +193,18 @@ test.describe('interface visual rendering', () => {
 
     const uneven = page.locator('[data-node-id="interface:interface_uneven_modport:link"]');
     await expect(uneven).toBeVisible();
-    await expect(uneven.locator('.bus-tap-left .interface-side-modport-label')).toHaveText(['producer', 'controller']);
-    await expect(uneven.locator('.bus-tap-right .interface-side-modport-label')).toHaveText(['consumer']);
-    await expect(uneven.locator('.interface-top-port', { hasText: 'clk' })).toBeVisible();
-    await expect(uneven.locator('.interface-top-port', { hasText: 'rst_n' })).toBeVisible();
+    await expect(uneven.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText(['producer', 'controller']);
+    await expect(uneven.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['consumer']);
+    await expect(uneven.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
+    await expect(uneven.locator('.svsch-interface-top-label', { hasText: 'rst_n' })).toBeVisible();
     await expectGraphAndScreenshot(page,'interface-uneven-modport-instance-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_consumer_fanout');
 
     const fanout = page.locator('[data-node-id="interface:interface_consumer_fanout:link"]');
     await expect(fanout).toBeVisible();
-    await expect(fanout.locator('.bus-tap-left .interface-side-modport-label')).toHaveText(['producer', 'controller']);
-    await expect(fanout.locator('.bus-tap-right .interface-side-modport-label')).toHaveText(['consumer']);
+    await expect(fanout.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText(['producer', 'controller']);
+    await expect(fanout.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['consumer']);
     await expect(page.locator('[data-node-id="instance:interface_consumer_fanout:u_sink0"]')).toBeVisible();
     await expect(page.locator('[data-node-id="instance:interface_consumer_fanout:u_sink1"]')).toBeVisible();
     await expect(page.locator('[data-node-id="instance:interface_consumer_fanout:u_sink2"]')).toBeVisible();
@@ -217,16 +216,16 @@ test.describe('interface visual rendering', () => {
 
     const allLeft = page.locator('[data-node-id="interface:interface_all_left_modports:request_bus"]');
     await expect(allLeft).toBeVisible();
-    await expect(allLeft.locator('.bus-tap-left .interface-side-modport-label')).toHaveText(['requester', 'arbiter']);
-    await expect(allLeft.locator('.bus-tap-right .interface-side-modport-label')).toHaveCount(0);
+    await expect(allLeft.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText(['requester', 'arbiter']);
+    await expect(allLeft.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveCount(0);
     await expectGraphAndScreenshot(page,'interface-all-left-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_all_right_modports');
 
     const allRight = page.locator('[data-node-id="interface:interface_all_right_modports:event_bus"]');
     await expect(allRight).toBeVisible();
-    await expect(allRight.locator('.bus-tap-left .interface-side-modport-label')).toHaveCount(0);
-    await expect(allRight.locator('.bus-tap-right .interface-side-modport-label')).toHaveText(['sink', 'observer']);
+    await expect(allRight.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveCount(0);
+    await expect(allRight.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['sink', 'observer']);
     await expectGraphAndScreenshot(page,'interface-all-right-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
   });
 
@@ -291,9 +290,9 @@ test.describe('interface visual rendering', () => {
     await expect(status).toBeVisible();
     await expect(status.locator('.hdl-interface-skin-with-tophat')).toBeVisible();
     await expect(status.locator('.hdl-interface-skin-with-bottomhat')).toBeVisible();
-    await expect(status.locator('.interface-top-port', { hasText: 'clk' })).toBeVisible();
-    await expect(status.locator('.interface-top-port', { hasText: 'rst_n' })).toBeVisible();
-    await expect(status.locator('.interface-bottom-port', { hasText: 'done' })).toBeVisible();
+    await expect(status.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
+    await expect(status.locator('.svsch-interface-top-label', { hasText: 'rst_n' })).toBeVisible();
+    await expect(status.locator('.svsch-interface-bottom-label', { hasText: 'done' })).toBeVisible();
     await expect(page.locator('[data-node-id="port:interface_output_wire:done"]')).toBeVisible();
     expect(outputView.edges).toEqual(expect.arrayContaining([
       expect.objectContaining({

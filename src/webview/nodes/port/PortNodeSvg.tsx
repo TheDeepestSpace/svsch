@@ -32,6 +32,8 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   );
 
   const leadSide = skinDirection === 'output' ? 'left' : 'right';
+  const portWidth = normalizeWidth(port?.widthExpression ?? port?.width);
+  const displayWidth = (portWidth && portWidth !== 'interface') ? portWidth : undefined;
 
   return (
     // Wrap in <g> with direction class so existing CSS rules
@@ -40,7 +42,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {/* Array back layer */}
       {isArray && (
         <path
-          className={`port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back`}
+          className="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back"
           transform={`translate(${ARRAY_STACK_LAYERS.back.dx}, ${ARRAY_STACK_LAYERS.back.dy})`}
           d={d}
           opacity={0.5}
@@ -54,23 +56,25 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {/* Array front layer */}
       {isArray && (
         <path
-          className={`port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front`}
+          className="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front"
           transform={`translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`}
           d={d}
         />
       )}
       <path className="port-skin-selection" d={d} />
-      {/* SVG label — provides text content for CLI export; font-weight normal for port nodes */}
+      {/* SVG label — port name only for CLI export.
+          Type/width info is rendered by HTML TypeLabel overlay in HdlNode (visible + clickable).
+          This SVG text is found by Playwright >> text= selectors even inside aria-hidden SVG. */}
       <text
         className="svsch-port-label"
         x={width / 2}
         y={height / 2}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontWeight="600"
+        fontWeight={600}
         fontSize={12}
       >
-        {node.label}
+        {node.label}{displayWidth && !port?.typeName ? ` ${displayWidth}` : ''}
       </text>
 
       {/* Array stack leads */}

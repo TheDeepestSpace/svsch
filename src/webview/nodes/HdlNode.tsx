@@ -26,7 +26,7 @@ import {
   nodeIsArrayNode,
   structRole
 } from '../../ir/nodeMetadata';
-import type { DiagramPort } from '../../ir/types';
+import type { DiagramPort, SourceRange } from '../../ir/types';
 import {
   TypeLabel,
   InstanceParameterList,
@@ -105,6 +105,12 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     );
   }
 
+  const navigateToSource = (source: SourceRange) => {
+    const msg = { type: 'navigateToSource', source };
+    console.log('NAVIGATE:', JSON.stringify(msg));
+    vscode.postMessage(msg);
+  };
+
   const handleDoubleClick = () => {
     let msg: any = null;
     const isInterface = node.kind === 'interface' || (node.kind === 'port' && Boolean(typeName && (modportName !== undefined || typeName.endsWith('_if') || typeName.endsWith('if'))));
@@ -144,21 +150,34 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         }}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <PortNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <PortNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+          />
         </svg>
-        {/* HTML overlay: TypeLabel only (SVG provides label text; HTML provides clickable type link) */}
-        {(typeName || (fallbackNodeWidth && fallbackNodeWidth !== 'interface') || width) && (
-          <div className="port-skin-label" style={{ justifyContent: 'flex-end' }}>
-            <TypeLabel
-              typeName={typeName}
-              width={width ?? (fallbackNodeWidth !== 'interface' ? fallbackNodeWidth : undefined)}
-              source={typeSource}
-              modportName={modportName}
-              modportSource={modportSource}
-              parameterRefs={node.ports[0]?.parameterRefs}
-            />
-          </div>
-        )}
+        {/* HTML overlay: CSS-width spacer (no text = no >> text= match) + visible TypeLabel.
+            SVG provides label text; HTML TypeLabel provides visible type link + Playwright selectors. */}
+        <div className="port-skin-label">
+          {/* Width-based spacer: no text content, just pushes TypeLabel to approximate type position */}
+          <span
+            aria-hidden="true"
+            style={{
+              display: 'inline-block',
+              width: `${(node.label.length + (isArray ? 3 : 0)) * 7}px`,
+              userSelect: 'none',
+            }}
+          />
+          <TypeLabel
+            typeName={typeName}
+            width={width ?? (fallbackNodeWidth !== 'interface' ? fallbackNodeWidth : undefined)}
+            source={typeSource}
+            modportName={modportName}
+            modportSource={modportSource}
+            parameterRefs={node.ports[0]?.parameterRefs}
+          />
+        </div>
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
@@ -196,14 +215,18 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         }}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <PortNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <PortNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+          />
         </svg>
-        {/* HTML overlay: TypeLabel for click interaction */}
-        {typeName && (
-          <div className="port-skin-label">
-            <TypeLabel typeName={typeName} source={typeSource} modportName={modportName} modportSource={modportSource} />
-          </div>
-        )}
+        {/* HTML overlay: CSS-width spacer + visible TypeLabel (same pattern as regular port) */}
+        <div className="port-skin-label">
+          <span aria-hidden="true" style={{ display: 'inline-block', width: `${node.label.length * 7}px`, userSelect: 'none' }} />
+          <TypeLabel typeName={typeName} source={typeSource} modportName={modportName} modportSource={modportSource} />
+        </div>
         <Handle type="target" id={port?.id} position={handlePosition} />
         <Handle type="source" id={port?.id} position={handlePosition} />
         <div className="hdl-node-selection-rect" aria-hidden="true" />
@@ -261,10 +284,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     ));
     const firstTapCenter = tapCenters[0] ?? nodeHeight / 2;
     const lastTapCenter = tapCenters[tapCenters.length - 1] ?? nodeHeight / 2;
-    const interfaceTitleCenters = [...leftInterfaceCenters, ...rightInterfaceCenters];
-    const interfaceTitleY = interfaceTitleCenters.length > 0
-      ? (Math.min(...interfaceTitleCenters) + Math.max(...interfaceTitleCenters)) / 2
-      : nodeHeight / 2;
     const busStyle = {
       ...nodeStyle,
       '--svsch-bus-single-y': isArrayComposition || isArrayBreakout ? `${lastTapCenter + diagramSizing.gridSize}px` : `${firstTapCenter}px`
@@ -272,9 +291,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const navigatePortSource = (event: React.MouseEvent, port: DiagramPort) => {
       if (port.source) {
         event.stopPropagation();
-        const msg = { type: 'navigateToSource', source: port.source };
-        console.log('NAVIGATE:', JSON.stringify(msg));
-        vscode.postMessage(msg);
+        navigateToSource(port.source);
       }
     };
     const navigateTapFromEvent = (event: React.MouseEvent) => {
@@ -284,9 +301,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       const port = portId ? taps.find((candidate) => candidate.id === portId) : undefined;
       if (port?.source) {
         event.stopPropagation();
-        const msg = { type: 'navigateToSource', source: port.source };
-        console.log('NAVIGATE:', JSON.stringify(msg));
-        vscode.postMessage(msg);
+        navigateToSource(port.source);
       }
     };
 
@@ -307,63 +322,39 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         }}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <BusNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <BusNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
+          />
         </svg>
         {!isInterfaceModport && !isInterfaceInstance && isComposition && singlePort ? (
           <Handle type="source" id={singlePort?.id} position={Position.Right} />
         ) : !isInterfaceModport && !isInterfaceInstance && singlePort ? (
           <Handle type="target" id={singlePort?.id} position={Position.Left} />
         ) : null}
-        {isInterfaceInstance && (
-          <div className="interface-instance-title" style={{ top: `${interfaceTitleY}px` }}>
-            <span
-              className="interface-instance-title-button nodrag nopan"
-            >
-              {node.label}
-              <TypeLabel typeName={typeName} source={typeSource} />
-            </span>
-          </div>
-        )}
-        {isInterfaceModport && !isModuleInterfaceModport && (
-          <div className="interface-modport-title">
-            <span
-              role="button"
-              tabIndex={0}
-              className="interface-modport-title-button nodrag nopan"
-              onClick={(event) => {
-                event.stopPropagation();
-                if (modportSource) {
-                  const msg = { type: 'navigateToSource', source: modportSource };
-                  console.log('NAVIGATE:', JSON.stringify(msg));
-                  vscode.postMessage(msg);
-                }
-              }}
-              onDoubleClick={(event) => event.stopPropagation()}
-              aria-disabled={!modportSource}
-            >
-              {node.id.startsWith('interface_modport:')
-                ? modportName ?? node.label
-                : (
-                  <>
-                    {node.label}
-                    <TypeLabel typeName={typeName} source={typeSource} modportName={modportName} modportSource={modportSource} />
-                  </>
-                )}
-            </span>
-          </div>
-        )}
         {topPorts.map((port, index) => (
-          <div key={port.id} className="interface-top-port" style={{ left: `${interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount)}px`, top: `${interfaceTopHatY}px` }}>
+          <div
+            key={port.id}
+            className="interface-top-port"
+            data-port-id={port.id}
+            style={{ left: `${interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount)}px`, top: `${interfaceTopHatY}px` }}
+          >
             <Handle type="target" id={port.id} position={Position.Top} />
             <Handle type="source" id={port.id} position={Position.Top} />
-            <span className="interface-port-label">{port.label ?? port.name}</span>
           </div>
         ))}
         {bottomPorts.map((port, index) => (
-          <div key={port.id} className="interface-bottom-port" style={{ left: `${interfaceTopPortX(nodeWidth, bottomPorts.length, index, capPortCount)}px`, top: `${nodeHeight}px` }}>
+          <div
+            key={port.id}
+            className="interface-bottom-port"
+            data-port-id={port.id}
+            style={{ left: `${interfaceTopPortX(nodeWidth, bottomPorts.length, index, capPortCount)}px`, top: `${nodeHeight}px` }}
+          >
             <Handle type="target" id={port.id} position={Position.Bottom} />
             <Handle type="source" id={port.id} position={Position.Bottom} />
-            <span className="interface-port-label">{port.label ?? port.name}</span>
           </div>
         ))}
         {interfaceBundlePorts.map((port) => {
@@ -395,17 +386,16 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
               style={{ top: `${tapCenters[index] - diagramSizing.gridSize / 2}px` }}
               onDoubleClick={(event) => navigatePortSource(event, port)}
             >
-              {/* Hidden span for test/navigation compatibility — SVG renders the visual */}
-              <span
-                style={{ opacity: 0, pointerEvents: 'none' }}
-              >
-                {isInterfaceInstance && port.width === 'interface'
-                  ? <span className="interface-side-modport-label">{port.label ?? port.name}</span>
-                  : <PortLabel port={port} showWidth={false} />}
-                {(node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface')) && structFieldAnnotation(node, port) && (
-                  <span className="struct-field-annotation"> {structFieldAnnotation(node, port)}</span>
-                )}
-              </span>
+              {!isInterface && (
+                <span
+                  style={{ opacity: 0, pointerEvents: 'auto' }}
+                >
+                  <PortLabel port={port} showWidth={false} />
+                  {node.kind === 'struct' && structFieldAnnotation(node, port) && (
+                    <span className="struct-field-annotation"> {structFieldAnnotation(node, port)}</span>
+                  )}
+                </span>
+              )}
               {isInterfaceModport ? (
                 <>
                   <Handle type="source" id={port.id} position={port.direction === 'output' ? Position.Right : Position.Left} />

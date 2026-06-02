@@ -1079,6 +1079,47 @@ function findIdentifierDeclaration(
     return { source: offsetToRawSource(text, sourceFile, startOffset, (match.index ?? 0) + match[0].length), width };
 }
 
+function findInterfaceMemberDeclaration(
+    cache: Map<string, string>,
+    sourceFile: string | undefined,
+    interfaceName: string | undefined,
+    memberName: string | undefined
+): RawSourceRange | undefined {
+    const text = getSourceText(cache, sourceFile);
+    if (!sourceFile || !text || !interfaceName || !memberName) return undefined;
+
+    const interfacePattern = new RegExp(`\\binterface\\s+(?:automatic\\s+)?${escapeRegExp(interfaceName)}\\b[\\s\\S]*?\\bendinterface\\b`, 'm');
+    const interfaceMatch = interfacePattern.exec(text);
+    if (!interfaceMatch) return undefined;
+
+    const interfaceOffset = interfaceMatch.index ?? 0;
+    const interfaceText = interfaceMatch[0];
+    const escapedMember = escapeRegExp(memberName);
+    const headerEnd = interfaceText.indexOf(';');
+    const headerText = headerEnd >= 0 ? interfaceText.slice(0, headerEnd) : '';
+    const headerPattern = new RegExp(`\\b(?:input|output|inout)\\b[^,;)]*\\b${escapedMember}\\b[^,;)]*`, 'g');
+    const headerMatch = headerPattern.exec(headerText);
+    if (headerMatch) {
+        const startOffset = interfaceOffset + (headerMatch.index ?? 0);
+        return offsetToRawSource(text, sourceFile, startOffset, startOffset + headerMatch[0].length);
+    }
+
+    const bodyOffset = headerEnd >= 0 ? headerEnd + 1 : 0;
+    const bodyText = interfaceText.slice(bodyOffset);
+    const declarationPattern = new RegExp(
+        `(?:^|[;\\n])\\s*(?:(?:input|output|inout)\\b\\s*)?(?:(?:wire|logic|reg|bit)\\b\\s*)?(?:\\[[^\\]]+\\]\\s*)?(?:[A-Za-z_$][\\w$]*\\s+)?(?:\\[[^\\]]+\\]\\s*)?[^;\\n()]*\\b${escapedMember}\\b[^;\\n()]*;`,
+        'g'
+    );
+    const declarationMatch = declarationPattern.exec(bodyText);
+    if (!declarationMatch) return undefined;
+
+    const leading = declarationMatch[0].search(/[^\s;]/);
+    const startInMatch = leading >= 0 ? leading : 0;
+    const startOffset = interfaceOffset + bodyOffset + (declarationMatch.index ?? 0) + startInMatch;
+    const endOffset = interfaceOffset + bodyOffset + (declarationMatch.index ?? 0) + declarationMatch[0].length;
+    return offsetToRawSource(text, sourceFile, startOffset, endOffset);
+}
+
 function findLiteralOccurrence(
     cache: Map<string, string>,
     sourceFile: string | undefined,
@@ -1395,6 +1436,15 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                         const declaredSignalWidth = rawPortWidth && rawPortWidth !== '[0:0]'
                             ? rawPortWidth
                             : (sourceDeclaredWidth ?? rawPortWidth);
+                        const resolvedInterfaceMemberSource = n.kind === 'interface' && p.width !== 'interface'
+                            ? findInterfaceMemberDeclaration(
+                                sourceTextCache,
+                                p.source?.file || n.source?.file || rawMod.file,
+                                nodeMetadata?.typeName || n.label,
+                                p.label || p.name
+                            )
+                            : undefined;
+                        const portSource = resolvedInterfaceMemberSource ?? p.source;
 
                         const common = {
                             name: p.name,
@@ -1425,12 +1475,12 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                             preferredSide: (p as any).preferredSide || undefined,
                             label: p.label || undefined,
                             connectedSignal: p.signal,
-                            source: p.source ? {
-                                file: path.relative(workspaceRoot, p.source.file),
-                                startLine: p.source.line,
-                                startColumn: p.source.col,
-                                endLine: p.source.endLine,
-                                endColumn: p.source.endCol
+                            source: portSource ? {
+                                file: path.relative(workspaceRoot, portSource.file),
+                                startLine: portSource.line,
+                                startColumn: portSource.col,
+                                endLine: portSource.endLine,
+                                endColumn: portSource.endCol
                             } : undefined
                         };
 

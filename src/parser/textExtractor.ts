@@ -1142,6 +1142,15 @@ function signalSource(
     };
   }
 
+  const unknownSourceInstance = nodes.find((node) => node.kind === 'instance' && node.ports.some((port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal));
+  if (unknownSourceInstance) {
+    const port = unknownSourceInstance.ports.find((port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal);
+    return {
+      nodeId: unknownSourceInstance.id,
+      portId: port!.id
+    };
+  }
+
   return undefined;
 }
 

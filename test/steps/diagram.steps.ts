@@ -1174,17 +1174,17 @@ When('I double-click the interface member tap {string} on interface node {string
     const candidates = allNodes.filter(node => {
       if (!node.querySelector('[data-node-kind="interface"]')) return false;
       const id = node.getAttribute('data-id') ?? '';
-      const labels = Array.from(node.querySelectorAll('.bus-title, .interface-instance-title, .interface-modport-title'))
+      const labels = Array.from(node.querySelectorAll('.svsch-node-title, .svsch-interface-modport-title, .svsch-interface-side-label, .svsch-interface-field-label'))
         .map(label => label.textContent?.trim() ?? '');
       return id === nodeName || id.endsWith(`:${nodeName}`) || labels.some(label => label.includes(nodeName));
     });
     const withTap = candidates.find(node => (
-      Array.from(node.querySelectorAll('.bus-tap span')).some(tap => tap.textContent?.includes(fieldName))
+      Array.from(node.querySelectorAll('.svsch-interface-field-label')).some(tap => tap.textContent?.includes(fieldName))
     ));
     return withTap?.getAttribute('data-id') ?? null;
   }, { nodeName: name, fieldName: field }) ?? await findNodeIdByLabel(this.page!, name, 'interface');
   if (!id) throw new Error(`Could not find interface node "${name}"`);
-  await this.page!.locator(`.react-flow__node[data-id="${id}"] .bus-tap span`, { hasText: field }).first().dblclick({ force: true });
+  await this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-interface-field-label`, { hasText: field }).first().dblclick({ force: true });
   await this.page!.waitForTimeout(200);
 });
 
@@ -1202,14 +1202,14 @@ When('I click on the modport label {string} for the {word} node {string}', async
   const id = await findNodeIdByLabel(this.page!, nodeName, kind);
   if (!id) throw new Error(`Could not find ${kind} node "${nodeName}"`);
 
-  const modportLabelLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-modport-label, .react-flow__node[data-id="${id}"] .interface-side-modport-label`).filter({ hasText: modportLabel }).first();
+  const modportLabelLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-modport-label, .react-flow__node[data-id="${id}"] .svsch-interface-side-modport-label`).filter({ hasText: modportLabel }).first();
   await expect(modportLabelLocator).toBeVisible();
   await modportLabelLocator.click({ force: true });
   await this.page!.waitForTimeout(200);
 });
 
 When('I click on the modport header {string}', async function (this: CustomWorld, modportName: string) {
-  const modportHeaderLocator = this.page!.locator('.interface-modport-title-button', { hasText: modportName }).first();
+  const modportHeaderLocator = this.page!.locator('.svsch-interface-modport-title', { hasText: modportName }).first();
   await expect(modportHeaderLocator).toBeVisible();
   await modportHeaderLocator.click({ force: true });
   await this.page!.waitForTimeout(200);
@@ -1603,7 +1603,7 @@ async function findNodeIdByLabel(page: Page, label: string, kind?: string): Prom
       return true;
     });
 
-    const nodeLabels = (node: Element) => Array.from(node.querySelectorAll('.port-skin-label, .node-title, .node-kind, .mux-side-port span, .mux-output-port span, .register-port span, .bus-title, .literal-content, .svsch-node-title, .svsch-node-kind, .svsch-port-label, .svsch-bus-tap-label'))
+    const nodeLabels = (node: Element) => Array.from(node.querySelectorAll('.port-skin-label, .node-title, .node-kind, .mux-side-port span, .mux-output-port span, .register-port span, .bus-title, .literal-content, .svsch-node-title, .svsch-node-kind, .svsch-port-label, .svsch-bus-tap-label, .svsch-interface-side-label, .svsch-interface-port-label, .svsch-interface-modport-title, .svsch-interface-field-label'))
       .map(l => l.textContent?.trim() ?? '')
       .filter(Boolean);
 

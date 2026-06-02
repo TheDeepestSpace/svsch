@@ -1,4 +1,5 @@
 import type { DiagramNode } from '../../../ir/types';
+import type { SourceRange } from '../../../ir/types';
 
 export interface ArrayConnection {
   portId?: string;
@@ -10,4 +11,6 @@ export interface NodeSvgProps {
   width: number;
   height: number;
   arrayConnections?: ArrayConnection[];
+  /** Called when the user clicks a type/source link inside the SVG. Undefined in CLI context. */
+  onNavigateToSource?: (source: SourceRange) => void;
 }
