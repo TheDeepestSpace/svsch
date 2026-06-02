@@ -155,19 +155,6 @@ export function BusNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   if (taps.length === 0) {
     return (
       <>
-        {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
-          <rect
-            key={layer.id}
-            className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-            transform={`translate(${layer.dx}, ${layer.dy})`}
-            width={width} height={height}
-            opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-          />
-        ))}
-        <rect className="svsch-node-shape" width={width} height={height} />
-        <text className="svsch-node-kind" x={12} y={14} textAnchor="start" dominantBaseline="middle">
-          {kindLabel}
-        </text>
       </>
     );
   }
@@ -178,23 +165,6 @@ export function BusNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
-        <rect
-          key={layer.id}
-          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          width={width} height={height}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
-      <rect
-        className="svsch-node-shape"
-        width={width}
-        height={height}
-      />
-      <text className="svsch-node-kind" x={12} y={14} textAnchor="start" dominantBaseline="middle">
-        {kindLabel}
-      </text>
       <rect className="svsch-bus-pipe" x={pipeX} y={pipeY} width={6} height={pipeH} rx={3} />
       {taps.map((port: DiagramPort, i: number) => {
         const cy = tapCenters[i];

@@ -64,7 +64,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
         <text
           key={port.id}
           className="svsch-port-label"
-          x={g * 0.75}
+          x={12}
           y={nodePortCenterOffset(i + paramRows)}
           dominantBaseline="middle"
         >
@@ -76,7 +76,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
         <text
           key={port.id}
           className="svsch-port-label"
-          x={width - g * 0.75}
+          x={width - 12}
           y={nodePortCenterOffset(i + paramRows)}
           textAnchor="end"
           dominantBaseline="middle"

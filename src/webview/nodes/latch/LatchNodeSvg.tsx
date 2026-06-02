@@ -71,35 +71,35 @@ export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgP
 
       {/* D port label (left side) */}
       {dPort && (
-        <text className="svsch-port-label" x={g * 0.75} y={dTop + g / 2} dominantBaseline="middle">
+        <text className="svsch-port-label" x={g / 2} y={dTop + g / 2} dominantBaseline="middle">
           {dPort.label ?? dPort.name}
         </text>
       )}
 
       {/* Q port label (right side) */}
       {qPort && (
-        <text className="svsch-port-label" x={width - g * 0.75} y={qTop + g / 2} textAnchor="end" dominantBaseline="middle">
+        <text className="svsch-port-label" x={width - g / 2} y={qTop + g / 2} textAnchor="end" dominantBaseline="middle">
           {qPort.label ?? qPort.name}
         </text>
       )}
 
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
-        <svg x={2} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+        <svg x={0} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
           <path d="M 1 1.5 L 9 6 L 1 10.5" />
         </svg>
       )}
 
       {/* Reset label: centered at bottom, if present */}
       {resetPort && (
-        <text className="svsch-port-label register-reset-label" x={width / 2} y={rstTop + g / 2} textAnchor="middle" dominantBaseline="middle">
+        <text className="svsch-port-label" x={width / 2} y={rstTop + g / 2} textAnchor="middle" dominantBaseline="middle">
           {resetActiveLow ? 'R̅' : 'R'}
         </text>
       )}
 
       {/* RV port */}
       {rvPort && (
-        <text className="svsch-port-label" x={g * 0.75} y={rvTop + g / 2} dominantBaseline="middle">RV</text>
+        <text className="svsch-port-label" x={g / 2} y={rvTop + g / 2} dominantBaseline="middle">RV</text>
       )}
 
       {/* Extra input ports */}

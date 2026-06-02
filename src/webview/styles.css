@@ -2301,6 +2301,13 @@ select {
   stroke-linejoin: round;
 }
 
+/* Override clock glyph stroke for register/latch nodes to use green */
+.hdl-node-register .register-clock-glyph path,
+.hdl-node-latch .register-clock-glyph path {
+  stroke: var(--vscode-charts-green);
+  fill: none;
+}
+
 /* SVG container inside node button — z-index 2 keeps it above z-index 1 compat layers */
 .hdl-node-svg {
   display: block;
@@ -2338,4 +2345,12 @@ path.port-skin-body.port-skin-harness {
 .hdl-node:has(> .hdl-node-svg) .react-flow__handle {
   background: transparent;
   border: 0;
+}
+
+/* Remove X-axis shift from handle transform so handles sit exactly at the node boundary */
+.hdl-node:has(> .hdl-node-svg) .react-flow__handle-left {
+  transform: translateY(-50%);
+}
+.hdl-node:has(> .hdl-node-svg) .react-flow__handle-right {
+  transform: translateY(-50%);
 }

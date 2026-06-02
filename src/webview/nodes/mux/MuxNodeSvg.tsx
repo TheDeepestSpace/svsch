@@ -55,7 +55,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
         const labelY = leadLen > 0
           ? muxTopPortLabelOffsetY(index, muxTopPorts.length, height)
-          : skinEdgeY + g / 2;
+          : skinEdgeY - 4;
         return (
           <g key={port.id}>
             {leadLen > 0 && (
@@ -66,7 +66,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
               x={portX}
               y={labelY}
               textAnchor="middle"
-              dominantBaseline="middle"
+              dominantBaseline={leadLen > 0 ? 'middle' : 'auto'}
             >
               {port.label ?? 's'}
             </text>

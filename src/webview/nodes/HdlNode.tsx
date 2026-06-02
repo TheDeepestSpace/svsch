@@ -157,7 +157,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
         {isArray && isSkinnedPort
           ? <ArrayStackSelection kind={isOutput ? 'output' : 'input'} width={nodeWidth} height={nodeHeight} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+          : isSkinnedPort
+            ? null
+            : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -452,7 +454,15 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         </svg>
         {/* HTML overlay for type label navigation (needs to be visible for tests) */}
         {(typeName || fallbackNodeWidth) && (
-          <div className="node-title" style={{ position: 'absolute', top: '20px', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none', background: 'transparent' }}>
+          <div style={{
+            position: 'absolute',
+            top: '18px',
+            left: '10px',
+            pointerEvents: 'none',
+            fontSize: '14px',
+            fontFamily: 'var(--vscode-editor-font-family, monospace)',
+            color: 'var(--vscode-editor-foreground)',
+          }}>
             <TypeLabel typeName={typeName} width={width ?? fallbackNodeWidth} source={typeSource} />
           </div>
         )}
@@ -524,12 +534,11 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <LiteralNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
-        {/* TypeLabel HTML for type navigation (typing.visual.spec.ts requires .svsch-type-label clickable) */}
-        {(typeName || fallbackNodeWidth) && (
-          <div className="literal-content" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',}}>
-            <TypeLabel typeName={typeName} width={fallbackNodeWidth} source={typeSource} />
-          </div>
-        )}
+        {/* literal-content: always present for test selectors; includes label text for toHaveText checks */}
+        <div className="literal-content" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'transparent' }}>
+          <span>{node.label}{fallbackNodeWidth ? ` ${fallbackNodeWidth}` : ''}</span>
+          {(typeName || fallbackNodeWidth) && <TypeLabel typeName={typeName} width={fallbackNodeWidth} source={typeSource} />}
+        </div>
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
@@ -597,24 +606,24 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
-        {/* HTML compat layer for test selectors (.mux-select-port, .mux-side-port) */}
-        <div className="mux-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none',}}>
+        {/* HTML compat layer for test selectors (.mux-select-port, .mux-side-port) — mux only, not select */}
+        {node.kind === 'mux' && <div className="mux-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none',}}>
           {muxTopPorts.map((port: DiagramPort, index: number) => (
             <div key={port.id} className="mux-select-port" style={{ position: 'absolute', left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%`, top: 0, height: diagramSizing.gridSize }}>
-              <span>{node.kind === 'select' ? selectPortLabel(node, port.name === 'width' ? 'w' : 's') : (port.label ?? 's')}</span>
+              <span>{port.label ?? 's'}</span>
             </div>
           ))}
           {sideInputs.map((port: DiagramPort, index: number) => (
             <div key={port.id} className="mux-side-port" style={{ position: 'absolute', top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) - diagramSizing.gridSize / 2, left: 0, height: diagramSizing.gridSize, width: '100%' }}>
-              <span>{node.kind === 'select' ? selectPortLabel(node, port) : (port.label ?? port.name)}</span>
+              <span>{port.label ?? port.name}</span>
             </div>
           ))}
           {outputs.slice(0, 1).map((port: DiagramPort) => (
             <div key={port.id} className="mux-output-port" style={{ position: 'absolute', right: 0, top: nodeHeight / 2 - diagramSizing.gridSize / 2, height: diagramSizing.gridSize, width: nodeWidth / 2 }}>
-              <span>{node.kind === 'select' ? selectPortLabel(node, port) : (port.label ?? port.name)}</span>
+              <span>{port.label ?? port.name}</span>
             </div>
           ))}
-        </div>
+        </div>}
       </button>
     );
   }
