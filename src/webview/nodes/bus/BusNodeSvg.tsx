@@ -256,7 +256,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
 
   const pipeY = tapCenters[0] - g / 2;
   const pipeH = tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
-  const pipeX = isComposition ? width - g * 2 - 6 : g * 2;
+  // Interface modport: pipe is centered (matching original CSS left:50% translateX(-50%))
+  // Bus breakout: pipe on left (g*2). Bus composition: pipe on right (width - g*2 - 6).
+  const pipeX = isInterfaceModport
+    ? Math.round(width / 2) - 3
+    : isComposition ? width - g * 2 - 6 : g * 2;
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
   const modportSource = isInterfaceModport ? nodeModportSource(node) : undefined;
   const shouldShowModportHeader = isInterfaceModport && modportName && node.label === nodeTypeName(node);
@@ -285,10 +289,15 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       {taps.map((port: DiagramPort, i: number) => {
         const cy = tapCenters[i];
         const label = port.label ?? port.name;
+        // For interface modport: outputs go right, inputs go left (mirrors original bus-tap-right/left CSS)
+        const tapGoesRight = isInterfaceModport
+          ? (port.preferredSide === 'right' || port.direction === 'output')
+          : !isComposition;
         const interfaceFieldClass = isInterface
-          ? ` svsch-interface-field-label ${isComposition ? 'svsch-interface-field-left' : port.direction === 'output' ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}${port.source ? ' svsch-svg-link' : ''}`
+          ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}${port.source ? ' svsch-svg-link' : ''}`
           : '';
-        return isComposition ? (
+        return !tapGoesRight ? (
+          // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap">
             <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
             <text
@@ -308,6 +317,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             {isInterface && port.source && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - 6, cy, 12, 'svsch-interface-field-link-underline', 'end')}
           </g>
         ) : (
+          // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap">
             <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
             <rect x={pipeX + 8} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
