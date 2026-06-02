@@ -85,16 +85,20 @@ export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgP
 
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
-        <svg x={-2} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
-          <path d="M 1 1.5 L 9 6 L 1 10.5" />
-        </svg>
+        <g className="svsch-register-clock-port">
+          <svg x={-2} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+            <path d="M 1 1.5 L 9 6 L 1 10.5" />
+          </svg>
+        </g>
       )}
 
       {/* Reset label: centered at bottom, if present */}
       {resetPort && (
-        <text className="svsch-port-label" x={width / 2} y={rstTop + g / 2} textAnchor="middle" dominantBaseline="middle">
-          {resetActiveLow ? 'R̅' : 'R'}
-        </text>
+        <g className="svsch-register-reset-port">
+          <text className="svsch-port-label svsch-register-reset-label" x={width / 2} y={rstTop + g / 2} textAnchor="middle" dominantBaseline="middle">
+            {resetActiveLow ? 'R̅' : 'R'}
+          </text>
+        </g>
       )}
 
       {/* RV port */}

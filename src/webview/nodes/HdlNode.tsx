@@ -14,14 +14,12 @@ import { registerPortTop, registerExtraInputPortTop } from '../../diagram/regist
 import { muxInputPortCenterY } from '../../diagram/muxGeometry';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import {
-  nodeOperation,
   nodeModportName,
   nodeModportSource,
   nodeTypeName,
   nodeTypeSource,
   nodeWidth as metadataNodeWidth,
   registerClockSignal,
-  registerResetActiveLow,
   registerResetSignal,
   nodeIsArrayNode,
   structRole
@@ -31,7 +29,6 @@ import {
   TypeLabel,
   InstanceParameterList,
   PortLabel,
-  structFieldAnnotation,
 } from './shared/labels';
 import { ArrayStackSelection } from './shared/skins';
 import { NetLabelNode } from './NetLabelNode';
@@ -46,7 +43,6 @@ import { CombNodeSvg } from './comb/CombNodeSvg';
 import { LoopNodeSvg } from './loop/LoopNodeSvg';
 import { MuxNodeSvg } from './mux/MuxNodeSvg';
 import { SelectNodeSvg } from './mux/SelectNodeSvg';
-import { selectPortLabel } from '../../diagram/selectLabels';
 import { AluNodeSvg } from './alu/AluNodeSvg';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { InstanceNodeSvg } from './instance/InstanceNodeSvg';
@@ -386,16 +382,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
               style={{ top: `${tapCenters[index] - diagramSizing.gridSize / 2}px` }}
               onDoubleClick={(event) => navigatePortSource(event, port)}
             >
-              {!isInterface && (
-                <span
-                  style={{ opacity: 0, pointerEvents: 'auto' }}
-                >
-                  <PortLabel port={port} showWidth={false} />
-                  {node.kind === 'struct' && structFieldAnnotation(node, port) && (
-                    <span className="struct-field-annotation"> {structFieldAnnotation(node, port)}</span>
-                  )}
-                </span>
-              )}
               {isInterfaceModport ? (
                 <>
                   <Handle type="source" id={port.id} position={port.direction === 'output' ? Position.Right : Position.Left} />
@@ -422,7 +408,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   if (node.kind === 'register' || node.kind === 'latch') {
     const clockSignal = registerClockSignal(node);
     const resetSignal = registerResetSignal(node);
-    const resetActiveLow = registerResetActiveLow(node);
     const hasReset = Boolean(resetSignal);
     const dPort = inputs.find((port: DiagramPort) => port.name === 'D') ?? inputs[0];
     const qPort = outputs.find((port: DiagramPort) => port.name === 'Q') ?? outputs[0];
@@ -480,17 +465,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
-        {/* HTML compat layer: class names preserved for test selectors, visually transparent */}
-        <div className="register-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none',}}>
-          {clockPort && (
-            <div className="register-clock-port" style={{ position: 'absolute', top: registerPortTop('clock', nodeHeight, hasReset, hasRv), left: 0, height: diagramSizing.gridSize, width: diagramSizing.gridSize * 2 }} />
-          )}
-          {resetPort && (
-            <div className="register-reset-port" style={{ position: 'absolute', bottom: 0, left: nodeWidth / 2 - diagramSizing.gridSize, height: diagramSizing.gridSize, width: diagramSizing.gridSize * 2 }}>
-              <span className="register-reset-label"><span>{resetActiveLow ? 'R̅' : 'R'}</span></span>
-            </div>
-          )}
-        </div>
       </button>
     );
   }
@@ -532,11 +506,11 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <LiteralNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
-        {/* literal-content: always present for test selectors; includes label text for toHaveText checks */}
-        <div className="literal-content" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'transparent' }}>
-          <span>{node.label}{fallbackNodeWidth ? ` ${fallbackNodeWidth}` : ''}</span>
-          {(typeName || fallbackNodeWidth) && <TypeLabel typeName={typeName} width={fallbackNodeWidth} source={typeSource} />}
-        </div>
+        {(typeName || fallbackNodeWidth) && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'transparent' }}>
+            <TypeLabel typeName={typeName} width={fallbackNodeWidth} source={typeSource} />
+          </div>
+        )}
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
@@ -604,24 +578,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
-        {/* HTML compat layer for test selectors (.mux-select-port, .mux-side-port) — mux only, not select */}
-        {node.kind === 'mux' && <div className="mux-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', color: 'transparent', userSelect: 'none' }}>
-          {muxTopPorts.map((port: DiagramPort, index: number) => (
-            <div key={port.id} className="mux-select-port" style={{ position: 'absolute', left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%`, top: 0, height: diagramSizing.gridSize }}>
-              <span>{port.label ?? 's'}</span>
-            </div>
-          ))}
-          {sideInputs.map((port: DiagramPort, index: number) => (
-            <div key={port.id} className="mux-side-port" style={{ position: 'absolute', top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) - diagramSizing.gridSize / 2, left: 0, height: diagramSizing.gridSize, width: '100%' }}>
-              <span>{port.label ?? port.name}</span>
-            </div>
-          ))}
-          {outputs.slice(0, 1).map((port: DiagramPort) => (
-            <div key={port.id} className="mux-output-port" style={{ position: 'absolute', right: 0, top: nodeHeight / 2 - diagramSizing.gridSize / 2, height: diagramSizing.gridSize, width: nodeWidth / 2 }}>
-              <span>{port.label ?? port.name}</span>
-            </div>
-          ))}
-        </div>}
       </button>
     );
   }
@@ -648,10 +604,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{ top: nodeHeight / 2 }} />
         ))}
         <div className="hdl-node-selection-rect" aria-hidden="true" />
-        {/* HTML compat for .alu-operation test selector */}
-        <span className="alu-operation" style={{ position: 'absolute', pointerEvents: 'none', right: 0, top: nodeHeight / 2 }} aria-hidden="true">
-          {nodeOperation(node) ?? '+'}
-        </span>
       </button>
     );
   }

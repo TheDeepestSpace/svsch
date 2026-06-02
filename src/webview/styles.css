@@ -430,13 +430,6 @@ select {
   padding-top: 6px;
 }
 
-.register-port-layer {
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-}
-
 .register-port {
   align-items: center;
   color: var(--vscode-editor-foreground);
@@ -621,16 +614,8 @@ select {
 .hdl-node-array .node-kind,
 .hdl-node-array .node-title,
 .hdl-node-array .node-ports,
-.hdl-node-array .mux-select-port,
-.hdl-node-array .mux-port-layer,
-.hdl-node-array .alu-port-layer,
-.hdl-node-array .register-port-layer,
 .hdl-node-array .instance-parameter-list {
   z-index: 3;
-}
-
-.hdl-node-array .mux-select-port {
-  z-index: 6;
 }
 
 .hdl-node-array .node-kind,
@@ -644,11 +629,7 @@ select {
   transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
 }
 
-.hdl-node-array .register-port span,
-.hdl-node-array .register-clock-glyph,
-.hdl-node-array .mux-select-port span,
-.hdl-node-array .mux-side-port span,
-.hdl-node-array .mux-output-port span {
+.hdl-node-array .register-clock-glyph {
   transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
 }
 
@@ -934,20 +915,6 @@ select {
   right: 3px;
 }
 
-.bus-tap span {
-  background: var(--vscode-editor-background);
-  font-family: var(--vscode-editor-font-family, monospace);
-  padding: 0 4px;
-  pointer-events: all;
-  position: relative;
-  z-index: 1;
-}
-
-.hdl-struct-node .bus-tap span {
-  display: inline-flex;
-  gap: 3px;
-  align-items: baseline;
-}
 
 .svsch-port-type-suffix-blue {
   color: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
@@ -970,9 +937,6 @@ select {
   background: color-mix(in srgb, var(--vscode-charts-blue) 72%, var(--vscode-editor-foreground));
 }
 
-.hdl-interface-node .bus-tap span {
-  color: color-mix(in srgb, var(--vscode-charts-blue) 36%, var(--vscode-editor-foreground));
-}
 
 .hdl-interface-instance {
   background: transparent;
@@ -1509,13 +1473,6 @@ select {
   border-color: var(--vscode-charts-red);
 }
 
-.hdl-node-literal .literal-content,
-.hdl-node-replicate .literal-content {
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 11px;
-  text-align: center;
-  word-break: break-all;
-}
 
 .svsch-repeat-label {
   cursor: default;
@@ -1752,70 +1709,6 @@ select {
   width: 0 !important;
 }
 
-.mux-port-layer,
-.alu-port-layer {
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-}
-
-.mux-side-port,
-.mux-output-port {
-  align-items: center;
-  color: var(--vscode-editor-foreground);
-  display: flex;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 12px;
-  height: var(--svsch-grid);
-  line-height: var(--svsch-grid);
-  pointer-events: all;
-  position: absolute;
-}
-
-.mux-side-port {
-  left: 0;
-  padding-left: 12px;
-}
-
-.mux-output-port {
-  justify-content: flex-end;
-  padding-right: 12px;
-  right: 0;
-}
-
-.alu-input-port,
-.alu-output-port {
-  height: var(--svsch-grid);
-  pointer-events: all;
-  position: absolute;
-}
-
-.alu-input-port {
-  left: 0;
-}
-
-.alu-output-port {
-  right: 0;
-}
-
-.alu-operation {
-  align-items: center;
-  color: var(--vscode-editor-foreground);
-  display: flex;
-  font-size: 20px;
-  font-weight: 700;
-  inset: 0 0 0 25%;
-  justify-content: center;
-  line-height: 1;
-  pointer-events: none;
-  position: absolute;
-}
-
-.mux-side-port .react-flow__handle-left,
-.mux-output-port .react-flow__handle-right,
-.alu-input-port .react-flow__handle-left,
-.alu-output-port .react-flow__handle-right,
 .hdl-node-inverter>.react-flow__handle-left,
 .hdl-node-inverter>.react-flow__handle-right {
   background: transparent;
@@ -1825,19 +1718,6 @@ select {
   min-width: 0;
   pointer-events: all;
   width: 0;
-}
-
-.mux-side-port .react-flow__handle-left {
-  left: 0;
-}
-
-.mux-output-port .react-flow__handle-right,
-.alu-output-port .react-flow__handle-right {
-  right: 0;
-}
-
-.alu-input-port .react-flow__handle-left {
-  left: 0;
 }
 
 .hdl-node-inverter>.react-flow__handle-left {
@@ -2452,14 +2332,6 @@ path.port-skin-body.port-skin-harness {
 .hdl-bus-node:has(> .hdl-node-svg) .bus-tap::before,
 .hdl-bus-node:has(> .hdl-node-svg) .bus-pipe {
   display: none;
-}
-
-/* Bus tap spans: hide text+background — SVG svsch-bus-tap-label provides visual */
-.hdl-bus-node:has(> .hdl-node-svg) .bus-tap span {
-  background: transparent;
-  color: transparent;
-  pointer-events: auto;
-  user-select: none;
 }
 
 /* Interface modport tap line ::before elements (colored blue) */

@@ -27,7 +27,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections }: NodeSv
         />
       ))}
       <rect className="svsch-node-shape" width={width} height={height} />
-      <text className="svsch-node-title" style={{ fontWeight: 'normal' }} x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
+      <text className="svsch-node-title svsch-literal-content" style={{ fontWeight: 'normal' }} x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
         {displayLabel}
       </text>
 

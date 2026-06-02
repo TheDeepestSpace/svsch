@@ -59,7 +59,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
           : skinEdgeY + g / 2;
         const label = selectPortLabel(node, port.name === 'width' ? 'w' : 's');
         return (
-          <g key={port.id}>
+          <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
               <line className="svsch-mux-select-lead" x1={portX} y1={0} x2={portX} y2={leadLen} />
             )}
@@ -79,7 +79,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       {sideInputs.map((port: DiagramPort, index: number) => (
         <text
           key={port.id}
-          className="svsch-port-label"
+          className="svsch-port-label svsch-mux-side-port"
           x={g * 0.75}
           y={muxInputPortCenterY(index, sideInputs.length, height)}
           dominantBaseline="middle"
@@ -90,7 +90,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
 
       {outputs[0] && (
         <text
-          className="svsch-port-label"
+          className="svsch-port-label svsch-mux-output-port"
           x={width - g * 0.75}
           y={height / 2}
           textAnchor="end"

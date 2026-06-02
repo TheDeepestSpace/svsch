@@ -486,9 +486,9 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('[data-node-kind="port"] >> text=y')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
     await expect(page.locator('.mux-skin')).toBeVisible();
-    await expect(page.locator('.mux-select-port >> text=s')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=1\'b0')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+    await expect(page.locator('.svsch-mux-select-port >> text=s')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b0')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="mux"]') });
   });
@@ -501,8 +501,8 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('[data-node-kind="port"] >> text=b')).toBeVisible();
     await expect(page.locator('[data-node-kind="port"] >> text=y')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=1\'b0')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b0')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-wired-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -516,9 +516,9 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('[data-node-kind="port"] >> text=c')).toBeVisible();
     await expect(page.locator('[data-node-kind="port"] >> text=y')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=2\'d0')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=2\'d1')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=2\'d0')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=2\'d1')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-three-inputs-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -532,9 +532,9 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('[data-node-kind="port"] >> text=fallback_path_with_extra_words')).toBeVisible();
     await expect(page.locator('[data-node-kind="port"] >> text=output_value_with_long_name')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=2\'d0')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=2\'d1')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=2\'d0')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=2\'d1')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-long-names-webview.png', {
       fullPage: true,
@@ -548,8 +548,8 @@ test.describe('mux visual rendering', () => {
     await waitForViewportTransformToSettle(page);
 
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text="{BYTE, 2\'d0}"')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=default')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text="{BYTE, 2\'d0}"')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-complex-case-literal.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="mux"]')
@@ -562,9 +562,9 @@ test.describe('register visual rendering', () => {
     await openFixture(page, 'register_async_reset.sv', 'register');
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
-    await expect(page.locator('.register-clock-port')).toBeVisible();
-    await expect(page.locator('.register-reset-port')).toBeVisible();
-    await expect(page.locator('.register-reset-label >> text=R')).toBeVisible();
+    await expect(page.locator('.svsch-register-clock-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-label >> text=R')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'register-async-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
   });
@@ -573,8 +573,8 @@ test.describe('register visual rendering', () => {
     await openFixture(page, 'register_active_low_reset.sv', 'register');
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
-    await expect(page.locator('.register-reset-port')).toBeVisible();
-    await expect(page.locator('.register-reset-label >> text=R\u0305')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-label >> text=R\u0305')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'register-active-low-reset-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
@@ -586,8 +586,8 @@ test.describe('register visual rendering', () => {
     await openFixture(page, 'register_no_reset.sv', 'register');
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
-    await expect(page.locator('.register-clock-port')).toBeVisible();
-    await expect(page.locator('.register-reset-port')).not.toBeVisible();
+    await expect(page.locator('.svsch-register-clock-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-port')).not.toBeVisible();
 
     await expectGraphAndScreenshot(page, 'register-no-reset-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="register"]') });
   });
@@ -597,11 +597,11 @@ test.describe('register visual rendering', () => {
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
-    await expect(page.locator('.register-clock-port')).toBeVisible();
-    await expect(page.locator('.register-reset-port')).toBeVisible();
-    await expect(page.locator('.mux-select-port >> text=s')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=true')).toBeVisible();
-    await expect(page.locator('.mux-side-port >> text=false')).toBeVisible();
+    await expect(page.locator('.svsch-register-clock-port')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-port')).toBeVisible();
+    await expect(page.locator('.svsch-mux-select-port >> text=s')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=true')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=false')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'register-clock-enable-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -646,7 +646,7 @@ test.describe('register visual rendering', () => {
 
     await expect(page.locator('[data-node-kind="register"]')).toBeVisible();
     await expect(page.locator('.hdl-node-array').first()).toBeVisible();
-    await expect(page.locator('.register-reset-port >> text=R')).toBeVisible();
+    await expect(page.locator('.svsch-register-reset-port >> text=R')).toBeVisible();
     expect(clockStorageEdge).toBeDefined();
     expect(resetStorageEdge).toBeDefined();
     await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
@@ -714,8 +714,8 @@ test.describe('register visual rendering', () => {
     await expect(page.locator(`[data-node-id="${arrayPort!.id}"].hdl-node-array`)).toBeVisible();
     await expect(page.locator(`[data-node-id="${readMux!.id}"].hdl-node-mux`)).toBeVisible();
     await expect(page.locator(`[data-node-id="${readMux!.id}"]`)).not.toHaveClass(/hdl-node-array/);
-    await expect(page.locator(`[data-node-id="${readMux!.id}"] .mux-select-port`, { hasText: 's' })).toBeVisible();
-    await expect(page.locator(`[data-node-id="${readMux!.id}"] .mux-side-port`, { hasText: 'in' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${readMux!.id}"] .svsch-mux-select-port`, { hasText: 's' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${readMux!.id}"] .svsch-mux-side-port`, { hasText: 'in' })).toBeVisible();
     await expect(page.locator(`[data-node-id="${arrayPort!.id}"] .svsch-array-stack-lead-source-right`)).toHaveCount(3);
     await expect(page.locator(`[data-node-id="${readMux!.id}"] .svsch-array-stack-lead-target-left`)).toHaveCount(3);
     await expect(page.locator(`.react-flow__edge[data-id="${arrayReadEdge!.id}"] .svsch-edge-stacked-converge`)).toHaveCount(3);
@@ -746,7 +746,7 @@ test.describe('register visual rendering', () => {
     expect(view.edges.some((edge) => edge.source === addrMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
 
     await expect(page.locator(`[data-node-id="${addrMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
-    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .mux-select-port`, { hasText: 's[]' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
     const muxTopLeadLayering = await page.locator(`[data-node-id="${addrMux!.id}"]`).evaluate((node) => {
       const topLeadLayer = node.querySelector('.svsch-array-stack-leads-target.svsch-array-stack-leads-top');
@@ -879,7 +879,7 @@ test.describe('register visual rendering', () => {
     await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-array-stack-lead-target-top`)).toHaveCount(3);
 
     // Addr mux selector is 2-bit (address [1:0]) so shows 's[]'
-    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .mux-select-port`, { hasText: 's[]' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${addrMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
 
     await expectMuxBodyMasksTopStackLead(page, writeEnMux!.id);
     await expectMuxBodyMasksTopStackLead(page, addrMux!.id);
@@ -936,10 +936,10 @@ test.describe('struct visual rendering', () => {
     await openFixture(page, 'struct_breakout.sv', 'struct');
 
     await expect(page.locator('[data-node-kind="struct"]')).toBeVisible();
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: 'opcode' })).toBeVisible();
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: '[6:3]' })).toBeVisible();
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: 'lane' })).toBeVisible();
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: '[1:0]' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'opcode' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: '[6:3]' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'lane' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: '[1:0]' })).toBeVisible();
 
     const structEdgeWidth = await page.locator('path.svsch-edge-struct').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
@@ -961,8 +961,8 @@ test.describe('struct visual rendering', () => {
     await expect(page.locator('[data-node-id="reg:struct_composition:pkt.opcode"]')).toContainText('[3:0]');
     await expect(page.locator('[data-node-id="port:struct_composition:flat"]')).toContainText('flat');
     await expect(page.locator('[data-node-id="port:struct_composition:flat"]')).toContainText('[4:0]');
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: 'opcode' })).toBeVisible();
-    await expect(page.locator('.hdl-struct-node .bus-tap', { hasText: 'valid' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'opcode' })).toBeVisible();
+    await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'valid' })).toBeVisible();
     await expect(page.locator('path.svsch-edge-struct')).toHaveCount(1);
   });
 
@@ -975,13 +975,13 @@ test.describe('struct visual rendering', () => {
     await expect(breakout).toBeVisible();
     await expect(composition).toBeVisible();
     await expect(page.locator('[data-node-kind="mux"]')).toHaveCount(2);
-    await expect(breakout.locator('.bus-tap')).toHaveCount(3);
-    await expect(composition.locator('.bus-tap')).toHaveCount(3);
-    await expect(breakout.locator('.bus-tap', { hasText: 'pkt_recomb' })).toHaveCount(0);
-    await expect(breakout.locator('.bus-tap', { hasText: 'opcode1' })).toBeVisible();
-    await expect(breakout.locator('.bus-tap', { hasText: 'opcode2' })).toBeVisible();
-    await expect(composition.locator('.bus-tap', { hasText: 'opcode1' })).toBeVisible();
-    await expect(composition.locator('.bus-tap', { hasText: 'opcode2' })).toBeVisible();
+    await expect(breakout.locator('.svsch-bus-tap')).toHaveCount(3);
+    await expect(composition.locator('.svsch-bus-tap')).toHaveCount(3);
+    await expect(breakout.locator('.svsch-bus-tap', { hasText: 'pkt_recomb' })).toHaveCount(0);
+    await expect(breakout.locator('.svsch-bus-tap', { hasText: 'opcode1' })).toBeVisible();
+    await expect(breakout.locator('.svsch-bus-tap', { hasText: 'opcode2' })).toBeVisible();
+    await expect(composition.locator('.svsch-bus-tap', { hasText: 'opcode1' })).toBeVisible();
+    await expect(composition.locator('.svsch-bus-tap', { hasText: 'opcode2' })).toBeVisible();
 
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
@@ -1007,7 +1007,7 @@ test.describe('ALU visual rendering', () => {
     const view = await openFixture(page, 'alu_connected.sv', 'alu');
 
     await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
-    await expect(page.locator('.alu-operation')).toHaveText('+');
+    await expect(page.locator('.svsch-alu-operation')).toHaveText('+');
     await expectGraphAndScreenshot(page, 'alu-connected-canvas.png', { clip: await paddedGraphClip(page) });
 
     for (const edge of view.edges) {
@@ -1500,8 +1500,8 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="comb"]')).toBeVisible();
     await expect(page.locator('[data-node-id="literal:value"]')).toBeVisible();
     await expect(page.locator('[data-node-id="literal:constant"]')).toBeVisible();
-    await expect(page.locator('[data-node-id="literal:value"] .literal-content')).toHaveText("8'h42");
-    await expect(page.locator('[data-node-id="literal:constant"] .literal-content')).toHaveText('VERSION');
+    await expect(page.locator('[data-node-id="literal:value"] .svsch-literal-content')).toHaveText("8'h42");
+    await expect(page.locator('[data-node-id="literal:constant"] .svsch-literal-content')).toHaveText('VERSION');
     await expect(page.locator('[data-node-id="bus"]')).toBeVisible();
     await expect(page.locator('[data-node-id="instance"]')).toBeVisible();
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();

@@ -25,7 +25,7 @@ test.describe('Bus Composition Visual Rendering', () => {
     await expect(busCompNode).toBeVisible();
 
     // Verify it has 3 input taps
-    await expect(busCompNode.locator('.bus-tap')).toHaveCount(3);
+    await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(3);
     
     // Verify output port node for 'r' is present
     await expect(page.locator('[data-node-kind="port"] >> text=r')).toBeVisible();
@@ -54,7 +54,7 @@ test.describe('Bus Composition Visual Rendering', () => {
 
     const busCompNode = page.locator('.hdl-bus-array-composition');
     await expect(busCompNode).toBeVisible();
-    await expect(busCompNode.locator('.bus-tap')).toHaveCount(4);
+    await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(4);
 
     await expectGraphAndScreenshot(page, 'array-stack-composition-literal-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -79,7 +79,7 @@ test.describe('Bus Composition Visual Rendering', () => {
 
     const busCompNode = page.locator('.hdl-bus-array-composition');
     await expect(busCompNode).toBeVisible();
-    await expect(busCompNode.locator('.bus-tap')).toHaveCount(4);
+    await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(4);
 
     await expectGraphAndScreenshot(page, 'array-stack-composition-elements-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -96,7 +96,7 @@ test.describe('Bus Composition Visual Rendering', () => {
 
       const busBreakoutNode = page.locator('.hdl-bus-array-breakout');
       await expect(busBreakoutNode).toBeVisible();
-      await expect(busBreakoutNode.locator('.bus-tap')).toHaveCount(4);
+      await expect(busBreakoutNode.locator('.svsch-bus-tap')).toHaveCount(4);
 
       await expectGraphAndScreenshot(page, 'array-stack-breakout-canvas.png', { clip: await paddedGraphClip(page) });
     } finally {

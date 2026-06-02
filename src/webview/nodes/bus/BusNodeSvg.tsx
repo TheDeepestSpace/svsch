@@ -289,7 +289,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           ? ` svsch-interface-field-label ${isComposition ? 'svsch-interface-field-left' : port.direction === 'output' ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}${port.source ? ' svsch-svg-link' : ''}`
           : '';
         return isComposition ? (
-          <g key={port.id}>
+          <g key={port.id} className="svsch-bus-tap">
             <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
@@ -308,7 +308,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             {isInterface && port.source && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - 6, cy, 12, 'svsch-interface-field-link-underline', 'end')}
           </g>
         ) : (
-          <g key={port.id}>
+          <g key={port.id} className="svsch-bus-tap">
             <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
             <rect x={pipeX + 8} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text
