@@ -135,7 +135,7 @@
     "start-server-and-test": "^3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.0",
-    "vite": "^7.0.0",
+    "vite": "^8.0.16",
     "vitest": "^4.1.0",
     "vscode-test-playwright": "^0.0.1-beta2"
   },
