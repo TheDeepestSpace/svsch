@@ -2354,3 +2354,17 @@ path.port-skin-body.port-skin-harness {
 .hdl-node:has(> .hdl-node-svg) .react-flow__handle-right {
   transform: translateY(-50%);
 }
+
+/* Cancel duplicate CSS transforms on SVG array layer rects — SVG transform attribute handles positioning */
+.hdl-node-svg .hdl-node-array-back,
+.hdl-node-svg .hdl-node-array-middle,
+.hdl-node-svg .hdl-node-array-front {
+  transform: none;
+}
+
+/* ALU operation symbol: white fill for visibility inside the shaped body */
+.svsch-alu-operation {
+  fill: white;
+  font-size: 18px;
+  font-weight: 700;
+}

@@ -179,6 +179,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         ) : (
           <g key={port.id}>
             <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
+            <rect x={pipeX + 8} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text className="svsch-bus-tap-label" x={pipeX + 12} y={cy} dominantBaseline="middle">
               {label}
             </text>

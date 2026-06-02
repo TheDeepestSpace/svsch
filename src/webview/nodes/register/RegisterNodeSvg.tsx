@@ -85,7 +85,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeS
 
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
-        <svg x={0} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+        <svg x={-2} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
           <path d="M 1 1.5 L 9 6 L 1 10.5" />
         </svg>
       )}

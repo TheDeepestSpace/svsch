@@ -146,10 +146,17 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <PortNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
-        {/* HTML overlay for type label navigation (tests require .svsch-type-label to be visible) */}
-        {(typeName || width || fallbackNodeWidth) && (
-          <div className="port-skin-label">
-            <TypeLabel typeName={typeName} width={width ?? fallbackNodeWidth} source={typeSource} modportName={modportName} modportSource={modportSource} parameterRefs={node.ports[0]?.parameterRefs} />
+        {/* HTML overlay: TypeLabel only (SVG provides label text; HTML provides clickable type link) */}
+        {(typeName || (fallbackNodeWidth && fallbackNodeWidth !== 'interface') || width) && (
+          <div className="port-skin-label" style={{ justifyContent: 'flex-end' }}>
+            <TypeLabel
+              typeName={typeName}
+              width={width ?? (fallbackNodeWidth !== 'interface' ? fallbackNodeWidth : undefined)}
+              source={typeSource}
+              modportName={modportName}
+              modportSource={modportSource}
+              parameterRefs={node.ports[0]?.parameterRefs}
+            />
           </div>
         )}
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
@@ -191,9 +198,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <PortNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
-        {/* HTML overlay for type label navigation */}
+        {/* HTML overlay: TypeLabel for click interaction */}
         {typeName && (
-          <div className="port-skin-label" style={{ pointerEvents: 'none' }}>
+          <div className="port-skin-label">
             <TypeLabel typeName={typeName} source={typeSource} modportName={modportName} modportSource={modportSource} />
           </div>
         )}
@@ -458,7 +465,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             position: 'absolute',
             top: '18px',
             left: '10px',
-            pointerEvents: 'none',
+            pointerEvents: 'all',
             fontSize: '14px',
             fontFamily: 'var(--vscode-editor-font-family, monospace)',
             color: 'var(--vscode-editor-foreground)',
@@ -472,7 +479,8 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           style={{ top: registerPortTop('q', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {clockPort && <Handle type="target" id={clockPort.id} position={Position.Left}
           style={{ top: registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
-        {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom} />}
+        {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom}
+          style={{ left: nodeWidth / 2, bottom: 0, transform: 'translate(-50%, 0)' }} />}
         {rvPort && <Handle type="target" id={rvPort.id} position={Position.Left}
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (
@@ -607,7 +615,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {/* HTML compat layer for test selectors (.mux-select-port, .mux-side-port) — mux only, not select */}
-        {node.kind === 'mux' && <div className="mux-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none',}}>
+        {node.kind === 'mux' && <div className="mux-port-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', color: 'transparent', userSelect: 'none' }}>
           {muxTopPorts.map((port: DiagramPort, index: number) => (
             <div key={port.id} className="mux-select-port" style={{ position: 'absolute', left: `${((index + 1) / (muxTopPorts.length + 1)) * 100}%`, top: 0, height: diagramSizing.gridSize }}>
               <span>{port.label ?? 's'}</span>

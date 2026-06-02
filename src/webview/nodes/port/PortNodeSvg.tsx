@@ -32,8 +32,6 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   );
 
   const leadSide = skinDirection === 'output' ? 'left' : 'right';
-  const portWidth = normalizeWidth(port?.widthExpression ?? port?.width);
-  const displayLabel = portWidth ? `${node.label} ${portWidth}` : node.label;
 
   return (
     // Wrap in <g> with direction class so existing CSS rules
@@ -62,14 +60,17 @@ export function PortNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
         />
       )}
       <path className="port-skin-selection" d={d} />
+      {/* SVG label — provides text content for CLI export; font-weight normal for port nodes */}
       <text
-        className="svsch-node-title"
+        className="svsch-port-label"
         x={width / 2}
         y={height / 2}
         textAnchor="middle"
         dominantBaseline="middle"
+        fontWeight="600"
+        fontSize={12}
       >
-        {displayLabel}
+        {node.label}
       </text>
 
       {/* Array stack leads */}

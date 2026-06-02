@@ -54,18 +54,6 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       ))}
       <path className="svsch-node-shape hdl-node-alu node-skin-body" d={path} />
 
-      {inputs.slice(0, 2).map((port: DiagramPort, index: number) => (
-        <text
-          key={port.id}
-          className="svsch-port-label"
-          x={notchX + g * 0.5}
-          y={inputYs[index]}
-          dominantBaseline="middle"
-        >
-          {port.label ?? port.name}
-        </text>
-      ))}
-
       <text
         className="svsch-alu-operation"
         x={width * 0.65}
