@@ -49,6 +49,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     );
   };
   const navigateSvgSource = (event: React.MouseEvent, source?: SourceRange) => {
+    console.log('navigateSvgSource called with source:', source);
     if (!source || !onNavigateToSource) return;
     event.stopPropagation();
     onNavigateToSource(source);
@@ -150,8 +151,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
               x={g * 0.75}
               y={leftCenters[i]}
               dominantBaseline="middle"
-              onClick={(event) => navigateSvgSource(event, port.source)}
-              onDoubleClick={stopSvgInteraction}
+              onDoubleClick={(event) => navigateSvgSource(event, port.source)}
               onMouseDown={stopSvgInteraction}
               onPointerDown={stopSvgInteraction}
             >
@@ -169,8 +169,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
               y={rightCenters[i]}
               textAnchor="end"
               dominantBaseline="middle"
-              onClick={(event) => navigateSvgSource(event, port.source)}
-              onDoubleClick={stopSvgInteraction}
+              onDoubleClick={(event) => navigateSvgSource(event, port.source)}
               onMouseDown={stopSvgInteraction}
               onPointerDown={stopSvgInteraction}
             >
@@ -268,22 +267,19 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   return (
     <>
       {shouldShowModportHeader && (
-        <>
-          <text
-            className={`svsch-interface-modport-title${modportSource ? ' svsch-svg-link' : ''}`}
-            x={width / 2}
-            y={g * 0.65}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            onClick={(event) => navigateSvgSource(event, modportSource)}
-            onDoubleClick={(event) => navigateSvgSource(event, modportSource)}
-            onMouseDown={stopSvgInteraction}
-            onPointerDown={stopSvgInteraction}
-          >
-            {modportName}
-          </text>
-          {modportSource && dottedUnderline('modport-title-underline', modportName, width / 2, g * 0.65, 11, 'svsch-interface-modport-link-underline', 'middle')}
-        </>
+        <text
+          className="svsch-interface-modport-title"
+          x={width / 2}
+          y={g * 0.65}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          onDoubleClick={(event) => navigateSvgSource(event, modportSource)}
+          onClick={(event) => navigateSvgSource(event, modportSource)}
+          onMouseDown={stopSvgInteraction}
+          onPointerDown={stopSvgInteraction}
+        >
+          {modportName}
+        </text>
       )}
       <rect className="svsch-bus-pipe" x={pipeX} y={pipeY} width={6} height={pipeH} rx={3} />
       {taps.map((port: DiagramPort, i: number) => {
@@ -293,13 +289,15 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         const tapGoesRight = isInterfaceModport
           ? (port.preferredSide === 'right' || port.direction === 'output')
           : !isComposition;
+        const isLink = isInterface && port.source && !isInterfaceModport;
         const interfaceFieldClass = isInterface
-          ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}${port.source ? ' svsch-svg-link' : ''}`
+          ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}${isLink ? ' svsch-svg-link' : ''}`
           : '';
         return !tapGoesRight ? (
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
-          <g key={port.id} className="svsch-bus-tap">
+          <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
+            <rect x={pipeX - 6 - Math.max(20, label.length * 7 + 8) + 4} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
@@ -307,18 +305,17 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
               y={cy}
               textAnchor="end"
               dominantBaseline="middle"
-              onClick={(event) => isInterface && navigateSvgSource(event, port.source)}
-              onDoubleClick={(event) => isInterface && navigateSvgSource(event, port.source)}
+              onDoubleClick={(event) => navigateSvgSource(event, port.source)}
               onMouseDown={isInterface ? stopSvgInteraction : undefined}
               onPointerDown={isInterface ? stopSvgInteraction : undefined}
             >
               {label}
             </text>
-            {isInterface && port.source && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - 6, cy, 12, 'svsch-interface-field-link-underline', 'end')}
+            {isLink && dottedUnderline(`field-left-underline-${port.id}`, label, pipeX - 6, cy, 12, 'svsch-interface-field-link-underline', 'end')}
           </g>
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
-          <g key={port.id} className="svsch-bus-tap">
+          <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
             <rect x={pipeX + 8} y={cy - 8} width={Math.max(20, label.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
             <text
@@ -327,14 +324,13 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
               x={pipeX + 12}
               y={cy}
               dominantBaseline="middle"
-              onClick={(event) => isInterface && navigateSvgSource(event, port.source)}
-              onDoubleClick={(event) => isInterface && navigateSvgSource(event, port.source)}
+              onDoubleClick={(event) => navigateSvgSource(event, port.source)}
               onMouseDown={isInterface ? stopSvgInteraction : undefined}
               onPointerDown={isInterface ? stopSvgInteraction : undefined}
             >
               {label}
             </text>
-            {isInterface && port.source && dottedUnderline(`field-right-underline-${port.id}`, label, pipeX + 12, cy, 12, 'svsch-interface-field-link-underline')}
+            {isLink && dottedUnderline(`field-right-underline-${port.id}`, label, pipeX + 12, cy, 12, 'svsch-interface-field-link-underline')}
           </g>
         );
       })}

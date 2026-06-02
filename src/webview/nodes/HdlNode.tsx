@@ -139,7 +139,8 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         style={nodeStyle}
         title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'port'}
         onDoubleClick={(event) => {
-          if (event.target instanceof Element && event.target.closest('.bus-tap')) {
+          console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
+          if (event.target instanceof Element && event.target.closest('.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label')) {
             return;
           }
           handleDoubleClick();
@@ -204,7 +205,8 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         style={nodeStyle}
         title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'interface port'}
         onDoubleClick={(event) => {
-          if (event.target instanceof Element && event.target.closest('.bus-tap')) {
+          console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
+          if (event.target instanceof Element && event.target.closest('.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label')) {
             return;
           }
           handleDoubleClick();
@@ -292,9 +294,11 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     };
     const navigateTapFromEvent = (event: React.MouseEvent) => {
       if (!(event.target instanceof Element)) return;
-      const tap = event.target.closest('.bus-tap') as HTMLElement | null;
-      const portId = tap?.dataset.portId;
+      const targetClass = typeof event.target.className === 'string' ? event.target.className : (event.target.className as any)?.baseVal;
+      const tap = event.target.closest('.bus-tap, .svsch-bus-tap, .svsch-interface-side-label');
+      const portId = tap?.getAttribute('data-port-id') ?? (tap as HTMLElement)?.dataset?.portId;
       const port = portId ? taps.find((candidate) => candidate.id === portId) : undefined;
+      console.log('navigateTapFromEvent targetClass:', targetClass, 'tap:', !!tap, 'portId:', portId, 'port:', !!port, 'port.source:', port?.source);
       if (port?.source) {
         event.stopPropagation();
         navigateToSource(port.source);
@@ -311,7 +315,8 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         onClickCapture={navigateTapFromEvent}
         onDoubleClickCapture={navigateTapFromEvent}
         onDoubleClick={(event) => {
-          if (event.target instanceof Element && event.target.closest('.bus-tap')) {
+          console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
+          if (event.target instanceof Element && event.target.closest('.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label')) {
             return;
           }
           handleDoubleClick();
