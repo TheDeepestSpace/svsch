@@ -918,11 +918,13 @@ select {
 
 .svsch-port-type-suffix-blue {
   color: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
   margin-left: 2px;
   font-weight: bold;
 }
 
 .svsch-port-type-suffix {
+  fill: currentColor;
   margin-left: 2px;
   font-weight: bold;
 }
@@ -1381,6 +1383,13 @@ select {
   text-decoration: underline;
   text-decoration-style: dotted;
   text-underline-offset: 2px;
+}
+
+.hdl-node-svg .svsch-param-token {
+  fill: var(--vscode-descriptionForeground);
+  pointer-events: all;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
 }
 
 .port-skin-harness .port-skin-body {
@@ -2129,6 +2138,35 @@ select {
   font-family: var(--vscode-editor-font-family, monospace);
   pointer-events: none;
   user-select: none;
+}
+
+.hdl-node-port .svsch-port-node-label {
+  font-size: 12px;
+}
+
+.hdl-node-port .svsch-port-type-label,
+.hdl-node-port .svsch-port-modport-label {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  font-weight: 400;
+  pointer-events: all;
+}
+
+.hdl-node-port .svsch-port-type-label.svsch-svg-link,
+.hdl-node-port .svsch-port-modport-label.svsch-svg-link {
+  cursor: pointer;
+}
+
+.hdl-node-svg .svsch-svg-link-underline {
+  fill: none;
+  pointer-events: none;
+  stroke-dasharray: 1 2;
+  stroke-linecap: round;
+  stroke-width: 1;
+}
+
+.hdl-node-port .svsch-port-type-link-underline {
+  stroke: var(--vscode-descriptionForeground);
 }
 .svsch-instance-param {
   fill: var(--vscode-descriptionForeground);

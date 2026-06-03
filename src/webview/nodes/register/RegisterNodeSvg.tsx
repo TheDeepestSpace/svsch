@@ -11,6 +11,7 @@ import {
 } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
@@ -72,14 +73,14 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeS
       {/* D port label (left side) */}
       {dPort && (
         <text className="svsch-port-label" x={g / 2} y={dTop + g / 2} dominantBaseline="middle">
-          {dPort.label ?? dPort.name}
+          <SvgPortLabel port={dPort} />
         </text>
       )}
 
       {/* Q port label (right side) */}
       {qPort && (
         <text className="svsch-port-label" x={width - g / 2} y={qTop + g / 2} textAnchor="end" dominantBaseline="middle">
-          {qPort.label ?? qPort.name}
+          <SvgPortLabel port={qPort} />
         </text>
       )}
 
@@ -111,7 +112,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections }: NodeS
         const top = registerExtraInputPortTop(index, height, hasRv);
         return (
           <text key={port.id} className="svsch-port-label" x={g * 0.75} y={top + g / 2} dominantBaseline="middle">
-            {port.label ?? port.name}
+            <SvgPortLabel port={port} />
           </text>
         );
       })}

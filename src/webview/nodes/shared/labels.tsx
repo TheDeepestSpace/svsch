@@ -2,7 +2,7 @@ import React from 'react';
 import { getVscodeApi } from '../../vscodeApi';
 import { normalizeWidth } from '../../../diagram/constants';
 import { structFields, nodeModportName, repeatExpression, repeatExpressionSource } from '../../../ir/nodeMetadata';
-import type { DiagramNode, DiagramPort, ParameterRef, ParameterDecl, InstanceParameter } from '../../../ir/types';
+import type { DiagramNode, DiagramPort, ParameterRef, ParameterDecl, InstanceParameter, SourceRange } from '../../../ir/types';
 
 const vscode = getVscodeApi();
 
@@ -134,6 +134,68 @@ export function ParameterizedText({ text, refs = [] }: { text: string; refs?: Pa
   return <>{parts}</>;
 }
 
+function parameterizedTextParts(text: string, refs: ParameterRef[]): Array<string | { text: string; refInfo?: ParameterRef; key: string }> {
+  if (refs.length === 0) return [text];
+
+  const byName = new Map(refs.map((ref) => [ref.name, ref]));
+  const names = [...byName.keys()].sort((a, b) => b.length - a.length);
+  if (names.length === 0) return [text];
+
+  const pattern = new RegExp(`\\b(${names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'g');
+  const parts: Array<string | { text: string; refInfo?: ParameterRef; key: string }> = [];
+  let lastIndex = 0;
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) parts.push(text.slice(lastIndex, index));
+    const name = match[1];
+    parts.push({ key: `${name}-${index}`, text: name, refInfo: byName.get(name) });
+    lastIndex = index + name.length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
+
+export function SvgParameterizedText({
+  text,
+  refs = [],
+  onNavigateToSource
+}: {
+  text: string;
+  refs?: ParameterRef[];
+  onNavigateToSource?: (source: SourceRange) => void;
+}): React.ReactElement {
+  const stopDrag = (event: React.SyntheticEvent) => {
+    if (onNavigateToSource) event.stopPropagation();
+  };
+
+  return (
+    <>
+      {parameterizedTextParts(text, refs).map((part, index) => {
+        if (typeof part === 'string') return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+
+        const source = part.refInfo?.declarationSource ?? part.refInfo?.source;
+        if (!source) return <React.Fragment key={part.key}>{part.text}</React.Fragment>;
+
+        return (
+          <tspan
+            key={part.key}
+            className="svsch-param-token"
+            onClick={(event) => {
+              event.stopPropagation();
+              onNavigateToSource?.(source);
+            }}
+            onDoubleClick={stopDrag}
+            onMouseDown={stopDrag}
+            onPointerDown={stopDrag}
+          >
+            {part.text}
+          </tspan>
+        );
+      })}
+    </>
+  );
+}
+
 export function ModuleParameterTable({ moduleName, parameters = [] }: { moduleName: string; parameters?: ParameterDecl[] }): React.ReactElement | null {
   const metaParameters = parameters.filter((param) => param.kind === 'parameter');
   const localparams = parameters.filter((param) => param.kind === 'localparam');
@@ -253,10 +315,8 @@ export function RepeatLabel({ node }: { node: DiagramNode }) {
     </span>
   );
 }
-
 export function PortTypeSuffix({ port }: { port: { width?: string; typeName?: string; modportName?: string } }) {
-  const width = normalizeWidth(port.width);
-  const isInterface = width === 'interface' || port.modportName !== undefined;
+  const isInterface = portIsInterfaceLike(port);
   const isStruct = !isInterface && port.typeName !== undefined;
 
   if (isInterface) {
@@ -302,6 +362,124 @@ export function PortLabel({ port, showWidth = true, showType = true, collapseWid
       )}
     </span>
   );
+}
+
+function svgPortBaseLabel(port: DiagramPort, label?: string): string {
+  const rawLabel = label ?? port.label ?? port.name;
+  return normalizeWidth(rawLabel) === undefined && rawLabel.startsWith('[') ? '' : rawLabel;
+}
+
+export function portIsInterfaceLike(port: { width?: string; widthExpression?: string; typeName?: string; modportName?: string }): boolean {
+  const width = normalizeWidth(port.widthExpression ?? port.width);
+  return width === 'interface'
+    || port.modportName !== undefined
+    || Boolean(port.typeName && (port.typeName.endsWith('_if') || port.typeName.endsWith('if')));
+}
+
+interface SvgPortLabelOptions {
+  label?: string;
+  showWidth?: boolean;
+  showType?: boolean;
+  collapseWidth?: boolean;
+  hideInterfaceSuffix?: boolean;
+  annotation?: string;
+}
+
+export function portDisplayLabel(port: DiagramPort, options: SvgPortLabelOptions = {}): string {
+  const {
+    label,
+    showWidth = false,
+    showType = true,
+    collapseWidth = false,
+    hideInterfaceSuffix = false,
+    annotation
+  } = options;
+  const baseLabel = svgPortBaseLabel(port, label);
+  const width = normalizeWidth(port.widthExpression ?? port.width);
+  const isInterfacePort = portIsInterfaceLike(port);
+  const showInterfaceSuffix = isInterfacePort && !hideInterfaceSuffix;
+  const isStruct = !isInterfacePort && port.typeName !== undefined;
+  const displayWidth = collapseWidth && width && width !== 'interface' ? '[]' : width;
+  const typeOrWidth = showType ? port.typeName : undefined;
+
+  let suffix = '';
+  if (showInterfaceSuffix || isStruct) {
+    suffix = '{}';
+  } else if (!isInterfacePort && collapseWidth && showWidth && displayWidth) {
+    suffix = displayWidth;
+  } else if (!isInterfacePort && showWidth) {
+    const visibleSuffix = typeOrWidth || displayWidth;
+    if (visibleSuffix) suffix = ` ${visibleSuffix}`;
+  }
+
+  return baseLabel + suffix + (annotation ? ` ${annotation}` : '');
+}
+
+export function SvgPortLabel({
+  port,
+  label,
+  showWidth = false,
+  showType = true,
+  collapseWidth = false,
+  hideInterfaceSuffix = false
+}: {
+  port: DiagramPort;
+  label?: string;
+  showWidth?: boolean;
+  showType?: boolean;
+  collapseWidth?: boolean;
+  hideInterfaceSuffix?: boolean;
+}) {
+  const width = normalizeWidth(port.widthExpression ?? port.width);
+  const baseLabel = svgPortBaseLabel(port, label);
+  const isInterfacePort = portIsInterfaceLike(port);
+  const showInterfaceSuffix = isInterfacePort && !hideInterfaceSuffix;
+  const isStruct = !isInterfacePort && port.typeName !== undefined;
+  const displayWidth = collapseWidth && width && width !== 'interface' ? '[]' : width;
+  const typeOrWidth = showType ? port.typeName : undefined;
+  const visibleFullSuffix = !isInterfacePort && !isStruct && showWidth && !collapseWidth
+    ? typeOrWidth || displayWidth
+    : undefined;
+
+  if (baseLabel === '' && !showWidth) {
+    const rawLabel = port.label ?? port.name;
+    if (rawLabel === '[0:0]') return null;
+    return <>{rawLabel}</>;
+  }
+
+  return (
+    <>
+      {baseLabel}
+      {showInterfaceSuffix ? (
+        <tspan className="svsch-port-type-suffix-blue">{"{}"}</tspan>
+      ) : isStruct ? (
+        <tspan className="svsch-port-type-suffix">{"{}"}</tspan>
+      ) : !isInterfacePort && collapseWidth && showWidth && displayWidth ? (
+        <tspan className="svsch-port-type-suffix">{displayWidth}</tspan>
+      ) : visibleFullSuffix ? (
+        <tspan className="svsch-port-width-suffix"> {visibleFullSuffix}</tspan>
+      ) : null}
+    </>
+  );
+}
+
+export function getSvgStructFieldAnnotation(node: DiagramNode, port: DiagramPort): string | undefined {
+  const fields = structFields(node);
+  const fieldName = (port.label ?? port.name.split('.').pop());
+  const field = fields.find((candidate) => candidate.name === fieldName);
+
+  if (field && typeof field.typeName === 'string') {
+    return field.typeName;
+  }
+  if (field && typeof field.bitRange === 'string') return field.bitRange;
+  if (field && typeof field.width === 'string') return normalizeWidth(field.width);
+  return normalizeWidth(port.width);
+}
+
+export function SvgStructFieldAnnotation({ node, port }: { node: DiagramNode; port: DiagramPort }) {
+  const annotation = getSvgStructFieldAnnotation(node, port);
+  if (!annotation) return null;
+  return <tspan className="svsch-struct-field-annotation"> {annotation}</tspan>;
 }
 
 export function structFieldAnnotation(node: DiagramNode, port: DiagramPort): React.ReactNode {

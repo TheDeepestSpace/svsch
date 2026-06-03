@@ -28,7 +28,6 @@ import type { DiagramPort, SourceRange } from '../../ir/types';
 import {
   TypeLabel,
   InstanceParameterList,
-  PortLabel,
 } from './shared/labels';
 import { ArrayStackSelection } from './shared/skins';
 import { NetLabelNode } from './NetLabelNode';
@@ -152,29 +151,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             width={nodeWidth}
             height={nodeHeight}
             arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
           />
         </svg>
-        {/* HTML overlay: CSS-width spacer (no text = no >> text= match) + visible TypeLabel.
-            SVG provides label text; HTML TypeLabel provides visible type link + Playwright selectors. */}
-        <div className="port-skin-label">
-          {/* Width-based spacer: no text content, just pushes TypeLabel to approximate type position */}
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'inline-block',
-              width: `${(node.label.length + (isArray ? 3 : 0)) * 7}px`,
-              userSelect: 'none',
-            }}
-          />
-          <TypeLabel
-            typeName={typeName}
-            width={width ?? (fallbackNodeWidth !== 'interface' ? fallbackNodeWidth : undefined)}
-            source={typeSource}
-            modportName={modportName}
-            modportSource={modportSource}
-            parameterRefs={node.ports[0]?.parameterRefs}
-          />
-        </div>
         {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
@@ -218,13 +197,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             width={nodeWidth}
             height={nodeHeight}
             arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
           />
         </svg>
-        {/* HTML overlay: CSS-width spacer + visible TypeLabel (same pattern as regular port) */}
-        <div className="port-skin-label">
-          <span aria-hidden="true" style={{ display: 'inline-block', width: `${node.label.length * 7}px`, userSelect: 'none' }} />
-          <TypeLabel typeName={typeName} source={typeSource} modportName={modportName} modportSource={modportSource} />
-        </div>
         <Handle type="target" id={port?.id} position={handlePosition} />
         <Handle type="source" id={port?.id} position={handlePosition} />
         <div className="hdl-node-selection-rect" aria-hidden="true" />
@@ -656,25 +631,6 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       {instanceParameters.length > 0 && (
         <div style={{ position: 'absolute', top: `${diagramSizing.nodeHeaderHeight - 16}px`, left: 0, right: 0 }}>
           <InstanceParameterList parameters={instanceParameters} />
-        </div>
-      )}
-      {/* HTML port rows — needed for test ".node-port" / ".svsch-port-type-suffix" selectors */}
-      {node.kind === 'instance' && (
-        <div className="node-ports" style={{ position: 'absolute', inset: 0, background: 'transparent', pointerEvents: 'none',}} aria-hidden="true">
-          <div>
-            {sideInputs.map((port: DiagramPort) => (
-              <div className="node-port" key={port.id}>
-                <PortLabel port={port} showWidth={true} showType={true} collapseWidth={true} />
-              </div>
-            ))}
-          </div>
-          <div>
-            {outputs.map((port: DiagramPort) => (
-              <div className="node-port node-port-out" key={`out-${port.id}`}>
-                <PortLabel port={port} showWidth={true} showType={true} collapseWidth={true} />
-              </div>
-            ))}
-          </div>
         </div>
       )}
       {sideInputs.map((port: DiagramPort, i: number) => (

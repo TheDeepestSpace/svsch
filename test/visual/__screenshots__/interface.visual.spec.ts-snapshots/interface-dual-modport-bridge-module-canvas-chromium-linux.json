@@ -97,7 +97,7 @@
         "x": 1368,
         "y": 36
       },
-      "width": 312,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "interface",
@@ -117,7 +117,7 @@
         "x": 24,
         "y": 84
       },
-      "width": 312,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "interface",
@@ -170,7 +170,7 @@
       "target": "interface_modport:pair_bridge:upstream",
       "sourceHandle": "out:master",
       "targetHandle": "in:master",
-      "path": "M 336 96 L 360 96 L 648 96 L 648 141"
+      "path": "M 144 96 L 168 96 L 648 96 L 648 141"
     }
   ]
 }

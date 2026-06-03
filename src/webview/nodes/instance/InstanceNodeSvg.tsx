@@ -5,6 +5,7 @@ import { instanceParameterRows } from '../../../diagram/nodeSizing';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
 
 export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
@@ -68,7 +69,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
           y={nodePortCenterOffset(i + paramRows)}
           dominantBaseline="middle"
         >
-          {port.label ?? port.name}
+          <SvgPortLabel port={port} showWidth collapseWidth />
         </text>
       ))}
 
@@ -81,7 +82,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
           textAnchor="end"
           dominantBaseline="middle"
         >
-          {port.label ?? port.name}
+          <SvgPortLabel port={port} showWidth collapseWidth />
         </text>
       ))}
 

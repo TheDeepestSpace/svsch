@@ -10,6 +10,7 @@ import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
@@ -68,7 +69,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
               textAnchor="middle"
               dominantBaseline={leadLen > 0 ? 'middle' : 'auto'}
             >
-              {port.label ?? 's'}
+              <SvgPortLabel port={port} label={port.label ?? 's'} showWidth collapseWidth />
             </text>
           </g>
         );
@@ -82,7 +83,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
           y={muxInputPortCenterY(index, sideInputs.length, height)}
           dominantBaseline="middle"
         >
-          {port.label ?? port.name}
+          <SvgPortLabel port={port} showWidth collapseWidth />
         </text>
       ))}
 
@@ -94,7 +95,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
           textAnchor="end"
           dominantBaseline="middle"
         >
-          {outputs[0].label ?? outputs[0].name}
+          <SvgPortLabel port={outputs[0]} showWidth collapseWidth />
         </text>
       )}
 
