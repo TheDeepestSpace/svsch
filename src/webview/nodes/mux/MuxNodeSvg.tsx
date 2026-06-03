@@ -54,22 +54,22 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
           ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
           : 0;
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
-        const labelY = leadLen > 0
-          ? muxTopPortLabelOffsetY(index, muxTopPorts.length, height)
-          : skinEdgeY - 4;
+        // Label is always one grid unit below the slope at portX (skinEdgeY + g),
+        // keeping a consistent visual gap from the trapezoid edge regardless of size.
+        const labelY = skinEdgeY + g;
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className="svsch-mux-select-lead" x1={portX} y1={0} x2={portX} y2={leadLen} />
+              <line className="svsch-mux-select-lead" x1={portX} y1={g} x2={portX} y2={skinEdgeY} />
             )}
             <text
               className="svsch-port-label"
               x={portX}
               y={labelY}
               textAnchor="middle"
-              dominantBaseline={leadLen > 0 ? 'middle' : 'auto'}
+              dominantBaseline="middle"
             >
-              <SvgPortLabel port={port} label={port.label ?? 's'} showWidth collapseWidth />
+              <SvgPortLabel port={port} label={'s'} showWidth collapseWidth />
             </text>
           </g>
         );

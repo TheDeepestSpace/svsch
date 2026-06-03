@@ -54,14 +54,15 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
           ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
           : 0;
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
+        // Lead: from handle (y=g) to slope (y=skinEdgeY). Label just inside slope.
         const labelY = leadLen > 0
-          ? muxTopPortLabelOffsetY(index, muxTopPorts.length, height)
+          ? skinEdgeY + 8
           : skinEdgeY + g / 2;
         const label = selectPortLabel(node, port.name === 'width' ? 'w' : 's');
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className="svsch-mux-select-lead" x1={portX} y1={0} x2={portX} y2={leadLen} />
+              <line className="svsch-mux-select-lead" x1={portX} y1={g} x2={portX} y2={skinEdgeY} />
             )}
             <text
               className="svsch-port-label"

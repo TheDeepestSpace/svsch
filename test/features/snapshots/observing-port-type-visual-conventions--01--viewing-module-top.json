@@ -42,7 +42,7 @@
         "x": 24,
         "y": 180
       },
-      "width": 168,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "interface",
@@ -102,7 +102,7 @@
         "x": 24,
         "y": 132
       },
-      "width": 168,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "port",
@@ -123,7 +123,7 @@
       "target": "instance:top:u_child",
       "sourceHandle": "out:master",
       "targetHandle": "port:d",
-      "path": "M 192 192 L 216 192 L 240 192 L 240 144 L 384 144 L 408 144"
+      "path": "M 144 192 L 168 192 L 240 192 L 240 144 L 384 144 L 408 144"
     },
     {
       "id": "edge:port:top:a:instance:top:u_child:a",
@@ -147,7 +147,7 @@
       "target": "instance:top:u_child",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 192 144 L 216 144 L 264 144 L 264 120 L 384 120 L 408 120"
+      "path": "M 144 144 L 168 144 L 264 144 L 264 120 L 384 120 L 408 120"
     }
   ]
 }
