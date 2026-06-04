@@ -944,7 +944,7 @@ Then('the port node {string} should not have moved', async function (this: Custo
 Then('the instance node {string} should have port {string} with no extra symbols', async function (this: CustomWorld, instanceName: string, portName: string) {
   const id = await findNodeIdByLabel(this.page!, instanceName, 'instance');
   if (!id) throw new Error(`Could not find instance node "${instanceName}"`);
-  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .node-port`, { hasText: portName }).first();
+  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-port-label`, { hasText: portName }).first();
   await expect(portLocator).toBeVisible();
   const text = await portLocator.textContent();
   expect(text?.trim()).toBe(portName);
@@ -953,7 +953,7 @@ Then('the instance node {string} should have port {string} with no extra symbols
 Then('the instance node {string} should have port {string} with label {string}', async function (this: CustomWorld, instanceName: string, portName: string, expectedLabel: string) {
   const id = await findNodeIdByLabel(this.page!, instanceName, 'instance');
   if (!id) throw new Error(`Could not find instance node "${instanceName}"`);
-  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .node-port`, { hasText: portName }).first();
+  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-port-label`, { hasText: portName }).first();
   await expect(portLocator).toBeVisible();
   const text = await portLocator.textContent();
   expect(text?.trim()).toBe(expectedLabel);
@@ -962,7 +962,7 @@ Then('the instance node {string} should have port {string} with label {string}',
 Then('the instance node {string} should have port {string} with suffix {string}', async function (this: CustomWorld, instanceName: string, portName: string, suffix: string) {
   const id = await findNodeIdByLabel(this.page!, instanceName, 'instance');
   if (!id) throw new Error(`Could not find instance node "${instanceName}"`);
-  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .node-port`, { hasText: portName }).first();
+  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-port-label`, { hasText: portName }).first();
   await expect(portLocator).toBeVisible();
   const suffixLocator = portLocator.locator('.svsch-port-type-suffix', { hasText: suffix });
   await expect(suffixLocator).toBeVisible();
@@ -971,7 +971,7 @@ Then('the instance node {string} should have port {string} with suffix {string}'
 Then('the instance node {string} should have port {string} with blue suffix {string}', async function (this: CustomWorld, instanceName: string, portName: string, suffix: string) {
   const id = await findNodeIdByLabel(this.page!, instanceName, 'instance');
   if (!id) throw new Error(`Could not find instance node "${instanceName}"`);
-  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .node-port`, { hasText: portName }).first();
+  const portLocator = this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-port-label`, { hasText: portName }).first();
   await expect(portLocator).toBeVisible();
   const suffixLocator = portLocator.locator('.svsch-port-type-suffix-blue', { hasText: suffix });
   await expect(suffixLocator).toBeVisible();
@@ -1144,7 +1144,7 @@ When('I double-click the struct field tap {string} on struct node {string}', asy
   const id = await findNodeIdByLabel(this.page!, name, 'struct');
   if (!id) throw new Error(`Could not find struct node "${name}"`);
   const beforeMessages = this.messages.length;
-  await this.page!.locator(`.react-flow__node[data-id="${id}"] .bus-tap span`, { hasText: field }).first().dblclick({ force: true });
+  await this.page!.locator(`.react-flow__node[data-id="${id}"] .svsch-bus-tap-label`, { hasText: field }).first().dblclick({ force: true });
   await this.page!.waitForTimeout(200);
   if (this.messages.length === beforeMessages) {
     const node = this.lastViewModel.nodes.find((candidate: any) => candidate.id === id);

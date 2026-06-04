@@ -2163,6 +2163,25 @@ select {
   stroke: var(--vscode-descriptionForeground);
 }
 
+.hdl-register-node .svsch-register-type-label {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  font-weight: 400;
+  pointer-events: all;
+}
+
+.hdl-register-node .svsch-register-type-label.svsch-svg-link {
+  cursor: pointer;
+}
+
+.hdl-register-node .svsch-register-type-link-underline {
+  stroke: var(--vscode-descriptionForeground);
+}
+
+.hdl-register-node .svsch-register-width-suffix {
+  font-weight: 400;
+}
+
 .svsch-port-label {
   fill: var(--vscode-editor-foreground);
   font-size: 11px;
@@ -2329,7 +2348,7 @@ select {
 .register-clock-glyph path {
   fill: none;
   stroke: var(--vscode-editor-foreground);
-  stroke-width: 1.5;
+  stroke-width: 1.25;
   stroke-linejoin: round;
 }
 

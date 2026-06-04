@@ -12,8 +12,8 @@ test.describe('interface visual rendering', () => {
     await expect(busPort).toHaveClass(/hdl-port-skinned/);
     await expect(busPort).toContainText('bus');
     await expect(busPort.locator('.port-skin-harness')).toBeVisible();
-    await expect(busPort.locator('.port-skin-label .svsch-type-label', { hasText: 'simple_if' }).first()).toBeVisible();
-    await expect(busPort.locator('.port-skin-label .svsch-modport-label', { hasText: 'slave' }).first()).toBeVisible();
+    await expect(busPort.locator('.svsch-port-type-label', { hasText: 'simple_if' }).first()).toBeVisible();
+    await expect(busPort.locator('.svsch-port-modport-label', { hasText: 'slave' }).first()).toBeVisible();
     await expect(busModport.locator('.svsch-interface-field-right', { hasText: 'valid' })).toBeVisible();
     await expect(busModport.locator('.svsch-interface-field-left', { hasText: 'ready' })).toBeVisible();
 
@@ -91,6 +91,7 @@ test.describe('interface visual rendering', () => {
     await expect(interfaceNode.locator('.svsch-interface-field-label', { hasText: 'data' })).toBeVisible();
     await expect(interfaceNode.locator('.svsch-interface-field-label', { hasText: 'valid' })).toBeVisible();
     await expect(interfaceNode.locator('.svsch-interface-modport-title')).toHaveCount(0);
+    await expect(interfaceNode.locator('.svsch-interface-field-link-underline')).toHaveCount(0);
 
     await expectGraphAndScreenshot(page,'interface-plain-view-canvas.png', { clip: await paddedGraphClip(page) });
   });
@@ -215,7 +216,11 @@ test.describe('interface visual rendering', () => {
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_all_left_modports');
 
     const allLeft = page.locator('[data-node-id="interface:interface_all_left_modports:request_bus"]');
+    const requester = page.locator('[data-node-id="instance:interface_all_left_modports:u_requester"]');
+    const arbiter = page.locator('[data-node-id="instance:interface_all_left_modports:u_arbiter"]');
     await expect(allLeft).toBeVisible();
+    await expect(requester.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
+    await expect(arbiter.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
     await expect(allLeft.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText(['requester', 'arbiter']);
     await expect(allLeft.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveCount(0);
     await expectGraphAndScreenshot(page,'interface-all-left-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
@@ -223,7 +228,11 @@ test.describe('interface visual rendering', () => {
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_all_right_modports');
 
     const allRight = page.locator('[data-node-id="interface:interface_all_right_modports:event_bus"]');
+    const sink = page.locator('[data-node-id="instance:interface_all_right_modports:u_sink"]');
+    const observer = page.locator('[data-node-id="instance:interface_all_right_modports:u_observer"]');
     await expect(allRight).toBeVisible();
+    await expect(sink.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
+    await expect(observer.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
     await expect(allRight.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveCount(0);
     await expect(allRight.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['sink', 'observer']);
     await expectGraphAndScreenshot(page,'interface-all-right-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
@@ -278,8 +287,8 @@ test.describe('interface visual rendering', () => {
     await expect(downstreamModport).toBeInViewport({ ratio: 0.98 });
     await expect(upstreamPort).toHaveClass(/hdl-port-skinned/);
     await expect(downstreamPort).toHaveClass(/hdl-port-skinned/);
-    await expect(upstreamPort.locator('.port-skin-label .svsch-modport-label', { hasText: 'master' }).first()).toBeVisible();
-    await expect(downstreamPort.locator('.port-skin-label .svsch-modport-label', { hasText: 'slave' }).first()).toBeVisible();
+    await expect(upstreamPort.locator('.svsch-port-modport-label', { hasText: 'master' }).first()).toBeVisible();
+    await expect(downstreamPort.locator('.svsch-port-modport-label', { hasText: 'slave' }).first()).toBeVisible();
     await expectGraphAndScreenshot(page,'interface-dual-modport-bridge-module-canvas.png', { clip: await canvasClip(page), maxDiffPixels: 600 });
   });
 

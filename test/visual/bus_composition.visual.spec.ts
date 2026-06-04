@@ -55,6 +55,8 @@ test.describe('Bus Composition Visual Rendering', () => {
     const busCompNode = page.locator('.hdl-bus-array-composition');
     await expect(busCompNode).toBeVisible();
     await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(4);
+    await expect(busCompNode.locator('.svsch-bus-tap', { hasText: '[3]' })).toBeVisible();
+    await expect(busCompNode.locator('.svsch-bus-tap', { hasText: '[3][]' })).toHaveCount(0);
 
     await expectGraphAndScreenshot(page, 'array-stack-composition-literal-canvas.png', { clip: await paddedGraphClip(page) });
   });

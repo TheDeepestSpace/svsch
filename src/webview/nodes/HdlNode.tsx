@@ -1,7 +1,7 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
-import { diagramSizing, normalizeWidth, nodePortCenterOffset } from '../../diagram/constants';
+import { diagramSizing, nodePortCenterOffset } from '../../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
@@ -17,8 +17,6 @@ import {
   nodeModportName,
   nodeModportSource,
   nodeTypeName,
-  nodeTypeSource,
-  nodeWidth as metadataNodeWidth,
   registerClockSignal,
   registerResetSignal,
   nodeIsArrayNode,
@@ -26,7 +24,6 @@ import {
 } from '../../ir/nodeMetadata';
 import type { DiagramPort, SourceRange } from '../../ir/types';
 import {
-  TypeLabel,
   InstanceParameterList,
 } from './shared/labels';
 import { ArrayStackSelection } from './shared/skins';
@@ -52,17 +49,8 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
-  const width = normalizeWidth(metadataNodeWidth(node));
-  const fallbackNodeWidth = node.kind === 'port'
-    ? normalizeWidth(node.ports[0]?.widthExpression ?? node.ports[0]?.width)
-    : (node.kind === 'register' || node.kind === 'latch')
-      ? normalizeWidth(node.ports.find((port) => port.direction === 'output')?.width)
-      : node.kind === 'literal'
-        ? normalizeWidth(node.ports.find((port) => port.direction === 'output')?.width)
-        : undefined;
   const typeName = nodeTypeName(node)
     ?? (node.kind === 'port' ? node.ports[0]?.typeName : undefined);
-  const typeSource = nodeTypeSource(node) ?? (node.kind === 'port' ? node.ports[0]?.typeSource : undefined);
   const modportName = nodeModportName(node) ?? (node.kind === 'port' ? node.ports[0]?.modportName : undefined);
   const modportSource = nodeModportSource(node) ?? (node.kind === 'port' ? node.ports[0]?.modportSource : undefined);
   const nodeRole = structRole(node);
@@ -413,22 +401,14 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         onDoubleClick={handleDoubleClick}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <SvgComp node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <SvgComp
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
+          />
         </svg>
-        {/* HTML overlay for type label navigation (needs to be visible for tests) */}
-        {(typeName || fallbackNodeWidth) && (
-          <div style={{
-            position: 'absolute',
-            top: '18px',
-            left: '10px',
-            pointerEvents: 'all',
-            fontSize: '14px',
-            fontFamily: 'var(--vscode-editor-font-family, monospace)',
-            color: 'var(--vscode-editor-foreground)',
-          }}>
-            <TypeLabel typeName={typeName} width={width ?? fallbackNodeWidth} source={typeSource} />
-          </div>
-        )}
         {dPort && <Handle type="target" id={dPort.id} position={Position.Left}
           style={{ top: registerPortTop('d', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {qPort && <Handle type="source" id={qPort.id} position={Position.Right}

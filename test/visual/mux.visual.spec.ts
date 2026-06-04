@@ -941,6 +941,33 @@ test.describe('struct visual rendering', () => {
     await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'lane' })).toBeVisible();
     await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: '[1:0]' })).toBeVisible();
 
+    const structAnnotationColors = await page.locator('.hdl-struct-node .svsch-bus-tap-label', { hasText: 'opcode' }).first().evaluate((label) => {
+      const annotation = label.querySelector('.svsch-struct-field-annotation');
+      return {
+        labelFill: getComputedStyle(label).fill,
+        annotationFill: annotation ? getComputedStyle(annotation).fill : ''
+      };
+    });
+    expect(structAnnotationColors.annotationFill).toBeTruthy();
+    expect(structAnnotationColors.annotationFill).not.toBe(structAnnotationColors.labelFill);
+
+    const minimapPortWidths = await page.evaluate(() => {
+      const widthOf = (id: string) => {
+        const node = document.querySelector(`[data-minimap-node-id="${id}"]`);
+        if (!(node instanceof SVGGraphicsElement)) {
+          throw new Error(`Missing minimap node ${id}`);
+        }
+        return node.getBBox().width;
+      };
+      return {
+        opcode: widthOf('port:struct_breakout:opcode'),
+        valid: widthOf('port:struct_breakout:valid'),
+        lane: widthOf('port:struct_breakout:lane')
+      };
+    });
+    expect(minimapPortWidths.opcode).toBeGreaterThan(minimapPortWidths.valid);
+    expect(minimapPortWidths.opcode).toBeGreaterThan(minimapPortWidths.lane);
+
     const structEdgeWidth = await page.locator('path.svsch-edge-struct').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
     });

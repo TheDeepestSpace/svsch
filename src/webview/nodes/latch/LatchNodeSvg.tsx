@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { diagramSizing } from '../../../diagram/constants';
+import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { registerPortTop, registerExtraInputPortTop } from '../../../diagram/registerGeometry';
 import {
   registerClockSignal,
@@ -8,13 +8,16 @@ import {
   registerResetActiveLow,
   nodeArrayDimension,
   nodeIsArrayNode,
+  nodeTypeName,
+  nodeTypeSource,
+  nodeWidth as metadataNodeWidth,
 } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgPortLabel } from '../shared/labels';
+import { SvgParameterizedText, SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
-export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const g = diagramSizing.gridSize;
@@ -43,6 +46,36 @@ export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgP
 
   const isArray = nodeIsArrayNode(node);
   const arrayDim = nodeArrayDimension(node);
+  const declaredWidth = normalizeWidth(metadataNodeWidth(node));
+  const outputWidth = normalizeWidth(qPort?.width);
+  const displayWidth = declaredWidth ?? outputWidth;
+  const typeName = nodeTypeName(node);
+  const typeSource = nodeTypeSource(node);
+  const widthSuffix = typeName ? undefined : displayWidth;
+  const hasTitleSuffix = Boolean(typeName || widthSuffix);
+  const titleX = 10;
+  const titleY = 26;
+  const titleFontSize = 14;
+  const typeFontSize = titleFontSize * 0.9;
+  const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
+  const typeLinkWidth = (text: string, fontSize: number) => text.length * fontSize * 0.55;
+  const suffixGap = hasTitleSuffix ? 4 : 0;
+  const labelWidth = monoTextWidth(node.label, titleFontSize);
+  const suffixText = typeName ?? widthSuffix ?? '';
+  const suffixFontSize = typeName ? typeFontSize : titleFontSize;
+  const suffixStartX = titleX + labelWidth + suffixGap;
+  const suffixWidth = hasTitleSuffix
+    ? (typeName ? typeLinkWidth(suffixText, suffixFontSize) : monoTextWidth(suffixText, suffixFontSize))
+    : 0;
+  const underlineY = titleY + typeFontSize * 0.62;
+  const stopSvgInteraction = (event: React.SyntheticEvent) => {
+    if (onNavigateToSource) event.stopPropagation();
+  };
+  const navigateSvgType = (event: React.MouseEvent) => {
+    if (!typeSource || !onNavigateToSource) return;
+    event.stopPropagation();
+    onNavigateToSource(typeSource);
+  };
 
   const dTop = registerPortTop('d', height, hasReset, hasRv);
   const qTop = registerPortTop('q', height, hasReset, hasRv);
@@ -68,7 +101,34 @@ export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgP
 
       {/* Kind + title in header */}
       <text className="svsch-node-kind" x={10} y={14} textAnchor="start" dominantBaseline="middle">LATCH</text>
-      <text className="svsch-node-title" x={10} y={26} textAnchor="start" dominantBaseline="middle">{node.label}</text>
+      <text className="svsch-node-title" x={titleX} y={titleY} textAnchor="start" dominantBaseline="middle">
+        <tspan>{node.label}</tspan>
+        {typeName ? (
+          <tspan
+            className={`svsch-type-label svsch-register-type-label${typeSource ? ' svsch-svg-link' : ''}`}
+            dx={suffixGap}
+            onClick={navigateSvgType}
+            onDoubleClick={stopSvgInteraction}
+            onMouseDown={stopSvgInteraction}
+            onPointerDown={stopSvgInteraction}
+          >
+            {typeName}
+          </tspan>
+        ) : widthSuffix ? (
+          <tspan className="svsch-register-width-suffix" dx={suffixGap}>
+            <SvgParameterizedText text={widthSuffix} refs={qPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+          </tspan>
+        ) : null}
+      </text>
+      {typeName && typeSource && (
+        <line
+          className="svsch-svg-link-underline svsch-register-type-link-underline"
+          x1={suffixStartX}
+          x2={suffixStartX + suffixWidth}
+          y1={underlineY}
+          y2={underlineY}
+        />
+      )}
 
       {/* D port label (left side) */}
       {dPort && (
@@ -87,7 +147,7 @@ export function LatchNodeSvg({ node, width, height, arrayConnections }: NodeSvgP
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
         <g className="svsch-register-clock-port">
-          <svg x={-2} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+          <svg x={0} y={clkTop + g / 2 - 6} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
             <path d="M 1 1.5 L 9 6 L 1 10.5" />
           </svg>
         </g>
