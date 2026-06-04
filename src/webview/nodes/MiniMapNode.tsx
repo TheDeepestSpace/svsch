@@ -17,7 +17,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
   const node = flowNode?.data.node;
 
   if (!node) {
-    return <rect x={x} y={y} width={width} height={height} className={className} fill="var(--vscode-editor-foreground)" />;
+    return <rect x={x} y={y} width={width} height={height} className={className} data-minimap-node-id={id} fill="var(--vscode-editor-foreground)" />;
   }
 
   if (node.kind === 'netLabel') {
@@ -102,6 +102,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
           <path
             d={skinPath}
             className={className}
+            data-minimap-node-id={id}
+            data-minimap-node-kind={node.kind}
             fill="var(--vscode-editor-foreground)"
             stroke="var(--vscode-editor-foreground)"
             strokeOpacity={0.4}
@@ -115,6 +117,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
     <path
       d={path}
       className={className}
+      data-minimap-node-id={id}
+      data-minimap-node-kind={node.kind}
       fill="var(--vscode-editor-foreground)"
       stroke="var(--vscode-editor-foreground)"
       strokeOpacity={0.4}

@@ -83,6 +83,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
+    '--svsch-port-width': `${node.kind === 'port' || isInterfacePortNode ? nodeWidth : diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
   if (node.kind === 'netLabel') {
