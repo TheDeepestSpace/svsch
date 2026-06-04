@@ -77,7 +77,7 @@
         "x": 24,
         "y": 36
       },
-      "width": 144,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "port",
@@ -114,7 +114,7 @@
       "target": "bus:top:bus_in",
       "sourceHandle": "port:bus_in",
       "targetHandle": "in:bus_in",
-      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+      "path": "M 144 48 L 168 48 L 408 48 L 432 48"
     }
   ]
 }

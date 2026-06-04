@@ -32,7 +32,7 @@
         "x": 24,
         "y": 36
       },
-      "width": 144,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "port",
@@ -52,7 +52,7 @@
         "x": 792,
         "y": 36
       },
-      "width": 144,
+      "width": 120,
       "height": 24,
       "data": {
         "kind": "port",
@@ -81,7 +81,7 @@
       "target": "bus:bus_one_tap:instr",
       "sourceHandle": "port:instr",
       "targetHandle": "in:instr",
-      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+      "path": "M 144 48 L 168 48 L 408 48 L 432 48"
     }
   ]
 }

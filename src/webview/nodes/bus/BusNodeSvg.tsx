@@ -275,9 +275,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     ? Math.round(width / 2) - 3
     : isComposition ? width - g * 2 - 6 : g * 2;
 
-  // HTML CSS: .bus-tap padding was 14px, span padding 4px.
-  const textOffsetLeft = isInterfaceModport ? 15 : 12;
-  const textOffsetRight = isInterfaceModport ? 21 : 18;
+  const pipeWidth = 6;
+  // Keep labels equally offset from the nearest visible pipe edge.
+  const labelGapFromPipeEdge = isInterfaceModport ? 15 : 17;
+  const labelMaskPaddingX = 10;
 
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
   const modportSource = isInterfaceModport ? nodeModportSource(node) : undefined;
@@ -300,18 +301,22 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           {modportName}
         </text>
       )}
-      <rect className="svsch-bus-pipe" x={pipeX} y={pipeY} width={6} height={pipeH} rx={3} />
+      <rect className="svsch-bus-pipe" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
       {taps.map((port: DiagramPort, i: number) => {
         const cy = tapCenters[i];
         const isStructBreakout = node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface');
         const annotation = isStructBreakout ? getSvgStructFieldAnnotation(node, port) : undefined;
-        const showCollapsedDesignator = !isInterface && node.kind !== 'struct';
+        // Aggregate taps already encode slice/range text in their labels.
+        const showCollapsedDesignator = false;
         const displayLabel = portDisplayLabel(port, {
           annotation,
           showWidth: showCollapsedDesignator,
           collapseWidth: showCollapsedDesignator,
           hideInterfaceSuffix: isInterface
         });
+        const labelMaskWidth = Math.max(20, monoTextWidth(displayLabel, 12) + labelMaskPaddingX * 2);
+        const leftLabelX = pipeX - labelGapFromPipeEdge;
+        const rightLabelX = pipeX + pipeWidth + labelGapFromPipeEdge;
         // For interface modport: outputs go right, inputs go left (mirrors original bus-tap-right/left CSS)
         const tapGoesRight = isInterfaceModport
           ? (port.preferredSide === 'right' || port.direction === 'output')
@@ -323,11 +328,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
-            <rect x={pipeX - textOffsetLeft - Math.max(20, displayLabel.length * 7 + 8) + 4} y={cy - 8} width={Math.max(20, displayLabel.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
+            <rect x={leftLabelX + labelMaskPaddingX - labelMaskWidth} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={pipeX - textOffsetLeft}
+              x={leftLabelX}
               y={cy}
               textAnchor="end"
               dominantBaseline="middle"
@@ -347,12 +352,12 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className="svsch-bus-tap-line" x1={pipeX + 6} y1={cy} x2={width - 3} y2={cy} />
-            <rect x={pipeX + textOffsetRight - 4} y={cy - 8} width={Math.max(20, displayLabel.length * 7 + 8)} height={16} fill="var(--vscode-editor-background)" />
+            <line className="svsch-bus-tap-line" x1={pipeX + pipeWidth} y1={cy} x2={width - 3} y2={cy} />
+            <rect x={rightLabelX - labelMaskPaddingX} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={pipeX + textOffsetRight}
+              x={rightLabelX}
               y={cy}
               dominantBaseline="middle"
               onDoubleClick={(event) => navigateSvgSource(event, port.source)}

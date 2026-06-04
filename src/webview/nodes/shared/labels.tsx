@@ -369,6 +369,11 @@ function svgPortBaseLabel(port: DiagramPort, label?: string): string {
   return normalizeWidth(rawLabel) === undefined && rawLabel.startsWith('[') ? '' : rawLabel;
 }
 
+function svgRawRangeLabel(rawLabel: string): string {
+  const singletonRange = rawLabel.match(/^\[(\d+):\1\]$/);
+  return singletonRange ? `[${singletonRange[1]}]` : rawLabel;
+}
+
 export function portIsInterfaceLike(port: { width?: string; widthExpression?: string; typeName?: string; modportName?: string }): boolean {
   const width = normalizeWidth(port.widthExpression ?? port.width);
   return width === 'interface'
@@ -394,7 +399,9 @@ export function portDisplayLabel(port: DiagramPort, options: SvgPortLabelOptions
     hideInterfaceSuffix = false,
     annotation
   } = options;
+  const rawLabel = label ?? port.label ?? port.name;
   const baseLabel = svgPortBaseLabel(port, label);
+  const visibleBaseLabel = baseLabel === '' && !showWidth ? svgRawRangeLabel(rawLabel) : baseLabel;
   const width = normalizeWidth(port.widthExpression ?? port.width);
   const isInterfacePort = portIsInterfaceLike(port);
   const showInterfaceSuffix = isInterfacePort && !hideInterfaceSuffix;
@@ -412,7 +419,7 @@ export function portDisplayLabel(port: DiagramPort, options: SvgPortLabelOptions
     if (visibleSuffix) suffix = ` ${visibleSuffix}`;
   }
 
-  return baseLabel + suffix + (annotation ? ` ${annotation}` : '');
+  return visibleBaseLabel + suffix + (annotation ? ` ${annotation}` : '');
 }
 
 export function SvgPortLabel({
@@ -443,8 +450,7 @@ export function SvgPortLabel({
 
   if (baseLabel === '' && !showWidth) {
     const rawLabel = port.label ?? port.name;
-    if (rawLabel === '[0:0]') return null;
-    return <>{rawLabel}</>;
+    return <>{svgRawRangeLabel(rawLabel)}</>;
   }
 
   return (
