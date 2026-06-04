@@ -485,13 +485,14 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         onDoubleClick={handleDoubleClick}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <LiteralNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <LiteralNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
+          />
         </svg>
-        {(typeName || fallbackNodeWidth) && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'transparent' }}>
-            <TypeLabel typeName={typeName} width={fallbackNodeWidth} source={typeSource} />
-          </div>
-        )}
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}

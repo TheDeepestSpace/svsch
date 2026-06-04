@@ -2036,6 +2036,12 @@ select {
   stroke-width: 1;
 }
 
+.svsch-literal-shape {
+  fill: var(--vscode-editor-background);
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1;
+}
+
 /* Per-kind stroke colors — match existing box-shadow: inset colors */
 .hdl-node-register .svsch-node-shape,
 .hdl-node-latch .svsch-node-shape,
@@ -2132,6 +2138,31 @@ select {
   pointer-events: none;
   user-select: none;
 }
+
+.svsch-literal-content {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  font-weight: 400;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hdl-node-literal .svsch-literal-type-label {
+  fill: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+  font-weight: 400;
+  pointer-events: all;
+}
+
+.hdl-node-literal .svsch-literal-type-label.svsch-svg-link {
+  cursor: pointer;
+}
+
+.hdl-node-literal .svsch-literal-type-link-underline {
+  stroke: var(--vscode-descriptionForeground);
+}
+
 .svsch-port-label {
   fill: var(--vscode-editor-foreground);
   font-size: 11px;

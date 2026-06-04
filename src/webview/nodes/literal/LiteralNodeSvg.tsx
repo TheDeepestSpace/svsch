@@ -1,35 +1,90 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
+import { nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
 import { normalizeWidth } from '../../../diagram/constants';
 import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { SvgParameterizedText } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
-export function LiteralNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const outputPort = outputs[0];
+  const nodeDeclaredWidth = normalizeWidth(metadataNodeWidth(node));
   const portWidth = normalizeWidth(outputPort?.widthExpression ?? outputPort?.width);
-  const displayLabel = portWidth ? `${node.label} ${portWidth}` : node.label;
+  const displayWidth = nodeDeclaredWidth ?? portWidth;
+  const typeName = nodeTypeName(node);
+  const typeSource = nodeTypeSource(node);
+  const widthSuffix = typeName ? undefined : displayWidth;
+  const hasSuffix = Boolean(typeName || widthSuffix);
+  const literalFontSize = 11;
+  const typeFontSize = literalFontSize * 0.9;
+  const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
+  const labelWidth = monoTextWidth(node.label, literalFontSize);
+  const suffixGap = hasSuffix ? 4 : 0;
+  const suffixText = typeName ?? widthSuffix ?? '';
+  const suffixFontSize = typeName ? typeFontSize : literalFontSize;
+  const suffixWidth = hasSuffix ? monoTextWidth(suffixText, suffixFontSize) : 0;
+  const textStartX = width / 2 - (labelWidth + suffixGap + suffixWidth) / 2;
+  const suffixStartX = textStartX + labelWidth + suffixGap;
+  const underlineY = height / 2 + typeFontSize * 0.62;
+  const shapeWidth = Math.max(0, width - 1);
+  const shapeHeight = Math.max(0, height - 1);
+  const stopSvgInteraction = (event: React.SyntheticEvent) => {
+    if (onNavigateToSource) event.stopPropagation();
+  };
+  const navigateSvgType = (event: React.MouseEvent) => {
+    if (!typeSource || !onNavigateToSource) return;
+    event.stopPropagation();
+    onNavigateToSource(typeSource);
+  };
 
   return (
     <>
       {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
         <rect
           key={layer.id}
-          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
+          className={`svsch-node-shape svsch-literal-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
           transform={`translate(${layer.dx}, ${layer.dy})`}
-          width={width} height={height}
+          x={0.5}
+          y={0.5}
+          width={shapeWidth}
+          height={shapeHeight}
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <rect className="svsch-node-shape" width={width} height={height} />
-      <text className="svsch-node-title svsch-literal-content" style={{ fontWeight: 'normal' }} x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
-        {displayLabel}
+      <rect className="svsch-node-shape svsch-literal-shape" x={0.5} y={0.5} width={shapeWidth} height={shapeHeight} />
+      <text className="svsch-node-title svsch-literal-content" x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
+        <tspan>{node.label}</tspan>
+        {typeName ? (
+          <tspan
+            className={`svsch-type-label svsch-literal-type-label${typeSource ? ' svsch-svg-link' : ''}`}
+            dx={suffixGap}
+            onClick={navigateSvgType}
+            onDoubleClick={stopSvgInteraction}
+            onMouseDown={stopSvgInteraction}
+            onPointerDown={stopSvgInteraction}
+          >
+            {typeName}
+          </tspan>
+        ) : widthSuffix ? (
+          <tspan dx={suffixGap}>
+            <SvgParameterizedText text={widthSuffix} refs={outputPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+          </tspan>
+        ) : null}
       </text>
+      {typeName && typeSource && (
+        <line
+          className="svsch-svg-link-underline svsch-literal-type-link-underline"
+          x1={suffixStartX}
+          x2={suffixStartX + suffixWidth}
+          y1={underlineY}
+          y2={underlineY}
+        />
+      )}
 
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
