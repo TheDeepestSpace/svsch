@@ -186,8 +186,8 @@ test.describe('Wire Intersections Cross Product', () => {
   test('renders all wire types crossing combinations in both directions', async ({ page }) => {
     await page.setViewportSize({ width: 3200, height: 2800 });
     await openView(page, createCrossProductView());
-    // Wait for one of the target port nodes to be visible
-    await page.waitForSelector('[data-node-id="g1_h_reg_src"]');
+    // Wait for one of the target port nodes to mount.
+    await page.waitForSelector('[data-node-id="g1_h_reg_src"]', { state: 'attached' });
     await waitForViewportTransformToSettle(page);
 
     // Verify that edges are rendered (4 regular/struct * 1 path + 2 interface * 2 paths + 2 stacked * 3 paths = 14 paths per grid, 28 total)

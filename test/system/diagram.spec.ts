@@ -163,9 +163,10 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     const webviewIframe = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
 
-    // --- 8. Poll until the first graph arrives (Surelog can take ~18 s cold).
+    // --- 8. Poll until the first graph arrives. Older supported VS Code
+    //     builds can take longer to cold-start the extension and Surelog.
     let loaded = false;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 180; i++) {
       loaded = await evaluateInVSCode(vscode => {
         void vscode;
         return ((global as any).__svschGraphCount ?? 0) > 0;

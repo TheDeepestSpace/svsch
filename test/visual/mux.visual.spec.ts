@@ -1577,7 +1577,7 @@ async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLa
           : layoutMode === 'replicate'
             ? '[data-node-kind="replicate"]'
           : '[data-node-kind="mux"]';
-  await page.waitForSelector(readySelector);
+  await page.waitForSelector(readySelector, { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -2992,5 +2992,4 @@ async function installStableTheme(page: Page): Promise<void> {
     `
   });
 }
-
 

@@ -126,7 +126,7 @@ async function openFixture(page: Page, fixtureName: string, layoutMode: 'auto' =
     }, '*');
   }, view);
 
-  await page.waitForSelector('.react-flow__node');
+  await page.waitForSelector('.react-flow__node', { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;

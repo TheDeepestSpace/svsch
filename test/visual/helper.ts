@@ -60,7 +60,7 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
               : layoutMode === 'inverter'
                 ? '[data-node-kind="inverter"]'
               : '.react-flow__node';
-  await page.waitForSelector(readySelector);
+  await page.waitForSelector(readySelector, { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
