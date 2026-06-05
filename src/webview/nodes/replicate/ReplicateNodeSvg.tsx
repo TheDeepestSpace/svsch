@@ -24,6 +24,8 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
   const source = repeatExpressionSource(node);
   const expression = repeatExpression(node);
   const symbolicLabel = source && expression && node.label === `x ${expression}`;
+  const fontSize = 11;
+  const charW = fontSize * 0.62;
   const stopSvgInteraction = (event: React.SyntheticEvent) => {
     if (onNavigateToSource) event.stopPropagation();
   };
@@ -50,7 +52,7 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
         width={width}
         height={height}
       />
-      <text className="svsch-node-title svsch-repeat-label" style={{ fontWeight: 'normal' }} x={width / 2 + contentShiftX} y={height / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
+      <text className="svsch-literal-content svsch-repeat-label" x={width / 2 + contentShiftX} y={height / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
         {symbolicLabel ? (
           <>
             <tspan>x </tspan>
@@ -67,6 +69,15 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
         ) : node.label}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
+      {symbolicLabel && expression && (
+        <line
+          className="svsch-svg-link-underline svsch-repeat-label-underline"
+          x1={width / 2 + contentShiftX + charW * (2 - expression.length) / 2}
+          x2={width / 2 + contentShiftX + charW * (2 + expression.length) / 2}
+          y1={height / 2 + contentShiftY + fontSize * 0.62}
+          y2={height / 2 + contentShiftY + fontSize * 0.62}
+        />
+      )}
       {isArray && arrayDim && (
         <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
           {arrayDim}

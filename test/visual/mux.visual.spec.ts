@@ -2992,3 +2992,5 @@ async function installStableTheme(page: Page): Promise<void> {
     `
   });
 }
+
+

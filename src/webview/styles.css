@@ -2098,6 +2098,14 @@ select {
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
+.hdl-node-replicate .svsch-node-shape,
+.svsch-node-shape.hdl-node-replicate {
+  fill: var(--vscode-editor-background);
+  stroke: var(--vscode-charts-red);
+}
+.hdl-node-replicate .svsch-repeat-label-underline {
+  stroke: var(--vscode-editor-foreground);
+}
 
 /* Array stack layers */
 .svsch-array-layer-back {
