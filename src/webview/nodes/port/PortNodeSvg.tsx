@@ -52,6 +52,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const typeFontSize = labelFontSize * 0.9;
   const widthSuffixFontSize = typeFontSize;
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
+  const linkTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.55;
   const typeText = typeName ?? '';
   const modportText = modportName ? `.${modportName}` : '';
   const labelGap = typeName
@@ -69,7 +70,9 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const labelStartX = width / 2 - labelWidth / 2;
   const typeStartX = labelStartX + monoTextWidth(node.label, labelFontSize) + labelGap;
   const typeWidth = monoTextWidth(typeText, typeFontSize);
+  const typeUnderlineWidth = linkTextWidth(typeText, typeFontSize);
   const modportStartX = typeStartX + typeWidth;
+  const modportUnderlineWidth = linkTextWidth(modportText, typeFontSize);
   const underlineY = height / 2 + typeFontSize * 0.62;
   const labelShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
   const labelShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
@@ -153,7 +156,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
         <line
           className="svsch-svg-link-underline svsch-port-type-link-underline"
           x1={typeStartX + labelShiftX}
-          x2={typeStartX + labelShiftX + typeWidth}
+          x2={typeStartX + labelShiftX + typeUnderlineWidth}
           y1={underlineY + labelShiftY}
           y2={underlineY + labelShiftY}
         />
@@ -162,7 +165,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
         <line
           className="svsch-svg-link-underline svsch-port-type-link-underline"
           x1={modportStartX + labelShiftX}
-          x2={modportStartX + labelShiftX + monoTextWidth(modportText, typeFontSize)}
+          x2={modportStartX + labelShiftX + modportUnderlineWidth}
           y1={underlineY + labelShiftY}
           y2={underlineY + labelShiftY}
         />

@@ -27,6 +27,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
+  const linkTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.55;
   const dottedUnderline = (
     key: string,
     text: string,
@@ -36,7 +37,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     className: string,
     anchor: 'start' | 'middle' | 'end' = 'start'
   ) => {
-    const w = monoTextWidth(text, fontSize);
+    const w = linkTextWidth(text, fontSize);
     const x1 = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
     return (
       <line
