@@ -262,7 +262,7 @@
         "x": 24,
         "y": 84
       },
-      "width": 120,
+      "width": 192,
       "height": 24,
       "data": {
         "kind": "port",
@@ -282,7 +282,7 @@
         "x": 1584,
         "y": 300
       },
-      "width": 120,
+      "width": 240,
       "height": 24,
       "data": {
         "kind": "port",
@@ -302,7 +302,7 @@
         "x": 24,
         "y": 36
       },
-      "width": 120,
+      "width": 192,
       "height": 24,
       "data": {
         "kind": "port",
@@ -403,7 +403,7 @@
       "target": "bus:write_enable_decode:mem_write_enable_sel:expr",
       "sourceHandle": "port:byte_index",
       "targetHandle": "in:_1:0_",
-      "path": "M 144 96 L 168 96 L 408 96 L 432 96"
+      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
     },
     {
       "id": "edge:port:write_enable_decode:transfersize:bus:write_enable_decode:mem_write_enable_sel:expr:transfersize",
@@ -411,7 +411,7 @@
       "target": "bus:write_enable_decode:mem_write_enable_sel:expr",
       "sourceHandle": "port:transfersize",
       "targetHandle": "in:_3:2_",
-      "path": "M 144 48 L 168 48 L 408 48 L 432 48"
+      "path": "M 216 48 L 240 48 L 408 48 L 432 48"
     }
   ]
 }

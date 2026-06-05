@@ -2,14 +2,15 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing, nodePortCenterOffset } from '../../../diagram/constants';
 import { instanceParameterRows } from '../../../diagram/nodeSizing';
-import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeArrayDimension, nodeIsArrayNode } from '../../../ir/nodeMetadata';
+import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
 
 export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const g = diagramSizing.gridSize;
@@ -27,10 +28,15 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
   // Module name shown as kind label, instance label as title
   const kindLabel =
     node.kind === 'instance' && node.instanceOf ? node.instanceOf : node.label;
+  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
+  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const shapeTransform = isArray
+    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    : undefined;
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -39,20 +45,31 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <rect className="svsch-node-shape" width={width} height={height} />
-      <text className="svsch-node-kind" x={12} y={14} textAnchor="start" dominantBaseline="middle">
+      <rect
+        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
+        transform={shapeTransform}
+        width={width}
+        height={height}
+      />
+      <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
         {kindLabel}
       </text>
-      <text className="svsch-node-title" x={12} y={26} textAnchor="start" dominantBaseline="middle">
+      <text className="svsch-node-title" x={12 + contentShiftX} y={26 + contentShiftY} textAnchor="start" dominantBaseline="middle">
         {node.label}
+        {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
+      {isArray && arrayDim && (
+        <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
+          {arrayDim}
+        </text>
+      )}
 
       {instanceParameters.map((param: InstanceParameter, i: number) => (
         <text
           key={param.name ?? i}
           className="svsch-instance-param"
-          x={width / 2}
-          y={diagramSizing.nodeHeaderHeight + g * i + g * 0.3}
+          x={width / 2 + contentShiftX}
+          y={diagramSizing.nodeHeaderHeight + g * i + g * 0.3 + contentShiftY}
           textAnchor="middle"
           dominantBaseline="hanging"
           fontSize={10}
@@ -65,8 +82,8 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
         <text
           key={port.id}
           className="svsch-port-label"
-          x={12}
-          y={nodePortCenterOffset(i + paramRows)}
+          x={12 + contentShiftX}
+          y={nodePortCenterOffset(i + paramRows) + contentShiftY}
           dominantBaseline="middle"
         >
           <SvgPortLabel port={port} showWidth collapseWidth />
@@ -77,8 +94,8 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
         <text
           key={port.id}
           className="svsch-port-label"
-          x={width - 12}
-          y={nodePortCenterOffset(i + paramRows)}
+          x={width - 12 + contentShiftX}
+          y={nodePortCenterOffset(i + paramRows) + contentShiftY}
           textAnchor="end"
           dominantBaseline="middle"
         >

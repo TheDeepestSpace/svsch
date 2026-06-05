@@ -2,7 +2,7 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
 import { nodeOperation, nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
@@ -40,10 +40,15 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   const inputYs = [g * 1, g * 3];
 
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
+  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
+  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const bodyTransform = isArray
+    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    : undefined;
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
         <path
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -52,12 +57,16 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <path className="svsch-node-shape hdl-node-alu node-skin-body" d={path} />
+      <path
+        className={`svsch-node-shape hdl-node-alu node-skin-body${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
+        transform={bodyTransform}
+        d={path}
+      />
 
       <text
         className="svsch-alu-operation"
-        x={width * 0.65}
-        y={midY}
+        x={width * 0.65 + contentShiftX}
+        y={midY + contentShiftY}
         textAnchor="middle"
         dominantBaseline="middle"
         fontSize={18}
@@ -81,7 +90,7 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads side="right" width={width} y={height / 2} />
       )}
-      <path className="node-skin-selection" d={path} style={{ strokeLinejoin: 'round' }} />
+      {!isArray && <path className="node-skin-selection" d={path} style={{ strokeLinejoin: 'round' }} />}
     </>
   );
 }

@@ -4,6 +4,7 @@ import { portSkinPath } from '../../../diagram/interfaceGeometry';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import {
   nodeIsArrayNode,
+  nodeArrayDimension,
   nodeModportName,
   nodeModportSource,
   nodeTypeName,
@@ -15,6 +16,7 @@ import { SvgParameterizedText } from '../shared/labels';
 
 export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const port = node.ports[0];
@@ -64,6 +66,8 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const typeWidth = monoTextWidth(typeText, typeFontSize);
   const modportStartX = typeStartX + typeWidth;
   const underlineY = height / 2 + typeFontSize * 0.62;
+  const labelShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
+  const labelShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
   const stopSvgInteraction = (event: React.SyntheticEvent) => {
     if (onNavigateToSource) event.stopPropagation();
   };
@@ -99,12 +103,12 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
           d={d}
         />
       )}
-      <path className="port-skin-selection" d={d} />
+      {!isArray && <path className="port-skin-selection" d={d} />}
       {/* Keep IO/interface port labels full in SVG; collapsed designators belong to internal block ports. */}
       <text
         className="svsch-port-label svsch-port-node-label"
-        x={width / 2}
-        y={height / 2}
+        x={width / 2 + labelShiftX}
+        y={height / 2 + labelShiftY}
         textAnchor="middle"
         dominantBaseline="middle"
         fontWeight={600}
@@ -138,24 +142,30 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
         ) : widthSuffix ? (
           <tspan className="svsch-port-width-suffix"> <SvgParameterizedText text={widthSuffix} refs={port?.parameterRefs} onNavigateToSource={onNavigateToSource} /></tspan>
         ) : null}
+        {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
       {typeName && typeSource && (
         <line
           className="svsch-svg-link-underline svsch-port-type-link-underline"
-          x1={typeStartX}
-          x2={typeStartX + typeWidth}
-          y1={underlineY}
-          y2={underlineY}
+          x1={typeStartX + labelShiftX}
+          x2={typeStartX + labelShiftX + typeWidth}
+          y1={underlineY + labelShiftY}
+          y2={underlineY + labelShiftY}
         />
       )}
       {typeName && modportName && modportSource && (
         <line
           className="svsch-svg-link-underline svsch-port-type-link-underline"
-          x1={modportStartX}
-          x2={modportStartX + monoTextWidth(modportText, typeFontSize)}
-          y1={underlineY}
-          y2={underlineY}
+          x1={modportStartX + labelShiftX}
+          x2={modportStartX + labelShiftX + monoTextWidth(modportText, typeFontSize)}
+          y1={underlineY + labelShiftY}
+          y2={underlineY + labelShiftY}
         />
+      )}
+      {isArray && arrayDim && (
+        <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
+          {arrayDim}
+        </text>
       )}
 
       {/* Array stack leads */}

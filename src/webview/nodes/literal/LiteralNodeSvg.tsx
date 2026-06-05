@@ -1,14 +1,15 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
+import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
 import { normalizeWidth } from '../../../diagram/constants';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
@@ -33,6 +34,11 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
   const underlineY = height / 2 + typeFontSize * 0.62;
   const shapeWidth = Math.max(0, width - 1);
   const shapeHeight = Math.max(0, height - 1);
+  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
+  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const shapeTransform = isArray
+    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    : undefined;
   const stopSvgInteraction = (event: React.SyntheticEvent) => {
     if (onNavigateToSource) event.stopPropagation();
   };
@@ -44,7 +50,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
           className={`svsch-node-shape svsch-literal-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -56,8 +62,15 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <rect className="svsch-node-shape svsch-literal-shape" x={0.5} y={0.5} width={shapeWidth} height={shapeHeight} />
-      <text className="svsch-node-title svsch-literal-content" x={width / 2} y={height / 2} textAnchor="middle" dominantBaseline="middle">
+      <rect
+        className={`svsch-node-shape svsch-literal-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
+        transform={shapeTransform}
+        x={0.5}
+        y={0.5}
+        width={shapeWidth}
+        height={shapeHeight}
+      />
+      <text className="svsch-node-title svsch-literal-content" x={width / 2 + contentShiftX} y={height / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
@@ -75,15 +88,21 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
             <SvgParameterizedText text={widthSuffix} refs={outputPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
           </tspan>
         ) : null}
+        {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
       {typeName && typeSource && (
         <line
           className="svsch-svg-link-underline svsch-literal-type-link-underline"
-          x1={suffixStartX}
-          x2={suffixStartX + suffixWidth}
-          y1={underlineY}
-          y2={underlineY}
+          x1={suffixStartX + contentShiftX}
+          x2={suffixStartX + contentShiftX + suffixWidth}
+          y1={underlineY + contentShiftY}
+          y2={underlineY + contentShiftY}
         />
+      )}
+      {isArray && arrayDim && (
+        <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
+          {arrayDim}
+        </text>
       )}
 
       {/* Array stack leads */}

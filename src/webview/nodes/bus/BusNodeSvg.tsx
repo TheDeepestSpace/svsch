@@ -237,6 +237,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       : isInterface
         ? false
         : aggregateInputs.length > 1;
+  const isArrayAggregate = node.kind === 'bus' && node.metadata?.aggregateKind === 'array';
 
   const taps: DiagramPort[] = isInterfaceModport
     ? [...sidePorts]
@@ -271,13 +272,22 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
   // Interface modport: pipe is centered (matching original CSS left:50% translateX(-50%))
   // Bus breakout: pipe on left (g*2). Bus composition: pipe on right (width - g*2 - 6).
-  const pipeX = isInterfaceModport
+  const pipeX = isArrayAggregate
+    ? isComposition
+      ? width - g * 2.5 - 3
+      : g * 1.5 - 3
+    : isInterfaceModport
     ? Math.round(width / 2) - 3
     : isComposition ? width - g * 2 - 6 : g * 2;
 
   const pipeWidth = 6;
+  const pipeCapWidth = 34;
+  const pipeCapHeight = 6;
+  const pipeCapCenterX = pipeX + 2;
+  const pipeCapCenterY = pipeY + pipeH - 3;
+  const pipeCapGradientId = `svsch-bus-array-cap-${node.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   // Keep labels equally offset from the nearest visible pipe edge.
-  const labelGapFromPipeEdge = isInterfaceModport ? 15 : 17;
+  const labelGapFromPipeEdge = isArrayAggregate ? g / 2 + 10 : isInterfaceModport ? 15 : 17;
   const labelMaskPaddingX = 10;
 
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
@@ -301,7 +311,27 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           {modportName}
         </text>
       )}
-      <rect className="svsch-bus-pipe" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+      {isArrayAggregate && (
+        <defs>
+          <linearGradient id={pipeCapGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" className="svsch-bus-array-cap-stop-strong" />
+            <stop offset="100%" className="svsch-bus-array-cap-stop-dim" />
+          </linearGradient>
+        </defs>
+      )}
+      <rect className={`svsch-bus-pipe${isArrayAggregate ? ' svsch-bus-pipe-array' : ''}`} x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+      {isArrayAggregate && (
+        <rect
+          className="svsch-bus-array-pipe-cap"
+          x={pipeCapCenterX}
+          y={pipeCapCenterY - pipeCapHeight / 2}
+          width={pipeCapWidth}
+          height={pipeCapHeight}
+          rx={pipeCapHeight / 2}
+          fill={`url(#${pipeCapGradientId})`}
+          transform={`rotate(45 ${pipeCapCenterX} ${pipeCapCenterY})`}
+        />
+      )}
       {taps.map((port: DiagramPort, i: number) => {
         const cy = tapCenters[i];
         const isStructBreakout = node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface');

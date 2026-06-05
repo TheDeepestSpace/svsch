@@ -633,6 +633,10 @@ select {
   transform: translate(calc(-1 * var(--svsch-array-content-shift)), calc(-1 * var(--svsch-array-content-shift)));
 }
 
+.hdl-node-array .hdl-node-svg .register-clock-glyph {
+  transform: none;
+}
+
 .hdl-node-array-index {
   color: color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
   font-weight: 400;
@@ -1493,6 +1497,10 @@ select {
   text-decoration-style: dotted;
 }
 
+.hdl-node-svg .svsch-repeat-label-clickable {
+  pointer-events: all;
+}
+
 .hdl-node-literal .react-flow__handle-right,
 .hdl-node-replicate .react-flow__handle-left,
 .hdl-node-replicate .react-flow__handle-right {
@@ -2139,6 +2147,12 @@ select {
   user-select: none;
 }
 
+.svsch-svg-array-index {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
+  font-size: inherit;
+  font-weight: 400;
+}
+
 .svsch-literal-content {
   fill: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
@@ -2233,6 +2247,22 @@ select {
 /* Bus elements */
 .svsch-bus-pipe {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
+}
+
+.svsch-bus-pipe-array {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
+}
+
+.svsch-bus-array-pipe-cap {
+  pointer-events: none;
+}
+
+.svsch-bus-array-cap-stop-strong {
+  stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
+}
+
+.svsch-bus-array-cap-stop-dim {
+  stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background));
 }
 .svsch-bus-tap-line {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
@@ -2340,7 +2370,6 @@ select {
 /* Array stack leads */
 .svsch-array-stack-lead {
   fill: none;
-  stroke: var(--vscode-editor-foreground);
   stroke-width: 1.5;
 }
 
@@ -2406,11 +2435,24 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* Cancel duplicate CSS transforms on SVG array layer rects — SVG transform attribute handles positioning */
+/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
 .hdl-node-svg .hdl-node-array-back,
 .hdl-node-svg .hdl-node-array-middle,
 .hdl-node-svg .hdl-node-array-front {
-  transform: none;
+  transform-box: fill-box;
+  transform-origin: 0 0;
+}
+
+.hdl-node-svg .hdl-node-array-back {
+  transform: translate(4px, 4px);
+}
+
+.hdl-node-svg .hdl-node-array-middle {
+  transform: translate(0, 0);
+}
+
+.hdl-node-svg .hdl-node-array-front {
+  transform: translate(-4px, -4px);
 }
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */

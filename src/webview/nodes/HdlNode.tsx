@@ -433,7 +433,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   if (node.kind === 'replicate') {
     return (
       <button
-        className="hdl-node hdl-node-replicate"
+        className={`hdl-node hdl-node-replicate${isArray ? ' hdl-node-array' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -441,7 +441,13 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         onDoubleClick={handleDoubleClick}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-          <ReplicateNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+          <ReplicateNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+            onNavigateToSource={navigateToSource}
+          />
         </svg>
         {sideInputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
@@ -449,7 +455,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -457,7 +465,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   if (node.kind === 'literal') {
     return (
       <button
-        className="hdl-node hdl-node-literal"
+        className={`hdl-node hdl-node-literal${isArray ? ' hdl-node-array' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -476,7 +484,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -577,7 +587,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const SvgComp = node.kind === 'comb' ? CombNodeSvg : LoopNodeSvg;
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind}`}
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ' hdl-node-array' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -594,7 +604,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={{ top: nodePortCenterOffset(i) }} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       </button>
     );
   }
@@ -630,7 +642,9 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <Handle key={port.id} type="source" id={port.id} position={Position.Right}
           style={{ top: nodePortCenterOffset(i + parameterRows) }} />
       ))}
-      <div className="hdl-node-selection-rect" aria-hidden="true" />
+      {isArray
+        ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+        : <div className="hdl-node-selection-rect" aria-hidden="true" />}
     </button>
   );
 }
