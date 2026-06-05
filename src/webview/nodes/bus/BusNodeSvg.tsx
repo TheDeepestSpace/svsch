@@ -360,7 +360,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         return !tapGoesRight ? (
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className="svsch-bus-tap-line" x1={3} y1={cy} x2={pipeX} y2={cy} />
+            <line className="svsch-bus-tap-line" x1={0} y1={cy} x2={pipeX} y2={cy} />
             <rect x={leftLabelX + labelMaskPaddingX - labelMaskWidth} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
@@ -385,7 +385,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className="svsch-bus-tap-line" x1={pipeX + pipeWidth} y1={cy} x2={width - 3} y2={cy} />
+            <line className="svsch-bus-tap-line" x1={pipeX + pipeWidth} y1={cy} x2={width} y2={cy} />
             <rect x={rightLabelX - labelMaskPaddingX} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
