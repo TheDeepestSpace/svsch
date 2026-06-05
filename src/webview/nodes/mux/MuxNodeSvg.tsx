@@ -116,7 +116,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         <text
           key={port.id}
           className="svsch-port-label svsch-mux-side-port"
-          x={g * 0.75 + contentShiftX}
+          x={g / 2 + contentShiftX}
           y={muxInputPortCenterY(index, sideInputs.length, height) + contentShiftY}
           dominantBaseline="middle"
         >
@@ -127,7 +127,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       {outputs[0] && (
         <text
           className="svsch-port-label svsch-mux-output-port"
-          x={width - g * 0.75 + contentShiftX}
+          x={width - g / 2 + contentShiftX}
           y={height / 2 + contentShiftY}
           textAnchor="end"
           dominantBaseline="middle"

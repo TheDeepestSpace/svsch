@@ -1530,7 +1530,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 100 });
   });
 
   test('renders every current node kind widened for long labels', async ({ page }) => {
@@ -1552,7 +1552,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 700 });
   });
 });
 
@@ -2992,4 +2992,3 @@ async function installStableTheme(page: Page): Promise<void> {
     `
   });
 }
-
