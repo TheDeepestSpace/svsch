@@ -1392,8 +1392,7 @@ select {
 .hdl-node-svg .svsch-param-token {
   fill: var(--vscode-descriptionForeground);
   pointer-events: all;
-  text-decoration-line: underline;
-  text-decoration-style: dotted;
+  text-decoration: none;
 }
 
 .port-skin-harness .port-skin-body {
@@ -2229,14 +2228,41 @@ select {
   stroke-width: 1;
 }
 
+.hdl-node-svg .svsch-param-token-underline {
+  stroke: var(--vscode-descriptionForeground);
+}
+
 .hdl-node-port .svsch-port-type-link-underline {
   stroke: var(--vscode-descriptionForeground);
 }
 .svsch-instance-param {
   fill: var(--vscode-descriptionForeground);
   font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
   pointer-events: none;
   user-select: none;
+}
+
+.svsch-instance-param-chip-bg {
+  fill: color-mix(in srgb, var(--vscode-editorWidget-background) 80%, var(--vscode-descriptionForeground));
+  stroke: color-mix(in srgb, var(--vscode-panel-border) 65%, var(--vscode-descriptionForeground));
+  stroke-width: 1;
+}
+
+.svsch-instance-param-name {
+  fill: var(--vscode-editor-foreground);
+  font-weight: 600;
+}
+
+.svsch-instance-param-value {
+  fill: var(--vscode-descriptionForeground);
+}
+
+.svsch-instance-param .svsch-param-token {
+  cursor: pointer;
+  fill: var(--vscode-descriptionForeground);
+  pointer-events: all;
+  text-decoration: none;
 }
 .svsch-array-badge {
   fill: var(--vscode-descriptionForeground);

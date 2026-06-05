@@ -12,7 +12,7 @@ import {
 } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgParameterizedText } from '../shared/labels';
+import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 
 export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -50,16 +50,21 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const widthSuffix = !typeName ? displayWidth : undefined;
   const labelFontSize = 12;
   const typeFontSize = labelFontSize * 0.9;
+  const widthSuffixFontSize = typeFontSize;
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
   const typeText = typeName ?? '';
   const modportText = modportName ? `.${modportName}` : '';
-  const labelGap = typeName || widthSuffix ? monoTextWidth(' ', labelFontSize) : 0;
+  const labelGap = typeName
+    ? monoTextWidth(' ', labelFontSize)
+    : widthSuffix
+      ? monoTextWidth(' ', widthSuffixFontSize)
+      : 0;
   const labelWidth = monoTextWidth(node.label, labelFontSize)
     + labelGap
     + (typeName
       ? monoTextWidth(typeText, typeFontSize) + monoTextWidth(modportText, typeFontSize)
       : widthSuffix
-        ? monoTextWidth(widthSuffix, labelFontSize)
+        ? monoTextWidth(widthSuffix, widthSuffixFontSize)
         : 0);
   const labelStartX = width / 2 - labelWidth / 2;
   const typeStartX = labelStartX + monoTextWidth(node.label, labelFontSize) + labelGap;
@@ -160,6 +165,17 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
           x2={modportStartX + labelShiftX + monoTextWidth(modportText, typeFontSize)}
           y1={underlineY + labelShiftY}
           y2={underlineY + labelShiftY}
+        />
+      )}
+      {widthSuffix && (
+        <SvgParameterizedTextUnderlines
+          text={widthSuffix}
+          refs={port?.parameterRefs}
+          x={typeStartX + labelShiftX}
+          y={height / 2 + labelShiftY}
+          fontSize={widthSuffixFontSize}
+          textWidth={(part) => monoTextWidth(part, widthSuffixFontSize)}
+          className="svsch-port-type-link-underline"
         />
       )}
       {isArray && arrayDim && (

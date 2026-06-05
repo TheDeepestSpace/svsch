@@ -5,10 +5,10 @@ import { instanceParameterRows } from '../../../diagram/nodeSizing';
 import { nodeArrayDimension, nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgPortLabel } from '../shared/labels';
+import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
 
-export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
@@ -33,6 +33,22 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
   const shapeTransform = isArray
     ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
     : undefined;
+  const monoTextWidth = (text: string, fontSize: number, weight: 'normal' | 'bold' = 'normal') =>
+    text.length * fontSize * (weight === 'bold' ? 0.68 : 0.62);
+  const paramFontSize = 10;
+  const chipHeight = 16;
+  const chipGap = 2;
+  const chipPaddingX = 4;
+  const chipStackHeight = instanceParameters.length > 0
+    ? instanceParameters.length * chipHeight + Math.max(0, instanceParameters.length - 1) * chipGap
+    : 0;
+  const chipStackTop = 16 + Math.max(0, (paramRows * g - chipStackHeight) / 2);
+  const chipTextY = (index: number) => chipStackTop + index * (chipHeight + chipGap) + chipHeight / 2 + contentShiftY;
+  const chipY = (index: number) => chipTextY(index) - chipHeight / 2;
+  const chipX = 12 + contentShiftX;
+  const titleY = paramRows > 0
+    ? 16 + g * paramRows + (diagramSizing.nodeHeaderHeight - 16) / 2 + contentShiftY
+    : 26 + contentShiftY;
 
   return (
     <>
@@ -54,29 +70,65 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections }: NodeS
       <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
         {kindLabel}
       </text>
-      <text className="svsch-node-title" x={12 + contentShiftX} y={26 + contentShiftY} textAnchor="start" dominantBaseline="middle">
-        {node.label}
-        {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
-      </text>
       {isArray && arrayDim && (
         <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
           {arrayDim}
         </text>
       )}
 
-      {instanceParameters.map((param: InstanceParameter, i: number) => (
-        <text
-          key={param.name ?? i}
-          className="svsch-instance-param"
-          x={width / 2 + contentShiftX}
-          y={diagramSizing.nodeHeaderHeight + g * i + g * 0.3 + contentShiftY}
-          textAnchor="middle"
-          dominantBaseline="hanging"
-          fontSize={10}
-        >
-          {param.name}{param.value ? `=${param.value}` : ''}
-        </text>
-      ))}
+      {instanceParameters.map((param: InstanceParameter, i: number) => {
+        const name = param.name ?? '';
+        const value = param.value ?? '';
+        const nameWidth = monoTextWidth(name, paramFontSize, 'bold');
+        const equalsWidth = value ? monoTextWidth('=', paramFontSize) : 0;
+        const valueWidth = value ? monoTextWidth(value, paramFontSize) : 0;
+        const chipWidth = chipPaddingX * 2 + nameWidth + equalsWidth + valueWidth;
+        return (
+          <g key={param.name ?? i} className="svsch-instance-param-chip">
+            <rect
+              className="svsch-instance-param-chip-bg"
+              x={chipX}
+              y={chipY(i)}
+              width={chipWidth}
+              height={chipHeight}
+              rx={4}
+            />
+            <text
+              className="svsch-instance-param"
+              x={chipX + chipPaddingX}
+              y={chipTextY(i)}
+              dominantBaseline="middle"
+              fontSize={paramFontSize}
+            >
+              <tspan className="svsch-instance-param-name">{name}</tspan>
+              {value && (
+                <>
+                  <tspan className="svsch-instance-param-equals">=</tspan>
+                  <tspan className="svsch-instance-param-value">
+                    <SvgParameterizedText text={value} refs={param.parameterRefs} onNavigateToSource={onNavigateToSource} />
+                  </tspan>
+                </>
+              )}
+            </text>
+            {value && (
+              <SvgParameterizedTextUnderlines
+                text={value}
+                refs={param.parameterRefs}
+                x={chipX + chipPaddingX + nameWidth + equalsWidth}
+                y={chipTextY(i)}
+                fontSize={paramFontSize}
+                textWidth={(part) => monoTextWidth(part, paramFontSize)}
+                className="svsch-instance-param-link-underline"
+              />
+            )}
+          </g>
+        );
+      })}
+
+      <text className="svsch-node-title" x={12 + contentShiftX} y={titleY} textAnchor="start" dominantBaseline="middle">
+        {node.label}
+        {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
+      </text>
 
       {inputs.map((port: DiagramPort, i: number) => (
         <text

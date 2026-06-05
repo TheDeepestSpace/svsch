@@ -4,7 +4,7 @@ import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeTypeSource, node
 import { normalizeWidth } from '../../../diagram/constants';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgParameterizedText } from '../shared/labels';
+import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
@@ -97,6 +97,17 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
           x2={suffixStartX + contentShiftX + suffixWidth}
           y1={underlineY + contentShiftY}
           y2={underlineY + contentShiftY}
+        />
+      )}
+      {widthSuffix && (
+        <SvgParameterizedTextUnderlines
+          text={widthSuffix}
+          refs={outputPort?.parameterRefs}
+          x={suffixStartX + contentShiftX}
+          y={height / 2 + contentShiftY}
+          fontSize={literalFontSize}
+          textWidth={(part) => monoTextWidth(part, literalFontSize)}
+          className="svsch-literal-type-link-underline"
         />
       )}
       {isArray && arrayDim && (

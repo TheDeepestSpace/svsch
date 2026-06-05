@@ -622,11 +622,22 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       onDoubleClick={handleDoubleClick}
     >
       <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
-        <InstanceNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+        <InstanceNodeSvg
+          node={node}
+          width={nodeWidth}
+          height={nodeHeight}
+          arrayConnections={arrayConnections}
+          onNavigateToSource={navigateToSource}
+        />
       </svg>
       {/* HTML instance parameter chips — needed for test ".instance-parameter-chip" selectors */}
       {instanceParameters.length > 0 && (
-        <div style={{ position: 'absolute', top: `${diagramSizing.nodeHeaderHeight - 16}px`, left: 0, right: 0 }}>
+        <div style={{
+          position: 'absolute',
+          top: `${16 + Math.max(0, (parameterRows * diagramSizing.gridSize - (instanceParameters.length * 16 + Math.max(0, instanceParameters.length - 1) * 2)) / 2)}px`,
+          left: 0,
+          right: 0
+        }}>
           <InstanceParameterList parameters={instanceParameters} />
         </div>
       )}

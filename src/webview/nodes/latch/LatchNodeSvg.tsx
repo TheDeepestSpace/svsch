@@ -14,7 +14,7 @@ import {
 } from '../../../ir/nodeMetadata';
 import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgParameterizedText, SvgPortLabel } from '../shared/labels';
+import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
@@ -138,6 +138,17 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
           x2={suffixStartX + contentShiftX + suffixWidth}
           y1={underlineY + contentShiftY}
           y2={underlineY + contentShiftY}
+        />
+      )}
+      {widthSuffix && (
+        <SvgParameterizedTextUnderlines
+          text={widthSuffix}
+          refs={qPort?.parameterRefs}
+          x={suffixStartX + contentShiftX}
+          y={titleY + contentShiftY}
+          fontSize={titleFontSize}
+          textWidth={(part) => monoTextWidth(part, titleFontSize)}
+          className="svsch-register-type-link-underline"
         />
       )}
 

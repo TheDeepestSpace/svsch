@@ -134,7 +134,9 @@ export function ParameterizedText({ text, refs = [] }: { text: string; refs?: Pa
   return <>{parts}</>;
 }
 
-function parameterizedTextParts(text: string, refs: ParameterRef[]): Array<string | { text: string; refInfo?: ParameterRef; key: string }> {
+export type ParameterizedTextPart = string | { text: string; refInfo?: ParameterRef; key: string };
+
+export function parameterizedTextParts(text: string, refs: ParameterRef[]): ParameterizedTextPart[] {
   if (refs.length === 0) return [text];
 
   const byName = new Map(refs.map((ref) => [ref.name, ref]));
@@ -142,7 +144,7 @@ function parameterizedTextParts(text: string, refs: ParameterRef[]): Array<strin
   if (names.length === 0) return [text];
 
   const pattern = new RegExp(`\\b(${names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'g');
-  const parts: Array<string | { text: string; refInfo?: ParameterRef; key: string }> = [];
+  const parts: ParameterizedTextPart[] = [];
   let lastIndex = 0;
   for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
@@ -194,6 +196,55 @@ export function SvgParameterizedText({
       })}
     </>
   );
+}
+
+export function SvgParameterizedTextUnderlines({
+  text,
+  refs = [],
+  x,
+  y,
+  fontSize,
+  textWidth,
+  className = ''
+}: {
+  text: string;
+  refs?: ParameterRef[];
+  x: number;
+  y: number;
+  fontSize: number;
+  textWidth: (text: string) => number;
+  className?: string;
+}): React.ReactElement | null {
+  let cursor = 0;
+  const underlines = parameterizedTextParts(text, refs).flatMap((part, index) => {
+    const partText = typeof part === 'string' ? part : part.text;
+    const partWidth = textWidth(partText);
+    if (typeof part === 'string') {
+      cursor += partWidth;
+      return [];
+    }
+
+    const source = part.refInfo?.declarationSource ?? part.refInfo?.source;
+    if (!source) {
+      cursor += partWidth;
+      return [];
+    }
+
+    const x1 = x + cursor;
+    cursor += partWidth;
+    return [
+      <line
+        key={`param-underline-${part.key}-${index}`}
+        className={`svsch-svg-link-underline svsch-param-token-underline ${className}`.trim()}
+        x1={x1}
+        x2={x1 + partWidth}
+        y1={y + fontSize * 0.62}
+        y2={y + fontSize * 0.62}
+      />
+    ];
+  });
+
+  return underlines.length > 0 ? <>{underlines}</> : null;
 }
 
 export function ModuleParameterTable({ moduleName, parameters = [] }: { moduleName: string; parameters?: ParameterDecl[] }): React.ReactElement | null {
