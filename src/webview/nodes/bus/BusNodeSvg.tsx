@@ -286,9 +286,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const pipeCapCenterX = pipeX + 2;
   const pipeCapCenterY = pipeY + pipeH - 3;
   const pipeCapGradientId = `svsch-bus-array-cap-${node.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
-  // Keep labels equally offset from the nearest visible pipe edge.
-  const labelGapFromPipeEdge = isArrayAggregate ? g / 2 + 10 : isInterfaceModport ? 15 : 17;
+  // labelMaskPaddingX is how far the background mask extends left of the label text.
+  // labelGapFromPipeEdge = labelMaskPaddingX + g/2 so the visible stub (colored line between
+  // pipe edge and mask) is exactly g/2, matching the old HTML/CSS rendering.
   const labelMaskPaddingX = 10;
+  const labelGapFromPipeEdge = isArrayAggregate ? g / 2 + 10 : labelMaskPaddingX + g / 2;
 
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
   const modportSource = isInterfaceModport ? nodeModportSource(node) : undefined;
