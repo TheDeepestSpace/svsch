@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/cli/**/*.ts",
+    "src/core/**/*.ts",
+    "src/diagram/**/*.ts",
+    "src/ir/**/*.ts",
+    "src/layout/**/*.ts",
+    "src/parser/**/*.ts",
+    "src/storage/**/*.ts",
+    "src/types/**/*.ts",
+    "src/vite-env.d.ts",
+    "src/webview/arrayStackGeometry.ts",
+    "src/webview/nodes/**/*.ts",
+    "src/webview/nodes/**/*.tsx",
+    "src/webview/orthogonal/**/*.ts",
+    "src/webview/react-flow-line-jumps/**/*.ts",
+    "src/webview/react-flow-line-jumps/**/*.tsx",
+    "src/webview/vscodeApi.ts"
+  ],
+  "exclude": [
+    "src/parser/backend_cpp/build/**"
+  ]
+}

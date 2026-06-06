@@ -21,6 +21,7 @@
     "src/**/*.ts"
   ],
   "exclude": [
+    "src/cli/**",
     "src/webview/**",
     "src/parser/backend_cpp/build/**"
   ]

@@ -115,6 +115,13 @@ export function instanceParameterRows(node: DiagramNode): number {
   return node.instanceParameters?.length ?? node.metadata?.instanceParameters?.length ?? 0;
 }
 
+/** X coordinate of the inverter output handle — right edge of the output bubble. */
+export function inverterGeometryWidth(): number {
+  const g = diagramSizing.gridSize;
+  const bubbleRadius = Math.min(g / 4, g / 6);
+  return g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
+}
+
 function registerVisibleInputRows(node: DiagramNode): number {
   const clockSignal = registerClockSignal(node);
   const resetSignal = registerResetSignal(node);
@@ -217,10 +224,7 @@ function nodeWidthForKind(
   }
 
   if (node.kind === 'inverter') {
-    const g = diagramSizing.gridSize;
-    const bubbleRadius = Math.min(g / 4, g / 6);
-    const geometryWidth = g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
-    return snapUpToEvenGrid(geometryWidth);
+    return snapUpToEvenGrid(inverterGeometryWidth());
   }
 
   if (node.kind === 'register') {

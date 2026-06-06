@@ -3,7 +3,7 @@ import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole }
 import { edgeNetKey, endpointKey } from '../ir/edgeNet';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
 import {
   interfaceSidePortCenters,
   interfaceTopHatHeight,
@@ -602,7 +602,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     } else if (node.kind === 'inverter') {
       if (port.direction === 'output') {
         side = 'EAST';
-        portX = width;
+        portX = inverterGeometryWidth();
       } else {
         side = 'WEST';
         portX = 0;

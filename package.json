@@ -102,7 +102,7 @@
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
     "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
-    "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json",
+    "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
     "test": "vitest run",
     "test:backend": "export PATH=$PATH:$(pwd)/dist/surelog/bin && mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && cmake --build . --target svsch_test && ./svsch_test",
     "test:visual": "playwright test",

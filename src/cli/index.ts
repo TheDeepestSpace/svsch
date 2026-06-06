@@ -6,6 +6,8 @@ import { parseArgs } from 'node:util';
 import { renderDiagram } from '../core';
 import { renderSvg } from './svgRenderer';
 import type { SvgThemeName } from './theme';
+import reactFlowCss from '@xyflow/react/dist/style.css?raw';
+import extensionCss from '../webview/styles.css?raw';
 
 interface RenderOptions {
   output?: string;
@@ -114,7 +116,7 @@ async function renderCommand(argv: string[]): Promise<void> {
         process.stderr.write(`[svsch] ${message}\n`);
       }
     });
-    const svg = renderSvg(view, { theme: options.theme });
+    const svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
     await fs.writeFile(output, svg, 'utf8');
     process.stdout.write(`${output}\n`);
   }
