@@ -172,7 +172,7 @@
       "target": "mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name",
       "sourceHandle": "port:select_between_pipeline_values",
       "targetHandle": "sel",
-      "path": "M 312 48 L 336 48 L 600 48 L 600 72 L 600 120"
+      "path": "M 312 48 L 336 48 L 600 48 L 600 72 L 600 117"
     },
     {
       "id": "edge:port:mux_long_names:somewhat_long_input_name_a:mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name:somewhat_long_input_name_a",

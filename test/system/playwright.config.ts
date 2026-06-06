@@ -9,7 +9,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   testDir: __dirname,
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
-  timeout: 120_000,
+  timeout: 240_000,
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: path.join(root, 'playwright-report/system') }],

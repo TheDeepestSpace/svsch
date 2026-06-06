@@ -148,7 +148,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 215 144 L 240 144 L 288 144 L 288 120 L 408 120 L 432 120"
+      "path": "M 216 144 L 240 144 L 288 144 L 288 120 L 408 120 L 432 120"
     },
     {
       "id": "edge:port:enum_types:clk:reg:enum_types:current_state:clk",

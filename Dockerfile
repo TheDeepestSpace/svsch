@@ -66,8 +66,10 @@ RUN ln -s /opt/uhdm/include/uhdm /usr/local/include/uhdm && \
     ln -s /opt/uhdm/bin/uhdm-dump /usr/local/bin/uhdm-dump
 
 # Install libraries for system testing (VS Code UI requirements)
+# fonts-dejavu ensures 'DejaVu Sans Mono' is available as the monospace font,
+# matching the font pinned in installStableTheme() for screenshot stability.
 RUN apt update && \
-    apt install -y xvfb libgtk-3-0 libgbm1 libasound2 libxss1 && \
+    apt install -y xvfb libgtk-3-0 libgbm1 libasound2 libxss1 fonts-dejavu && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Global Playwright browser path

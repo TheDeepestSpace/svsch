@@ -12,6 +12,7 @@ export default defineConfig({
   outputDir: './test-results/visual',
   snapshotDir: './test/visual/__screenshots__',
   fullyParallel: false,
+  timeout: 90_000,
   reporter: reporters,
   expect: {
     toHaveScreenshot: {

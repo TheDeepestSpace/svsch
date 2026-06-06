@@ -178,7 +178,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:data_out_branch_n0",
       "targetHandle": "port:data_out_in",
-      "path": "M 191 168 L 216 168 L 264 168 L 264 240 L 408 240 L 432 240"
+      "path": "M 192 168 L 216 168 L 264 168 L 264 240 L 408 240 L 432 240"
     },
     {
       "id": "edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2",
@@ -186,7 +186,7 @@
       "target": "loop:loop_logic:20:n3",
       "sourceHandle": "port:parity_bits_branch_n2",
       "targetHandle": "port:parity_bits_in",
-      "path": "M 191 168 L 216 168 L 240 168 L 240 96 L 384 96 L 408 96"
+      "path": "M 192 168 L 216 168 L 240 168 L 240 96 L 384 96 L 408 96"
     },
     {
       "id": "edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out",

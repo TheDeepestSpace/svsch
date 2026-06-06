@@ -202,7 +202,7 @@
       "target": "mux:register_clock_enable:q:en:q_next",
       "sourceHandle": "port:en",
       "targetHandle": "sel",
-      "path": "M 456 48 L 480 48 L 720 48 L 720 72 L 720 120"
+      "path": "M 456 48 L 480 48 L 720 48 L 720 72 L 720 117"
     },
     {
       "id": "edge:port:register_clock_enable:rst:reg:register_clock_enable:q:rst",

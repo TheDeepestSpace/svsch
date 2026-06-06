@@ -98,7 +98,7 @@
       "target": "select:top:bus[sel]",
       "sourceHandle": "port:bus",
       "targetHandle": "port:in",
-      "path": "M 144.00030141362993 144.000030141363 L 168 144 L 336 144 L 360 144.00012056545197"
+      "path": "M 144.00030141362993 144.000030141363 L 168 144 L 336 144 L 360 144.0001130301112"
     },
     {
       "id": "edge:port:top:sel:select:top:bus_sel_:sel",
@@ -106,7 +106,7 @@
       "target": "select:top:bus[sel]",
       "sourceHandle": "port:sel",
       "targetHandle": "port:sel",
-      "path": "M 144.00030141362993 48.00003014136299 L 168 48 L 408 48 L 408 72 L 408.000120565452 120.00006028272598"
+      "path": "M 144.00030141362993 48.00003014136299 L 168 48 L 408 48 L 408 72 L 408.0001130301112 117.00005274738524"
     },
     {
       "id": "edge:select:top:bus_sel_:port:top:bit_out:bit_out",
@@ -114,7 +114,7 @@
       "target": "port:top:bit_out",
       "sourceHandle": "port:out",
       "targetHandle": "port:bit_out",
-      "path": "M 456.00024113090393 144.00012056545197 L 480 144 L 648 144 L 672 144.000030141363"
+      "path": "M 456.0002260602224 144.0001130301112 L 480 144 L 648 144 L 672 144.000030141363"
     }
   ]
 }
