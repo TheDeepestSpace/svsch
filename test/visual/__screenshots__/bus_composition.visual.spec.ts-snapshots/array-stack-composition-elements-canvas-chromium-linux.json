@@ -194,7 +194,7 @@
       "target": "bus_comp:array_stack_composition_elements:arr",
       "sourceHandle": "port:8_h00",
       "targetHandle": "in:_0_",
-      "path": "M 455 240 L 480 240 L 504 240 L 504 192 L 648 192 L 672 192"
+      "path": "M 456 240 L 480 240 L 504 240 L 504 192 L 648 192 L 672 192"
     },
     {
       "id": "edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01",
@@ -202,7 +202,7 @@
       "target": "alu:array_stack_composition_elements:arr_elem_1:expr",
       "sourceHandle": "port:8_h01",
       "targetHandle": "rhs",
-      "path": "M 143 192 L 168 192 L 336 192 L 360 192"
+      "path": "M 144 192 L 168 192 L 336 192 L 360 192"
     },
     {
       "id": "edge:literal:array_stack_composition_elements:8_hAB:8_hAB:bus_comp:array_stack_composition_elements:arr:8_hAB",
@@ -210,7 +210,7 @@
       "target": "bus_comp:array_stack_composition_elements:arr",
       "sourceHandle": "port:8_hAB",
       "targetHandle": "in:_3_",
-      "path": "M 455 48 L 480 48 L 648 48 L 672 48"
+      "path": "M 456 48 L 480 48 L 648 48 L 672 48"
     },
     {
       "id": "edge:port:array_stack_composition_elements:seed:alu:array_stack_composition_elements:arr_elem_1:expr:seed",

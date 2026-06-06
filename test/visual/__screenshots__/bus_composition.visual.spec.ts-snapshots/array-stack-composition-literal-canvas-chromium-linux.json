@@ -156,7 +156,7 @@
       "target": "bus_comp:array_stack_composition_literal:arr",
       "sourceHandle": "port:8_h00",
       "targetHandle": "in:_0_",
-      "path": "M 143 192 L 168 192 L 336 192 L 360 192"
+      "path": "M 144 192 L 168 192 L 336 192 L 360 192"
     },
     {
       "id": "edge:literal:array_stack_composition_literal:8_hAB:8_hAB:bus_comp:array_stack_composition_literal:arr:8_hAB",
@@ -164,7 +164,7 @@
       "target": "bus_comp:array_stack_composition_literal:arr",
       "sourceHandle": "port:8_hAB",
       "targetHandle": "in:_3_",
-      "path": "M 143 48 L 168 48 L 336 48 L 360 48"
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
     },
     {
       "id": "edge:literal:array_stack_composition_literal:8_hCD:8_hCD:bus_comp:array_stack_composition_literal:arr:8_hCD",
@@ -172,7 +172,7 @@
       "target": "bus_comp:array_stack_composition_literal:arr",
       "sourceHandle": "port:8_hCD",
       "targetHandle": "in:_2_",
-      "path": "M 143 96 L 168 96 L 336 96 L 360 96"
+      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
     },
     {
       "id": "edge:literal:array_stack_composition_literal:8_hEF:8_hEF:bus_comp:array_stack_composition_literal:arr:8_hEF",
@@ -180,7 +180,7 @@
       "target": "bus_comp:array_stack_composition_literal:arr",
       "sourceHandle": "port:8_hEF",
       "targetHandle": "in:_1_",
-      "path": "M 143 144 L 168 144 L 336 144 L 360 144"
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     }
   ]
 }

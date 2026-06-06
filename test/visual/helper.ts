@@ -60,7 +60,7 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
               : layoutMode === 'inverter'
                 ? '[data-node-kind="inverter"]'
               : '.react-flow__node';
-  await page.waitForSelector(readySelector);
+  await page.waitForSelector(readySelector, { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -581,6 +581,7 @@ export async function installStableTheme(page: Page): Promise<void> {
         --vscode-editor-background: #000000;
         --vscode-editor-foreground: #d6d6d6;
         --vscode-font-family: Arial, sans-serif;
+        --vscode-editor-font-family: 'DejaVu Sans Mono', monospace;
         --vscode-editorWidget-background: #000000;
         --vscode-panel-border: #303030;
         --vscode-descriptionForeground: #9da3ad;

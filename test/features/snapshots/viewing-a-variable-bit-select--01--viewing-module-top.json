@@ -106,7 +106,7 @@
       "target": "select:top:bus[sel]",
       "sourceHandle": "port:sel",
       "targetHandle": "port:sel",
-      "path": "M 144 48 L 168 48 L 408 48 L 408 72 L 408 120"
+      "path": "M 144 48 L 168 48 L 408 48 L 408 72 L 408 117"
     },
     {
       "id": "edge:select:top:bus_sel_:port:top:bit_out:bit_out",

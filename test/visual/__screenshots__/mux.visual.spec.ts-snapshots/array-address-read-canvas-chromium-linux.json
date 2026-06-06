@@ -106,7 +106,7 @@
       "target": "mux:array_address_read:M_read_address",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 192 48 L 216 48 L 480 48 L 480 72 L 480 120"
+      "path": "M 192 48 L 216 48 L 480 48 L 480 72 L 480 117"
     },
     {
       "id": "edge:port:array_address_read:M:mux:array_address_read:M_read_address:M",
