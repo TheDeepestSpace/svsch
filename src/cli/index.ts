@@ -5,7 +5,6 @@ import * as path from 'node:path';
 import { parseArgs } from 'node:util';
 import { renderDiagram } from '../core';
 import { renderSvg } from './svgRenderer';
-import { renderHeadless } from './headlessRenderer';
 import type { SvgThemeName } from './theme';
 
 interface RenderOptions {
@@ -115,12 +114,8 @@ async function renderCommand(argv: string[]): Promise<void> {
         process.stderr.write(`[svsch] ${message}\n`);
       }
     });
-    if (path.extname(output).toLowerCase() === '.png') {
-      await renderHeadless(view, output);
-    } else {
-      const svg = renderSvg(view, { theme: options.theme });
-      await fs.writeFile(output, svg, 'utf8');
-    }
+    const svg = renderSvg(view, { theme: options.theme });
+    await fs.writeFile(output, svg, 'utf8');
     process.stdout.write(`${output}\n`);
   }
 }
@@ -130,7 +125,7 @@ function outputPathFor(input: string, options: RenderOptions): string {
     return path.resolve(options.output);
   }
   const inputPath = path.resolve(input);
-  const outputName = `${path.basename(inputPath, path.extname(inputPath))}.png`;
+  const outputName = `${path.basename(inputPath, path.extname(inputPath))}.svg`;
   if (options.outputDir) {
     return path.resolve(options.outputDir, outputName);
   }
