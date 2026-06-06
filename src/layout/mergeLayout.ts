@@ -565,7 +565,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       if (isSelect) {
         side = 'NORTH';
         portX = width / 2;
-        portY = 0;
+        portY = diagramSizing.gridSize;
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
@@ -581,7 +581,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       if (portIndex >= 0) {
         side = 'NORTH';
         portX = width * (portIndex + 1) / (topPorts.length + 1);
-        portY = 0;
+        portY = diagramSizing.gridSize;
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
