@@ -86,23 +86,23 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       />
 
       {muxTopPorts.map((port: DiagramPort, index: number) => {
-        const portX = width * (index + 1) / (muxTopPorts.length + 1);
+        const portX = Math.round(width * (index + 1) / (muxTopPorts.length + 1));
         const leadLen = (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
           ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
           : 0;
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
         // Label is always one grid unit below the slope at portX (skinEdgeY + g),
         // keeping a consistent visual gap from the trapezoid edge regardless of size.
-        const labelY = skinEdgeY + g;
+        const labelY = Math.round(skinEdgeY + g);
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className="svsch-mux-select-lead" x1={portX + contentShiftX} y1={g + contentShiftY} x2={portX + contentShiftX} y2={skinEdgeY + contentShiftY} />
+              <line className="svsch-mux-select-lead" x1={Math.round(portX + contentShiftX)} y1={Math.round(g + contentShiftY)} x2={Math.round(portX + contentShiftX)} y2={Math.round(skinEdgeY + contentShiftY)} />
             )}
             <text
               className="svsch-port-label"
-              x={portX + contentShiftX}
-              y={labelY + contentShiftY}
+              x={Math.round(portX + contentShiftX)}
+              y={Math.round(labelY + contentShiftY)}
               textAnchor="middle"
               dominantBaseline="middle"
             >

@@ -36,6 +36,7 @@ export async function expectGraphAndScreenshot(
   );
 
   // 2. Image Regression
+  await page.evaluate(() => document.fonts.ready);
   await expect(page).toHaveScreenshot(name, options);
 }
 
@@ -600,7 +601,38 @@ export async function installStableTheme(page: Page): Promise<void> {
       *, *::before, *::after {
         transition-duration: 0s !important;
         animation-duration: 0s !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+      }
+
+      text {
+        text-rendering: geometricPrecision !important;
       }
     `
+  });
+  // Force Chrome to load and cache the font file for every weight used by SVG
+  // text elements before any diagram renders. SVG dominantBaseline="middle"
+  // positioning uses cap-height metrics; if the font file hasn't been read from
+  // disk yet, Chrome briefly falls back to "monospace" metrics for the first
+  // paint and then repaints once the file loads — causing a random 1 px shift
+  // in whichever nodes happen to render during that window. Forcing layout with
+  // getBoundingClientRect() on an invisible element with the target font
+  // completes the disk load synchronously so the first SVG paint is always
+  // using the correct metrics.
+  await page.evaluate(async () => {
+    const el = document.createElement('span');
+    el.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;';
+    document.body.appendChild(el);
+    for (const spec of [
+      'normal 10px "DejaVu Sans Mono",monospace',
+      '600 14px "DejaVu Sans Mono",monospace',
+      '700 11px "DejaVu Sans Mono",monospace',
+    ]) {
+      el.style.font = spec;
+      el.textContent = 'Xg';
+      el.getBoundingClientRect();
+    }
+    el.remove();
+    await document.fonts.ready;
   });
 }

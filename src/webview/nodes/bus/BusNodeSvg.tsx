@@ -83,9 +83,9 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
     const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
     const allCenters = [...leftCenters, ...rightCenters];
-    const titleY = allCenters.length > 0
+    const titleY = Math.round(allCenters.length > 0
       ? (Math.min(...allCenters) + Math.max(...allCenters)) / 2
-      : height / 2;
+      : height / 2);
 
     const {
       path: skinPath,
@@ -111,8 +111,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     const titleLabelWidth = monoTextWidth(node.label, titleFontSize);
     const titleTypeWidth = typeName ? monoTextWidth(typeName, typeFontSize) : 0;
     const titleStartX = width / 2 - (titleLabelWidth + titleGap + titleTypeWidth) / 2;
-    const titleLabelX = typeName ? titleStartX : width / 2;
-    const titleTypeX = titleStartX + titleLabelWidth + titleGap;
+    const titleLabelX = Math.round(typeName ? titleStartX : width / 2);
+    const titleTypeX = Math.round(titleStartX + titleLabelWidth + titleGap);
 
     return (
       <g className={`hdl-interface-skin${topPorts.length > 0 ? ' hdl-interface-skin-with-tophat' : ''}${bottomPorts.length > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`}>
@@ -198,8 +198,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             key={port.id}
             className="svsch-interface-port-label svsch-interface-top-label"
             data-port-id={port.id}
-            x={interfaceTopPortX(width, topPorts.length, i, capPortCount)}
-            y={topHatTop + topHatHeight / 2}
+            x={Math.round(interfaceTopPortX(width, topPorts.length, i, capPortCount))}
+            y={Math.round(topHatTop + topHatHeight / 2)}
             textAnchor="middle"
             dominantBaseline="middle"
           >
@@ -212,8 +212,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             key={port.id}
             className="svsch-interface-port-label svsch-interface-bottom-label"
             data-port-id={port.id}
-            x={interfaceTopPortX(width, bottomPorts.length, i, capPortCount)}
-            y={bottomHatTop + bottomHatHeight / 2}
+            x={Math.round(interfaceTopPortX(width, bottomPorts.length, i, capPortCount))}
+            y={Math.round(bottomHatTop + bottomHatHeight / 2)}
             textAnchor="middle"
             dominantBaseline="middle"
           >
@@ -303,7 +303,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         <text
           className="svsch-interface-modport-title"
           x={width / 2}
-          y={g * 0.65}
+          y={Math.round(g * 0.65)}
           textAnchor="middle"
           dominantBaseline="middle"
           onDoubleClick={(event) => navigateSvgSource(event, modportSource)}
@@ -347,7 +347,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           collapseWidth: showCollapsedDesignator,
           hideInterfaceSuffix: isInterface
         });
-        const labelMaskWidth = Math.max(20, monoTextWidth(displayLabel, 12) + labelMaskPaddingX * 2);
+        const labelMaskWidth = Math.round(Math.max(20, monoTextWidth(displayLabel, 12) + labelMaskPaddingX * 2));
         const leftLabelX = pipeX - labelGapFromPipeEdge;
         const rightLabelX = pipeX + pipeWidth + labelGapFromPipeEdge;
         // For interface modport: outputs go right, inputs go left (mirrors original bus-tap-right/left CSS)
@@ -361,11 +361,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={0} y1={cy} x2={pipeX} y2={cy} />
-            <rect x={leftLabelX + labelMaskPaddingX - labelMaskWidth} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
+            <rect x={Math.round(leftLabelX + labelMaskPaddingX - labelMaskWidth)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={leftLabelX}
+              x={Math.round(leftLabelX)}
               y={cy}
               textAnchor="end"
               dominantBaseline="middle"
@@ -386,11 +386,11 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
             <line className="svsch-bus-tap-line" x1={pipeX + pipeWidth} y1={cy} x2={width} y2={cy} />
-            <rect x={rightLabelX - labelMaskPaddingX} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
+            <rect x={Math.round(rightLabelX - labelMaskPaddingX)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
-              x={rightLabelX}
+              x={Math.round(rightLabelX)}
               y={cy}
               dominantBaseline="middle"
               onDoubleClick={(event) => navigateSvgSource(event, port.source)}
