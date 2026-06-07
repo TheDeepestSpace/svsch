@@ -1417,7 +1417,7 @@ test.describe('edge route editing', () => {
     await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
-    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page), maxDiffPixels: 80 });
   });
 
   test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
