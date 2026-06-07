@@ -103,3 +103,15 @@ Feature: Navigation
     Then the diagram should display the module "interface simple_if"
     And I click on the modport header "master"
     Then the editor should highlight the text "modport master(input clk, output data, output valid, input ready);"
+
+  # TODO: migrate to full vscode emulation to support this scenario
+  Scenario: Exporting the diagram as SVG
+    Given a SystemVerilog module:
+      """
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I click the Export SVG button
+    Then an export request should be sent to VS Code
+

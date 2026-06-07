@@ -6,6 +6,7 @@ import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
 import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
+import { renderSvg } from './cli/svgRenderer';
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -21,7 +22,8 @@ type WebviewMessage =
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'navigateToSource'; source: SourceRange }
-  | { type: 'navigateToSignal'; edge: DiagramEdge };
+  | { type: 'navigateToSignal'; edge: DiagramEdge }
+  | { type: 'exportSvg' };
 
 export class DiagramPanel {
   private panel?: vscode.WebviewPanel;
@@ -354,6 +356,75 @@ export class DiagramPanel {
     if (message.type === 'navigateToSignal') {
       await this.navigateToSignal(message.edge);
       return;
+    }
+    if (message.type === 'exportSvg') {
+      await this.exportSvg();
+      return;
+    }
+  }
+
+  private async exportSvg(): Promise<void> {
+    try {
+      if (!this.graph || this.currentModule === undefined || !this.layout) {
+        return;
+      }
+
+      let reactFlowCss = '';
+      try {
+        const paths = [
+          path.join(this.context.extensionUri.fsPath, 'node_modules', '@xyflow', 'react', 'dist', 'style.css'),
+          path.join(this.context.extensionUri.fsPath, '..', 'node_modules', '@xyflow', 'react', 'dist', 'style.css'),
+          path.join(this.context.extensionUri.fsPath, '..', '..', 'node_modules', '@xyflow', 'react', 'dist', 'style.css')
+        ];
+        for (const p of paths) {
+          if (fs.existsSync(p)) {
+            reactFlowCss = fs.readFileSync(p, 'utf8');
+            break;
+          }
+        }
+      } catch (err) {
+        logger.log(`Warning: Could not load React Flow CSS for export: ${err}`);
+      }
+
+      let extensionCss = '';
+      try {
+        const p = path.join(this.context.extensionUri.fsPath, 'media', 'webview.css');
+        if (fs.existsSync(p)) {
+          extensionCss = fs.readFileSync(p, 'utf8');
+        }
+      } catch (err) {
+        logger.log(`Warning: Could not load extension CSS for export: ${err}`);
+      }
+
+      const viewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
+      const svg = renderSvg(viewModel, {
+        theme: vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
+        reactFlowCss,
+        extensionCss
+      });
+
+      const defaultUri = vscode.Uri.file(path.join(workspaceRootPath() ?? '.', `${this.currentModule.replace(/[^a-z0-9]/gi, '_')}.svg`));
+      
+      // In tests, we bypass the dialog to avoid hanging
+      if (process.env.SVSCH_TEST) {
+        fs.writeFileSync(defaultUri.fsPath, svg);
+        return;
+      }
+
+      const uri = await vscode.window.showSaveDialog({
+        defaultUri,
+        filters: { 'SVG': ['svg'] },
+        title: 'Export Diagram as SVG'
+      });
+
+      if (uri) {
+        fs.writeFileSync(uri.fsPath, svg);
+        vscode.window.showInformationMessage(`Diagram exported to ${path.basename(uri.fsPath)}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.log(`Error exporting SVG: ${msg}`);
+      vscode.window.showErrorMessage(`Failed to export SVG: ${msg}`);
     }
   }
 

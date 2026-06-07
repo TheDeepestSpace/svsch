@@ -3,7 +3,8 @@
     "module": "commonjs",
     "target": "ES2022",
     "lib": [
-      "ES2022"
+      "ES2022",
+      "dom"
     ],
     "outDir": "dist",
     "rootDir": "src",
@@ -12,16 +13,17 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
+    "jsx": "react-jsx",
     "types": [
       "node",
       "vscode"
     ]
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/cli/svgRenderer.ts"
   ],
   "exclude": [
-    "src/cli/**",
     "src/webview/**",
     "src/parser/backend_cpp/build/**"
   ]

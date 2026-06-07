@@ -158,7 +158,7 @@ function renderDefs(): string {
 
 // Export-only bridge: keep the SVG root transparent and fill small gaps where the
 // webview CSS targets HTML wrappers rather than the pure exported SVG tree.
-function svgBridgeCss(): string {
+export function svgBridgeCss(): string {
   return `
 .svsch-diagram { background: none; }
 .svsch-net-label {

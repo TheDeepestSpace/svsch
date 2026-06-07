@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export SVSCH_TEST=1
+
 # Forward all args (for example: --name "regex") to cucumber-js.
 test_command="cucumber-js"
 for arg in "$@"; do

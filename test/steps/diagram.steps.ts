@@ -213,13 +213,23 @@ Before(async function (this: CustomWorld, { pickle }) {
   this.page = await this.browser.newPage();
   await this.page.addInitScript(() => {
     (window as any).__svschMessages = [];
-    (window as any).acquireVsCodeApi = () => ({
+    const vscode = {
       postMessage: (message: unknown) => {
         (window as any).__svschMessages.push(message);
+        console.log('WEBVIEW_MESSAGE:', JSON.stringify(message));
       }
-    });
+    };
+    (window as any).acquireVsCodeApi = () => vscode;
   });
-  this.page.on('console', msg => { const text = msg.text(); console.log(`BROWSER [${msg.type()}]: ${text}`); if (text.startsWith('NAVIGATE:')) { try { this.messages.push(JSON.parse(text.substring(9))); } catch (e) { } } });
+  this.page.on('console', msg => {
+    const text = msg.text();
+    console.log(`BROWSER [${msg.type()}]: ${text}`);
+    if (text.startsWith('NAVIGATE:')) {
+      try { this.messages.push(JSON.parse(text.substring(9))); } catch (e) { }
+    } else if (text.startsWith('WEBVIEW_MESSAGE:')) {
+      try { this.messages.push(JSON.parse(text.substring(16))); } catch (e) { }
+    }
+  });
   await this.page.setViewportSize({ width: 1400, height: 1000 });
   await this.page.goto('http://127.0.0.1:5176/');
 });
@@ -422,6 +432,18 @@ When('I reset the layout', async function (this: CustomWorld) {
   await this.page?.waitForSelector('.react-flow__node');
   await this.page?.waitForTimeout(500);
   await this.takeScreenshot('After layout reset');
+});
+
+When('I click the Export SVG button', { timeout: 60000 }, async function (this: CustomWorld) {
+  await this.page!.click('button:has-text("Export SVG")');
+  await this.page!.waitForTimeout(200);
+});
+
+Then('an export request should be sent to VS Code', async function (this: CustomWorld) {
+  const m = this.messages.reverse().find(m => m.type === 'exportSvg');
+  if (!m) {
+    throw new Error(`No exportSvg message found in: ${JSON.stringify(this.messages)}`);
+  }
 });
 
 When('I have saved the layout', async function (this: CustomWorld) {
