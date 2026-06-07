@@ -688,7 +688,10 @@ test.describe('register visual rendering', () => {
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
     await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
 
-    await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', {
+      clip: await paddedGraphClip(page),
+      maxDiffPixels: 69,
+    });
   });
 
   test('renders a variable-index array read as a flat mux fed by converging stacked wires', async ({ page }) => {

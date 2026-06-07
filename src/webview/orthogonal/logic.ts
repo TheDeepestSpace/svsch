@@ -9,6 +9,20 @@ export interface NodeObstacle {
   height: number;
 }
 
+export function snapLeadPoint(point: OrthogonalPoint, handleX: number, handleY: number, position: HdlPosition): OrthogonalPoint {
+  if (position === HdlPosition.Top || position === HdlPosition.Bottom) {
+    return {
+      x: handleX,
+      y: snapToGrid(point.y)
+    };
+  } else {
+    return {
+      x: snapToGrid(point.x),
+      y: handleY
+    };
+  }
+}
+
 export function normalizeRoutePoints(
   route: SerializableOrthogonalRoute | undefined,
   sourceX: number,
@@ -30,10 +44,10 @@ export function normalizeRoutePoints(
   // coordinates so the stub wire departs orthogonally from the actual handle.
   const sourceLead = forceStraight
     ? { x: sourceX, y: sourceY }
-    : snapPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen));
+    : snapLeadPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen), sourceX, sourceY, sourcePosition);
   const targetLead = forceStraight
     ? { x: targetX, y: targetY }
-    : snapPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen));
+    : snapLeadPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen), targetX, targetY, targetPosition);
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
     : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
@@ -261,7 +275,7 @@ export function makeOrthogonal(points: OrthogonalPoint[], simplify = true): Orth
   return simplify ? removeRedundantPoints(orthogonal) : orthogonal;
 }
 export function removeRedundantPoints(points: OrthogonalPoint[]): OrthogonalPoint[] {
-  return points.filter((point, index) => {
+  const simplified = points.filter((point, index) => {
     if (index === 0 || index === points.length - 1) {
       return true;
     }
@@ -275,12 +289,28 @@ export function removeRedundantPoints(points: OrthogonalPoint[]): OrthogonalPoin
       // Check if it's a 180 degree turn (double back).
       const dotProduct = (point.x - previous.x) * (next.x - point.x) + (point.y - previous.y) * (next.y - point.y);
       if (dotProduct < 0) {
-        return true; // Keep it, it's a turn!
+        return true; // Keep it for now, might be a 180 turn
       }
       return false; // Remove it, it's a straight line (or duplicate).
     }
     return true;
   });
+
+  // Remove actual double-backs (A -> B -> A)
+  const result: OrthogonalPoint[] = [];
+  for (const point of simplified) {
+    if (result.length >= 2) {
+      const prev = result[result.length - 1];
+      const prevPrev = result[result.length - 2];
+      // If we are doubling back exactly to the previous point's start, it's a spike
+      if (pointsAlmostEqual(point, prevPrev)) {
+        result.pop();
+        continue;
+      }
+    }
+    result.push(point);
+  }
+  return result;
 }
 
 export function leadPoint(x: number, y: number, position: HdlPosition, distance: number): OrthogonalPoint {
