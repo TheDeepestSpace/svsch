@@ -30,6 +30,7 @@ class CustomWorld extends World {
   notedRoutes: Map<string, string> = new Map();
   scenarioName?: string;
   scenarioId?: string;
+  scenarioExampleIndex?: number;
   isScenarioOutline: boolean = false;
   stepCounter: number = 0;
   workspaceDir?: string;
@@ -54,7 +55,7 @@ class CustomWorld extends World {
       if (this.scenarioName) {
         this.stepCounter += 1;
         const safeScenarioName = this.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        const scenarioId = (this.isScenarioOutline && this.scenarioId) ? `-${this.scenarioId.slice(0, 4)}` : '';
+        const scenarioId = this.isScenarioOutline ? `-${this.scenarioExampleIndex}` : '';
         const safeLabel = label.replace(/[^a-z0-9]/gi, '-').toLowerCase();
         const snapshotName = `${safeScenarioName}${scenarioId}--${this.stepCounter.toString().padStart(2, '0')}--${safeLabel}`;
         await compareSnapshots(this, screenshot, graphState, snapshotName);
@@ -203,10 +204,18 @@ class CustomWorld extends World {
 
 setWorldConstructor(CustomWorld);
 
+const exampleCounters = new Map<string, number>();
+
 Before(async function (this: CustomWorld, { pickle }) {
   this.scenarioName = pickle.name;
   this.scenarioId = pickle.id;
   this.isScenarioOutline = (pickle.astNodeIds?.length ?? 0) > 1;
+  if (this.isScenarioOutline) {
+    const key = `${pickle.uri}:${pickle.name}`;
+    const count = (exampleCounters.get(key) ?? 0) + 1;
+    exampleCounters.set(key, count);
+    this.scenarioExampleIndex = count;
+  }
   this.browser = await chromium.launch({
     args: chromiumStabilizationArgs
   });
@@ -848,6 +857,22 @@ Then('the CLI output should contain {string}', function (this: CustomWorld, expe
   }
 });
 
+Then('the CLI should have used the custom Surelog path', function () {
+  return 'pending';
+});
+
+Then('the CLI should have used the custom Backend path', function () {
+  return 'pending';
+});
+
+Then('the CLI should have used {string} as the workspace root', function (string) {
+  return 'pending';
+});
+
+Then('the CLI should have focused on the {string} folder', function (string) {
+  return 'pending';
+});
+
 Then('the CLI output should not contain {string}', function (this: CustomWorld, unexpected: string) {
   if (this.lastCliSvg) {
     expect(this.lastCliSvg).not.toContain(unexpected);
@@ -1274,7 +1299,7 @@ async function persistCliPngSnapshot(world: CustomWorld, pngBuffer: Buffer) {
   if (!world.scenarioName) return;
   world.stepCounter += 1;
   const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-  const scenarioId = (world.isScenarioOutline && world.scenarioId) ? `-${world.scenarioId.slice(0, 4)}` : '';
+  const scenarioId = world.isScenarioOutline ? `-${world.scenarioExampleIndex}` : '';
   const snapshotName = `${safeScenarioName}${scenarioId}--${world.stepCounter.toString().padStart(2, '0')}--cli-png`;
 
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
@@ -1310,7 +1335,7 @@ async function persistSvgSnapshot(world: CustomWorld, svgContent: string) {
   if (!world.scenarioName) return;
   world.stepCounter += 1;
   const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-  const scenarioId = (world.isScenarioOutline && world.scenarioId) ? `-${world.scenarioId.slice(0, 4)}` : '';
+  const scenarioId = world.isScenarioOutline ? `-${world.scenarioExampleIndex}` : '';
   const snapshotName = `${safeScenarioName}${scenarioId}--${world.stepCounter.toString().padStart(2, '0')}--cli-svg`;
 
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');

@@ -165,32 +165,46 @@ Feature: Command Line Interface
       | dark  | --vscode-editor-background: #1e1e1e |
       | light | --vscode-editor-background: #ffffff |
 
-  @todo
+  @todo @skip
   Scenario: Overriding Surelog path
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y); assign y = a; endmodule
+      """
     When I run the CLI command:
       """
       svsch render top.sv --surelog /custom/path/to/surelog --output out.svg
       """
     Then the CLI should have used the custom Surelog path
 
-  @todo
+  @todo @skip
   Scenario: Overriding Backend path
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y); assign y = a; endmodule
+      """
     When I run the CLI command:
       """
       svsch render top.sv --backend /custom/path/to/backend --output out.svg
       """
     Then the CLI should have used the custom Backend path
 
-  @todo
+  @todo @skip
   Scenario: Overriding Workspace root
+    Given the following SystemVerilog files:
+      | file       | content                                               |
+      | src/top.sv | module top(input a, output y); assign y = a; endmodule |
     When I run the CLI command:
       """
       svsch render src/top.sv --workspace src --output out.svg
       """
     Then the CLI should have used "src" as the workspace root
 
-  @todo
+  @todo @skip
   Scenario: Specifying Project folder
+    Given the following SystemVerilog files:
+      | file        | content                                               |
+      | proj/top.sv | module top(input a, output y); assign y = a; endmodule |
     When I run the CLI command:
       """
       svsch render proj/top.sv --project-folder proj --output out.svg
