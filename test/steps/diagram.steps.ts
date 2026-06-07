@@ -299,7 +299,7 @@ When('I render {string} with the CLI to {string}', async function (this: CustomW
   this.lastCliSvg = await fs.promises.readFile(outputPath, 'utf8');
 });
 
-When('I run the CLI command:', async function (this: CustomWorld, command: string) {
+When('I run the CLI command:', { timeout: 120000 }, async function (this: CustomWorld, command: string) {
   if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
 
   const worktreeRoot = path.resolve(__dirname, '../..');

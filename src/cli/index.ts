@@ -268,7 +268,9 @@ Options:
 `);
 }
 
-main(process.argv.slice(2)).catch((error) => {
+main(process.argv.slice(2)).then(() => {
+  process.exit(0);
+}).catch((error) => {
   process.stderr.write(`[svsch] ${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
+  process.exit(1);
 });

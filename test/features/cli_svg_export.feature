@@ -38,7 +38,7 @@ Feature: CLI SVG export
     And I should not see a register node "old_state"
     When I run the CLI command:
       """
-      svsch render top.sv --output top.png --no-layout
+      svsch render top.sv --output top.svg --no-layout
       """
     Then the CLI output should contain "edited_state"
     And the CLI output should not contain "old_state"

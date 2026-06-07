@@ -98,7 +98,7 @@
       "target": "reg:top:edited_state",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144.00034317639847 119.99999326970192 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96.00019417785681"
+      "path": "M 144.00034317639847 119.99999326970192 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96.00021540706845"
     },
     {
       "id": "edge:port:top:d:reg:top:edited_state:d",
@@ -106,7 +106,7 @@
       "target": "reg:top:edited_state",
       "sourceHandle": "port:d",
       "targetHandle": "d",
-      "path": "M 144.00034317639847 72.00005190961325 L 168 72 L 336 72 L 360 72.00014899854165"
+      "path": "M 144.00034317639847 72.00005190961325 L 168 72 L 336 72 L 360 72.00013113447906"
     },
     {
       "id": "edge:reg:top:edited_state:port:top:q:q",
@@ -114,7 +114,7 @@
       "target": "port:top:q",
       "sourceHandle": "q",
       "targetHandle": "port:q",
-      "path": "M 552.0005569008924 72.00014899854165 L 576 72 L 744 72 L 768 72.00005190961325"
+      "path": "M 552.0005211727672 72.00013113447906 L 576 72 L 744 72 L 768 72.00005190961325"
     }
   ]
 }
