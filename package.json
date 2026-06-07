@@ -109,7 +109,7 @@
     "test:visual:update": "playwright test --update-snapshots",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
-    "postinstall": "node scripts/install-surelog.js || true && patch-package",
+    "prepare": "node scripts/install-surelog.js || true && patch-package",
     "test:bdd": "./scripts/test-bdd.sh",
     "test:system": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts",
     "test:system:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts --update-snapshots",

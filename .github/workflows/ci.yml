@@ -288,7 +288,7 @@ jobs:
       - name: Run npm audit
         run: npm audit --audit-level=high
 
-  package:
+  package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
@@ -309,3 +309,42 @@ jobs:
         with:
           name: extension-vsix
           path: "*.vsix"
+
+  pack_npm:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *fix_perms_step
+
+      - name: Pack NPM Tarball
+        run: npm pack
+
+      - name: Upload Tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball
+          path: "*.tgz"
+
+  test_global_install:
+    needs: [prep, build_ci_image, pack_npm]
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - name: Download Tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-tarball
+          path: .
+
+      - name: Install Global Package
+        run: |
+          TGZ_FILE=$(ls *.tgz | head -n 1)
+          sudo npm install -g $TGZ_FILE
+
+      - name: Verify Installation
+        run: svsch --help
