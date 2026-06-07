@@ -8,11 +8,6 @@
   "bin": {
     "svsch": "./dist/cli.js"
   },
-  "files": [
-    "dist/",
-    "media/",
-    "out/"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TheDeepestSpace/vscode-svsch"

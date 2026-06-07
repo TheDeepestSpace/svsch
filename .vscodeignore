@@ -2,6 +2,16 @@
 .devcontainer/**
 .github/**
 .svsch/**
+.agents/**
+.claude/**
+.codex/**
+.vscode-test/**
+playwright-report/**
+test-results/**
+patches/**
+plans/**
+Dockerfile
+vscode-versions.json
 src/**
 test/**
 scripts/**
