@@ -128,6 +128,24 @@ jobs:
             media/
             !dist/svsch_backend
 
+  build_cli:
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Compile CLI
+        run: npm run build:cli
+
+      - name: Upload CLI Dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-dist
+          path: dist/
+
   test_backend:
     needs: [prep, build_ci_image, setup]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
@@ -141,7 +159,7 @@ jobs:
         run: npm run test:backend
 
   test_unit:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -162,6 +180,13 @@ jobs:
           name: backend-binary
           path: dist
 
+      - &download_cli_step
+        name: Download CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-dist
+          path: dist
+
       - &fix_perms_step
         name: Fix Binary Permissions
         run: |
@@ -172,7 +197,7 @@ jobs:
         run: npm test
 
   test_visual:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -180,6 +205,7 @@ jobs:
       - *restore_npm_step
       - *download_dist_step
       - *download_backend_step
+      - *download_cli_step
       - *fix_perms_step
 
       - &pw_version_step
@@ -214,7 +240,7 @@ jobs:
             test/visual/__screenshots__/**
 
   test_bdd:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -222,6 +248,7 @@ jobs:
       - *restore_npm_step
       - *download_dist_step
       - *download_backend_step
+      - *download_cli_step
       - *fix_perms_step
       - *pw_version_step
       - *pw_cache_step
@@ -240,7 +267,7 @@ jobs:
             test/features/snapshots/**
 
   test_system:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     strategy:
@@ -252,6 +279,7 @@ jobs:
       - *restore_npm_step
       - *download_dist_step
       - *download_backend_step
+      - *download_cli_step
       - *fix_perms_step
       - *pw_version_step
       - *pw_cache_step
@@ -289,7 +317,7 @@ jobs:
         run: npm audit --audit-level=high
 
   package_extension:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -297,6 +325,7 @@ jobs:
       - *restore_npm_step
       - *download_dist_step
       - *download_backend_step
+      - *download_cli_step
       - *fix_perms_step
 
       - name: Package Extension
@@ -311,7 +340,7 @@ jobs:
           path: "*.vsix"
 
   pack_npm:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -319,6 +348,7 @@ jobs:
       - *restore_npm_step
       - *download_dist_step
       - *download_backend_step
+      - *download_cli_step
       - *fix_perms_step
 
       - name: Pack NPM Tarball
