@@ -46,6 +46,8 @@ import { SelectNodeSvg } from '../webview/nodes/mux/SelectNodeSvg';
 import { AluNodeSvg } from '../webview/nodes/alu/AluNodeSvg';
 import { BusNodeSvg } from '../webview/nodes/bus/BusNodeSvg';
 import { InstanceNodeSvg } from '../webview/nodes/instance/InstanceNodeSvg';
+import { NetLabelWirePaths } from '../webview/nodes/shared/NetLabelWire';
+import { SvgArrayStackLeads } from '../webview/nodes/shared/SvgArrayStackLeads';
 import type { ArrayConnection, NodeSvgProps } from '../webview/nodes/shared/NodeSvgProps';
 
 export interface SvgRendererOptions {
@@ -303,6 +305,16 @@ function sideToHdlPosition(side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'): HdlPositi
 }
 
 function connectionPortGeometry(node: PositionedNode, portId?: string): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
+  if (node.kind === 'netLabel') {
+    const { width, height } = diagramNodeDimensions(node);
+    const handleSide = node.metadata?.cutNet?.handleSide ?? 'left';
+    switch (handleSide) {
+      case 'top':    return { offset: { x: width / 2, y: 0 },          side: 'NORTH' };
+      case 'bottom': return { offset: { x: width / 2, y: height },      side: 'SOUTH' };
+      case 'right':  return { offset: { x: width,     y: height / 2 },  side: 'EAST'  };
+      default:       return { offset: { x: 0,          y: height / 2 }, side: 'WEST'  };
+    }
+  }
   return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId);
 }
 
@@ -597,7 +609,38 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[]): 
 function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = []): string {
   const { width, height } = diagramNodeDimensions(node);
   if (node.kind === 'netLabel') {
-    return `<g class="svsch-node hdl-net-label" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${renderNetLabel(node, width, height)}</g>`;
+    const cutNet = node.metadata?.cutNet;
+    const handleSide = (cutNet?.handleSide ?? 'left') as 'left' | 'right' | 'top' | 'bottom';
+    const isInterface = cutNet?.edgeStyle?.aggregate === 'interface';
+    const isStruct = cutNet?.edgeStyle?.aggregate === 'struct';
+    const isSourceStacked = cutNet?.isSourceStacked ?? false;
+    const align = cutNet?.align as 'start' | 'end' | undefined;
+    const role = cutNet?.role ?? 'sink';
+    const midX = width / 2;
+    const midY = height / 2;
+
+    // Wire paths — reuses NetLabelWire.tsx's NetLabelWirePaths (single source of truth)
+    const wireEl = normalizeJsxNode(NetLabelWirePaths({ handleSide, edgeStyle: cutNet?.edgeStyle, align, isSourceStacked, width, height }));
+    const wirePaths = renderToStaticMarkup(React.createElement('svg', null, wireEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
+
+    // Array stack leads
+    let leadsHtml = '';
+    if (isSourceStacked) {
+      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source' }));
+      leadsHtml = '\n' + renderToStaticMarkup(React.createElement('svg', null, leadsEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
+    }
+
+    // Label text above wire — matching webview CSS: align=start → left:0, align=end → right:0
+    // CSS: bottom: calc(50% + textGap) → text bottom at midY - textGap
+    const textGap = isInterface || isSourceStacked ? 8 : isStruct ? 5 : 2;
+    const textY = midY - textGap - 6.5; // 6.5 = half of 13px line-height
+    const textPad = 3; // matches CSS padding: 0 3px on .hdl-net-label-text
+    const textX = align === 'end' ? width - textPad : textPad;
+    const textAnchor = align === 'end' ? 'end' : 'start';
+    const textHtml = `<text class="svsch-net-label" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
+
+    const content = wirePaths + leadsHtml + '\n' + textHtml;
+    return `<g class="svsch-node hdl-net-label" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
   }
 
   const classes = nodeWrapperClasses(node);
@@ -802,27 +845,6 @@ function busWrapperClasses(node: PositionedNode): string {
   ].filter(Boolean).join(' ');
 }
 
-function renderNetLabel(node: DiagramNode, width: number, height: number): string {
-  const cutNet = node.metadata?.cutNet;
-  const handleSide = cutNet?.handleSide ?? 'left';
-  const midX = width / 2;
-  const midY = height / 2;
-  const horizontalPath = handleSide === 'top' || handleSide === 'bottom'
-    ? cutNet?.align === 'end'
-      ? `M ${formatNumber(midX)} ${formatNumber(midY)} H ${formatNumber(width)}`
-      : `M 0 ${formatNumber(midY)} H ${formatNumber(midX)}`
-    : `M 0 ${formatNumber(midY)} H ${formatNumber(width)}`;
-  const verticalPath = handleSide === 'top'
-    ? ` M ${formatNumber(midX)} ${formatNumber(midY)} V 0`
-    : handleSide === 'bottom'
-      ? ` M ${formatNumber(midX)} ${formatNumber(midY)} V ${formatNumber(height)}`
-      : '';
-  return [
-    `<path class="svsch-edge${cutNet?.edgeStyle?.aggregate === 'struct' ? ' svsch-edge-struct' : ''}${cutNet?.edgeStyle?.aggregate === 'interface' ? ' svsch-edge-interface' : ''}" d="${horizontalPath}${verticalPath}" />`,
-    `<rect class="svsch-label-box" x="${formatNumber(width * 0.2)}" y="${formatNumber(height * 0.2)}" width="${formatNumber(width * 0.6)}" height="${formatNumber(height * 0.6)}" rx="3" />`,
-    `<text class="svsch-net-label" x="${formatNumber(midX)}" y="${formatNumber(midY)}" text-anchor="middle">${escapeXml(node.label)}</text>`
-  ].join('\n');
-}
 
 function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], padding: number): RectBounds {
   const bounds: RectBounds = {
