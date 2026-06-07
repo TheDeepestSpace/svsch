@@ -29,6 +29,8 @@ class CustomWorld extends World {
   notedPositions: Map<string, { x: number, y: number }> = new Map();
   notedRoutes: Map<string, string> = new Map();
   scenarioName?: string;
+  scenarioId?: string;
+  isScenarioOutline: boolean = false;
   stepCounter: number = 0;
   workspaceDir?: string;
   workspaceSources: Map<string, string> = new Map();
@@ -36,6 +38,7 @@ class CustomWorld extends World {
   lastCliSvgPath?: string;
   lastCliPng?: Buffer;
   lastCliPngPath?: string;
+  lastCliStdout?: string;
 
   async takeScreenshot(label: string) {
     if (this.page) {
@@ -51,8 +54,9 @@ class CustomWorld extends World {
       if (this.scenarioName) {
         this.stepCounter += 1;
         const safeScenarioName = this.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+        const scenarioId = (this.isScenarioOutline && this.scenarioId) ? `-${this.scenarioId.slice(0, 4)}` : '';
         const safeLabel = label.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        const snapshotName = `${safeScenarioName}--${this.stepCounter.toString().padStart(2, '0')}--${safeLabel}`;
+        const snapshotName = `${safeScenarioName}${scenarioId}--${this.stepCounter.toString().padStart(2, '0')}--${safeLabel}`;
         await compareSnapshots(this, screenshot, graphState, snapshotName);
       }
 
@@ -201,6 +205,8 @@ setWorldConstructor(CustomWorld);
 
 Before(async function (this: CustomWorld, { pickle }) {
   this.scenarioName = pickle.name;
+  this.scenarioId = pickle.id;
+  this.isScenarioOutline = (pickle.astNodeIds?.length ?? 0) > 1;
   this.browser = await chromium.launch({
     args: chromiumStabilizationArgs
   });
@@ -238,12 +244,11 @@ Given('a SystemVerilog module:', async function (this: CustomWorld, code: string
 });
 
 Given('the following SystemVerilog files:', async function (this: CustomWorld, table: any) {
-  this.files = table.hashes().map((row: any) => ({ file: row.file, text: row.content.replace(/\\n/g, "\n") }));
-  const sources = this.files.map((row: any) => ({
+  const sources = table.hashes().map((row: any) => ({
     file: row.file,
-    text: row.text
+    text: row.content.replace(/\\n/g, "\n")
   }));
-  await this.postGraph(sources);
+  await this.openWorkspaceForEditing(sources);
 });
 
 Given('a SystemVerilog file {string} with:', async function (this: CustomWorld, filename: string, content: string) {
@@ -300,8 +305,6 @@ When('I render {string} with the CLI to {string}', async function (this: CustomW
 });
 
 When('I run the CLI command:', { timeout: 120000 }, async function (this: CustomWorld, command: string) {
-  if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
-
   const worktreeRoot = path.resolve(__dirname, '../..');
   const cliPath = path.join(worktreeRoot, 'dist', 'cli.js');
   if (!fs.existsSync(cliPath)) {
@@ -318,16 +321,18 @@ When('I run the CLI command:', { timeout: 120000 }, async function (this: Custom
   }
 
   // Execute the command exactly as written; cwd is the workspace so relative paths work
-  await execAsync(command.trim(), {
-    cwd: this.workspaceDir,
+  const { stdout } = await execAsync(command.trim(), {
+    cwd: this.workspaceDir || worktreeRoot,
     env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ''}` },
     maxBuffer: 10 * 1024 * 1024
   });
+  this.lastCliStdout = stdout;
 
   // Parse command only to locate the output file for reading back
   const parts = command.trim().split(/\s+/);
   const outputFlagIdx = parts.indexOf('--output');
-  if (outputFlagIdx < 0) throw new Error(`Cannot locate output: no --output flag in command`);
+  if (outputFlagIdx < 0) return; // Support commands like --help
+  if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first for commands with output.');
   const outputPath = path.join(this.workspaceDir, parts[outputFlagIdx + 1]);
 
   const ext = path.extname(outputPath).toLowerCase();
@@ -416,7 +421,14 @@ When('I reset the layout', async function (this: CustomWorld) {
 
   await this.page?.waitForSelector('.react-flow__node');
   await this.page?.waitForTimeout(500);
-  await this.takeScreenshot('After reset');
+  await this.takeScreenshot('After layout reset');
+});
+
+When('I have saved the layout', async function (this: CustomWorld) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  const layoutPath = path.join(this.workspaceDir, '.svsch', 'layout.json');
+  await fs.promises.mkdir(path.dirname(layoutPath), { recursive: true });
+  await fs.promises.writeFile(layoutPath, JSON.stringify(this.layout, null, 2));
 });
 
 When('I reroute the diagram', async function (this: CustomWorld) {
@@ -826,6 +838,62 @@ Then('the CLI output should not contain {string}', function (this: CustomWorld, 
   }
 });
 
+Then('I see the following CLI output:', function (this: CustomWorld, expected: string) {
+  if (this.lastCliStdout === undefined) throw new Error('No CLI output (stdout) captured.');
+  expect(this.lastCliStdout.trim()).toBe(expected.trim());
+});
+
+When('I have saved the layout to {string}', async function (this: CustomWorld, customPath: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  const fullPath = path.join(this.workspaceDir, customPath);
+  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.promises.writeFile(fullPath, JSON.stringify(this.layout, null, 2));
+});
+
+Then('a file named {string} should exist in directory {string}', async function (this: CustomWorld, filename: string, dir: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  const filePath = path.join(this.workspaceDir, dir, filename);
+  try {
+    await fs.promises.access(filePath);
+  } catch {
+    const fullDir = path.join(this.workspaceDir, dir);
+    const files = await fs.promises.readdir(fullDir).catch(() => []);
+    throw new Error(`File "${filename}" does not exist in "${dir}". Found: ${files.join(', ')}`);
+  }
+});
+
+Then('a file named {string} should not exist in the workspace', async function (this: CustomWorld, filename: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  const filePath = path.join(this.workspaceDir, filename);
+  try {
+    await fs.promises.access(filePath);
+    throw new Error(`File "${filename}" exists but should not`);
+  } catch (err: any) {
+    if (err.code === 'ENOENT') return;
+    throw err;
+  }
+});
+
+Then('the CLI should have reported generating {string}', function (this: CustomWorld, expectedFile: string) {
+  if (this.lastCliStdout === undefined) throw new Error('No CLI output captured.');
+  const lines = this.lastCliStdout.trim().split('\n');
+  const found = lines.some(line => line.endsWith(expectedFile));
+  if (!found) {
+    throw new Error(`Expected CLI to report generating "${expectedFile}", but stdout was:\n${this.lastCliStdout}`);
+  }
+});
+
+Then('a file named {string} should exist in the workspace', async function (this: CustomWorld, filename: string) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  const filePath = path.join(this.workspaceDir, filename);
+  try {
+    await fs.promises.access(filePath);
+  } catch {
+    const files = await fs.promises.readdir(this.workspaceDir);
+    throw new Error(`File "${filename}" does not exist in workspace. Found: ${files.join(', ')}`);
+  }
+});
+
 Then('I should see a loop block', async function (this: CustomWorld) {
   await expect(this.page!.locator('[data-node-kind="loop"]')).toBeVisible();
 });
@@ -1098,7 +1166,10 @@ When('I drag port nodes {string} and {string} together', async function (this: C
 When('I position the port node {string} at \\({int}, {int}\\)', async function (this: CustomWorld, name: string, x: number, y: number) {
   const id = await findNodeIdByLabel(this.page!, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
-  const moduleName = this.lastGraph.rootModules[0];
+  const moduleName = this.lastViewModel.moduleName;
+  if (!this.layout.modules[moduleName]) {
+    this.layout.modules[moduleName] = { nodes: {}, edges: {}, nets: [] };
+  }
   this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
   await postCurrentView(this, 'After positioning node');
 });
@@ -1181,7 +1252,8 @@ async function persistCliPngSnapshot(world: CustomWorld, pngBuffer: Buffer) {
   if (!world.scenarioName) return;
   world.stepCounter += 1;
   const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-  const snapshotName = `${safeScenarioName}--${world.stepCounter.toString().padStart(2, '0')}--cli-png`;
+  const scenarioId = (world.isScenarioOutline && world.scenarioId) ? `-${world.scenarioId.slice(0, 4)}` : '';
+  const snapshotName = `${safeScenarioName}${scenarioId}--${world.stepCounter.toString().padStart(2, '0')}--cli-png`;
 
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
@@ -1216,7 +1288,8 @@ async function persistSvgSnapshot(world: CustomWorld, svgContent: string) {
   if (!world.scenarioName) return;
   world.stepCounter += 1;
   const safeScenarioName = world.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-  const snapshotName = `${safeScenarioName}--${world.stepCounter.toString().padStart(2, '0')}--cli-svg`;
+  const scenarioId = (world.isScenarioOutline && world.scenarioId) ? `-${world.scenarioId.slice(0, 4)}` : '';
+  const snapshotName = `${safeScenarioName}${scenarioId}--${world.stepCounter.toString().padStart(2, '0')}--cli-svg`;
 
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
