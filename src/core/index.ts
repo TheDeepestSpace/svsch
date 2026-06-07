@@ -42,10 +42,24 @@ export async function renderDiagram(
     onProgress: opts.onProgress
   });
 
-  const moduleName = opts.topModule
-    ?? graph.rootModules[0]
-    ?? Object.keys(graph.modules)[0]
-    ?? path.basename(svFilePath, path.extname(svFilePath));
+  let moduleName = opts.topModule;
+  if (moduleName) {
+    if (!graph.modules[moduleName]) {
+      throw new Error(`Top module "${moduleName}" not found in project graph.`);
+    }
+  } else {
+    // Try to find modules defined in the input file within the graph
+    const modulesInFile = Object.values(graph.modules).filter((m) => path.resolve(workspaceRoot, m.file) === svFilePath);
+    if (modulesInFile.length > 0) {
+      const rootsInFile = modulesInFile.filter((m) => graph.rootModules.includes(m.name));
+      moduleName = rootsInFile[0]?.name ?? modulesInFile[0].name;
+    } else {
+      // If the input file has no modules in the graph (e.g. excluded by project folder),
+      // and no explicit top module was requested, error out instead of picking an unrelated module.
+      throw new Error(`No modules from "${path.basename(svFilePath)}" were found in the project graph. Check --project-folder or --workspace.`);
+    }
+  }
+
   const layout = opts.noLayout ? EMPTY_LAYOUT : await readLayoutForFile(svFilePath, workspaceRoot, opts.layoutFile);
 
   return buildViewModel(graph, moduleName, layout);

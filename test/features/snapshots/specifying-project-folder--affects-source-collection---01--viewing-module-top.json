@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:u_child",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:i",
+            "name": "i",
+            "direction": "input"
+          },
+          {
+            "id": "port:o",
+            "name": "o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:u_child:port:top:y:y",
+      "source": "instance:top:u_child",
+      "target": "port:top:y",
+      "sourceHandle": "port:o",
+      "targetHandle": "port:y",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:u_child:a",
+      "source": "port:top:a",
+      "target": "instance:top:u_child",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:i",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    }
+  ]
+}

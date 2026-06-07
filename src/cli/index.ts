@@ -16,8 +16,6 @@ interface RenderOptions {
   layout?: string;
   noLayout: boolean;
   theme: SvgThemeName;
-  surelogPath?: string;
-  backendPath?: string;
   workspaceRoot?: string;
   projectFolder?: string;
 }
@@ -48,8 +46,6 @@ async function renderCommand(argv: string[]): Promise<void> {
       layout: { type: 'string' },
       'no-layout': { type: 'boolean', default: false },
       theme: { type: 'string', default: 'dark' },
-      surelog: { type: 'string' },
-      backend: { type: 'string' },
       workspace: { type: 'string' },
       'project-folder': { type: 'string' },
       watch: { type: 'boolean', default: false },
@@ -95,11 +91,16 @@ async function renderCommand(argv: string[]): Promise<void> {
     layout: parsed.values.layout,
     noLayout: parsed.values['no-layout'] === true,
     theme,
-    surelogPath: parsed.values.surelog,
-    backendPath: parsed.values.backend,
     workspaceRoot: parsed.values.workspace,
     projectFolder: parsed.values['project-folder']
   };
+
+  if (options.workspaceRoot) {
+    process.stderr.write(`[svsch] Using custom Workspace root: ${options.workspaceRoot}\n`);
+  }
+  if (options.projectFolder) {
+    process.stderr.write(`[svsch] Using custom Project folder: ${options.projectFolder}\n`);
+  }
 
   for (const input of inputs) {
     const output = outputPathFor(input, options);
@@ -108,8 +109,6 @@ async function renderCommand(argv: string[]): Promise<void> {
       layoutFile: options.layout,
       topModule: options.top,
       noLayout: options.noLayout,
-      surelogPath: options.surelogPath,
-      backendPath: options.backendPath,
       workspaceRoot: options.workspaceRoot,
       projectFolder: options.projectFolder,
       onProgress: (message) => {
@@ -261,8 +260,6 @@ Options:
       --layout <json>       Use an explicit saved layout file
       --no-layout           Ignore saved layout and run auto-layout
       --theme <dark|light>  Fixed SVG color theme (default: dark)
-      --surelog <path>      Surelog executable path
-      --backend <path>      svsch_backend executable path
       --workspace <dir>     Workspace root used for parser cache and relative paths
       --project-folder <d>  Project folder relative to workspace
 `);

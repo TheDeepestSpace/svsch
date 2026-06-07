@@ -37,7 +37,7 @@ interface ElkDiagramNode {
 }
 
 export async function buildViewModel(graph: DesignGraph, moduleName: string, layout: SavedLayout): Promise<DiagramViewModel> {
-  const designModule = graph.modules[moduleName] ?? graph.modules[graph.rootModules[0]];
+  const designModule = graph.modules[moduleName];
   if (!designModule) {
     return {
       moduleName,

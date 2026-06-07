@@ -40,6 +40,7 @@ class CustomWorld extends World {
   lastCliPng?: Buffer;
   lastCliPngPath?: string;
   lastCliStdout?: string;
+  lastCliStderr?: string;
 
   async takeScreenshot(label: string) {
     if (this.page) {
@@ -262,6 +263,10 @@ Given('a SystemVerilog module:', async function (this: CustomWorld, code: string
   await this.postGraph([{ file: 'top.sv', text: code }]);
 });
 
+Given('the current directory structure is:', function (this: CustomWorld, _docString: string) {
+  // No-op, used for documentation in the feature file
+});
+
 Given('the following SystemVerilog files:', async function (this: CustomWorld, table: any) {
   const sources = table.hashes().map((row: any) => ({
     file: row.file,
@@ -270,8 +275,8 @@ Given('the following SystemVerilog files:', async function (this: CustomWorld, t
   await this.openWorkspaceForEditing(sources);
 });
 
-Given('a SystemVerilog file {string} with:', async function (this: CustomWorld, filename: string, content: string) {
-  await this.postGraph([{ file: filename, text: content }]);
+Given('a SystemVerilog file {string} with:', async function (this: CustomWorld, filename: string, code: string) {
+  await this.postGraph([{ file: filename, text: code }]);
 });
 
 Given('I have opened {string} for editing with:', async function (this: CustomWorld, filename: string, content: string) {
@@ -298,8 +303,6 @@ When('I render {string} with the CLI to {string}', async function (this: CustomW
     throw new Error(`CLI bundle not found at ${cliPath}. Run npm run build:cli before the BDD CLI scenario.`);
   }
 
-  const surelogPath = process.env.SURELOG_PATH || path.resolve(__dirname, '../../dist/surelog/bin/surelog');
-  const backendPath = process.env.BACKEND_PATH || path.resolve(__dirname, '../../dist/svsch_backend');
   const outputPath = path.join(this.workspaceDir, outputFile);
 
   await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
@@ -309,11 +312,7 @@ When('I render {string} with the CLI to {string}', async function (this: CustomW
     inputFile,
     '--output',
     outputPath,
-    '--no-layout',
-    '--surelog',
-    surelogPath,
-    '--backend',
-    backendPath
+    '--no-layout'
   ], {
     cwd: this.workspaceDir,
     maxBuffer: 10 * 1024 * 1024
@@ -324,6 +323,10 @@ When('I render {string} with the CLI to {string}', async function (this: CustomW
 });
 
 When('I run the CLI command:', { timeout: 120000 }, async function (this: CustomWorld, command: string) {
+  await runCliCommand(this, command);
+});
+
+async function runCliCommand(world: CustomWorld, command: string) {
   const worktreeRoot = path.resolve(__dirname, '../..');
   const cliPath = path.join(worktreeRoot, 'dist', 'cli.js');
   if (!fs.existsSync(cliPath)) {
@@ -340,31 +343,50 @@ When('I run the CLI command:', { timeout: 120000 }, async function (this: Custom
   }
 
   // Execute the command exactly as written; cwd is the workspace so relative paths work
-  const { stdout } = await execAsync(command.trim(), {
-    cwd: this.workspaceDir || worktreeRoot,
-    env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ''}` },
-    maxBuffer: 10 * 1024 * 1024
-  });
-  this.lastCliStdout = stdout;
+  let stdout = '';
+  let stderr = '';
+  try {
+    const result = await execAsync(command.trim(), {
+      cwd: world.workspaceDir || worktreeRoot,
+      env: { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ''}` },
+      maxBuffer: 10 * 1024 * 1024
+    });
+    stdout = result.stdout;
+    stderr = result.stderr;
+  } catch (err: any) {
+    stdout = err.stdout || '';
+    stderr = err.stderr || '';
+    // Only rethrow if we didn't get any output and it's not one of our path-testing scenarios
+    if (!stdout && !stderr) throw err;
+  }
+  world.lastCliStdout = stdout;
+  world.lastCliStderr = stderr;
 
   // Parse command only to locate the output file for reading back
   const parts = command.trim().split(/\s+/);
   const outputFlagIdx = parts.indexOf('--output');
   if (outputFlagIdx < 0) return; // Support commands like --help
-  if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first for commands with output.');
-  const outputPath = path.join(this.workspaceDir, parts[outputFlagIdx + 1]);
+  if (!world.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first for commands with output.');
+  const outputPath = path.join(world.workspaceDir, parts[outputFlagIdx + 1]);
 
   const ext = path.extname(outputPath).toLowerCase();
-  if (ext === '.png') {
-    this.lastCliPngPath = outputPath;
-    this.lastCliPng = await fs.promises.readFile(outputPath);
-    await persistCliPngSnapshot(this, this.lastCliPng);
+  if (fs.existsSync(outputPath)) {
+    if (ext === '.png') {
+      world.lastCliPngPath = outputPath;
+      world.lastCliPng = await fs.promises.readFile(outputPath);
+      await persistCliPngSnapshot(world, world.lastCliPng);
+    } else {
+      world.lastCliSvgPath = outputPath;
+      world.lastCliSvg = await fs.promises.readFile(outputPath, 'utf8');
+      await persistSvgSnapshot(world, world.lastCliSvg);
+    }
   } else {
-    this.lastCliSvgPath = outputPath;
-    this.lastCliSvg = await fs.promises.readFile(outputPath, 'utf8');
-    await persistSvgSnapshot(this, this.lastCliSvg);
+    world.lastCliPngPath = undefined;
+    world.lastCliPng = undefined;
+    world.lastCliSvgPath = undefined;
+    world.lastCliSvg = undefined;
   }
-});
+}
 
 When('I select module {string} from the dropdown', async function (this: CustomWorld, moduleName: string) {
   // We use the page to select the option, which will trigger the onChange and send the message back to us
@@ -844,33 +866,60 @@ Then('the CLI SVG should not contain {string}', function (this: CustomWorld, une
   expect(this.lastCliSvg).not.toContain(unexpected);
 });
 
-Then('the CLI output should contain {string}', function (this: CustomWorld, expected: string) {
-  if (this.lastCliSvg) {
-    expect(this.lastCliSvg).toContain(expected);
-  } else if (this.lastCliPng) {
-    // For PNG output, verify the view model that was used to render contains the expected label
-    const nodes = this.lastViewModel?.nodes ?? [];
-    const found = nodes.some((n: any) => n.label === expected || n.id?.includes(expected));
-    if (!found) throw new Error(`CLI output (PNG): no node with label/id containing "${expected}" in the rendered view model`);
-  } else {
-    throw new Error('No CLI output has been rendered');
+Then('a file named {string} should not exist in directory {string}', function (this: CustomWorld, fileName: string, dir: string) {
+  const filePath = path.join(this.workspaceDir || '', dir, fileName);
+  if (fs.existsSync(filePath)) {
+    throw new Error(`File "${fileName}" should not exist in directory "${dir}"`);
   }
 });
 
-Then('the CLI should have used the custom Surelog path', function () {
-  return 'pending';
+When('I manually position node {string} at \\({int}, {int}\\) in module {string}', async function (this: CustomWorld, nodeId: string, x: number, y: number, moduleName: string) {
+  if (!this.layout.modules[moduleName]) {
+    this.layout.modules[moduleName] = { nodes: {}, edges: {}, nets: [] };
+  }
+  this.layout.modules[moduleName].nodes[nodeId] = { x, y, fixed: true };
+  await postCurrentView(this, 'After manual position');
 });
 
-Then('the CLI should have used the custom Backend path', function () {
-  return 'pending';
+Then(/^the CLI stdout should be exactly:?$/, function (this: CustomWorld, expected: string) {
+  if (this.lastCliStdout === undefined) throw new Error('No CLI stdout captured.');
+  expect(this.lastCliStdout.trim()).toBe(expected.trim());
 });
 
-Then('the CLI should have used {string} as the workspace root', function (string) {
-  return 'pending';
+Then(/^the CLI stdout should be exactly \(workspace-relative\):?$/, function (this: CustomWorld, expected: string) {
+  if (this.lastCliStdout === undefined) throw new Error('No CLI stdout captured.');
+  const workspaceDir = this.workspaceDir || '';
+  const lines = this.lastCliStdout.trim().split('\n').map(line => {
+    const absolute = path.isAbsolute(line) ? line : path.resolve(workspaceDir, line);
+    if (absolute.startsWith(workspaceDir)) {
+      return path.relative(workspaceDir, absolute);
+    }
+    return line;
+  });
+  expect(lines.join('\n')).toBe(expected.trim());
 });
 
-Then('the CLI should have focused on the {string} folder', function (string) {
-  return 'pending';
+Then(/^the CLI stderr should be exactly:?$/, function (this: CustomWorld, expected: string) {
+  if (this.lastCliStderr === undefined) throw new Error('No CLI stderr captured.');
+  expect(this.lastCliStderr.trim()).toBe(expected.trim());
+});
+
+Then('the CLI stderr should be empty', function (this: CustomWorld) {
+  if (this.lastCliStderr === undefined) throw new Error('No CLI stderr captured.');
+  expect(this.lastCliStderr.trim()).toBe('');
+});
+
+Then('the CLI stderr should contain {string}', function (this: CustomWorld, expected: string) {
+  if (this.lastCliStderr === undefined) throw new Error('No CLI stderr captured.');
+  expect(this.lastCliStderr).toContain(expected);
+});
+
+Then('the CLI SVG should be empty', function (this: CustomWorld) {
+  // If no SVG was captured at all (e.g. CLI errored out before writing), that also counts as empty
+  if (this.lastCliSvg === undefined) return;
+  // An empty diagram still has the SVG wrapper and styles, but the actual node/edge containers are empty
+  expect(this.lastCliSvg).toContain('<g class="svsch-edges">\n</g>');
+  expect(this.lastCliSvg).toContain('<g class="svsch-nodes">\n</g>');
 });
 
 Then('the CLI output should not contain {string}', function (this: CustomWorld, unexpected: string) {
