@@ -49,6 +49,7 @@ class CustomWorld extends World {
         await fitViewButton.click();
         await this.page.waitForTimeout(500);
       }
+      await this.page.evaluate(() => document.fonts.ready);
       const screenshot = await this.page.screenshot();
       const graphState = await captureGraphState(this.page);
       this.attach(screenshot, 'image/png');

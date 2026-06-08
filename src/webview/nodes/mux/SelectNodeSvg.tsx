@@ -86,25 +86,25 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       />
 
       {muxTopPorts.map((port: DiagramPort, index: number) => {
-        const portX = width * (index + 1) / (muxTopPorts.length + 1);
+        const portX = Math.round(width * (index + 1) / (muxTopPorts.length + 1));
         const leadLen = (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
           ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
           : 0;
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
         // Lead: from handle (y=g) to slope (y=skinEdgeY). Label just inside slope.
-        const labelY = leadLen > 0
+        const labelY = Math.round(leadLen > 0
           ? skinEdgeY + 8
-          : skinEdgeY + g / 2;
+          : skinEdgeY + g / 2);
         const label = selectPortLabel(node, port.name === 'width' ? 'w' : 's');
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className="svsch-mux-select-lead" x1={portX + contentShiftX} y1={g + contentShiftY} x2={portX + contentShiftX} y2={skinEdgeY + contentShiftY} />
+              <line className="svsch-mux-select-lead" x1={Math.round(portX + contentShiftX)} y1={Math.round(g + contentShiftY)} x2={Math.round(portX + contentShiftX)} y2={Math.round(skinEdgeY + contentShiftY)} />
             )}
             <text
               className="svsch-port-label"
-              x={portX + contentShiftX}
-              y={labelY + contentShiftY}
+              x={Math.round(portX + contentShiftX)}
+              y={Math.round(labelY + contentShiftY)}
               textAnchor="middle"
               dominantBaseline="middle"
             >
@@ -118,8 +118,8 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
         <text
           key={port.id}
           className="svsch-port-label svsch-mux-side-port"
-          x={g / 2 + contentShiftX}
-          y={muxInputPortCenterY(index, sideInputs.length, height) + contentShiftY}
+          x={Math.round(g / 2 + contentShiftX)}
+          y={Math.round(muxInputPortCenterY(index, sideInputs.length, height) + contentShiftY)}
           dominantBaseline="middle"
         >
           {selectPortLabel(node, port)}
@@ -129,8 +129,8 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       {outputs[0] && (
         <text
           className="svsch-port-label svsch-mux-output-port"
-          x={width - g / 2 + contentShiftX}
-          y={height / 2 + contentShiftY}
+          x={Math.round(width - g / 2 + contentShiftX)}
+          y={Math.round(height / 2 + contentShiftY)}
           textAnchor="end"
           dominantBaseline="middle"
         >
@@ -140,7 +140,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
 
       {/* Array stack leads */}
       {outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads side="right" width={width} y={height / 2} />
+        <SvgArrayStackLeads side="right" width={width} y={Math.round(height / 2)} />
       )}
       {!isArray && <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />}
     </>

@@ -65,8 +65,8 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
 
       <text
         className="svsch-alu-operation"
-        x={width * 0.65 + contentShiftX}
-        y={midY + contentShiftY}
+        x={Math.round(width * 0.65 + contentShiftX)}
+        y={Math.round(midY + contentShiftY)}
         textAnchor="middle"
         dominantBaseline="middle"
         fontSize={18}

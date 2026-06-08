@@ -22,28 +22,28 @@ export function SvgArrayStackLeads({
       {ARRAY_STACK_LEAD_LAYERS.map((layer) => {
         const trim = arrayStackLayerTrim(layer.id);
         const shapeX = (side === 'top' || side === 'bottom')
-          ? (x ?? width / 2) + layer.dx
+          ? Math.round((x ?? width / 2) + layer.dx)
           : side === 'left'
-            ? layer.dx
-            : width + layer.dx;
-        const shapeY = y + layer.dy;
-        const endY = side === 'top' && trimSink
+            ? Math.round(layer.dx)
+            : Math.round(width + layer.dx);
+        const shapeY = Math.round(y + layer.dy);
+        const endY = Math.round(side === 'top' && trimSink
           ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
-          : shapeY;
-        const sourceRightExitX = width + ARRAY_STACK_LAYERS.back.dx + ARRAY_STACK_LEAD_EDGE_GAP;
-        const bottomExitY = y + ARRAY_STACK_LAYERS.back.dy + ARRAY_STACK_LEAD_EDGE_GAP;
-        const leadX = (side === 'top' || side === 'bottom')
+          : shapeY);
+        const sourceRightExitX = Math.round(width + ARRAY_STACK_LAYERS.back.dx + ARRAY_STACK_LEAD_EDGE_GAP);
+        const bottomExitY = Math.round(y + ARRAY_STACK_LAYERS.back.dy + ARRAY_STACK_LEAD_EDGE_GAP);
+        const leadX = Math.round((side === 'top' || side === 'bottom')
           ? shapeX
           : side === 'left'
             ? shapeX - trim
             : trimSink
               ? shapeX + trim
-              : Math.max(shapeX + trim, sourceRightExitX);
-        const leadY = side === 'top'
+              : Math.max(shapeX + trim, sourceRightExitX));
+        const leadY = Math.round(side === 'top'
           ? endY - trim
           : side === 'bottom'
             ? Math.max(endY + trim, bottomExitY)
-            : shapeY;
+            : shapeY);
         return (
           <path
             key={layer.id}

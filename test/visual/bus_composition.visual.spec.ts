@@ -118,7 +118,7 @@ async function openFixture(page: Page, fixtureName: string, layoutMode: 'auto' =
   await page.goto('/');
   // Wait a bit for React to initialize and add the event listener
   await page.waitForTimeout(500);
-  
+
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',

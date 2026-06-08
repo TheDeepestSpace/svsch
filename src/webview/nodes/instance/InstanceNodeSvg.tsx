@@ -43,12 +43,12 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
     ? instanceParameters.length * chipHeight + Math.max(0, instanceParameters.length - 1) * chipGap
     : 0;
   const chipStackTop = 16 + Math.max(0, (paramRows * g - chipStackHeight) / 2);
-  const chipTextY = (index: number) => chipStackTop + index * (chipHeight + chipGap) + chipHeight / 2 + contentShiftY;
+  const chipTextY = (index: number) => Math.round(chipStackTop + index * (chipHeight + chipGap) + chipHeight / 2 + contentShiftY);
   const chipY = (index: number) => chipTextY(index) - chipHeight / 2;
   const chipX = 12 + contentShiftX;
-  const titleY = paramRows > 0
+  const titleY = Math.round(paramRows > 0
     ? 16 + g * paramRows + (diagramSizing.nodeHeaderHeight - 16) / 2 + contentShiftY
-    : 26 + contentShiftY;
+    : 26 + contentShiftY);
 
   return (
     <>

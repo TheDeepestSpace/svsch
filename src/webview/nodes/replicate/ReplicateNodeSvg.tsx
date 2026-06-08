@@ -52,7 +52,7 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
         width={width}
         height={height}
       />
-      <text className="svsch-literal-content svsch-repeat-label" x={width / 2 + contentShiftX} y={height / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
+      <text className="svsch-literal-content svsch-repeat-label" x={Math.round(width / 2 + contentShiftX)} y={Math.round(height / 2 + contentShiftY)} textAnchor="middle" dominantBaseline="middle">
         {symbolicLabel ? (
           <>
             <tspan>x </tspan>
@@ -72,14 +72,14 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
       {symbolicLabel && expression && (
         <line
           className="svsch-svg-link-underline svsch-repeat-label-underline"
-          x1={width / 2 + contentShiftX + charW * (2 - expression.length) / 2}
-          x2={width / 2 + contentShiftX + charW * (2 + expression.length) / 2}
-          y1={height / 2 + contentShiftY + fontSize * 0.62}
-          y2={height / 2 + contentShiftY + fontSize * 0.62}
+          x1={Math.round(width / 2 + contentShiftX + charW * (2 - expression.length) / 2)}
+          x2={Math.round(width / 2 + contentShiftX + charW * (2 + expression.length) / 2)}
+          y1={Math.round(height / 2 + contentShiftY + fontSize * 0.62)}
+          y2={Math.round(height / 2 + contentShiftY + fontSize * 0.62)}
         />
       )}
       {isArray && arrayDim && (
-        <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
+        <text className="svsch-node-kind svsch-array-badge" x={Math.round(width + 3)} y={-4} textAnchor="start">
           {arrayDim}
         </text>
       )}

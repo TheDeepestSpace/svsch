@@ -184,6 +184,8 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     expect(loaded, 'Expected graph to be received by webview').toBe(true);
 
     // Let the React render settle before snapshotting.
+    await webviewIframe.locator('.react-flow__node').first().waitFor();
+    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
     await workbox.waitForTimeout(1_000);
 
     // Verify the webview iframe exists
@@ -281,6 +283,8 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     }
 
     // Let the React render settle before snapshotting.
+    await webviewIframe.locator('.react-flow__node').first().waitFor();
+    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
     await workbox.waitForTimeout(1_000);
 
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
