@@ -70,7 +70,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
         width={shapeWidth}
         height={shapeHeight}
       />
-      <text className="svsch-node-title svsch-literal-content" x={width / 2 + contentShiftX} y={height / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
+      <text className="svsch-node-title svsch-literal-content" x={Math.round(width / 2 + contentShiftX)} y={Math.round(height / 2 + contentShiftY)} textAnchor="middle" dominantBaseline="middle">
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
@@ -93,25 +93,25 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
       {typeName && typeSource && (
         <line
           className="svsch-svg-link-underline svsch-literal-type-link-underline"
-          x1={suffixStartX + contentShiftX}
-          x2={suffixStartX + contentShiftX + suffixWidth}
-          y1={underlineY + contentShiftY}
-          y2={underlineY + contentShiftY}
+          x1={Math.round(suffixStartX + contentShiftX)}
+          x2={Math.round(suffixStartX + contentShiftX + suffixWidth)}
+          y1={Math.round(underlineY + contentShiftY)}
+          y2={Math.round(underlineY + contentShiftY)}
         />
       )}
       {widthSuffix && (
         <SvgParameterizedTextUnderlines
           text={widthSuffix}
           refs={outputPort?.parameterRefs}
-          x={suffixStartX + contentShiftX}
-          y={height / 2 + contentShiftY}
+          x={Math.round(suffixStartX + contentShiftX)}
+          y={Math.round(height / 2 + contentShiftY)}
           fontSize={literalFontSize}
           textWidth={(part) => monoTextWidth(part, literalFontSize)}
           className="svsch-literal-type-link-underline"
         />
       )}
       {isArray && arrayDim && (
-        <text className="svsch-node-kind svsch-array-badge" x={width + 3} y={-4} textAnchor="start">
+        <text className="svsch-node-kind svsch-array-badge" x={Math.round(width + 3)} y={-4} textAnchor="start">
           {arrayDim}
         </text>
       )}
@@ -119,7 +119,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
         hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads key={port.id} side="right" width={width} y={height / 2} />
+          <SvgArrayStackLeads key={port.id} side="right" width={width} y={Math.round(height / 2)} />
         ) : null
       )}
     </>

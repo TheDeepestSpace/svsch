@@ -26,6 +26,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // VSCode workspace: ./test/ already has .vscode/settings.json configuring
     // svsch.projectFolder = visual/fixtures and suppressing noisy popups.
     baseDir: path.join(root, 'test'),
+    deviceScaleFactor: 1,
     // Pin to Electron 30 era. VSCode 1.121 uses Electron 35+ which
     // drops --remote-debugging-port=0 support that Playwright 1.59 requires.
     vscodeVersion,

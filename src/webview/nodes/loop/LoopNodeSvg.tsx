@@ -39,7 +39,7 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
         width={width}
         height={height}
       />
-      <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
+      <text className="svsch-node-kind" x={Math.round(12 + contentShiftX)} y={Math.round(14 + contentShiftY)} textAnchor="start" dominantBaseline="middle">
         LOOP
       </text>
 
@@ -50,7 +50,7 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
             key={`lead-${port.id}`}
             side="left"
             width={width}
-            y={nodePortCenterOffset(i + paramRows)}
+            y={Math.round(nodePortCenterOffset(i + paramRows))}
             trimSink
           />
         ) : null
@@ -61,7 +61,7 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
             key={`lead-${port.id}`}
             side="right"
             width={width}
-            y={nodePortCenterOffset(i + paramRows)}
+            y={Math.round(nodePortCenterOffset(i + paramRows))}
           />
         ) : null
       )}

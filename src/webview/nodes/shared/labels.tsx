@@ -236,10 +236,10 @@ export function SvgParameterizedTextUnderlines({
       <line
         key={`param-underline-${part.key}-${index}`}
         className={`svsch-svg-link-underline svsch-param-token-underline ${className}`.trim()}
-        x1={x1}
-        x2={x1 + partWidth}
-        y1={y + fontSize * 0.62}
-        y2={y + fontSize * 0.62}
+        x1={Math.round(x1)}
+        x2={Math.round(x1 + partWidth)}
+        y1={Math.round(y + fontSize * 0.62)}
+        y2={Math.round(y + fontSize * 0.62)}
       />
     ];
   });
