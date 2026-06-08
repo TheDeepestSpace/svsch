@@ -676,7 +676,7 @@ export class DiagramPanel {
     const mediaUri = vscode.Uri.joinPath(this.context.extensionUri, 'media', fileName);
     let version = 'dev';
     try {
-      version = String(Math.round(fs.statSync(mediaUri.fsPath).mtimeMs));
+      version = String(Math.round(fs.statSync(mediaUri.fsPath).mtimeMs)) + '-' + String(Date.now());
     } catch {
       // Keep serving the stable URI if the asset is missing; the webview will
       // surface the load failure and the caller can rebuild media.
