@@ -291,7 +291,7 @@ jobs:
           chmod -R a+rX /usr/local
           mkdir -p /home/dev/tmp
           # Ensure dev can traverse the parent directories of the workspace
-          chmod 755 /__w /__w/vscode-svsch
+          chmod 755 /__w /__w/svsch
           chown -R dev:dev . /home/dev/tmp
           sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system
         env:
