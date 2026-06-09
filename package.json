@@ -1,16 +1,16 @@
 {
-  "name": "vscode-svsch",
+  "name": "svsch",
   "displayName": "SVSCH",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
   "version": "0.0.1",
-  "publisher": "svsch",
+  "publisher": "thedeepestspace",
   "license": "AGPL-3.0",
   "bin": {
     "svsch": "./dist/cli.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheDeepestSpace/vscode-svsch"
+    "url": "https://github.com/TheDeepestSpace/svsch"
   },
   "engines": {
     "vscode": "^1.90.0"
