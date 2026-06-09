@@ -175,9 +175,6 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
-      [svsch] Using cached design data
-      [svsch] Extracting design graph...
-      [svsch] Finalizing...
       """
 
   Scenario: Selecting a top module
@@ -288,11 +285,35 @@ Feature: Command Line Interface
     And the CLI SVG should contain "instance:top:u_child"
     And the CLI SVG should contain "child"
 
+  Scenario: Single output with directory glob and top module
+    Given the following SystemVerilog files:
+      | file   | content                                                 |
+      | a.sv   | module a(input i, output o); assign o = i; endmodule    |
+      | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
+    When I run the CLI command:
+      """
+      svsch render "*.sv" --top b --output single_b.svg --no-layout
+      """
+    Then a file named "single_b.svg" should exist in the workspace
+    And a file named "a.svg" should not exist in the workspace
+    And a file named "b.svg" should not exist in the workspace
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      single_b.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
   Scenario: Project folder isolation
     Given the following SystemVerilog files:
       | file         | content                                                              |
       | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
       | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
+    And I record the workspace directory state
     When I run the CLI command:
       """
       svsch render top.sv --project-folder sub --output out.svg --no-layout
@@ -306,4 +327,4 @@ Feature: Command Line Interface
       [svsch] Finalizing...
       [svsch] No modules from "top.sv" were found in the project graph. Check --project-folder or --workspace.
       """
-    And the CLI SVG should be empty
+    And the workspace directory state should remain unchanged

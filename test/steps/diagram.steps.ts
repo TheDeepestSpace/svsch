@@ -35,6 +35,7 @@ class CustomWorld extends World {
   stepCounter: number = 0;
   workspaceDir?: string;
   workspaceSources: Map<string, string> = new Map();
+  workspaceDirStateBefore?: string[];
   lastCliSvg?: string;
   lastCliSvgPath?: string;
   lastCliPng?: Buffer;
@@ -913,6 +914,36 @@ Then('the CLI stderr should be empty', function (this: CustomWorld) {
 Then('the CLI stderr should contain {string}', function (this: CustomWorld, expected: string) {
   if (this.lastCliStderr === undefined) throw new Error('No CLI stderr captured.');
   expect(this.lastCliStderr).toContain(expected);
+});
+
+async function getWorkspaceState(dir: string): Promise<string[]> {
+  const files: string[] = [];
+  async function walk(current: string) {
+    const entries = await fs.promises.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === '.svsch' || entry.name === '.git' || entry.name === 'node_modules') continue;
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      } else {
+        files.push(path.relative(dir, fullPath).replace(/\\/g, '/'));
+      }
+    }
+  }
+  await walk(dir);
+  return files;
+}
+
+Given('I record the workspace directory state', async function (this: CustomWorld) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  this.workspaceDirStateBefore = await getWorkspaceState(this.workspaceDir);
+});
+
+Then('the workspace directory state should remain unchanged', async function (this: CustomWorld) {
+  if (!this.workspaceDir) throw new Error('No open workspace');
+  if (!this.workspaceDirStateBefore) throw new Error('Workspace state was not recorded');
+  const currentState = await getWorkspaceState(this.workspaceDir);
+  expect(currentState.sort()).toEqual(this.workspaceDirStateBefore.sort());
 });
 
 Then('the CLI SVG should be empty', function (this: CustomWorld) {

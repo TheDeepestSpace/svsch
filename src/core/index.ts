@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
-import type { DiagramViewModel } from '../ir/types';
+import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
 import type { SavedLayout } from '../storage/layoutStore';
@@ -42,6 +42,15 @@ export async function renderDiagram(
     onProgress: opts.onProgress
   });
 
+  return await renderModuleFromGraph(graph, svFilePath, workspaceRoot, opts);
+}
+
+export async function renderModuleFromGraph(
+  graph: DesignGraph,
+  svFilePath: string,
+  workspaceRoot: string,
+  opts: RenderDiagramOptions
+): Promise<DiagramViewModel> {
   let moduleName = opts.topModule;
   if (moduleName) {
     if (!graph.modules[moduleName]) {
@@ -60,12 +69,13 @@ export async function renderDiagram(
     }
   }
 
-  const layout = opts.noLayout ? EMPTY_LAYOUT : await readLayoutForFile(svFilePath, workspaceRoot, opts.layoutFile);
+  const layoutFile = opts.layoutFile;
+  const layout = opts.noLayout ? EMPTY_LAYOUT : readLayoutForFileSync(svFilePath, workspaceRoot, layoutFile);
 
-  return buildViewModel(graph, moduleName, layout);
+  return await buildViewModel(graph, moduleName, layout);
 }
 
-function resolveProjectScope(
+export function resolveProjectScope(
   svFilePath: string,
   opts: RenderDiagramOptions
 ): { workspaceRoot: string; projectFolder: string } {
@@ -85,10 +95,7 @@ function resolveProjectScope(
   return { workspaceRoot: cwd, projectFolder };
 }
 
-function relativeProjectFolder(workspaceRoot: string, projectDir: string): string {
-  const relative = path.relative(workspaceRoot, projectDir);
-  return relative.length > 0 ? relative : '.';
-}
+export { buildDesignGraph };
 
 async function assertReadableFile(filePath: string): Promise<void> {
   const stat = await fs.stat(filePath).catch((error) => {
@@ -99,13 +106,13 @@ async function assertReadableFile(filePath: string): Promise<void> {
   }
 }
 
-async function readLayoutForFile(
+function readLayoutForFileSync(
   svFilePath: string,
   workspaceRoot: string,
   explicitLayoutFile?: string
-): Promise<SavedLayout> {
+): SavedLayout {
   if (explicitLayoutFile) {
-    return readLayout(path.resolve(explicitLayoutFile));
+    return readLayoutSync(path.resolve(explicitLayoutFile));
   }
 
   const ext = path.extname(svFilePath);
@@ -119,16 +126,16 @@ async function readLayoutForFile(
 
   for (const candidate of candidates) {
     if (fsSync.existsSync(candidate)) {
-      return readLayout(candidate);
+      return readLayoutSync(candidate);
     }
   }
 
   return EMPTY_LAYOUT;
 }
 
-async function readLayout(layoutFile: string): Promise<SavedLayout> {
+function readLayoutSync(layoutFile: string): SavedLayout {
   try {
-    const raw = await fs.readFile(layoutFile, 'utf8');
+    const raw = fsSync.readFileSync(layoutFile, 'utf8');
     const parsed = JSON.parse(raw) as Partial<SavedLayout>;
     return {
       version: 1,
@@ -142,7 +149,12 @@ async function readLayout(layoutFile: string): Promise<SavedLayout> {
   }
 }
 
-function resolveBackendPath(explicitPath?: string): string {
+function relativeProjectFolder(workspaceRoot: string, projectDir: string): string {
+  const relative = path.relative(workspaceRoot, projectDir);
+  return relative.length > 0 ? relative : '.';
+}
+
+export function resolveBackendPath(explicitPath?: string): string {
   if (explicitPath) {
     return path.resolve(explicitPath);
   }
@@ -151,7 +163,7 @@ function resolveBackendPath(explicitPath?: string): string {
     ?? 'svsch_backend';
 }
 
-function resolveSurelogPath(explicitPath?: string): string {
+export function resolveSurelogPath(explicitPath?: string): string {
   if (explicitPath) {
     return path.resolve(explicitPath);
   }

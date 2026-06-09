@@ -3,7 +3,13 @@ import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { parseArgs } from 'node:util';
-import { renderDiagram } from '../core';
+import { 
+  buildDesignGraph, 
+  resolveProjectScope, 
+  renderModuleFromGraph,
+  resolveSurelogPath,
+  resolveBackendPath
+} from '../core';
 import { renderSvg } from './svgRenderer';
 import type { SvgThemeName } from './theme';
 import reactFlowCss from '@xyflow/react/dist/style.css?raw';
@@ -18,6 +24,10 @@ interface RenderOptions {
   theme: SvgThemeName;
   workspaceRoot?: string;
   projectFolder?: string;
+  surelogPath?: string;
+  backendPath?: string;
+  includePaths?: string[];
+  defines?: Record<string, string>;
 }
 
 const HDL_EXTENSIONS = new Set(['.sv', '.v']);
@@ -66,7 +76,7 @@ async function renderCommand(argv: string[]): Promise<void> {
     throw new Error(`Unsupported theme: ${parsed.values.theme}`);
   }
 
-  const inputs = await expandInputs(parsed.positionals);
+  let inputs = await expandInputs(parsed.positionals);
   if (inputs.length === 0) {
     throw new Error('No input SystemVerilog files matched.');
   }
@@ -75,13 +85,6 @@ async function renderCommand(argv: string[]): Promise<void> {
   let outputDir = parsed.values['output-dir'];
   if (output && outputDir) {
     throw new Error('Use either --output or --output-dir, not both.');
-  }
-  if (output && (inputs.length > 1 || outputLooksLikeDirectory(output))) {
-    outputDir = output;
-    output = undefined;
-  }
-  if (inputs.length > 1 && output) {
-    throw new Error('--output can only be used with a single input. Use --output-dir for multiple files.');
   }
 
   const options: RenderOptions = {
@@ -102,19 +105,60 @@ async function renderCommand(argv: string[]): Promise<void> {
     process.stderr.write(`[svsch] Using custom Project folder: ${options.projectFolder}\n`);
   }
 
+  // 1. Resolve project scope using the FIRST input file (standard CLI behavior)
+  const firstInputPath = path.resolve(inputs[0]);
+  const { workspaceRoot, projectFolder } = resolveProjectScope(firstInputPath, options);
+
+  // 2. Build design graph ONCE for the whole project
+  const graph = await buildDesignGraph({
+    workspaceRoot,
+    projectFolder,
+    backend: 'uhdm',
+    veriblePath: 'verible-verilog-syntax',
+    surelogPath: resolveSurelogPath(options.surelogPath),
+    backendPath: resolveBackendPath(options.backendPath),
+    includePaths: options.includePaths,
+    defines: options.defines,
+    includeExternalDiagnostics: true,
+    onProgress: (message) => {
+      process.stderr.write(`[svsch] ${message}\n`);
+    }
+  });
+
+  // 3. Early validation of top module and input reduction
+  if (options.top) {
+    const topMod = graph.modules[options.top];
+    if (!topMod) {
+      throw new Error(`Top module "${options.top}" not found in project graph.`);
+    }
+    // If a specific module is requested, reduce inputs to only the file defining it.
+    inputs = [path.resolve(workspaceRoot, topMod.file)];
+  }
+
+  // 4. Validate output flags now that inputs list is finalized
+  if (output && (inputs.length > 1 || outputLooksLikeDirectory(output))) {
+    options.outputDir = output;
+    options.output = undefined;
+  }
+  if (inputs.length > 1 && options.output) {
+    throw new Error('--output can only be used with a single input. Use --output-dir for multiple files.');
+  }
+
+  // 5. Pre-collect all views to ensure everything is valid before writing ANY files
+  const results: Array<{ output: string; view: any }> = [];
   for (const input of inputs) {
     const output = outputPathFor(input, options);
-    await fs.mkdir(path.dirname(output), { recursive: true });
-    const view = await renderDiagram(input, {
+    const view = await renderModuleFromGraph(graph, path.resolve(input), workspaceRoot, {
+      ...options,
       layoutFile: options.layout,
-      topModule: options.top,
-      noLayout: options.noLayout,
-      workspaceRoot: options.workspaceRoot,
-      projectFolder: options.projectFolder,
-      onProgress: (message) => {
-        process.stderr.write(`[svsch] ${message}\n`);
-      }
+      topModule: options.top
     });
+    results.push({ output, view });
+  }
+
+  // All valid? Write them out.
+  for (const { output, view } of results) {
+    await fs.mkdir(path.dirname(output), { recursive: true });
     const svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
     await fs.writeFile(output, svg, 'utf8');
     process.stdout.write(`${output}\n`);
