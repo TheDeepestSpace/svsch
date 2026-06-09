@@ -142,3 +142,51 @@ export function compareGraphState(
     );
   }
 }
+
+export function compareSvgSnapshot(
+  actualSvg: string,
+  snapshotName: string,
+  snapshotsDir: string,
+  resultsDir: string,
+  updateSnapshots: boolean = false
+) {
+  const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
+
+  if (!fs.existsSync(snapshotPath) || updateSnapshots) {
+    fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
+    fs.writeFileSync(snapshotPath, actualSvg);
+    console.log(`Created or updated baseline SVG: ${snapshotPath}`);
+    return;
+  }
+
+  const expectedSvg = fs.readFileSync(snapshotPath, 'utf8');
+
+  if (actualSvg !== expectedSvg) {
+    fs.mkdirSync(resultsDir, { recursive: true });
+
+    const actualPath = path.join(resultsDir, `${snapshotName}.actual.svg`);
+    const expectedPath = path.join(resultsDir, `${snapshotName}.expected.svg`);
+    const diffPath = path.join(resultsDir, `${snapshotName}.svg.diff.txt`);
+
+    fs.writeFileSync(actualPath, actualSvg);
+    fs.writeFileSync(expectedPath, expectedSvg);
+
+    const diff = diffLines(expectedSvg, actualSvg);
+    let diffText = '';
+    diff.forEach((part) => {
+      const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
+      diffText += part.value.split('\n').map((line) => (line ? prefix + line : line)).join('\n');
+    });
+    fs.writeFileSync(diffPath, diffText);
+
+    throw new Error(
+      `SVG regression failure for "${snapshotName}".\n` +
+      `SVG output has changed from the baseline.\n\n` +
+      `Expected: ${expectedPath}\n` +
+      `Actual:   ${actualPath}\n` +
+      `Diff:     ${diffPath}\n\n` +
+      `Summary of changes:\n${diffText.split('\n').filter((l) => l.startsWith('+') || l.startsWith('-')).slice(0, 20).join('\n')}\n...\n\n` +
+      `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update the baseline.`
+    );
+  }
+}

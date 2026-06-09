@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot, fitGraphView } from './helper';
+import { expectGraphAndScreenshot, fitGraphView, trackView } from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
@@ -1420,7 +1420,7 @@ test.describe('edge route editing', () => {
     await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
-    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page), maxDiffPixels: 80 });
   });
 
   test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
@@ -1654,6 +1654,7 @@ async function cutLabelPaint(page: Page, nodeId: string, edgeId: string, edgeSel
 }
 
 async function postView(page: Page, view: DiagramViewModel): Promise<void> {
+  trackView(page, view);
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',

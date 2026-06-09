@@ -8,7 +8,7 @@ declare global {
 
 let vscodeApi: { postMessage(message: unknown): void } | undefined;
 
-export function getVscodeApi() {
+export function getVscodeApi(): { postMessage(message: unknown): void } {
   if (!vscodeApi) {
     if (typeof window !== 'undefined') {
       vscodeApi = window.acquireVsCodeApi?.() ?? {

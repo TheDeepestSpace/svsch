@@ -2,17 +2,17 @@ import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramSizing, nodePortCenterOffset } from '../../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows } from '../../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
-  interfaceTopHatTop,
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
 import { registerPortTop, registerExtraInputPortTop } from '../../diagram/registerGeometry';
 import { muxInputPortCenterY } from '../../diagram/muxGeometry';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
+import { interfaceInstanceTopHatY, visualHandleGeometry } from '../../diagram/visualHandleGeometry';
 import {
   nodeModportName,
   nodeModportSource,
@@ -220,7 +220,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const unshiftedHeight = Math.max(diagramSizing.gridSize, nodeHeight - shiftY);
     const leftInterfaceCenters = distributedInterfaceSideCenters(leftSidePorts.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
     const rightInterfaceCenters = distributedInterfaceSideCenters(rightSidePorts.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
-    const interfaceTopHatY = interfaceTopHatTop([...leftInterfaceCenters, ...rightInterfaceCenters], topHatHeight);
+    const interfaceTopHatY = interfaceInstanceTopHatY(node, nodeHeight);
     const interfaceTapCenterById = new Map<string, number>();
     leftSidePorts.forEach((port, index) => interfaceTapCenterById.set(port.id, leftInterfaceCenters[index]));
     rightSidePorts.forEach((port, index) => interfaceTapCenterById.set(port.id, rightInterfaceCenters[index]));
@@ -246,10 +246,16 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     ));
     const firstTapCenter = tapCenters[0] ?? nodeHeight / 2;
     const lastTapCenter = tapCenters[tapCenters.length - 1] ?? nodeHeight / 2;
-    const busStyle = {
-      ...nodeStyle,
-      '--svsch-bus-single-y': isArrayComposition || isArrayBreakout ? `${lastTapCenter + diagramSizing.gridSize}px` : `${firstTapCenter}px`
-    } as React.CSSProperties;
+    const singlePortHandle = singlePort ? visualHandleGeometry(node, singlePort.id) : undefined;
+    const singlePortHandleStyle = singlePortHandle
+      ? ({
+        top: singlePortHandle.offset.y,
+        ...(singlePortHandle.side === 'EAST'
+          ? { right: nodeWidth - singlePortHandle.offset.x }
+          : { left: singlePortHandle.offset.x })
+      } as React.CSSProperties)
+      : undefined;
+    const busStyle = { ...nodeStyle } as React.CSSProperties;
     const navigatePortSource = (event: React.MouseEvent, port: DiagramPort) => {
       if (port.source) {
         event.stopPropagation();
@@ -296,21 +302,27 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           />
         </svg>
         {!isInterfaceModport && !isInterfaceInstance && isComposition && singlePort ? (
-          <Handle type="source" id={singlePort?.id} position={Position.Right} />
+          <Handle type="source" id={singlePort?.id} position={Position.Right} style={singlePortHandleStyle} />
         ) : !isInterfaceModport && !isInterfaceInstance && singlePort ? (
-          <Handle type="target" id={singlePort?.id} position={Position.Left} />
+          <Handle type="target" id={singlePort?.id} position={Position.Left} style={singlePortHandleStyle} />
         ) : null}
-        {topPorts.map((port, index) => (
-          <div
-            key={port.id}
-            className="interface-top-port"
-            data-port-id={port.id}
-            style={{ left: `${interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount)}px`, top: `${interfaceTopHatY}px` }}
-          >
-            <Handle type="target" id={port.id} position={Position.Top} />
-            <Handle type="source" id={port.id} position={Position.Top} />
-          </div>
-        ))}
+        {topPorts.map((port, index) => {
+          const handleGeometry = visualHandleGeometry(node, port.id);
+          return (
+            <div
+              key={port.id}
+              className="interface-top-port"
+              data-port-id={port.id}
+              style={{
+                left: `${handleGeometry?.offset.x ?? interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount)}px`,
+                top: `${handleGeometry?.offset.y ?? interfaceTopHatY}px`
+              }}
+            >
+              <Handle type="target" id={port.id} position={Position.Top} />
+              <Handle type="source" id={port.id} position={Position.Top} />
+            </div>
+          );
+        })}
         {bottomPorts.map((port, index) => (
           <div
             key={port.id}
@@ -492,10 +504,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   }
 
   if (node.kind === 'inverter') {
-    const invG = diagramSizing.gridSize;
-    const invBubbleRadius = Math.min(invG / 4, invG / 6);
-    const invGeometryWidth = invG * Math.sqrt(3) / 2 + 2 + invBubbleRadius * 2;
-    const invOutputOffset = nodeWidth - invGeometryWidth;
+    const invOutputOffset = nodeWidth - inverterGeometryWidth();
     return (
       <button
         className="hdl-node hdl-node-inverter"

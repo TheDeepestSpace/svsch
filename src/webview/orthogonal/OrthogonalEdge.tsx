@@ -5,10 +5,11 @@ import {
   useNodes,
   useReactFlow
 } from '@xyflow/react';
-import { HdlPosition, type OrthogonalPoint, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
+import { HdlPosition, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
 import type { DiagramEdge, DiagramPort, PositionedNode } from '../../ir/types';
 import { edgeNetKey } from '../../ir/edgeNet';
 import { diagramSizing } from '../../diagram/constants';
+import { pathFromPoints, type OrthogonalPoint } from '../../core/pathUtils';
 import {
   moveRouteSegment,
   normalizeRoutePoints,
@@ -23,8 +24,20 @@ import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender, type LineJumpHalo } from '../react-flow-line-jumps';
 import { InteractionContext } from '../nodes/shared/context';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
+import { ARRAY_STACK_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import {
+  convergingStackPath,
+  offsetPointsForArrayStackLayer,
+  promotedStackFanoutPath,
+  shortenStackSource,
+  shortenStackTarget,
+  stableFragmentId,
+  stackedLayerEdgeClass,
+  stackedLayerGradientStopClass,
+  type ConvergingStackPath,
+  type PromotedStackFanout
+} from './stackedEdgeGeometry';
 
 interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   onRouteChange?: RouteChangeHandler;
@@ -81,10 +94,6 @@ function routePointsFromFullPoints(points: OrthogonalPoint[]): OrthogonalPoint[]
   return points.slice(1, -1).map((point) => ({ ...point }));
 }
 
-function pathFromPoints(points: OrthogonalPoint[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-}
-
 function routeControlPoint(points: OrthogonalPoint[]): OrthogonalPoint {
   if (points.length < 2) {
     return points[0] ?? { x: 0, y: 0 };
@@ -105,160 +114,6 @@ function routeControlPoint(points: OrthogonalPoint[]): OrthogonalPoint {
   }
 
   return midpoint(bestStart, bestEnd);
-}
-
-function offsetPoints(points: OrthogonalPoint[], dx: number, dy: number): OrthogonalPoint[] {
-  return points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
-}
-
-function shortenStackTarget(points: OrthogonalPoint[], amount: number, targetPosition: HdlPosition): OrthogonalPoint[] {
-  if (points.length === 0 || amount === 0) return points;
-  const next = points.map((point) => ({ ...point }));
-  const last = next[next.length - 1];
-  if (targetPosition === HdlPosition.Left) last.x -= amount;
-  else if (targetPosition === HdlPosition.Right) last.x += amount;
-  else if (targetPosition === HdlPosition.Top) last.y -= amount;
-  else if (targetPosition === HdlPosition.Bottom) last.y += amount;
-  return next;
-}
-
-function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId): OrthogonalPoint[] {
-  const layer = ARRAY_STACK_LAYERS[layerId];
-  return offsetPoints(points, layer.dx, layer.dy);
-}
-
-function shortenStackSource(points: OrthogonalPoint[], amount: number, sourcePosition: HdlPosition): OrthogonalPoint[] {
-  if (points.length === 0 || amount === 0) return points;
-  const next = points.map((point) => ({ ...point }));
-  const first = next[0];
-  if (sourcePosition === HdlPosition.Left) first.x -= amount;
-  else if (sourcePosition === HdlPosition.Right) first.x += amount;
-  else if (sourcePosition === HdlPosition.Top) first.y -= amount;
-  else if (sourcePosition === HdlPosition.Bottom) first.y += amount;
-  return next;
-}
-
-interface PromotedStackFanout {
-  trunk: string;
-  bar: string;
-  barStart: OrthogonalPoint;
-  barEnd: OrthogonalPoint;
-  branches: Array<{ layerId: ArrayStackLayerId; path: string }>;
-}
-
-interface ConvergingStackPath {
-  layerId: ArrayStackLayerId;
-  path: string;
-  start: OrthogonalPoint;
-  end: OrthogonalPoint;
-}
-
-function stackedLayerEdgeClass(layerId: ArrayStackLayerId): string {
-  if (layerId === 'front') return 'svsch-edge-stacked-front';
-  if (layerId === 'back') return 'svsch-edge-stacked-back';
-  return 'svsch-edge-stacked';
-}
-
-function stackedLayerGradientStopClass(layerId: ArrayStackLayerId): string {
-  if (layerId === 'front') return 'svsch-stack-gradient-front-stop';
-  if (layerId === 'back') return 'svsch-stack-gradient-back-stop';
-  return 'svsch-stack-gradient-middle-stop';
-}
-
-function stableFragmentId(value: string): string {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = Math.imul(hash, 31) + value.charCodeAt(index);
-  }
-  return (hash >>> 0).toString(36);
-}
-
-function dropFinalApproachStub(points: OrthogonalPoint[], targetPosition: HdlPosition): OrthogonalPoint[] {
-  if (points.length < 3) return points;
-  const last = points[points.length - 1];
-  const penult = points[points.length - 2];
-  // For Left/Right targets the wire approaches horizontally; strip any trailing vertical
-  // segment (same x) so the wire stays as a clean horizontal line at its own y level.
-  if (
-    (targetPosition === HdlPosition.Left || targetPosition === HdlPosition.Right) &&
-    Math.abs(last.x - penult.x) < 0.5
-  ) {
-    return points.slice(0, -1);
-  }
-  // For Top/Bottom targets the wire approaches vertically; strip trailing horizontal stub.
-  if (
-    (targetPosition === HdlPosition.Top || targetPosition === HdlPosition.Bottom) &&
-    Math.abs(last.y - penult.y) < 0.5
-  ) {
-    return points.slice(0, -1);
-  }
-  return points;
-}
-
-function convergingStackPath(points: OrthogonalPoint[], layerId: ArrayStackLayerId, sourcePosition: HdlPosition, targetPosition: HdlPosition): ConvergingStackPath | undefined {
-  if (points.length < 2) return undefined;
-
-  const offsetted = offsetPointsForArrayStackLayer(points, layerId);
-  const rawTarget = points[points.length - 1];
-  const last = offsetted[offsetted.length - 1];
-
-  // Pin the target to the mux face (restore the parallel-to-wire axis of the offset)
-  // so all 3 wires arrive at the same x (Left/Right) or same y (Top/Bottom).
-  if (targetPosition === HdlPosition.Left || targetPosition === HdlPosition.Right) {
-    last.x = rawTarget.x;
-  } else {
-    last.y = rawTarget.y;
-  }
-
-  // Drop the trailing vertical (or horizontal) stub that makeOrthogonal would add when
-  // source.y != target.y — leaving each wire as a clean horizontal run at its own y.
-  const layerPoints = shortenStackSource(
-    dropFinalApproachStub(makeOrthogonal(points).map((p, i) => i === makeOrthogonal(points).length - 1 ? last : offsetPointsForArrayStackLayer([p], layerId)[0]), targetPosition),
-    arrayStackLayerTrim(layerId),
-    sourcePosition
-  );
-  const start = layerPoints[0];
-  const end = layerPoints[layerPoints.length - 1];
-
-  if (!start || !end) return undefined;
-
-  return {
-    layerId,
-    path: pathFromPoints(layerPoints),
-    start,
-    end
-  };
-}
-
-function promotedStackFanoutPath(points: OrthogonalPoint[], targetPosition: HdlPosition, splitDistance: number): PromotedStackFanout | undefined {
-  if (points.length < 2) return undefined;
-
-  const target = points[points.length - 1];
-  let split: OrthogonalPoint;
-
-  if (targetPosition === HdlPosition.Left) split = { x: target.x - splitDistance, y: target.y };
-  else if (targetPosition === HdlPosition.Right) split = { x: target.x + splitDistance, y: target.y };
-  else if (targetPosition === HdlPosition.Top) split = { x: target.x, y: target.y - splitDistance };
-  else split = { x: target.x, y: target.y + splitDistance };
-
-  const trunkPoints = makeOrthogonal([...points.slice(0, -1), split]);
-  const branchStarts = ARRAY_STACK_LEAD_LAYERS.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
-  const branchTargets = ARRAY_STACK_LEAD_LAYERS.map((layer) => shortenStackTarget(
-    [{ x: target.x + layer.dx, y: target.y + layer.dy }],
-    arrayStackLayerTrim(layer.id),
-    targetPosition
-  )[0]);
-
-  return {
-    trunk: pathFromPoints(trunkPoints),
-    barStart: branchStarts[0],
-    barEnd: branchStarts[branchStarts.length - 1],
-    bar: `M ${branchStarts[0].x} ${branchStarts[0].y} L ${branchStarts[branchStarts.length - 1].x} ${branchStarts[branchStarts.length - 1].y}`,
-    branches: branchTargets.map((branchTarget, index) => ({
-      layerId: ARRAY_STACK_LEAD_LAYERS[index].id,
-      path: `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`
-    }))
-  };
 }
 
 function nodeObstacle(node: any): NodeObstacle | undefined {

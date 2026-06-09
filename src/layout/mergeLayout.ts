@@ -3,7 +3,7 @@ import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole }
 import { edgeNetKey, endpointKey } from '../ir/edgeNet';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
 import {
   interfaceSidePortCenters,
   interfaceTopHatHeight,
@@ -16,7 +16,7 @@ interface AutoLayoutResult {
   routes: Map<string, Array<{ x: number; y: number }>>;
 }
 
-type ElkPortSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+export type ElkPortSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
 interface ElkDiagramNode {
   id: string;
@@ -37,7 +37,7 @@ interface ElkDiagramNode {
 }
 
 export async function buildViewModel(graph: DesignGraph, moduleName: string, layout: SavedLayout): Promise<DiagramViewModel> {
-  const designModule = graph.modules[moduleName] ?? graph.modules[graph.rootModules[0]];
+  const designModule = graph.modules[moduleName];
   if (!designModule) {
     return {
       moduleName,
@@ -317,7 +317,7 @@ function makeCutStubEdge({
   };
 }
 
-function elkSideToHandleSide(side: ElkPortSide): 'left' | 'right' | 'top' | 'bottom' {
+export function elkSideToHandleSide(side: ElkPortSide): 'left' | 'right' | 'top' | 'bottom' {
   if (side === 'WEST') return 'left';
   if (side === 'EAST') return 'right';
   if (side === 'NORTH') return 'top';
@@ -565,7 +565,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       if (isSelect) {
         side = 'NORTH';
         portX = width / 2;
-        portY = 0;
+        portY = diagramSizing.gridSize;
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
@@ -581,7 +581,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
       if (portIndex >= 0) {
         side = 'NORTH';
         portX = width * (portIndex + 1) / (topPorts.length + 1);
-        portY = 0;
+        portY = diagramSizing.gridSize;
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
@@ -602,7 +602,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     } else if (node.kind === 'inverter') {
       if (port.direction === 'output') {
         side = 'EAST';
-        portX = width;
+        portX = inverterGeometryWidth();
       } else {
         side = 'WEST';
         portX = 0;
@@ -935,7 +935,26 @@ function genericNodePortTop(node: DiagramNode): number {
   return diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * instanceParameterRows(node);
 }
 
-function renderedPortOffset(node: DiagramNode, portId?: string): { x: number; y: number } | undefined {
+export function renderedPortGeometry(
+  node: DiagramNode,
+  portId?: string,
+  includeLeadMargins = false
+): { offset: { x: number; y: number }; side: ElkPortSide } | undefined {
+  const elkNode = elkNodeForDiagramNode(node, includeLeadMargins);
+  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
+  if (!port || port.x === undefined || port.y === undefined) {
+    return undefined;
+  }
+  return {
+    offset: {
+      x: port.x - elkNode.layoutOffset.x,
+      y: port.y - elkNode.layoutOffset.y
+    },
+    side: (port.properties['org.eclipse.elk.port.side'] ?? 'EAST') as ElkPortSide
+  };
+}
+
+export function renderedPortOffset(node: DiagramNode, portId?: string): { x: number; y: number } | undefined {
   const elkNode = elkNodeForDiagramNode(node, false);
   const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
   if (!port || port.x === undefined || port.y === undefined) {
@@ -1270,7 +1289,7 @@ function segmentIntersectsRectInterior(
   return false;
 }
 
-function renderedLeadPoint(
+export function renderedLeadPoint(
   nodeId: string,
   portId: string | undefined,
   nodesById: Map<string, DiagramNode>,

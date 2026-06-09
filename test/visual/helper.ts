@@ -7,7 +7,23 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
-import { captureGraphState, compareGraphState } from '../graphRegression';
+import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
+import { renderSvg } from '../../src/cli/svgRenderer';
+
+const reactFlowCss = fs.readFileSync(
+  require.resolve('@xyflow/react/dist/style.css'),
+  'utf8'
+);
+const extensionCss = fs.readFileSync(
+  path.resolve(__dirname, '../../src/webview/styles.css'),
+  'utf8'
+);
+
+const currentPageViews = new WeakMap<Page, DiagramViewModel>();
+
+export function trackView(page: Page, view: DiagramViewModel): void {
+  currentPageViews.set(page, view);
+}
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
@@ -17,25 +33,28 @@ export async function expectGraphAndScreenshot(
   options?: any
 ) {
   const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
-  
+
   // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
   const jsonName = name.endsWith('.png') ? name.replace('.png', '.json') : `${name}.json`;
   const snapshotPath = test.info().snapshotPath(jsonName);
   const snapshotsDir = path.dirname(snapshotPath);
   const baseName = path.basename(snapshotPath, '.json');
-  
-  // 1. Graph Regression
-  const graphState = await captureGraphState(page);
-  
-  compareGraphState(
-    graphState,
-    baseName,
-    snapshotsDir,
-    resultsDir,
-    !!process.env.UPDATE_SNAPSHOTS
-  );
+  const updateSnapshots = !!process.env.UPDATE_SNAPSHOTS || test.info().config.updateSnapshots === 'all' || test.info().config.updateSnapshots === 'missing';
 
-  // 2. Image Regression
+  // 1. Graph Regression (JSON)
+  const graphState = await captureGraphState(page);
+  compareGraphState(graphState, baseName, snapshotsDir, resultsDir, updateSnapshots);
+
+  // 2. SVG Regression — generated from the DiagramViewModel, platform-independent.
+  //    Stored without the browser/platform suffix so one file covers all platforms.
+  const view = currentPageViews.get(page);
+  if (view) {
+    const svgBaseName = name.endsWith('.png') ? name.slice(0, -4) : name;
+    const svg = renderSvg(view, { theme: 'dark', reactFlowCss, extensionCss });
+    compareSvgSnapshot(svg, svgBaseName, snapshotsDir, resultsDir, updateSnapshots);
+  }
+
+  // 3. Image Regression (PNG)
   await page.evaluate(() => document.fonts.ready);
   await expect(page).toHaveScreenshot(name, options);
 }
@@ -68,6 +87,7 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
 }
 
 export async function openView(page: Page, view: DiagramViewModel): Promise<void> {
+  currentPageViews.set(page, view);
   await page.goto('/');
   await installStableTheme(page);
   // Wait a bit for React to initialize and add the event listener
@@ -76,6 +96,7 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 }
 
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
+  currentPageViews.set(page, view);
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',

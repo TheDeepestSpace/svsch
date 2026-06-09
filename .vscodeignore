@@ -2,6 +2,16 @@
 .devcontainer/**
 .github/**
 .svsch/**
+.agents/**
+.claude/**
+.codex/**
+.vscode-test/**
+playwright-report/**
+test-results/**
+patches/**
+plans/**
+Dockerfile
+vscode-versions.json
 src/**
 test/**
 scripts/**
@@ -14,6 +24,10 @@ cucumber.js
 **/*.ts
 **/*.map
 !dist/**
+dist/cli.js
+dist/cli.js.map
+dist/elk.bundled-*.js
+dist/elk.bundled-*.js.map
 !media/**
 node_modules/.bin/**
 node_modules/*/.github/**

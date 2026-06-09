@@ -68,6 +68,57 @@ export function handlePositionForSide(side: 'left' | 'right' | 'top' | 'bottom')
   return Position.Bottom;
 }
 
+export function NetLabelWirePaths({
+  handleSide,
+  edgeStyle,
+  align,
+  isSourceStacked = false,
+  width,
+  height
+}: {
+  handleSide: 'left' | 'right' | 'top' | 'bottom';
+  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean };
+  align?: 'start' | 'end';
+  isSourceStacked?: boolean;
+  width: number;
+  height: number;
+}): React.ReactElement {
+  const isInterface = edgeStyle?.aggregate === 'interface';
+  const isStruct = edgeStyle?.aggregate === 'struct';
+  const isStacked = isSourceStacked;
+
+  const horizontalPath = (handleSide === 'top' || handleSide === 'bottom')
+    ? (align === 'end' ? `M ${width / 2} ${height / 2} H ${width}` : `M 0 ${height / 2} H ${width / 2}`)
+    : `M 0 ${height / 2} H ${width}`;
+  const verticalPath = handleSide === 'top'
+    ? `M ${width / 2} ${height / 2} V 0`
+    : handleSide === 'bottom'
+      ? `M ${width / 2} ${height / 2} V ${height}`
+      : '';
+
+  const renderPath = (className: string, transform?: string) => (
+    <g transform={transform}>
+      <path className={className} d={horizontalPath} />
+      {verticalPath && <path className={className} d={verticalPath} />}
+    </g>
+  );
+
+  return (
+    <>
+      {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
+      {isStacked ? (
+        <>
+          {renderPath('svsch-edge svsch-edge-stacked-back', 'translate(4, 4)')}
+          {renderPath('svsch-edge svsch-edge-stacked')}
+          {renderPath('svsch-edge svsch-edge-stacked-front', 'translate(-4, -4)')}
+        </>
+      ) : (
+        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : ''}`} d={horizontalPath + verticalPath} />
+      )}
+    </>
+  );
+}
+
 export function NetLabelWire({
   node,
   handleSide,
@@ -87,22 +138,6 @@ export function NetLabelWire({
 
   const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
 
-  const horizontalPath = (handleSide === 'top' || handleSide === 'bottom')
-    ? (align === 'end' ? `M ${nodeWidth / 2} ${nodeHeight / 2} H ${nodeWidth}` : `M 0 ${nodeHeight / 2} H ${nodeWidth / 2}`)
-    : `M 0 ${nodeHeight / 2} H ${nodeWidth}`;
-  const verticalPath = handleSide === 'top'
-    ? `M ${nodeWidth / 2} ${nodeHeight / 2} V 0`
-    : handleSide === 'bottom'
-      ? `M ${nodeWidth / 2} ${nodeHeight / 2} V ${nodeHeight}`
-      : '';
-
-  const renderPath = (className: string, transform?: string) => (
-    <g transform={transform}>
-      <path className={className} d={horizontalPath} />
-      {verticalPath && <path className={className} d={verticalPath} />}
-    </g>
-  );
-
   const classes = [
     'hdl-net-label-wire-svg',
     isInterface ? 'svsch-edge-interface' : '',
@@ -112,18 +147,14 @@ export function NetLabelWire({
 
   return (
     <svg className={classes} viewBox={`0 0 ${nodeWidth} ${nodeHeight}`} style={{ overflow: 'visible' }}>
-      {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
-
-
-      {isStacked ? (
-        <>
-          {renderPath('svsch-edge svsch-edge-stacked-back', 'translate(4, 4)')}
-          {renderPath('svsch-edge svsch-edge-stacked')}
-          {renderPath('svsch-edge svsch-edge-stacked-front', 'translate(-4, -4)')}
-        </>
-      ) : (
-        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : ''}`} d={horizontalPath + verticalPath} />
-      )}
+      <NetLabelWirePaths
+        handleSide={handleSide}
+        edgeStyle={edgeStyle}
+        align={align}
+        isSourceStacked={isSourceStacked}
+        width={nodeWidth}
+        height={nodeHeight}
+      />
     </svg>
   );
 }

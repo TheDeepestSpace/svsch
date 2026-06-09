@@ -1,0 +1,330 @@
+Feature: Command Line Interface
+
+  Scenario: Help command output
+    When I run the CLI command:
+      """
+      svsch --help
+      """
+    Then the CLI stdout should be exactly:
+      """
+      SVSCH CLI
+
+      Usage:
+        svsch render <file.sv> [--output <file.svg>] [--top <module>] [--layout <json>] [--no-layout]
+        svsch render "<glob>" --output-dir <dir>
+
+      Options:
+        -o, --output <file>       Write a single SVG to this path
+            --output-dir <dir>    Write one SVG per input into this directory
+            --top <module>        Render a specific module
+            --layout <json>       Use an explicit saved layout file
+            --no-layout           Ignore saved layout and run auto-layout
+            --theme <dark|light>  Fixed SVG color theme (default: dark)
+            --workspace <dir>     Workspace root used for parser cache and relative paths
+            --project-folder <d>  Project folder relative to workspace
+      """
+    And the CLI stderr should be empty
+
+  Scenario: Basic schematic rendering
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I run the CLI command:
+      """
+      svsch render top.sv --output top.svg --no-layout
+      """
+    Then the CLI SVG should contain "port:top:a"
+    And the CLI SVG should contain "port:top:y"
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      top.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Render with manual layout
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I position the port node "a" at (120, 468)
+    And I have saved the layout
+    And I run the CLI command:
+      """
+      svsch render top.sv --output top_with_layout.svg
+      """
+    Then the CLI SVG should contain "port:top:a"
+    And the CLI SVG should contain "transform=\"translate(120 468)\""
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      top_with_layout.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Render without manual layout (--no-layout)
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I position the port node "a" at (120, 468)
+    And I have saved the layout
+    And I run the CLI command:
+      """
+      svsch render top.sv --output top_no_layout.svg --no-layout
+      """
+    Then the CLI SVG should contain "port:top:a"
+    And the CLI SVG should not contain "transform=\"translate(120 468)\""
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      top_no_layout.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Render with multiple files and dependencies
+    Given the following SystemVerilog files:
+      | file   | content                                                           |
+      | sub.sv | module sub(input a, output y); assign y = ~a; endmodule           |
+      | top.sv | module top(input i, output o); sub u_sub(.a(i), .y(o)); endmodule |
+    When I run the CLI command:
+      """
+      svsch render top.sv --output multi.svg --no-layout
+      """
+    Then the CLI SVG should contain "instance:top:u_sub"
+    And the CLI SVG should contain "sub"
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      multi.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario Outline: Output file name
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I run the CLI command:
+      """
+      <command>
+      """
+    Then the CLI stdout should be exactly (workspace-relative):
+      """
+      <expected_file>
+      """
+    And a file named "<expected_file>" should exist in the workspace
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+    Examples:
+      | command                            | expected_file |
+      | svsch render top.sv --no-layout    | top.svg       |
+      | svsch render top.sv -o custom.svg  | custom.svg    |
+      | svsch render top.sv --output o.svg | o.svg         |
+
+  Scenario: Batch rendering to a directory
+    Given the following SystemVerilog files:
+      | file   | content                                                 |
+      | a.sv   | module a(input i, output o); assign o = i; endmodule    |
+      | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
+      | decoy.txt | this is not an HDL file                               |
+    When I run the CLI command:
+      """
+      svsch render "*.sv" --output-dir out --no-layout
+      """
+    Then a file named "a.svg" should exist in directory "out"
+    And a file named "b.svg" should exist in directory "out"
+    And a file named "decoy.svg" should not exist in directory "out"
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      out/a.svg
+      out/b.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Selecting a top module
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module first(input a, output y); assign y = a; endmodule
+      module second(input b, output z); assign z = ~b; endmodule
+      """
+    When I run the CLI command:
+      """
+      svsch render top.sv --top second --output second.svg --no-layout
+      """
+    Then the CLI SVG should contain "port:second:b"
+    And the CLI SVG should not contain "port:first:a"
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      second.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Using an explicit layout file
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I position the port node "a" at (768, 900)
+    And I have saved the layout to "my_layout.json"
+    And I run the CLI command:
+      """
+      svsch render top.sv --layout my_layout.json --output explicit.svg
+      """
+    Then the CLI SVG should contain "port:top:a"
+    And the CLI SVG should contain "transform=\"translate(768 900)\""
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      explicit.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario Outline: SVG themes
+    Given I have opened "top.sv" for editing with:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I run the CLI command:
+      """
+      svsch render top.sv --theme <theme> --output theme.svg --no-layout
+      """
+    Then the CLI SVG should contain "<bg_color>"
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+    Examples:
+      | theme | bg_color                           |
+      | dark  | --vscode-editor-background: #1e1e1e |
+      | light | --vscode-editor-background: #ffffff |
+
+  Scenario: Overriding Workspace root (affects layout discovery)
+    Given the following SystemVerilog files:
+      | file       | content                                               |
+      | src/top.sv | module top(input a, output y); assign y = a; endmodule |
+    When I select module "top" from the dropdown
+    And I manually position node "port:top:a" at (504, 612) in module "top"
+    And I have saved the layout to "src/.svsch/layout.json"
+    And I run the CLI command:
+      """
+      svsch render src/top.sv --workspace src --output out.svg
+      """
+    Then the CLI stderr should be exactly:
+      """
+      [svsch] Using custom Workspace root: src
+      [svsch] Elaborating project...
+      [svsch] Elaborating project...
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+    And the CLI SVG should contain "transform=\"translate(504 612)\""
+
+  Scenario: Specifying Project folder (affects source collection)
+    Given the following SystemVerilog files:
+      | file         | content                                                              |
+      | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
+      | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
+    When I run the CLI command:
+      """
+      svsch render top.sv --project-folder . --output out.svg --no-layout
+      """
+    Then the CLI stderr should contain "[svsch] Using custom Project folder: ."
+    And the CLI stderr should contain "[svsch] Finalizing..."
+    And the CLI SVG should contain "instance:top:u_child"
+    And the CLI SVG should contain "child"
+
+  Scenario: Single output with directory glob and top module
+    Given the following SystemVerilog files:
+      | file   | content                                                 |
+      | a.sv   | module a(input i, output o); assign o = i; endmodule    |
+      | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
+    When I run the CLI command:
+      """
+      svsch render "*.sv" --top b --output single_b.svg --no-layout
+      """
+    Then a file named "single_b.svg" should exist in the workspace
+    And a file named "a.svg" should not exist in the workspace
+    And a file named "b.svg" should not exist in the workspace
+    And the CLI stdout should be exactly (workspace-relative):
+      """
+      single_b.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      """
+
+  Scenario: Project folder isolation
+    Given the following SystemVerilog files:
+      | file         | content                                                              |
+      | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
+      | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
+    And I record the workspace directory state
+    When I run the CLI command:
+      """
+      svsch render top.sv --project-folder sub --output out.svg --no-layout
+      """
+    Then the CLI stderr should be exactly:
+      """
+      [svsch] Using custom Project folder: sub
+      [svsch] Elaborating project...
+      [svsch] Elaborating project...
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      [svsch] No modules from "top.sv" were found in the project graph. Check --project-folder or --workspace.
+      """
+    And the workspace directory state should remain unchanged

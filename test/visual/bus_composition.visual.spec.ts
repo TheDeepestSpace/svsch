@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { expectGraphAndScreenshot } from './helper';
+import { expectGraphAndScreenshot, trackView } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DiagramViewModel } from '../../src/ir/types';
@@ -113,6 +113,7 @@ test.describe('Bus Composition Visual Rendering', () => {
 
 async function openFixture(page: Page, fixtureName: string, layoutMode: 'auto' = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
+  trackView(page, view);
 
   await page.goto('/');
   // Wait a bit for React to initialize and add the event listener

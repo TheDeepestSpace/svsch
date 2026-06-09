@@ -856,14 +856,6 @@ text {
   left: calc(var(--svsch-grid) * 1.5);
 }
 
-.hdl-bus-node.hdl-bus-composition.hdl-bus-array-composition > .react-flow__handle-right {
-  right: calc(var(--svsch-grid) * 1.5);
-}
-
-.hdl-bus-node.hdl-bus-breakout.hdl-bus-array-breakout > .react-flow__handle-left {
-  left: calc(var(--svsch-grid) * 2.5);
-}
-
 .hdl-bus-node.hdl-bus-array-composition .bus-pipe::before,
 .hdl-bus-node.hdl-bus-array-breakout .bus-pipe::before {
   background: linear-gradient(to right, color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background)), color-mix(in srgb, var(--vscode-editor-foreground) 50%, var(--vscode-editor-background)));
@@ -1182,16 +1174,6 @@ text {
   min-width: 0;
   pointer-events: all;
   width: 0;
-}
-
-.hdl-bus-node.hdl-bus-breakout > .react-flow__handle-left {
-  left: calc(var(--svsch-grid) * 2);
-  top: var(--svsch-bus-single-y);
-}
-
-.hdl-bus-node.hdl-bus-composition > .react-flow__handle-right {
-  right: calc(var(--svsch-grid) * 2);
-  top: var(--svsch-bus-single-y);
 }
 
 .hdl-bus-node.hdl-bus-breakout .bus-tap .react-flow__handle-right {

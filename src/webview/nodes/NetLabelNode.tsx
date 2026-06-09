@@ -84,12 +84,7 @@ export function NetLabelNode({
       {cutNet && <Handle type={handleType} id="cut" position={handlePosition} />}
       <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} />
       {cutNet?.isSourceStacked && (
-        <ArrayStackLeads
-          side={handleSide}
-          width={nodeWidth}
-          y={nodeHeight / 2}
-          trimSink={cutNet?.role === 'source'}
-        />
+        <ArrayStackLeads side={handleSide} width={nodeWidth} y={nodeHeight / 2} trimSink={cutNet?.role === 'source'} />
       )}
       {editing ? (
         <input

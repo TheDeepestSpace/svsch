@@ -5,6 +5,9 @@
   "version": "0.0.1",
   "publisher": "svsch",
   "license": "AGPL-3.0",
+  "bin": {
+    "svsch": "./dist/cli.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/TheDeepestSpace/vscode-svsch"
@@ -88,18 +91,20 @@
   },
   "scripts": {
     "clean": "rm -rf media dist node_modules/.vite src/parser/backend_cpp/build",
-    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog",
+    "build": "npm run compile",
+    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
+    "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
     "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
-    "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json",
+    "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
     "test": "vitest run",
     "test:backend": "export PATH=$PATH:$(pwd)/dist/surelog/bin && mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && cmake --build . --target svsch_test && ./svsch_test",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
-    "postinstall": "node scripts/install-surelog.js || true && patch-package",
+    "prepare": "node scripts/install-surelog.js || true && patch-package",
     "test:bdd": "./scripts/test-bdd.sh",
     "test:system": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts",
     "test:system:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts --update-snapshots",
