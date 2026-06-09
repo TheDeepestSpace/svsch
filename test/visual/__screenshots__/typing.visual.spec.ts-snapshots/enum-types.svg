@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3194,7 +3200,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:enum_types:IDLE:IDLE" data-node-kind="literal" transform="translate(96 132)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
-<rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="119" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="60" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>IDLE</tspan><tspan class="svsch-type-label svsch-literal-type-label svsch-svg-link" dx="4">state_t</tspan></text><line class="svsch-svg-link-underline svsch-literal-type-link-underline" x1="54.157" x2="97.12299999999999" y1="18.137999999999998" y2="18.137999999999998"></line>
+<rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="119" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="60" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>IDLE</tspan><tspan class="svsch-type-label svsch-literal-type-label svsch-svg-link" dx="4">state_t</tspan></text><line class="svsch-svg-link-underline svsch-literal-type-link-underline" x1="54" x2="97" y1="18" y2="18"></line>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:enum_types:current_state" data-node-kind="register" transform="translate(432 24)">

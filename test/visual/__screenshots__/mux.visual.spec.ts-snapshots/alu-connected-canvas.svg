@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3192,7 +3198,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-alu" data-node-id="alu:alu_connected:y:expr" data-node-kind="alu" transform="translate(360 24)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<path class="svsch-node-shape hdl-node-alu node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62.400000000000006" y="48" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700">+</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
+<path class="svsch-node-shape hdl-node-alu node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700">+</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:alu_connected:a" data-node-kind="port" transform="translate(24 36)">

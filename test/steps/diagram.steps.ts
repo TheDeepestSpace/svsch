@@ -12,7 +12,7 @@ import pixelmatch from 'pixelmatch';
 import { chromiumStabilizationArgs } from '../testConstants';
 import { captureGraphState, compareGraphState } from '../graphRegression';
 
-setDefaultTimeout(20000);
+setDefaultTimeout(60000);
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);

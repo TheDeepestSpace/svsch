@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3193,7 +3199,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-bus-node hdl-bus-breakout" data-node-id="bus:bus_three_taps:instr" data-node-kind="bus" transform="translate(384 24)">
 <svg class="hdl-node-svg" width="192" height="144" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="120" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:instr_6:0_"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="192" y2="24"></line><rect x="66" y="16" width="57.2" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_6:0_" x="76" y="24" dominant-baseline="middle">[6:0]</text></g><g class="svsch-bus-tap" data-port-id="out:instr_11:7_"><line class="svsch-bus-tap-line" x1="54" y1="72" x2="192" y2="72"></line><rect x="66" y="64" width="64.64" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_11:7_" x="76" y="72" dominant-baseline="middle">[11:7]</text></g><g class="svsch-bus-tap" data-port-id="out:instr_10:5_"><line class="svsch-bus-tap-line" x1="54" y1="120" x2="192" y2="120"></line><rect x="66" y="112" width="64.64" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_10:5_" x="76" y="120" dominant-baseline="middle">[10:5]</text></g>
+<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="120" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:instr_6:0_"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="192" y2="24"></line><rect x="66" y="16" width="57" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_6:0_" x="76" y="24" dominant-baseline="middle">[6:0]</text></g><g class="svsch-bus-tap" data-port-id="out:instr_11:7_"><line class="svsch-bus-tap-line" x1="54" y1="72" x2="192" y2="72"></line><rect x="66" y="64" width="65" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_11:7_" x="76" y="72" dominant-baseline="middle">[11:7]</text></g><g class="svsch-bus-tap" data-port-id="out:instr_10:5_"><line class="svsch-bus-tap-line" x1="54" y1="120" x2="192" y2="120"></line><rect x="66" y="112" width="65" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:instr_10:5_" x="76" y="120" dominant-baseline="middle">[10:5]</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:bus_three_taps:instr" data-node-kind="port" transform="translate(24 36)">

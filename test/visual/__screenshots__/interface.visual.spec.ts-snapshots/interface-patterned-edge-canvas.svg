@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3205,7 +3211,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-bus-node hdl-interface-node hdl-interface-instance hdl-bus-breakout" data-node-id="interface:interface_modport:link" data-node-kind="interface" transform="translate(432 96)">
 <svg class="hdl-node-svg" width="192" height="180" aria-hidden="true">
-<g class="hdl-interface-skin hdl-interface-skin-with-tophat"><path class="hdl-interface-skin-body" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><path class="hdl-interface-skin-selection" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><text class="svsch-node-title svsch-interface-instance-title" x="56.49" y="144" text-anchor="start" dominant-baseline="middle">link</text><text class="svsch-type-label svsch-interface-type-label svsch-svg-link" x="85.29" y="144" dominant-baseline="middle">simple_if</text><line class="svsch-svg-link-underline svsch-interface-type-link-underline" x1="85.29" x2="129.84" y1="149.58" y2="149.58"></line><text class="svsch-interface-side-label svsch-interface-side-left svsch-interface-side-modport-label svsch-svg-link" data-port-id="in:master" x="18" y="144" dominant-baseline="middle">master</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="18" x2="57.6" y1="151.44" y2="151.44"></line><text class="svsch-interface-side-label svsch-interface-side-right svsch-interface-side-modport-label svsch-svg-link" data-port-id="out:slave" x="174" y="144" text-anchor="end" dominant-baseline="middle">slave</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="141" x2="174" y1="151.44" y2="151.44"></line><text class="svsch-interface-port-label svsch-interface-top-label" data-port-id="in:clk" x="96" y="120" text-anchor="middle" dominant-baseline="middle">clk</text></g>
+<g class="hdl-interface-skin hdl-interface-skin-with-tophat"><path class="hdl-interface-skin-body" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><path class="hdl-interface-skin-selection" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><text class="svsch-node-title svsch-interface-instance-title" x="56" y="144" text-anchor="start" dominant-baseline="middle">link</text><text class="svsch-type-label svsch-interface-type-label svsch-svg-link" x="85" y="144" dominant-baseline="middle">simple_if</text><line class="svsch-svg-link-underline svsch-interface-type-link-underline" x1="85" x2="129.55" y1="149.58" y2="149.58"></line><text class="svsch-interface-side-label svsch-interface-side-left svsch-interface-side-modport-label svsch-svg-link" data-port-id="in:master" x="18" y="144" dominant-baseline="middle">master</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="18" x2="57.6" y1="151.44" y2="151.44"></line><text class="svsch-interface-side-label svsch-interface-side-right svsch-interface-side-modport-label svsch-svg-link" data-port-id="out:slave" x="174" y="144" text-anchor="end" dominant-baseline="middle">slave</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="141" x2="174" y1="151.44" y2="151.44"></line><text class="svsch-interface-port-label svsch-interface-top-label" data-port-id="in:clk" x="96" y="120" text-anchor="middle" dominant-baseline="middle">clk</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:interface_modport:clk" data-node-kind="port" transform="translate(96 36)">

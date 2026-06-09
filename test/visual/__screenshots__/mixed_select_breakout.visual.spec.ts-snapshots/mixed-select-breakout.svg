@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3196,7 +3202,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-bus-node hdl-bus-breakout" data-node-id="bus:mixed_select_breakout:data_i" data-node-kind="bus" transform="translate(408 264)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="24" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:data_i_7:0_"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="192" y2="24"></line><rect x="66" y="16" width="57.2" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:data_i_7:0_" x="76" y="24" dominant-baseline="middle">[7:0]</text></g>
+<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="24" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:data_i_7:0_"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="192" y2="24"></line><rect x="66" y="16" width="57" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:data_i_7:0_" x="76" y="24" dominant-baseline="middle">[7:0]</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:mixed_select_breakout:P_WIDTH:P_WIDTH" data-node-kind="literal" transform="translate(48 36)">
@@ -3226,7 +3232,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:mixed_select_breakout:variable_out" data-node-kind="port" transform="translate(816 180)">
 <svg class="hdl-node-svg" width="264" height="24" aria-hidden="true">
-<g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 264 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 264 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="132" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">variable_out</tspan><tspan class="svsch-port-width-suffix"> [<tspan class="svsch-param-token">P_WIDTH</tspan>-1:0]</tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-port-type-link-underline" x1="143.16" x2="190.032" y1="18.696" y2="18.696"></line></g>
+<g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 264 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 264 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="132" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">variable_out</tspan><tspan class="svsch-port-width-suffix"> [<tspan class="svsch-param-token">P_WIDTH</tspan>-1:0]</tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-port-type-link-underline" x1="143" x2="190" y1="19" y2="19"></line></g>
 </svg>
 </g>
 </g>

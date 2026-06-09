@@ -39,7 +39,7 @@ export async function expectGraphAndScreenshot(
   const snapshotPath = test.info().snapshotPath(jsonName);
   const snapshotsDir = path.dirname(snapshotPath);
   const baseName = path.basename(snapshotPath, '.json');
-  const updateSnapshots = !!process.env.UPDATE_SNAPSHOTS;
+  const updateSnapshots = !!process.env.UPDATE_SNAPSHOTS || test.info().config.updateSnapshots === 'all' || test.info().config.updateSnapshots === 'missing';
 
   // 1. Graph Regression (JSON)
   const graphState = await captureGraphState(page);

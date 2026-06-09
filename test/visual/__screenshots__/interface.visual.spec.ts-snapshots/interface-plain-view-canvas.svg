@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3189,7 +3195,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-bus-node hdl-interface-node hdl-bus-breakout" data-node-id="interface_type:packet_if" data-node-kind="interface" transform="translate(288 120)">
 <svg class="hdl-node-svg" width="240" height="180" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:data"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="240" y2="24"></line><rect x="66" y="16" width="49.76" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label svsch-interface-field-label svsch-interface-field-right" data-port-id="out:data" x="76" y="24" dominant-baseline="middle">data</text></g><g class="svsch-bus-tap" data-port-id="out:valid"><line class="svsch-bus-tap-line" x1="54" y1="72" x2="240" y2="72"></line><rect x="66" y="64" width="57.2" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label svsch-interface-field-label svsch-interface-field-right" data-port-id="out:valid" x="76" y="72" dominant-baseline="middle">valid</text></g>
+<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:data"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="240" y2="24"></line><rect x="66" y="16" width="50" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label svsch-interface-field-label svsch-interface-field-right" data-port-id="out:data" x="76" y="24" dominant-baseline="middle">data</text></g><g class="svsch-bus-tap" data-port-id="out:valid"><line class="svsch-bus-tap-line" x1="54" y1="72" x2="240" y2="72"></line><rect x="66" y="64" width="57" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label svsch-interface-field-label svsch-interface-field-right" data-port-id="out:valid" x="76" y="72" dominant-baseline="middle">valid</text></g>
 </svg>
 </g>
 </g>

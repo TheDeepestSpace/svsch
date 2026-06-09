@@ -685,6 +685,12 @@ select {
 
 * {
   box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+text {
+  text-rendering: geometricPrecision;
 }
 
 .shell {
@@ -3208,7 +3214,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-bus-node hdl-struct-node hdl-bus-composition" data-node-id="struct_comp:struct_composition:pkt" data-node-kind="struct" transform="translate(816 48)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="138" y="12" width="6" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="in:pkt.opcode"><line class="svsch-bus-tap-line" x1="0" y1="24" x2="138" y2="24"></line><rect x="16.72" y="16" width="109.28" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.opcode" x="116" y="24" text-anchor="end" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [4:1]</tspan></text></g><g class="svsch-bus-tap" data-port-id="in:pkt.valid"><line class="svsch-bus-tap-line" x1="0" y1="72" x2="138" y2="72"></line><rect x="39.040000000000006" y="64" width="86.96" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.valid" x="116" y="72" text-anchor="end" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [0]</tspan></text></g>
+<rect class="svsch-bus-pipe" x="138" y="12" width="6" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="in:pkt.opcode"><line class="svsch-bus-tap-line" x1="0" y1="24" x2="138" y2="24"></line><rect x="17" y="16" width="109" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.opcode" x="116" y="24" text-anchor="end" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [4:1]</tspan></text></g><g class="svsch-bus-tap" data-port-id="in:pkt.valid"><line class="svsch-bus-tap-line" x1="0" y1="72" x2="138" y2="72"></line><rect x="39" y="64" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.valid" x="116" y="72" text-anchor="end" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [0]</tspan></text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:struct_composition:clk" data-node-kind="port" transform="translate(72 132)">
