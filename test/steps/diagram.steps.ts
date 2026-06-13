@@ -550,6 +550,10 @@ When('I open the schematic for module {string}', async function (this: BddWorld,
   }
 });
 
+When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
+  await this._revealPanel();
+});
+
 // ---------------------------------------------------------------------------
 // Then steps
 // ---------------------------------------------------------------------------
@@ -1040,45 +1044,72 @@ Then('the instance node {string} should have port {string} with blue suffix {str
 });
 
 Then('the editor should highlight the text {string}', async function (this: BddWorld, text: string) {
-  // Combine messages from extension host and in-memory buffer (for synthetic messages from steps)
-  const fromHost = await this.webviewMessages();
-  const allMessages = [...fromHost, ...this.messages];
-  let messages = allMessages.filter((m: any) => m.type === 'navigateToSource');
-
-  if (messages.length === 0) {
-    const signalMessages = allMessages.filter((m: any) => m.type === 'navigateToSignal');
-    if (signalMessages.length > 0) {
-      const lastSignal = signalMessages[signalMessages.length - 1];
-      const edge = lastSignal.edge;
-      if (edge.sourceRange) messages = [{ type: 'navigateToSource', source: edge.sourceRange }];
-      const moduleName = this.lastViewModel.moduleName;
-      const module = this.lastGraph.modules[moduleName];
-      if (messages.length === 0) {
-        const port = module.ports.find((p: any) => p.name === edge.signal);
-        if (port?.source) messages = [{ type: 'navigateToSource', source: port.source }];
-      }
-      if (messages.length === 0) {
-        const sourceNode = module.nodes.find((n: any) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter'));
-        if (sourceNode?.source) messages = [{ type: 'navigateToSource', source: sourceNode.source }];
-      }
-    }
-  }
-  if (messages.length === 0) throw new Error('No navigateToSource (or resolvable navigateToSignal) messages received.');
   const tNorm = normalizeHighlightedText(text);
-  const matchingMessage = [...messages].reverse().find((message: any) =>
-    sourceIncludesExpectedText(this.files, message.source, tNorm)
-  );
-  const src = (matchingMessage ?? messages[messages.length - 1]).source;
-  const sourceFile = this.files.find((f: any) =>
-    f.file === src.file
-    || path.normalize(f.file) === path.normalize(src.file)
-    || path.basename(f.file) === path.basename(src.file)
-  );
-  if (!sourceFile) throw new Error(`Source file not found: ${src.file}`);
-  const lines = sourceFile.text.split('\n');
-  const highlightedLines = lines.slice(src.startLine - 1, src.endLine).join('\n');
-  const hNorm = normalizeHighlightedText(highlightedLines);
-  if (!hNorm.includes(tNorm)) throw new Error(`Expected text "\n${tNorm}\n" to be in highlighted lines:\n"${hNorm}"`);
+
+  const source = await resolveSourceFromMessages(this);
+  if (!source) throw new Error(`No navigation message received for "${text}"`);
+
+  await this.navigateToRange(source);
+
+  const deadline = Date.now() + 10_000;
+  let selectedText: string | null = null;
+  while (Date.now() < deadline) {
+    selectedText = await this.selectedEditorText();
+    if (selectedText !== null && normalizeHighlightedText(selectedText).includes(tNorm)) break;
+    await this.workbox.waitForTimeout(200);
+  }
+  if (selectedText === null) throw new Error(`No text matching "${text}" selected in editor within timeout`);
+  const hNorm = normalizeHighlightedText(selectedText);
+  if (!hNorm.includes(tNorm)) throw new Error(`Expected text "\n${tNorm}\n" to be in highlighted text:\n"${hNorm}"`);
+});
+
+async function resolveSourceFromMessages(world: BddWorld): Promise<any | null> {
+  const allMessages = [...(await world.webviewMessages()), ...world.messages];
+  const navMessages = allMessages.filter((m: any) => m.type === 'navigateToSource');
+  if (navMessages.length > 0) return navMessages[navMessages.length - 1].source;
+
+  const signalWithRange = allMessages.filter((m: any) => m.type === 'navigateToSignal' && m.edge?.sourceRange);
+  if (signalWithRange.length > 0) return signalWithRange[signalWithRange.length - 1].edge.sourceRange;
+
+  const signalMessages = allMessages.filter((m: any) => m.type === 'navigateToSignal' && !m.edge?.sourceRange);
+  if (signalMessages.length > 0) {
+    const edge = signalMessages[signalMessages.length - 1].edge;
+    const moduleName = world.lastViewModel.moduleName;
+    const module = world.lastGraph.modules[moduleName];
+    return module.ports.find((p: any) => p.name === edge.signal)?.source
+      ?? module.nodes.find((n: any) =>
+        n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter')
+      )?.source ?? null;
+  }
+  return null;
+}
+
+async function waitForActiveEditorFile(world: BddWorld, filename: string): Promise<void> {
+  let triggered = false;
+  const deadline = Date.now() + 10_000;
+  let activeFile: string | null = null;
+  while (Date.now() < deadline) {
+    activeFile = await world.evaluateInVSCode((vscode) => {
+      const editor = (vscode as any).window.activeTextEditor;
+      return editor?.document?.fileName ?? null;
+    });
+    if (activeFile && (activeFile.endsWith('/' + filename) || activeFile.endsWith('\\' + filename))) return;
+    if (!triggered) {
+      triggered = true;
+      const source = await resolveSourceFromMessages(world);
+      if (source) await world.navigateToRange(source);
+    }
+    await world.workbox.waitForTimeout(200);
+  }
+  throw new Error(`Expected editor focused on "${filename}" but got "${activeFile ?? 'none'}"`);
+}
+
+Then('the editor pane for {string} is opened and focused', async function (this: BddWorld, filename: string) {
+  await waitForActiveEditorFile(this, filename);
+});
+
+Then('the existing editor pane for {string} is focused', async function (this: BddWorld, filename: string) {
+  await waitForActiveEditorFile(this, filename);
 });
 
 Then('a warning notification should be shown with {string}', async function (this: BddWorld, expectedMessage: string) {
@@ -1491,10 +1522,6 @@ function sourceTextForRange(files: any[], source: any): string | undefined {
   return String(sourceFile.text ?? '').split('\n').slice(startLine - 1, endLine).join('\n');
 }
 
-function sourceIncludesExpectedText(files: any[], source: any, expectedNorm: string): boolean {
-  const text = sourceTextForRange(files, source);
-  return !!text && normalizeHighlightedText(text).includes(expectedNorm);
-}
 
 function normalizeHighlightedText(text: string): string {
   return text.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();

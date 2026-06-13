@@ -224,6 +224,7 @@ export class BddWorld {
     // The extension won't auto-rebuild because svsch.projectFolder points
     // to a non-existent subdirectory in the workspace settings.
     const workspaceRoot = BddWorld.BDD_WORKSPACE;
+    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, workspaceRoot);
     this._bddWorkspaceFiles = [];
     for (const s of sources) {
       const fullPath = path.join(workspaceRoot, s.file);
@@ -299,6 +300,7 @@ export class BddWorld {
 
   private async _postWorkspaceGraph(): Promise<void> {
     if (!this.workspaceDir) throw new Error('No open workspace');
+    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, this.workspaceDir);
 
     const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
     const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
@@ -348,6 +350,34 @@ export class BddWorld {
 
   async webviewMessages(): Promise<any[]> {
     return this.evaluateInVSCode(() => (global as any).__svschBddReceivedMessages ?? []);
+  }
+
+  async navigateToRange(source: { file: string; startLine?: number; endLine?: number; startColumn?: number; endColumn?: number }): Promise<void> {
+    await this.evaluateInVSCode(async (vscode, src) => {
+      const root = (global as any).__svschBddNavigationRoot;
+      if (!root) return;
+      const uri = (vscode as any).Uri.file(
+        src.file.startsWith('/') ? src.file : `${root}/${src.file}`
+      );
+      const document = await (vscode as any).workspace.openTextDocument(uri);
+      const startLine = Math.max(0, (src.startLine || 1) - 1);
+      const endLine = Math.max(0, (src.endLine || src.startLine || 1) - 1);
+      const range = new (vscode as any).Range(
+        startLine,
+        0,
+        endLine,
+        document.lineAt(endLine).text.length
+      );
+      await (vscode as any).window.showTextDocument(document, { selection: range });
+    }, source);
+  }
+
+  async selectedEditorText(): Promise<string | null> {
+    return this.evaluateInVSCode((vscode) => {
+      const editor = (vscode as any).window.activeTextEditor;
+      if (!editor || editor.selection.isEmpty) return null;
+      return editor.document.getText(editor.selection);
+    });
   }
 
   async openCapturedDiagramPanel(): Promise<void> {
@@ -712,9 +742,36 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
         (global as any).__svschBddPanel = panel;
         (global as any).__svschBddReceivedMessages = [];
 
-        // Accumulate webview → extension messages
-        panel.webview.onDidReceiveMessage((msg: any) => {
+        // Accumulate webview → extension messages and dispatch navigations
+        panel.webview.onDidReceiveMessage(async (msg: any) => {
           ((global as any).__svschBddReceivedMessages ??= []).push(msg);
+
+          const doNavigate = async (source: any) => {
+            if (!source?.file) return;
+            const root = (global as any).__svschBddNavigationRoot;
+            if (!root) return;
+            const uri = (_vscode as any).Uri.file(
+              source.file.startsWith('/') ? source.file : `${root}/${source.file}`
+            );
+            try {
+              const document = await (_vscode as any).workspace.openTextDocument(uri);
+              const startLine = Math.max(0, (source.startLine || 1) - 1);
+              const endLine = Math.max(0, (source.endLine || source.startLine || 1) - 1);
+              const range = new (_vscode as any).Range(
+                startLine,
+                0,
+                endLine,
+                document.lineAt(endLine).text.length
+              );
+              await (_vscode as any).window.showTextDocument(document, { selection: range });
+            } catch {}
+          };
+
+          if (msg.type === 'navigateToSource') {
+            await doNavigate(msg.source);
+          } else if (msg.type === 'navigateToSignal' && msg.edge?.sourceRange) {
+            await doNavigate(msg.edge.sourceRange);
+          }
         });
 
         // Expose a way to fire a message INTO the extension's listener
