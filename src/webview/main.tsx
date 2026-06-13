@@ -98,7 +98,7 @@ function DiagramApp(): React.ReactElement {
   }, [nodes, onNodesChangeRaw]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
-  const [hasFitInitialView, setHasFitInitialView] = useState(false);
+  const fittedModuleNameRef = useRef<string | undefined>(undefined);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -246,13 +246,26 @@ function DiagramApp(): React.ReactElement {
   }, [handleRouteChange, setEdges, view]);
 
   useEffect(() => {
-    if (!hasFitInitialView && nodes.length > 0) {
-      window.setTimeout(() => {
-        reactFlow.fitView({ padding: 0.2 });
-        setHasFitInitialView(true);
-      }, 0);
+    if (!view || nodes.length === 0) {
+      return;
     }
-  }, [hasFitInitialView, nodes.length, reactFlow]);
+
+    const nodesMatchView =
+      nodes.length === view.nodes.length &&
+      nodes.every((node) => node.data?.moduleName === view.moduleName);
+
+    if (!nodesMatchView || fittedModuleNameRef.current === view.moduleName) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      reactFlow.fitView({ padding: 0.2 });
+      fittedModuleNameRef.current = view.moduleName;
+    }, 0);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [nodes, reactFlow, view]);
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
