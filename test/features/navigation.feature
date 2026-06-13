@@ -9,6 +9,7 @@ Feature: Navigation
       | top.sv | module top(input i, output o); A a_inst(i, o); endmodule |
       | a.sv   | module A(input i, output o); assign o = i; endmodule |
       | b.sv   | module B(input i, output o); assign o = ~i; endmodule |
+    When I open the "top" module in SVSCH
     Then the module dropdown should contain "top", "A", "B" in that order
     And I should see an instance node "a_inst" of module "A"
     And I should see a port node "i"
@@ -25,7 +26,8 @@ Feature: Navigation
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | module top(a, b, c);\n  input logic a;\n  output wire [3:0] b;\n  input c;\nendmodule |
-    When I double-click on the port node "a"
+    When I open the "top" module in SVSCH
+    And I double-click on the port node "a"
     Then the editor should highlight the text "input logic a"
     When I double-click on the port node "b"
     Then the editor should highlight the text "output wire [3:0] b"
@@ -36,28 +38,32 @@ Feature: Navigation
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | module top(input clk, input d, output logic q);\n  always_ff @(posedge clk) begin\n    q <= d;\n  end\nendmodule |
-    When I double-click on the register node "q"
+    When I open the "top" module in SVSCH
+    And I double-click on the register node "q"
     Then the editor should highlight the text "always_ff @(posedge clk) begin\n    q <= d;\n  end"
 
   Scenario: Navigating to combinational blocks
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | module top(input a, input c, output wire b);\n  assign b = a & c;\nendmodule |
-    When I double-click on the combinational block for "b"
+    When I open the "top" module in SVSCH
+    And I double-click on the combinational block for "b"
     Then the editor should highlight the text "assign b = a & c;"
 
   Scenario: Navigating to inverter nodes
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | module top(input a, output wire b);\n  assign b = ~a;\nendmodule |
-    When I double-click on the inverter node for "b"
+    When I open the "top" module in SVSCH
+    And I double-click on the inverter node for "b"
     Then the editor should highlight the text "assign b = ~a;"
 
   Scenario: Navigating to mux blocks
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | module top(input a, input b, input sel, output logic o);\n  always_comb begin\n    case (sel)\n      1'b0: o = a;\n      1'b1: o = b;\n      default: o = 1'b0;\n    endcase\n  end\nendmodule |
-    When I double-click on the mux block for "o"
+    When I open the "top" module in SVSCH
+    And I double-click on the mux block for "o"
     Then the editor should highlight the text "case (sel)\n      1'b0: o = a;\n      1'b1: o = b;\n      default: o = 1'b0;\n    endcase"
 
   Scenario: Navigating to connection source
@@ -65,7 +71,8 @@ Feature: Navigation
       | file     | content                             |
       | top.sv   | module top(input a, output wire b);\n  wire w;\n  Child c1(.i(a), .o(w));\n  Child c2(.i(w), .o(b));\nendmodule |
       | child.sv | module Child(input i, output o); endmodule |
-    When I double-click on the connection between the port node "a" and the instance node "c1"
+    When I open the "top" module in SVSCH
+    And I double-click on the connection between the port node "a" and the instance node "c1"
     Then the editor should highlight the text "input a"
     When I double-click on the connection between the instance node "c1" and the instance node "c2"
     Then a warning notification should be shown with "This is an internal wire."
@@ -75,7 +82,8 @@ Feature: Navigation
       | file   | content |
       | top.sv | module top(input i, output o);\n  Sub sub_inst(i, o);\nendmodule |
       | sub.sv | module Sub(input i, output o);\n  assign o = i;\nendmodule |
-    When I double-click on the instance node "sub_inst"
+    When I open the "top" module in SVSCH
+    And I double-click on the instance node "sub_inst"
     Then the diagram should display the module "Sub"
     And the module dropdown should have "Sub" selected
 
@@ -83,7 +91,8 @@ Feature: Navigation
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | typedef enum logic [1:0] { IDLE, READY } state_t;\nmodule top(input state_t in_state, output state_t out_state);\n  state_t current_state;\n  always_ff @(posedge clk) current_state <= in_state;\n  assign out_state = current_state;\nendmodule |
-    When I click on the type label "state_t" for the port node "in_state"
+    When I open the "top" module in SVSCH
+    And I click on the type label "state_t" for the port node "in_state"
     Then the editor should highlight the text "typedef enum logic [1:0] { IDLE, READY } state_t;"
     When I click on the type label "state_t" for the register node "current_state"
     Then the editor should highlight the text "typedef enum logic [1:0] { IDLE, READY } state_t;"
@@ -92,7 +101,8 @@ Feature: Navigation
     Given the following SystemVerilog files:
       | file   | content |
       | top.sv | interface simple_if(input logic clk);\n  logic [7:0] data;\n  logic valid;\n  logic ready;\n  modport master(input clk, output data, output valid, input ready);\n  modport slave(input clk, input data, input valid, output ready);\nendinterface\n\nmodule consumer(simple_if.slave bus, output logic observed);\n  assign bus.ready = bus.valid;\n  assign observed = bus.data[0];\nendmodule\n\nmodule top(input logic clk, output logic observed);\n  simple_if link(clk);\n  consumer u_consumer(.bus(link), .observed(observed));\nendmodule |
-    When I select module "consumer" from the dropdown
+    When I open the "top" module in SVSCH
+    And I select module "consumer" from the dropdown
     And I click on the type label "simple_if" for the interface node "bus"
     Then the editor should highlight the text "interface simple_if(input logic clk);"
     When I click on the modport label "slave" for the interface node "bus"
@@ -112,6 +122,6 @@ Feature: Navigation
         assign y = a;
       endmodule
       """
-    When I click the Export SVG button
+    When I open the "top" module in SVSCH
+    And I click the Export SVG button
     Then an export request should be sent to VS Code
-

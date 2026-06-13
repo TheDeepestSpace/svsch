@@ -10,7 +10,8 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" by (100, 100)
+    When I open the "top" module in SVSCH
+    And I move the port node "a" by (100, 100)
     Then the port node "a" should have moved
 
   Scenario: Manual positions are preserved across diagram reloads
@@ -20,7 +21,8 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 132)
+    When I open the "top" module in SVSCH
+    And I move the port node "a" to (120, 132)
     And I close and reopen the diagram
     Then the port node "a" should be at (120, 132)
 
@@ -31,7 +33,8 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 132)
+    When I open the "top" module in SVSCH
+    And I move the port node "a" to (120, 132)
     And I update the code to remove node "a":
       """
       module top(output y);
@@ -53,8 +56,9 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I note the position of port node "a"
-    When I move the port node "a" to (120, 120)
+    And I move the port node "a" to (120, 120)
     And I reset the layout
     Then the port node "a" should not have moved
 
@@ -66,7 +70,8 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 132)
+    When I open the "top" module in SVSCH
+    And I move the port node "a" to (120, 132)
     And I move the port node "y" to (480, 252)
     And I force the connection between "a" and "y" to pass through (240, 468)
     And I force the connection between "b" and "x" to pass through (240, 100)
@@ -88,7 +93,8 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
-    When I move the port node "a" to (120, 132)
+    When I open the "top" module in SVSCH
+    And I move the port node "a" to (120, 132)
     And I move the port node "y" to (480, 252)
     And I force the connection between "a" and "y" to pass through (240, 468)
     And I note the position of port node "a"
@@ -111,6 +117,7 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I position the port node "a" at (24, -36)
     Then the port node "a" should be at (24, -36)
     When I hover the connection between "a" and "x" and click its Cut control
@@ -132,6 +139,7 @@ Feature: Diagram Interaction
         assign y = b;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I note the position of port node "a"
     And I note the position of port node "b"
     When I drag port nodes "a" and "b" together
@@ -149,6 +157,7 @@ Feature: Diagram Interaction
         assign y = b;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I move the port node "b" by (0, -48)
     And I move the port node "y" by (0, -48)
     Then I should see overlap hints

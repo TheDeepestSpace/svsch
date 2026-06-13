@@ -98,7 +98,7 @@
       "target": "reg:top:q_new",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144.00030141362993 120.000030141363 L 168 120.000030141363 L 216 120 L 216 96 L 336 96.0001733128372 L 360 96.0001733128372"
+      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
     },
     {
       "id": "edge:port:top:d:reg:top:q_new:d",
@@ -106,7 +106,7 @@
       "target": "reg:top:q_new",
       "sourceHandle": "port:d",
       "targetHandle": "d",
-      "path": "M 144.00030141362993 72.000030141363 L 168 72.000030141363 L 336 72.00011303011122 L 360 72.00011303011122"
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     },
     {
       "id": "edge:reg:top:q_new:port:top:q_new:q_new",
@@ -114,7 +114,7 @@
       "target": "port:top:q_new",
       "sourceHandle": "q",
       "targetHandle": "port:q_new",
-      "path": "M 456.0002260602224 72.00011303011122 L 480 72.00011303011122 L 648 72.000030141363 L 672 72.000030141363"
+      "path": "M 456 72 L 480 72 L 648 72 L 672 72"
     }
   ]
 }

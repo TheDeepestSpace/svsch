@@ -3191,7 +3191,7 @@ path.port-skin-body.port-skin-harness {
 </style>
 <g transform="translate(24 24)">
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:inverter:second:z:expr:port:second:z:z"><path class="svsch-edge" data-edge-id="edge:inverter:second:z:expr:port:second:z:z" data-net-key="inverter:second:z:expr:out:z" d="M 390.7846096908265 48 L 408 48 L 600 48 L 624 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:inverter:second:z:expr:port:second:z:z"><path class="svsch-edge" data-edge-id="edge:inverter:second:z:expr:port:second:z:z" data-net-key="inverter:second:z:expr:out:z" d="M 390.785 48 L 408 48 L 600 48 L 624 48" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:second:b:inverter:second:z:expr:b"><path class="svsch-edge" data-edge-id="edge:port:second:b:inverter:second:z:expr:b" data-net-key="port:second:b:port:b" d="M 144 48 L 168 48 L 336 48 L 360 48" /></g>
 </g>
 <g class="svsch-nodes">

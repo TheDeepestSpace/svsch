@@ -8,7 +8,7 @@
         "y": 24
       },
       "width": 192,
-      "height": 245,
+      "height": 240,
       "data": {
         "kind": "interface",
         "ports": [
@@ -43,7 +43,7 @@
         "y": 288
       },
       "width": 192,
-      "height": 245,
+      "height": 240,
       "data": {
         "kind": "interface",
         "ports": [

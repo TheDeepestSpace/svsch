@@ -1,0 +1,7 @@
+{
+  "svsch.projectFolder": ".",
+  "git.openRepositoryInParentFolders": "never",
+  "extensions.ignoreRecommendations": true,
+  "workbench.tips.enabled": false,
+  "workbench.startupEditor": "none"
+}

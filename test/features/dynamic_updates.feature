@@ -10,8 +10,9 @@ Feature: Dynamic Updates
         assign y = a;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I note the position of port node "y"
-    When I update the code to:
+    And I update the code to:
       """
       module top(input a, input b, input c, input d, output y);
         assign y = a & b & c & d;
@@ -27,6 +28,7 @@ Feature: Dynamic Updates
         assign y = a;
       endmodule
       """
+    When I open the "top" module in SVSCH
     And I move the port node "a" to (96, 108)
     And I move the port node "y" to (288, 108)
     And I note the position of port node "a"
@@ -51,7 +53,8 @@ Feature: Dynamic Updates
         end
       endmodule
       """
-    When I update the code to rename register "q" to "q_new":
+    When I open the "top" module in SVSCH
+    And I update the code to rename register "q" to "q_new":
       """
       module top(input logic clk, input logic d, output logic q_new);
         always_ff @(posedge clk) begin
@@ -70,7 +73,8 @@ Feature: Dynamic Updates
         assign y = a;
       endmodule
       """
-    When I update the code to remove the assignment:
+    When I open the "top" module in SVSCH
+    And I update the code to remove the assignment:
       """
       module top(input a, output y);
       endmodule

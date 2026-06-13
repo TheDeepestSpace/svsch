@@ -7,6 +7,7 @@ import type {
   ResolvedLineJumpOptions,
   LineJumpHalo
 } from './types';
+import { formatPathNumber } from '../../core/pathUtils';
 
 const EPSILON = 0.5;
 
@@ -151,7 +152,11 @@ function crossingBetween(a: Segment, b: Segment, padding: number): Point | undef
 }
 
 function pathFromPoints(points: Point[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`).join(' ');
+}
+
+function pathCommand(command: 'M' | 'L' | 'Q', ...values: number[]): string {
+  return `${command} ${values.map(formatPathNumber).join(' ')}`;
 }
 
 function crossingKey(crossing: Crossing): string {
@@ -230,11 +235,11 @@ export function buildLineJumpRender(
     const orientation = orientationFor(start, end);
 
     if (index === 0) {
-      commands.push(`M ${start.x} ${start.y}`);
+      commands.push(pathCommand('M', start.x, start.y));
     }
 
     if (!orientation) {
-      commands.push(`L ${end.x} ${end.y}`);
+      commands.push(pathCommand('L', end.x, end.y));
       continue;
     }
 
@@ -250,28 +255,30 @@ export function buildLineJumpRender(
         const before = { x: crossing.point.x - direction * currentJumpSize, y: crossing.point.y };
         const after = { x: crossing.point.x + direction * currentJumpSize, y: crossing.point.y };
         const control = { x: crossing.point.x, y: crossing.point.y - currentJumpSize };
-        commands.push(`L ${before.x} ${before.y}`);
-        commands.push(`Q ${control.x} ${control.y} ${after.x} ${after.y}`);
-        jumpPaths.push(`M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`);
+        const jump = `${pathCommand('M', before.x, before.y)} ${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
+        commands.push(pathCommand('L', before.x, before.y));
+        commands.push(pathCommand('Q', control.x, control.y, after.x, after.y));
+        jumpPaths.push(jump);
         jumpHalos.push({
-          path: `M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`,
+          path: jump,
           strokeWidth: crossing.haloWidth
         });
       } else {
         const before = { x: crossing.point.x, y: crossing.point.y - direction * currentJumpSize };
         const after = { x: crossing.point.x, y: crossing.point.y + direction * currentJumpSize };
         const control = { x: crossing.point.x + currentJumpSize, y: crossing.point.y };
-        commands.push(`L ${before.x} ${before.y}`);
-        commands.push(`Q ${control.x} ${control.y} ${after.x} ${after.y}`);
-        jumpPaths.push(`M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`);
+        const jump = `${pathCommand('M', before.x, before.y)} ${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
+        commands.push(pathCommand('L', before.x, before.y));
+        commands.push(pathCommand('Q', control.x, control.y, after.x, after.y));
+        jumpPaths.push(jump);
         jumpHalos.push({
-          path: `M ${before.x} ${before.y} Q ${control.x} ${control.y} ${after.x} ${after.y}`,
+          path: jump,
           strokeWidth: crossing.haloWidth
         });
       }
     }
 
-    commands.push(`L ${end.x} ${end.y}`);
+    commands.push(pathCommand('L', end.x, end.y));
   }
 
   return {

@@ -1,0 +1,5 @@
+# Scenario source files written here during BDD tests
+*.sv
+*.v
+*.svh
+no-sv-files-here/

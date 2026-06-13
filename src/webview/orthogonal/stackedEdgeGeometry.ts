@@ -162,10 +162,10 @@ export function promotedStackFanoutPath(
     trunk: pathFromPoints(trunkPoints),
     barStart: branchStarts[0],
     barEnd: branchStarts[branchStarts.length - 1],
-    bar: `M ${branchStarts[0].x} ${branchStarts[0].y} L ${branchStarts[branchStarts.length - 1].x} ${branchStarts[branchStarts.length - 1].y}`,
+    bar: pathFromPoints([branchStarts[0], branchStarts[branchStarts.length - 1]]),
     branches: branchTargets.map((branchTarget, index) => ({
       layerId: ARRAY_STACK_LEAD_LAYERS[index].id,
-      path: `M ${branchStarts[index].x} ${branchStarts[index].y} L ${branchTarget.x} ${branchTarget.y}`
+      path: pathFromPoints([branchStarts[index], branchTarget])
     }))
   };
 }

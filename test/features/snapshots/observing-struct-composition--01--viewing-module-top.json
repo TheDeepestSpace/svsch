@@ -148,7 +148,7 @@
         "y": 48
       },
       "width": 192,
-      "height": 101,
+      "height": 96,
       "data": {
         "kind": "struct",
         "ports": [

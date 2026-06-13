@@ -1,3 +1,4 @@
+@cli
 Feature: Command Line Interface
 
   Scenario: Help command output
@@ -32,7 +33,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I run the CLI command:
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
       """
       svsch render top.sv --output top.svg --no-layout
       """
@@ -56,7 +58,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I position the port node "a" at (120, 468)
+    When I open the "top" module in SVSCH
+    And I position the port node "a" at (120, 468)
     And I have saved the layout
     And I run the CLI command:
       """
@@ -82,7 +85,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I position the port node "a" at (120, 468)
+    When I open the "top" module in SVSCH
+    And I position the port node "a" at (120, 468)
     And I have saved the layout
     And I run the CLI command:
       """
@@ -106,7 +110,8 @@ Feature: Command Line Interface
       | file   | content                                                           |
       | sub.sv | module sub(input a, output y); assign y = ~a; endmodule           |
       | top.sv | module top(input i, output o); sub u_sub(.a(i), .y(o)); endmodule |
-    When I run the CLI command:
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
       """
       svsch render top.sv --output multi.svg --no-layout
       """
@@ -130,7 +135,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I run the CLI command:
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
       """
       <command>
       """
@@ -158,7 +164,8 @@ Feature: Command Line Interface
       | a.sv   | module a(input i, output o); assign o = i; endmodule    |
       | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
       | decoy.txt | this is not an HDL file                               |
-    When I run the CLI command:
+    When I open the "a" module in SVSCH
+    And I run the CLI command:
       """
       svsch render "*.sv" --output-dir out --no-layout
       """
@@ -183,7 +190,8 @@ Feature: Command Line Interface
       module first(input a, output y); assign y = a; endmodule
       module second(input b, output z); assign z = ~b; endmodule
       """
-    When I run the CLI command:
+    When I open the "first" module in SVSCH
+    And I run the CLI command:
       """
       svsch render top.sv --top second --output second.svg --no-layout
       """
@@ -207,7 +215,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I position the port node "a" at (768, 900)
+    When I open the "top" module in SVSCH
+    And I position the port node "a" at (768, 900)
     And I have saved the layout to "my_layout.json"
     And I run the CLI command:
       """
@@ -233,7 +242,8 @@ Feature: Command Line Interface
         assign y = a;
       endmodule
       """
-    When I run the CLI command:
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
       """
       svsch render top.sv --theme <theme> --output theme.svg --no-layout
       """
@@ -254,7 +264,8 @@ Feature: Command Line Interface
     Given the following SystemVerilog files:
       | file       | content                                               |
       | src/top.sv | module top(input a, output y); assign y = a; endmodule |
-    When I select module "top" from the dropdown
+    When I open the "top" module in SVSCH
+    And I select module "top" from the dropdown
     And I manually position node "port:top:a" at (504, 612) in module "top"
     And I have saved the layout to "src/.svsch/layout.json"
     And I run the CLI command:
@@ -276,7 +287,8 @@ Feature: Command Line Interface
       | file         | content                                                              |
       | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
       | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
-    When I run the CLI command:
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
       """
       svsch render top.sv --project-folder . --output out.svg --no-layout
       """
@@ -290,7 +302,8 @@ Feature: Command Line Interface
       | file   | content                                                 |
       | a.sv   | module a(input i, output o); assign o = i; endmodule    |
       | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
-    When I run the CLI command:
+    When I open the "a" module in SVSCH
+    And I run the CLI command:
       """
       svsch render "*.sv" --top b --output single_b.svg --no-layout
       """
@@ -313,8 +326,9 @@ Feature: Command Line Interface
       | file         | content                                                              |
       | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
       | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
+    When I open the "top" module in SVSCH
     And I record the workspace directory state
-    When I run the CLI command:
+    And I run the CLI command:
       """
       svsch render top.sv --project-folder sub --output out.svg --no-layout
       """

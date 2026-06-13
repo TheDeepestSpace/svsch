@@ -14,7 +14,7 @@ Feature: Variable Bit Select
           assign bit_out = bus[sel];
       endmodule
       """
-    When I open the diagram for module "top"
+    When I open the "top" module in SVSCH
     Then I should see a "select" block for "bus[sel]"
     And the "select" block should have an input "sel" on the top
     And the "select" block should have an input "in" from "bus"
