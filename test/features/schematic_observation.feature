@@ -5,13 +5,13 @@ Feature: Schematic Observation
   So that I can understand and verify my design visually
 
   Scenario: Opening the SVSCH diagram from the command palette
-    Given I have a file "svsch-test-folder/top.sv":
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output b);
         assign b = a;
       endmodule
       """
-    When I open VS Code to "svsch-test-folder"
+    When I open the workspace folder in VS Code
     And I open the command palette with Ctrl+Shift+P
     And I type "SVSCH: Open Diagram"
     And I press Enter

@@ -19,12 +19,22 @@ Given('I have a file {string}:', async function (this: BddWorld, filePath: strin
   this.lastCode ??= docString;
 });
 
-When('I open VS Code to {string}', async function (this: BddWorld, folder: string) {
-  await this.evaluateInVSCode((_vscode, f) => {
+Given('I have a file {string} in my workspace:', async function (this: BddWorld, filePath: string, docString: string) {
+  const fullPath = path.join(BddWorld.BDD_WORKSPACE, filePath);
+  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.promises.writeFile(fullPath, docString);
+  this._bddWorkspaceFiles.push(fullPath);
+  this.files = this.files.filter((source: any) => source.file !== filePath);
+  this.files.push({ file: filePath, text: docString });
+  this.lastCode ??= docString;
+});
+
+When('I open the workspace folder in VS Code', async function (this: BddWorld) {
+  await this.evaluateInVSCode((_vscode) => {
     return (_vscode as any).workspace
       .getConfiguration('svsch')
-      .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
-  }, folder);
+      .update('projectFolder', '.', (_vscode as any).ConfigurationTarget.Workspace);
+  });
 });
 
 When('I open the command palette with Ctrl+Shift+P', async function (this: BddWorld) {
