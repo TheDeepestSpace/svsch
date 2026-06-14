@@ -96,7 +96,7 @@
       "target": "port:top:x",
       "sourceHandle": "port:b",
       "targetHandle": "port:x",
-      "path": "M 144 72 L 168 72 L 168 120 L 336 120 L 336 72 L 360 72"
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     }
   ]
 }

@@ -21,31 +21,11 @@
       }
     },
     {
-      "id": "port:top:b",
-      "type": "hdl",
-      "position": {
-        "x": 24,
-        "y": 60
-      },
-      "width": 120,
-      "height": 24,
-      "data": {
-        "kind": "port",
-        "ports": [
-          {
-            "id": "port:b",
-            "name": "b",
-            "direction": "input"
-          }
-        ]
-      }
-    },
-    {
       "id": "port:top:x",
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 60
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -65,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": -12
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -83,20 +63,20 @@
   ],
   "edges": [
     {
+      "id": "edge:port:top:a:port:top:x:x",
+      "source": "port:top:a",
+      "target": "port:top:x",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:x",
+      "path": "M 144 0 L 168 0 L 336 0 L 336 48 L 360 48"
+    },
+    {
       "id": "edge:port:top:a:port:top:y:y",
       "source": "port:top:a",
       "target": "port:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 144 0 L 168 0 L 336 0 L 360 0"
-    },
-    {
-      "id": "edge:port:top:b:port:top:x:x",
-      "source": "port:top:b",
-      "target": "port:top:x",
-      "sourceHandle": "port:b",
-      "targetHandle": "port:x",
-      "path": "M 144 72 L 168 72 L 168 120 L 336 120 L 336 72 L 360 72"
+      "path": "M 144 0 L 168 0 L 216 0 L 216 96 L 336 96 L 360 96"
     }
   ]
 }

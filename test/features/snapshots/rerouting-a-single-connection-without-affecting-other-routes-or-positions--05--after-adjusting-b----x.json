@@ -88,7 +88,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 144 0 L 168 0 L 336 0 L 360 0"
+      "path": "M 144 0 L 168 0 L 168 -48 L 336 -48 L 336 0 L 360 0"
     },
     {
       "id": "edge:port:top:b:port:top:x:x",

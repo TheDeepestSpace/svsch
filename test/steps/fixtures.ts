@@ -70,6 +70,9 @@ export class BddWorld {
 
   // Remembered positions/routes for assertions
   notedPositions: Map<string, { x: number; y: number }> = new Map();
+  // Where a node ended up after the user dragged it (post-move), so reload
+  // scenarios can assert the position was preserved.
+  movedToPositions: Map<string, { x: number; y: number }> = new Map();
   notedRoutes: Map<string, string> = new Map();
 
   // -------------------------------------------------------------------------
@@ -623,6 +626,7 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.isNaturalScenario = ($bddContext?.tags ?? []).includes('@natural');
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
   this.notedPositions = new Map();
+  this.movedToPositions = new Map();
   this.notedRoutes = new Map();
   this._bddWorkspaceFiles = [];
 

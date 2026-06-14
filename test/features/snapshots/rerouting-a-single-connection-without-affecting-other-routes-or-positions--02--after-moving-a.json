@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": -12
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -88,7 +88,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 144 0 L 168 0 L 336 0 L 360 0"
+      "path": "M 144 0 L 168 0 L 336 0 L 336 48 L 360 48"
     },
     {
       "id": "edge:port:top:b:port:top:x:x",
@@ -96,7 +96,7 @@
       "target": "port:top:x",
       "sourceHandle": "port:b",
       "targetHandle": "port:x",
-      "path": "M 144 72 L 168 72 L 168 120 L 336 120 L 336 72 L 360 72"
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     }
   ]
 }

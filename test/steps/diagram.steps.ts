@@ -1,7 +1,8 @@
 import { Given, When, Then, Before, After, BddWorld } from './fixtures';
 import type { FrameLocator } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeNetCut, mergeNodePositions, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { diagramGrid } from '../../src/diagram/constants';
 import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -56,11 +57,6 @@ Given('I note the position of port node {string}', async function (this: BddWorl
   const pos = await getInternalPosition(this.webviewPage, id);
   if (!pos) throw new Error('Could not get internal position');
   this.notedPositions.set(name, pos);
-});
-
-Given('I note the route of the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
-  const route = await connectionRoutePath(this.webviewPage, source, target);
-  this.notedRoutes.set(routeKey(source, target), route);
 });
 
 Given('I record the workspace directory state', async function (this: BddWorld) {
@@ -229,46 +225,20 @@ When('I have saved the layout', async function (this: BddWorld) {
   await fs.promises.writeFile(layoutPath, JSON.stringify(this.layout, null, 2));
 });
 
-When('I reroute the diagram', async function (this: BddWorld) {
-  const messageStart = (await this.webviewMessages()).length;
-  await this.webviewPage.locator('button:has-text("Reroute All")').click();
+When('I click {string} in the diagram toolbar', async function (this: BddWorld, label: string) {
+  // Snapshot every node's position right before the action so that later
+  // "should not have moved" assertions compare against the pre-action layout.
+  await recordPortPositions(this);
   const moduleName = this.lastViewModel.moduleName;
-  await expect.poll(async () => {
-    const messages = await this.webviewMessages();
-    return messages.slice(messageStart).some((m: any) => m.type === 'rerouteLayout' && m.moduleName === moduleName);
-  }, { timeout: 10_000 }).toBe(true).catch(() => undefined);
-  const rerouteMessage = (await this.webviewMessages()).slice(messageStart).reverse()
-    .find((m: any) => m.type === 'rerouteLayout' && m.moduleName === moduleName) as any;
-  const flowNodes = await this.webviewPage.locator('html').evaluate(() => {
-    const instance = (window as any).reactFlowInstance;
-    return instance.getNodes().map((node: any) => ({ id: node.id, position: node.position }));
-  });
-  const positionById = new Map(flowNodes.map((node: any) => [node.id, node.position]));
-  const frozenNodes = (rerouteMessage?.nodes?.length ? rerouteMessage.nodes : this.lastViewModel.nodes).map((node: any) => ({
-    ...node, position: positionById.get(node.id) ?? node.position, fixed: true,
-  }));
-  this.layout = mergeRerouteLayout(this.layout, moduleName, frozenNodes);
-  await persistWorldLayout(this);
-  await this._waitForDiagramRebuild();
+  const layoutBefore = JSON.stringify(await readExtensionLayout(this));
+  await this.webviewPage.locator(`button:has-text("${label}")`).click();
+  // The extension owns persistence: the click rewrites the layout file and
+  // re-renders. Wait for the file to change rather than relying on the (flaky)
+  // message channel.
+  await expect.poll(async () => JSON.stringify(await readExtensionLayout(this)) !== layoutBefore, { timeout: 10_000 }).toBe(true);
+  this.layout = await readExtensionLayout(this);
   await syncLastViewModel(this, moduleName);
-  await waitForExtensionRenderedView(this, 'After reroute');
-});
-
-When('I force the connection between {string} and {string} to pass through \\({int}, {int}\\)', async function (this: BddWorld, source: string, target: string, x: number, y: number) {
-  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
-  const targetId = await findNodeIdByLabel(this.webviewPage, target);
-  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
-  const moduleName = this.lastViewModel.moduleName;
-  const edge = this.lastViewModel.edges.find((candidate: any) => candidate.source === sourceId && candidate.target === targetId);
-  if (!edge?.routePoints?.length) throw new Error(`Could not find routed edge between ${sourceId} and ${targetId}`);
-  const first = edge.routePoints[0];
-  const last = edge.routePoints[edge.routePoints.length - 1];
-  const manualRoute = [first, { x: first.x, y }, { x, y }, { x: last.x, y }, last];
-  this.layout = mergeEdgeRoutePoints(this.layout, moduleName, edge.id, manualRoute);
-  await persistWorldLayout(this);
-  await this._waitForDiagramRebuild();
-  await syncLastViewModel(this, moduleName);
-  await waitForExtensionRenderedView(this, 'After manual route');
+  await waitForExtensionRenderedView(this, `After clicking ${label}`);
 });
 
 When('I cut the net on the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
@@ -388,44 +358,113 @@ When('I move the port node {string} to \\({int}, {int}\\)', async function (this
   await dragPortNodeTo(this, name, x, y, 'After move');
 });
 
-When('I drag port nodes {string} and {string} together', async function (this: BddWorld, name1: string, name2: string) {
+// Plain "move" with no coordinates: behaves like a real user nudging a block a
+// couple of grid cells up with the mouse. No internal repositioning — the move
+// happens entirely through a drag in the React Flow canvas and the extension
+// persists it.
+When('I move the port node {string}', async function (this: BddWorld, name: string) {
+  await dragPortNodeByGridCells(this, name, 0, -2, `After moving ${name}`);
+});
+
+// Rubber-band selection: press on empty canvas and drag a rectangle around the
+// two nodes, exactly like a user lassoing blocks. React Flow has selectionOnDrag
+// enabled, so a left-button drag on the pane selects the enclosed nodes.
+When('click and drag the mouse to select {string} and {string} together', async function (this: BddWorld, name1: string, name2: string) {
   const id1 = await findNodeIdByLabel(this.webviewPage, name1, 'port');
   const id2 = await findNodeIdByLabel(this.webviewPage, name2, 'port');
   if (!id1 || !id2) throw new Error(`Nodes not found: ${name1}=${id1}, ${name2}=${id2}`);
-  await this.webviewPage.locator('html').evaluate((_el, { nodeId1, nodeId2 }) => {
-    const rf = (window as any).reactFlowInstance;
-    rf.setNodes((nodes: any[]) => nodes.map((n: any) => ({ ...n, selected: n.id === nodeId1 || n.id === nodeId2 })));
-  }, { nodeId1: id1, nodeId2: id2 });
-  await this.workbox.waitForTimeout(100);
-  const msgsBefore = (await this.webviewMessages()).length;
-  const nodeLocator = this.webviewPage.locator(`.react-flow__node[data-id="${id1}"]`);
-  const box = await nodeLocator.boundingBox();
-  if (!box) throw new Error(`Could not get bounding box for node ${id1}`);
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
-  await this.workbox.mouse.move(cx, cy);
-  await this.workbox.mouse.down();
-  await this.workbox.mouse.move(cx + 96, cy, { steps: 10 });
-  await this.workbox.mouse.up();
-  await this.workbox.waitForTimeout(500);
-  const sawLayoutMessage = await expect.poll(async () => {
-    const messages = await this.webviewMessages();
-    return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
-  }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
-  const allMessages = await this.webviewMessages();
-  const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
-  if (layoutMsg) {
-    this.layout = mergeNodePositions(this.layout, layoutMsg.moduleName, layoutMsg.nodes);
-  } else {
-    const moduleName = this.lastViewModel.moduleName;
-    const positioned = await currentPositionedNodes(this.webviewPage, this.lastViewModel.nodes);
-    this.layout = mergeNodePositions(this.layout, moduleName, positioned);
-    if (!sawLayoutMessage) {
-      this.lastViewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
-    }
+
+  // Remember where the two nodes started so a later "should have moved" check
+  // has a pre-move baseline to compare against.
+  for (const [name, id] of [[name1, id1], [name2, id2]] as Array<[string, string]>) {
+    const pos = await getInternalPosition(this.webviewPage, id);
+    if (!pos) throw new Error(`Missing position data for ${name}`);
+    this.notedPositions.set(name, pos);
   }
-  await persistWorldLayout(this);
-  await this.takeScreenshot('After group drag');
+
+  const box1 = await this.webviewPage.locator(`.react-flow__node[data-id="${id1}"]`).boundingBox();
+  const box2 = await this.webviewPage.locator(`.react-flow__node[data-id="${id2}"]`).boundingBox();
+  if (!box1 || !box2) throw new Error(`Could not get bounding boxes for ${name1}/${name2}`);
+
+  // Draw the lasso from above-left of both nodes to below-right of both nodes,
+  // starting on empty canvas so we don't grab a node by mistake.
+  const left = Math.min(box1.x, box2.x);
+  const top = Math.min(box1.y, box2.y);
+  const right = Math.max(box1.x + box1.width, box2.x + box2.width);
+  const bottom = Math.max(box1.y + box1.height, box2.y + box2.height);
+  const startX = left - 24;
+  const startY = top - 24;
+  const endX = right + 24;
+  const endY = bottom + 24;
+
+  await this.workbox.mouse.move(startX, startY);
+  await this.workbox.mouse.down();
+  await this.workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+  await this.workbox.mouse.move(endX, endY, { steps: 8 });
+  await this.workbox.mouse.up();
+
+  await expect.poll(async () => {
+    return this.webviewPage.locator('html').evaluate((_el, { a, b }) => {
+      const rf = (window as any).reactFlowInstance;
+      const selected = new Set(rf.getNodes().filter((n: any) => n.selected).map((n: any) => n.id));
+      return selected.has(a) && selected.has(b);
+    }, { a: id1, b: id2 });
+  }, { timeout: 5000 }).toBe(true);
+
+  await this.takeScreenshot(`Selected ${name1} and ${name2}`);
+});
+
+// Drag the current multi-selection a couple of grid cells with the mouse. React
+// Flow moves every selected node together; the extension persists the result.
+When('I move the selected nodes', async function (this: BddWorld) {
+  const selected = await this.webviewPage.locator('html').evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getNodes().filter((n: any) => n.selected).map((n: any) => ({ id: n.id, position: n.position }));
+  });
+  if (selected.length < 2) throw new Error(`Expected a multi-selection but found ${selected.length} selected node(s)`);
+
+  const moduleName = this.lastViewModel.moduleName;
+
+  // Grab one of the selected nodes and drag it upward; React Flow moves the
+  // whole selection together and the extension persists the result. A single
+  // drag is enough here — the scenario only checks that the nodes moved.
+  const anchorId = selected[0].id;
+  const zoom = await this.webviewPage.locator('html').evaluate(() =>
+    ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
+  );
+  await rawDragNode(this, anchorId, 0, -2 * diagramGrid.size * zoom);
+
+  await expect.poll(async () => {
+    const after = await getInternalPosition(this.webviewPage, anchorId);
+    const start = selected.find((n: any) => n.id === anchorId)?.position;
+    return !!after && !!start && (Math.abs(after.x - start.x) > 1 || Math.abs(after.y - start.y) > 1);
+  }, { timeout: 5000 }).toBe(true);
+
+  // Wait until the extension has persisted every dragged node, then mirror the
+  // layout file into our in-memory copy.
+  await expect.poll(async () => {
+    const layout = await readExtensionLayout(this);
+    const nodes = layout.modules?.[moduleName]?.nodes ?? {};
+    return selected.every((n: any) => nodes[n.id]?.fixed);
+  }, { timeout: 10_000 }).toBe(true);
+  this.layout = await readExtensionLayout(this);
+  await syncLastViewModel(this, moduleName);
+  await this.takeScreenshot('After moving the selected nodes');
+});
+
+// Drag a horizontal segment of a connection so its wire shifts by a grid cell,
+// the way a user reshapes a route. "downward" is the default; "upward" is used
+// where a scenario needs two routes nudged in opposite directions.
+When('I adjust the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
+  await adjustConnectionByGridCells(this, source, target, 1);
+});
+
+When('I adjust the connection between {string} and {string} upward', async function (this: BddWorld, source: string, target: string) {
+  await adjustConnectionByGridCells(this, source, target, -1);
+});
+
+When('I adjust the connection between {string} and {string} downward', async function (this: BddWorld, source: string, target: string) {
+  await adjustConnectionByGridCells(this, source, target, 1);
 });
 
 When('I position the port node {string} at \\({int}, {int}\\)', async function (this: BddWorld, name: string, x: number, y: number) {
@@ -1102,7 +1141,29 @@ Then('the port node {string} should have moved', async function (this: BddWorld,
   const pos = await getInternalPosition(this.webviewPage, id);
   const initialPos = this.notedPositions.get(name);
   if (!pos || !initialPos) throw new Error(`Missing position data for ${name}`);
-  expect(pos.x).not.toBeCloseTo(initialPos.x, 0);
+  // A move along either axis counts (the default move nudges nodes vertically).
+  const moved = Math.abs(pos.x - initialPos.x) > 0.5 || Math.abs(pos.y - initialPos.y) > 0.5;
+  expect(moved, `Expected ${name} to have moved from (${initialPos.x}, ${initialPos.y}) but it is at (${pos.x}, ${pos.y})`).toBe(true);
+});
+
+Then('the port node {string} should be where I moved it to', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const movedTo = this.movedToPositions.get(name);
+  if (!pos || !movedTo) throw new Error(`Missing remembered move target for ${name}`);
+  expect(pos.x).toBeCloseTo(movedTo.x, 0);
+  expect(pos.y).toBeCloseTo(movedTo.y, 0);
+});
+
+Then('the port node {string} should be at its original position', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const originalPos = this.notedPositions.get(name);
+  if (!pos || !originalPos) throw new Error(`Missing original position for ${name}`);
+  expect(pos.x).toBeCloseTo(originalPos.x, 0);
+  expect(pos.y).toBeCloseTo(originalPos.y, 0);
 });
 
 Then('the port node {string} should not have moved', async function (this: BddWorld, name: string) {
@@ -1970,6 +2031,218 @@ async function dragPortNodeTo(
   }
   await persistWorldLayout(world);
   await world.takeScreenshot(screenshotLabel);
+}
+
+// Realistic relative drag: nudge a port node by a whole number of grid cells
+// with the mouse — no internal repositioning, no fake fallback. The pre-move
+// position is remembered for "should have moved"/"original position" checks and
+// the landing position for "where I moved it to". The extension persists the
+// drag (layoutChanged), so this only mirrors the result into the in-memory
+// layout for bookkeeping — it never writes the layout file itself.
+async function dragPortNodeByGridCells(
+  world: BddWorld,
+  name: string,
+  cellsX: number,
+  cellsY: number,
+  screenshotLabel: string
+): Promise<void> {
+  const id = await findNodeIdByLabel(world.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
+  const moduleName = world.lastViewModel.moduleName;
+  const before = await getInternalPosition(world.webviewPage, id);
+  if (!before) throw new Error(`Missing position data for ${name}`);
+  world.notedPositions.set(name, before);
+
+  await dragNodeByGridCells(world, id, cellsX, cellsY);
+
+  await expect.poll(async () => {
+    const nextPos = await getInternalPosition(world.webviewPage, id);
+    return !!nextPos && (Math.abs(nextPos.x - before.x) > 1 || Math.abs(nextPos.y - before.y) > 1);
+  }, { timeout: 5000 }).toBe(true);
+
+  const after = await getInternalPosition(world.webviewPage, id);
+  if (!after) throw new Error(`Missing position data for ${name} after move`);
+  world.movedToPositions.set(name, after);
+
+  // The extension owns persistence — wait until it has written the new fixed
+  // position to the layout file, then mirror that file into our in-memory copy.
+  await waitForNodePersisted(world, moduleName, id, after);
+  world.layout = await readExtensionLayout(world);
+
+  await syncLastViewModel(world, moduleName);
+  await world.takeScreenshot(screenshotLabel);
+}
+
+// One raw mouse drag of a node by a screen-space delta. React Flow needs a small
+// threshold nudge before it recognises the drag.
+async function rawDragNode(world: BddWorld, id: string, dxScreen: number, dyScreen: number): Promise<void> {
+  const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for node ${id}`);
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await world.workbox.mouse.move(cx, cy);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(cx + Math.sign(dxScreen || 1) * 2, cy + Math.sign(dyScreen || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(cx + dxScreen, cy + dyScreen, { steps: 20 });
+  await world.workbox.mouse.up();
+  await world.workbox.waitForTimeout(150);
+}
+
+// Drag a node to land exactly a whole number of grid cells from where it
+// started. The webview can render with a device-pixel-ratio that makes a naive
+// "flow * zoom" delta undershoot, so we self-calibrate: drag, measure the actual
+// screen→flow ratio, and correct until we reach the target. Pure mouse moves —
+// no internal repositioning.
+async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, cellsY: number): Promise<void> {
+  const start = await getInternalPosition(world.webviewPage, id);
+  if (!start) throw new Error(`Missing position data for node ${id}`);
+  const target = { x: start.x + cellsX * diagramGrid.size, y: start.y + cellsY * diagramGrid.size };
+
+  const zoom = await world.webviewPage.locator('html').evaluate(() =>
+    ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
+  );
+  let screenPerFlow = zoom; // refined after the first observed move
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const cur = await getInternalPosition(world.webviewPage, id);
+    if (!cur) throw new Error(`Missing position data for node ${id}`);
+    const remX = target.x - cur.x;
+    const remY = target.y - cur.y;
+    if (Math.abs(remX) <= 1 && Math.abs(remY) <= 1) return;
+
+    const dxScreen = remX * screenPerFlow;
+    const dyScreen = remY * screenPerFlow;
+    await rawDragNode(world, id, dxScreen, dyScreen);
+
+    const after = await getInternalPosition(world.webviewPage, id);
+    if (!after) throw new Error(`Missing position data for node ${id}`);
+    // Learn the real ratio from the dominant axis of this drag.
+    if (Math.abs(dyScreen) >= Math.abs(dxScreen) && Math.abs(dyScreen) > 1 && Math.abs(after.y - cur.y) > 1) {
+      screenPerFlow = dyScreen / (after.y - cur.y);
+    } else if (Math.abs(dxScreen) > 1 && Math.abs(after.x - cur.x) > 1) {
+      screenPerFlow = dxScreen / (after.x - cur.x);
+    }
+    // Cache the measured screen→flow ratio so edge-segment drags can reuse it.
+    (world as any)._dragScreenPerFlow = screenPerFlow;
+  }
+
+  const final = await getInternalPosition(world.webviewPage, id);
+  if (!final || Math.abs(final.x - target.x) > 1 || Math.abs(final.y - target.y) > 1) {
+    throw new Error(`Could not drag node ${id} to ${JSON.stringify(target)} (reached ${JSON.stringify(final)})`);
+  }
+}
+
+async function readExtensionLayout(world: BddWorld): Promise<any> {
+  const layoutPath = path.join(world.workspaceDir || BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
+  try {
+    return JSON.parse(await fs.promises.readFile(layoutPath, 'utf8'));
+  } catch {
+    return { version: 1, modules: {} };
+  }
+}
+
+async function waitForNodePersisted(world: BddWorld, moduleName: string, nodeId: string, pos: { x: number; y: number }): Promise<void> {
+  await expect.poll(async () => {
+    const layout = await readExtensionLayout(world);
+    const node = layout.modules?.[moduleName]?.nodes?.[nodeId];
+    return !!node && Math.abs(node.x - pos.x) <= 1 && Math.abs(node.y - pos.y) <= 1;
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+// Reshape a connection the way a user does: grab one of its horizontal segment
+// handles and drag it up or down by a grid cell. The extension persists the new
+// route (edgeRoutesChanged); we mirror it into the in-memory layout and record
+// the resulting route so later "route should (not) have changed" checks have a
+// baseline taken after the manual adjustment.
+async function adjustConnectionByGridCells(
+  world: BddWorld,
+  source: string,
+  target: string,
+  cellsDown: number
+): Promise<void> {
+  const sourceId = await findNodeIdByLabel(world.webviewPage, source);
+  const targetId = await findNodeIdByLabel(world.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(world.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${targetId}`);
+  const moduleName = world.lastViewModel.moduleName;
+
+  const beforeRoute = await connectionRoutePath(world.webviewPage, source, target);
+
+  // Reveal the edge controls/handles by hovering it, then pick the longest
+  // horizontal segment handle (dragging it vertically shifts the wire).
+  const edgeLocator = world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').hover({ force: true });
+  await world.workbox.waitForTimeout(200);
+
+  const handles = edgeLocator.locator('path.svsch-edge-segment-horizontal');
+  const handleCount = await handles.count();
+  if (handleCount === 0) throw new Error(`No horizontal segment handle to drag on connection ${source} -> ${target}`);
+  let longestHandle = handles.first();
+  let bestWidth = -1;
+  for (let i = 0; i < handleCount; i += 1) {
+    const candidate = handles.nth(i);
+    const candidateBox = await candidate.boundingBox();
+    if (candidateBox && candidateBox.width > bestWidth) {
+      bestWidth = candidateBox.width;
+      longestHandle = candidate;
+    }
+  }
+  const handleBox = await longestHandle.boundingBox();
+  if (!handleBox) throw new Error(`Could not get bounding box for segment handle on ${source} -> ${target}`);
+
+  // Use the screen→flow ratio measured by a prior node drag if we have it;
+  // otherwise derive it from the viewport zoom and the webview's device pixel
+  // ratio (the webview can render at a DPR that scales the effective zoom).
+  const screenPerFlow = (world as any)._dragScreenPerFlow ?? await world.webviewPage.locator('html').evaluate(() => {
+    const zoom = (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1;
+    return zoom * (window.devicePixelRatio || 1);
+  });
+  const gx = handleBox.x + handleBox.width / 2;
+  const gy = handleBox.y + handleBox.height / 2;
+  const dyScreen = cellsDown * diagramGrid.size * screenPerFlow;
+
+  const layoutBefore = JSON.stringify(await readExtensionLayout(world));
+  await world.workbox.mouse.move(gx, gy);
+  await world.workbox.mouse.down();
+  // Small threshold nudge so the segment-drag is recognised, then the move.
+  await world.workbox.mouse.move(gx, gy + Math.sign(cellsDown) * 3, { steps: 3 });
+  await world.workbox.mouse.move(gx, gy + dyScreen, { steps: 20 });
+  await world.workbox.mouse.up();
+
+  // The route must actually have changed for the adjustment to be meaningful.
+  await expect.poll(async () => {
+    const current = await connectionRoutePath(world.webviewPage, source, target);
+    return current !== beforeRoute;
+  }, { timeout: 5000 }).toBe(true);
+
+  // The extension owns persistence — wait until it has rewritten the layout
+  // file, then mirror it into our in-memory copy.
+  await expect.poll(async () => JSON.stringify(await readExtensionLayout(world)) !== layoutBefore, { timeout: 10_000 }).toBe(true);
+  world.layout = await readExtensionLayout(world);
+
+  await syncLastViewModel(world, moduleName);
+  await waitForExtensionRenderedView(world, `After adjusting ${source} -> ${target}`);
+
+  // Baseline the (now manually-adjusted) route so later assertions compare
+  // against this state rather than the auto-routed original.
+  world.notedRoutes.set(routeKey(source, target), await connectionRoutePath(world.webviewPage, source, target));
+}
+
+// Snapshot the current position of every port node into notedPositions so a
+// subsequent "should not have moved" assertion compares against the layout as it
+// stood just before an action (e.g. clicking Reroute All).
+async function recordPortPositions(world: BddWorld): Promise<void> {
+  const ports = await world.webviewPage.locator('html').evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    if (!rf) return [];
+    return rf.getNodes()
+      .filter((n: any) => n.data?.node?.kind === 'port')
+      .map((n: any) => ({ label: n.data?.node?.label ?? n.data?.node?.name, position: n.position }));
+  });
+  for (const port of ports) {
+    if (port.label) world.notedPositions.set(port.label, port.position);
+  }
 }
 
 async function cutNetByClickingControl(world: BddWorld, source: string, target: string): Promise<void> {
