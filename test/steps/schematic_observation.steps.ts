@@ -62,46 +62,66 @@ Then('the {string} module is selected in the module dropdown', async function (t
 // ---------------------------------------------------------------------------
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
-  // Cached-graph scenarios still open the real SVSCH panel, then hydrate it
-  // with the graph prepared by their Given step.
-  let folder = this.lastGraph ? './no-sv-files-here' : '.';
-  if (!this.lastGraph && this._bddWorkspaceFiles.length > 0) {
-    const relDir = path.relative(BddWorld.BDD_WORKSPACE, path.dirname(this._bddWorkspaceFiles[0]));
-    folder = relDir || '.';
-  }
+  if (this._bddWorkspaceFiles.length > 0) {
+    // Natural flow: files are in BDD_WORKSPACE, let the extension build and render.
+    const folder = commonProjectFolder(this._bddWorkspaceFiles);
 
-  await this.evaluateInVSCode((_vscode, f) => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
-  }, folder);
+    await this.evaluateInVSCode((_vscode, f) => {
+      return (_vscode as any).workspace
+        .getConfiguration('svsch')
+        .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
+    }, folder);
 
-  if (this.lastGraph?.modules?.[moduleName]) {
+    await this.workbox.keyboard.press('Control+Shift+P');
+    await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
+    await this.workbox.keyboard.type('SVSCH: Open Diagram');
+    await this.workbox.keyboard.press('Enter');
+
+    await this.workbox.waitForSelector(
+      '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
+      { timeout: 30_000 }
+    );
+
+    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+      .waitFor({ state: 'hidden', timeout: 90_000 })
+      .catch(() => {});
+
+    await this.selectModule(moduleName, false);
+  } else {
+    // Injection flow: files live in a temp dir that VS Code doesn't know about
+    // (e.g. CLI tests using openWorkspaceForEditing). Open a captured panel and
+    // post the pre-built graph directly so the webview can render it.
     await this.openCapturedDiagramPanel();
-    await this.selectModule(moduleName);
-    return;
+    if (this.lastGraph && this.lastViewModel) {
+      await this._waitForWebviewReady();
+      await this._postGraphToWebview(this.lastViewModel, this.lastGraph.rootModules);
+      await this._waitForRenderedGraph(this.lastViewModel, this.lastGraph.rootModules, 30_000);
+    }
+    await this.selectModule(moduleName, false);
   }
-
-  await this.workbox.keyboard.press('Control+Shift+P');
-  await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
-  await this.workbox.keyboard.type('SVSCH: Open Diagram');
-  await this.workbox.keyboard.press('Enter');
-
-  await this.workbox.waitForSelector(
-    '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-    { timeout: 30_000 }
-  );
-
-  // Wait for any in-progress rebuild to settle before asserting on nodes
-  await this.webviewPage.locator('div.busy-indicator[role="status"]')
-    .waitFor({ state: 'hidden', timeout: 90_000 })
-    .catch(() => {});
-
-  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 90_000 });
-
-  await expect(
-    this.webviewPage.locator('select[aria-label="Module"]')
-  ).toHaveValue(moduleName, { timeout: 10_000 });
 
   await this.takeScreenshot(`Viewing module ${moduleName}`);
 });
+
+function commonProjectFolder(files: string[]): string {
+  const relativeDirs = files.map((file) => {
+    const relDir = path.relative(BddWorld.BDD_WORKSPACE, path.dirname(file));
+    return relDir && relDir !== '' ? relDir : '.';
+  });
+  if (relativeDirs.length === 0) {
+    return '.';
+  }
+
+  let commonParts = relativeDirs[0] === '.'
+    ? []
+    : relativeDirs[0].split(path.sep).filter(Boolean);
+  for (const relDir of relativeDirs.slice(1)) {
+    const parts = relDir === '.' ? [] : relDir.split(path.sep).filter(Boolean);
+    let index = 0;
+    while (index < commonParts.length && index < parts.length && commonParts[index] === parts[index]) {
+      index += 1;
+    }
+    commonParts = commonParts.slice(0, index);
+  }
+  return commonParts.length > 0 ? commonParts.join(path.sep) : '.';
+}

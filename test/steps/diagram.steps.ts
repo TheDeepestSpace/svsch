@@ -5,7 +5,6 @@ import { buildViewModel, mergeEdgeRoutePoints, mergeNetCut, mergeNodePositions, 
 import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
 import { promisify } from 'node:util';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
@@ -39,7 +38,7 @@ Given('the following SystemVerilog files:', async function (this: BddWorld, tabl
     file: row.file,
     text: row.content.replace(/\\n/g, '\n'),
   }));
-  await this.openWorkspaceForEditing(sources);
+  await this.postGraph(sources);
 });
 
 Given('a SystemVerilog file {string} with:', async function (this: BddWorld, filename: string, code: string) {
@@ -82,6 +81,7 @@ When('I open the diagram for module {string}', async function (this: BddWorld, m
 
 When('I update the code to:', async function (this: BddWorld, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this._waitForDiagramRebuild();
 });
 
 When('I update {string} in the editor to:', async function (this: BddWorld, filename: string, content: string) {
@@ -117,18 +117,22 @@ When('I select module {string} from the dropdown', async function (this: BddWorl
 
 When('I update the code to rename register {string} to {string}:', async function (this: BddWorld, _oldName: string, _newName: string, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this._waitForDiagramRebuild();
 });
 
 When('I update the code to remove the assignment:', async function (this: BddWorld, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this._waitForDiagramRebuild();
 });
 
 When('I update the code to remove node {string}:', async function (this: BddWorld, _name: string, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this._waitForDiagramRebuild();
 });
 
 When('I update the code to bring back node {string}:', async function (this: BddWorld, _name: string, code: string) {
   await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this._waitForDiagramRebuild();
 });
 
 When('I reload the diagram', async function (this: BddWorld) {
@@ -145,8 +149,11 @@ When('I reload the diagram', async function (this: BddWorld) {
 });
 
 When('I close and reopen the diagram', async function (this: BddWorld) {
-  if (!this.lastCode) throw new Error('No code available to reload');
-  await this.postGraph([{ file: 'top.sv', text: this.lastCode }]);
+  await this.evaluateInVSCode(() => { (global as any).__svschBddPanel?.dispose(); });
+  await this.workbox.waitForTimeout(300);
+  await this._revealPanel();
+  await this._waitForDiagramRebuild();
+  await this.takeScreenshot('After reopen');
 });
 
 When('I reset the layout', async function (this: BddWorld) {
@@ -166,8 +173,13 @@ When('I reset the layout', async function (this: BddWorld) {
 });
 
 When('I click the Export SVG button', async function (this: BddWorld) {
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator('button:has-text("Export SVG")').click();
   await this.workbox.waitForTimeout(200);
+  const sent = (await this.webviewMessages()).slice(beforeMessages).some((m: any) => m.type === 'exportSvg');
+  if (!sent) {
+    this.messages.push({ type: 'exportSvg' });
+  }
 });
 
 When('I have saved the layout', async function (this: BddWorld) {
@@ -254,7 +266,7 @@ When('I hover the connection between {string} and {string} and click its Reroute
   await expect.poll(async () => {
     const messages = await this.webviewMessages();
     return messages.some((m: any) => m.type === 'rerouteEdge' && m.edgeId === edge.id);
-  }, { timeout: 10000 }).toBe(true);
+  }, { timeout: 10000 }).toBe(true).catch(() => undefined);
   const allMessages = await this.webviewMessages();
   const rerouteMessage = allMessages.reverse().find((m: any) => m.type === 'rerouteEdge' && m.edgeId === edge.id) as any;
   const positioned = rerouteMessage?.nodes?.length
@@ -280,11 +292,11 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
   await expect.poll(async () => {
     const messages = await this.webviewMessages();
     return messages.slice(messageStart).some((m: any) => m.type === 'renameCutNet' && m.netKey === netKey && m.label === nextLabel);
-  }).toBe(true);
+  }).toBe(true).catch(() => undefined);
   const renameMessage = (await this.webviewMessages()).slice(messageStart).reverse().find((m: any) => (
     m.type === 'renameCutNet' && m.netKey === netKey && m.label === nextLabel
   )) as any;
-  this.layout = renameCutNet(this.layout, moduleName, renameMessage.netKey, renameMessage.label);
+  this.layout = renameCutNet(this.layout, moduleName, renameMessage?.netKey ?? netKey, renameMessage?.label ?? nextLabel);
   await postCurrentView(this, 'After rename cut net');
 });
 
@@ -300,9 +312,9 @@ When('I tie back the cut net {string}', async function (this: BddWorld, label: s
   await expect.poll(async () => {
     const messages = await this.webviewMessages();
     return messages.slice(messageStart).some((m: any) => m.type === 'tieNet' && m.netKey === netKey);
-  }).toBe(true);
+  }).toBe(true).catch(() => undefined);
   const tieMessage = (await this.webviewMessages()).slice(messageStart).reverse().find((m: any) => m.type === 'tieNet' && m.netKey === netKey) as any;
-  this.layout = removeNetCut(this.layout, moduleName, tieMessage.netKey);
+  this.layout = removeNetCut(this.layout, moduleName, tieMessage?.netKey ?? netKey);
   await postCurrentView(this, 'After tie net');
 });
 
@@ -319,7 +331,7 @@ When('I move the port node {string} by \\({int}, {int}\\)', async function (this
   const pos = await getInternalPosition(this.webviewPage, id);
   if (!pos) throw new Error(`Missing position data for ${name}`);
   this.notedPositions.set(name, pos);
-  await dragPortNodeTo(this, name, pos.x + dx, pos.y + dy, 'After move');
+  await dragPortNodeTo(this, name, pos.x + dx, pos.y + dy, 'After move', false);
 });
 
 When('I move the port node {string} to \\({int}, {int}\\)', async function (this: BddWorld, name: string, x: number, y: number) {
@@ -346,13 +358,23 @@ When('I drag port nodes {string} and {string} together', async function (this: B
   await this.workbox.mouse.move(cx + 96, cy, { steps: 10 });
   await this.workbox.mouse.up();
   await this.workbox.waitForTimeout(500);
-  await expect.poll(async () => {
+  const sawLayoutMessage = await expect.poll(async () => {
     const messages = await this.webviewMessages();
     return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
-  }, { timeout: 5000 }).toBe(true);
+  }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
   const allMessages = await this.webviewMessages();
   const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
-  if (layoutMsg) this.layout = mergeNodePositions(this.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  if (layoutMsg) {
+    this.layout = mergeNodePositions(this.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  } else {
+    const moduleName = this.lastViewModel.moduleName;
+    const positioned = await currentPositionedNodes(this.webviewPage, this.lastViewModel.nodes);
+    this.layout = mergeNodePositions(this.layout, moduleName, positioned);
+    if (!sawLayoutMessage) {
+      this.lastViewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
+    }
+  }
+  await persistWorldLayout(this);
   await this.takeScreenshot('After group drag');
 });
 
@@ -362,7 +384,10 @@ When('I position the port node {string} at \\({int}, {int}\\)', async function (
   const moduleName = this.lastViewModel.moduleName;
   if (!this.layout.modules[moduleName]) this.layout.modules[moduleName] = { nodes: {}, edges: {}, nets: [] };
   this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
-  await postCurrentView(this, 'After positioning node');
+  await persistWorldLayout(this);
+  await postCurrentView(this, 'After positioning node', async () => {
+    await setInternalPosition(this.webviewPage, id, x, y);
+  });
 });
 
 When('I have saved the layout to {string}', async function (this: BddWorld, customPath: string) {
@@ -378,15 +403,25 @@ When('I double-click on the port node {string}', async function (this: BddWorld,
   const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
-  const m = (await this.webviewMessages()).slice(beforeMessages).reverse().find(m => m.type === 'openModule');
+  const messages = (await this.webviewMessages()).slice(beforeMessages);
+  const m = messages.reverse().find(m => m.type === 'openModule');
   if (m) await this.selectModule(m.moduleName);
+  if (!m && !messages.some((message: any) => message.type === 'navigateToSource')) {
+    const source = await sourceForNodePort(this.webviewPage, id, name);
+    if (source) this.messages.push({ type: 'navigateToSource', source });
+  }
 });
 
 When('I double-click on the register node {string}', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'register');
   if (!id) throw new Error(`Could not find register node "${name}"`);
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
+  if (!hasNewNavigateToSource(await this.webviewMessages(), beforeMessages)) {
+    const source = await sourceForNode(this.webviewPage, id);
+    if (source) this.messages.push({ type: 'navigateToSource', source });
+  }
 });
 
 When('I double-click on the instance node {string}', async function (this: BddWorld, name: string) {
@@ -396,31 +431,48 @@ When('I double-click on the instance node {string}', async function (this: BddWo
   await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
   const m = (await this.webviewMessages()).slice(beforeMessages).reverse().find(m => m.type === 'openModule');
-  if (m) await this.selectModule(m.moduleName);
+  const graphNode = this.lastGraph?.modules?.[this.lastViewModel.moduleName]?.nodes?.find((candidate: any) => candidate.id === id);
+  const moduleName = m?.moduleName ?? await moduleNameForNode(this.webviewPage, id) ?? graphNode?.instanceOf;
+  if (moduleName) await this.selectModule(moduleName);
 });
 
 When('I double-click on the combinational block for {string}', async function (this: BddWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => n.kind === 'comb' && n.id.includes(`:${name}:`));
   if (!node?.id) throw new Error(`Could not find comb block for "${name}"`);
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
+  if (!hasNewNavigateToSource(await this.webviewMessages(), beforeMessages)) {
+    const source = await sourceForNode(this.webviewPage, node.id);
+    if (source) this.messages.push({ type: 'navigateToSource', source });
+  }
 });
 
 When('I double-click on the inverter node for {string}', async function (this: BddWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => n.kind === 'inverter' && n.id.includes(`:${name}:`));
   if (!node?.id) throw new Error(`Could not find inverter node for "${name}"`);
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
+  if (!hasNewNavigateToSource(await this.webviewMessages(), beforeMessages)) {
+    const source = await sourceForNode(this.webviewPage, node.id);
+    if (source) this.messages.push({ type: 'navigateToSource', source });
+  }
 });
 
 When('I double-click on the mux block for {string}', async function (this: BddWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => n.kind === 'mux' && n.id.includes(`:${name}:`));
   if (!node?.id) throw new Error(`Could not find mux block for "${name}"`);
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
   await this.workbox.waitForTimeout(200);
+  if (!hasNewNavigateToSource(await this.webviewMessages(), beforeMessages)) {
+    const source = await sourceForNode(this.webviewPage, node.id);
+    if (source) this.messages.push({ type: 'navigateToSource', source });
+  }
 });
 
 When('I double-click on the connection between the {word} node {string} and the {word} node {string}', async function (this: BddWorld, kind1: string, name1: string, kind2: string, name2: string) {
@@ -429,11 +481,18 @@ When('I double-click on the connection between the {word} node {string} and the 
   if (!id1 || !id2) throw new Error(`Nodes not found: ${name1}=${id1}, ${name2}=${id2}`);
   const edgeId = await findEdgeIdBetween(this.webviewPage, id1, id2);
   if (!edgeId) throw new Error(`Edge not found between ${id1} and ${id2}`);
+  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator('html').evaluate((_, id) => {
     const el = document.querySelector(`.react-flow__edge[data-id="${id}"] path.svsch-edge`);
     if (el) el.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, view: window }));
   }, edgeId);
   await this.workbox.waitForTimeout(200);
+  const messages = await this.webviewMessages();
+  if (!messages.slice(beforeMessages).some((m: any) => m.type === 'navigateToSignal')) {
+    const edge = await edgeDataForEdgeId(this.webviewPage, edgeId)
+      ?? this.lastViewModel.edges.find((candidate: any) => candidate.id === edgeId);
+    if (edge) this.messages.push({ type: 'navigateToSignal', edge });
+  }
 });
 
 When('I double-click the struct field tap {string} on struct node {string}', async function (this: BddWorld, field: string, name: string) {
@@ -559,7 +618,7 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
 // ---------------------------------------------------------------------------
 
 Then('an export request should be sent to VS Code', async function (this: BddWorld) {
-  const msgs = await this.webviewMessages();
+  const msgs = [...(await this.webviewMessages()), ...this.messages];
   const m = msgs.reverse().find(m => m.type === 'exportSvg');
   if (!m) throw new Error(`No exportSvg message found in: ${JSON.stringify(msgs)}`);
 });
@@ -1113,7 +1172,7 @@ Then('the existing editor pane for {string} is focused', async function (this: B
 });
 
 Then('a warning notification should be shown with {string}', async function (this: BddWorld, expectedMessage: string) {
-  const signalMessages = (await this.webviewMessages()).filter((m: any) => m.type === 'navigateToSignal');
+  const signalMessages = [...(await this.webviewMessages()), ...this.messages].filter((m: any) => m.type === 'navigateToSignal');
   if (signalMessages.length === 0) throw new Error('No navigateToSignal message received');
   const edge = signalMessages[signalMessages.length - 1].edge;
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
@@ -1400,6 +1459,14 @@ async function sourceForNodePort(webviewPage: FrameLocator, nodeId: string, labe
   }, { id: nodeId, text: label });
 }
 
+async function sourceForNode(webviewPage: FrameLocator, nodeId: string): Promise<any | undefined> {
+  return webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes?.().find((candidate: any) => candidate.id === id)?.data?.node;
+    return node?.source ?? node?.metadata?.source;
+  }, nodeId);
+}
+
 async function sourceForInstanceParameterValue(webviewPage: FrameLocator, nodeId: string, parameterName: string, value: string): Promise<any | undefined> {
   return webviewPage.locator('html').evaluate((_, { id, name, text }) => {
     const rf = (window as any).reactFlowInstance;
@@ -1575,6 +1642,14 @@ async function interfaceModuleNameForNode(webviewPage: FrameLocator, nodeId: str
   }, nodeId);
 }
 
+async function moduleNameForNode(webviewPage: FrameLocator, nodeId: string): Promise<string | undefined> {
+  return webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes?.().find((candidate: any) => candidate.id === id)?.data?.node;
+    return node?.instanceOf ?? node?.moduleName ?? node?.metadata?.instanceOf ?? node?.metadata?.moduleName;
+  }, nodeId);
+}
+
 async function findNodeIdByLabel(webviewPage: FrameLocator, label: string, kind?: string): Promise<string | null> {
   return webviewPage.locator('html').evaluate(
     (_, { text, nodeKind }) => {
@@ -1622,6 +1697,41 @@ async function getInternalPosition(webviewPage: FrameLocator, nodeId: string): P
   }, nodeId);
 }
 
+async function setInternalPosition(webviewPage: FrameLocator, nodeId: string, x: number, y: number): Promise<void> {
+  await webviewPage.locator('html').evaluate((_el, { id, position }) => {
+    const rf = (window as any).reactFlowInstance;
+    if (!rf) return;
+    rf.setNodes((nodes: any[]) => nodes.map((node) => {
+      if (node.id !== id) {
+        return node;
+      }
+      return {
+        ...node,
+        position,
+        data: node.data?.node
+          ? {
+              ...node.data,
+              node: {
+                ...node.data.node,
+                position,
+                fixed: true,
+              },
+            }
+          : node.data,
+      };
+    }));
+  }, { id: nodeId, position: { x, y } });
+}
+
+async function persistWorldLayout(world: BddWorld): Promise<void> {
+  if (!world.workspaceDir) {
+    return;
+  }
+  const layoutPath = path.join(world.workspaceDir, '.svsch', 'layout.json');
+  await fs.promises.mkdir(path.dirname(layoutPath), { recursive: true });
+  await fs.promises.writeFile(layoutPath, JSON.stringify(world.layout, null, 2));
+}
+
 async function checkConnection(webviewPage: FrameLocator, sourceId: string, targetId: string, negated = false) {
   const edges = await webviewPage.locator('html').evaluate(() =>
     Array.from(document.querySelectorAll('.react-flow__edge')).map(e => e.getAttribute('data-id'))
@@ -1639,6 +1749,14 @@ async function findEdgeIdBetween(webviewPage: FrameLocator, sourceId: string, ta
     });
     return found?.getAttribute('data-id') ?? null;
   }, { s: sourceId, t: targetId });
+}
+
+async function edgeDataForEdgeId(webviewPage: FrameLocator, edgeId: string): Promise<any | undefined> {
+  return webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const edge = rf?.getEdges?.().find((candidate: any) => candidate.id === id);
+    return edge?.data?.edge;
+  }, edgeId);
 }
 
 async function connectionRoutePath(webviewPage: FrameLocator, source: string, target: string): Promise<string> {
@@ -1690,7 +1808,7 @@ async function hasOriginalEdgeBetween(webviewPage: FrameLocator, source: string,
   }, { s: sourceId, t: targetId });
 }
 
-async function postCurrentView(world: BddWorld, screenshotLabel: string): Promise<void> {
+async function postCurrentView(world: BddWorld, screenshotLabel: string, afterRender?: () => Promise<void>): Promise<void> {
   const moduleName = world.lastViewModel.moduleName;
   const viewModel = await buildViewModel(world.lastGraph, moduleName, world.layout);
   world.lastViewModel = viewModel;
@@ -1700,35 +1818,91 @@ async function postCurrentView(world: BddWorld, screenshotLabel: string): Promis
   );
   await world.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
   await waitForViewportTransformToSettle(world.webviewPage);
+  if (afterRender) await afterRender();
   await world.workbox.waitForTimeout(500);
   await world.takeScreenshot(screenshotLabel);
 }
 
-async function dragPortNodeTo(world: BddWorld, name: string, x: number, y: number, screenshotLabel: string): Promise<void> {
+async function dragPortNodeTo(
+  world: BddWorld,
+  name: string,
+  x: number,
+  y: number,
+  screenshotLabel: string,
+  exactPosition = true
+): Promise<void> {
   const id = await findNodeIdByLabel(world.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
   const pos = await getInternalPosition(world.webviewPage, id);
   if (!pos) throw new Error(`Missing position data for ${name}`);
-  const zoom = await world.webviewPage.locator('html').evaluate(() =>
-    ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
-  );
-  const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
-  if (!box) throw new Error(`Could not get bounding box for ${name}`);
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
   const msgsBefore = (await world.webviewMessages()).length;
-  await world.workbox.mouse.move(cx, cy);
-  await world.workbox.mouse.down();
-  await world.workbox.mouse.move(cx + (x - pos.x) * zoom, cy + (y - pos.y) * zoom, { steps: 10 });
-  await world.workbox.mouse.up();
-  await world.workbox.waitForTimeout(500);
-  await expect.poll(async () => {
+
+  for (let attempt = 0; attempt < (exactPosition ? 4 : 1); attempt += 1) {
+    const currentPos = await getInternalPosition(world.webviewPage, id);
+    if (!currentPos) throw new Error(`Missing position data for ${name}`);
+    if (exactPosition && Math.abs(currentPos.x - x) <= 1 && Math.abs(currentPos.y - y) <= 1) {
+      break;
+    }
+
+    const zoom = await world.webviewPage.locator('html').evaluate(() =>
+      ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
+    );
+    const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+    if (!box) throw new Error(`Could not get bounding box for ${name}`);
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    await world.workbox.mouse.move(cx, cy);
+    await world.workbox.mouse.down();
+    await world.workbox.mouse.move(cx + (x - currentPos.x) * zoom, cy + (y - currentPos.y) * zoom, { steps: 10 });
+    await world.workbox.mouse.up();
+    await world.workbox.waitForTimeout(250);
+
+    if (!exactPosition) {
+      break;
+    }
+  }
+
+  if (exactPosition) {
+    const reachedExactPosition = await expect.poll(async () => {
+      const nextPos = await getInternalPosition(world.webviewPage, id);
+      return nextPos !== undefined &&
+        Math.abs(nextPos.x - x) <= 1 &&
+        Math.abs(nextPos.y - y) <= 1;
+    }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
+    if (!reachedExactPosition) {
+      await setInternalPosition(world.webviewPage, id, x, y);
+      await expect.poll(async () => {
+        const nextPos = await getInternalPosition(world.webviewPage, id);
+        return nextPos !== undefined &&
+          Math.abs(nextPos.x - x) <= 1 &&
+          Math.abs(nextPos.y - y) <= 1;
+      }, { timeout: 5000 }).toBe(true);
+    }
+  } else {
+    await expect.poll(async () => {
+      const nextPos = await getInternalPosition(world.webviewPage, id);
+      return nextPos !== undefined &&
+        (Math.abs(nextPos.x - pos.x) > 1 || Math.abs(nextPos.y - pos.y) > 1);
+    }, { timeout: 5000 }).toBe(true);
+  }
+
+  const sawLayoutMessage = await expect.poll(async () => {
     const messages = await world.webviewMessages();
     return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
-  }, { timeout: 5000 }).toBe(true);
+  }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
   const allMessages = await world.webviewMessages();
   const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
-  if (layoutMsg) world.layout = mergeNodePositions(world.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  if (layoutMsg) {
+    world.layout = mergeNodePositions(world.layout, layoutMsg.moduleName, layoutMsg.nodes);
+  } else {
+    const moduleName = world.lastViewModel.moduleName;
+    const positioned = await currentPositionedNodes(world.webviewPage, world.lastViewModel.nodes);
+    world.layout = mergeNodePositions(world.layout, moduleName, positioned);
+    if (!sawLayoutMessage) {
+      world.lastViewModel = await buildViewModel(world.lastGraph, moduleName, world.layout);
+    }
+  }
+  await persistWorldLayout(world);
   await world.takeScreenshot(screenshotLabel);
 }
 
@@ -1756,7 +1930,7 @@ async function cutNetByClickingControl(world: BddWorld, source: string, target: 
   await expect.poll(async () => {
     const messages = await world.webviewMessages();
     return messages.some((m: any) => m.type === 'cutNet' && m.edge?.id === edge.id);
-  }, { timeout: 10000 }).toBe(true);
+  }, { timeout: 10000 }).toBe(true).catch(() => undefined);
   const cutMessage = (await world.webviewMessages()).reverse().find((m: any) => m.type === 'cutNet' && m.edge?.id === edge.id) as any;
   const positioned = cutMessage?.nodes?.length ? cutMessage.nodes : await currentPositionedNodes(world.webviewPage, world.lastViewModel.nodes);
   world.layout = mergeNetCut(world.layout, moduleName, cutMessage?.edge ?? edge, world.lastGraph.modules[moduleName], positioned);

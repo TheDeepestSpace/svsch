@@ -5,7 +5,6 @@ import type { Page, FrameLocator } from '@playwright/test';
 import { expect } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as os from 'node:os';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { buildDesignGraph } from '../../src/parser/backend';
@@ -84,6 +83,7 @@ export class BddWorld {
   // -------------------------------------------------------------------------
 
   async takeScreenshot(label: string): Promise<Buffer | null> {
+    await this._settleWorkbenchForScreenshot();
     const screenshot = await this.workbox.screenshot();
     await this._attachBuffer(screenshot, 'image/png');
 
@@ -220,10 +220,8 @@ export class BddWorld {
   static readonly EXTENSION_ROOT = path.resolve(__dirname, '../..');
 
   async postGraph(sources: { file: string; text: string }[]): Promise<void> {
-    // Write source files into bdd-workspace so they appear in the Explorer.
-    // The extension won't auto-rebuild because svsch.projectFolder points
-    // to a non-existent subdirectory in the workspace settings.
     const workspaceRoot = BddWorld.BDD_WORKSPACE;
+    this.workspaceDir = workspaceRoot;
     await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, workspaceRoot);
     this._bddWorkspaceFiles = [];
     for (const s of sources) {
@@ -254,24 +252,15 @@ export class BddWorld {
     const viewModel = await buildViewModel(graph, moduleName, this.layout);
     this.lastViewModel = viewModel;
     this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
-
-    if (!await this._hasCapturedPanel()) return;
-
-    // Wait for webview to signal ready before posting the graph.
-    await this._waitForWebviewReady();
-    await this._postGraphToWebview(viewModel, Object.keys(graph.modules));
-    // Ensure the SVSCH webview panel is in the foreground.
-    await this._revealPanel();
-    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
-    await this.workbox.waitForTimeout(1000);
-    await this.takeScreenshot(`Viewing module ${moduleName}`);
+    // VS Code's extension handles rendering — no webview injection here.
   }
 
   async openWorkspaceForEditing(sources: { file: string; text: string }[]): Promise<void> {
-    if (this.workspaceDir) {
+    if (this.workspaceDir && this.workspaceDir !== BddWorld.BDD_WORKSPACE) {
       await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
     }
-    this.workspaceDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'svsch-bdd-cli-'));
+    this.workspaceDir = BddWorld.BDD_WORKSPACE;
+    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, this.workspaceDir);
     this.workspaceSources.clear();
     for (const source of sources) {
       this.workspaceSources.set(source.file, source.text);
@@ -289,10 +278,14 @@ export class BddWorld {
 
   private async _writeWorkspaceSources(): Promise<void> {
     if (!this.workspaceDir) throw new Error('No open workspace');
+    this._bddWorkspaceFiles = [];
     for (const [file, text] of this.workspaceSources) {
       const fullPath = path.join(this.workspaceDir, file);
       await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.promises.writeFile(fullPath, text);
+      if (this.workspaceDir === BddWorld.BDD_WORKSPACE) {
+        this._bddWorkspaceFiles.push(fullPath);
+      }
     }
     this.files = Array.from(this.workspaceSources, ([file, text]) => ({ file, text }));
     this.lastCode = this.files[0]?.text;
@@ -320,30 +313,27 @@ export class BddWorld {
     const viewModel = await buildViewModel(graph, moduleName, this.layout);
     this.lastViewModel = viewModel;
     this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
-
-    if (!await this._hasCapturedPanel()) return;
-
-    await this._revealPanel();
-    await this._waitForWebviewReady();
-    await this._postGraphToWebview(viewModel, Object.keys(graph.modules));
-    await this._waitForRenderedGraph(viewModel, Object.keys(graph.modules), 15_000);
-    await this.workbox.waitForTimeout(500);
-    await this.takeScreenshot(`Viewing module ${moduleName}`);
+    // VS Code's extension handles rendering — no webview injection here.
   }
 
   async selectModule(
     moduleName: string,
     screenshotLabel: string | false = `Viewing module ${moduleName}`
   ): Promise<void> {
-    const graph = this.lastGraph;
-    const viewModel = await buildViewModel(graph, moduleName, this.layout);
-    this.lastViewModel = viewModel;
-    this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
-
-    await this._waitForWebviewReady();
-    await this._postGraphToWebview(viewModel, Object.keys(graph.modules));
+    if (this.lastGraph) {
+      const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
+      this.lastViewModel = viewModel;
+      this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
+    }
     await this._revealPanel();
-    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
+    const moduleSelect = this.webviewPage.locator('select[aria-label="Module"]');
+    await moduleSelect.waitFor({ timeout: 15_000 });
+    const currentModule = await moduleSelect.inputValue().catch(() => undefined);
+    if (currentModule !== moduleName) {
+      await moduleSelect.selectOption(moduleName);
+    }
+    await expect(moduleSelect).toHaveValue(moduleName, { timeout: 15_000 });
+    await this._waitForRenderedModule(moduleName, 30_000);
     await this.workbox.waitForTimeout(500);
     if (screenshotLabel) await this.takeScreenshot(screenshotLabel);
   }
@@ -370,6 +360,47 @@ export class BddWorld {
       );
       await (vscode as any).window.showTextDocument(document, { selection: range });
     }, source);
+  }
+
+  async _waitForDiagramRebuild(): Promise<void> {
+    await this.evaluateInVSCode(vscode => {
+      void (vscode as any).commands.executeCommand('svsch.rebuildDiagram');
+    }).catch(() => {});
+    // Give VS Code's file watcher time to detect the change and start rebuilding.
+    await this.workbox.waitForTimeout(500);
+    // Wait for the busy indicator to appear then disappear (extension is rebuilding).
+    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .catch(() => {});
+    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+      .waitFor({ state: 'hidden', timeout: 90_000 })
+      .catch(() => {});
+    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
+    await this.workbox.waitForTimeout(500);
+  }
+
+  async _waitForRenderedModule(moduleName: string, timeout = 30_000): Promise<void> {
+    await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
+    await expect.poll(async () => {
+      return this.webviewPage.locator('html').evaluate((_el, expectedModule) => {
+        const rf = (window as any).reactFlowInstance;
+        if (!rf) return false;
+        const nodes = rf.getNodes();
+        return nodes.length > 0 && nodes.every((node: any) => node.data?.moduleName === expectedModule);
+      }, moduleName).catch(() => false);
+    }, { timeout }).toBe(true);
+  }
+
+  async _settleWorkbenchForScreenshot(): Promise<void> {
+    await this.workbox.locator('.notification-toast', { hasText: 'SVSCH' })
+      .waitFor({ state: 'hidden', timeout: 5_000 })
+      .catch(() => {});
+
+    for (const btn of await this.workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+      await btn.click().catch(() => {});
+    }
+
+    await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
   }
 
   async selectedEditorText(): Promise<string | null> {
@@ -486,7 +517,7 @@ export class BddWorld {
   // Internal: deliver a graph message to the VSCode webview via the extension host
   // -------------------------------------------------------------------------
 
-  private async _postGraphToWebview(
+  async _postGraphToWebview(
     view: any,
     modules: string[]
   ): Promise<void> {
@@ -513,7 +544,7 @@ export class BddWorld {
     }
   }
 
-  private async _waitForRenderedGraph(view: any, modules: string[], timeout: number): Promise<void> {
+  async _waitForRenderedGraph(view: any, modules: string[], timeout: number): Promise<void> {
     const firstNode = this.webviewPage.locator('.react-flow__node').first();
     try {
       await firstNode.waitFor({ timeout });
@@ -722,6 +753,8 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   });
 
   await closeOpenSvschTabs(workbox);
+  await cleanBddWorkspace();
+  await refreshFilesExplorer(workbox, evaluateInVSCode);
 
   // Install panel interceptor (captures the webview panel so we can inject messages)
   await evaluateInVSCode(_vscode => {
@@ -797,7 +830,13 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
 
 });
 
-After(async function (this: BddWorld, { workbox }: any) {
+After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
+  await evaluateInVSCode((_vscode: any) => {
+    return (_vscode as any).workspace
+      .getConfiguration('svsch')
+      .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
+  }).catch(() => {});
+
   // Clean up .sv files written to bdd-workspace during this scenario
   for (const f of this._bddWorkspaceFiles) {
     await fs.promises.rm(f, { force: true });
@@ -808,11 +847,16 @@ After(async function (this: BddWorld, { workbox }: any) {
   const layoutPath = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
   await fs.promises.rm(layoutPath, { force: true });
 
-  // Clean up workspace temp dir (used by CLI/openWorkspaceForEditing steps)
-  if (this.workspaceDir) {
+  // Clean up workspace temp dir (used by CLI/openWorkspaceForEditing steps).
+  // Never delete BDD_WORKSPACE — it's the VS Code workspace root and deleting
+  // it causes the next test's Before hook to fail ("no workspace is opened").
+  if (this.workspaceDir && this.workspaceDir !== BddWorld.BDD_WORKSPACE) {
     await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
     this.workspaceDir = undefined;
   }
+
+  await cleanBddWorkspace();
+  await refreshFilesExplorer(workbox, evaluateInVSCode);
 
   // Dismiss any stray notifications
   for (const btn of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
@@ -830,6 +874,16 @@ async function cleanBddWorkspace(): Promise<void> {
       force: true,
     });
   }
+}
+
+async function refreshFilesExplorer(
+  workbox: Page,
+  evaluateInVSCode: <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>
+): Promise<void> {
+  await evaluateInVSCode(vscode => {
+    return (vscode as any).commands.executeCommand('workbench.files.action.refreshFilesExplorer');
+  }).catch(() => {});
+  await workbox.waitForTimeout(200);
 }
 
 async function closeOpenSvschTabs(workbox: Page): Promise<void> {

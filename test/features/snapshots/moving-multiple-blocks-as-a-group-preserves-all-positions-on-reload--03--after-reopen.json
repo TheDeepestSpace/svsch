@@ -4,8 +4,8 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": -36
+        "x": 96,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -15,6 +15,26 @@
           {
             "id": "port:a",
             "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
             "direction": "input"
           }
         ]
@@ -45,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 84
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -68,15 +88,15 @@
       "target": "port:top:x",
       "sourceHandle": "port:a",
       "targetHandle": "port:x",
-      "path": "M 144 -24 L 168 -24 L 336 -24 L 336 48 L 360 48"
+      "path": "M 216 72 L 240 72 L 288 72 L 288 48 L 336 48 L 360 48"
     },
     {
-      "id": "edge:port:top:a:port:top:y:y",
-      "source": "port:top:a",
+      "id": "edge:port:top:b:port:top:y:y",
+      "source": "port:top:b",
       "target": "port:top:y",
-      "sourceHandle": "port:a",
+      "sourceHandle": "port:b",
       "targetHandle": "port:y",
-      "path": "M 144 -24 L 168 -24 L 216 -24 L 216 96 L 336 96 L 360 96"
+      "path": "M 216 96 L 240 96 L 288 96 L 288 72 L 336 72 L 360 72"
     }
   ]
 }
