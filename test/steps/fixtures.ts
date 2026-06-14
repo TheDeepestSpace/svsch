@@ -360,6 +360,23 @@ export class BddWorld {
     return this.evaluateInVSCode(() => (global as any).__svschBddReceivedMessages ?? []);
   }
 
+  // Snapshot the current position of every port node into notedPositions. Called
+  // when the diagram opens (to capture original positions) and before reroute
+  // actions (to capture the pre-action baseline), so scenarios don't need
+  // explicit "I note the position" steps.
+  async recordPortPositions(): Promise<void> {
+    const ports = await this.webviewPage.locator('html').evaluate(() => {
+      const rf = (window as any).reactFlowInstance;
+      if (!rf) return [];
+      return rf.getNodes()
+        .filter((n: any) => n.data?.node?.kind === 'port')
+        .map((n: any) => ({ label: n.data?.node?.label ?? n.data?.node?.name, position: n.position }));
+    });
+    for (const port of ports) {
+      if (port.label) this.notedPositions.set(port.label, port.position);
+    }
+  }
+
   async navigateToRange(source: { file: string; startLine?: number; endLine?: number; startColumn?: number; endColumn?: number }): Promise<void> {
     await this.evaluateInVSCode(async (vscode, src) => {
       const root = (global as any).__svschBddNavigationRoot;

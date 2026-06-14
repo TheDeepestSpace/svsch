@@ -60,7 +60,6 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I note the position of port node "a"
     And I move the port node "a"
     And I reset the layout
     Then the port node "a" should be at its original position
@@ -78,8 +77,6 @@ Feature: Diagram Interaction
     And I move the port node "y"
     And I adjust the connection between "a" and "y" upward
     And I adjust the connection between "b" and "x" downward
-    And I note the position of port node "a"
-    And I note the position of port node "y"
     And I hover the connection between "a" and "y" and click its Reroute control
     Then the route of the connection between "a" and "y" should have changed
     And the route of the connection between "b" and "x" should not have changed

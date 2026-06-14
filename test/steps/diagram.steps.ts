@@ -228,7 +228,7 @@ When('I have saved the layout', async function (this: BddWorld) {
 When('I click {string} in the diagram toolbar', async function (this: BddWorld, label: string) {
   // Snapshot every node's position right before the action so that later
   // "should not have moved" assertions compare against the pre-action layout.
-  await recordPortPositions(this);
+  await this.recordPortPositions();
   const moduleName = this.lastViewModel.moduleName;
   const layoutBefore = JSON.stringify(await readExtensionLayout(this));
   await this.webviewPage.locator(`button:has-text("${label}")`).click();
@@ -250,6 +250,9 @@ When('I hover the connection between {string} and {string} and click its Cut con
 });
 
 When('I hover the connection between {string} and {string} and click its Reroute control', async function (this: BddWorld, source: string, target: string) {
+  // Snapshot positions right before rerouting so "should not have moved" checks
+  // compare against the pre-reroute layout (no explicit note steps needed).
+  await this.recordPortPositions();
   const moduleName = this.lastViewModel.moduleName;
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
@@ -2227,22 +2230,6 @@ async function adjustConnectionByGridCells(
   // Baseline the (now manually-adjusted) route so later assertions compare
   // against this state rather than the auto-routed original.
   world.notedRoutes.set(routeKey(source, target), await connectionRoutePath(world.webviewPage, source, target));
-}
-
-// Snapshot the current position of every port node into notedPositions so a
-// subsequent "should not have moved" assertion compares against the layout as it
-// stood just before an action (e.g. clicking Reroute All).
-async function recordPortPositions(world: BddWorld): Promise<void> {
-  const ports = await world.webviewPage.locator('html').evaluate(() => {
-    const rf = (window as any).reactFlowInstance;
-    if (!rf) return [];
-    return rf.getNodes()
-      .filter((n: any) => n.data?.node?.kind === 'port')
-      .map((n: any) => ({ label: n.data?.node?.label ?? n.data?.node?.name, position: n.position }));
-  });
-  for (const port of ports) {
-    if (port.label) world.notedPositions.set(port.label, port.position);
-  }
 }
 
 async function cutNetByClickingControl(world: BddWorld, source: string, target: string): Promise<void> {

@@ -79,6 +79,9 @@ When('I open the {string} module in SVSCH', async function (this: BddWorld, modu
     .catch(() => {});
 
   await this.selectModule(moduleName, false);
+  // Remember the original position of every port so movement scenarios can later
+  // assert against it without an explicit "I note the position" step.
+  await this.recordPortPositions();
   await this.takeScreenshot(`Viewing module ${moduleName}`);
 });
 
