@@ -851,6 +851,37 @@ Then('the CLI SVG should not contain {string}', function (this: BddWorld, unexpe
   expect(this.lastCliSvg).not.toContain(unexpected);
 });
 
+// The CLI honoured the saved layout: the node sits where the user dragged it on
+// the diagram. The CLI SVG and the live diagram share the same layout
+// coordinate frame (both come from buildViewModel), so we compare the SVG node's
+// translate() against the node's current position in the React Flow canvas.
+Then('the CLI SVG should have node {string} positioned as it is on the diagram', async function (this: BddWorld, name: string) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found on the diagram: ${name}`);
+  const svgPos = cliSvgNodePosition(this.lastCliSvg, id);
+  if (!svgPos) throw new Error(`Node "${id}" not found in CLI SVG`);
+  const diagramPos = await getInternalPosition(this.webviewPage, id);
+  if (!diagramPos) throw new Error(`Could not read diagram position for ${name}`);
+  expect(svgPos.x, `node ${name} x: SVG ${svgPos.x} vs diagram ${diagramPos.x}`).toBeCloseTo(diagramPos.x, 0);
+  expect(svgPos.y, `node ${name} y: SVG ${svgPos.y} vs diagram ${diagramPos.y}`).toBeCloseTo(diagramPos.y, 0);
+});
+
+// The CLI ignored the saved layout (--no-layout): the node is back at its
+// auto-layout position, i.e. where it was before the user moved it. That
+// original position was recorded when the diagram opened.
+Then('the CLI SVG should have node {string} positioned in its initial location', async function (this: BddWorld, name: string) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found on the diagram: ${name}`);
+  const svgPos = cliSvgNodePosition(this.lastCliSvg, id);
+  if (!svgPos) throw new Error(`Node "${id}" not found in CLI SVG`);
+  const originalPos = this.notedPositions.get(name);
+  if (!originalPos) throw new Error(`No original position recorded for ${name}`);
+  expect(svgPos.x, `node ${name} x: SVG ${svgPos.x} vs original ${originalPos.x}`).toBeCloseTo(originalPos.x, 0);
+  expect(svgPos.y, `node ${name} y: SVG ${svgPos.y} vs original ${originalPos.y}`).toBeCloseTo(originalPos.y, 0);
+});
+
 Then('a file named {string} should not exist in directory {string}', function (this: BddWorld, fileName: string, dir: string) {
   const filePath = path.join(this.workspaceDir || '', dir, fileName);
   if (fs.existsSync(filePath)) throw new Error(`File "${fileName}" should not exist in directory "${dir}"`);
@@ -2272,6 +2303,16 @@ async function cutNetByClickingControl(world: BddWorld, source: string, target: 
 
 function routeKey(source: string, target: string): string {
   return `${source}->${target}`;
+}
+
+// Read a node's layout position from a CLI-rendered SVG. Each node is emitted as
+// <g ... data-node-id="<id>" ... transform="translate(X Y)"> where X/Y are the
+// raw layout coordinates (the outer group carries the bounds offset separately).
+function cliSvgNodePosition(svg: string, id: string): { x: number; y: number } | null {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = new RegExp(`data-node-id="${escaped}"[^>]*transform="translate\\(\\s*(-?[\\d.]+)\\s+(-?[\\d.]+)\\s*\\)"`).exec(svg);
+  if (!match) return null;
+  return { x: Number(match[1]), y: Number(match[2]) };
 }
 
 function handleMatches(actual: string | undefined, expectedLabel: string): boolean {

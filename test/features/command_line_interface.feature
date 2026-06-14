@@ -59,14 +59,14 @@ Feature: Command Line Interface
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I position the port node "a" at (120, 468)
+    And I move the port node "a"
     And I have saved the layout
     And I run the CLI command:
       """
       svsch render top.sv --output top_with_layout.svg
       """
     Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should contain "transform=\"translate(120 468)\""
+    And the CLI SVG should have node "a" positioned as it is on the diagram
     And the CLI stdout should be exactly (workspace-relative):
       """
       top_with_layout.svg
@@ -86,14 +86,14 @@ Feature: Command Line Interface
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I position the port node "a" at (120, 468)
+    And I move the port node "a"
     And I have saved the layout
     And I run the CLI command:
       """
       svsch render top.sv --output top_no_layout.svg --no-layout
       """
     Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should not contain "transform=\"translate(120 468)\""
+    And the CLI SVG should have node "a" positioned in its initial location
     And the CLI stdout should be exactly (workspace-relative):
       """
       top_no_layout.svg
@@ -216,14 +216,14 @@ Feature: Command Line Interface
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I position the port node "a" at (768, 900)
+    And I move the port node "a"
     And I have saved the layout to "my_layout.json"
     And I run the CLI command:
       """
       svsch render top.sv --layout my_layout.json --output explicit.svg
       """
     Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should contain "transform=\"translate(768 900)\""
+    And the CLI SVG should have node "a" positioned as it is on the diagram
     And the CLI stdout should be exactly (workspace-relative):
       """
       explicit.svg
@@ -256,7 +256,7 @@ Feature: Command Line Interface
       """
 
     Examples:
-      | theme | bg_color                           |
+      | theme | bg_color                              |
       | dark  | --vscode-editor-background: #1e1e1e |
       | light | --vscode-editor-background: #ffffff |
 
@@ -265,8 +265,7 @@ Feature: Command Line Interface
       | file       | content                                               |
       | src/top.sv | module top(input a, output y); assign y = a; endmodule |
     When I open the "top" module in SVSCH
-    And I select module "top" from the dropdown
-    And I manually position node "port:top:a" at (504, 612) in module "top"
+    And I move the port node "a"
     And I have saved the layout to "src/.svsch/layout.json"
     And I run the CLI command:
       """
@@ -280,7 +279,7 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
-    And the CLI SVG should contain "transform=\"translate(504 612)\""
+    And the CLI SVG should have node "a" positioned as it is on the diagram
 
   Scenario: Specifying Project folder (affects source collection)
     Given I have the following files in my workspace:
