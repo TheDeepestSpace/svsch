@@ -377,26 +377,6 @@ export class BddWorld {
     }
   }
 
-  async navigateToRange(source: { file: string; startLine?: number; endLine?: number; startColumn?: number; endColumn?: number }): Promise<void> {
-    await this.evaluateInVSCode(async (vscode, src) => {
-      const root = (global as any).__svschBddNavigationRoot;
-      if (!root) return;
-      const uri = (vscode as any).Uri.file(
-        src.file.startsWith('/') ? src.file : `${root}/${src.file}`
-      );
-      const document = await (vscode as any).workspace.openTextDocument(uri);
-      const startLine = Math.max(0, (src.startLine || 1) - 1);
-      const endLine = Math.max(0, (src.endLine || src.startLine || 1) - 1);
-      const range = new (vscode as any).Range(
-        startLine,
-        0,
-        endLine,
-        document.lineAt(endLine).text.length
-      );
-      await (vscode as any).window.showTextDocument(document, { selection: range });
-    }, source);
-  }
-
   async _waitForDiagramRebuild(): Promise<void> {
     await this.evaluateInVSCode(vscode => {
       void (vscode as any).commands.executeCommand('svsch.rebuildDiagram');
