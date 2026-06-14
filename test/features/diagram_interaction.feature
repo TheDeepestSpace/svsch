@@ -58,7 +58,7 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     And I note the position of port node "a"
-    And I move the port node "a" to (120, 120)
+    And I move the port node "a" to (120, 132)
     And I reset the layout
     Then the port node "a" should not have moved
 
