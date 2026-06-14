@@ -11,14 +11,8 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import {
   buildViewModel,
   mergeNodePositions,
-  mergeEdgeRoutePoints,
-  mergeNetCut,
-  mergeRerouteLayout,
-  mergeRerouteSingleEdge,
-  removeNetCut,
-  renameCutNet,
 } from '../../src/layout/mergeLayout';
-import { captureGraphState, compareGraphState } from '../graphRegression';
+import { compareGraphState } from '../graphRegression';
 
 type ScreenshotCompareBox = {
   x: number;
@@ -217,9 +211,8 @@ export class BddWorld {
 
   // Root of the VSCode workspace shown in the Explorer during BDD tests.
   static readonly BDD_WORKSPACE = path.resolve(__dirname, '../../test/bdd-workspace');
-  static readonly EXTENSION_ROOT = path.resolve(__dirname, '../..');
 
-  async postGraph(sources: { file: string; text: string }[]): Promise<void> {
+  async prepareWorkspaceGraph(sources: { file: string; text: string }[]): Promise<void> {
     const workspaceRoot = BddWorld.BDD_WORKSPACE;
     this.workspaceDir = workspaceRoot;
     await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, workspaceRoot);
@@ -266,14 +259,14 @@ export class BddWorld {
       this.workspaceSources.set(source.file, source.text);
     }
     await this._writeWorkspaceSources();
-    await this._postWorkspaceGraph();
+    await this._buildWorkspaceGraph();
   }
 
   async updateWorkspaceFile(filename: string, text: string): Promise<void> {
     if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
     this.workspaceSources.set(filename, text);
     await this._writeWorkspaceSources();
-    await this._postWorkspaceGraph();
+    await this._buildWorkspaceGraph();
   }
 
   private async _writeWorkspaceSources(): Promise<void> {
@@ -291,7 +284,7 @@ export class BddWorld {
     this.lastCode = this.files[0]?.text;
   }
 
-  private async _postWorkspaceGraph(): Promise<void> {
+  private async _buildWorkspaceGraph(): Promise<void> {
     if (!this.workspaceDir) throw new Error('No open workspace');
     await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, this.workspaceDir);
 
@@ -411,88 +404,6 @@ export class BddWorld {
     });
   }
 
-  async openCapturedDiagramPanel(): Promise<void> {
-    if (await this._hasCapturedPanel()) {
-      await this._revealPanel();
-      return;
-    }
-
-    await this.evaluateInVSCode((vscode, extensionRoot) => {
-      const panel = (vscode as any).window.createWebviewPanel('svsch.diagram', 'SVSCH Diagram', (vscode as any).ViewColumn.Beside, {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [(vscode as any).Uri.joinPath((vscode as any).Uri.file(extensionRoot), 'media')],
-      });
-      const webview = panel.webview;
-      const mediaUri = (fileName: string) => {
-        const uri = (vscode as any).Uri.joinPath((vscode as any).Uri.file(extensionRoot), 'media', fileName);
-        return webview.asWebviewUri(uri).with({ query: `v=${Date.now()}` }).toString();
-      };
-      const nonce = String(Date.now());
-      const scriptUri = mediaUri('webview.js');
-      const styleUri = mediaUri('webview.css');
-      webview.html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource} https:; font-src ${webview.cspSource}; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' ${webview.cspSource};">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="${styleUri}" rel="stylesheet">
-  <title>SVSCH Diagram</title>
-</head>
-<body>
-  <div id="root"></div>
-  <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
-</body>
-</html>`;
-    }, BddWorld.EXTENSION_ROOT);
-
-    await this.workbox.waitForSelector(
-      '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-      { timeout: 30_000 }
-    );
-    await this._waitForCapturedPanel();
-  }
-
-  private async _hasCapturedPanel(): Promise<boolean> {
-    return this.evaluateInVSCode(() => !!(global as any).__svschBddPanel);
-  }
-
-  private async _waitForCapturedPanel(): Promise<void> {
-    for (let i = 0; i < 40; i++) {
-      if (await this._hasCapturedPanel()) return;
-      await this.workbox.waitForTimeout(250);
-    }
-    throw new Error('BDD interceptor: svsch.diagram panel was not captured within timeout');
-  }
-
-  // -------------------------------------------------------------------------
-  // Internal: wait until the webview React app has registered its listener
-  // -------------------------------------------------------------------------
-
-  async _waitForWebviewReady(): Promise<void> {
-    // The webview sends { type: 'ready' } after its useEffect registers the
-    // message listener. We wait for that before posting graph data.
-    // Also accept 'layoutChanged' or 'ready' — any message means the app is live.
-    const alreadyReady = await this.evaluateInVSCode(() => {
-      const msgs: any[] = (global as any).__svschBddReceivedMessages ?? [];
-      return msgs.some((m: any) => m.type === 'ready');
-    });
-    if (alreadyReady) return;
-
-    // Not yet ready — wait up to 15s for the ready message to arrive.
-    for (let i = 0; i < 60; i++) {
-      await this.workbox.waitForTimeout(250);
-      const ready = await this.evaluateInVSCode(() => {
-        const msgs: any[] = (global as any).__svschBddReceivedMessages ?? [];
-        return msgs.some((m: any) => m.type === 'ready');
-      });
-      if (ready) return;
-    }
-    // Log a warning but don't throw — the message might still work without ready handshake.
-    console.warn('[BDD] Warning: webview did not send ready within 15s');
-  }
-
   // -------------------------------------------------------------------------
   // Internal: bring the SVSCH webview panel to the foreground
   // -------------------------------------------------------------------------
@@ -513,48 +424,6 @@ export class BddWorld {
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Internal: deliver a graph message to the VSCode webview via the extension host
-  // -------------------------------------------------------------------------
-
-  async _postGraphToWebview(
-    view: any,
-    modules: string[]
-  ): Promise<void> {
-    // Serialize here to avoid any CDP serialization quirks with deep objects.
-    const jsonStr = JSON.stringify({ type: 'graph', view, modules });
-
-    const result = await this.evaluateInVSCode(
-      (_vscode, json) => {
-        const panel = (global as any).__svschBddPanel;
-        if (!panel) return 'no-panel';
-        try {
-          const data = JSON.parse(json);
-          void panel.webview.postMessage(data);
-          return `ok:${data.view?.nodes?.length ?? 0}nodes`;
-        } catch (e: any) {
-          return `error:${String(e)}`;
-        }
-      },
-      jsonStr
-    );
-    console.log('[BDD] _postGraphToWebview result:', result);
-    if (!result || result === 'no-panel') {
-      throw new Error(`[BDD] postGraph failed: panel is gone (disposed). Result: ${result}`);
-    }
-  }
-
-  async _waitForRenderedGraph(view: any, modules: string[], timeout: number): Promise<void> {
-    const firstNode = this.webviewPage.locator('.react-flow__node').first();
-    try {
-      await firstNode.waitFor({ timeout });
-    } catch (err) {
-      console.warn('[BDD] Warning: graph did not render after initial post; reposting once');
-      await this._revealPanel();
-      await this._postGraphToWebview(view, modules);
-      await firstNode.waitFor({ timeout });
-    }
-  }
 }
 
 function cropPng(source: PNG, box: ScreenshotCompareBox): PNG {
@@ -706,8 +575,8 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
 
   // Remove any on-disk layout that accumulated from the previous scenario
-  // (drag operations write to .svsch/layout.json; we inject our own layout so
-  //  we don't want stale positions leaking in if the extension ever reads it again)
+  // (drag operations write to .svsch/layout.json; tests prepare per-scenario
+  //  layouts so stale positions must not leak across scenarios)
   const layoutPath = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
   await fs.promises.rm(layoutPath, { force: true });
   await cleanBddWorkspace();
@@ -756,7 +625,7 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   await cleanBddWorkspace();
   await refreshFilesExplorer(workbox, evaluateInVSCode);
 
-  // Install panel interceptor (captures the webview panel so we can inject messages)
+  // Install panel interceptor so steps can observe webview -> extension messages.
   await evaluateInVSCode(_vscode => {
     try { (global as any).__svschBddPanel?.dispose?.(); } catch {}
     (global as any).__svschBddPanel = null;
@@ -806,18 +675,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
             await doNavigate(msg.edge.sourceRange);
           }
         });
-
-        // Expose a way to fire a message INTO the extension's listener
-        // (used by steps that simulate the webview sending messages back)
-        const origOnReceive = panel.webview.onDidReceiveMessage.bind(panel.webview);
-        const listeners: Array<(msg: any) => void> = [];
-        panel.webview.onDidReceiveMessage = function (listener: any, thisArg?: any, disposables?: any) {
-          listeners.push(thisArg ? listener.bind(thisArg) : listener);
-          return origOnReceive(listener, thisArg, disposables);
-        };
-        (global as any).__svschBddFireMessage = (msg: any) => {
-          for (const l of listeners) l(msg);
-        };
 
         // Track panel disposal so we know when to re-intercept
         panel.onDidDispose(() => {

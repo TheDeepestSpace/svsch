@@ -18,7 +18,7 @@ const execAsync = promisify(exec);
 
 Given('a SystemVerilog module:', async function (this: BddWorld, code: string) {
   if (!this.isNaturalScenario) {
-    await this.postGraph([{ file: 'top.sv', text: code }]);
+    await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
     return;
   }
   const fullPath = path.join(BddWorld.BDD_WORKSPACE, 'top.sv');
@@ -38,11 +38,11 @@ Given('the following SystemVerilog files:', async function (this: BddWorld, tabl
     file: row.file,
     text: row.content.replace(/\\n/g, '\n'),
   }));
-  await this.postGraph(sources);
+  await this.prepareWorkspaceGraph(sources);
 });
 
 Given('a SystemVerilog file {string} with:', async function (this: BddWorld, filename: string, code: string) {
-  await this.postGraph([{ file: filename, text: code }]);
+  await this.prepareWorkspaceGraph([{ file: filename, text: code }]);
 });
 
 Given('I have opened {string} for editing with:', async function (this: BddWorld, filename: string, content: string) {
@@ -68,7 +68,7 @@ Given('I record the workspace directory state', async function (this: BddWorld) 
 });
 
 Given('I have a file named {string} with the following content:', async function (this: BddWorld, filename: string, content: string) {
-  await this.postGraph([{ file: filename, text: content }]);
+  await this.prepareWorkspaceGraph([{ file: filename, text: content }]);
 });
 
 // ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ When('I open the diagram for module {string}', async function (this: BddWorld, m
 });
 
 When('I update the code to:', async function (this: BddWorld, code: string) {
-  await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
   await this._waitForDiagramRebuild();
 });
 
@@ -116,36 +116,30 @@ When('I select module {string} from the dropdown', async function (this: BddWorl
 });
 
 When('I update the code to rename register {string} to {string}:', async function (this: BddWorld, _oldName: string, _newName: string, code: string) {
-  await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
   await this._waitForDiagramRebuild();
 });
 
 When('I update the code to remove the assignment:', async function (this: BddWorld, code: string) {
-  await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
   await this._waitForDiagramRebuild();
 });
 
 When('I update the code to remove node {string}:', async function (this: BddWorld, _name: string, code: string) {
-  await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
   await this._waitForDiagramRebuild();
 });
 
 When('I update the code to bring back node {string}:', async function (this: BddWorld, _name: string, code: string) {
-  await this.postGraph([{ file: 'top.sv', text: code }]);
+  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
   await this._waitForDiagramRebuild();
 });
 
 When('I reload the diagram', async function (this: BddWorld) {
-  const moduleName = this.lastGraph.rootModules[0];
-  const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
-  this.lastViewModel = viewModel;
-  await this.evaluateInVSCode(
-    (_vscode, data) => { (global as any).__svschBddPanel?.webview.postMessage(data); },
-    { type: 'graph', view: viewModel, modules: Object.keys(this.lastGraph.modules) }
-  );
-  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
-  await this.workbox.waitForTimeout(500);
-  await this.takeScreenshot('After reload');
+  await syncLastViewModel(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this);
+  await waitForExtensionRenderedView(this, 'After reload');
 });
 
 When('I close and reopen the diagram', async function (this: BddWorld) {
@@ -157,19 +151,18 @@ When('I close and reopen the diagram', async function (this: BddWorld) {
 });
 
 When('I reset the layout', async function (this: BddWorld) {
+  const messageStart = (await this.webviewMessages()).length;
   await this.webviewPage.locator('button:has-text("Reset Layout")').click();
   const moduleName = this.lastViewModel.moduleName;
   delete this.layout.modules[moduleName];
-  const graph = this.lastGraph;
-  const viewModel = await buildViewModel(graph, moduleName, this.layout);
-  this.lastViewModel = viewModel;
-  await this.evaluateInVSCode(
-    (_vscode, data) => { (global as any).__svschBddPanel?.webview.postMessage(data); },
-    { type: 'graph', view: viewModel, modules: Object.keys(graph.modules) }
-  );
-  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
-  await this.workbox.waitForTimeout(500);
-  await this.takeScreenshot('After layout reset');
+  await expect.poll(async () => {
+    const messages = await this.webviewMessages();
+    return messages.slice(messageStart).some((m: any) => m.type === 'resetLayout' && m.moduleName === moduleName);
+  }, { timeout: 10_000 }).toBe(true).catch(() => undefined);
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After layout reset');
 });
 
 When('I click the Export SVG button', async function (this: BddWorld) {
@@ -190,26 +183,28 @@ When('I have saved the layout', async function (this: BddWorld) {
 });
 
 When('I reroute the diagram', async function (this: BddWorld) {
+  const messageStart = (await this.webviewMessages()).length;
   await this.webviewPage.locator('button:has-text("Reroute All")').click();
   const moduleName = this.lastViewModel.moduleName;
+  await expect.poll(async () => {
+    const messages = await this.webviewMessages();
+    return messages.slice(messageStart).some((m: any) => m.type === 'rerouteLayout' && m.moduleName === moduleName);
+  }, { timeout: 10_000 }).toBe(true).catch(() => undefined);
+  const rerouteMessage = (await this.webviewMessages()).slice(messageStart).reverse()
+    .find((m: any) => m.type === 'rerouteLayout' && m.moduleName === moduleName) as any;
   const flowNodes = await this.webviewPage.locator('html').evaluate(() => {
     const instance = (window as any).reactFlowInstance;
     return instance.getNodes().map((node: any) => ({ id: node.id, position: node.position }));
   });
   const positionById = new Map(flowNodes.map((node: any) => [node.id, node.position]));
-  const frozenNodes = this.lastViewModel.nodes.map((node: any) => ({
+  const frozenNodes = (rerouteMessage?.nodes?.length ? rerouteMessage.nodes : this.lastViewModel.nodes).map((node: any) => ({
     ...node, position: positionById.get(node.id) ?? node.position, fixed: true,
   }));
   this.layout = mergeRerouteLayout(this.layout, moduleName, frozenNodes);
-  const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
-  this.lastViewModel = viewModel;
-  await this.evaluateInVSCode(
-    (_vscode, data) => { (global as any).__svschBddPanel?.webview.postMessage(data); },
-    { type: 'graph', view: viewModel, modules: Object.keys(this.lastGraph.modules) }
-  );
-  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
-  await this.workbox.waitForTimeout(500);
-  await this.takeScreenshot('After reroute');
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After reroute');
 });
 
 When('I force the connection between {string} and {string} to pass through \\({int}, {int}\\)', async function (this: BddWorld, source: string, target: string, x: number, y: number) {
@@ -223,15 +218,10 @@ When('I force the connection between {string} and {string} to pass through \\({i
   const last = edge.routePoints[edge.routePoints.length - 1];
   const manualRoute = [first, { x: first.x, y }, { x, y }, { x: last.x, y }, last];
   this.layout = mergeEdgeRoutePoints(this.layout, moduleName, edge.id, manualRoute);
-  const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
-  this.lastViewModel = viewModel;
-  await this.evaluateInVSCode(
-    (_vscode, data) => { (global as any).__svschBddPanel?.webview.postMessage(data); },
-    { type: 'graph', view: viewModel, modules: Object.keys(this.lastGraph.modules) }
-  );
-  await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
-  await this.workbox.waitForTimeout(500);
-  await this.takeScreenshot('After manual route');
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After manual route');
 });
 
 When('I cut the net on the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
@@ -273,7 +263,10 @@ When('I hover the connection between {string} and {string} and click its Reroute
     ? rerouteMessage.nodes
     : await currentPositionedNodes(this.webviewPage, this.lastViewModel.nodes);
   this.layout = mergeRerouteSingleEdge(this.layout, moduleName, edge.id, positioned);
-  await postCurrentView(this, 'After reroute single edge');
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After reroute single edge');
 });
 
 When('I rename the cut net {string} to {string}', async function (this: BddWorld, currentLabel: string, nextLabel: string) {
@@ -297,7 +290,10 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
     m.type === 'renameCutNet' && m.netKey === netKey && m.label === nextLabel
   )) as any;
   this.layout = renameCutNet(this.layout, moduleName, renameMessage?.netKey ?? netKey, renameMessage?.label ?? nextLabel);
-  await postCurrentView(this, 'After rename cut net');
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After rename cut net');
 });
 
 When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
@@ -315,13 +311,20 @@ When('I tie back the cut net {string}', async function (this: BddWorld, label: s
   }).toBe(true).catch(() => undefined);
   const tieMessage = (await this.webviewMessages()).slice(messageStart).reverse().find((m: any) => m.type === 'tieNet' && m.netKey === netKey) as any;
   this.layout = removeNetCut(this.layout, moduleName, tieMessage?.netKey ?? netKey);
-  await postCurrentView(this, 'After tie net');
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await syncLastViewModel(this, moduleName);
+  await waitForExtensionRenderedView(this, 'After tie net');
 });
 
 When('I manually position node {string} at \\({int}, {int}\\) in module {string}', async function (this: BddWorld, nodeId: string, x: number, y: number, moduleName: string) {
   if (!this.layout.modules[moduleName]) this.layout.modules[moduleName] = { nodes: {}, edges: {}, nets: [] };
   this.layout.modules[moduleName].nodes[nodeId] = { x, y, fixed: true };
-  await postCurrentView(this, 'After manual position');
+  await syncLastViewModel(this, moduleName);
+  await persistWorldLayout(this);
+  await this._waitForDiagramRebuild();
+  await waitForNodePosition(this, nodeId, x, y);
+  await waitForExtensionRenderedView(this, 'After manual position');
   this.nextCliSnapshotStepCounter = this.stepCounter;
 });
 
@@ -384,10 +387,11 @@ When('I position the port node {string} at \\({int}, {int}\\)', async function (
   const moduleName = this.lastViewModel.moduleName;
   if (!this.layout.modules[moduleName]) this.layout.modules[moduleName] = { nodes: {}, edges: {}, nets: [] };
   this.layout.modules[moduleName].nodes[id] = { x, y, fixed: true };
+  await syncLastViewModel(this, moduleName);
   await persistWorldLayout(this);
-  await postCurrentView(this, 'After positioning node', async () => {
-    await setInternalPosition(this.webviewPage, id, x, y);
-  });
+  await this._waitForDiagramRebuild();
+  await waitForNodePosition(this, id, x, y);
+  await waitForExtensionRenderedView(this, 'After positioning node');
 });
 
 When('I have saved the layout to {string}', async function (this: BddWorld, customPath: string) {
@@ -598,7 +602,7 @@ When('I hover over the connection between the {word} node {string} and the {word
 });
 
 When('I open {string}', async function (this: BddWorld, _filename: string) {
-  // Handled implicitly by postGraph
+  // Handled implicitly by the workspace graph preparation step.
 });
 
 When('I open the schematic for module {string}', async function (this: BddWorld, moduleName: string) {
@@ -1808,19 +1812,31 @@ async function hasOriginalEdgeBetween(webviewPage: FrameLocator, source: string,
   }, { s: sourceId, t: targetId });
 }
 
-async function postCurrentView(world: BddWorld, screenshotLabel: string, afterRender?: () => Promise<void>): Promise<void> {
-  const moduleName = world.lastViewModel.moduleName;
-  const viewModel = await buildViewModel(world.lastGraph, moduleName, world.layout);
-  world.lastViewModel = viewModel;
-  await world.evaluateInVSCode(
-    (_vscode, data) => { (global as any).__svschBddPanel?.webview.postMessage(data); },
-    { type: 'graph', view: viewModel, modules: Object.keys(world.lastGraph.modules) }
-  );
+async function syncLastViewModel(world: BddWorld, moduleName?: string): Promise<void> {
+  if (!world.lastGraph) {
+    return;
+  }
+  const currentModule = moduleName ?? world.lastViewModel?.moduleName ?? world.lastGraph.rootModules?.[0];
+  if (!currentModule) {
+    return;
+  }
+  world.lastViewModel = await buildViewModel(world.lastGraph, currentModule, world.layout);
+}
+
+async function waitForExtensionRenderedView(world: BddWorld, screenshotLabel: string): Promise<void> {
   await world.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
   await waitForViewportTransformToSettle(world.webviewPage);
-  if (afterRender) await afterRender();
   await world.workbox.waitForTimeout(500);
   await world.takeScreenshot(screenshotLabel);
+}
+
+async function waitForNodePosition(world: BddWorld, nodeId: string, x: number, y: number): Promise<void> {
+  await expect.poll(async () => {
+    const position = await getInternalPosition(world.webviewPage, nodeId);
+    return !!position
+      && Math.abs(position.x - x) <= 1
+      && Math.abs(position.y - y) <= 1;
+  }, { timeout: 10_000 }).toBe(true);
 }
 
 async function dragPortNodeTo(
@@ -1934,7 +1950,10 @@ async function cutNetByClickingControl(world: BddWorld, source: string, target: 
   const cutMessage = (await world.webviewMessages()).reverse().find((m: any) => m.type === 'cutNet' && m.edge?.id === edge.id) as any;
   const positioned = cutMessage?.nodes?.length ? cutMessage.nodes : await currentPositionedNodes(world.webviewPage, world.lastViewModel.nodes);
   world.layout = mergeNetCut(world.layout, moduleName, cutMessage?.edge ?? edge, world.lastGraph.modules[moduleName], positioned);
-  await postCurrentView(world, 'After cut net');
+  await persistWorldLayout(world);
+  await world._waitForDiagramRebuild();
+  await syncLastViewModel(world, moduleName);
+  await waitForExtensionRenderedView(world, 'After cut net');
 }
 
 // ---------------------------------------------------------------------------

@@ -64,7 +64,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 504,
+        "x": 480,
         "y": 252
       },
       "width": 120,
@@ -88,7 +88,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 240 144 L 264 144 L 264 480 L 480 480 L 480 264 L 504 264"
+      "path": "M 240 144 L 264 144 L 264 480 L 456 480 L 456 264 L 480 264"
     },
     {
       "id": "edge:port:top:b:port:top:x:x",

@@ -62,44 +62,33 @@ Then('the {string} module is selected in the module dropdown', async function (t
 // ---------------------------------------------------------------------------
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
-  if (this._bddWorkspaceFiles.length > 0) {
-    // Natural flow: files are in BDD_WORKSPACE, let the extension build and render.
-    const folder = commonProjectFolder(this._bddWorkspaceFiles);
-
-    await this.evaluateInVSCode((_vscode, f) => {
-      return (_vscode as any).workspace
-        .getConfiguration('svsch')
-        .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
-    }, folder);
-
-    await this.workbox.keyboard.press('Control+Shift+P');
-    await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
-    await this.workbox.keyboard.type('SVSCH: Open Diagram');
-    await this.workbox.keyboard.press('Enter');
-
-    await this.workbox.waitForSelector(
-      '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-      { timeout: 30_000 }
-    );
-
-    await this.webviewPage.locator('div.busy-indicator[role="status"]')
-      .waitFor({ state: 'hidden', timeout: 90_000 })
-      .catch(() => {});
-
-    await this.selectModule(moduleName, false);
-  } else {
-    // Injection flow: files live in a temp dir that VS Code doesn't know about
-    // (e.g. CLI tests using openWorkspaceForEditing). Open a captured panel and
-    // post the pre-built graph directly so the webview can render it.
-    await this.openCapturedDiagramPanel();
-    if (this.lastGraph && this.lastViewModel) {
-      await this._waitForWebviewReady();
-      await this._postGraphToWebview(this.lastViewModel, this.lastGraph.rootModules);
-      await this._waitForRenderedGraph(this.lastViewModel, this.lastGraph.rootModules, 30_000);
-    }
-    await this.selectModule(moduleName, false);
+  if (this._bddWorkspaceFiles.length === 0) {
+    throw new Error('No BDD workspace files were prepared before opening the SVSCH diagram.');
   }
 
+  const folder = commonProjectFolder(this._bddWorkspaceFiles);
+
+  await this.evaluateInVSCode((_vscode, f) => {
+    return (_vscode as any).workspace
+      .getConfiguration('svsch')
+      .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
+  }, folder);
+
+  await this.workbox.keyboard.press('Control+Shift+P');
+  await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
+  await this.workbox.keyboard.type('SVSCH: Open Diagram');
+  await this.workbox.keyboard.press('Enter');
+
+  await this.workbox.waitForSelector(
+    '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
+    { timeout: 30_000 }
+  );
+
+  await this.webviewPage.locator('div.busy-indicator[role="status"]')
+    .waitFor({ state: 'hidden', timeout: 90_000 })
+    .catch(() => {});
+
+  await this.selectModule(moduleName, false);
   await this.takeScreenshot(`Viewing module ${moduleName}`);
 });
 

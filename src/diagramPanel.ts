@@ -165,7 +165,7 @@ export class DiagramPanel {
     this.lastBackendPath = backendPath;
 
     const store = this.getStore();
-    if (store && !this.layout) {
+    if (store) {
       this.layout = await store.read();
     }
 

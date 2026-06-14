@@ -38,8 +38,8 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   },
   use: {
     extensionDevelopmentPath: root,
-    // Use a minimal workspace with no .sv files so the extension never
-    // auto-rebuilds and our injected graphs are the only ones posted.
+    // Use a minimal workspace with no .sv files at startup; scenarios write
+    // their own files before opening the diagram through the extension.
     baseDir: path.join(root, 'test/bdd-workspace'),
     deviceScaleFactor: 1,
     vscodeVersion,
