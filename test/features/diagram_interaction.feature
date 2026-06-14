@@ -4,7 +4,7 @@ Feature: Diagram Interaction
   So that I can customize the layout to my preference
 
   Scenario: Moving a single block
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output y);
         assign y = a;
@@ -15,7 +15,7 @@ Feature: Diagram Interaction
     Then the port node "a" should have moved
 
   Scenario: Manual positions are preserved across diagram reloads
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output y);
         assign y = a;
@@ -27,14 +27,16 @@ Feature: Diagram Interaction
     Then the port node "a" should be at (120, 132)
 
   Scenario: Manual positions are remembered even if the node is temporarily removed
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output y);
         assign y = a;
       endmodule
       """
-    When I open the "top" module in SVSCH
+    And I open the "top" module in SVSCH
     And I move the port node "a" to (120, 132)
+
+    When I open "top.sv"
     And I update the code to remove node "a":
       """
       module top(output y);
@@ -47,10 +49,11 @@ Feature: Diagram Interaction
         assign y = a;
       endmodule
       """
+    And I go back to the SVSCH diagram pane
     Then the port node "a" should be at (120, 132)
 
   Scenario: Resetting the layout
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output y);
         assign y = a;
@@ -63,7 +66,7 @@ Feature: Diagram Interaction
     Then the port node "a" should not have moved
 
   Scenario: Rerouting a single connection without affecting other routes or positions
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
         assign x = b;
@@ -86,7 +89,7 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
 
   Scenario: Rerouting without moving blocks
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
         assign x = b;
@@ -110,7 +113,7 @@ Feature: Diagram Interaction
     And the route of the connection between "a" and "y" should have changed
 
   Scenario: Cutting, renaming, and tying back a fanout net
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
         assign x = a;
@@ -132,7 +135,7 @@ Feature: Diagram Interaction
     And I should not see cut net labels named "data_a"
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
         assign x = a;
@@ -150,7 +153,7 @@ Feature: Diagram Interaction
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
         assign x = a;

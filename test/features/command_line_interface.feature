@@ -27,7 +27,7 @@ Feature: Command Line Interface
     And the CLI stderr should be empty
 
   Scenario: Basic schematic rendering
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -52,7 +52,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Render with manual layout
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -79,7 +79,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Render without manual layout (--no-layout)
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -106,7 +106,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Render with multiple files and dependencies
-    Given the following SystemVerilog files:
+    Given I have the following files in my workspace:
       | file   | content                                                           |
       | sub.sv | module sub(input a, output y); assign y = ~a; endmodule           |
       | top.sv | module top(input i, output o); sub u_sub(.a(i), .y(o)); endmodule |
@@ -129,7 +129,7 @@ Feature: Command Line Interface
       """
 
   Scenario Outline: Output file name
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -159,11 +159,11 @@ Feature: Command Line Interface
       | svsch render top.sv --output o.svg | o.svg         |
 
   Scenario: Batch rendering to a directory
-    Given the following SystemVerilog files:
-      | file   | content                                                 |
-      | a.sv   | module a(input i, output o); assign o = i; endmodule    |
-      | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
-      | decoy.txt | this is not an HDL file                               |
+    Given I have the following files in my workspace:
+      | file   | content                                               |
+      | a.sv   | module a(input i, output o); assign o = i; endmodule  |
+      | b.sv   | module b(input i, output o); assign o = ~i; endmodule |
+      | decoy.txt | this is not an HDL file                            |
     When I open the "a" module in SVSCH
     And I run the CLI command:
       """
@@ -185,7 +185,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Selecting a top module
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module first(input a, output y); assign y = a; endmodule
       module second(input b, output z); assign z = ~b; endmodule
@@ -209,7 +209,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Using an explicit layout file
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -236,7 +236,7 @@ Feature: Command Line Interface
       """
 
   Scenario Outline: SVG themes
-    Given I have opened "top.sv" for editing with:
+    Given I have a file "top.sv" in my workspace:
       """sv
       module top(input a, output y);
         assign y = a;
@@ -261,7 +261,7 @@ Feature: Command Line Interface
       | light | --vscode-editor-background: #ffffff |
 
   Scenario: Overriding Workspace root (affects layout discovery)
-    Given the following SystemVerilog files:
+    Given I have the following files in my workspace:
       | file       | content                                               |
       | src/top.sv | module top(input a, output y); assign y = a; endmodule |
     When I open the "top" module in SVSCH
@@ -283,7 +283,7 @@ Feature: Command Line Interface
     And the CLI SVG should contain "transform=\"translate(504 612)\""
 
   Scenario: Specifying Project folder (affects source collection)
-    Given the following SystemVerilog files:
+    Given I have the following files in my workspace:
       | file         | content                                                              |
       | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
       | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |
@@ -298,7 +298,7 @@ Feature: Command Line Interface
     And the CLI SVG should contain "child"
 
   Scenario: Single output with directory glob and top module
-    Given the following SystemVerilog files:
+    Given I have the following files in my workspace:
       | file   | content                                                 |
       | a.sv   | module a(input i, output o); assign o = i; endmodule    |
       | b.sv   | module b(input i, output o); assign o = ~i; endmodule   |
@@ -322,7 +322,7 @@ Feature: Command Line Interface
       """
 
   Scenario: Project folder isolation
-    Given the following SystemVerilog files:
+    Given I have the following files in my workspace:
       | file         | content                                                              |
       | sub/child.sv | module child(input i, output o); assign o = i; endmodule             |
       | top.sv       | module top(input a, output y); child u_child(.i(a), .o(y)); endmodule |

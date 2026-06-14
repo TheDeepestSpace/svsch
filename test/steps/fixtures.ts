@@ -309,10 +309,32 @@ export class BddWorld {
     // VS Code's extension handles rendering — no webview injection here.
   }
 
+  async _ensureGraphBuilt(): Promise<void> {
+    if (this.lastGraph) return;
+    if (this.files.length === 0) return;
+
+    const workspaceRoot = BddWorld.BDD_WORKSPACE;
+    this.workspaceDir = workspaceRoot;
+
+    const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
+    const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
+
+    this.lastGraph = await buildDesignGraph({
+      workspaceRoot,
+      projectFolder: '.',
+      backend: 'uhdm',
+      veriblePath: 'verible-verilog-syntax',
+      surelogPath,
+      backendPath,
+      includeExternalDiagnostics: false,
+    });
+  }
+
   async selectModule(
     moduleName: string,
     screenshotLabel: string | false = `Viewing module ${moduleName}`
   ): Promise<void> {
+    await this._ensureGraphBuilt();
     if (this.lastGraph) {
       const viewModel = await buildViewModel(this.lastGraph, moduleName, this.layout);
       this.lastViewModel = viewModel;

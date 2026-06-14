@@ -4,30 +4,10 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 // ---------------------------------------------------------------------------
-// Natural-flow steps: file creation, VS Code folder configuration, and
+// Natural-flow steps: VS Code folder configuration, and
 // command palette interactions.  These steps let the extension build and
 // display the diagram through its normal pipeline rather than via injection.
 // ---------------------------------------------------------------------------
-
-Given('I have a file {string}:', async function (this: BddWorld, filePath: string, docString: string) {
-  const fullPath = path.join(BddWorld.BDD_WORKSPACE, filePath);
-  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-  await fs.promises.writeFile(fullPath, docString);
-  this._bddWorkspaceFiles.push(fullPath);
-  this.files = this.files.filter((source: any) => source.file !== filePath);
-  this.files.push({ file: filePath, text: docString });
-  this.lastCode ??= docString;
-});
-
-Given('I have a file {string} in my workspace:', async function (this: BddWorld, filePath: string, docString: string) {
-  const fullPath = path.join(BddWorld.BDD_WORKSPACE, filePath);
-  await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-  await fs.promises.writeFile(fullPath, docString);
-  this._bddWorkspaceFiles.push(fullPath);
-  this.files = this.files.filter((source: any) => source.file !== filePath);
-  this.files.push({ file: filePath, text: docString });
-  this.lastCode ??= docString;
-});
 
 When('I open the workspace folder in VS Code', async function (this: BddWorld) {
   await this.evaluateInVSCode((_vscode) => {

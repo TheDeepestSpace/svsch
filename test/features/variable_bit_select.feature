@@ -4,7 +4,7 @@ Feature: Variable Bit Select
   So that I can understand how dynamic indexing is used in my design
 
   Scenario: Viewing a variable bit select
-    Given a SystemVerilog file "var_bit_select.sv" with:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(
           input logic [31:0] bus,

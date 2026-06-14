@@ -16,37 +16,38 @@ const execAsync = promisify(exec);
 // Given steps
 // ---------------------------------------------------------------------------
 
-Given('a SystemVerilog module:', async function (this: BddWorld, code: string) {
-  if (!this.isNaturalScenario) {
-    await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-    return;
-  }
-  const fullPath = path.join(BddWorld.BDD_WORKSPACE, 'top.sv');
+Given('I have a file {string} in my workspace:', async function (this: BddWorld, filePath: string, docString: string) {
+  const fullPath = path.join(BddWorld.BDD_WORKSPACE, filePath);
+  this.workspaceDir = BddWorld.BDD_WORKSPACE;
   await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-  await fs.promises.writeFile(fullPath, code);
+  await fs.promises.writeFile(fullPath, docString);
   this._bddWorkspaceFiles.push(fullPath);
-  this.files = [{ file: 'top.sv', text: code }];
-  this.lastCode = code;
+  this.files = this.files.filter((source: any) => source.file !== filePath);
+  this.files.push({ file: filePath, text: docString });
+  this.lastCode ??= docString;
 });
 
-Given('the current directory structure is:', function (this: BddWorld, _docString: string) {
-  // No-op, documentation only
-});
-
-Given('the following SystemVerilog files:', async function (this: BddWorld, table: any) {
+Given('I have the following files in my workspace:', async function (this: BddWorld, table: any) {
+  this.workspaceDir = BddWorld.BDD_WORKSPACE;
   const sources = table.hashes().map((row: any) => ({
     file: row.file,
     text: row.content.replace(/\\n/g, '\n'),
   }));
-  await this.prepareWorkspaceGraph(sources);
+  for (const s of sources) {
+    const fullPath = path.join(BddWorld.BDD_WORKSPACE, s.file);
+    await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.promises.writeFile(fullPath, s.text);
+    this._bddWorkspaceFiles.push(fullPath);
+    this.files = this.files.filter((source: any) => source.file !== s.file);
+    this.files.push(s);
+  }
+  if (sources.length > 0) {
+    this.lastCode ??= sources[0].text;
+  }
 });
 
-Given('a SystemVerilog file {string} with:', async function (this: BddWorld, filename: string, code: string) {
-  await this.prepareWorkspaceGraph([{ file: filename, text: code }]);
-});
-
-Given('I have opened {string} for editing with:', async function (this: BddWorld, filename: string, content: string) {
-  await this.openWorkspaceForEditing([{ file: filename, text: content }]);
+Given('the current directory structure is:', function (this: BddWorld, _docString: string) {
+  // No-op, documentation only
 });
 
 Given('I note the position of port node {string}', async function (this: BddWorld, name: string) {
@@ -67,25 +68,75 @@ Given('I record the workspace directory state', async function (this: BddWorld) 
   this.workspaceDirStateBefore = await getWorkspaceState(this.workspaceDir);
 });
 
-Given('I have a file named {string} with the following content:', async function (this: BddWorld, filename: string, content: string) {
-  await this.prepareWorkspaceGraph([{ file: filename, text: content }]);
-});
-
 // ---------------------------------------------------------------------------
 // When steps
 // ---------------------------------------------------------------------------
 
-When('I open the diagram for module {string}', async function (this: BddWorld, moduleName: string) {
-  await this.selectModule(moduleName);
+async function updateActiveEditorFaithfully(world: BddWorld, code: string) {
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  
+  // Try to focus the editor
+  await world.workbox.locator('.monaco-editor').first().click().catch(() => {});
+  
+  await world.workbox.keyboard.press(`${modifier}+A`);
+  await world.workbox.keyboard.press('Backspace');
+  await world.workbox.keyboard.insertText(code);
+  await world.workbox.keyboard.press(`${modifier}+S`);
+  
+  // Wait a bit for VS Code to flush the file to disk
+  await world.workbox.waitForTimeout(1000);
+
+  // Sync internal state for assertions that use world.files/lastCode
+  world.lastCode = code;
+  // If we have an active file tracked, use it; otherwise default to top.sv
+  const targetFile = (world as any)._lastOpenedFile || 'top.sv';
+  const fileEntry = world.files.find(f => f.file === targetFile);
+  if (fileEntry) fileEntry.text = code;
+  else world.files.push({ file: targetFile, text: code });
+
+  // Clear stale graph so it gets rebuilt
+  world.lastGraph = undefined;
+}
+
+When('I open {string}', async function (this: BddWorld, filename: string) {
+  // Ensure Explorer is visible
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await this.workbox.keyboard.press(`${modifier}+Shift+E`);
+  await this.workbox.waitForTimeout(500);
+
+  // Click the file in the explorer
+  const fileLocator = this.workbox.locator(`.monaco-list-row:has-text("${filename}")`).first();
+  if (await fileLocator.isVisible()) {
+    await fileLocator.dblclick();
+  } else {
+    // Fallback to Quick Open if not in explorer view
+    await this.workbox.keyboard.press(`${modifier}+P`);
+    await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
+    await this.workbox.keyboard.type(filename);
+    await this.workbox.keyboard.press('Enter');
+  }
+  
+  // Wait for the tab to appear and be active
+  const tab = this.workbox.locator(`.tab:has-text("${filename}")`).first();
+  await expect(tab).toBeVisible({ timeout: 10_000 });
+  await tab.click();
+  await this.workbox.waitForTimeout(1000);
+  
+  (this as any)._lastOpenedFile = filename;
 });
 
 When('I update the code to:', async function (this: BddWorld, code: string) {
-  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-  await this._waitForDiagramRebuild();
+  await updateActiveEditorFaithfully(this, code);
 });
 
 When('I update {string} in the editor to:', async function (this: BddWorld, filename: string, content: string) {
-  await this.updateWorkspaceFile(filename, content);
+  // This step implies we might need to open it first if not already open
+  await this.workbox.keyboard.press(process.platform === 'darwin' ? 'Meta+P' : 'Control+P');
+  await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
+  await this.workbox.keyboard.type(filename);
+  await this.workbox.keyboard.press('Enter');
+  await this.workbox.waitForTimeout(1000);
+  await updateActiveEditorFaithfully(this, content);
 });
 
 When('I render {string} with the CLI to {string}', async function (this: BddWorld, inputFile: string, outputFile: string) {
@@ -116,23 +167,19 @@ When('I select module {string} from the dropdown', async function (this: BddWorl
 });
 
 When('I update the code to rename register {string} to {string}:', async function (this: BddWorld, _oldName: string, _newName: string, code: string) {
-  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-  await this._waitForDiagramRebuild();
+  await updateActiveEditorFaithfully(this, code);
 });
 
 When('I update the code to remove the assignment:', async function (this: BddWorld, code: string) {
-  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-  await this._waitForDiagramRebuild();
+  await updateActiveEditorFaithfully(this, code);
 });
 
 When('I update the code to remove node {string}:', async function (this: BddWorld, _name: string, code: string) {
-  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-  await this._waitForDiagramRebuild();
+  await updateActiveEditorFaithfully(this, code);
 });
 
 When('I update the code to bring back node {string}:', async function (this: BddWorld, _name: string, code: string) {
-  await this.prepareWorkspaceGraph([{ file: 'top.sv', text: code }]);
-  await this._waitForDiagramRebuild();
+  await updateActiveEditorFaithfully(this, code);
 });
 
 When('I reload the diagram', async function (this: BddWorld) {
@@ -601,10 +648,6 @@ When('I hover over the connection between the {word} node {string} and the {word
   await this.takeScreenshot(`Hovering connection ${name1} to ${name2}`);
 });
 
-When('I open {string}', async function (this: BddWorld, _filename: string) {
-  // Handled implicitly by the workspace graph preparation step.
-});
-
 When('I open the schematic for module {string}', async function (this: BddWorld, moduleName: string) {
   const current = await this.webviewPage.locator('.module-select').inputValue().catch(() => '');
   if (current !== moduleName) {
@@ -615,6 +658,13 @@ When('I open the schematic for module {string}', async function (this: BddWorld,
 
 When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
   await this._revealPanel();
+  // Now that the panel is visible, we can reliably wait for the rebuild indicator
+  await this._waitForDiagramRebuild();
+  // Re-sync graph and viewmodel so following steps see the update
+  await (this as any)._ensureGraphBuilt?.();
+  if (this.lastViewModel?.moduleName) {
+    await syncLastViewModel(this, this.lastViewModel.moduleName);
+  }
 });
 
 // ---------------------------------------------------------------------------

@@ -20,7 +20,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing input and output ports
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output y);
         assign y = a;
@@ -33,7 +33,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing combinational logic
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output y);
         assign y = a & b;
@@ -47,7 +47,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing ALU arithmetic
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic a, input logic b, output logic y);
         assign y = a + b;
@@ -62,7 +62,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing registers
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic clk, input logic d, output logic q);
         always_ff @(posedge clk) begin
@@ -77,7 +77,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing bus breakouts
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input [3:0] bus_in, output a, output b);
         assign a = bus_in[0];
@@ -91,7 +91,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing bus composition
-    Given I have a file "bus_composition.sv":
+    Given I have a file "bus_composition.sv" in my workspace:
       """
       module bus_composition(input clk, input a, input b, input [1:0] sub, output logic [3:0] r);
         always_ff @(posedge clk) begin
@@ -111,7 +111,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing aggregate assignment concatenations
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic [1:0] d, input e, output logic a, output logic b, output logic c);
         assign {a, b, c} = {d, e};
@@ -127,7 +127,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing struct breakouts
-    Given I have a file "struct_breakout.sv":
+    Given I have a file "struct_breakout.sv" in my workspace:
       """
       typedef struct packed { logic [3:0] opcode; logic valid; logic [1:0] lane; } packet_t;
       module top(input packet_t pkt, output logic [3:0] opcode, output logic valid, output logic [1:0] lane);
@@ -145,7 +145,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing struct composition
-    Given I have a file "struct_composition.sv":
+    Given I have a file "struct_composition.sv" in my workspace:
       """
       module top(input logic clk, input logic [3:0] opcode_i, input logic valid_i, output logic [4:0] flat);
         typedef struct packed { logic [3:0] opcode; logic valid; } packet_t;
@@ -164,7 +164,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing module instances
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module child #(parameter WIDTH = 8, parameter DEPTH = 4) (
         input logic [WIDTH-1:0] a,
@@ -201,7 +201,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing module meta-parameter table
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top #(
         parameter WIDTH = 8,
@@ -229,7 +229,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing module parameter table without parameters
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic x, output logic y);
         assign y = x;
@@ -245,7 +245,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing literal assignments
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(output logic [7:0] y);
         assign y = 8'h42;
@@ -257,7 +257,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing named constants
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(output logic [3:0] y);
         localparam logic [3:0] VERSION = 4'd5;
@@ -270,7 +270,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing literal 42
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(output logic [7:0] y);
         assign y = 8'd42;
@@ -282,7 +282,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing FSM with states
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input clk, input rst_n, input logic next_state_en, output logic [1:0] state);
         typedef enum logic [1:0] {IDLE=0, START=1, BUSY=2, DONE=3} state_t;
@@ -313,7 +313,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing inferred latches
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic en, input logic d, output logic q);
         always_comb begin
@@ -330,7 +330,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing for loops
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input logic [3:0] in, output logic [3:0] out);
         always_comb begin
@@ -348,7 +348,7 @@ Feature: Schematic Observation
 
   @natural
   Scenario: Observing port type visual conventions
-    Given I have a file "top.sv":
+    Given I have a file "top.sv" in my workspace:
       """
       interface my_if; logic clk; modport master(input clk); endinterface
       typedef struct packed { logic [7:0] data; } my_struct_t;
@@ -367,7 +367,7 @@ Feature: Schematic Observation
   # Note: pending due to difficulties reliably automating SVG hover events headlessly.
   @skip
   Scenario: Highlighting entire net on hover
-    Given a SystemVerilog module:
+    Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
         assign x = a;
