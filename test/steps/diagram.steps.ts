@@ -215,13 +215,6 @@ When('I click {string}', async function (this: BddWorld, label: string) {
   await this.workbox.getByRole('button', { name: label, exact: true }).first().click();
 });
 
-When('I have saved the layout', async function (this: BddWorld) {
-  if (!this.workspaceDir) throw new Error('No open workspace');
-  const layoutPath = path.join(this.workspaceDir, '.svsch', 'layout.json');
-  await fs.promises.mkdir(path.dirname(layoutPath), { recursive: true });
-  await fs.promises.writeFile(layoutPath, JSON.stringify(this.layout, null, 2));
-});
-
 When('I click {string} in the diagram toolbar', async function (this: BddWorld, label: string) {
   // Snapshot every node's position right before the action so that later
   // "should not have moved" assertions compare against the pre-action layout.

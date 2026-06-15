@@ -53,7 +53,6 @@ export class BddWorld {
   // File state
   files: any[] = [];
   workspaceDir?: string;
-  workspaceSources: Map<string, string> = new Map();
   _bddWorkspaceFiles: string[] = [];
   workspaceDirStateBefore?: string[];
 
@@ -211,100 +210,6 @@ export class BddWorld {
 
   // Root of the VSCode workspace shown in the Explorer during BDD tests.
   static readonly BDD_WORKSPACE = path.resolve(__dirname, '../../test/bdd-workspace');
-
-  async prepareWorkspaceGraph(sources: { file: string; text: string }[]): Promise<void> {
-    const workspaceRoot = BddWorld.BDD_WORKSPACE;
-    this.workspaceDir = workspaceRoot;
-    this._bddWorkspaceFiles = [];
-    for (const s of sources) {
-      const fullPath = path.join(workspaceRoot, s.file);
-      await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-      await fs.promises.writeFile(fullPath, s.text);
-      this._bddWorkspaceFiles.push(fullPath);
-    }
-
-    this.lastCode = sources[0].text;
-    this.files = sources;
-
-    const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
-    const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
-
-    const graph = await buildDesignGraph({
-      workspaceRoot,
-      projectFolder: '.',
-      backend: 'uhdm',
-      veriblePath: 'verible-verilog-syntax',
-      surelogPath,
-      backendPath,
-      includeExternalDiagnostics: false,
-    });
-
-    this.lastGraph = graph;
-    const moduleName = graph.rootModules[0];
-    const viewModel = await buildViewModel(graph, moduleName, this.layout);
-    this.lastViewModel = viewModel;
-    this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
-    // VS Code's extension handles rendering — no webview injection here.
-  }
-
-  async openWorkspaceForEditing(sources: { file: string; text: string }[]): Promise<void> {
-    if (this.workspaceDir && this.workspaceDir !== BddWorld.BDD_WORKSPACE) {
-      await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
-    }
-    this.workspaceDir = BddWorld.BDD_WORKSPACE;
-    this.workspaceSources.clear();
-    for (const source of sources) {
-      this.workspaceSources.set(source.file, source.text);
-    }
-    await this._writeWorkspaceSources();
-    await this._buildWorkspaceGraph();
-  }
-
-  async updateWorkspaceFile(filename: string, text: string): Promise<void> {
-    if (!this.workspaceDir) throw new Error('No open workspace. Use "I have opened ... for editing" first.');
-    this.workspaceSources.set(filename, text);
-    await this._writeWorkspaceSources();
-    await this._buildWorkspaceGraph();
-  }
-
-  private async _writeWorkspaceSources(): Promise<void> {
-    if (!this.workspaceDir) throw new Error('No open workspace');
-    this._bddWorkspaceFiles = [];
-    for (const [file, text] of this.workspaceSources) {
-      const fullPath = path.join(this.workspaceDir, file);
-      await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-      await fs.promises.writeFile(fullPath, text);
-      if (this.workspaceDir === BddWorld.BDD_WORKSPACE) {
-        this._bddWorkspaceFiles.push(fullPath);
-      }
-    }
-    this.files = Array.from(this.workspaceSources, ([file, text]) => ({ file, text }));
-    this.lastCode = this.files[0]?.text;
-  }
-
-  private async _buildWorkspaceGraph(): Promise<void> {
-    if (!this.workspaceDir) throw new Error('No open workspace');
-
-    const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
-    const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
-
-    const graph = await buildDesignGraph({
-      workspaceRoot: this.workspaceDir,
-      projectFolder: '.',
-      backend: 'uhdm',
-      veriblePath: 'verible-verilog-syntax',
-      surelogPath,
-      backendPath,
-      includeExternalDiagnostics: false,
-    });
-
-    this.lastGraph = graph;
-    const moduleName = graph.rootModules[0];
-    const viewModel = await buildViewModel(graph, moduleName, this.layout);
-    this.lastViewModel = viewModel;
-    this.layout = mergeNodePositions(this.layout, moduleName, viewModel.nodes);
-    // VS Code's extension handles rendering — no webview injection here.
-  }
 
   async _ensureGraphBuilt(): Promise<void> {
     if (this.lastGraph) return;
@@ -599,7 +504,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.lastCode = undefined;
   this.lastViewModel = undefined;
   this.files = [];
-  this.workspaceSources = new Map();
   this.workspaceDirStateBefore = undefined;
   this.lastCliSvg = undefined;
   this.lastCliSvgPath = undefined;

@@ -60,7 +60,6 @@ Feature: Command Line Interface
       """
     When I open the "top" module in SVSCH
     And I move the port node "a"
-    And I have saved the layout
     And I run the CLI command:
       """
       svsch render top.sv --output top_with_layout.svg
@@ -87,7 +86,6 @@ Feature: Command Line Interface
       """
     When I open the "top" module in SVSCH
     And I move the port node "a"
-    And I have saved the layout
     And I run the CLI command:
       """
       svsch render top.sv --output top_no_layout.svg --no-layout
