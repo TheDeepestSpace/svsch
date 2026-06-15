@@ -50,9 +50,6 @@ export class BddWorld {
   lastCode?: string;
   lastViewModel?: any;
 
-  // Message tracking (webview → extension)
-  messages: any[] = [];
-
   // File state
   files: any[] = [];
   workspaceDir?: string;
@@ -218,7 +215,6 @@ export class BddWorld {
   async prepareWorkspaceGraph(sources: { file: string; text: string }[]): Promise<void> {
     const workspaceRoot = BddWorld.BDD_WORKSPACE;
     this.workspaceDir = workspaceRoot;
-    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, workspaceRoot);
     this._bddWorkspaceFiles = [];
     for (const s of sources) {
       const fullPath = path.join(workspaceRoot, s.file);
@@ -256,7 +252,6 @@ export class BddWorld {
       await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
     }
     this.workspaceDir = BddWorld.BDD_WORKSPACE;
-    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, this.workspaceDir);
     this.workspaceSources.clear();
     for (const source of sources) {
       this.workspaceSources.set(source.file, source.text);
@@ -289,7 +284,6 @@ export class BddWorld {
 
   private async _buildWorkspaceGraph(): Promise<void> {
     if (!this.workspaceDir) throw new Error('No open workspace');
-    await this.evaluateInVSCode((_vscode, root) => { (global as any).__svschBddNavigationRoot = root; }, this.workspaceDir);
 
     const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
     const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
@@ -354,10 +348,6 @@ export class BddWorld {
     await this._waitForRenderedModule(moduleName, 30_000);
     await this.workbox.waitForTimeout(500);
     if (screenshotLabel) await this.takeScreenshot(screenshotLabel);
-  }
-
-  async webviewMessages(): Promise<any[]> {
-    return this.evaluateInVSCode(() => (global as any).__svschBddReceivedMessages ?? []);
   }
 
   // Snapshot the current position of every port node into notedPositions. Called
@@ -608,7 +598,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.lastGraph = undefined;
   this.lastCode = undefined;
   this.lastViewModel = undefined;
-  this.messages = [];
   this.files = [];
   this.workspaceSources = new Map();
   this.workspaceDirStateBefore = undefined;
@@ -647,67 +636,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   await closeOpenSvschTabs(workbox);
   await cleanBddWorkspace();
   await refreshFilesExplorer(workbox, evaluateInVSCode);
-
-  // Install panel interceptor so steps can observe webview -> extension messages.
-  await evaluateInVSCode(_vscode => {
-    try { (global as any).__svschBddPanel?.dispose?.(); } catch {}
-    (global as any).__svschBddPanel = null;
-    (global as any).__svschBddReceivedMessages = [];
-
-    // Idempotent: only patch once per VSCode session
-    if ((global as any).__svschBddInterceptorInstalled) {
-      return;
-    }
-    (global as any).__svschBddInterceptorInstalled = true;
-
-    const origCreatePanel = (_vscode as any).window.createWebviewPanel;
-    (_vscode as any).window.createWebviewPanel = function (viewType: string, title: string, ...args: any[]) {
-      const panel = origCreatePanel.call((_vscode as any).window, viewType, title, ...args);
-      if (viewType === 'svsch.diagram') {
-        (global as any).__svschBddPanel = panel;
-        (global as any).__svschBddReceivedMessages = [];
-
-        // Accumulate webview → extension messages and dispatch navigations
-        panel.webview.onDidReceiveMessage(async (msg: any) => {
-          ((global as any).__svschBddReceivedMessages ??= []).push(msg);
-
-          const doNavigate = async (source: any) => {
-            if (!source?.file) return;
-            const root = (global as any).__svschBddNavigationRoot;
-            if (!root) return;
-            const uri = (_vscode as any).Uri.file(
-              source.file.startsWith('/') ? source.file : `${root}/${source.file}`
-            );
-            try {
-              const document = await (_vscode as any).workspace.openTextDocument(uri);
-              const startLine = Math.max(0, (source.startLine || 1) - 1);
-              const endLine = Math.max(0, (source.endLine || source.startLine || 1) - 1);
-              const range = new (_vscode as any).Range(
-                startLine,
-                0,
-                endLine,
-                document.lineAt(endLine).text.length
-              );
-              await (_vscode as any).window.showTextDocument(document, { selection: range });
-            } catch {}
-          };
-
-          if (msg.type === 'navigateToSource') {
-            await doNavigate(msg.source);
-          } else if (msg.type === 'navigateToSignal' && msg.edge?.sourceRange) {
-            await doNavigate(msg.edge.sourceRange);
-          }
-        });
-
-        // Track panel disposal so we know when to re-intercept
-        panel.onDidDispose(() => {
-          (global as any).__svschBddPanel = null;
-        });
-      }
-      return panel;
-    };
-  });
-
 });
 
 After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {

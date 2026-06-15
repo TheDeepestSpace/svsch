@@ -1,7 +1,7 @@
 import { Given, When, Then, Before, After, BddWorld } from './fixtures';
 import type { FrameLocator } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
+import { buildViewModel } from '../../src/layout/mergeLayout';
 import { diagramGrid } from '../../src/diagram/constants';
 import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -186,7 +186,14 @@ When('I reload the diagram', async function (this: BddWorld) {
 });
 
 When('I close and reopen the diagram', async function (this: BddWorld) {
-  await this.evaluateInVSCode(() => { (global as any).__svschBddPanel?.dispose(); });
+  // Actually close the SVSCH editor tab (Ctrl+W), then reopen it.
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  const tab = this.workbox.locator('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]').first();
+  if (await tab.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await tab.click();
+    await this.workbox.keyboard.press(`${modifier}+W`);
+    await tab.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {});
+  }
   await this.workbox.waitForTimeout(300);
   await this._revealPanel();
   await this._waitForDiagramRebuild();
@@ -200,13 +207,7 @@ When('I reset the layout', async function (this: BddWorld) {
 });
 
 When('I click the Export SVG button', async function (this: BddWorld) {
-  const beforeMessages = (await this.webviewMessages()).length;
   await this.webviewPage.locator('button:has-text("Export SVG")').click();
-  await this.workbox.waitForTimeout(200);
-  const sent = (await this.webviewMessages()).slice(beforeMessages).some((m: any) => m.type === 'exportSvg');
-  if (!sent) {
-    this.messages.push({ type: 'exportSvg' });
-  }
 });
 
 When('I have saved the layout', async function (this: BddWorld) {
@@ -288,7 +289,7 @@ When('I move the port node {string} by \\({int}, {int}\\)', async function (this
   const pos = await getInternalPosition(this.webviewPage, id);
   if (!pos) throw new Error(`Missing position data for ${name}`);
   this.notedPositions.set(name, pos);
-  await dragPortNodeTo(this, name, pos.x + dx, pos.y + dy, 'After move', false);
+  await dragPortNodeTo(this, name, pos.x + dx, pos.y + dy, 'After move');
 });
 
 When('I move the port node {string} to \\({int}, {int}\\)', async function (this: BddWorld, name: string, x: number, y: number) {
@@ -560,12 +561,6 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
 // Then steps
 // ---------------------------------------------------------------------------
 
-Then('an export request should be sent to VS Code', async function (this: BddWorld) {
-  const msgs = [...(await this.webviewMessages()), ...this.messages];
-  const m = msgs.reverse().find(m => m.type === 'exportSvg');
-  if (!m) throw new Error(`No exportSvg message found in: ${JSON.stringify(msgs)}`);
-});
-
 Then('I should see {int} cut net labels named {string}', async function (this: BddWorld, count: number, label: string) {
   await expect(cutNetLabelNodes(this.webviewPage, label)).toHaveCount(count);
 });
@@ -611,23 +606,19 @@ Then('the instance node {string} parameter {string} should link value {string}',
   const chip = this.webviewPage.locator(`.react-flow__node[data-id="${id}"] .instance-parameter-chip`, { hasText: parameterName }).first();
   const token = chip.locator('.svsch-param-token', { hasText: value }).first();
   await expect(token).toBeVisible();
-  const beforeMessages = (await this.webviewMessages()).length;
-  const beforeSyntheticMessages = this.messages.length;
+  // The token is a real link: clicking it makes the extension navigate the
+  // editor to the value's declaration. Assert the editor lands there.
   await token.click({ force: true });
-  await this.workbox.waitForTimeout(200);
-  let message = [
-    ...(await this.webviewMessages()).slice(beforeMessages),
-    ...this.messages.slice(beforeSyntheticMessages)
-  ].find((m: any) => m.type === 'navigateToSource');
-  if (!message) {
-    const source = await sourceForInstanceParameterValue(this.webviewPage, id, parameterName, value)
-      ?? sourceForIdentifierDeclaration(this.files, value);
-    if (source) {
-      message = { type: 'navigateToSource', source };
-      this.messages.push(message);
-    }
+  const deadline = Date.now() + 10_000;
+  let selectedText: string | null = null;
+  while (Date.now() < deadline) {
+    selectedText = await this.selectedEditorText();
+    if (selectedText !== null && normalizeHighlightedText(selectedText).includes(value)) break;
+    await this.workbox.waitForTimeout(200);
   }
-  if (!message) throw new Error(`Clicking parameter value "${value}" did not post navigateToSource`);
+  if (!selectedText || !normalizeHighlightedText(selectedText).includes(value)) {
+    throw new Error(`Clicking parameter value "${value}" did not navigate the editor to its declaration (selection: ${selectedText})`);
+  }
 });
 
 Then('the module parameter table should show module {string}', async function (this: BddWorld, moduleName: string) {
@@ -1419,53 +1410,8 @@ async function runCliCommand(world: BddWorld, command: string) {
 // DOM helpers (operate on webviewPage: FrameLocator)
 // ---------------------------------------------------------------------------
 
-async function sourceForInstanceParameterValue(webviewPage: FrameLocator, nodeId: string, parameterName: string, value: string): Promise<any | undefined> {
-  return webviewPage.locator('html').evaluate((_, { id, name, text }) => {
-    const rf = (window as any).reactFlowInstance;
-    const node = rf?.getNodes?.().find((candidate: any) => candidate.id === id)?.data?.node;
-    const direct = Array.isArray(node?.instanceParameters) ? node.instanceParameters : [];
-    const metadata = Array.isArray(node?.metadata?.instanceParameters) ? node.metadata.instanceParameters : [];
-    const parameters = [...direct, ...metadata];
-    const param = parameters.find((candidate: any) => (
-      candidate.name === name && (candidate.value === text || String(candidate.value ?? '').includes(text))
-    )) ?? parameters.find((candidate: any) => candidate.name === name)
-      ?? parameters.find((candidate: any) => candidate.value === text);
-    const ref = param?.parameterRefs?.find((candidate: any) => candidate.name === text) ?? param?.parameterRefs?.[0];
-    return ref?.declarationSource ?? ref?.source ?? param?.valueSource ?? param?.source;
-  }, { id: nodeId, name: parameterName, text: value });
-}
-
-function sourceForIdentifierDeclaration(files: any[], identifier: string): any | undefined {
-  const declarationPattern = new RegExp(`\\b(?:localparam|parameter|typedef|logic|wire|reg|bit|int)\\b[^;\\n]*\\b${escapeRegExp(identifier)}\\b`);
-  return sourceForMatchingLine(files, identifier, line => declarationPattern.test(line));
-}
-
-function sourceForMatchingLine(files: any[], identifier: string, predicate: (line: string) => boolean): any | undefined {
-  for (const file of files) {
-    const lines = String(file.text ?? '').split('\n');
-    for (let index = 0; index < lines.length; index += 1) {
-      const uncommented = lines[index].replace(/\/\/.*$/, '');
-      if (!predicate(uncommented)) continue;
-      const identifierColumn = lines[index].indexOf(identifier);
-      const startColumn = identifierColumn >= 0 ? identifierColumn : Math.max(0, lines[index].search(/\S/));
-      return {
-        file: file.file,
-        startLine: index + 1,
-        startColumn,
-        endLine: index + 1,
-        endColumn: lines[index].length
-      };
-    }
-  }
-  return undefined;
-}
-
 function normalizeHighlightedText(text: string): string {
   return text.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function findInterfaceNodeIdForNavigation(webviewPage: FrameLocator, label: string): Promise<string | null> {
@@ -1550,41 +1496,6 @@ async function getInternalPosition(webviewPage: FrameLocator, nodeId: string): P
   }, nodeId);
 }
 
-async function setInternalPosition(webviewPage: FrameLocator, nodeId: string, x: number, y: number): Promise<void> {
-  await webviewPage.locator('html').evaluate((_el, { id, position }) => {
-    const rf = (window as any).reactFlowInstance;
-    if (!rf) return;
-    rf.setNodes((nodes: any[]) => nodes.map((node) => {
-      if (node.id !== id) {
-        return node;
-      }
-      return {
-        ...node,
-        position,
-        data: node.data?.node
-          ? {
-              ...node.data,
-              node: {
-                ...node.data.node,
-                position,
-                fixed: true,
-              },
-            }
-          : node.data,
-      };
-    }));
-  }, { id: nodeId, position: { x, y } });
-}
-
-async function persistWorldLayout(world: BddWorld): Promise<void> {
-  if (!world.workspaceDir) {
-    return;
-  }
-  const layoutPath = path.join(world.workspaceDir, '.svsch', 'layout.json');
-  await fs.promises.mkdir(path.dirname(layoutPath), { recursive: true });
-  await fs.promises.writeFile(layoutPath, JSON.stringify(world.layout, null, 2));
-}
-
 async function checkConnection(webviewPage: FrameLocator, sourceId: string, targetId: string, negated = false) {
   const edges = await webviewPage.locator('html').evaluate(() =>
     Array.from(document.querySelectorAll('.react-flow__edge')).map(e => e.getAttribute('data-id'))
@@ -1630,17 +1541,6 @@ async function waitForViewportTransformToSettle(webviewPage: FrameLocator): Prom
   });
 }
 
-async function currentPositionedNodes(webviewPage: FrameLocator, fallbackNodes: any[]): Promise<any[]> {
-  const flowNodes = await webviewPage.locator('html').evaluate(() => {
-    const instance = (window as any).reactFlowInstance;
-    return instance.getNodes().map((node: any) => ({ id: node.id, position: node.position }));
-  });
-  const positionById = new Map(flowNodes.map((node: any) => [node.id, node.position]));
-  return fallbackNodes.map((node: any) => ({
-    ...node, position: positionById.get(node.id) ?? node.position, fixed: true,
-  }));
-}
-
 async function hasOriginalEdgeBetween(webviewPage: FrameLocator, source: string, target: string): Promise<boolean> {
   const sourceId = await findNodeIdByLabel(webviewPage, source);
   const targetId = await findNodeIdByLabel(webviewPage, target);
@@ -1681,7 +1581,7 @@ async function syncToWebviewModule(world: BddWorld): Promise<void> {
 // After a real diagram action (cut/rename/tie/reset/reroute), the extension is
 // the sole writer of the layout file and re-renders the webview itself. Wait for
 // the file to change from `before`, mirror it into the in-memory layout (so
-// downstream lookups like cutNetKeyByLabel see the real net cuts), and settle.
+// downstream steps see the real net cuts / routes), and settle.
 // Click one of a connection's hover-only floating controls (Cut / Reroute).
 // Revealing them requires "mousing over the wire": the wire is an L-shaped SVG
 // path whose bounding-box centre isn't on the stroke, so a positional hover is
@@ -1709,86 +1609,18 @@ async function waitForExtensionRenderedView(world: BddWorld, screenshotLabel: st
   await world.takeScreenshot(screenshotLabel);
 }
 
-async function dragPortNodeTo(
-  world: BddWorld,
-  name: string,
-  x: number,
-  y: number,
-  screenshotLabel: string,
-  exactPosition = true
-): Promise<void> {
+// Drag a port node to an absolute (x, y) flow position with the mouse, then let
+// the extension persist it. No internal repositioning, no message channel.
+async function dragPortNodeTo(world: BddWorld, name: string, x: number, y: number, screenshotLabel: string): Promise<void> {
   const id = await findNodeIdByLabel(world.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
-  const pos = await getInternalPosition(world.webviewPage, id);
-  if (!pos) throw new Error(`Missing position data for ${name}`);
-  const msgsBefore = (await world.webviewMessages()).length;
-
-  for (let attempt = 0; attempt < (exactPosition ? 4 : 1); attempt += 1) {
-    const currentPos = await getInternalPosition(world.webviewPage, id);
-    if (!currentPos) throw new Error(`Missing position data for ${name}`);
-    if (exactPosition && Math.abs(currentPos.x - x) <= 1 && Math.abs(currentPos.y - y) <= 1) {
-      break;
-    }
-
-    const zoom = await world.webviewPage.locator('html').evaluate(() =>
-      ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
-    );
-    const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
-    if (!box) throw new Error(`Could not get bounding box for ${name}`);
-    const cx = box.x + box.width / 2;
-    const cy = box.y + box.height / 2;
-    await world.workbox.mouse.move(cx, cy);
-    await world.workbox.mouse.down();
-    await world.workbox.mouse.move(cx + (x - currentPos.x) * zoom, cy + (y - currentPos.y) * zoom, { steps: 10 });
-    await world.workbox.mouse.up();
-    await world.workbox.waitForTimeout(250);
-
-    if (!exactPosition) {
-      break;
-    }
-  }
-
-  if (exactPosition) {
-    const reachedExactPosition = await expect.poll(async () => {
-      const nextPos = await getInternalPosition(world.webviewPage, id);
-      return nextPos !== undefined &&
-        Math.abs(nextPos.x - x) <= 1 &&
-        Math.abs(nextPos.y - y) <= 1;
-    }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
-    if (!reachedExactPosition) {
-      await setInternalPosition(world.webviewPage, id, x, y);
-      await expect.poll(async () => {
-        const nextPos = await getInternalPosition(world.webviewPage, id);
-        return nextPos !== undefined &&
-          Math.abs(nextPos.x - x) <= 1 &&
-          Math.abs(nextPos.y - y) <= 1;
-      }, { timeout: 5000 }).toBe(true);
-    }
-  } else {
-    await expect.poll(async () => {
-      const nextPos = await getInternalPosition(world.webviewPage, id);
-      return nextPos !== undefined &&
-        (Math.abs(nextPos.x - pos.x) > 1 || Math.abs(nextPos.y - pos.y) > 1);
-    }, { timeout: 5000 }).toBe(true);
-  }
-
-  const sawLayoutMessage = await expect.poll(async () => {
-    const messages = await world.webviewMessages();
-    return messages.slice(msgsBefore).some((m: any) => m.type === 'layoutChanged');
-  }, { timeout: 5000 }).toBe(true).then(() => true).catch(() => false);
-  const allMessages = await world.webviewMessages();
-  const layoutMsg = allMessages.slice(msgsBefore).reverse().find((m: any) => m.type === 'layoutChanged');
-  if (layoutMsg) {
-    world.layout = mergeNodePositions(world.layout, layoutMsg.moduleName, layoutMsg.nodes);
-  } else {
-    const moduleName = world.lastViewModel.moduleName;
-    const positioned = await currentPositionedNodes(world.webviewPage, world.lastViewModel.nodes);
-    world.layout = mergeNodePositions(world.layout, moduleName, positioned);
-    if (!sawLayoutMessage) {
-      world.lastViewModel = await buildViewModel(world.lastGraph, moduleName, world.layout);
-    }
-  }
-  await persistWorldLayout(world);
+  const moduleName = world.lastViewModel.moduleName;
+  await dragNodeToFlowPosition(world, id, x, y);
+  const after = await getInternalPosition(world.webviewPage, id);
+  if (!after) throw new Error(`Missing position data for ${name} after move`);
+  await waitForNodePersisted(world, moduleName, id, after);
+  world.layout = await readExtensionLayout(world);
+  await syncLastViewModel(world, moduleName);
   await world.takeScreenshot(screenshotLabel);
 }
 
@@ -1847,48 +1679,61 @@ async function rawDragNode(world: BddWorld, id: string, dxScreen: number, dyScre
   await world.workbox.waitForTimeout(150);
 }
 
-// Drag a node to land exactly a whole number of grid cells from where it
-// started. The webview can render with a device-pixel-ratio that makes a naive
-// "flow * zoom" delta undershoot, so we self-calibrate: drag, measure the actual
-// screen→flow ratio, and correct until we reach the target. Pure mouse moves —
-// no internal repositioning.
-async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, cellsY: number): Promise<void> {
-  const start = await getInternalPosition(world.webviewPage, id);
-  if (!start) throw new Error(`Missing position data for node ${id}`);
-  const target = { x: start.x + cellsX * diagramGrid.size, y: start.y + cellsY * diagramGrid.size };
+// Screen pixels per flow unit. React Flow's zoom is in CSS px; the webview can
+// render at a device-pixel-ratio that scales it. This product is stable, so we
+// use it directly rather than measuring it from (snapped, noisy) drag results.
+async function effectiveScreenPerFlow(world: BddWorld): Promise<number> {
+  return world.webviewPage.locator('html').evaluate(() => {
+    const zoom = (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1;
+    return zoom * (window.devicePixelRatio || 1);
+  });
+}
 
-  const zoom = await world.webviewPage.locator('html').evaluate(() =>
-    ((window as any).reactFlowInstance?.getViewport()?.zoom ?? 1) as number
-  );
-  let screenPerFlow = zoom; // refined after the first observed move
+// Drag a node so it lands at an absolute flow position, with the mouse only.
+// Starts from the stable zoom×dpr ratio and refines it from each observed move,
+// but keeps the ratio within sane bounds and caps the per-drag distance so a
+// noisy measurement can never fling the node off-canvas (the bug that made the
+// reroute moves overshoot and hang). No cross-node state — each drag is fresh.
+async function dragNodeToFlowPosition(world: BddWorld, id: string, targetX: number, targetY: number): Promise<void> {
+  const base = await effectiveScreenPerFlow(world);
+  const MIN_RATIO = base / 4;
+  const MAX_RATIO = base * 4;
+  const MAX_STEP = 1500; // screen px; guards against runaway deltas
+  let ratio = base;
 
-  for (let attempt = 0; attempt < 5; attempt += 1) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
     const cur = await getInternalPosition(world.webviewPage, id);
     if (!cur) throw new Error(`Missing position data for node ${id}`);
-    const remX = target.x - cur.x;
-    const remY = target.y - cur.y;
+    const remX = targetX - cur.x;
+    const remY = targetY - cur.y;
     if (Math.abs(remX) <= 1 && Math.abs(remY) <= 1) return;
 
-    const dxScreen = remX * screenPerFlow;
-    const dyScreen = remY * screenPerFlow;
+    const dxScreen = Math.max(-MAX_STEP, Math.min(MAX_STEP, remX * ratio));
+    const dyScreen = Math.max(-MAX_STEP, Math.min(MAX_STEP, remY * ratio));
     await rawDragNode(world, id, dxScreen, dyScreen);
 
+    // Refine the ratio from the dominant axis of this drag, clamped so a tiny
+    // or noisy measured delta can't explode (or collapse) the next step.
     const after = await getInternalPosition(world.webviewPage, id);
     if (!after) throw new Error(`Missing position data for node ${id}`);
-    // Learn the real ratio from the dominant axis of this drag.
     if (Math.abs(dyScreen) >= Math.abs(dxScreen) && Math.abs(dyScreen) > 1 && Math.abs(after.y - cur.y) > 1) {
-      screenPerFlow = dyScreen / (after.y - cur.y);
+      ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, dyScreen / (after.y - cur.y)));
     } else if (Math.abs(dxScreen) > 1 && Math.abs(after.x - cur.x) > 1) {
-      screenPerFlow = dxScreen / (after.x - cur.x);
+      ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, dxScreen / (after.x - cur.x)));
     }
-    // Cache the measured screen→flow ratio so edge-segment drags can reuse it.
-    (world as any)._dragScreenPerFlow = screenPerFlow;
   }
 
   const final = await getInternalPosition(world.webviewPage, id);
-  if (!final || Math.abs(final.x - target.x) > 1 || Math.abs(final.y - target.y) > 1) {
-    throw new Error(`Could not drag node ${id} to ${JSON.stringify(target)} (reached ${JSON.stringify(final)})`);
+  if (!final || Math.abs(final.x - targetX) > 1 || Math.abs(final.y - targetY) > 1) {
+    throw new Error(`Could not drag node ${id} to (${targetX}, ${targetY}) (reached ${JSON.stringify(final)})`);
   }
+}
+
+// Drag a node a whole number of grid cells from where it started.
+async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, cellsY: number): Promise<void> {
+  const start = await getInternalPosition(world.webviewPage, id);
+  if (!start) throw new Error(`Missing position data for node ${id}`);
+  await dragNodeToFlowPosition(world, id, start.x + cellsX * diagramGrid.size, start.y + cellsY * diagramGrid.size);
 }
 
 async function readExtensionLayout(world: BddWorld): Promise<any> {
@@ -1950,13 +1795,7 @@ async function adjustConnectionByGridCells(
   const handleBox = await longestHandle.boundingBox();
   if (!handleBox) throw new Error(`Could not get bounding box for segment handle on ${source} -> ${target}`);
 
-  // Use the screen→flow ratio measured by a prior node drag if we have it;
-  // otherwise derive it from the viewport zoom and the webview's device pixel
-  // ratio (the webview can render at a DPR that scales the effective zoom).
-  const screenPerFlow = (world as any)._dragScreenPerFlow ?? await world.webviewPage.locator('html').evaluate(() => {
-    const zoom = (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1;
-    return zoom * (window.devicePixelRatio || 1);
-  });
+  const screenPerFlow = await effectiveScreenPerFlow(world);
   const gx = handleBox.x + handleBox.width / 2;
   const gy = handleBox.y + handleBox.height / 2;
   const dyScreen = cellsDown * diagramGrid.size * screenPerFlow;
