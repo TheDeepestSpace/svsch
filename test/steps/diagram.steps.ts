@@ -210,6 +210,11 @@ When('I click the Export SVG button', async function (this: BddWorld) {
   await this.webviewPage.locator('button:has-text("Export SVG")').click();
 });
 
+// Generic workbench button click (e.g. the "OK" button in the save dialog).
+When('I click {string}', async function (this: BddWorld, label: string) {
+  await this.workbox.getByRole('button', { name: label, exact: true }).first().click();
+});
+
 When('I have saved the layout', async function (this: BddWorld) {
   if (!this.workspaceDir) throw new Error('No open workspace');
   const layoutPath = path.join(this.workspaceDir, '.svsch', 'layout.json');
@@ -814,12 +819,21 @@ Then('the CLI should have reported generating {string}', function (this: BddWorl
   if (!found) throw new Error(`Expected CLI to report generating "${expectedFile}", but stdout was:\n${this.lastCliStdout}`);
 });
 
+// The in-window (simple) save dialog is a QuickPick; its path input is
+// pre-filled with the default save target. "<workspace folder>" resolves to the
+// open workspace directory.
+Then('I see the file save dialog with {string} as the filename', async function (this: BddWorld, expectedFilename: string) {
+  const expected = expectedFilename.replace('<workspace folder>', this.workspaceDir || BddWorld.BDD_WORKSPACE);
+  const dialog = this.workbox.locator('.quick-input-widget');
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await expect(dialog.locator('input[aria-label="input"]')).toHaveValue(expected, { timeout: 10_000 });
+});
+
 Then('a file named {string} should exist in the workspace', async function (this: BddWorld, filename: string) {
   if (!this.workspaceDir) throw new Error('No open workspace');
   const filePath = path.join(this.workspaceDir, filename);
-  try {
-    await fs.promises.access(filePath);
-  } catch {
+  const exists = await expect.poll(() => fs.existsSync(filePath), { timeout: 10_000 }).toBe(true).then(() => true).catch(() => false);
+  if (!exists) {
     const files = await fs.promises.readdir(this.workspaceDir);
     throw new Error(`File "${filename}" does not exist in workspace. Found: ${files.join(', ')}`);
   }

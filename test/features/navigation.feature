@@ -142,11 +142,6 @@ Feature: Navigation
     Then the existing editor pane for "top.sv" is focused
     And the editor should highlight the text "modport master(input clk, output data, output valid, input ready);"
 
-  # @skip: the real export opens a native OS Save dialog that Playwright can't
-  # drive; writing directly needs SVSCH_TEST plumbed into the extension host
-  # (not available in this harness yet). The step performs a real click so this
-  # is ready to enable once the dialog can be bypassed.
-  @skip
   Scenario: Exporting the diagram as SVG
     Given I have a file "top.sv" in my workspace:
       """
@@ -156,4 +151,7 @@ Feature: Navigation
       """
     When I open the "top" module in SVSCH
     And I click the Export SVG button
+    Then I see the file save dialog with "<workspace folder>/top.svg" as the filename
+
+    When I click "OK"
     Then a file named "top.svg" should exist in the workspace
