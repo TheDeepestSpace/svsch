@@ -573,7 +573,7 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
   // Never delete BDD_WORKSPACE — it's the VS Code workspace root and deleting
   // it causes the next test's Before hook to fail ("no workspace is opened").
   if (this.workspaceDir && this.workspaceDir !== BddWorld.BDD_WORKSPACE) {
-    await fs.promises.rm(this.workspaceDir, { recursive: true, force: true });
+    await fs.promises.rm(this.workspaceDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     this.workspaceDir = undefined;
   }
 
@@ -594,6 +594,8 @@ async function cleanBddWorkspace(): Promise<void> {
     await fs.promises.rm(path.join(BddWorld.BDD_WORKSPACE, entry.name), {
       recursive: true,
       force: true,
+      maxRetries: 10,
+      retryDelay: 100,
     });
   }
 }
