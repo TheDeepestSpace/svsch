@@ -222,6 +222,8 @@ When('I click {string} in the diagram toolbar', async function (this: BddWorld, 
   const moduleName = this.lastViewModel.moduleName;
   const layoutBefore = JSON.stringify(await readExtensionLayout(this));
   await this.webviewPage.locator(`button:has-text("${label}")`).click();
+  // Move mouse away to clear any hover states before screenshot
+  await this.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
   // The extension owns persistence: the click rewrites the layout file and
   // re-renders. Wait for the file to change rather than relying on the (flaky)
   // message channel.
@@ -1606,6 +1608,8 @@ async function clickEdgeControl(world: BddWorld, edgeId: string, controlClass: s
   const control = edgeLocator.locator(`.${controlClass}`);
   await expect(control).toBeVisible({ timeout: 5_000 });
   await control.click();
+  // Move mouse away to clear hover states so the edge isn't highlighted in the screenshot
+  await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
 }
 
 async function waitForLayoutChange(world: BddWorld, before: string, screenshotLabel: string): Promise<void> {
