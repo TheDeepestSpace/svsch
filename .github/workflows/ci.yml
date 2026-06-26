@@ -303,13 +303,6 @@ jobs:
           name: bdd-html-docs
           path: |
             test-results/bdd/**
-            !test-results/bdd/documentation.pdf
-
-      - name: Upload BDD PDF Documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: bdd-pdf-docs
-          path: test-results/bdd/documentation.pdf
 
   test_system:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
