@@ -22,7 +22,10 @@ export default class StepAttachmentReporter {
       const currentLength = result.attachments.length;
       
       if (currentLength > previousLength) {
-        const scenarioTitle = test.title;
+        let scenarioTitle = test.title;
+        if (scenarioTitle.startsWith('Example #') && test.parent) {
+          scenarioTitle = test.parent.title;
+        }
         const text = step.title.replace(/^(Given|When|Then|And|But)\s+/, '');
         
         if (!this.scenarioAttachments.has(scenarioTitle)) {
