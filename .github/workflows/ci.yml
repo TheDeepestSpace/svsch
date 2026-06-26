@@ -352,7 +352,7 @@ jobs:
         run: npm audit --audit-level=high
 
   package_extension:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit, generate_bdd_docs]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -375,7 +375,7 @@ jobs:
           path: "*.vsix"
 
   pack_npm:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit, generate_bdd_docs]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
