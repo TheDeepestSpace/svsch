@@ -33,6 +33,7 @@ export class BddWorld {
     fn: (vscode: any, arg: Arg) => R,
     arg?: Arg
   ) => Promise<R>;
+  testInfo!: import('@playwright/test').TestInfo;
 
   // Scenario metadata
   scenarioName?: string;
@@ -140,10 +141,18 @@ export class BddWorld {
   }
 
   private async _attachBuffer(buf: Buffer, contentType: string): Promise<void> {
-    // In playwright-bdd the world fixture doesn't have direct attach access.
-    // Attachments go via testInfo when needed; for now just log length.
-    void buf;
-    void contentType;
+    if (this.testInfo) {
+      const fs = require('fs');
+      const path = require('path');
+      const screenshotsDir = path.join(process.cwd(), 'test-results', 'bdd', 'screenshots');
+      if (!fs.existsSync(screenshotsDir)) {
+        fs.mkdirSync(screenshotsDir, { recursive: true });
+      }
+      const filename = `screenshot-${Date.now()}-${Math.floor(Math.random() * 10000)}.png`;
+      const filepath = path.join(screenshotsDir, filename);
+      fs.writeFileSync(filepath, buf);
+      await this.testInfo.attach('diagram-screenshot', { path: filepath, contentType });
+    }
   }
 
   private async _compareSnapshots(
@@ -367,13 +376,14 @@ function cropPng(source: PNG, box: ScreenshotCompareBox): PNG {
 const mergedTest = mergeTests(bddTest, vsCodeTest);
 
 export const test = mergedTest.extend<{ world: BddWorld }>({
-  world: async ({ workbox, evaluateInVSCode }, use) => {
+  world: async ({ workbox, evaluateInVSCode, $testInfo }, use) => {
     const w = new BddWorld();
     w.workbox = workbox;
     w.webviewPage = workbox
       .frameLocator('iframe.webview')
       .frameLocator('iframe#active-frame');
     w.evaluateInVSCode = evaluateInVSCode as any;
+    w.testInfo = $testInfo;
     await use(w);
   },
 });

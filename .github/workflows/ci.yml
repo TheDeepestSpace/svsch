@@ -254,8 +254,18 @@ jobs:
       - *pw_cache_step
       - *pw_install_step
 
+      - &prepare_vscode_user_step
+        name: Prepare non-root user for VS Code
+        # vscode-test-playwright launches VS Code (Electron) which must run as the
+        # non-root dev user; give it access to the tools and the workspace.
+        run: |
+          chmod -R a+rX /usr/local
+          mkdir -p /home/dev/tmp
+          chmod 755 /__w /__w/svsch
+          chown -R dev:dev . /home/dev/tmp
+
       - name: Run BDD Tests
-        run: npm run test:bdd
+        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd
 
       - name: Upload BDD Documentation
         if: always()
@@ -265,6 +275,37 @@ jobs:
           path: |
             test-results/bdd/**
             test/features/snapshots/**
+
+  generate_bdd_docs:
+    needs: [prep, build_ci_image, setup, test_bdd]
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Download BDD Test Results
+        uses: actions/download-artifact@v4
+        with:
+          name: bdd-documentation
+          path: .
+
+      - name: Generate BDD Docs
+        run: npm run docs:generate
+
+      - name: Upload BDD HTML Documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-html-docs
+          path: |
+            test-results/bdd/**
+            !test-results/bdd/documentation.pdf
+
+      - name: Upload BDD PDF Documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-pdf-docs
+          path: test-results/bdd/documentation.pdf
 
   test_system:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -284,16 +325,10 @@ jobs:
       - *pw_version_step
       - *pw_cache_step
       - *pw_install_step
+      - *prepare_vscode_user_step
 
       - name: Run System Tests (${{ matrix.vscode_version }})
-        run: |
-          # Ensure all tools are readable/executable by the dev user
-          chmod -R a+rX /usr/local
-          mkdir -p /home/dev/tmp
-          # Ensure dev can traverse the parent directories of the workspace
-          chmod 755 /__w /__w/svsch
-          chown -R dev:dev . /home/dev/tmp
-          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system
+        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
       - name: Upload System Test Artifacts
@@ -317,7 +352,7 @@ jobs:
         run: npm audit --audit-level=high
 
   package_extension:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit, generate_bdd_docs]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -340,7 +375,7 @@ jobs:
           path: "*.vsix"
 
   pack_npm:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit, generate_bdd_docs]
     runs-on: ubuntu-latest
     container: *container_config
     steps:

@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwright';
-import { defineBddConfig } from 'playwright-bdd';
+import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import path from 'path';
 import os from 'os';
 
@@ -30,7 +30,13 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   timeout: 120_000,
   reporter: [
     ['list'],
+    ['./step-attachment-reporter.ts'],
+    ['json', { outputFile: path.join(root, 'test-results/bdd/playwright-report.json') }],
     ['html', { open: 'never', outputFolder: reportDir }],
+    // Emit a cucumber-JSON report so `npm run docs:generate` can build the
+    // living BDD documentation (multiple-cucumber-html-reporter consumes this).
+    // Own subdir so the reporter doesn't pick up snapshot-diff JSON in bdd/.
+    cucumberReporter('json', { outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json') }),
   ],
   snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
   expect: {
