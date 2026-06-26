@@ -792,6 +792,9 @@ Then('a file named {string} should exist in directory {string}', async function 
     const files = await fs.promises.readdir(path.join(this.workspaceDir, dir)).catch(() => []);
     throw new Error(`File "${filename}" does not exist in "${dir}". Found: ${files.join(', ')}`);
   }
+  if (filename.endsWith('.svg') && this.testInfo) {
+    await this.testInfo.attach(filename, { path: filePath, contentType: 'image/svg+xml' });
+  }
 });
 
 Then('a file named {string} should not exist in the workspace', async function (this: BddWorld, filename: string) {
@@ -829,6 +832,9 @@ Then('a file named {string} should exist in the workspace', async function (this
   if (!exists) {
     const files = await fs.promises.readdir(this.workspaceDir);
     throw new Error(`File "${filename}" does not exist in workspace. Found: ${files.join(', ')}`);
+  }
+  if (filename.endsWith('.svg') && this.testInfo) {
+    await this.testInfo.attach(filename, { path: filePath, contentType: 'image/svg+xml' });
   }
 });
 

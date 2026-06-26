@@ -15,9 +15,13 @@ if (fs.existsSync(cucumberReportPath) && fs.existsSync(stepAttachmentsPath)) {
     // Now inject into cucumber-report.json
     let injectedCount = 0;
     for (const feature of reportData) {
+      const elementCounters: Record<string, number> = {};
       for (const element of feature.elements) {
-        const scenarioTitle = element.name;
-        const scenarioSteps = stepMap[scenarioTitle];
+        const baseTitle = element.name;
+        elementCounters[baseTitle] = (elementCounters[baseTitle] || 0) + 1;
+        
+        const exampleTitle = `${baseTitle} - Example #${elementCounters[baseTitle]}`;
+        const scenarioSteps = stepMap[exampleTitle] || stepMap[baseTitle];
         
         if (!scenarioSteps) continue;
 

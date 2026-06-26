@@ -38,9 +38,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --output top.svg --no-layout
       """
-    Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should contain "port:top:y"
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       top.svg
       """
@@ -50,6 +48,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "top.svg" should exist in the workspace
+    And the CLI SVG should contain "port:top:a"
+    And the CLI SVG should contain "port:top:y"
 
   Scenario: Render with manual layout
     Given I have a file "top.sv" in my workspace:
@@ -64,9 +65,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --output top_with_layout.svg
       """
-    Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should have node "a" positioned as it is on the diagram
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       top_with_layout.svg
       """
@@ -76,6 +75,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "top_with_layout.svg" should exist in the workspace
+    And the CLI SVG should contain "port:top:a"
+    And the CLI SVG should have node "a" positioned as it is on the diagram
 
   Scenario: Render without manual layout (--no-layout)
     Given I have a file "top.sv" in my workspace:
@@ -90,9 +92,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --output top_no_layout.svg --no-layout
       """
-    Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should have node "a" positioned in its initial location
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       top_no_layout.svg
       """
@@ -102,6 +102,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "top_no_layout.svg" should exist in the workspace
+    And the CLI SVG should contain "port:top:a"
+    And the CLI SVG should have node "a" positioned in its initial location
 
   Scenario: Render with multiple files and dependencies
     Given I have the following files in my workspace:
@@ -113,9 +116,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --output multi.svg --no-layout
       """
-    Then the CLI SVG should contain "instance:top:u_sub"
-    And the CLI SVG should contain "sub"
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       multi.svg
       """
@@ -125,6 +126,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "multi.svg" should exist in the workspace
+    And the CLI SVG should contain "instance:top:u_sub"
+    And the CLI SVG should contain "sub"
 
   Scenario Outline: Output file name
     Given I have a file "top.sv" in my workspace:
@@ -142,13 +146,13 @@ Feature: Command Line Interface
       """
       <expected_file>
       """
-    And a file named "<expected_file>" should exist in the workspace
     And the CLI stderr should be exactly:
       """
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "<expected_file>" should exist in the workspace
 
     Examples:
       | command                            | expected_file |
@@ -167,10 +171,7 @@ Feature: Command Line Interface
       """
       svsch render "*.sv" --output-dir out --no-layout
       """
-    Then a file named "a.svg" should exist in directory "out"
-    And a file named "b.svg" should exist in directory "out"
-    And a file named "decoy.svg" should not exist in directory "out"
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       out/a.svg
       out/b.svg
@@ -181,6 +182,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "a.svg" should exist in directory "out"
+    And a file named "b.svg" should exist in directory "out"
+    And a file named "decoy.svg" should not exist in directory "out"
 
   Scenario: Selecting a top module
     Given I have a file "top.sv" in my workspace:
@@ -193,9 +197,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --top second --output second.svg --no-layout
       """
-    Then the CLI SVG should contain "port:second:b"
-    And the CLI SVG should not contain "port:first:a"
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       second.svg
       """
@@ -205,6 +207,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "second.svg" should exist in the workspace
+    And the CLI SVG should contain "port:second:b"
+    And the CLI SVG should not contain "port:first:a"
 
   Scenario: Using an explicit layout file
     Given I have a file "top.sv" in my workspace:
@@ -220,9 +225,7 @@ Feature: Command Line Interface
       """
       svsch render top.sv --layout my_layout.json --output explicit.svg
       """
-    Then the CLI SVG should contain "port:top:a"
-    And the CLI SVG should have node "a" positioned as it is on the diagram
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       explicit.svg
       """
@@ -232,6 +235,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "explicit.svg" should exist in the workspace
+    And the CLI SVG should contain "port:top:a"
+    And the CLI SVG should have node "a" positioned as it is on the diagram
 
   Scenario Outline: SVG themes
     Given I have a file "top.sv" in my workspace:
@@ -245,13 +251,14 @@ Feature: Command Line Interface
       """
       svsch render top.sv --theme <theme> --output theme.svg --no-layout
       """
-    Then the CLI SVG should contain "<bg_color>"
-    And the CLI stderr should be exactly:
+    Then the CLI stderr should be exactly:
       """
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "theme.svg" should exist in the workspace
+    And the CLI SVG should contain "<bg_color>"
 
     Examples:
       | theme | bg_color                              |
@@ -277,6 +284,7 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "out.svg" should exist in the workspace
     And the CLI SVG should have node "a" positioned as it is on the diagram
 
   Scenario: Specifying Project folder (affects source collection)
@@ -291,6 +299,7 @@ Feature: Command Line Interface
       """
     Then the CLI stderr should contain "[svsch] Using custom Project folder: ."
     And the CLI stderr should contain "[svsch] Finalizing..."
+    And a file named "out.svg" should exist in the workspace
     And the CLI SVG should contain "instance:top:u_child"
     And the CLI SVG should contain "child"
 
@@ -304,10 +313,7 @@ Feature: Command Line Interface
       """
       svsch render "*.sv" --top b --output single_b.svg --no-layout
       """
-    Then a file named "single_b.svg" should exist in the workspace
-    And a file named "a.svg" should not exist in the workspace
-    And a file named "b.svg" should not exist in the workspace
-    And the CLI stdout should be exactly (workspace-relative):
+    Then the CLI stdout should be exactly (workspace-relative):
       """
       single_b.svg
       """
@@ -317,6 +323,9 @@ Feature: Command Line Interface
       [svsch] Extracting design graph...
       [svsch] Finalizing...
       """
+    And a file named "single_b.svg" should exist in the workspace
+    And a file named "a.svg" should not exist in the workspace
+    And a file named "b.svg" should not exist in the workspace
 
   Scenario: Project folder isolation
     Given I have the following files in my workspace:
