@@ -267,6 +267,10 @@ jobs:
       - name: Run BDD Tests
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd
 
+      - name: Copy Playwright Results
+        if: always()
+        run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
+
       - name: Upload BDD Documentation
         if: always()
         uses: actions/upload-artifact@v4

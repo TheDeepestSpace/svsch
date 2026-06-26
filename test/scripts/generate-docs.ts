@@ -28,8 +28,17 @@ if (fs.existsSync(cucumberReportPath) && fs.existsSync(stepAttachmentsPath)) {
             for (const att of attachments) {
               let base64Body;
               
-              if (att.path && fs.existsSync(att.path)) {
-                base64Body = fs.readFileSync(att.path).toString('base64');
+              let targetPath = att.path;
+              if (targetPath && !fs.existsSync(targetPath)) {
+                // CI copies /tmp/bdd-playwright-results to test-results/bdd/bdd-playwright-results
+                const copiedPath = targetPath.replace(/^\/tmp\//, 'test-results/bdd/');
+                if (fs.existsSync(copiedPath)) {
+                  targetPath = copiedPath;
+                }
+              }
+
+              if (targetPath && fs.existsSync(targetPath)) {
+                base64Body = fs.readFileSync(targetPath).toString('base64');
               } else if (att.body) {
                 base64Body = att.body;
               }
