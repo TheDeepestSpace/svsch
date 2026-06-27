@@ -548,7 +548,7 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
       .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
   });
 
-  await closeOpenSvschTabs(workbox);
+  await closeOpenSvschTabs(workbox, evaluateInVSCode);
   await cleanBddWorkspace();
   await refreshFilesExplorer(workbox, evaluateInVSCode);
 });
@@ -611,13 +611,17 @@ async function refreshFilesExplorer(
   await workbox.waitForTimeout(200);
 }
 
-async function closeOpenSvschTabs(workbox: Page): Promise<void> {
+async function closeOpenSvschTabs(workbox: Page, evaluateInVSCode?: any): Promise<void> {
   const tabs = workbox.locator('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]');
   for (let i = 0; i < 3; i++) {
     const count = await tabs.count().catch(() => 0);
     if (count === 0) return;
     await tabs.first().click().catch(() => {});
-    await workbox.keyboard.press(process.platform === 'darwin' ? 'Meta+W' : 'Control+W').catch(() => {});
+    if (evaluateInVSCode) {
+      await evaluateInVSCode((_vscode: any) => _vscode.commands.executeCommand('workbench.action.closeActiveEditor')).catch(() => {});
+    } else {
+      await workbox.keyboard.press(process.platform === 'darwin' ? 'Meta+W' : 'Control+W').catch(() => {});
+    }
     await workbox.waitForTimeout(200);
   }
 }

@@ -187,11 +187,12 @@ When('I reload the diagram', async function (this: BddWorld) {
 
 When('I close and reopen the diagram', async function (this: BddWorld) {
   // Actually close the SVSCH editor tab (Ctrl+W), then reopen it.
-  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
   const tab = this.workbox.locator('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]').first();
   if (await tab.isVisible({ timeout: 2_000 }).catch(() => false)) {
     await tab.click();
-    await this.workbox.keyboard.press(`${modifier}+W`);
+    await this.evaluateInVSCode(_vscode => {
+      return (_vscode as any).commands.executeCommand('workbench.action.closeActiveEditor');
+    });
     await tab.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {});
   }
   await this.workbox.waitForTimeout(300);
