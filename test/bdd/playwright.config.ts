@@ -50,9 +50,9 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     deviceScaleFactor: 1,
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
-    viewport: { width: 1400, height: 900 },
+    viewport: { width: 1400, height: 1000 },
     launchOptions: {
-      args: ['--window-size=1400,900']
+      args: ['--window-size=1400,1000']
     },
   },
 });
