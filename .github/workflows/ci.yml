@@ -325,7 +325,7 @@ jobs:
       - *prepare_vscode_user_step
 
       - name: Run System Tests (${{ matrix.vscode_version }})
-        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system
+        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
       - name: Upload System Test Artifacts
