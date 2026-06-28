@@ -1168,6 +1168,7 @@ Then('a warning notification should be shown with {string}', async function (thi
 Then('the diagram should display the module {string}', async function (this: BddWorld, name: string) {
   // Assert on what the webview is actually showing (the extension switched it).
   await expect(this.webviewPage.locator('select[aria-label="Module"]')).toHaveValue(name, { timeout: 15_000 });
+  await this.takeScreenshot(`Displaying module ${name}`);
 });
 
 Then('the module dropdown should have {string} selected', async function (this: BddWorld, name: string) {
