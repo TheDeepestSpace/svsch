@@ -1,4 +1,3 @@
-@natural
 Feature: Schematic Observation
   As a hardware designer
   I want to see my SystemVerilog code reflected in a block diagram
@@ -18,7 +17,6 @@ Feature: Schematic Observation
     Then the SVSCH diagram panel opens
     And the "top" module is selected in the module dropdown
 
-  @natural
   Scenario: Observing input and output ports
     Given I have a file "top.sv" in my workspace:
       """
@@ -31,7 +29,6 @@ Feature: Schematic Observation
     And I should see a port node "y"
     And there should be a connection between "a" and "y"
 
-  @natural
   Scenario: Observing combinational logic
     Given I have a file "top.sv" in my workspace:
       """
@@ -45,7 +42,6 @@ Feature: Schematic Observation
     And there should be a connection between "b" and the combinational block
     And there should be a connection between the combinational block and "y"
 
-  @natural
   Scenario: Observing ALU arithmetic
     Given I have a file "top.sv" in my workspace:
       """
@@ -60,7 +56,6 @@ Feature: Schematic Observation
     And there should be a connection between "b" and the ALU block
     And there should be a connection between the ALU block and "y"
 
-  @natural
   Scenario: Observing registers
     Given I have a file "top.sv" in my workspace:
       """
@@ -75,7 +70,6 @@ Feature: Schematic Observation
     And there should be a connection between "d" and the register node "q"
     And there should be a connection between "clk" and the register node "q"
 
-  @natural
   Scenario: Observing bus breakouts
     Given I have a file "top.sv" in my workspace:
       """
@@ -89,7 +83,6 @@ Feature: Schematic Observation
     And there should be a connection between the bus node "bus_in" and "a"
     And there should be a connection between the bus node "bus_in" and "b"
 
-  @natural
   Scenario: Observing bus composition
     Given I have a file "bus_composition.sv" in my workspace:
       """
@@ -109,7 +102,6 @@ Feature: Schematic Observation
     And there should be a connection from "reg:bus_composition:r[3:2]" port "Q" to "bus_comp:bus_composition:r" port "[3:2]"
     And there should be a connection from "bus_comp:bus_composition:r" port "r" to "port:bus_composition:r" port "r"
 
-  @natural
   Scenario: Observing aggregate assignment concatenations
     Given I have a file "top.sv" in my workspace:
       """
@@ -125,7 +117,6 @@ Feature: Schematic Observation
     And there should be a connection from "bus:top:aggregate_assign:2:9:n0:breakout" port "lhs0" to "port:top:a" port "a"
     And there should be a connection from "bus:top:aggregate_assign:2:9:n0:breakout" port "lhs2" to "port:top:c" port "c"
 
-  @natural
   Scenario: Observing struct breakouts
     Given I have a file "struct_breakout.sv" in my workspace:
       """
@@ -143,7 +134,6 @@ Feature: Schematic Observation
     When I double-click the struct field tap "opcode" on struct node "pkt"
     Then the editor should highlight the text "pkt.opcode"
 
-  @natural
   Scenario: Observing struct composition
     Given I have a file "struct_composition.sv" in my workspace:
       """
@@ -162,7 +152,6 @@ Feature: Schematic Observation
     And there should be a connection from "reg:top:pkt.opcode" port "Q" to "struct_comp:top:pkt" port "opcode"
     And there should be a connection from "struct_comp:top:pkt" port "pkt" to "port:top:flat" port "flat"
 
-  @natural
   Scenario: Observing module instances
     Given I have a file "top.sv" in my workspace:
       """
@@ -199,7 +188,6 @@ Feature: Schematic Observation
     And there should be a connection between "override_in" and "u_override"
     And there should be a connection between "u_override" and "override_out"
 
-  @natural
   Scenario: Observing module meta-parameter table
     Given I have a file "top.sv" in my workspace:
       """
@@ -227,7 +215,6 @@ Feature: Schematic Observation
     And I should see a port node "y"
     And there should be a connection between "x" and "y"
 
-  @natural
   Scenario: Observing module parameter table without parameters
     Given I have a file "top.sv" in my workspace:
       """
@@ -243,7 +230,6 @@ Feature: Schematic Observation
     And I should see a port node "y"
     And there should be a connection between "x" and "y"
 
-  @natural
   Scenario: Observing literal assignments
     Given I have a file "top.sv" in my workspace:
       """
@@ -255,7 +241,6 @@ Feature: Schematic Observation
     Then I should see a literal node "8'h42"
     And there should be a connection between "8'h42" and "y"
 
-  @natural
   Scenario: Observing named constants
     Given I have a file "top.sv" in my workspace:
       """
@@ -268,7 +253,6 @@ Feature: Schematic Observation
     Then I should see a literal node "VERSION"
     And there should be a connection between "VERSION" and "y"
 
-  @natural
   Scenario: Observing literal 42
     Given I have a file "top.sv" in my workspace:
       """
@@ -280,7 +264,6 @@ Feature: Schematic Observation
     Then I should see a literal node "8'd42"
     And there should be a connection between "8'd42" and "y"
 
-  @natural
   Scenario: Observing FSM with states
     Given I have a file "top.sv" in my workspace:
       """
@@ -311,7 +294,6 @@ Feature: Schematic Observation
     And I should see a latch node "next_r"
     And there should be a connection between "IDLE" and "r"
 
-  @natural
   Scenario: Observing inferred latches
     Given I have a file "top.sv" in my workspace:
       """
@@ -328,7 +310,6 @@ Feature: Schematic Observation
     And there should be a connection between "en" and the mux node "if en"
     And there should be a connection between the mux node "if en" and the latch node "q"
 
-  @natural
   Scenario: Observing for loops
     Given I have a file "top.sv" in my workspace:
       """
@@ -346,7 +327,6 @@ Feature: Schematic Observation
     And there should be a connection between "in" and the loop block
     And there should be a connection between the loop block and "out"
 
-  @natural
   Scenario: Observing port type visual conventions
     Given I have a file "top.sv" in my workspace:
       """
@@ -378,7 +358,6 @@ Feature: Schematic Observation
     And I hover over the connection between the port node "a" and the port node "x"
     Then the entire net for "a" should be highlighted
 
-  @natural
   Scenario: Viewing a variable bit select
     Given I have a file "top.sv" in my workspace:
       """

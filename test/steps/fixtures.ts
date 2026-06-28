@@ -40,7 +40,6 @@ export class BddWorld {
   scenarioId?: string;
   scenarioExampleIndex?: number;
   isScenarioOutline = false;
-  isNaturalScenario = false;
   stepCounter = 0;
   updateSnapshots = false;
   nextCliSnapshotStepCounter?: number;
@@ -499,7 +498,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.scenarioId = $testInfo.testId;
   this.isScenarioOutline = metadata.isOutline;
   this.scenarioExampleIndex = metadata.exampleIndex;
-  this.isNaturalScenario = ($bddContext?.tags ?? []).includes('@natural');
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
 
   // Remove any on-disk layout that accumulated from the previous scenario
@@ -524,7 +522,6 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.lastCliStderr = undefined;
   this.nextCliSnapshotStepCounter = undefined;
   this.stepCounter = 0;
-  this.isNaturalScenario = ($bddContext?.tags ?? []).includes('@natural');
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
   this.notedPositions = new Map();
   this.movedToPositions = new Map();
@@ -541,7 +538,7 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
 
   // Reset svsch.projectFolder to a non-existent directory so the extension's
   // file watcher never triggers a successful rebuild during setup.
-  // @natural scenarios override this in their own "When I open VS Code to X" step.
+  // Tests opening the diagram will override this in their open steps.
   await evaluateInVSCode(_vscode => {
     return (_vscode as any).workspace
       .getConfiguration('svsch')
