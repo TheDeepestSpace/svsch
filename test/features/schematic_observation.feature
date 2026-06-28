@@ -377,3 +377,21 @@ Feature: Schematic Observation
     When I open the "top" module in SVSCH
     And I hover over the connection between the port node "a" and the port node "x"
     Then the entire net for "a" should be highlighted
+
+  @natural
+  Scenario: Viewing a variable bit select
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(
+          input logic [31:0] bus,
+          input logic [4:0] sel,
+          output logic bit_out
+      );
+          assign bit_out = bus[sel];
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see a "select" block for "bus[sel]"
+    And the "select" block should have an input "sel" on the top
+    And the "select" block should have an input "in" from "bus"
+    And the "select" block should have an output "out" to "bit_out"
