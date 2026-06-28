@@ -556,6 +556,7 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
   if (this.lastViewModel?.moduleName) {
     await syncLastViewModel(this, this.lastViewModel.moduleName);
   }
+  await this.takeScreenshot('After returning to pane');
 });
 
 // ---------------------------------------------------------------------------
