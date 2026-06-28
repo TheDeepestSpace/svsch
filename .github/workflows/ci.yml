@@ -271,11 +271,11 @@ jobs:
         if: always()
         run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
 
-      - name: Upload BDD Documentation
+      - name: Upload BDD Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bdd-documentation
+          name: bdd-artifacts
           path: |
             test-results/bdd/**
             test/features/snapshots/**
@@ -288,10 +288,10 @@ jobs:
       - *checkout_step
       - *restore_npm_step
 
-      - name: Download BDD Test Results
+      - name: Download BDD Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: bdd-documentation
+          name: bdd-artifacts
           path: .
 
       - name: Generate BDD Docs
