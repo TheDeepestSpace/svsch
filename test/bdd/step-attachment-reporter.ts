@@ -38,9 +38,7 @@ export default class StepAttachmentReporter {
         }
         
         const addedAttachments = result.attachments.slice(previousLength, currentLength);
-        for (const att of addedAttachments) {
-          stepMap.get(text).push(att);
-        }
+        stepMap.get(text).push(addedAttachments);
       }
     }
   }

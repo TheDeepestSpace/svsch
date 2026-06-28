@@ -26,10 +26,12 @@ if (fs.existsSync(cucumberReportPath) && fs.existsSync(stepAttachmentsPath)) {
         if (!scenarioSteps) continue;
 
         for (const step of element.steps) {
-          const attachments = scenarioSteps[step.name];
-          if (attachments && attachments.length > 0) {
-            if (!step.embeddings) step.embeddings = [];
-            for (const att of attachments) {
+          const attachmentGroups = scenarioSteps[step.name];
+          if (attachmentGroups && attachmentGroups.length > 0) {
+            const attachments = attachmentGroups.shift(); // consume the attachments for this occurrence
+            if (attachments && attachments.length > 0) {
+              if (!step.embeddings) step.embeddings = [];
+              for (const att of attachments) {
               let base64Body;
               
               let targetPath = att.path;
@@ -53,6 +55,7 @@ if (fs.existsSync(cucumberReportPath) && fs.existsSync(stepAttachmentsPath)) {
                   mime_type: att.contentType || 'image/png'
                 });
                 injectedCount++;
+              }
               }
             }
           }
