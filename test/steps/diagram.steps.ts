@@ -249,13 +249,11 @@ When('I hover the connection between {string} and {string} and click its Reroute
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
-  const edge = this.lastViewModel.edges.find((candidate: any) => (
-    candidate.source === sourceId && candidate.target === targetId && candidate.metadata?.cutStub === undefined
-  ));
-  if (!edge) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+  const edgeId = await findEdgeIdBetween(this.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
   const before = JSON.stringify(await readExtensionLayout(this));
   // Hover the connection to reveal its floating controls, then click Reroute.
-  await clickEdgeControl(this, edge.id, 'svsch-edge-reroute-control');
+  await clickEdgeControl(this, edgeId, 'svsch-edge-reroute-control');
   // The extension reroutes the edge, persists, and re-renders.
   await waitForLayoutChange(this, before, 'After reroute single edge');
 });
@@ -1851,13 +1849,11 @@ async function cutNetByClickingControl(world: BddWorld, source: string, target: 
   const sourceId = await findNodeIdByLabel(world.webviewPage, source);
   const targetId = await findNodeIdByLabel(world.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
-  const edge = world.lastViewModel.edges.find((candidate: any) =>
-    candidate.source === sourceId && candidate.target === targetId && candidate.metadata?.cutStub === undefined
-  );
-  if (!edge) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+  const edgeId = await findEdgeIdBetween(world.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
   const before = JSON.stringify(await readExtensionLayout(world));
   // Hover the connection to reveal its floating controls, then click Cut.
-  await clickEdgeControl(world, edge.id, 'svsch-edge-cut-control');
+  await clickEdgeControl(world, edgeId, 'svsch-edge-cut-control');
   // The extension cuts the net, persists, and re-renders.
   await waitForLayoutChange(world, before, 'After cut net');
 }
