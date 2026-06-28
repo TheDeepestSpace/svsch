@@ -72,6 +72,11 @@ RUN apt update && \
     apt install -y xvfb libgtk-3-0 libgbm1 libasound2 libxss1 fonts-dejavu && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install VNC tooling for headed VS Code BDD runs
+RUN apt update && \
+    apt install -y tigervnc-standalone-server novnc websockify && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Global Playwright browser path
 ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/ms-playwright
 RUN mkdir -p ${PLAYWRIGHT_BROWSERS_PATH} && chmod -R 777 ${PLAYWRIGHT_BROWSERS_PATH}

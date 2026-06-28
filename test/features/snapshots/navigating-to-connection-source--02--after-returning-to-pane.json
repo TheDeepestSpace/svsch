@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:c1",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:i",
+            "name": "i",
+            "direction": "input"
+          },
+          {
+            "id": "port:o",
+            "name": "o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:c2",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:i",
+            "name": "i",
+            "direction": "input"
+          },
+          {
+            "id": "port:o",
+            "name": "o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:c1:instance:top:c2:w",
+      "source": "instance:top:c1",
+      "target": "instance:top:c2",
+      "sourceHandle": "port:o",
+      "targetHandle": "port:i",
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:instance:top:c2:port:top:b:b",
+      "source": "instance:top:c2",
+      "target": "port:top:b",
+      "sourceHandle": "port:o",
+      "targetHandle": "port:b",
+      "path": "M 960 72 L 984 72 L 1152 72 L 1176 72"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:c1:a",
+      "source": "port:top:a",
+      "target": "instance:top:c1",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:i",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    }
+  ]
+}

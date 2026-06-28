@@ -73,7 +73,7 @@
       "target": "port:B:o",
       "sourceHandle": "out:o",
       "targetHandle": "port:o",
-      "path": "M 390.796875 48 L 408 48 L 600 48 L 624 48"
+      "path": "M 390.797 48 L 408 48 L 600 48 L 624 48"
     },
     {
       "id": "edge:port:B:i:inverter:B:o:expr:i",

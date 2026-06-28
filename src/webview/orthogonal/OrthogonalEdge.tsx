@@ -249,7 +249,7 @@ export function OrthogonalEdge({
     ...officialPoints,
     { x: targetX, y: targetY }
   ];
-  const rawEdgePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const rawEdgePath = pathFromPoints(points);
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
   const targetHdlPosition = forceStraight && isVertical

@@ -1,8 +1,109 @@
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..988cb80 100644
+index 5570b9f..2e625ae 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
-@@ -196,17 +196,12 @@ exports.test = test_1.test.extend({
+@@ -66,8 +66,55 @@ function getTraceMode(trace) {
+         return 'on-first-retry';
+     return traceMode;
+ }
++async function closeElectronApp(electronApp, timeoutMs = 5000) {
++    const proc = electronApp.process?.();
++    if (!proc || proc.exitCode !== null || proc.signalCode) {
++        return;
++    }
++    const processTree = collectProcessTree(proc.pid);
++    const waitForExit = new Promise(resolve => proc.once('exit', resolve));
++    killProcessTree(processTree, 'SIGTERM');
++    const exited = await Promise.race([
++        waitForExit.then(() => true),
++        new Promise(resolve => setTimeout(() => resolve(false), timeoutMs)),
++    ]);
++    if (!exited && proc.exitCode === null && !proc.signalCode) {
++        killProcessTree(processTree, 'SIGKILL');
++        console.warn(`[vscode-test-playwright] Timed out after ${timeoutMs}ms closing VSCode Electron app; killed process ${proc.pid}`);
++    }
++}
++function collectProcessTree(rootPid) {
++    const seen = new Set();
++    const visit = (pid) => {
++        if (!pid || seen.has(pid))
++            return;
++        seen.add(pid);
++        for (const child of childProcessIds(pid))
++            visit(child);
++    };
++    visit(rootPid);
++    return [...seen].reverse();
++}
++function childProcessIds(pid) {
++    try {
++        const stdout = cp.execFileSync('pgrep', ['-P', String(pid)], { encoding: 'utf8' }).trim();
++        return stdout ? stdout.split(/\s+/).map(Number).filter(Boolean) : [];
++    }
++    catch {
++        return [];
++    }
++}
++function killProcessTree(pids, signal) {
++    for (const pid of pids) {
++        try {
++            process.kill(pid, signal);
++        }
++        catch {
++        }
++    }
++}
+ // adapted from https://github.com/microsoft/playwright/blob/a6b320e36224f70ad04fd520503c230d5956ba66/packages/playwright-core/src/server/electron/electron.ts#L294-L320
+-function waitForLine(process, regex) {
++function waitForLine(process, regex, timeoutMs = 30000) {
+     function addEventListener(emitter, eventName, handler) {
+         emitter.on(eventName, handler);
+         return { emitter, eventName, handler };
+@@ -80,6 +127,10 @@ function waitForLine(process, regex) {
+     return new Promise((resolve, reject) => {
+         const rl = readline.createInterface({ input: process.stderr });
+         const failError = new Error('Process failed to launch!');
++        const timeout = setTimeout(() => {
++            cleanup();
++            reject(new Error(`Timed out after ${timeoutMs}ms waiting for process output matching ${regex}`));
++        }, timeoutMs);
+         const listeners = [
+             addEventListener(rl, 'line', onLine),
+             addEventListener(rl, 'close', reject.bind(null, failError)),
+@@ -95,6 +146,7 @@ function waitForLine(process, regex) {
+             resolve(match);
+         }
+         function cleanup() {
++            clearTimeout(timeout);
+             removeEventListeners(listeners);
+         }
+     });
+@@ -144,6 +196,7 @@ exports.test = test_1.test.extend({
+                 if (/^VSCODE_/i.test(prop))
+                     delete env[prop];
+             }
++            env.ELECTRON_DISABLE_SANDBOX = '1';
+             const electronApp = await test_1._electron.launch({
+                 executablePath: installPath,
+                 env,
+@@ -151,6 +204,7 @@ exports.test = test_1.test.extend({
+                     // Stolen from https://github.com/microsoft/vscode-test/blob/0ec222ef170e102244569064a12898fb203e5bb7/lib/runTest.ts#L126-L160
+                     // https://github.com/microsoft/vscode/issues/84238
+                     '--no-sandbox',
++                    '--disable-setuid-sandbox',
+                     // https://github.com/microsoft/vscode-test/issues/221
+                     '--disable-gpu-sandbox',
+                     // https://github.com/microsoft/vscode-test/issues/120
+@@ -184,7 +238,7 @@ exports.test = test_1.test.extend({
+                     testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
+                 }
+             }
+-            await electronApp.close();
++            await closeElectronApp(electronApp);
+             const logPath = path.join(cachePath, 'user-data', 'logs');
+             if (fs.existsSync(logPath)) {
+                 const logOutputPath = exports.test.info().outputPath('vscode-logs');
+@@ -196,24 +250,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -10,18 +111,30 @@ index 5570b9f..988cb80 100644
 -        const electronAppImpl = await playwright._toImpl(electronApp);
 -        const pageImpl = await playwright._toImpl(workbox);
 -        // check recent logs or wait for URL to access VSCode test server
-+    _evaluator: async ({ electronApp, workbox, vscodeTrace }, use, testInfo) => {
-+        // Use the public Playwright API — playwright._toImpl() was removed in Playwright 1.48+.
-         const vscodeTestServerRegExp = /^VSCodeTestServer listening on (http:\/\/.*)$/;
+-        const vscodeTestServerRegExp = /^VSCodeTestServer listening on (http:\/\/.*)$/;
 -        const process = electronAppImpl._process;
 -        const recentLogs = electronAppImpl._nodeConnection._browserLogsCollector.recentLogs();
 -        let [match] = recentLogs.map(s => s.match(vscodeTestServerRegExp)).filter(Boolean);
--        if (!match) {
--            match = await waitForLine(process, vscodeTestServerRegExp);
--        }
++    _evaluator: async ({ electronApp, workbox, vscodeTrace }, use, testInfo) => {
++        // Use the public Playwright API — playwright._toImpl() was removed in Playwright 1.48+.
++        const vscodeTestServerRegExp = /VSCodeTestServer listening on (http:\/\/\S+)/;
 +        const proc = electronApp.process();
-+        const match = await waitForLine(proc, vscodeTestServerRegExp);
++        const electronAppImpl = electronApp._connection?.toImpl?.(electronApp);
++        const recentLogs = electronAppImpl?._nodeConnection?._browserLogsCollector?.recentLogs?.() ?? [];
++        let [match] = recentLogs.map((s) => s.match(vscodeTestServerRegExp)).filter(Boolean);
+         if (!match) {
+-            match = await waitForLine(process, vscodeTestServerRegExp);
++            match = await waitForLine(proc, vscodeTestServerRegExp);
+         }
 +        const pageImpl = undefined;
          const ws = new ws_1.WebSocket(match[1]);
          await new Promise(r => ws.once('open', r));
          const traceMode = getTraceMode(vscodeTrace);
+         const captureTrace = shouldCaptureTrace(traceMode, testInfo);
+         const evaluator = new vscodeHandle_1.VSCodeEvaluator(ws, captureTrace ? pageImpl : undefined);
+         await use(evaluator);
+-        ws.close();
++        ws.terminate();
+     },
+     _vscodeHandle: async ({ _evaluator }, use) => {
+         await use(_evaluator.rootHandle());
