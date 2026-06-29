@@ -253,6 +253,7 @@ text {
   height: 100%;
   position: absolute;
   width: 100%;
+  z-index: 1;
 }
 
 .react-flow .react-flow__edges {
@@ -265,6 +266,127 @@ text {
 
 .react-flow__nodes {
   z-index: 2 !important;
+}
+
+.react-flow__viewport-portal {
+  z-index: 1;
+}
+
+.generate-region-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+
+.generate-region {
+  color: var(--vscode-editor-foreground);
+  position: absolute;
+  pointer-events: none;
+}
+
+.generate-region-outline {
+  border: 1.5px dashed var(--vscode-charts-orange);
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  inset: 0;
+  position: absolute;
+}
+
+.generate-region-title {
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--vscode-editor-foreground) 90%, var(--vscode-descriptionForeground));
+  cursor: move;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  left: 8px;
+  line-height: 18px;
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 8px;
+  white-space: nowrap;
+}
+
+.generate-region-resize {
+  background: transparent;
+  border: 0;
+  pointer-events: auto;
+  position: absolute;
+}
+
+.generate-region-resize-left,
+.generate-region-resize-right {
+  cursor: ew-resize;
+  height: 100%;
+  top: 0;
+  width: 10px;
+}
+
+.generate-region-resize-left {
+  left: -5px;
+}
+
+.generate-region-resize-right {
+  right: -5px;
+}
+
+.generate-region-resize-top,
+.generate-region-resize-bottom {
+  cursor: ns-resize;
+  height: 10px;
+  left: 0;
+  width: 100%;
+}
+
+.generate-region-resize-top {
+  top: -5px;
+}
+
+.generate-region-resize-bottom {
+  bottom: -5px;
+}
+
+.generate-region-inactive {
+  opacity: 0.75;
+}
+
+.generate-region-active .generate-region-outline {
+  border-color: var(--vscode-charts-orange);
+  border-style: solid;
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+}
+
+.generate-region-active .generate-region-title {
+  color: var(--vscode-editor-foreground);
+}
+
+.generate-region-invalid .generate-region-outline {
+  border-color: var(--vscode-charts-red);
+  background: color-mix(in srgb, var(--vscode-charts-red) 9%, transparent);
+}
+
+.generate-region-invalid .generate-region-title {
+  color: color-mix(in srgb, var(--vscode-charts-red) 78%, var(--vscode-editor-foreground));
+}
+
+.generate-region-note {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-charts-red);
+  color: color-mix(in srgb, var(--vscode-charts-red) 82%, var(--vscode-editor-foreground));
+  font-size: 11px;
+  line-height: 16px;
+  max-width: 220px;
+  padding: 2px 6px;
+  pointer-events: none;
+  position: absolute;
+  right: 6px;
+  top: 6px;
 }
 
 .empty {
@@ -334,6 +456,25 @@ text {
   position: relative;
   text-align: left;
   width: var(--svsch-node-width);
+}
+
+.generate-node-inactive .hdl-node,
+.generate-node-inactive .hdl-bus-node,
+.generate-node-inactive .hdl-net-label,
+.generate-node-inactive.hdl-node,
+.generate-node-inactive.hdl-bus-node,
+.generate-node-inactive.hdl-net-label {
+  filter: grayscale(0.75);
+  opacity: 0.75;
+}
+
+.generate-node-active .hdl-node,
+.generate-node-active .hdl-bus-node,
+.generate-node-active .hdl-net-label,
+.generate-node-active.hdl-node,
+.generate-node-active.hdl-bus-node,
+.generate-node-active.hdl-net-label {
+  opacity: 1;
 }
 
 .hdl-node-has-params {
@@ -1789,6 +1930,22 @@ text {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+.generate-edge-inactive .svsch-edge,
+.generate-edge-inactive.svsch-edge {
+  opacity: 0.75;
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 42%, var(--vscode-editor-background));
+  stroke-dasharray: 7 5;
+}
+
+.generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+.generate-edge-active .svsch-edge,
+.generate-edge-active.svsch-edge {
+  opacity: 1;
 }
 
 .svsch-edge-stacked {

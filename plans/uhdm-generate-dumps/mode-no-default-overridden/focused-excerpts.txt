@@ -1,0 +1,231 @@
+Focused UHDM excerpts for no-default MODE overridden by parent
+Source: plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv
+
+=== Surelog result ===
+1:status=0
+15:[INF:CP0335] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv:17:13: Compile generate block "work@wrapper.u_child.g_case_12".
+16:[NTE:EL0503] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv:29:1: Top level module "work@wrapper".
+17:[NTE:EL0508] Nb Top level modules: 1.
+25:[  ERROR] : 0
+26:[WARNING] : 3
+
+=== Folded gen_case source tree ===
+  \_gen_region: 
+    |vpiParent:
+    \_module_inst: work@child (work@child), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:5:1, endln:27:10
+    |vpiStmt:
+    \_begin: (work@child)
+      |vpiParent:
+      \_gen_region: 
+      |vpiFullName:work@child
+      |vpiStmt:
+      \_gen_case: , line:13:5, endln:23:12
+        |vpiParent:
+        \_begin: (work@child)
+        |vpiCondition:
+        \_ref_obj: (work@child.MODE), line:13:11, endln:13:15
+          |vpiParent:
+          \_gen_case: , line:13:5, endln:23:12
+          |vpiName:MODE
+          |vpiFullName:work@child.MODE
+        |vpiCaseItem:
+        \_case_item: 
+          |vpiExpr:
+          \_constant: , line:14:7, endln:14:8
+            |vpiParent:
+            \_case_item: 
+            |vpiDecompile:0
+            |vpiSize:64
+            |UINT:0
+            |vpiConstType:9
+          |vpiStmt:
+          \_named_begin: (g_case_0)
+            |vpiParent:
+            \_case_item: 
+            |vpiName:g_case_0
+            |vpiStmt:
+            \_ref_module: work@leaf (u_c0), line:15:14, endln:15:18
+              |vpiParent:
+              \_named_begin: (g_case_0)
+              |vpiName:u_c0
+              |vpiDefName:work@leaf
+              |vpiPort:
+              \_port: (a), line:15:19, endln:15:24
+                |vpiParent:
+                \_ref_module: work@leaf (u_c0), line:15:14, endln:15:18
+                |vpiName:a
+                |vpiHighConn:
+                \_ref_obj: (g_case_0.u_c0.a.a), line:15:22, endln:15:23
+                  |vpiParent:
+                  \_port: (a), line:15:19, endln:15:24
+                  |vpiName:a
+                  |vpiFullName:g_case_0.u_c0.a.a
+              |vpiPort:
+              \_port: (y), line:15:26, endln:15:36
+                |vpiParent:
+                \_ref_module: work@leaf (u_c0), line:15:14, endln:15:18
+                |vpiName:y
+                |vpiHighConn:
+                \_ref_obj: (g_case_0.u_c0.y.w_case), line:15:29, endln:15:35
+                  |vpiParent:
+                  \_port: (y), line:15:26, endln:15:36
+                  |vpiName:w_case
+                  |vpiFullName:g_case_0.u_c0.y.w_case
+        |vpiCaseItem:
+        \_case_item: 
+          |vpiExpr:
+          \_constant: , line:17:7, endln:17:8
+            |vpiParent:
+            \_case_item: 
+            |vpiDecompile:1
+            |vpiSize:64
+            |UINT:1
+            |vpiConstType:9
+          |vpiStmt:
+          \_begin: 
+            |vpiParent:
+            \_case_item: 
+        |vpiCaseItem:
+        \_case_item: 
+          |vpiStmt:
+          \_named_begin: (g_case_default)
+            |vpiParent:
+            \_case_item: 
+            |vpiName:g_case_default
+            |vpiStmt:
+            \_cont_assign: , line:21:16, endln:21:29
+              |vpiParent:
+              \_named_begin: (g_case_default)
+              |vpiRhs:
+              \_constant: , line:21:25, endln:21:29
+                |vpiParent:
+                \_cont_assign: , line:21:16, endln:21:29
+                |vpiDecompile:1'b0
+                |vpiSize:1
+                |BIN:0
+                |vpiConstType:3
+              |vpiLhs:
+              \_ref_obj: (g_case_default.w_case), line:21:16, endln:21:22
+                |vpiParent:
+                \_cont_assign: , line:21:16, endln:21:29
+                |vpiName:w_case
+                |vpiFullName:g_case_default.w_case
+|uhdmallModules:
+\_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:1:1, endln:3:10
+  |vpiParent:
+  \_design: (work@wrapper)
+
+=== Active generated case scope ===
+        \_port: (y), line:8:16, endln:8:17
+        |vpiFullName:work@wrapper.u_child.y
+        |vpiActual:
+        \_logic_typespec: , line:8:10, endln:8:15
+    |vpiGenScopeArray:
+    \_gen_scope_array: (work@wrapper.u_child.g_case_12), line:17:13, endln:19:10
+      |vpiParent:
+      \_module_inst: work@child (work@wrapper.u_child), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:30:3, endln:30:50
+      |vpiName:g_case_12
+      |vpiFullName:work@wrapper.u_child.g_case_12
+      |vpiGenScope:
+      \_gen_scope: (work@wrapper.u_child.g_case_12), line:17:13, endln:19:10
+        |vpiParent:
+        \_gen_scope_array: (work@wrapper.u_child.g_case_12), line:17:13, endln:19:10
+        |vpiFullName:work@wrapper.u_child.g_case_12
+        |vpiModule:
+        \_module_inst: work@leaf (work@wrapper.u_child.g_case_12.u_c12), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:18:9, endln:18:39
+          |vpiParent:
+          \_gen_scope: (work@wrapper.u_child.g_case_12), line:17:13, endln:19:10
+          |vpiName:u_c12
+          |vpiFullName:work@wrapper.u_child.g_case_12.u_c12
+          |vpiDefName:work@leaf
+          |vpiDefFile:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv
+          |vpiDefLineNo:1
+          |vpiNet:
+          \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.a), line:1:25, endln:1:26
+            |vpiParent:
+            \_module_inst: work@leaf (work@wrapper.u_child.g_case_12.u_c12), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:18:9, endln:18:39
+            |vpiTypespec:
+            \_ref_typespec: (work@wrapper.u_child.g_case_12.u_c12.a)
+              |vpiParent:
+              \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.a), line:1:25, endln:1:26
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.a
+              |vpiActual:
+              \_logic_typespec: , line:1:19, endln:1:24
+            |vpiName:a
+            |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.a
+            |vpiNetType:36
+          |vpiNet:
+          \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.y), line:1:41, endln:1:42
+            |vpiParent:
+            \_module_inst: work@leaf (work@wrapper.u_child.g_case_12.u_c12), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:18:9, endln:18:39
+            |vpiTypespec:
+            \_ref_typespec: (work@wrapper.u_child.g_case_12.u_c12.y)
+              |vpiParent:
+              \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.y), line:1:41, endln:1:42
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.y
+              |vpiActual:
+              \_logic_typespec: , line:1:35, endln:1:40
+            |vpiName:y
+            |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.y
+            |vpiNetType:36
+          |vpiPort:
+          \_port: (a), line:1:25, endln:1:26
+            |vpiParent:
+            \_module_inst: work@leaf (work@wrapper.u_child.g_case_12.u_c12), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:18:9, endln:18:39
+            |vpiName:a
+            |vpiDirection:1
+            |vpiHighConn:
+            \_ref_obj: (work@wrapper.u_child.g_case_12.b), line:18:23, endln:18:24
+              |vpiParent:
+              \_port: (a), line:1:25, endln:1:26
+              |vpiName:b
+              |vpiFullName:work@wrapper.u_child.g_case_12.b
+              |vpiActual:
+              \_logic_net: (work@wrapper.u_child.b), line:7:15, endln:7:16
+            |vpiLowConn:
+            \_ref_obj: (work@wrapper.u_child.g_case_12.u_c12.a), line:18:21, endln:18:22
+              |vpiParent:
+              \_port: (a), line:1:25, endln:1:26
+              |vpiName:a
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.a
+              |vpiActual:
+              \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.a), line:1:25, endln:1:26
+            |vpiTypedef:
+            \_ref_typespec: (work@wrapper.u_child.g_case_12.u_c12.a)
+              |vpiParent:
+              \_port: (a), line:1:25, endln:1:26
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.a
+              |vpiActual:
+              \_logic_typespec: , line:1:19, endln:1:24
+          |vpiPort:
+          \_port: (y), line:1:41, endln:1:42
+            |vpiParent:
+            \_module_inst: work@leaf (work@wrapper.u_child.g_case_12.u_c12), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden/override_probe.sv, line:18:9, endln:18:39
+            |vpiName:y
+            |vpiDirection:2
+            |vpiHighConn:
+            \_ref_obj: (work@wrapper.u_child.g_case_12.w_case), line:18:30, endln:18:36
+              |vpiParent:
+              \_port: (y), line:1:41, endln:1:42
+              |vpiName:w_case
+              |vpiFullName:work@wrapper.u_child.g_case_12.w_case
+              |vpiActual:
+              \_logic_var: (work@wrapper.u_child.w_case), line:10:9, endln:10:15
+            |vpiLowConn:
+            \_ref_obj: (work@wrapper.u_child.g_case_12.u_c12.y), line:18:28, endln:18:29
+              |vpiParent:
+              \_port: (y), line:1:41, endln:1:42
+              |vpiName:y
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.y
+              |vpiActual:
+              \_logic_net: (work@wrapper.u_child.g_case_12.u_c12.y), line:1:41, endln:1:42
+            |vpiTypedef:
+            \_ref_typespec: (work@wrapper.u_child.g_case_12.u_c12.y)
+              |vpiParent:
+              \_port: (y), line:1:41, endln:1:42
+              |vpiFullName:work@wrapper.u_child.g_case_12.u_c12.y
+              |vpiActual:
+              \_logic_typespec: , line:1:35, endln:1:40
+          |vpiContAssign:
+          \_cont_assign: , line:2:10, endln:2:15
+    |vpiContAssign:

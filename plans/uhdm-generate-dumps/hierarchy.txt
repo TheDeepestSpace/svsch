@@ -1,0 +1,8 @@
+Design name: work@top
+Instance tree:
+work@top (work@top /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:5:)
+work@top.g_if_a ( /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:14:)
+work@top.g_if_a.u_a (work@leaf /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:15:)
+work@top.g_case_12 ( /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:24:)
+work@top.g_case_12.u_c12 (work@leaf /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:25:)
+work@top.g_imp_true ( /tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv:33:)

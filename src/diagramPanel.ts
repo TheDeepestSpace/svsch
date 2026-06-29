@@ -3,14 +3,15 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
 import { logger } from './logger';
-import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
+import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 
 type WebviewMessage =
   | { type: 'ready' }
-  | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[] }
+  | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[]; regions?: PositionedGenerateRegion[] }
+  | { type: 'regionLayoutChanged'; moduleName: string; regions: PositionedGenerateRegion[] }
   | { type: 'edgeLayoutChanged'; moduleName: string; edgeId: string; waypoint: { x: number; y: number } }
   | { type: 'edgeRouteChanged'; moduleName: string; edgeId: string; routePoints: Array<{ x: number; y: number }> }
   | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }> }
@@ -322,7 +323,11 @@ export class DiagramPanel {
       return;
     }
     if (message.type === 'layoutChanged') {
-      await this.saveLayout(message.moduleName, message.nodes);
+      await this.saveLayout(message.moduleName, message.nodes, message.regions);
+      return;
+    }
+    if (message.type === 'regionLayoutChanged') {
+      await this.saveRegionLayout(message.moduleName, message.regions);
       return;
     }
     if (message.type === 'edgeLayoutChanged') {
@@ -487,7 +492,7 @@ export class DiagramPanel {
     vscode.window.showWarningMessage('This is an internal wire.');
   }
 
-  private async saveLayout(moduleName: string, nodes: PositionedNode[]): Promise<void> {
+  private async saveLayout(moduleName: string, nodes: PositionedNode[], regions?: PositionedGenerateRegion[]): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -496,6 +501,21 @@ export class DiagramPanel {
       this.layout = await store.read();
     }
     this.layout = mergeNodePositions(this.layout, moduleName, nodes);
+    if (regions) {
+      this.layout = mergeRegionBounds(this.layout, moduleName, regions);
+    }
+    await store.write(this.layout);
+  }
+
+  private async saveRegionLayout(moduleName: string, regions: PositionedGenerateRegion[]): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.layout = mergeRegionBounds(this.layout, moduleName, regions);
     await store.write(this.layout);
   }
 

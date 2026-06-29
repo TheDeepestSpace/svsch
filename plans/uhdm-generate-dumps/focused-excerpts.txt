@@ -1,0 +1,278 @@
+Focused UHDM excerpts for generate if/case probe
+Source: plans/uhdm-generate-dumps/generate_probe.sv
+
+=== Folded generate if/else source tree excerpts ===
+  \_gen_region: 
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:5:1, endln:38:10
+    |vpiStmt:
+    \_begin: (work@top)
+      |vpiParent:
+      \_gen_region: 
+      |vpiFullName:work@top
+      |vpiStmt:
+      \_gen_if_else: , line:14:5, endln:18:8
+        |vpiParent:
+        \_begin: (work@top)
+        |vpiCondition:
+        \_ref_obj: (work@top.USE_A), line:14:9, endln:14:14
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:USE_A
+          |vpiFullName:work@top.USE_A
+        |vpiStmt:
+        \_named_begin: (work@top.g_if_a)
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:g_if_a
+          |vpiFullName:work@top.g_if_a
+          |vpiStmt:
+          \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+            |vpiParent:
+            \_named_begin: (work@top.g_if_a)
+            |vpiName:u_a
+            |vpiDefName:work@leaf
+            |vpiPort:
+            \_port: (a), line:15:16, endln:15:21
+              |vpiParent:
+              \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+              |vpiName:a
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_a.u_a.a.a), line:15:19, endln:15:20
+                |vpiParent:
+                \_port: (a), line:15:16, endln:15:21
+                |vpiName:a
+                |vpiFullName:work@top.g_if_a.u_a.a.a
+            |vpiPort:
+            \_port: (y), line:15:23, endln:15:31
+              |vpiParent:
+              \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+              |vpiName:y
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_a.u_a.y.w_if), line:15:26, endln:15:30
+                |vpiParent:
+                \_port: (y), line:15:23, endln:15:31
+                |vpiName:w_if
+                |vpiFullName:work@top.g_if_a.u_a.y.w_if
+        |vpiElseStmt:
+        \_named_begin: (work@top.g_if_b)
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:g_if_b
+          |vpiFullName:work@top.g_if_b
+          |vpiStmt:
+          \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+            |vpiParent:
+            \_named_begin: (work@top.g_if_b)
+            |vpiName:u_b
+            |vpiDefName:work@leaf
+            |vpiPort:
+            \_port: (a), line:17:16, endln:17:21
+              |vpiParent:
+              \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+              |vpiName:a
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_b.u_b.a.b), line:17:19, endln:17:20
+                |vpiParent:
+                \_port: (a), line:17:16, endln:17:21
+                |vpiName:b
+                |vpiFullName:work@top.g_if_b.u_b.a.b
+            |vpiPort:
+            \_port: (y), line:17:23, endln:17:31
+              |vpiParent:
+              \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+              |vpiName:y
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_b.u_b.y.w_if), line:17:26, endln:17:30
+                |vpiParent:
+                \_port: (y), line:17:23, endln:17:31
+                |vpiName:w_if
+                |vpiFullName:work@top.g_if_b.u_b.y.w_if
+  |vpiGenStmt:
+  \_gen_if_else: 
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:5:1, endln:38:10
+    |vpiCondition:
+    \_ref_obj: (work@top.USE_A), line:33:7, endln:33:12
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:USE_A
+      |vpiFullName:work@top.USE_A
+    |vpiStmt:
+    \_named_begin: (work@top.g_imp_true)
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:g_imp_true
+      |vpiFullName:work@top.g_imp_true
+      |vpiStmt:
+      \_cont_assign: , line:34:12, endln:34:29
+        |vpiParent:
+        \_named_begin: (work@top.g_imp_true)
+        |vpiRhs:
+        \_operation: , line:34:16, endln:34:29
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiOpType:28
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_if), line:34:16, endln:34:20
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_if
+            |vpiFullName:work@top.g_imp_true.w_if
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_case), line:34:23, endln:34:29
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_case
+            |vpiFullName:work@top.g_imp_true.w_case
+        |vpiLhs:
+        \_ref_obj: (work@top.g_imp_true.y), line:34:12, endln:34:13
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiName:y
+          |vpiFullName:work@top.g_imp_true.y
+    |vpiElseStmt:
+    \_named_begin: (work@top.g_imp_false)
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:g_imp_false
+      |vpiFullName:work@top.g_imp_false
+      |vpiStmt:
+      \_cont_assign: , line:36:12, endln:36:22
+        |vpiParent:
+        \_named_begin: (work@top.g_imp_false)
+        |vpiRhs:
+        \_ref_obj: (work@top.g_imp_false.w_case), line:36:16, endln:36:22
+          |vpiParent:
+          \_cont_assign: , line:36:12, endln:36:22
+          |vpiName:w_case
+          |vpiFullName:work@top.g_imp_false.w_case
+        |vpiLhs:
+        \_ref_obj: (work@top.g_imp_false.y), line:36:12, endln:36:13
+          |vpiParent:
+          \_cont_assign: , line:36:12, endln:36:22
+          |vpiName:y
+          |vpiFullName:work@top.g_imp_false.y
+|uhdmtopModules:
+\_module_inst: work@top (work@top), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:5:1, endln:38:10
+  |vpiName:work@top
+  |vpiVariables:
+  \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+
+=== Active generated case scope excerpt ===
+        |vpiContAssign:
+        \_cont_assign: , line:2:10, endln:2:15
+  |vpiGenScopeArray:
+  \_gen_scope_array: (work@top.g_case_12), line:24:13, endln:26:10
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:5:1, endln:38:10
+    |vpiName:g_case_12
+    |vpiFullName:work@top.g_case_12
+    |vpiGenScope:
+    \_gen_scope: (work@top.g_case_12), line:24:13, endln:26:10
+      |vpiParent:
+      \_gen_scope_array: (work@top.g_case_12), line:24:13, endln:26:10
+      |vpiFullName:work@top.g_case_12
+      |vpiModule:
+      \_module_inst: work@leaf (work@top.g_case_12.u_c12), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:25:9, endln:25:39
+        |vpiParent:
+        \_gen_scope: (work@top.g_case_12), line:24:13, endln:26:10
+        |vpiName:u_c12
+        |vpiFullName:work@top.g_case_12.u_c12
+        |vpiDefName:work@leaf
+        |vpiDefFile:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv
+        |vpiDefLineNo:1
+        |vpiNet:
+        \_logic_net: (work@top.g_case_12.u_c12.a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_12.u_c12), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:25:9, endln:25:39
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_case_12.u_c12.a)
+            |vpiParent:
+            \_logic_net: (work@top.g_case_12.u_c12.a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_case_12.u_c12.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+          |vpiName:a
+          |vpiFullName:work@top.g_case_12.u_c12.a
+          |vpiNetType:36
+        |vpiNet:
+        \_logic_net: (work@top.g_case_12.u_c12.y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_12.u_c12), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:25:9, endln:25:39
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_case_12.u_c12.y)
+            |vpiParent:
+            \_logic_net: (work@top.g_case_12.u_c12.y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_case_12.u_c12.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+          |vpiName:y
+          |vpiFullName:work@top.g_case_12.u_c12.y
+          |vpiNetType:36
+        |vpiPort:
+        \_port: (a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_12.u_c12), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:25:9, endln:25:39
+          |vpiName:a
+          |vpiDirection:1
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_case_12.b), line:25:23, endln:25:24
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:b
+            |vpiFullName:work@top.g_case_12.b
+            |vpiActual:
+            \_logic_net: (work@top.b), line:7:15, endln:7:16
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_case_12.u_c12.a), line:25:21, endln:25:22
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:a
+            |vpiFullName:work@top.g_case_12.u_c12.a
+            |vpiActual:
+            \_logic_net: (work@top.g_case_12.u_c12.a), line:1:25, endln:1:26
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_case_12.u_c12.a)
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_case_12.u_c12.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+        |vpiPort:
+        \_port: (y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_12.u_c12), file:/tmp/svsch-generate-uhdm-b91DtD/generate_probe.sv, line:25:9, endln:25:39
+          |vpiName:y
+          |vpiDirection:2
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_case_12.w_case), line:25:30, endln:25:36
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:w_case
+            |vpiFullName:work@top.g_case_12.w_case
+            |vpiActual:
+            \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_case_12.u_c12.y), line:25:28, endln:25:29
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:y
+            |vpiFullName:work@top.g_case_12.u_c12.y
+            |vpiActual:
+            \_logic_net: (work@top.g_case_12.u_c12.y), line:1:41, endln:1:42
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_case_12.u_c12.y)
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_case_12.u_c12.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+        |vpiContAssign:
+        \_cont_assign: , line:2:10, endln:2:15
+  |vpiGenScopeArray:
+  \_gen_scope_array: (work@top.g_imp_true), line:33:14, endln:35:6
+    |vpiParent:
+
+=== Search result for folded gen_case/case_item objects ===
+No _gen_case/case_item objects and no inactive case-arm scopes found in these dumps.

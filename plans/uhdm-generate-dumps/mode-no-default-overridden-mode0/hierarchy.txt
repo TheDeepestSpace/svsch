@@ -1,0 +1,6 @@
+Design name: work@wrapper
+Instance tree:
+work@wrapper (work@wrapper /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:29:)
+work@wrapper.u_child (work@child /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:30:)
+work@wrapper.u_child.g_case_0 ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:14:)
+work@wrapper.u_child.g_case_0.u_c0 (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:15:)

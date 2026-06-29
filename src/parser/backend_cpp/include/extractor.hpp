@@ -157,6 +157,8 @@ struct Node {
         std::string arrayDimension;
         int arraySize = 0;
         std::string arrayIndexSignal;
+        std::string generateRegionId;
+        std::string generateActiveState;
     } metadata;
     std::vector<NodePort> ports;
     SourceInfo source;
@@ -173,6 +175,28 @@ struct Edge {
     bool aggregateStruct = false;
     std::string aggregateKind;
     bool isStacked = false;
+    std::string generateRegionId;
+    std::string generateActiveState;
+};
+
+struct GenerateRegion {
+    std::string id;
+    std::string kind; // if, else-if, else, case, case-default
+    std::string label;
+    std::string condition;
+    std::string selector;
+    std::string caseValue;
+    std::string blockLabel;
+    std::string fullBlockLabel;
+    std::string parentRegionId;
+    std::string siblingGroupId;
+    std::string activeState = "unknown"; // active, inactive, unknown
+    int armIndex = 0;
+    SourceInfo source;
+    SourceInfo bodySource;
+    std::vector<std::string> nodeIds;
+    std::vector<std::string> edgeIds;
+    std::vector<std::string> warnings;
 };
 
 struct PendingStructAssign {
@@ -199,6 +223,7 @@ struct Module {
     std::vector<Port> ports;
     std::vector<Node> nodes;
     std::vector<Edge> edges;
+    std::vector<GenerateRegion> generateRegions;
     SourceInfo source;
     std::map<std::string, StructSignal> structSignals;
     std::map<std::string, InterfaceSignal> interfaceSignals;
@@ -238,6 +263,15 @@ public:
 private:
     void processModule(vpiHandle module_handle);
     void collectModuleParameters(vpiHandle module_handle, Module& mod);
+    void processGenerateRegions(vpiHandle module_handle, Module& mod);
+    void walkGenerateRegionTree(vpiHandle handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth = 0);
+    void collectGenerateIfRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth);
+    void collectGenerateIfArms(vpiHandle gen_handle, Module& mod, const std::string& siblingGroupId, const std::string& parentRegionId, int& armIndex, std::set<vpiHandle>& visited, int depth, bool isElseIf = false);
+    void collectGenerateCaseRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth);
+    void collectGenerateRegionBody(vpiHandle handle, Module& mod, GenerateRegion& region, std::set<vpiHandle>& visited, int depth);
+    void processGenerateRegionInstance(vpiHandle inst_handle, Module& mod, GenerateRegion& region);
+    void processGenerateRegionAssign(vpiHandle assign_handle, Module& mod, GenerateRegion& region);
+    void tagGenerateRegionEdges(Module& mod);
     std::vector<InstanceParameter> collectInstanceParameters(vpiHandle inst_handle, const Module& mod);
     void collectInterfaceTypesFromDesign();
     void processModuleInterfaces(vpiHandle module_handle, Module& mod);

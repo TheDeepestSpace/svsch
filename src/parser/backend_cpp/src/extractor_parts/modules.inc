@@ -4,7 +4,14 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
     std::string mod_name = def_name ? def_name : (full_name ? full_name : "unnamed");
     if (mod_name.rfind("work@", 0) == 0) mod_name = mod_name.substr(5);
 
-    for (const auto& m : modules_) if (m.name == mod_name) return;
+    for (auto& m : modules_) {
+        if (m.name == mod_name) {
+            if (m.generateRegions.empty()) {
+                processGenerateRegions(mod_handle, m);
+            }
+            return;
+        }
+    }
     if (processing_modules_.find(mod_name) != processing_modules_.end()) return;
     processing_modules_.insert(mod_name);
 
@@ -185,20 +192,9 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
 
     synthesizePendingStructCompositions(mod);
 
-    // Generate blocks
-    for (int type : {vpiGenStmt, 2154, 5013, 5014, 5015, 5016}) { // GenStmt, GenRegion, GenIf, GenIfElse, GenFor, GenCase
-        vpiHandle gen_itr = vpi_iterate(type, mod_handle);
-        if (gen_itr) {
-            while (vpiHandle gen_handle = vpi_scan(gen_itr)) {
-                 Node n;
-                 n.id = "unknown:" + mod.name + ":generate:" + std::to_string(getLine(gen_handle));
-                 n.kind = "unknown";
-                 n.label = "generate";
-                 n.source = getSourceInfo(gen_handle);
-                 mod.nodes.push_back(n);
-            }
-        }
-    }
+    // Generate block regions. The source-side UHDM generate tree carries all if/case
+    // arms, including inactive arms, so expose it separately from the active schematic.
+    processGenerateRegions(mod_handle, mod);
 
     // Submodules (Instances)
     for (int it_type : {32, 33}) {

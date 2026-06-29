@@ -1,0 +1,34 @@
+=== UHDM Object Stats Begin (plans/uhdm-generate-dumps/mode-no-default-overridden-simple-case/folded/slpp_unit/surelog.uhdm) ===
+begin                                                  1
+case_item                                              4
+class_defn                                             8
+class_typespec                                         3
+class_var                                              3
+constant                                              10
+cont_assign                                            3
+design                                                 1
+enum_const                                             5
+enum_typespec                                          1
+enum_var                                               1
+function                                               9
+gen_case                                               1
+gen_region                                             1
+gen_scope                                              1
+gen_scope_array                                        1
+int_typespec                                          11
+int_var                                                4
+io_decl                                               11
+logic_net                                             21
+logic_typespec                                        32
+logic_var                                              2
+module_inst                                            6
+named_begin                                            4
+package                                                2
+param_assign                                           2
+parameter                                              2
+port                                                  30
+ref_module                                             4
+ref_obj                                               42
+ref_typespec                                          48
+task                                                   9
+=== UHDM Object Stats End ===

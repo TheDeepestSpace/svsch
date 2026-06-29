@@ -1,4 +1,4 @@
-import type { DesignGraph, DesignModule, DiagramEdge, DiagramNode, DiagramViewModel, PositionedNode } from '../ir/types';
+import type { DesignGraph, DesignModule, DiagramEdge, DiagramNode, DiagramViewModel, GenerateRegion, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey, endpointKey } from '../ir/edgeNet';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
@@ -14,6 +14,7 @@ import {
 interface AutoLayoutResult {
   positions: Map<string, { x: number; y: number }>;
   routes: Map<string, Array<{ x: number; y: number }>>;
+  regionBounds: Map<string, RegionBounds>;
 }
 
 export type ElkPortSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
@@ -36,6 +37,18 @@ interface ElkDiagramNode {
   layoutOffset: { x: number; y: number };
 }
 
+interface ElkLayoutNode {
+  id: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  ports?: ElkDiagramNode['ports'];
+  children?: ElkLayoutNode[];
+  layoutOptions?: Record<string, string>;
+  properties?: Record<string, string>;
+}
+
 export async function buildViewModel(graph: DesignGraph, moduleName: string, layout: SavedLayout): Promise<DiagramViewModel> {
   const designModule = graph.modules[moduleName];
   if (!designModule) {
@@ -43,6 +56,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
       moduleName,
       nodes: [],
       edges: [],
+      generateRegions: [],
       diagnostics: graph.diagnostics
     };
   }
@@ -51,8 +65,9 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   const activeCuts = activeNetCuts(designModule, moduleLayout);
   const activeCutKeys = new Set(activeCuts.keys());
   const routedDesignEdges = designModule.edges.filter((edge) => !activeCutKeys.has(edgeNetKey(edge)));
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout);
-  const positioned = designModule.nodes.map((node, index): PositionedNode => {
+  const generateRegions = designModule.generateRegions ?? [];
+  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, generateRegions);
+  const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
     const fallback = defaultPosition(index, node.kind);
@@ -67,6 +82,11 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
       position: snapPosition(position, node.kind, structRole(node))
     };
   });
+  const packedGenerateLayout = elkLayout.regionBounds.size > 0
+    ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
+    : packGenerateRegionSiblings(generateRegions, initialPositioned, moduleLayout);
+  const positioned = packedGenerateLayout.nodes;
+  const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
 
@@ -78,12 +98,530 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
       ...routedDesignEdges.map((edge) => ({
         ...edge,
         waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
-        routePoints: moduleLayout.edges?.[edge.id]?.routePoints ?? elkLayout.routes.get(edge.id)
+        routePoints: moduleLayout.edges?.[edge.id]?.routePoints
+          ?? (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds) ? undefined : elkLayout.routes.get(edge.id))
       })),
       ...cutProjection.edges
     ],
+    generateRegions: positionedRegions,
     diagnostics: graph.diagnostics
   };
+}
+
+interface RegionBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const REGION_INSET = diagramSizing.gridSize * 2;
+const REGION_LABEL_BAND = diagramSizing.gridSize;
+const REGION_TOP_INSET = REGION_INSET + REGION_LABEL_BAND;
+const REGION_MIN_WIDTH = diagramSizing.gridSize * 8;
+const REGION_MIN_HEIGHT = diagramSizing.gridSize * 5;
+const REGION_GAP = diagramSizing.gridSize;
+
+function packGenerateRegionSiblings(
+  regions: GenerateRegion[],
+  positionedNodes: PositionedNode[],
+  moduleLayout: SavedModuleLayout
+): { nodes: PositionedNode[]; movedNodeIds: Set<string> } {
+  if (regions.length === 0) {
+    return { nodes: positionedNodes, movedNodeIds: new Set() };
+  }
+
+  const nodes = positionedNodes.map((node) => ({ ...node, position: { ...node.position } }));
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const movedNodeIds = new Set<string>();
+  const rootGroups = siblingGroupsByParent(regions);
+
+  for (let pass = 0; pass < regions.length; pass += 1) {
+    const positionedRegions = positionGenerateRegions(regions, nodes, moduleLayout);
+    const positionedById = new Map(positionedRegions.map((region) => [region.id, region]));
+    let shifted = false;
+
+    for (const group of rootGroups) {
+      let cursorY: number | undefined;
+      for (const region of group) {
+        const positioned = positionedById.get(region.id);
+        if (!positioned) continue;
+
+        if (cursorY !== undefined && positioned.bounds.y < cursorY && canAutoShiftRegion(region, regions, moduleLayout)) {
+          const dy = Math.ceil((cursorY - positioned.bounds.y) / diagramSizing.gridSize) * diagramSizing.gridSize;
+          if (dy > 0) {
+            for (const nodeId of generateDescendantNodeIds(region, regions)) {
+              const node = nodeById.get(nodeId);
+              if (!node) continue;
+              node.position = {
+                x: node.position.x,
+                y: snapToGrid(node.position.y + dy, node.kind, structRole(node))
+              };
+              movedNodeIds.add(node.id);
+            }
+            shifted = true;
+          }
+        }
+
+        const shiftedRegion = shifted ? positionGenerateRegions(regions, nodes, moduleLayout).find((candidate) => candidate.id === region.id) : positioned;
+        cursorY = Math.max(cursorY ?? Number.NEGATIVE_INFINITY, (shiftedRegion ?? positioned).bounds.y + (shiftedRegion ?? positioned).bounds.height + REGION_GAP);
+      }
+    }
+
+    if (!shifted) break;
+  }
+
+  return { nodes, movedNodeIds };
+}
+
+function edgeTouchesMovedNode(edge: DiagramEdge, movedNodeIds: Set<string>): boolean {
+  return movedNodeIds.has(edge.source) || movedNodeIds.has(edge.target);
+}
+
+function siblingGroupsByParent(regions: GenerateRegion[]): GenerateRegion[][] {
+  const byId = new Map(regions.map((region) => [region.id, region]));
+  const childrenByParent = new Map<string, GenerateRegion[]>();
+  for (const region of [...regions].sort(compareGenerateRegions)) {
+    const parent = region.parentRegionId && byId.has(region.parentRegionId) ? region.parentRegionId : '';
+    const siblings = childrenByParent.get(parent) ?? [];
+    siblings.push(region);
+    childrenByParent.set(parent, siblings);
+  }
+
+  return Array.from(childrenByParent.values()).flatMap((children) => groupRegionsBySibling(children));
+}
+
+function canAutoShiftRegion(region: GenerateRegion, regions: GenerateRegion[], moduleLayout: SavedModuleLayout): boolean {
+  if (moduleLayout.regions?.[region.id]?.fixed) return false;
+  const nodeIds = generateDescendantNodeIds(region, regions);
+  return nodeIds.length > 0 && nodeIds.every((nodeId) => !moduleLayout.nodes[nodeId]?.fixed);
+}
+
+function generateDescendantNodeIds(region: GenerateRegion, regions: GenerateRegion[]): string[] {
+  const ids = new Set(region.nodeIds ?? []);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const candidate of regions) {
+      if (!candidate.parentRegionId) continue;
+      if (ids.size === 0 && candidate.parentRegionId !== region.id) continue;
+      let parent: string | undefined = candidate.parentRegionId;
+      let isDescendant = parent === region.id;
+      while (!isDescendant && parent) {
+        const parentRegion = regions.find((item) => item.id === parent);
+        parent = parentRegion?.parentRegionId;
+        isDescendant = parent === region.id;
+      }
+      if (!isDescendant) continue;
+      for (const nodeId of candidate.nodeIds ?? []) {
+        if (!ids.has(nodeId)) {
+          ids.add(nodeId);
+          changed = true;
+        }
+      }
+    }
+  }
+  return Array.from(ids);
+}
+
+function positionGenerateRegions(
+  regions: GenerateRegion[],
+  positionedNodes: PositionedNode[],
+  moduleLayout: SavedModuleLayout,
+  nativeRegionBounds: Map<string, RegionBounds> = new Map()
+): PositionedGenerateRegion[] {
+  if (regions.length === 0) return [];
+
+  const sorted = [...regions].sort(compareGenerateRegions);
+  const byId = new Map(sorted.map((region) => [region.id, region]));
+  const childrenByParent = new Map<string, GenerateRegion[]>();
+  for (const region of sorted) {
+    const key = region.parentRegionId && byId.has(region.parentRegionId) ? region.parentRegionId : '';
+    const children = childrenByParent.get(key) ?? [];
+    children.push(region);
+    childrenByParent.set(key, children);
+  }
+  for (const children of childrenByParent.values()) {
+    children.sort(compareGenerateRegions);
+  }
+
+  const nodeById = new Map(positionedNodes.map((node) => [node.id, node]));
+  const graphBounds = boundsForPositionedNodes(positionedNodes) ?? {
+    x: 0,
+    y: 0,
+    width: diagramSizing.nodeWidth,
+    height: diagramSizing.nodeHeight
+  };
+
+  if (nativeRegionBounds.size > 0) {
+    const visualRegionBounds = computeVisualGenerateRegionBounds(sorted, childrenByParent, nodeById, graphBounds, nativeRegionBounds);
+    const result = sorted.map((region, index): PositionedGenerateRegion => {
+      const nodeIds = region.nodeIds ?? [];
+      const fallbackBounds = boundsForRegionNodes(nodeIds, nodeById) ?? snapRegionBounds({
+        x: graphBounds.x + graphBounds.width + diagramSizing.columnGap,
+        y: graphBounds.y + index * (REGION_MIN_HEIGHT + REGION_GAP),
+        width: REGION_MIN_WIDTH,
+        height: REGION_MIN_HEIGHT
+      });
+      const saved = moduleLayout.regions?.[region.id];
+      const autoBounds = visualRegionBounds.get(region.id) ?? snapRegionBounds(nativeRegionBounds.get(region.id) ?? fallbackBounds);
+      const bounds = saved
+        ? expandSavedRegionBounds(saved, autoBounds)
+        : autoBounds;
+      return {
+        ...region,
+        nodeIds,
+        edgeIds: region.edgeIds,
+        bounds,
+        fixed: saved?.fixed,
+        stale: saved?.stale
+      };
+    });
+
+    markInvalidRegions(result, positionedNodes);
+    return result;
+  }
+
+  const computed = new Map<string, PositionedGenerateRegion>();
+  const rootGroups = groupRegionsBySibling(childrenByParent.get('') ?? []);
+  let rootX = snapToGrid(graphBounds.x + graphBounds.width + diagramSizing.columnGap);
+  const rootY = snapToGrid(graphBounds.y);
+
+  for (const group of rootGroups) {
+    let cursorY = rootY;
+    let groupWidth = REGION_MIN_WIDTH;
+    for (const region of group) {
+      const positioned = layoutRegion(region, rootX, cursorY);
+      computed.set(region.id, positioned);
+      cursorY = positioned.bounds.y + positioned.bounds.height + REGION_GAP;
+      groupWidth = Math.max(groupWidth, positioned.bounds.width);
+    }
+    rootX += groupWidth + REGION_GAP * 2;
+  }
+
+  const result = sorted
+    .map((region) => computed.get(region.id))
+    .filter((region): region is PositionedGenerateRegion => region !== undefined);
+
+  markInvalidRegions(result, positionedNodes);
+  return result;
+
+  function layoutRegion(region: GenerateRegion, x: number, y: number): PositionedGenerateRegion {
+    const existing = computed.get(region.id);
+    if (existing) return existing;
+
+    const nodeIds = region.nodeIds ?? [];
+    const nodeBounds = boundsForRegionNodes(nodeIds, nodeById);
+    const baseBounds = nodeBounds ?? snapRegionBounds({
+      x,
+      y,
+      width: REGION_MIN_WIDTH,
+      height: REGION_MIN_HEIGHT
+    });
+
+    let contentBounds: RegionBounds = baseBounds;
+    const childGroups = groupRegionsBySibling(childrenByParent.get(region.id) ?? []);
+    if (childGroups.length > 0) {
+      const childStartX = baseBounds.x + REGION_INSET;
+      let childCursorY = baseBounds.y + REGION_INSET;
+      let maxChildRight = childStartX + REGION_MIN_WIDTH - REGION_INSET * 2;
+
+      for (const group of childGroups) {
+        let groupCursorY = childCursorY;
+        let groupWidth = REGION_MIN_WIDTH;
+        for (const child of group) {
+          const childRegion = layoutRegion(child, childStartX, groupCursorY);
+          computed.set(child.id, childRegion);
+          groupCursorY = childRegion.bounds.y + childRegion.bounds.height + REGION_GAP;
+          groupWidth = Math.max(groupWidth, childRegion.bounds.width);
+          maxChildRight = Math.max(maxChildRight, childRegion.bounds.x + childRegion.bounds.width);
+        }
+        childCursorY = groupCursorY;
+        maxChildRight = Math.max(maxChildRight, childStartX + groupWidth);
+      }
+
+      contentBounds = unionBounds([
+        contentBounds,
+        {
+          x: childStartX - REGION_INSET,
+          y: baseBounds.y,
+          width: maxChildRight - childStartX + REGION_INSET * 2,
+          height: Math.max(REGION_MIN_HEIGHT, childCursorY - baseBounds.y)
+        }
+      ]);
+    }
+
+    const saved = moduleLayout.regions?.[region.id];
+    const autoBounds = snapRegionBounds(contentBounds);
+    const bounds = saved
+      ? expandSavedRegionBounds(saved, autoBounds)
+      : autoBounds;
+
+    const positioned: PositionedGenerateRegion = {
+      ...region,
+      nodeIds,
+      edgeIds: region.edgeIds,
+      bounds,
+      fixed: saved?.fixed,
+      stale: saved?.stale
+    };
+    computed.set(region.id, positioned);
+    return positioned;
+  }
+}
+
+function compareGenerateRegions(a: GenerateRegion, b: GenerateRegion): number {
+  if ((a.siblingGroupId || a.id) === (b.siblingGroupId || b.id)) {
+    const aArm = a.armIndex ?? Number.MAX_SAFE_INTEGER;
+    const bArm = b.armIndex ?? Number.MAX_SAFE_INTEGER;
+    if (aArm !== bArm) return aArm - bArm;
+  }
+
+  const aLine = a.source?.startLine ?? a.bodySource?.startLine ?? Number.MAX_SAFE_INTEGER;
+  const bLine = b.source?.startLine ?? b.bodySource?.startLine ?? Number.MAX_SAFE_INTEGER;
+  if (aLine !== bLine) return aLine - bLine;
+  const aCol = a.source?.startColumn ?? a.bodySource?.startColumn ?? 0;
+  const bCol = b.source?.startColumn ?? b.bodySource?.startColumn ?? 0;
+  if (aCol !== bCol) return aCol - bCol;
+  return (a.armIndex ?? 0) - (b.armIndex ?? 0) || a.id.localeCompare(b.id);
+}
+
+function groupRegionsBySibling(regions: GenerateRegion[]): GenerateRegion[][] {
+  const groups: GenerateRegion[][] = [];
+  const groupById = new Map<string, GenerateRegion[]>();
+  for (const region of regions) {
+    const key = region.siblingGroupId || region.id;
+    let group = groupById.get(key);
+    if (!group) {
+      group = [];
+      groupById.set(key, group);
+      groups.push(group);
+    }
+    group.push(region);
+  }
+  for (const group of groups) {
+    group.sort(compareGenerateRegions);
+  }
+  return groups;
+}
+
+function computeVisualGenerateRegionBounds(
+  sortedRegions: GenerateRegion[],
+  childrenByParent: Map<string, GenerateRegion[]>,
+  nodeById: Map<string, PositionedNode>,
+  graphBounds: RegionBounds,
+  nativeRegionBounds: Map<string, RegionBounds>
+): Map<string, RegionBounds> {
+  const computed = new Map<string, RegionBounds>();
+
+  const compute = (region: GenerateRegion, index: number): RegionBounds => {
+    const existing = computed.get(region.id);
+    if (existing) return existing;
+
+    const contentBounds: RegionBounds[] = [];
+    const nodeBounds = tightBoundsForRegionNodes(region.nodeIds ?? [], nodeById);
+    if (nodeBounds) {
+      contentBounds.push(nodeBounds);
+    }
+    for (const child of childrenByParent.get(region.id) ?? []) {
+      contentBounds.push(compute(child, index));
+    }
+
+    const bounds = contentBounds.length > 0
+      ? expandRegionContentBounds(unionBounds(contentBounds))
+      : snapRegionBounds(nativeRegionBounds.get(region.id) ?? {
+        x: graphBounds.x + graphBounds.width + diagramSizing.columnGap,
+        y: graphBounds.y + index * (REGION_MIN_HEIGHT + REGION_GAP),
+        width: REGION_MIN_WIDTH,
+        height: REGION_MIN_HEIGHT
+      });
+    computed.set(region.id, bounds);
+    return bounds;
+  };
+
+  sortedRegions.forEach((region, index) => compute(region, index));
+  return computed;
+}
+
+function boundsForRegionNodes(nodeIds: string[], nodeById: Map<string, PositionedNode>): RegionBounds | undefined {
+  const bounds = tightBoundsForRegionNodes(nodeIds, nodeById);
+  return bounds ? expandRegionContentBounds(bounds) : undefined;
+}
+
+function tightBoundsForRegionNodes(nodeIds: string[], nodeById: Map<string, PositionedNode>): RegionBounds | undefined {
+  const bounds: RegionBounds = {
+    x: Number.POSITIVE_INFINITY,
+    y: Number.POSITIVE_INFINITY,
+    width: 0,
+    height: 0
+  };
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (const nodeId of nodeIds) {
+    const node = nodeById.get(nodeId);
+    if (!node) continue;
+    const size = diagramNodeDimensions(node);
+    bounds.x = Math.min(bounds.x, node.position.x);
+    bounds.y = Math.min(bounds.y, node.position.y);
+    maxX = Math.max(maxX, node.position.x + size.width);
+    maxY = Math.max(maxY, node.position.y + size.height);
+  }
+
+  if (!Number.isFinite(bounds.x)) return undefined;
+
+  return {
+    x: bounds.x,
+    y: bounds.y,
+    width: maxX - bounds.x,
+    height: maxY - bounds.y
+  };
+}
+
+function expandRegionContentBounds(bounds: RegionBounds): RegionBounds {
+  return snapRegionBounds({
+    x: bounds.x - REGION_INSET,
+    y: bounds.y - REGION_INSET,
+    width: bounds.width + REGION_INSET * 2,
+    height: bounds.height + REGION_INSET * 2
+  });
+}
+
+function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undefined {
+  if (nodes.length === 0) return undefined;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (const node of nodes) {
+    const size = diagramNodeDimensions(node);
+    minX = Math.min(minX, node.position.x);
+    minY = Math.min(minY, node.position.y);
+    maxX = Math.max(maxX, node.position.x + size.width);
+    maxY = Math.max(maxY, node.position.y + size.height);
+  }
+
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function unionBounds(boundsList: RegionBounds[]): RegionBounds {
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (const bounds of boundsList) {
+    minX = Math.min(minX, bounds.x);
+    minY = Math.min(minY, bounds.y);
+    maxX = Math.max(maxX, bounds.x + bounds.width);
+    maxY = Math.max(maxY, bounds.y + bounds.height);
+  }
+
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function snapRegionBounds(bounds: RegionBounds): RegionBounds {
+  const x = Math.floor(bounds.x / diagramSizing.gridSize) * diagramSizing.gridSize;
+  const y = Math.floor(bounds.y / diagramSizing.gridSize) * diagramSizing.gridSize;
+  const right = Math.ceil((bounds.x + Math.max(REGION_MIN_WIDTH, bounds.width)) / diagramSizing.gridSize) * diagramSizing.gridSize;
+  const bottom = Math.ceil((bounds.y + Math.max(REGION_MIN_HEIGHT, bounds.height)) / diagramSizing.gridSize) * diagramSizing.gridSize;
+  return {
+    x,
+    y,
+    width: Math.max(REGION_MIN_WIDTH, right - x),
+    height: Math.max(REGION_MIN_HEIGHT, bottom - y)
+  };
+}
+
+function expandSavedRegionBounds(saved: RegionBounds, autoBounds: RegionBounds): RegionBounds {
+  const minX = Math.min(saved.x, autoBounds.x);
+  const minY = Math.min(saved.y, autoBounds.y);
+  const maxX = Math.max(saved.x + saved.width, autoBounds.x + autoBounds.width);
+  const maxY = Math.max(saved.y + saved.height, autoBounds.y + autoBounds.height);
+  return snapRegionBounds({
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  });
+}
+
+function markInvalidRegions(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): void {
+  const byId = new Map(regions.map((region) => [region.id, region]));
+
+  const isAncestor = (ancestorId: string, descendantId: string): boolean => {
+    let current = byId.get(descendantId)?.parentRegionId;
+    while (current) {
+      if (current === ancestorId) return true;
+      current = byId.get(current)?.parentRegionId;
+    }
+    return false;
+  };
+
+  for (let i = 0; i < regions.length; i++) {
+    for (let j = i + 1; j < regions.length; j++) {
+      const a = regions[i];
+      const b = regions[j];
+      if (isAncestor(a.id, b.id) || isAncestor(b.id, a.id)) continue;
+      if (rectsOverlap(a.bounds, b.bounds)) {
+        a.invalid = true;
+        b.invalid = true;
+      }
+    }
+  }
+
+  for (const region of regions) {
+    const owned = new Set(descendantNodeIds(region, regions));
+    for (const node of nodes) {
+      if (owned.has(node.id) || node.kind === 'port') continue;
+      const size = diagramNodeDimensions(node);
+      const center = {
+        x: node.position.x + size.width / 2,
+        y: node.position.y + size.height / 2
+      };
+      if (pointInBounds(center, region.bounds)) {
+        region.invalid = true;
+        region.warningNote = `Block does not belong to ${region.condition || region.label}`;
+        break;
+      }
+    }
+  }
+}
+
+function descendantNodeIds(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): string[] {
+  const ids = new Set(region.nodeIds);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const candidate of regions) {
+      if (!candidate.parentRegionId) continue;
+      if (ids.size === 0 && candidate.parentRegionId !== region.id) continue;
+      let parent: string | undefined = candidate.parentRegionId;
+      let isDescendant = parent === region.id;
+      while (!isDescendant && parent) {
+        const parentRegion = regions.find((item) => item.id === parent);
+        parent = parentRegion?.parentRegionId;
+        isDescendant = parent === region.id;
+      }
+      if (!isDescendant) continue;
+      for (const nodeId of candidate.nodeIds) {
+        if (!ids.has(nodeId)) {
+          ids.add(nodeId);
+          changed = true;
+        }
+      }
+    }
+  }
+  return Array.from(ids);
+}
+
+function rectsOverlap(a: RegionBounds, b: RegionBounds): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+function pointInBounds(point: { x: number; y: number }, bounds: RegionBounds): boolean {
+  return point.x > bounds.x && point.x < bounds.x + bounds.width && point.y > bounds.y && point.y < bounds.y + bounds.height;
 }
 
 interface ActiveNetCut {
@@ -358,122 +896,76 @@ function labelPositionForHandlePoint(
 async function autoLayoutMissingNodes(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
-  moduleLayout: SavedModuleLayout
+  moduleLayout: SavedModuleLayout,
+  generateRegions: GenerateRegion[] = []
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
+  const regionBounds = new Map<string, RegionBounds>();
   const routePositions = new Map<string, { x: number; y: number }>();
-  const missingIds = new Set(nodes.filter((node) => !moduleLayout.nodes[node.id]).map((node) => node.id));
   const nodeIds = new Set(nodes.map((node) => node.id));
-  if (nodes.length === 0) {
-    return { positions, routes };
+  if (nodes.length === 0 && generateRegions.length === 0) {
+    return { positions, routes, regionBounds };
   }
 
   try {
     const elkModule = await import('elkjs/lib/elk.bundled.js');
     const Elk = elkModule.default;
     const elk = new Elk();
+    const useCompoundGenerateLayout = canUseCompoundGenerateLayout(generateRegions, moduleLayout);
     const graph = await elk.layout({
       id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
-        'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
-        'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.interactive': 'true',
-        'elk.layered.crossingMinimization.semiInteractive': 'true',
-        'elk.layered.concentrateEdges': 'true',
-        'elk.layered.improveHyperedgeRoutes': 'true',
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-        'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
-        'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`
-      },
-      children: nodes.map((node) => {
-        const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, true);
-        const saved = moduleLayout.nodes[node.id];
-        return {
-          ...elkNode,
-          properties: {
-            ...elkNode.properties,
-            ...(saved?.fixed
-              ? {
-                'org.eclipse.elk.position': 'FIXED'
-              }
-              : {})
-          },
-          layoutOptions: {
-            ...elkNode.layoutOptions,
-            ...(saved?.fixed
-              ? {
-                'elk.position': 'FIXED',
-                'org.eclipse.elk.position': 'FIXED'
-              }
-              : {})
-          },
-          ...(saved
-            ? {
-              x: saved.x - layoutOffset.x,
-              y: saved.y - layoutOffset.y
-            }
-            : {})
-        };
-      }),
+      layoutOptions: nodePlacementLayoutOptions(useCompoundGenerateLayout),
+      children: useCompoundGenerateLayout
+        ? buildGenerateCompoundElkChildren(nodes, generateRegions, moduleLayout, { includeLeadMargins: true })
+        : nodes.map((node) => elkNodeForLayout(node, moduleLayout, {
+          includeLeadMargins: true,
+          useSavedPosition: true
+        })),
       edges: buildNodePlacementElkEdges(edges, nodeIds)
     });
 
-    for (const child of graph.children ?? []) {
-      if (child.id && child.x !== undefined && child.y !== undefined) {
-        const node = nodes.find((n) => n.id === child.id);
-        const offset = node ? elkNodeForDiagramNode(node, true).layoutOffset : { x: 0, y: 0 };
-        positions.set(child.id, snapPosition({ x: child.x + offset.x, y: child.y + offset.y }, node?.kind, node ? structRole(node) : undefined));
+    if (useCompoundGenerateLayout) {
+      collectElkPositionsAndRegionBounds(graph, nodes, positions, regionBounds);
+    } else {
+      for (const child of graph.children ?? []) {
+        if (child.id && child.x !== undefined && child.y !== undefined) {
+          const node = nodes.find((n) => n.id === child.id);
+          const offset = node ? elkNodeForDiagramNode(node, true).layoutOffset : { x: 0, y: 0 };
+          positions.set(child.id, snapPosition({ x: child.x + offset.x, y: child.y + offset.y }, node?.kind, node ? structRole(node) : undefined));
+        }
       }
     }
     alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
-    enforceMinimumBlockGaps(nodes, positions, moduleLayout);
-    alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+    if (!useCompoundGenerateLayout) {
+      enforceMinimumBlockGaps(nodes, positions, moduleLayout);
+      alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+    }
 
-    const routeLayoutOptions = {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'RIGHT',
-      'elk.edgeRouting': 'ORTHOGONAL',
-      'elk.interactive': 'true',
-      'elk.layered.concentrateEdges': 'true',
-      'elk.layered.improveHyperedgeRoutes': 'true',
-      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-      'elk.layered.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
-      'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
-      'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
-      'elk.layered.spacing.edgeEdge': (diagramSizing.gridSize / 2).toString(),
-      'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString(),
-      'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`
-    };
-    const routeChildren = nodes.map((node, index) => {
-      const graphChild = graph.children?.find((child) => child.id === node.id);
+    const fixedRoutePositions = new Map<string, { x: number; y: number }>();
+    for (const [index, node] of nodes.entries()) {
       const saved = moduleLayout.nodes[node.id];
       const fallback = defaultPosition(index, node.kind);
       const position = saved?.fixed
         ? { x: saved.x, y: saved.y }
-        : positions.get(node.id) ?? (saved ? { x: saved.x, y: saved.y } : undefined) ?? (graphChild?.x !== undefined && graphChild.y !== undefined
-          ? { x: graphChild.x, y: graphChild.y }
-          : fallback);
+        : positions.get(node.id) ?? (saved ? { x: saved.x, y: saved.y } : undefined) ?? fallback;
       routePositions.set(node.id, position);
-      const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, true);
-      return {
-        ...elkNode,
-        x: position.x - layoutOffset.x,
-        y: position.y - layoutOffset.y,
-        properties: {
-          ...elkNode.properties,
-          'org.eclipse.elk.position': 'FIXED'
-        },
-        layoutOptions: {
-          ...elkNode.layoutOptions,
-          'elk.position': 'FIXED',
-          'org.eclipse.elk.position': 'FIXED'
-        }
-      };
-    });
+      fixedRoutePositions.set(node.id, position);
+    }
+
+    const routeLayoutOptions = routingLayoutOptions(useCompoundGenerateLayout);
+    const routeChildren = useCompoundGenerateLayout
+      ? buildGenerateCompoundElkChildren(nodes, generateRegions, moduleLayout, {
+        includeLeadMargins: true,
+        forceFixed: true,
+        nodePositions: fixedRoutePositions,
+        regionBounds
+      })
+      : nodes.map((node) => elkNodeForLayout(node, moduleLayout, {
+        includeLeadMargins: true,
+        forceFixed: true,
+        nodePositions: fixedRoutePositions
+      }));
 
     let routeGraph;
     try {
@@ -513,10 +1005,306 @@ async function autoLayoutMissingNodes(
     }
     repairSourceStems(edges, routes, nodesById, routePositions);
   } catch {
-    return { positions, routes };
+    return { positions, routes, regionBounds };
   }
 
-  return { positions, routes };
+  return { positions, routes, regionBounds };
+}
+
+const GENERATE_REGION_ELK_ID_PREFIX = 'generate-region:';
+
+function generateRegionElkId(regionId: string): string {
+  return `${GENERATE_REGION_ELK_ID_PREFIX}${regionId}`;
+}
+
+function generateRegionIdFromElkId(elkId: string): string | undefined {
+  return elkId.startsWith(GENERATE_REGION_ELK_ID_PREFIX)
+    ? elkId.slice(GENERATE_REGION_ELK_ID_PREFIX.length)
+    : undefined;
+}
+
+function canUseCompoundGenerateLayout(regions: GenerateRegion[], moduleLayout: SavedModuleLayout): boolean {
+  if (regions.length === 0) return false;
+  if (Object.values(moduleLayout.nodes).some((node) => node.fixed)) return false;
+  if (Object.values(moduleLayout.regions ?? {}).some((region) => region.fixed)) return false;
+  return true;
+}
+
+function nodePlacementLayoutOptions(useCompoundGenerateLayout: boolean): Record<string, string> {
+  const rootPaddingTop = useCompoundGenerateLayout ? diagramSizing.gridSize * 3 : diagramSizing.gridSize;
+  return {
+    'elk.algorithm': 'layered',
+    'elk.direction': 'RIGHT',
+    'elk.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
+    'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
+    'elk.edgeRouting': 'ORTHOGONAL',
+    'elk.interactive': 'true',
+    'elk.layered.crossingMinimization.semiInteractive': 'true',
+    'elk.layered.concentrateEdges': 'true',
+    'elk.layered.improveHyperedgeRoutes': 'true',
+    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+    'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
+    'elk.padding': `[top=${rootPaddingTop}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`,
+    ...(useCompoundGenerateLayout ? compoundGenerateLayoutOptions() : {})
+  };
+}
+
+function routingLayoutOptions(useCompoundGenerateLayout: boolean): Record<string, string> {
+  const rootPaddingTop = useCompoundGenerateLayout ? diagramSizing.gridSize * 3 : diagramSizing.gridSize;
+  return {
+    'elk.algorithm': 'layered',
+    'elk.direction': 'RIGHT',
+    'elk.edgeRouting': 'ORTHOGONAL',
+    'elk.interactive': 'true',
+    'elk.layered.concentrateEdges': 'true',
+    'elk.layered.improveHyperedgeRoutes': 'true',
+    'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+    'elk.layered.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
+    'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
+    'elk.layered.spacing.edgeNode': diagramSizing.gridSize.toString(),
+    'elk.layered.spacing.edgeEdge': (diagramSizing.gridSize / 2).toString(),
+    'elk.spacing.portPort': (diagramSizing.gridSize / 2).toString(),
+    'elk.padding': `[top=${rootPaddingTop}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`,
+    ...(useCompoundGenerateLayout ? compoundGenerateLayoutOptions() : {})
+  };
+}
+
+function compoundGenerateLayoutOptions(): Record<string, string> {
+  return {
+    'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+    'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+    'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+    'elk.layered.mergeHierarchyEdges': 'true'
+  };
+}
+
+function generateRegionLayoutOptions(forceFixed: boolean): Record<string, string> {
+  return {
+    'elk.padding': `[top=${REGION_TOP_INSET}, left=${REGION_INSET}, bottom=${REGION_INSET}, right=${REGION_INSET}]`,
+    'elk.nodeSize.constraints': 'MINIMUM_SIZE',
+    'elk.nodeSize.minimum': `(${REGION_MIN_WIDTH},${REGION_MIN_HEIGHT})`,
+    ...(forceFixed
+      ? {
+        'elk.position': 'FIXED',
+        'org.eclipse.elk.position': 'FIXED'
+      }
+      : {})
+  };
+}
+
+function generateRegionProperties(forceFixed: boolean): Record<string, string> {
+  return forceFixed
+    ? { 'org.eclipse.elk.position': 'FIXED' }
+    : {};
+}
+
+function elkNodeForLayout(
+  node: DiagramNode,
+  moduleLayout: SavedModuleLayout,
+  options: {
+    includeLeadMargins: boolean;
+    useSavedPosition?: boolean;
+    forceFixed?: boolean;
+    nodePositions?: Map<string, { x: number; y: number }>;
+    parentBounds?: RegionBounds;
+  }
+): ElkLayoutNode {
+  const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, options.includeLeadMargins);
+  const saved = moduleLayout.nodes[node.id];
+  const position = options.nodePositions?.get(node.id)
+    ?? (options.useSavedPosition && saved ? { x: saved.x, y: saved.y } : undefined);
+  const forceFixed = options.forceFixed || saved?.fixed === true;
+  const parentX = options.parentBounds?.x ?? 0;
+  const parentY = options.parentBounds?.y ?? 0;
+
+  return {
+    ...elkNode,
+    properties: {
+      ...elkNode.properties,
+      ...(forceFixed
+        ? {
+          'org.eclipse.elk.position': 'FIXED'
+        }
+        : {})
+    },
+    layoutOptions: {
+      ...elkNode.layoutOptions,
+      ...(forceFixed
+        ? {
+          'elk.position': 'FIXED',
+          'org.eclipse.elk.position': 'FIXED'
+        }
+        : {})
+    },
+    ...(position
+      ? {
+        x: position.x - layoutOffset.x - parentX,
+        y: position.y - layoutOffset.y - parentY
+      }
+      : {})
+  };
+}
+
+function buildGenerateCompoundElkChildren(
+  nodes: DiagramNode[],
+  regions: GenerateRegion[],
+  moduleLayout: SavedModuleLayout,
+  options: {
+    includeLeadMargins: boolean;
+    forceFixed?: boolean;
+    nodePositions?: Map<string, { x: number; y: number }>;
+    regionBounds?: Map<string, RegionBounds>;
+  }
+): ElkLayoutNode[] {
+  const sortedRegions = [...regions].sort(compareGenerateRegions);
+  const regionById = new Map(sortedRegions.map((region) => [region.id, region]));
+  const childrenByParent = new Map<string, GenerateRegion[]>();
+  for (const region of sortedRegions) {
+    const parent = region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
+    const children = childrenByParent.get(parent) ?? [];
+    children.push(region);
+    childrenByParent.set(parent, children);
+  }
+  for (const children of childrenByParent.values()) {
+    children.sort(compareGenerateRegions);
+  }
+
+  const nodeOwner = new Map<string, string>();
+  for (const node of nodes) {
+    const owner = deepestOwningGenerateRegion(node.id, sortedRegions, regionById);
+    if (owner) {
+      nodeOwner.set(node.id, owner.id);
+    }
+  }
+
+  const nodesByOwner = new Map<string, DiagramNode[]>();
+  const rootNodes: DiagramNode[] = [];
+  for (const node of nodes) {
+    const ownerId = nodeOwner.get(node.id);
+    if (!ownerId) {
+      rootNodes.push(node);
+      continue;
+    }
+    const ownedNodes = nodesByOwner.get(ownerId) ?? [];
+    ownedNodes.push(node);
+    nodesByOwner.set(ownerId, ownedNodes);
+  }
+
+  const buildNode = (node: DiagramNode, parentBounds?: RegionBounds): ElkLayoutNode => elkNodeForLayout(node, moduleLayout, {
+    includeLeadMargins: options.includeLeadMargins,
+    forceFixed: options.forceFixed,
+    nodePositions: options.nodePositions,
+    parentBounds
+  });
+
+  const buildRegion = (region: GenerateRegion, parentBounds?: RegionBounds): ElkLayoutNode => {
+    const bounds = options.regionBounds?.get(region.id);
+    const regionChildren = [
+      ...(nodesByOwner.get(region.id) ?? []).map((node) => buildNode(node, bounds)),
+      ...(childrenByParent.get(region.id) ?? []).map((child) => buildRegion(child, bounds))
+    ];
+    const parentX = parentBounds?.x ?? 0;
+    const parentY = parentBounds?.y ?? 0;
+
+    return {
+      id: generateRegionElkId(region.id),
+      width: bounds?.width ?? REGION_MIN_WIDTH,
+      height: bounds?.height ?? REGION_MIN_HEIGHT,
+      ...(bounds
+        ? {
+          x: bounds.x - parentX,
+          y: bounds.y - parentY
+        }
+        : {}),
+      children: regionChildren,
+      layoutOptions: generateRegionLayoutOptions(options.forceFixed === true),
+      properties: generateRegionProperties(options.forceFixed === true)
+    };
+  };
+
+  const sourcePorts = rootNodes.filter(isSourceBoundaryPortNode);
+  const sinkPorts = rootNodes.filter(isSinkBoundaryPortNode);
+  const middleNodes = rootNodes.filter((node) => !isSourceBoundaryPortNode(node) && !isSinkBoundaryPortNode(node));
+  const rootRegions = childrenByParent.get('') ?? [];
+
+  return [
+    ...sourcePorts.map((node) => buildNode(node)),
+    ...middleNodes.map((node) => buildNode(node)),
+    ...rootRegions.map((region) => buildRegion(region)),
+    ...sinkPorts.map((node) => buildNode(node))
+  ];
+}
+
+function deepestOwningGenerateRegion(
+  nodeId: string,
+  regions: GenerateRegion[],
+  regionById: Map<string, GenerateRegion>
+): GenerateRegion | undefined {
+  const owners = regions.filter((region) => (region.nodeIds ?? []).includes(nodeId));
+  if (owners.length === 0) return undefined;
+  owners.sort((a, b) => generateRegionDepth(b, regionById) - generateRegionDepth(a, regionById));
+  return owners[0];
+}
+
+function generateRegionDepth(region: GenerateRegion, regionById: Map<string, GenerateRegion>): number {
+  let depth = 0;
+  let parent = region.parentRegionId ? regionById.get(region.parentRegionId) : undefined;
+  while (parent) {
+    depth += 1;
+    parent = parent.parentRegionId ? regionById.get(parent.parentRegionId) : undefined;
+  }
+  return depth;
+}
+
+function isSourceBoundaryPortNode(node: DiagramNode): boolean {
+  return node.kind === 'port' && node.ports.some((port) => port.direction !== 'output');
+}
+
+function isSinkBoundaryPortNode(node: DiagramNode): boolean {
+  return node.kind === 'port' && node.ports.length > 0 && node.ports.every((port) => port.direction === 'output');
+}
+
+function collectElkPositionsAndRegionBounds(
+  graph: ElkLayoutNode,
+  nodes: DiagramNode[],
+  positions: Map<string, { x: number; y: number }>,
+  regionBounds: Map<string, RegionBounds>
+): void {
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+  const visit = (node: ElkLayoutNode, origin: { x: number; y: number }) => {
+    const x = origin.x + (node.x ?? 0);
+    const y = origin.y + (node.y ?? 0);
+    const regionId = generateRegionIdFromElkId(node.id);
+    if (regionId) {
+      if (node.width !== undefined && node.height !== undefined) {
+        regionBounds.set(regionId, snapRegionBounds({
+          x,
+          y,
+          width: node.width,
+          height: node.height
+        }));
+      }
+      for (const child of node.children ?? []) {
+        visit(child, { x, y });
+      }
+      return;
+    }
+
+    const diagramNode = nodesById.get(node.id);
+    if (diagramNode && node.x !== undefined && node.y !== undefined) {
+      const offset = elkNodeForDiagramNode(diagramNode, true).layoutOffset;
+      positions.set(node.id, snapPosition({ x: x + offset.x, y: y + offset.y }, diagramNode.kind, structRole(diagramNode)));
+    }
+
+    for (const child of node.children ?? []) {
+      visit(child, { x, y });
+    }
+  };
+
+  for (const child of graph.children ?? []) {
+    visit(child, { x: 0, y: 0 });
+  }
 }
 
 function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
@@ -1015,13 +1803,49 @@ function routeWithRenderedLeads(
   }
   points.push(targetLead.point);
 
+  const stitched = removeRedundantRoutePoints(makeOrthogonalRoute(points));
+  const smoothed = smoothInitialForwardHierarchyStair(stitched, sourceLead, targetLead, nodesById, nodePositions);
   return repairForwardHorizontalRoute(
-    removeRedundantRoutePoints(makeOrthogonalRoute(points)),
+    smoothed,
     sourceLead,
     targetLead,
     nodesById,
     nodePositions
   );
+}
+
+function smoothInitialForwardHierarchyStair(
+  route: Array<{ x: number; y: number }>,
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide },
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): Array<{ x: number; y: number }> {
+  const direction = forwardHorizontalDirection(sourceLead, targetLead);
+  if (!direction || route.length < 5 || !pointsEqual(route[0], sourceLead.point)) {
+    return route;
+  }
+
+  const [source, first, second, third, fourth] = route;
+  const isInitialStair = (
+    first.y === source.y
+    && second.x === first.x
+    && third.y === second.y
+    && fourth.x === third.x
+    && second.y !== source.y
+    && ((direction > 0 && third.x > first.x) || (direction < 0 && third.x < first.x))
+    && Math.abs(third.x - first.x) <= diagramSizing.gridSize * 2
+  );
+  if (!isInitialStair) {
+    return route;
+  }
+
+  const candidate = removeRedundantRoutePoints(makeOrthogonalRoute([
+    source,
+    { x: third.x, y: source.y },
+    ...route.slice(4)
+  ]));
+  return routeIntersectsNodeInterior(candidate, nodesById, nodePositions) ? route : candidate;
 }
 
 function insetVerticalBoundaryLead(
@@ -1734,6 +2558,40 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
   next.modules[moduleName] = {
     ...existing,
     nodes: mergedNodes
+  };
+  return next;
+}
+
+export function mergeRegionBounds(layout: SavedLayout, moduleName: string, regions: PositionedGenerateRegion[]): SavedLayout {
+  const next: SavedLayout = {
+    version: 1,
+    modules: { ...layout.modules }
+  };
+  const existing: SavedModuleLayout = next.modules[moduleName] ?? { nodes: {} };
+  const activeIds = new Set(regions.map((region) => region.id));
+  const mergedRegions: NonNullable<SavedModuleLayout['regions']> = {};
+
+  for (const [id, value] of Object.entries(existing.regions ?? {})) {
+    if (!activeIds.has(id) && value.fixed) {
+      mergedRegions[id] = { ...value, stale: true };
+    }
+  }
+
+  for (const region of regions) {
+    if (region.fixed || existing.regions?.[region.id]?.fixed) {
+      mergedRegions[region.id] = {
+        x: Math.round(region.bounds.x),
+        y: Math.round(region.bounds.y),
+        width: Math.round(region.bounds.width),
+        height: Math.round(region.bounds.height),
+        fixed: true
+      };
+    }
+  }
+
+  next.modules[moduleName] = {
+    ...existing,
+    regions: Object.keys(mergedRegions).length > 0 ? mergedRegions : undefined
   };
   return next;
 }

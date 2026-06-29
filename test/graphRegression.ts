@@ -21,6 +21,8 @@ export interface GraphState {
         metadata?: any;
       }>;
     };
+    active?: boolean;
+    inactive?: boolean;
   }>;
   edges: Array<{
     id: string;
@@ -29,6 +31,23 @@ export interface GraphState {
     sourceHandle?: string | null;
     targetHandle?: string | null;
     path: string; // Captured SVG path data
+    active?: boolean;
+    inactive?: boolean;
+  }>;
+  regions?: Array<{
+    id: string;
+    kind?: string;
+    label: string;
+    bounds: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    active?: boolean;
+    inactive?: boolean;
+    invalid?: boolean;
+    warningNote?: string;
   }>;
 }
 
@@ -39,27 +58,32 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
       throw new Error('reactFlowInstance not found on window');
     }
     
-    const nodes = rf.getNodes().map((n: any) => ({
-      id: n.id,
-      type: n.type,
-      position: {
-        x: Math.round(n.position.x),
-        y: Math.round(n.position.y)
-      },
-      width: Math.round(n.measured?.width ?? n.width ?? 0),
-      height: Math.round(n.measured?.height ?? n.height ?? 0),
-      data: n.data ? {
-        label: n.data.label,
-        kind: n.data.node?.kind,
-        ports: n.data.node?.ports?.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          side: p.side,
-          direction: p.direction,
-          metadata: p.metadata
-        }))
-      } : undefined
-    }));
+    const nodes = rf.getNodes().map((n: any) => {
+      const nodeElement = document.querySelector(`.react-flow__node[data-id="${n.id}"]`);
+      return {
+        id: n.id,
+        type: n.type,
+        position: {
+          x: Math.round(n.position.x),
+          y: Math.round(n.position.y)
+        },
+        width: Math.round(n.measured?.width ?? n.width ?? 0),
+        height: Math.round(n.measured?.height ?? n.height ?? 0),
+        data: n.data ? {
+          label: n.data.label,
+          kind: n.data.node?.kind,
+          ports: n.data.node?.ports?.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            side: p.side,
+            direction: p.direction,
+            metadata: p.metadata
+          }))
+        } : undefined,
+        active: nodeElement?.classList.contains('generate-node-active') || undefined,
+        inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined
+      };
+    });
 
     const edges = rf.getEdges().map((e: any) => {
       // Use a more specific selector to find the path element for this specific edge
@@ -72,15 +96,39 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
         target: e.target,
         sourceHandle: e.sourceHandle,
         targetHandle: e.targetHandle,
-        path: pathData
+        path: pathData,
+        active: edgeElement?.closest('.react-flow__edge')?.classList.contains('generate-edge-active') || undefined,
+        inactive: edgeElement?.closest('.react-flow__edge')?.classList.contains('generate-edge-inactive') || undefined
       };
     });
+
+    const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
+      const element = region as HTMLElement;
+      const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
+      const warningNote = element.querySelector('.generate-region-note')?.textContent?.trim() ?? undefined;
+      return {
+        id: element.dataset.regionId ?? '',
+        kind: element.dataset.regionKind,
+        label: title,
+        bounds: {
+          x: Math.round(Number.parseFloat(element.style.left || '0')),
+          y: Math.round(Number.parseFloat(element.style.top || '0')),
+          width: Math.round(Number.parseFloat(element.style.width || '0')),
+          height: Math.round(Number.parseFloat(element.style.height || '0'))
+        },
+        active: element.classList.contains('generate-region-active') || undefined,
+        inactive: element.classList.contains('generate-region-inactive') || undefined,
+        invalid: element.classList.contains('generate-region-invalid') || undefined,
+        warningNote
+      };
+    }).filter((region) => region.id);
 
     // Sort to ensure deterministic comparison
     nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
     edges.sort((a: any, b: any) => a.id.localeCompare(b.id));
+    regions.sort((a: any, b: any) => a.id.localeCompare(b.id));
 
-    return { nodes, edges };
+    return regions.length > 0 ? { nodes, edges, regions } : { nodes, edges };
   });
 }
 
@@ -94,7 +142,7 @@ export function compareGraphState(
 ) {
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.json`);
   const actualJson = JSON.stringify(actual, null, 2);
-  const actualHasContent = actual.nodes.length > 0 || actual.edges.length > 0;
+  const actualHasContent = actual.nodes.length > 0 || actual.edges.length > 0 || (actual.regions?.length ?? 0) > 0;
 
   const snapshotMissingOrEmpty = !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
   if (snapshotMissingOrEmpty || updateSnapshots) {

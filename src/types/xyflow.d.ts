@@ -60,6 +60,7 @@ declare module '@xyflow/react' {
     export const MiniMap: React.FC<any>;
     export const ReactFlow: <NodeType extends Node = Node, EdgeType extends Edge = Edge>(props: any) => React.ReactElement;
     export const ReactFlowProvider: React.FC<{ children: React.ReactNode }>;
+    export const ViewportPortal: React.FC<{ children: React.ReactNode }>;
 
     export function useReactFlow(): any;
     export function useEdgesState<T extends Edge = Edge>(initialEdges: T[]): [T[], (edges: T[] | ((eds: T[]) => T[])) => void, any];

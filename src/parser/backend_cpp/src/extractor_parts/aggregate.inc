@@ -286,6 +286,15 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
             }
             if (incoming_copy.empty()) continue;
 
+            auto endpoint_generate_region = [&](const std::string& node_id) -> std::pair<std::string, std::string> {
+                for (const auto& candidate : mod.nodes) {
+                    if (candidate.id == node_id) {
+                        return {candidate.metadata.generateRegionId, candidate.metadata.generateActiveState};
+                    }
+                }
+                return {"", ""};
+            };
+
             // Bypass: for each incoming×outgoing pair, create a direct edge.
             std::vector<Edge> new_edges;
             for (const auto& inc : incoming_copy) {
@@ -297,6 +306,21 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
                     ne.targetPort = outg.targetPort;
                     ne.signal    = outg.signal.empty() ? inc.signal : outg.signal;
                     ne.width     = outg.width.empty()  ? inc.width  : outg.width;
+                    auto source_region = endpoint_generate_region(inc.source);
+                    auto target_region = endpoint_generate_region(outg.target);
+                    if (!inc.generateRegionId.empty()) {
+                        ne.generateRegionId = inc.generateRegionId;
+                        ne.generateActiveState = inc.generateActiveState;
+                    } else if (!source_region.first.empty()) {
+                        ne.generateRegionId = source_region.first;
+                        ne.generateActiveState = source_region.second;
+                    } else if (!outg.generateRegionId.empty()) {
+                        ne.generateRegionId = outg.generateRegionId;
+                        ne.generateActiveState = outg.generateActiveState;
+                    } else if (!target_region.first.empty()) {
+                        ne.generateRegionId = target_region.first;
+                        ne.generateActiveState = target_region.second;
+                    }
                     // Do not inherit isStacked from the incoming edge: the output side
                     // of an alias determines whether the bypass is stacked (e.g. array
                     // breakout outputs are scalar even though the input is stacked).

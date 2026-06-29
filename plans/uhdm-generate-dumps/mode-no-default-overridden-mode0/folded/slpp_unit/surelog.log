@@ -1,0 +1,43 @@
+********************************************
+*  SURELOG SystemVerilog  Compiler/Linter  *
+********************************************
+
+Copyright (c) 2017-2023 Alain Dargelas,
+http://www.apache.org/licenses/LICENSE-2.0
+
+VERSION: 1.84
+BUILT  : Aug 23 2024
+DATE   : 2026-06-28.13:31:45
+COMMAND: -parse -sverilog -fileunit -nopython -o plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/folded plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv
+
+[INF:CM0023] Creating log file "/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/folded/slpp_unit/surelog.log".
+[INF:CM0020] Separate compilation-unit mode is on.
+[WRN:PA0205] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:1:1: No timescale set for "leaf".
+[WRN:PA0205] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:5:1: No timescale set for "child".
+[WRN:PA0205] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:29:1: No timescale set for "wrapper".
+[INF:CP0300] Compilation...
+[INF:CP0303] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:5:1: Compile module "work@child".
+[INF:CP0303] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:1:1: Compile module "work@leaf".
+[INF:CP0303] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:29:1: Compile module "work@wrapper".
+[INF:CP0302] Compile class "work@mailbox".
+[INF:CP0302] Compile class "work@process".
+[INF:CP0302] Compile class "work@semaphore".
+[INF:EL0526] Design Elaboration...
+[INF:CP0335] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:14:10: Compile generate block "work@wrapper.u_child.g_case_0".
+[NTE:EL0503] /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/override_probe_mode0.sv:29:1: Top level module "work@wrapper".
+[NTE:EL0508] Nb Top level modules: 1.
+[NTE:EL0509] Max instance depth: 4.
+[NTE:EL0510] Nb instances: 3.
+[NTE:EL0511] Nb leaf instances: 1.
+[INF:UH0706] Creating UHDM Model...
+[INF:UH0708] Writing UHDM DB: /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default-overridden-mode0/folded/slpp_unit/surelog.uhdm ...
+[  FATAL] : 0
+[ SYNTAX] : 0
+[  ERROR] : 0
+[WARNING] : 3
+[   NOTE] : 5
+
+********************************************
+*   End SURELOG SVerilog Compiler/Linter   *
+********************************************
+

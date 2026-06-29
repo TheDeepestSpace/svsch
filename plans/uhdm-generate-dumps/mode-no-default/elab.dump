@@ -1,0 +1,1835 @@
+plans/uhdm-generate-dumps/mode-no-default/elab/slpp_unit/surelog.uhdm: Restored design Pre-Elab: 
+design: (work@top)
+|vpiElaborated:1
+|vpiName:work@top
+|uhdmallPackages:
+\_package: builtin (builtin::)
+  |vpiParent:
+  \_design: (work@top)
+  |vpiName:builtin
+  |vpiFullName:builtin::
+  |vpiDefName:builtin
+|uhdmtopPackages:
+\_package: builtin (builtin::)
+  |vpiParent:
+  \_design: (work@top)
+  |vpiName:builtin
+  |vpiFullName:builtin::
+  |vpiDefName:builtin
+  |vpiTop:1
+  |vpiClassDefn:
+  \_class_defn: (builtin::any_sverilog_class)
+    |vpiParent:
+    \_package: builtin (builtin::)
+    |vpiName:any_sverilog_class
+    |vpiFullName:builtin::any_sverilog_class
+  |vpiClassDefn:
+  \_class_defn: (builtin::array)
+    |vpiParent:
+    \_package: builtin (builtin::)
+    |vpiName:array
+    |vpiFullName:builtin::array
+  |vpiClassDefn:
+  \_class_defn: (builtin::queue)
+    |vpiParent:
+    \_package: builtin (builtin::)
+    |vpiName:queue
+    |vpiFullName:builtin::queue
+  |vpiClassDefn:
+  \_class_defn: (builtin::string)
+    |vpiParent:
+    \_package: builtin (builtin::)
+    |vpiName:string
+    |vpiFullName:builtin::string
+  |vpiClassDefn:
+  \_class_defn: (builtin::system)
+    |vpiParent:
+    \_package: builtin (builtin::)
+    |vpiName:system
+    |vpiFullName:builtin::system
+|uhdmallClasses:
+\_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiParent:
+  \_design: (work@top)
+  |vpiName:work@mailbox
+  |vpiMethod:
+  \_function: (work@mailbox::new), line:3:5, endln:4:16
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:new
+    |vpiFullName:work@mailbox::new
+    |vpiMethod:1
+    |vpiReturn:
+    \_class_var: (work@mailbox::new), line:3:23, endln:3:28
+      |vpiParent:
+      \_function: (work@mailbox::new), line:3:5, endln:4:16
+      |vpiTypespec:
+      \_ref_typespec: (work@mailbox::new)
+        |vpiParent:
+        \_class_var: (work@mailbox::new), line:3:23, endln:3:28
+        |vpiFullName:work@mailbox::new
+        |vpiActual:
+        \_class_typespec: 
+      |vpiFullName:work@mailbox::new
+    |vpiIODecl:
+    \_io_decl: (bound), line:3:23, endln:3:28
+      |vpiParent:
+      \_function: (work@mailbox::new), line:3:5, endln:4:16
+      |vpiDirection:1
+      |vpiName:bound
+      |vpiExpr:
+      \_constant: , line:3:31, endln:3:32
+        |vpiDecompile:0
+        |vpiSize:64
+        |UINT:0
+        |vpiConstType:9
+      |vpiTypedef:
+      \_ref_typespec: (work@mailbox::new::bound)
+        |vpiParent:
+        \_io_decl: (bound), line:3:23, endln:3:28
+        |vpiFullName:work@mailbox::new::bound
+        |vpiActual:
+        \_int_typespec: , line:3:19, endln:3:22
+  |vpiMethod:
+  \_function: (work@mailbox::num), line:6:5, endln:7:16
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:num
+    |vpiFullName:work@mailbox::num
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_int_var: (work@mailbox::num), line:6:14, endln:6:17
+      |vpiParent:
+      \_function: (work@mailbox::num), line:6:5, endln:7:16
+      |vpiTypespec:
+      \_ref_typespec: (work@mailbox::num)
+        |vpiParent:
+        \_int_var: (work@mailbox::num), line:6:14, endln:6:17
+        |vpiFullName:work@mailbox::num
+        |vpiActual:
+        \_int_typespec: , line:6:14, endln:6:17
+      |vpiFullName:work@mailbox::num
+      |vpiSigned:1
+  |vpiMethod:
+  \_task: (work@mailbox::put), line:9:5, endln:10:12
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:put
+    |vpiFullName:work@mailbox::put
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiIODecl:
+    \_io_decl: (message), line:9:15, endln:9:22
+      |vpiParent:
+      \_task: (work@mailbox::put), line:9:5, endln:10:12
+      |vpiDirection:1
+      |vpiName:message
+  |vpiMethod:
+  \_function: (work@mailbox::try_put), line:12:5, endln:13:16
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:try_put
+    |vpiFullName:work@mailbox::try_put
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_logic_var: (work@mailbox::try_put)
+      |vpiParent:
+      \_function: (work@mailbox::try_put), line:12:5, endln:13:16
+      |vpiFullName:work@mailbox::try_put
+    |vpiIODecl:
+    \_io_decl: (message), line:12:23, endln:12:30
+      |vpiParent:
+      \_function: (work@mailbox::try_put), line:12:5, endln:13:16
+      |vpiDirection:1
+      |vpiName:message
+  |vpiMethod:
+  \_task: (work@mailbox::get), line:15:5, endln:16:12
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:get
+    |vpiFullName:work@mailbox::get
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiIODecl:
+    \_io_decl: (message), line:15:19, endln:15:26
+      |vpiParent:
+      \_task: (work@mailbox::get), line:15:5, endln:16:12
+      |vpiDirection:6
+      |vpiName:message
+  |vpiMethod:
+  \_function: (work@mailbox::try_get), line:18:5, endln:19:16
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:try_get
+    |vpiFullName:work@mailbox::try_get
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_int_var: (work@mailbox::try_get), line:18:14, endln:18:17
+      |vpiParent:
+      \_function: (work@mailbox::try_get), line:18:5, endln:19:16
+      |vpiTypespec:
+      \_ref_typespec: (work@mailbox::try_get)
+        |vpiParent:
+        \_int_var: (work@mailbox::try_get), line:18:14, endln:18:17
+        |vpiFullName:work@mailbox::try_get
+        |vpiActual:
+        \_int_typespec: , line:18:14, endln:18:17
+      |vpiFullName:work@mailbox::try_get
+      |vpiSigned:1
+    |vpiIODecl:
+    \_io_decl: (message), line:18:31, endln:18:38
+      |vpiParent:
+      \_function: (work@mailbox::try_get), line:18:5, endln:19:16
+      |vpiDirection:6
+      |vpiName:message
+  |vpiMethod:
+  \_task: (work@mailbox::peek), line:21:5, endln:22:12
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:peek
+    |vpiFullName:work@mailbox::peek
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiIODecl:
+    \_io_decl: (message), line:21:20, endln:21:27
+      |vpiParent:
+      \_task: (work@mailbox::peek), line:21:5, endln:22:12
+      |vpiDirection:6
+      |vpiName:message
+  |vpiMethod:
+  \_function: (work@mailbox::try_peek), line:24:5, endln:25:16
+    |vpiParent:
+    \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+    |vpiName:try_peek
+    |vpiFullName:work@mailbox::try_peek
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_int_var: (work@mailbox::try_peek), line:24:14, endln:24:17
+      |vpiParent:
+      \_function: (work@mailbox::try_peek), line:24:5, endln:25:16
+      |vpiTypespec:
+      \_ref_typespec: (work@mailbox::try_peek)
+        |vpiParent:
+        \_int_var: (work@mailbox::try_peek), line:24:14, endln:24:17
+        |vpiFullName:work@mailbox::try_peek
+        |vpiActual:
+        \_int_typespec: , line:24:14, endln:24:17
+      |vpiFullName:work@mailbox::try_peek
+      |vpiSigned:1
+    |vpiIODecl:
+    \_io_decl: (message), line:24:31, endln:24:38
+      |vpiParent:
+      \_function: (work@mailbox::try_peek), line:24:5, endln:25:16
+      |vpiDirection:6
+      |vpiName:message
+|uhdmallClasses:
+\_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+  |vpiParent:
+  \_design: (work@top)
+  |vpiName:work@process
+  |vpiTypedef:
+  \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:state
+    |vpiEnumConst:
+    \_enum_const: (FINISHED), line:32:20, endln:32:28
+      |vpiParent:
+      \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiName:FINISHED
+      |INT:0
+      |vpiDecompile:0
+      |vpiSize:64
+    |vpiEnumConst:
+    \_enum_const: (RUNNING), line:32:30, endln:32:37
+      |vpiParent:
+      \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiName:RUNNING
+      |INT:1
+      |vpiDecompile:1
+      |vpiSize:64
+    |vpiEnumConst:
+    \_enum_const: (WAITING), line:32:39, endln:32:46
+      |vpiParent:
+      \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiName:WAITING
+      |INT:2
+      |vpiDecompile:2
+      |vpiSize:64
+    |vpiEnumConst:
+    \_enum_const: (SUSPENDED), line:32:48, endln:32:57
+      |vpiParent:
+      \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiName:SUSPENDED
+      |INT:3
+      |vpiDecompile:3
+      |vpiSize:64
+    |vpiEnumConst:
+    \_enum_const: (KILLED), line:32:59, endln:32:65
+      |vpiParent:
+      \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiName:KILLED
+      |INT:4
+      |vpiDecompile:4
+      |vpiSize:64
+  |vpiMethod:
+  \_function: (work@process::self), line:34:5, endln:34:11
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:self
+    |vpiFullName:work@process::self
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_class_var: (work@process::self), line:34:21, endln:34:28
+      |vpiParent:
+      \_function: (work@process::self), line:34:5, endln:34:11
+      |vpiTypespec:
+      \_ref_typespec: (work@process::self)
+        |vpiParent:
+        \_class_var: (work@process::self), line:34:21, endln:34:28
+        |vpiFullName:work@process::self
+        |vpiActual:
+        \_class_typespec: , line:34:21, endln:34:28
+      |vpiFullName:work@process::self
+  |vpiMethod:
+  \_function: (work@process::status), line:37:5, endln:38:16
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:status
+    |vpiFullName:work@process::status
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_enum_var: (work@process::status), line:37:14, endln:37:19
+      |vpiParent:
+      \_function: (work@process::status), line:37:5, endln:38:16
+      |vpiTypespec:
+      \_ref_typespec: (work@process::status)
+        |vpiParent:
+        \_enum_var: (work@process::status), line:37:14, endln:37:19
+        |vpiFullName:work@process::status
+        |vpiActual:
+        \_enum_typespec: (state), line:32:5, endln:32:74
+      |vpiFullName:work@process::status
+  |vpiMethod:
+  \_task: (work@process::kill), line:40:5, endln:41:12
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:kill
+    |vpiFullName:work@process::kill
+    |vpiMethod:1
+    |vpiVisibility:1
+  |vpiMethod:
+  \_task: (work@process::await), line:43:5, endln:44:12
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:await
+    |vpiFullName:work@process::await
+    |vpiMethod:1
+    |vpiVisibility:1
+  |vpiMethod:
+  \_task: (work@process::suspend), line:46:5, endln:47:12
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:suspend
+    |vpiFullName:work@process::suspend
+    |vpiMethod:1
+    |vpiVisibility:1
+  |vpiMethod:
+  \_task: (work@process::resume), line:49:5, endln:50:12
+    |vpiParent:
+    \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+    |vpiName:resume
+    |vpiFullName:work@process::resume
+    |vpiMethod:1
+    |vpiVisibility:1
+|uhdmallClasses:
+\_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+  |vpiParent:
+  \_design: (work@top)
+  |vpiName:work@semaphore
+  |vpiMethod:
+  \_function: (work@semaphore::new), line:57:5, endln:58:16
+    |vpiParent:
+    \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+    |vpiName:new
+    |vpiFullName:work@semaphore::new
+    |vpiMethod:1
+    |vpiReturn:
+    \_class_var: (work@semaphore::new), line:57:22, endln:57:30
+      |vpiParent:
+      \_function: (work@semaphore::new), line:57:5, endln:58:16
+      |vpiTypespec:
+      \_ref_typespec: (work@semaphore::new)
+        |vpiParent:
+        \_class_var: (work@semaphore::new), line:57:22, endln:57:30
+        |vpiFullName:work@semaphore::new
+        |vpiActual:
+        \_class_typespec: 
+      |vpiFullName:work@semaphore::new
+    |vpiIODecl:
+    \_io_decl: (keyCount), line:57:22, endln:57:30
+      |vpiParent:
+      \_function: (work@semaphore::new), line:57:5, endln:58:16
+      |vpiDirection:1
+      |vpiName:keyCount
+      |vpiExpr:
+      \_constant: , line:57:33, endln:57:34
+        |vpiDecompile:0
+        |vpiSize:64
+        |UINT:0
+        |vpiConstType:9
+      |vpiTypedef:
+      \_ref_typespec: (work@semaphore::new::keyCount)
+        |vpiParent:
+        \_io_decl: (keyCount), line:57:22, endln:57:30
+        |vpiFullName:work@semaphore::new::keyCount
+        |vpiActual:
+        \_int_typespec: , line:57:18, endln:57:21
+  |vpiMethod:
+  \_task: (work@semaphore::put), line:60:5, endln:61:12
+    |vpiParent:
+    \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+    |vpiName:put
+    |vpiFullName:work@semaphore::put
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiIODecl:
+    \_io_decl: (keyCount), line:60:18, endln:60:26
+      |vpiParent:
+      \_task: (work@semaphore::put), line:60:5, endln:61:12
+      |vpiDirection:1
+      |vpiName:keyCount
+      |vpiExpr:
+      \_constant: , line:60:29, endln:60:30
+        |vpiDecompile:1
+        |vpiSize:64
+        |UINT:1
+        |vpiConstType:9
+      |vpiTypedef:
+      \_ref_typespec: (work@semaphore::put::keyCount)
+        |vpiParent:
+        \_io_decl: (keyCount), line:60:18, endln:60:26
+        |vpiFullName:work@semaphore::put::keyCount
+        |vpiActual:
+        \_int_typespec: , line:60:14, endln:60:17
+  |vpiMethod:
+  \_task: (work@semaphore::get), line:63:5, endln:64:12
+    |vpiParent:
+    \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+    |vpiName:get
+    |vpiFullName:work@semaphore::get
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiIODecl:
+    \_io_decl: (keyCount), line:63:18, endln:63:26
+      |vpiParent:
+      \_task: (work@semaphore::get), line:63:5, endln:64:12
+      |vpiDirection:1
+      |vpiName:keyCount
+      |vpiExpr:
+      \_constant: , line:63:29, endln:63:30
+        |vpiDecompile:1
+        |vpiSize:64
+        |UINT:1
+        |vpiConstType:9
+      |vpiTypedef:
+      \_ref_typespec: (work@semaphore::get::keyCount)
+        |vpiParent:
+        \_io_decl: (keyCount), line:63:18, endln:63:26
+        |vpiFullName:work@semaphore::get::keyCount
+        |vpiActual:
+        \_int_typespec: , line:63:14, endln:63:17
+  |vpiMethod:
+  \_function: (work@semaphore::try_get), line:66:5, endln:67:16
+    |vpiParent:
+    \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+    |vpiName:try_get
+    |vpiFullName:work@semaphore::try_get
+    |vpiMethod:1
+    |vpiVisibility:1
+    |vpiReturn:
+    \_int_var: (work@semaphore::try_get), line:66:14, endln:66:17
+      |vpiParent:
+      \_function: (work@semaphore::try_get), line:66:5, endln:67:16
+      |vpiTypespec:
+      \_ref_typespec: (work@semaphore::try_get)
+        |vpiParent:
+        \_int_var: (work@semaphore::try_get), line:66:14, endln:66:17
+        |vpiFullName:work@semaphore::try_get
+        |vpiActual:
+        \_int_typespec: , line:66:14, endln:66:17
+      |vpiFullName:work@semaphore::try_get
+      |vpiSigned:1
+    |vpiIODecl:
+    \_io_decl: (keyCount), line:66:30, endln:66:38
+      |vpiParent:
+      \_function: (work@semaphore::try_get), line:66:5, endln:67:16
+      |vpiDirection:1
+      |vpiName:keyCount
+      |vpiExpr:
+      \_constant: , line:66:41, endln:66:42
+        |vpiDecompile:1
+        |vpiSize:64
+        |UINT:1
+        |vpiConstType:9
+      |vpiTypedef:
+      \_ref_typespec: (work@semaphore::try_get::keyCount)
+        |vpiParent:
+        \_io_decl: (keyCount), line:66:30, endln:66:38
+        |vpiFullName:work@semaphore::try_get::keyCount
+        |vpiActual:
+        \_int_typespec: , line:66:26, endln:66:29
+|uhdmallModules:
+\_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+  |vpiParent:
+  \_design: (work@top)
+  |vpiFullName:work@leaf
+  |vpiDefName:work@leaf
+  |vpiNet:
+  \_logic_net: (work@leaf.a), line:1:25, endln:1:26
+    |vpiParent:
+    \_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+    |vpiName:a
+    |vpiFullName:work@leaf.a
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@leaf.y), line:1:41, endln:1:42
+    |vpiParent:
+    \_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+    |vpiName:y
+    |vpiFullName:work@leaf.y
+    |vpiNetType:36
+  |vpiPort:
+  \_port: (a), line:1:25, endln:1:26
+    |vpiParent:
+    \_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+    |vpiName:a
+    |vpiDirection:1
+    |vpiLowConn:
+    \_ref_obj: (work@leaf.a.a), line:1:25, endln:1:26
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiName:a
+      |vpiFullName:work@leaf.a.a
+      |vpiActual:
+      \_logic_net: (work@leaf.a), line:1:25, endln:1:26
+    |vpiTypedef:
+    \_ref_typespec: (work@leaf.a)
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiFullName:work@leaf.a
+      |vpiActual:
+      \_logic_typespec: , line:1:19, endln:1:24
+  |vpiPort:
+  \_port: (y), line:1:41, endln:1:42
+    |vpiParent:
+    \_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+    |vpiName:y
+    |vpiDirection:2
+    |vpiLowConn:
+    \_ref_obj: (work@leaf.y.y), line:1:41, endln:1:42
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiName:y
+      |vpiFullName:work@leaf.y.y
+      |vpiActual:
+      \_logic_net: (work@leaf.y), line:1:41, endln:1:42
+    |vpiTypedef:
+    \_ref_typespec: (work@leaf.y)
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiFullName:work@leaf.y
+      |vpiActual:
+      \_logic_typespec: , line:1:35, endln:1:40
+  |vpiContAssign:
+  \_cont_assign: , line:2:10, endln:2:15
+    |vpiParent:
+    \_module_inst: work@leaf (work@leaf), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:1:1, endln:3:10
+    |vpiRhs:
+    \_ref_obj: (work@leaf.a), line:2:14, endln:2:15
+      |vpiParent:
+      \_cont_assign: , line:2:10, endln:2:15
+      |vpiName:a
+      |vpiFullName:work@leaf.a
+      |vpiActual:
+      \_logic_net: (work@leaf.a), line:1:25, endln:1:26
+    |vpiLhs:
+    \_ref_obj: (work@leaf.y), line:2:10, endln:2:11
+      |vpiParent:
+      \_cont_assign: , line:2:10, endln:2:15
+      |vpiName:y
+      |vpiFullName:work@leaf.y
+      |vpiActual:
+      \_logic_net: (work@leaf.y), line:1:41, endln:1:42
+|uhdmallModules:
+\_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiParent:
+  \_design: (work@top)
+  |vpiFullName:work@top
+  |vpiParameter:
+  \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |UINT:1
+    |vpiTypespec:
+    \_ref_typespec: (work@top.USE_A)
+      |vpiParent:
+      \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+      |vpiFullName:work@top.USE_A
+      |vpiActual:
+      \_int_typespec: , line:5:24, endln:5:27
+    |vpiSigned:1
+    |vpiName:USE_A
+    |vpiFullName:work@top.USE_A
+  |vpiParameter:
+  \_parameter: (work@top.MODE), line:5:53, endln:5:57
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.MODE)
+      |vpiParent:
+      \_parameter: (work@top.MODE), line:5:53, endln:5:57
+      |vpiFullName:work@top.MODE
+      |vpiActual:
+      \_int_typespec: , line:5:49, endln:5:52
+    |vpiSigned:1
+    |vpiName:MODE
+    |vpiFullName:work@top.MODE
+  |vpiParamAssign:
+  \_param_assign: , line:5:28, endln:5:37
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiRhs:
+    \_constant: , line:5:36, endln:5:37
+      |vpiParent:
+      \_param_assign: , line:5:28, endln:5:37
+      |vpiDecompile:1
+      |vpiSize:64
+      |UINT:1
+      |vpiTypespec:
+      \_ref_typespec: (work@top)
+        |vpiParent:
+        \_constant: , line:5:36, endln:5:37
+        |vpiFullName:work@top
+        |vpiActual:
+        \_int_typespec: , line:5:24, endln:5:27
+      |vpiConstType:9
+    |vpiLhs:
+    \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+  |vpiParamAssign:
+  \_param_assign: , line:5:53, endln:5:57
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiLhs:
+    \_parameter: (work@top.MODE), line:5:53, endln:5:57
+  |vpiDefName:work@top
+  |vpiNet:
+  \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:a
+    |vpiFullName:work@top.a
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.b), line:7:15, endln:7:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:b
+    |vpiFullName:work@top.b
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.y), line:8:16, endln:8:17
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:y
+    |vpiFullName:work@top.y
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.w_if), line:10:9, endln:10:13
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.w_if)
+      |vpiParent:
+      \_logic_net: (work@top.w_if), line:10:9, endln:10:13
+      |vpiFullName:work@top.w_if
+      |vpiActual:
+      \_logic_typespec: , line:10:3, endln:10:8
+    |vpiName:w_if
+    |vpiFullName:work@top.w_if
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.w_case), line:11:9, endln:11:15
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.w_case)
+      |vpiParent:
+      \_logic_net: (work@top.w_case), line:11:9, endln:11:15
+      |vpiFullName:work@top.w_case
+      |vpiActual:
+      \_logic_typespec: , line:11:3, endln:11:8
+    |vpiName:w_case
+    |vpiFullName:work@top.w_case
+    |vpiNetType:36
+  |vpiPort:
+  \_port: (a), line:6:15, endln:6:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:a
+    |vpiDirection:1
+    |vpiLowConn:
+    \_ref_obj: (work@top.a.a), line:6:15, endln:6:16
+      |vpiParent:
+      \_port: (a), line:6:15, endln:6:16
+      |vpiName:a
+      |vpiFullName:work@top.a.a
+      |vpiActual:
+      \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiTypedef:
+    \_ref_typespec: (work@top.a)
+      |vpiParent:
+      \_port: (a), line:6:15, endln:6:16
+      |vpiFullName:work@top.a
+      |vpiActual:
+      \_logic_typespec: , line:6:9, endln:6:14
+  |vpiPort:
+  \_port: (b), line:7:15, endln:7:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:b
+    |vpiDirection:1
+    |vpiLowConn:
+    \_ref_obj: (work@top.b.b), line:7:15, endln:7:16
+      |vpiParent:
+      \_port: (b), line:7:15, endln:7:16
+      |vpiName:b
+      |vpiFullName:work@top.b.b
+      |vpiActual:
+      \_logic_net: (work@top.b), line:7:15, endln:7:16
+    |vpiTypedef:
+    \_ref_typespec: (work@top.b)
+      |vpiParent:
+      \_port: (b), line:7:15, endln:7:16
+      |vpiFullName:work@top.b
+      |vpiActual:
+      \_logic_typespec: , line:7:9, endln:7:14
+  |vpiPort:
+  \_port: (y), line:8:16, endln:8:17
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:y
+    |vpiDirection:2
+    |vpiLowConn:
+    \_ref_obj: (work@top.y.y), line:8:16, endln:8:17
+      |vpiParent:
+      \_port: (y), line:8:16, endln:8:17
+      |vpiName:y
+      |vpiFullName:work@top.y.y
+      |vpiActual:
+      \_logic_net: (work@top.y), line:8:16, endln:8:17
+    |vpiTypedef:
+    \_ref_typespec: (work@top.y)
+      |vpiParent:
+      \_port: (y), line:8:16, endln:8:17
+      |vpiFullName:work@top.y
+      |vpiActual:
+      \_logic_typespec: , line:8:10, endln:8:15
+  |vpiGenStmt:
+  \_gen_region: 
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiStmt:
+    \_begin: (work@top)
+      |vpiParent:
+      \_gen_region: 
+      |vpiFullName:work@top
+      |vpiStmt:
+      \_gen_if_else: , line:14:5, endln:18:8
+        |vpiParent:
+        \_begin: (work@top)
+        |vpiCondition:
+        \_ref_obj: (work@top.USE_A), line:14:9, endln:14:14
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:USE_A
+          |vpiFullName:work@top.USE_A
+        |vpiStmt:
+        \_named_begin: (work@top.g_if_a)
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:g_if_a
+          |vpiFullName:work@top.g_if_a
+          |vpiStmt:
+          \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+            |vpiParent:
+            \_named_begin: (work@top.g_if_a)
+            |vpiName:u_a
+            |vpiDefName:work@leaf
+            |vpiPort:
+            \_port: (a), line:15:16, endln:15:21
+              |vpiParent:
+              \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+              |vpiName:a
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_a.u_a.a.a), line:15:19, endln:15:20
+                |vpiParent:
+                \_port: (a), line:15:16, endln:15:21
+                |vpiName:a
+                |vpiFullName:work@top.g_if_a.u_a.a.a
+            |vpiPort:
+            \_port: (y), line:15:23, endln:15:31
+              |vpiParent:
+              \_ref_module: work@leaf (u_a), line:15:12, endln:15:15
+              |vpiName:y
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_a.u_a.y.w_if), line:15:26, endln:15:30
+                |vpiParent:
+                \_port: (y), line:15:23, endln:15:31
+                |vpiName:w_if
+                |vpiFullName:work@top.g_if_a.u_a.y.w_if
+        |vpiElseStmt:
+        \_named_begin: (work@top.g_if_b)
+          |vpiParent:
+          \_gen_if_else: , line:14:5, endln:18:8
+          |vpiName:g_if_b
+          |vpiFullName:work@top.g_if_b
+          |vpiStmt:
+          \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+            |vpiParent:
+            \_named_begin: (work@top.g_if_b)
+            |vpiName:u_b
+            |vpiDefName:work@leaf
+            |vpiPort:
+            \_port: (a), line:17:16, endln:17:21
+              |vpiParent:
+              \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+              |vpiName:a
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_b.u_b.a.b), line:17:19, endln:17:20
+                |vpiParent:
+                \_port: (a), line:17:16, endln:17:21
+                |vpiName:b
+                |vpiFullName:work@top.g_if_b.u_b.a.b
+            |vpiPort:
+            \_port: (y), line:17:23, endln:17:31
+              |vpiParent:
+              \_ref_module: work@leaf (u_b), line:17:12, endln:17:15
+              |vpiName:y
+              |vpiHighConn:
+              \_ref_obj: (work@top.g_if_b.u_b.y.w_if), line:17:26, endln:17:30
+                |vpiParent:
+                \_port: (y), line:17:23, endln:17:31
+                |vpiName:w_if
+                |vpiFullName:work@top.g_if_b.u_b.y.w_if
+  |vpiGenStmt:
+  \_gen_if_else: 
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiCondition:
+    \_ref_obj: (work@top.USE_A), line:33:7, endln:33:12
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:USE_A
+      |vpiFullName:work@top.USE_A
+    |vpiStmt:
+    \_named_begin: (work@top.g_imp_true)
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:g_imp_true
+      |vpiFullName:work@top.g_imp_true
+      |vpiStmt:
+      \_cont_assign: , line:34:12, endln:34:29
+        |vpiParent:
+        \_named_begin: (work@top.g_imp_true)
+        |vpiRhs:
+        \_operation: , line:34:16, endln:34:29
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiOpType:28
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_if), line:34:16, endln:34:20
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_if
+            |vpiFullName:work@top.g_imp_true.w_if
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_case), line:34:23, endln:34:29
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_case
+            |vpiFullName:work@top.g_imp_true.w_case
+        |vpiLhs:
+        \_ref_obj: (work@top.g_imp_true.y), line:34:12, endln:34:13
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiName:y
+          |vpiFullName:work@top.g_imp_true.y
+    |vpiElseStmt:
+    \_named_begin: (work@top.g_imp_false)
+      |vpiParent:
+      \_gen_if_else: 
+      |vpiName:g_imp_false
+      |vpiFullName:work@top.g_imp_false
+      |vpiStmt:
+      \_cont_assign: , line:36:12, endln:36:22
+        |vpiParent:
+        \_named_begin: (work@top.g_imp_false)
+        |vpiRhs:
+        \_ref_obj: (work@top.g_imp_false.w_case), line:36:16, endln:36:22
+          |vpiParent:
+          \_cont_assign: , line:36:12, endln:36:22
+          |vpiName:w_case
+          |vpiFullName:work@top.g_imp_false.w_case
+        |vpiLhs:
+        \_ref_obj: (work@top.g_imp_false.y), line:36:12, endln:36:13
+          |vpiParent:
+          \_cont_assign: , line:36:12, endln:36:22
+          |vpiName:y
+          |vpiFullName:work@top.g_imp_false.y
+|uhdmtopModules:
+\_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiName:work@top
+  |vpiVariables:
+  \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.w_if)
+      |vpiParent:
+      \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+      |vpiFullName:work@top.w_if
+      |vpiActual:
+      \_logic_typespec: , line:10:3, endln:10:8
+    |vpiName:w_if
+    |vpiFullName:work@top.w_if
+    |vpiVisibility:1
+  |vpiVariables:
+  \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.w_case)
+      |vpiParent:
+      \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+      |vpiFullName:work@top.w_case
+      |vpiActual:
+      \_logic_typespec: , line:11:3, endln:11:8
+    |vpiName:w_case
+    |vpiFullName:work@top.w_case
+    |vpiVisibility:1
+  |vpiParameter:
+  \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |UINT:1
+    |vpiTypespec:
+    \_ref_typespec: (work@top.USE_A)
+      |vpiParent:
+      \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+      |vpiFullName:work@top.USE_A
+      |vpiActual:
+      \_int_typespec: , line:5:24, endln:5:27
+    |vpiSigned:1
+    |vpiName:USE_A
+    |vpiFullName:work@top.USE_A
+  |vpiParameter:
+  \_parameter: (work@top.MODE), line:5:53, endln:5:57
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.MODE)
+      |vpiParent:
+      \_parameter: (work@top.MODE), line:5:53, endln:5:57
+      |vpiFullName:work@top.MODE
+      |vpiActual:
+      \_int_typespec: , line:5:49, endln:5:52
+    |vpiSigned:1
+    |vpiName:MODE
+    |vpiFullName:work@top.MODE
+  |vpiParamAssign:
+  \_param_assign: , line:5:28, endln:5:37
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiRhs:
+    \_constant: , line:5:36, endln:5:37
+      |vpiParent:
+      \_param_assign: , line:5:28, endln:5:37
+      |vpiDecompile:1
+      |vpiSize:32
+      |UINT:1
+      |vpiTypespec:
+      \_ref_typespec: (work@top)
+        |vpiParent:
+        \_constant: , line:5:36, endln:5:37
+        |vpiFullName:work@top
+        |vpiActual:
+        \_int_typespec: , line:5:24, endln:5:27
+      |vpiConstType:9
+    |vpiLhs:
+    \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+  |vpiParamAssign:
+  \_param_assign: , line:5:53, endln:5:57
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiLhs:
+    \_parameter: (work@top.MODE), line:5:53, endln:5:57
+  |vpiDefName:work@top
+  |vpiTop:1
+  |vpiNet:
+  \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.a)
+      |vpiParent:
+      \_logic_net: (work@top.a), line:6:15, endln:6:16
+      |vpiFullName:work@top.a
+      |vpiActual:
+      \_logic_typespec: , line:6:9, endln:6:14
+    |vpiName:a
+    |vpiFullName:work@top.a
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.b), line:7:15, endln:7:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.b)
+      |vpiParent:
+      \_logic_net: (work@top.b), line:7:15, endln:7:16
+      |vpiFullName:work@top.b
+      |vpiActual:
+      \_logic_typespec: , line:7:9, endln:7:14
+    |vpiName:b
+    |vpiFullName:work@top.b
+    |vpiNetType:36
+  |vpiNet:
+  \_logic_net: (work@top.y), line:8:16, endln:8:17
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiTypespec:
+    \_ref_typespec: (work@top.y)
+      |vpiParent:
+      \_logic_net: (work@top.y), line:8:16, endln:8:17
+      |vpiFullName:work@top.y
+      |vpiActual:
+      \_logic_typespec: , line:8:10, endln:8:15
+    |vpiName:y
+    |vpiFullName:work@top.y
+    |vpiNetType:36
+  |vpiTopModule:1
+  |vpiPort:
+  \_port: (a), line:6:15, endln:6:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:a
+    |vpiDirection:1
+    |vpiLowConn:
+    \_ref_obj: (work@top.a), line:6:15, endln:6:16
+      |vpiParent:
+      \_port: (a), line:6:15, endln:6:16
+      |vpiName:a
+      |vpiFullName:work@top.a
+      |vpiActual:
+      \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiTypedef:
+    \_ref_typespec: (work@top.a)
+      |vpiParent:
+      \_port: (a), line:6:15, endln:6:16
+      |vpiFullName:work@top.a
+      |vpiActual:
+      \_logic_typespec: , line:6:9, endln:6:14
+    |vpiInstance:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiPort:
+  \_port: (b), line:7:15, endln:7:16
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:b
+    |vpiDirection:1
+    |vpiLowConn:
+    \_ref_obj: (work@top.b), line:7:15, endln:7:16
+      |vpiParent:
+      \_port: (b), line:7:15, endln:7:16
+      |vpiName:b
+      |vpiFullName:work@top.b
+      |vpiActual:
+      \_logic_net: (work@top.b), line:7:15, endln:7:16
+    |vpiTypedef:
+    \_ref_typespec: (work@top.b)
+      |vpiParent:
+      \_port: (b), line:7:15, endln:7:16
+      |vpiFullName:work@top.b
+      |vpiActual:
+      \_logic_typespec: , line:7:9, endln:7:14
+    |vpiInstance:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiPort:
+  \_port: (y), line:8:16, endln:8:17
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:y
+    |vpiDirection:2
+    |vpiLowConn:
+    \_ref_obj: (work@top.y), line:8:16, endln:8:17
+      |vpiParent:
+      \_port: (y), line:8:16, endln:8:17
+      |vpiName:y
+      |vpiFullName:work@top.y
+      |vpiActual:
+      \_logic_net: (work@top.y), line:8:16, endln:8:17
+    |vpiTypedef:
+    \_ref_typespec: (work@top.y)
+      |vpiParent:
+      \_port: (y), line:8:16, endln:8:17
+      |vpiFullName:work@top.y
+      |vpiActual:
+      \_logic_typespec: , line:8:10, endln:8:15
+    |vpiInstance:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiGenScopeArray:
+  \_gen_scope_array: (work@top.g_if_a), line:14:16, endln:16:8
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:g_if_a
+    |vpiFullName:work@top.g_if_a
+    |vpiGenScope:
+    \_gen_scope: (work@top.g_if_a), line:14:16, endln:16:8
+      |vpiParent:
+      \_gen_scope_array: (work@top.g_if_a), line:14:16, endln:16:8
+      |vpiFullName:work@top.g_if_a
+      |vpiModule:
+      \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+        |vpiParent:
+        \_gen_scope: (work@top.g_if_a), line:14:16, endln:16:8
+        |vpiName:u_a
+        |vpiFullName:work@top.g_if_a.u_a
+        |vpiDefName:work@leaf
+        |vpiDefFile:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv
+        |vpiDefLineNo:1
+        |vpiNet:
+        \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_if_a.u_a.a)
+            |vpiParent:
+            \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_if_a.u_a.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+          |vpiName:a
+          |vpiFullName:work@top.g_if_a.u_a.a
+          |vpiNetType:36
+        |vpiNet:
+        \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_if_a.u_a.y)
+            |vpiParent:
+            \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_if_a.u_a.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+          |vpiName:y
+          |vpiFullName:work@top.g_if_a.u_a.y
+          |vpiNetType:36
+        |vpiPort:
+        \_port: (a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+          |vpiName:a
+          |vpiDirection:1
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_if_a.a), line:15:19, endln:15:20
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:a
+            |vpiFullName:work@top.g_if_a.a
+            |vpiActual:
+            \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_if_a.u_a.a), line:15:17, endln:15:18
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:a
+            |vpiFullName:work@top.g_if_a.u_a.a
+            |vpiActual:
+            \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_if_a.u_a.a)
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_if_a.u_a.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+          |vpiInstance:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+        |vpiPort:
+        \_port: (y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+          |vpiName:y
+          |vpiDirection:2
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_if_a.w_if), line:15:26, endln:15:30
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:w_if
+            |vpiFullName:work@top.g_if_a.w_if
+            |vpiActual:
+            \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_if_a.u_a.y), line:15:24, endln:15:25
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:y
+            |vpiFullName:work@top.g_if_a.u_a.y
+            |vpiActual:
+            \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_if_a.u_a.y)
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_if_a.u_a.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+          |vpiInstance:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+        |vpiContAssign:
+        \_cont_assign: , line:2:10, endln:2:15
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+          |vpiRhs:
+          \_ref_obj: (work@top.g_if_a.u_a.a), line:2:14, endln:2:15
+            |vpiParent:
+            \_cont_assign: , line:2:10, endln:2:15
+            |vpiName:a
+            |vpiFullName:work@top.g_if_a.u_a.a
+            |vpiActual:
+            \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+          |vpiLhs:
+          \_ref_obj: (work@top.g_if_a.u_a.y), line:2:10, endln:2:11
+            |vpiParent:
+            \_cont_assign: , line:2:10, endln:2:15
+            |vpiName:y
+            |vpiFullName:work@top.g_if_a.u_a.y
+            |vpiActual:
+            \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+  |vpiGenScopeArray:
+  \_gen_scope_array: (work@top.g_case_0), line:21:10, endln:23:10
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:g_case_0
+    |vpiFullName:work@top.g_case_0
+    |vpiGenScope:
+    \_gen_scope: (work@top.g_case_0), line:21:10, endln:23:10
+      |vpiParent:
+      \_gen_scope_array: (work@top.g_case_0), line:21:10, endln:23:10
+      |vpiFullName:work@top.g_case_0
+      |vpiModule:
+      \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+        |vpiParent:
+        \_gen_scope: (work@top.g_case_0), line:21:10, endln:23:10
+        |vpiName:u_c0
+        |vpiFullName:work@top.g_case_0.u_c0
+        |vpiDefName:work@leaf
+        |vpiDefFile:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv
+        |vpiDefLineNo:1
+        |vpiNet:
+        \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_case_0.u_c0.a)
+            |vpiParent:
+            \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_case_0.u_c0.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+          |vpiName:a
+          |vpiFullName:work@top.g_case_0.u_c0.a
+          |vpiNetType:36
+        |vpiNet:
+        \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+          |vpiTypespec:
+          \_ref_typespec: (work@top.g_case_0.u_c0.y)
+            |vpiParent:
+            \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_case_0.u_c0.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+          |vpiName:y
+          |vpiFullName:work@top.g_case_0.u_c0.y
+          |vpiNetType:36
+        |vpiPort:
+        \_port: (a), line:1:25, endln:1:26
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+          |vpiName:a
+          |vpiDirection:1
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_case_0.a), line:22:22, endln:22:23
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:a
+            |vpiFullName:work@top.g_case_0.a
+            |vpiActual:
+            \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_case_0.u_c0.a), line:22:20, endln:22:21
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiName:a
+            |vpiFullName:work@top.g_case_0.u_c0.a
+            |vpiActual:
+            \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_case_0.u_c0.a)
+            |vpiParent:
+            \_port: (a), line:1:25, endln:1:26
+            |vpiFullName:work@top.g_case_0.u_c0.a
+            |vpiActual:
+            \_logic_typespec: , line:1:19, endln:1:24
+          |vpiInstance:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+        |vpiPort:
+        \_port: (y), line:1:41, endln:1:42
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+          |vpiName:y
+          |vpiDirection:2
+          |vpiHighConn:
+          \_ref_obj: (work@top.g_case_0.w_case), line:22:29, endln:22:35
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:w_case
+            |vpiFullName:work@top.g_case_0.w_case
+            |vpiActual:
+            \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+          |vpiLowConn:
+          \_ref_obj: (work@top.g_case_0.u_c0.y), line:22:27, endln:22:28
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiName:y
+            |vpiFullName:work@top.g_case_0.u_c0.y
+            |vpiActual:
+            \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+          |vpiTypedef:
+          \_ref_typespec: (work@top.g_case_0.u_c0.y)
+            |vpiParent:
+            \_port: (y), line:1:41, endln:1:42
+            |vpiFullName:work@top.g_case_0.u_c0.y
+            |vpiActual:
+            \_logic_typespec: , line:1:35, endln:1:40
+          |vpiInstance:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+        |vpiContAssign:
+        \_cont_assign: , line:2:10, endln:2:15
+          |vpiParent:
+          \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+          |vpiRhs:
+          \_ref_obj: (work@top.g_case_0.u_c0.a), line:2:14, endln:2:15
+            |vpiParent:
+            \_cont_assign: , line:2:10, endln:2:15
+            |vpiName:a
+            |vpiFullName:work@top.g_case_0.u_c0.a
+            |vpiActual:
+            \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+          |vpiLhs:
+          \_ref_obj: (work@top.g_case_0.u_c0.y), line:2:10, endln:2:11
+            |vpiParent:
+            \_cont_assign: , line:2:10, endln:2:15
+            |vpiName:y
+            |vpiFullName:work@top.g_case_0.u_c0.y
+            |vpiActual:
+            \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+  |vpiGenScopeArray:
+  \_gen_scope_array: (work@top.g_imp_true), line:33:14, endln:35:6
+    |vpiParent:
+    \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+    |vpiName:g_imp_true
+    |vpiFullName:work@top.g_imp_true
+    |vpiGenScope:
+    \_gen_scope: (work@top.g_imp_true), line:33:14, endln:35:6
+      |vpiParent:
+      \_gen_scope_array: (work@top.g_imp_true), line:33:14, endln:35:6
+      |vpiFullName:work@top.g_imp_true
+      |vpiContAssign:
+      \_cont_assign: , line:34:12, endln:34:29
+        |vpiParent:
+        \_gen_scope: (work@top.g_imp_true), line:33:14, endln:35:6
+        |vpiRhs:
+        \_operation: , line:34:16, endln:34:29
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiOpType:28
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_if), line:34:16, endln:34:20
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_if
+            |vpiFullName:work@top.g_imp_true.w_if
+            |vpiActual:
+            \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+          |vpiOperand:
+          \_ref_obj: (work@top.g_imp_true.w_case), line:34:23, endln:34:29
+            |vpiParent:
+            \_operation: , line:34:16, endln:34:29
+            |vpiName:w_case
+            |vpiFullName:work@top.g_imp_true.w_case
+            |vpiActual:
+            \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+        |vpiLhs:
+        \_ref_obj: (work@top.g_imp_true.y), line:34:12, endln:34:13
+          |vpiParent:
+          \_cont_assign: , line:34:12, endln:34:29
+          |vpiName:y
+          |vpiFullName:work@top.g_imp_true.y
+          |vpiActual:
+          \_logic_net: (work@top.y), line:8:16, endln:8:17
+\_weaklyReferenced:
+\_int_typespec: , line:5:24, endln:5:27
+  |vpiParent:
+  \_parameter: (work@top.USE_A), line:5:28, endln:5:33
+  |vpiSigned:1
+\_int_typespec: , line:5:49, endln:5:52
+  |vpiParent:
+  \_parameter: (work@top.MODE), line:5:53, endln:5:57
+  |vpiSigned:1
+\_function: (work@mailbox::new), line:3:5, endln:4:16
+  |vpiParent:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiName:new
+  |vpiFullName:work@mailbox::new
+  |vpiMethod:1
+  |vpiReturn:
+  \_class_var: (work@mailbox::new), line:3:23, endln:3:28
+  |vpiIODecl:
+  \_io_decl: (bound), line:3:23, endln:3:28
+    |vpiParent:
+    \_function: (work@mailbox::new), line:3:5, endln:4:16
+    |vpiDirection:1
+    |vpiName:bound
+    |vpiExpr:
+    \_constant: , line:3:31, endln:3:32
+    |vpiTypedef:
+    \_ref_typespec: (work@mailbox::new::bound)
+      |vpiParent:
+      \_io_decl: (bound), line:3:23, endln:3:28
+      |vpiFullName:work@mailbox::new::bound
+      |vpiActual:
+      \_int_typespec: , line:3:19, endln:3:22
+\_class_typespec: 
+  |vpiClassDefn:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+\_int_typespec: , line:3:19, endln:3:22
+  |vpiSigned:1
+\_function: (work@mailbox::num), line:6:5, endln:7:16
+  |vpiParent:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiName:num
+  |vpiFullName:work@mailbox::num
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_int_var: (work@mailbox::num), line:6:14, endln:6:17
+\_int_typespec: , line:6:14, endln:6:17
+  |vpiSigned:1
+\_function: (work@mailbox::try_put), line:12:5, endln:13:16
+  |vpiParent:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiName:try_put
+  |vpiFullName:work@mailbox::try_put
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_logic_var: (work@mailbox::try_put)
+  |vpiIODecl:
+  \_io_decl: (message), line:12:23, endln:12:30
+    |vpiParent:
+    \_function: (work@mailbox::try_put), line:12:5, endln:13:16
+    |vpiDirection:1
+    |vpiName:message
+\_function: (work@mailbox::try_get), line:18:5, endln:19:16
+  |vpiParent:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiName:try_get
+  |vpiFullName:work@mailbox::try_get
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_int_var: (work@mailbox::try_get), line:18:14, endln:18:17
+  |vpiIODecl:
+  \_io_decl: (message), line:18:31, endln:18:38
+    |vpiParent:
+    \_function: (work@mailbox::try_get), line:18:5, endln:19:16
+    |vpiDirection:6
+    |vpiName:message
+\_int_typespec: , line:18:14, endln:18:17
+  |vpiSigned:1
+\_function: (work@mailbox::try_peek), line:24:5, endln:25:16
+  |vpiParent:
+  \_class_defn: (work@mailbox), file:/workspaces/vscode-svsch/builtin.sv, line:1:3, endln:27:11
+  |vpiName:try_peek
+  |vpiFullName:work@mailbox::try_peek
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_int_var: (work@mailbox::try_peek), line:24:14, endln:24:17
+  |vpiIODecl:
+  \_io_decl: (message), line:24:31, endln:24:38
+    |vpiParent:
+    \_function: (work@mailbox::try_peek), line:24:5, endln:25:16
+    |vpiDirection:6
+    |vpiName:message
+\_int_typespec: , line:24:14, endln:24:17
+  |vpiSigned:1
+\_enum_typespec: (state), line:32:5, endln:32:74
+  |vpiParent:
+  \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+  |vpiName:state
+  |vpiEnumConst:
+  \_enum_const: (FINISHED), line:32:20, endln:32:28
+    |vpiParent:
+    \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiName:FINISHED
+    |INT:0
+    |vpiDecompile:0
+    |vpiSize:64
+  |vpiEnumConst:
+  \_enum_const: (RUNNING), line:32:30, endln:32:37
+    |vpiParent:
+    \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiName:RUNNING
+    |INT:1
+    |vpiDecompile:1
+    |vpiSize:64
+  |vpiEnumConst:
+  \_enum_const: (WAITING), line:32:39, endln:32:46
+    |vpiParent:
+    \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiName:WAITING
+    |INT:2
+    |vpiDecompile:2
+    |vpiSize:64
+  |vpiEnumConst:
+  \_enum_const: (SUSPENDED), line:32:48, endln:32:57
+    |vpiParent:
+    \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiName:SUSPENDED
+    |INT:3
+    |vpiDecompile:3
+    |vpiSize:64
+  |vpiEnumConst:
+  \_enum_const: (KILLED), line:32:59, endln:32:65
+    |vpiParent:
+    \_enum_typespec: (state), line:32:5, endln:32:74
+    |vpiName:KILLED
+    |INT:4
+    |vpiDecompile:4
+    |vpiSize:64
+\_function: (work@process::self), line:34:5, endln:34:11
+  |vpiParent:
+  \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+  |vpiName:self
+  |vpiFullName:work@process::self
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_class_var: (work@process::self), line:34:21, endln:34:28
+\_class_typespec: , line:34:21, endln:34:28
+  |vpiClassDefn:
+  \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+\_function: (work@process::status), line:37:5, endln:38:16
+  |vpiParent:
+  \_class_defn: (work@process), file:/workspaces/vscode-svsch/builtin.sv, line:30:3, endln:52:11
+  |vpiName:status
+  |vpiFullName:work@process::status
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_enum_var: (work@process::status), line:37:14, endln:37:19
+\_function: (work@semaphore::new), line:57:5, endln:58:16
+  |vpiParent:
+  \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+  |vpiName:new
+  |vpiFullName:work@semaphore::new
+  |vpiMethod:1
+  |vpiReturn:
+  \_class_var: (work@semaphore::new), line:57:22, endln:57:30
+  |vpiIODecl:
+  \_io_decl: (keyCount), line:57:22, endln:57:30
+    |vpiParent:
+    \_function: (work@semaphore::new), line:57:5, endln:58:16
+    |vpiDirection:1
+    |vpiName:keyCount
+    |vpiExpr:
+    \_constant: , line:57:33, endln:57:34
+    |vpiTypedef:
+    \_ref_typespec: (work@semaphore::new::keyCount)
+      |vpiParent:
+      \_io_decl: (keyCount), line:57:22, endln:57:30
+      |vpiFullName:work@semaphore::new::keyCount
+      |vpiActual:
+      \_int_typespec: , line:57:18, endln:57:21
+\_class_typespec: 
+  |vpiClassDefn:
+  \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+\_int_typespec: , line:57:18, endln:57:21
+  |vpiSigned:1
+\_int_typespec: , line:60:14, endln:60:17
+  |vpiSigned:1
+\_int_typespec: , line:63:14, endln:63:17
+  |vpiSigned:1
+\_function: (work@semaphore::try_get), line:66:5, endln:67:16
+  |vpiParent:
+  \_class_defn: (work@semaphore), file:/workspaces/vscode-svsch/builtin.sv, line:55:3, endln:69:11
+  |vpiName:try_get
+  |vpiFullName:work@semaphore::try_get
+  |vpiMethod:1
+  |vpiVisibility:1
+  |vpiReturn:
+  \_int_var: (work@semaphore::try_get), line:66:14, endln:66:17
+  |vpiIODecl:
+  \_io_decl: (keyCount), line:66:30, endln:66:38
+    |vpiParent:
+    \_function: (work@semaphore::try_get), line:66:5, endln:67:16
+    |vpiDirection:1
+    |vpiName:keyCount
+    |vpiExpr:
+    \_constant: , line:66:41, endln:66:42
+    |vpiTypedef:
+    \_ref_typespec: (work@semaphore::try_get::keyCount)
+      |vpiParent:
+      \_io_decl: (keyCount), line:66:30, endln:66:38
+      |vpiFullName:work@semaphore::try_get::keyCount
+      |vpiActual:
+      \_int_typespec: , line:66:26, endln:66:29
+\_int_typespec: , line:66:14, endln:66:17
+  |vpiSigned:1
+\_int_typespec: , line:66:26, endln:66:29
+  |vpiSigned:1
+\_logic_typespec: , line:6:9, endln:6:14
+\_logic_typespec: , line:7:9, endln:7:14
+\_logic_typespec: , line:8:10, endln:8:15
+\_logic_typespec: , line:6:9, endln:6:14
+  |vpiParent:
+  \_logic_net: (work@top.a), line:6:15, endln:6:16
+\_logic_typespec: , line:7:9, endln:7:14
+  |vpiParent:
+  \_logic_net: (work@top.b), line:7:15, endln:7:16
+\_logic_typespec: , line:8:10, endln:8:15
+\_logic_typespec: , line:10:3, endln:10:8
+  |vpiParent:
+  \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+\_logic_typespec: , line:11:3, endln:11:8
+  |vpiParent:
+  \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+\_logic_typespec: , line:1:19, endln:1:24
+\_logic_typespec: , line:1:35, endln:1:40
+\_logic_typespec: , line:1:19, endln:1:24
+  |vpiParent:
+  \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+\_logic_typespec: , line:1:35, endln:1:40
+\_logic_typespec: , line:1:19, endln:1:24
+\_logic_typespec: , line:1:35, endln:1:40
+\_logic_typespec: , line:1:19, endln:1:24
+  |vpiParent:
+  \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+\_logic_typespec: , line:1:35, endln:1:40
+\_logic_typespec: , line:1:19, endln:1:24
+\_logic_typespec: , line:1:35, endln:1:40
+\_logic_typespec: , line:6:9, endln:6:14
+\_logic_typespec: , line:7:9, endln:7:14
+\_logic_typespec: , line:8:10, endln:8:15
+\_logic_typespec: , line:10:3, endln:10:8
+\_logic_typespec: , line:11:3, endln:11:8
+\_int_typespec: , line:5:24, endln:5:27
+  |vpiParent:
+  \_ref_typespec: (work@top.USE_A)
+  |vpiSigned:1
+\_int_typespec: , line:5:49, endln:5:52
+  |vpiParent:
+  \_ref_typespec: (work@top.MODE)
+  |vpiSigned:1
+\_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+  |vpiParent:
+  \_gen_scope: (work@top.g_if_a), line:14:16, endln:16:8
+  |vpiName:u_a
+  |vpiFullName:work@top.g_if_a.u_a
+  |vpiDefName:work@leaf
+  |vpiDefFile:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv
+  |vpiDefLineNo:1
+  |vpiNet:
+  \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+  |vpiNet:
+  \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+  |vpiPort:
+  \_port: (a), line:1:25, endln:1:26
+    |vpiParent:
+    \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+    |vpiName:a
+    |vpiDirection:1
+    |vpiHighConn:
+    \_ref_obj: (work@top.g_if_a.a), line:15:19, endln:15:20
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiName:a
+      |vpiFullName:work@top.g_if_a.a
+      |vpiActual:
+      \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiLowConn:
+    \_ref_obj: (work@top.g_if_a.u_a.a), line:15:17, endln:15:18
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiName:a
+      |vpiFullName:work@top.g_if_a.u_a.a
+      |vpiActual:
+      \_logic_net: (work@top.g_if_a.u_a.a), line:1:25, endln:1:26
+    |vpiTypedef:
+    \_ref_typespec: (work@top.g_if_a.u_a.a)
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiFullName:work@top.g_if_a.u_a.a
+      |vpiActual:
+      \_logic_typespec: , line:1:19, endln:1:24
+  |vpiPort:
+  \_port: (y), line:1:41, endln:1:42
+    |vpiParent:
+    \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+    |vpiName:y
+    |vpiDirection:2
+    |vpiHighConn:
+    \_ref_obj: (work@top.g_if_a.w_if), line:15:26, endln:15:30
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiName:w_if
+      |vpiFullName:work@top.g_if_a.w_if
+      |vpiActual:
+      \_logic_var: (work@top.w_if), line:10:9, endln:10:13
+    |vpiLowConn:
+    \_ref_obj: (work@top.g_if_a.u_a.y), line:15:24, endln:15:25
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiName:y
+      |vpiFullName:work@top.g_if_a.u_a.y
+      |vpiActual:
+      \_logic_net: (work@top.g_if_a.u_a.y), line:1:41, endln:1:42
+    |vpiTypedef:
+    \_ref_typespec: (work@top.g_if_a.u_a.y)
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiFullName:work@top.g_if_a.u_a.y
+      |vpiActual:
+      \_logic_typespec: , line:1:35, endln:1:40
+  |vpiContAssign:
+  \_cont_assign: , line:2:10, endln:2:15
+\_gen_scope: (work@top.g_if_a), line:14:16, endln:16:8
+  |vpiParent:
+  \_gen_scope_array: (work@top.g_if_a), line:14:16, endln:16:8
+  |vpiFullName:work@top.g_if_a
+  |vpiModule:
+  \_module_inst: work@leaf (work@top.g_if_a.u_a), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:15:7, endln:15:33
+\_gen_scope_array: (work@top.g_if_a), line:14:16, endln:16:8
+  |vpiParent:
+  \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiName:g_if_a
+  |vpiFullName:work@top.g_if_a
+  |vpiGenScope:
+  \_gen_scope: (work@top.g_if_a), line:14:16, endln:16:8
+\_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+  |vpiParent:
+  \_gen_scope: (work@top.g_case_0), line:21:10, endln:23:10
+  |vpiName:u_c0
+  |vpiFullName:work@top.g_case_0.u_c0
+  |vpiDefName:work@leaf
+  |vpiDefFile:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv
+  |vpiDefLineNo:1
+  |vpiNet:
+  \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+  |vpiNet:
+  \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+  |vpiPort:
+  \_port: (a), line:1:25, endln:1:26
+    |vpiParent:
+    \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+    |vpiName:a
+    |vpiDirection:1
+    |vpiHighConn:
+    \_ref_obj: (work@top.g_case_0.a), line:22:22, endln:22:23
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiName:a
+      |vpiFullName:work@top.g_case_0.a
+      |vpiActual:
+      \_logic_net: (work@top.a), line:6:15, endln:6:16
+    |vpiLowConn:
+    \_ref_obj: (work@top.g_case_0.u_c0.a), line:22:20, endln:22:21
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiName:a
+      |vpiFullName:work@top.g_case_0.u_c0.a
+      |vpiActual:
+      \_logic_net: (work@top.g_case_0.u_c0.a), line:1:25, endln:1:26
+    |vpiTypedef:
+    \_ref_typespec: (work@top.g_case_0.u_c0.a)
+      |vpiParent:
+      \_port: (a), line:1:25, endln:1:26
+      |vpiFullName:work@top.g_case_0.u_c0.a
+      |vpiActual:
+      \_logic_typespec: , line:1:19, endln:1:24
+  |vpiPort:
+  \_port: (y), line:1:41, endln:1:42
+    |vpiParent:
+    \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+    |vpiName:y
+    |vpiDirection:2
+    |vpiHighConn:
+    \_ref_obj: (work@top.g_case_0.w_case), line:22:29, endln:22:35
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiName:w_case
+      |vpiFullName:work@top.g_case_0.w_case
+      |vpiActual:
+      \_logic_var: (work@top.w_case), line:11:9, endln:11:15
+    |vpiLowConn:
+    \_ref_obj: (work@top.g_case_0.u_c0.y), line:22:27, endln:22:28
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiName:y
+      |vpiFullName:work@top.g_case_0.u_c0.y
+      |vpiActual:
+      \_logic_net: (work@top.g_case_0.u_c0.y), line:1:41, endln:1:42
+    |vpiTypedef:
+    \_ref_typespec: (work@top.g_case_0.u_c0.y)
+      |vpiParent:
+      \_port: (y), line:1:41, endln:1:42
+      |vpiFullName:work@top.g_case_0.u_c0.y
+      |vpiActual:
+      \_logic_typespec: , line:1:35, endln:1:40
+  |vpiContAssign:
+  \_cont_assign: , line:2:10, endln:2:15
+\_gen_scope: (work@top.g_case_0), line:21:10, endln:23:10
+  |vpiParent:
+  \_gen_scope_array: (work@top.g_case_0), line:21:10, endln:23:10
+  |vpiFullName:work@top.g_case_0
+  |vpiModule:
+  \_module_inst: work@leaf (work@top.g_case_0.u_c0), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:22:9, endln:22:38
+\_gen_scope_array: (work@top.g_case_0), line:21:10, endln:23:10
+  |vpiParent:
+  \_module_inst: work@top (work@top), file:/workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv, line:5:1, endln:38:10
+  |vpiName:g_case_0
+  |vpiFullName:work@top.g_case_0
+  |vpiGenScope:
+  \_gen_scope: (work@top.g_case_0), line:21:10, endln:23:10

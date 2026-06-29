@@ -31,6 +31,7 @@ namespace svsch {
 #include "extractor_parts/helpers.inc"
 #include "extractor_parts/serialization.inc"
 #include "extractor_parts/interface_bus.inc"
+#include "extractor_parts/generate_regions.inc"
 #include "extractor_parts/modules.inc"
 #include "extractor_parts/procedural.inc"
 #include "extractor_parts/struct_bus.inc"

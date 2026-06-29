@@ -7,6 +7,7 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
+  ViewportPortal,
   type Edge,
   useReactFlow,
   useEdgesState,
@@ -20,7 +21,9 @@ import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
 import type {
   DiagramViewModel,
-  DiagramEdge
+  DiagramEdge,
+  PositionedGenerateRegion,
+  PositionedNode
 } from '../ir/types';
 import { edgeNetKey } from '../ir/edgeNet';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
@@ -48,6 +51,19 @@ const vscode = getVscodeApi();
 const EDGE_Z_INDEX = 1;
 const ARRAY_NODE_Z_INDEX = 2;
 const BLOCK_NODE_Z_INDEX = 2;
+const GENERATE_REGION_MIN_CONTENT_PADDING = diagramSizing.gridSize * 2;
+
+function generateStateClass(state?: string, prefix = 'generate'): string | undefined {
+  if (state === 'active') return `${prefix}-active`;
+  if (state === 'inactive') return `${prefix}-inactive`;
+  return undefined;
+}
+
+interface FlowViewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
 
 function App(): React.ReactElement {
   return (
@@ -62,6 +78,8 @@ function DiagramApp(): React.ReactElement {
   const [modules, setModules] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'rebuilding'>('idle');
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
+  const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
+  const [viewport, setViewport] = useState<FlowViewport>({ x: 0, y: 0, zoom: 1 });
   const groupDragRef = useRef<{
     startPos: { x: number; y: number };
     originalRoutes: Map<string, Array<{ x: number; y: number }>>;
@@ -199,9 +217,11 @@ function DiagramApp(): React.ReactElement {
       id: node.id,
       type: 'hdl',
       position: node.position,
+      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
       zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
       data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
     })));
+    setRegions(view.generateRegions ?? []);
 
     const netToLeader = new Map<string, string>();
     const edgesByNet = new Map<string, string[]>();
@@ -231,6 +251,7 @@ function DiagramApp(): React.ReactElement {
         targetHandle: edge.targetPort,
         label: edge.label,
         type: 'svsch',
+        className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
         zIndex: EDGE_Z_INDEX,
         data: {
           waypoint: edge.waypoint,
@@ -311,7 +332,9 @@ function DiagramApp(): React.ReactElement {
         position: node.id === dragged.id ? dragged.position : node.position,
         fixed: node.data.node.fixed || node.selected || node.id === dragged.id
       }));
-      vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned });
+      const expandedRegions = expandRegionsForNodes(regions, positioned);
+      setRegions(expandedRegions);
+      vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: expandedRegions });
 
       const state = groupDragRef.current;
       groupDragRef.current = null;
@@ -327,7 +350,7 @@ function DiagramApp(): React.ReactElement {
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange]
+    [view, handleRouteChange, regions]
   );
 
   const rerouteLayout = useCallback(() => {
@@ -422,7 +445,9 @@ function DiagramApp(): React.ReactElement {
                 }}
                 onInit={(instance: any) => {
                   (window as any).reactFlowInstance = instance;
+                  setViewport(instance.getViewport?.() ?? { x: 0, y: 0, zoom: 1 });
                 }}
+                onMove={(_: unknown, nextViewport: FlowViewport) => setViewport(nextViewport)}
                 nodesConnectable={false}
                 deleteKeyCode={null}
                 selectionOnDrag
@@ -434,6 +459,16 @@ function DiagramApp(): React.ReactElement {
                 proOptions={{ hideAttribution: true }}
               >
                 <Background gap={diagramSizing.gridSize} />
+                <ViewportPortal>
+                  <GenerateRegionOverlay
+                    moduleName={view.moduleName}
+                    regions={regions}
+                    nodes={nodes}
+                    viewport={viewport}
+                    setNodes={setNodes}
+                    setRegions={setRegions}
+                  />
+                </ViewportPortal>
                 <MiniMap
                   pannable
                   zoomable
@@ -447,6 +482,340 @@ function DiagramApp(): React.ReactElement {
         </main>
     </div>
   );
+}
+
+type RegionDragSide = 'left' | 'right' | 'top' | 'bottom';
+
+interface RegionDragState {
+  kind: 'move' | 'resize';
+  regionId: string;
+  side?: RegionDragSide;
+  startClientX: number;
+  startClientY: number;
+  startRegions: PositionedGenerateRegion[];
+  startNodes: HdlFlowNode[];
+  affectedRegionIds: Set<string>;
+  affectedNodeIds: Set<string>;
+}
+
+function GenerateRegionOverlay({
+  moduleName,
+  regions,
+  nodes,
+  viewport,
+  setNodes,
+  setRegions
+}: {
+  moduleName: string;
+  regions: PositionedGenerateRegion[];
+  nodes: HdlFlowNode[];
+  viewport: FlowViewport;
+  setNodes: (nodes: HdlFlowNode[] | ((nodes: HdlFlowNode[]) => HdlFlowNode[])) => void;
+  setRegions: React.Dispatch<React.SetStateAction<PositionedGenerateRegion[]>>;
+}): React.ReactElement | null {
+  const dragRef = useRef<RegionDragState | null>(null);
+
+  const startDrag = useCallback((event: React.PointerEvent, region: PositionedGenerateRegion, kind: RegionDragState['kind'], side?: RegionDragSide) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const affectedRegionIds = kind === 'move'
+      ? descendantRegionIds(region.id, regions, true)
+      : new Set([region.id]);
+    const affectedNodeIds = kind === 'move'
+      ? nodeIdsForRegions(affectedRegionIds, regions)
+      : new Set<string>();
+    dragRef.current = {
+      kind,
+      regionId: region.id,
+      side,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startRegions: regions.map((item) => ({ ...item, bounds: { ...item.bounds } })),
+      startNodes: nodes.map((node) => ({
+        ...node,
+        position: { ...node.position },
+        data: {
+          ...node.data,
+          node: { ...node.data.node, position: { ...node.data.node.position } }
+        }
+      })),
+      affectedRegionIds,
+      affectedNodeIds
+    };
+  }, [nodes, regions]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setRegions(update.regions);
+      setNodes(update.nodes);
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      dragRef.current = null;
+      const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setRegions(update.regions);
+      setNodes(update.nodes);
+
+      const fixedRegions = update.regions.map((region) => ({
+        ...region,
+        fixed: region.fixed || drag.affectedRegionIds.has(region.id)
+      }));
+
+      if (drag.kind === 'resize') {
+        vscode.postMessage({ type: 'regionLayoutChanged', moduleName, regions: fixedRegions });
+        return;
+      }
+
+      const positioned = flowNodesToPositioned(update.nodes, drag.affectedNodeIds);
+      vscode.postMessage({ type: 'layoutChanged', moduleName, nodes: positioned, regions: fixedRegions });
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [moduleName, setNodes, setRegions, viewport.zoom]);
+
+  if (regions.length === 0) return null;
+
+  return (
+    <div className="generate-region-layer">
+      {regions.map((region) => (
+        <div
+          key={region.id}
+          className={[
+            'generate-region',
+            region.activeState === 'active' ? 'generate-region-active' : '',
+            region.activeState === 'inactive' ? 'generate-region-inactive' : '',
+            region.invalid ? 'generate-region-invalid' : ''
+          ].filter(Boolean).join(' ')}
+          data-region-id={region.id}
+          data-region-kind={region.kind}
+          style={{
+            left: region.bounds.x,
+            top: region.bounds.y,
+            width: region.bounds.width,
+            height: region.bounds.height
+          }}
+        >
+          <div className="generate-region-outline" />
+          <button
+            type="button"
+            className="generate-region-title"
+            onPointerDown={(event) => startDrag(event, region, 'move')}
+            title={region.label}
+          >
+            {region.label}
+          </button>
+          {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
+            <button
+              key={side}
+              type="button"
+              aria-label={`Resize ${region.label} ${side}`}
+              className={`generate-region-resize generate-region-resize-${side}`}
+              onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+            />
+          ))}
+          {region.warningNote && <div className="generate-region-note">{region.warningNote}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number, zoom: number): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {
+  const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
+  const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
+
+  if (drag.kind === 'resize') {
+    return {
+      nodes: drag.startNodes,
+      regions: drag.startRegions.map((region) => {
+        if (region.id !== drag.regionId) return region;
+        return {
+          ...region,
+          bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag)
+        };
+      })
+    };
+  }
+
+  return {
+    nodes: drag.startNodes.map((node) => {
+      if (!drag.affectedNodeIds.has(node.id)) return node;
+      const position = {
+        x: node.position.x + dx,
+        y: node.position.y + dy
+      };
+      return {
+        ...node,
+        position,
+        data: {
+          ...node.data,
+          node: {
+            ...node.data.node,
+            position
+          }
+        }
+      };
+    }),
+    regions: drag.startRegions.map((region) => {
+      if (!drag.affectedRegionIds.has(region.id)) return region;
+      return {
+        ...region,
+        bounds: {
+          ...region.bounds,
+          x: region.bounds.x + dx,
+          y: region.bounds.y + dy
+        }
+      };
+    })
+  };
+}
+
+function resizeRegionBounds(
+  bounds: PositionedGenerateRegion['bounds'],
+  side: RegionDragSide,
+  dx: number,
+  dy: number,
+  drag: RegionDragState
+): PositionedGenerateRegion['bounds'] {
+  const minWidth = diagramSizing.gridSize * 8;
+  const minHeight = diagramSizing.gridSize * 4;
+  const inset = GENERATE_REGION_MIN_CONTENT_PADDING;
+  const content = resizeContentBounds(drag.regionId, drag.startRegions, drag.startNodes);
+  let next = { ...bounds };
+
+  if (side === 'left') {
+    const right = bounds.x + bounds.width;
+    next.x = Math.min(bounds.x + dx, right - minWidth);
+    if (content) next.x = Math.min(next.x, content.x - inset);
+    next.width = right - next.x;
+  } else if (side === 'right') {
+    next.width = Math.max(minWidth, bounds.width + dx);
+    if (content) next.width = Math.max(next.width, content.x + content.width + inset - bounds.x);
+  } else if (side === 'top') {
+    const bottom = bounds.y + bounds.height;
+    next.y = Math.min(bounds.y + dy, bottom - minHeight);
+    if (content) next.y = Math.min(next.y, content.y - inset);
+    next.height = bottom - next.y;
+  } else {
+    next.height = Math.max(minHeight, bounds.height + dy);
+    if (content) next.height = Math.max(next.height, content.y + content.height + inset - bounds.y);
+  }
+
+  return snapRegionBounds(next);
+}
+
+function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion['bounds'] | undefined {
+  const descendantIds = descendantRegionIds(regionId, regions, false);
+  const nodeIds = nodeIdsForRegions(new Set([regionId, ...descendantIds]), regions);
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const rects: PositionedGenerateRegion['bounds'][] = [];
+
+  for (const nodeId of nodeIds) {
+    const node = nodeById.get(nodeId);
+    if (!node) continue;
+    const size = diagramNodeDimensions(node.data.node);
+    rects.push({ x: node.position.x, y: node.position.y, width: size.width, height: size.height });
+  }
+  for (const region of regions) {
+    if (descendantIds.has(region.id)) rects.push(region.bounds);
+  }
+  return unionRegionBounds(rects);
+}
+
+function descendantRegionIds(regionId: string, regions: PositionedGenerateRegion[], includeSelf: boolean): Set<string> {
+  const result = new Set<string>(includeSelf ? [regionId] : []);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const region of regions) {
+      if (!region.parentRegionId || result.has(region.id)) continue;
+      if (region.parentRegionId === regionId || result.has(region.parentRegionId)) {
+        result.add(region.id);
+        changed = true;
+      }
+    }
+  }
+  return result;
+}
+
+function nodeIdsForRegions(regionIds: Set<string>, regions: PositionedGenerateRegion[]): Set<string> {
+  const nodeIds = new Set<string>();
+  for (const region of regions) {
+    if (!regionIds.has(region.id)) continue;
+    for (const nodeId of region.nodeIds) nodeIds.add(nodeId);
+  }
+  return nodeIds;
+}
+
+function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): PositionedNode[] {
+  return nodes.map((node) => ({
+    ...node.data.node,
+    position: node.position,
+    fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id)
+  }));
+}
+
+function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
+  if (regions.length === 0) return regions;
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  return regions.map((region) => {
+    const content = unionRegionBounds(region.nodeIds
+      .map((nodeId) => {
+        const node = nodeById.get(nodeId);
+        if (!node) return undefined;
+        const size = diagramNodeDimensions(node);
+        return {
+          x: node.position.x - GENERATE_REGION_MIN_CONTENT_PADDING,
+          y: node.position.y - GENERATE_REGION_MIN_CONTENT_PADDING,
+          width: size.width + GENERATE_REGION_MIN_CONTENT_PADDING * 2,
+          height: size.height + GENERATE_REGION_MIN_CONTENT_PADDING * 2
+        };
+      })
+      .filter((bounds): bounds is PositionedGenerateRegion['bounds'] => bounds !== undefined));
+    if (!content) return region;
+    return {
+      ...region,
+      bounds: snapRegionBounds({
+        x: Math.min(region.bounds.x, content.x),
+        y: Math.min(region.bounds.y, content.y),
+        width: Math.max(region.bounds.x + region.bounds.width, content.x + content.width) - Math.min(region.bounds.x, content.x),
+        height: Math.max(region.bounds.y + region.bounds.height, content.y + content.height) - Math.min(region.bounds.y, content.y)
+      }),
+      fixed: region.fixed
+    };
+  });
+}
+
+function unionRegionBounds(rects: PositionedGenerateRegion['bounds'][]): PositionedGenerateRegion['bounds'] | undefined {
+  if (rects.length === 0) return undefined;
+  const minX = Math.min(...rects.map((rect) => rect.x));
+  const minY = Math.min(...rects.map((rect) => rect.y));
+  const maxX = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const maxY = Math.max(...rects.map((rect) => rect.y + rect.height));
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function snapDelta(value: number): number {
+  return Math.round(value / diagramSizing.gridSize) * diagramSizing.gridSize;
+}
+
+function snapRegionBounds(bounds: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] {
+  const grid = diagramSizing.gridSize;
+  const x = Math.round(bounds.x / grid) * grid;
+  const y = Math.round(bounds.y / grid) * grid;
+  const width = Math.max(grid * 8, Math.round(bounds.width / grid) * grid);
+  const height = Math.max(grid * 4, Math.round(bounds.height / grid) * grid);
+  return { x, y, width, height };
 }
 
 createRoot(document.getElementById('root')!).render(<App />);

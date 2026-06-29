@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedNode } from '../ir/types';
+import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
@@ -112,7 +112,7 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     .map((edge) => renderEdgeGeometry(edge, nodesById, obstacles))
     .filter((edge): edge is RenderedEdgeBase => edge !== undefined);
   const renderedEdges = attachEdgeRendering(baseEdges);
-  const bounds = diagramBounds(view.nodes, renderedEdges, padding);
+  const bounds = diagramBounds(view.nodes, renderedEdges, view.generateRegions ?? [], padding);
   const width = Math.max(diagramSizing.gridSize * 8, Math.ceil(bounds.maxX - bounds.minX));
   const height = Math.max(diagramSizing.gridSize * 6, Math.ceil(bounds.maxY - bounds.minY));
   const offsetX = -bounds.minX;
@@ -129,6 +129,9 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     svgBridgeCss(),
     '</style>',
     `<g transform="translate(${formatNumber(offsetX)} ${formatNumber(offsetY)})">`,
+    '<g class="svsch-generate-regions">',
+    ...(view.generateRegions ?? []).map(renderGenerateRegion),
+    '</g>',
     '<g class="svsch-edges">',
     ...renderedEdges.map(renderEdge),
     '</g>',
@@ -172,7 +175,55 @@ export function svgBridgeCss(): string {
   stroke: var(--svsch-label-border);
   stroke-width: 1;
 }
+.svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  stroke: var(--vscode-charts-orange);
+  stroke-dasharray: 7 5;
+  stroke-width: 1.5;
+}
+.svsch-generate-region-label,
+.svsch-generate-region-note {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  dominant-baseline: middle;
+}
+.svsch-generate-region-inactive {
+  opacity: 0.75;
+}
+.svsch-generate-region-active .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+  stroke: var(--vscode-charts-orange);
+  stroke-dasharray: none;
+}
+.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-charts-red) 9%, transparent);
+  stroke: var(--vscode-charts-red);
+}
+.svsch-generate-region-invalid .svsch-generate-region-note {
+  fill: var(--vscode-charts-red);
+}
 `.trim();
+}
+
+function renderGenerateRegion(region: PositionedGenerateRegion): string {
+  const classes = [
+    'svsch-generate-region',
+    region.activeState === 'active' ? 'svsch-generate-region-active' : '',
+    region.activeState === 'inactive' ? 'svsch-generate-region-inactive' : '',
+    region.invalid ? 'svsch-generate-region-invalid' : ''
+  ].filter(Boolean).join(' ');
+  const labelX = region.bounds.x + 8;
+  const labelY = region.bounds.y + 8;
+  return [
+    `<g class="${escapeAttr(classes)}" data-region-id="${escapeAttr(region.id)}">`,
+    `<rect class="svsch-generate-region-box" x="${formatNumber(region.bounds.x)}" y="${formatNumber(region.bounds.y)}" width="${formatNumber(region.bounds.width)}" height="${formatNumber(region.bounds.height)}" />`,
+    `<text class="svsch-generate-region-label" x="${formatNumber(labelX)}" y="${formatNumber(labelY + 9)}">${escapeXml(region.label)}</text>`,
+    region.warningNote
+      ? `<text class="svsch-generate-region-note" x="${formatNumber(region.bounds.x + region.bounds.width - 8)}" y="${formatNumber(region.bounds.y + 18)}" text-anchor="end">${escapeXml(region.warningNote)}</text>`
+      : '',
+    '</g>'
+  ].filter(Boolean).join('\n');
 }
 
 function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, PositionedNode>, obstacles: NodeObstacle[]): RenderedEdgeBase | undefined {
@@ -528,14 +579,24 @@ function renderNetJunctions(rendered: RenderedEdge): string[] {
 }
 
 function edgePath(rendered: RenderedEdge, className: string, d: string, includeNetKey = true, style?: string): string {
+  const classes = [
+    className,
+    generateStateClass(rendered.edge.metadata?.generateActiveState, 'generate-edge')
+  ].filter(Boolean).join(' ');
   return [
-    `<path class="${escapeAttr(className)}"`,
+    `<path class="${escapeAttr(classes)}"`,
     `data-edge-id="${escapeAttr(rendered.edge.id)}"`,
     includeNetKey ? `data-net-key="${escapeAttr(rendered.netKey)}"` : '',
     style ? `style="${escapeAttr(style)}"` : '',
     `d="${escapeAttr(d)}"`,
     '/>'
   ].filter(Boolean).join(' ');
+}
+
+function generateStateClass(state: string | undefined, prefix: string): string | undefined {
+  if (state === 'active') return `${prefix}-active`;
+  if (state === 'inactive') return `${prefix}-inactive`;
+  return undefined;
 }
 
 function buildNetEdgeIdsByNet(edges: RenderedEdgeBase[]): Map<string, string[]> {
@@ -640,7 +701,12 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textHtml = `<text class="svsch-net-label" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
     const content = wirePaths + leadsHtml + '\n' + textHtml;
-    return `<g class="svsch-node hdl-net-label" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
+    const classes = [
+      'svsch-node',
+      'hdl-net-label',
+      generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? ''
+    ].filter(Boolean).join(' ');
+    return `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
   }
 
   const classes = nodeWrapperClasses(node);
@@ -793,7 +859,8 @@ function nodeWrapperClasses(node: PositionedNode): string {
       `hdl-port-${direction}`,
       isSkinnedPort ? 'hdl-port-skinned' : '',
       isInterfacePort ? 'hdl-port-interface' : '',
-      nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+      nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+      generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? ''
     ].filter(Boolean).join(' ');
   }
 
@@ -807,7 +874,8 @@ function nodeWrapperClasses(node: PositionedNode): string {
     `hdl-node-${node.kind}`,
     node.kind === 'register' || node.kind === 'latch' ? 'hdl-register-node' : '',
     node.kind === 'instance' && instanceParameterRows(node) > 0 ? 'hdl-node-has-params' : '',
-    nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+    nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+    generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? ''
   ].filter(Boolean).join(' ');
 }
 
@@ -841,12 +909,13 @@ function busWrapperClasses(node: PositionedNode): string {
     isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout',
     isArrayComposition ? 'hdl-bus-array-composition' : '',
     isArrayBreakout ? 'hdl-bus-array-breakout' : '',
-    nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+    nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+    generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? ''
   ].filter(Boolean).join(' ');
 }
 
 
-function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], padding: number): RectBounds {
+function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: PositionedGenerateRegion[], padding: number): RectBounds {
   const bounds: RectBounds = {
     minX: Number.POSITIVE_INFINITY,
     minY: Number.POSITIVE_INFINITY,
@@ -864,6 +933,11 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], padding: 
     for (const point of edge.points) {
       includeBounds(bounds, point.x, point.y);
     }
+  }
+
+  for (const region of regions) {
+    includeBounds(bounds, region.bounds.x, region.bounds.y - diagramSizing.gridSize);
+    includeBounds(bounds, region.bounds.x + region.bounds.width, region.bounds.y + region.bounds.height);
   }
 
   if (!Number.isFinite(bounds.minX)) {

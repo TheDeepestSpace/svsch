@@ -327,6 +327,78 @@ Feature: Schematic Observation
     And there should be a connection between "in" and the loop block
     And there should be a connection between the loop block and "out"
 
+  Scenario: Observing if/else generate block
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        input logic c,
+        output logic y
+      );
+        logic w;
+
+        generate
+          if (MODE == 0) begin : g_if_zero
+            leaf u_if_zero(.a(a), .y(w));
+          end else if (MODE == 1) begin : g_if_one
+            leaf u_if_one(.a(b), .y(w));
+          end else begin : g_if_other
+            assign w = c;
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 3 generate regions
+    And I should see a "if" generate region labeled "g_if_zero"
+    And I should see a "else-if" generate region labeled "g_if_one"
+    And I should see a "else" generate region labeled "g_if_other"
+
+  Scenario: Observing case generate blocks
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        input logic c,
+        output logic y
+      );
+        logic w;
+
+        generate
+          case (MODE)
+            0: begin : g_case_0
+              leaf u_case_0(.a(a), .y(w));
+            end
+            1: begin : g_case_1
+              leaf u_case_1(.a(b), .y(w));
+            end
+            default: begin : g_case_default
+              assign w = c;
+            end
+          endcase
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 3 generate regions
+    And I should see a "case" generate region labeled "g_case_0"
+    And I should see a "case" generate region labeled "g_case_1"
+    And I should see a "case-default" generate region labeled "g_case_default"
+
   Scenario: Observing port type visual conventions
     Given I have a file "top.sv" in my workspace:
       """

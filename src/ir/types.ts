@@ -92,6 +92,8 @@ export interface DiagramNodeMetadata {
   arrayDimension?: string;
   arraySize?: number;
   arrayIndexSignal?: string;
+  generateRegionId?: string;
+  generateActiveState?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
   cutNet?: {
     netKey: string;
@@ -193,6 +195,8 @@ export type DiagramNode =
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
+  generateRegionId?: string;
+  generateActiveState?: string;
   forceStraight?: boolean;
   cutStub?: {
     netKey: string;
@@ -223,6 +227,44 @@ export interface DiagramEdge {
   metadata?: DiagramEdgeMetadata;
 }
 
+export type GenerateRegionKind = 'if' | 'else-if' | 'else' | 'case' | 'case-default' | string;
+export type GenerateRegionActiveState = 'active' | 'inactive' | 'unknown' | string;
+
+export interface GenerateRegion {
+  id: string;
+  kind: GenerateRegionKind;
+  label: string;
+  condition?: string;
+  selector?: string;
+  caseValue?: string;
+  blockLabel?: string;
+  fullBlockLabel?: string;
+  parentRegionId?: string;
+  siblingGroupId?: string;
+  activeState?: GenerateRegionActiveState;
+  armIndex?: number;
+  source?: SourceRange;
+  bodySource?: SourceRange;
+  nodeIds?: string[];
+  edgeIds?: string[];
+  warnings?: string[];
+}
+
+export interface PositionedGenerateRegion extends GenerateRegion {
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  nodeIds: string[];
+  edgeIds?: string[];
+  fixed?: boolean;
+  stale?: boolean;
+  invalid?: boolean;
+  warningNote?: string;
+}
+
 export interface DesignModule {
   name: string;
   file: string;
@@ -230,6 +272,7 @@ export interface DesignModule {
   ports: DiagramPort[];
   nodes: DiagramNode[];
   edges: DiagramEdge[];
+  generateRegions?: GenerateRegion[];
 }
 
 export interface DesignDiagnostic {
@@ -258,6 +301,7 @@ export interface DiagramViewModel {
   parameters?: ParameterDecl[];
   nodes: PositionedNode[];
   edges: DiagramEdge[];
+  generateRegions?: PositionedGenerateRegion[];
   diagnostics: DesignDiagnostic[];
   debugInfo?: unknown;
 }

@@ -3,7 +3,7 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DesignGraph, DesignModule, DiagramNode, DiagramPort, DiagramEdge, DiagramNodeMetadata, DiagramEdgeMetadata, InstanceParameter, ParameterDecl, ParameterRef, SourceRange } from '../ir/types';
+import type { DesignGraph, DesignModule, DiagramNode, DiagramPort, DiagramEdge, DiagramNodeMetadata, DiagramEdgeMetadata, GenerateRegion, InstanceParameter, ParameterDecl, ParameterRef, SourceRange } from '../ir/types';
 import { edgeId, stableId } from '../ir/ids';
 import { orderGraphModules } from './moduleOrdering';
 import { extractDesignFromText } from './textExtractor';
@@ -398,6 +398,7 @@ export async function extractDesignWithUhdm(
     for (const module of Object.values(graph.modules)) {
         const drivers = new Map<string, string[]>();
         for (const edge of module.edges) {
+            if (edge.metadata?.generateRegionId) continue;
             if (edge.signal) {
                 if (!drivers.has(edge.signal)) drivers.set(edge.signal, []);
                 drivers.get(edge.signal)!.push(edge.source);
@@ -842,6 +843,25 @@ interface RawUhdmIr {
             sourceRange?: { file: string; line: number; col: number; endLine: number; endCol: number };
             metadata?: DiagramEdgeMetadata;
         }>;
+        generateRegions?: Array<{
+            id: string;
+            kind: string;
+            label: string;
+            condition?: string;
+            selector?: string;
+            caseValue?: string;
+            blockLabel?: string;
+            fullBlockLabel?: string;
+            parentRegionId?: string;
+            siblingGroupId?: string;
+            activeState?: string;
+            armIndex?: number;
+            source?: RawSourceRange;
+            bodySource?: RawSourceRange;
+            nodeIds?: string[];
+            edgeIds?: string[];
+            warnings?: string[];
+        }>;
     }>;
     rootModules?: string[];
 }
@@ -893,6 +913,28 @@ function instanceParameterFromRaw(param: RawInstanceParameter, workspaceRoot: st
         source: sourceRangeFromRaw(param.source, workspaceRoot),
         valueSource: sourceRangeFromRaw(param.valueSource, workspaceRoot),
         parameterRefs: param.parameterRefs?.map((ref) => parameterRefFromRaw(ref, workspaceRoot))
+    };
+}
+
+function generateRegionFromRaw(region: NonNullable<RawModule['generateRegions']>[number], workspaceRoot: string): GenerateRegion {
+    return {
+        id: region.id,
+        kind: region.kind,
+        label: region.label,
+        condition: region.condition || undefined,
+        selector: region.selector || undefined,
+        caseValue: region.caseValue || undefined,
+        blockLabel: region.blockLabel || undefined,
+        fullBlockLabel: region.fullBlockLabel || undefined,
+        parentRegionId: region.parentRegionId || undefined,
+        siblingGroupId: region.siblingGroupId || undefined,
+        activeState: region.activeState || undefined,
+        armIndex: region.armIndex,
+        source: sourceRangeFromRaw(region.source, workspaceRoot),
+        bodySource: sourceRangeFromRaw(region.bodySource, workspaceRoot),
+        nodeIds: region.nodeIds?.length ? region.nodeIds : undefined,
+        edgeIds: region.edgeIds?.length ? region.edgeIds : undefined,
+        warnings: region.warnings?.length ? region.warnings : undefined
     };
 }
 
@@ -1542,12 +1584,15 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             }
         }
 
+        const generateRegions = rawMod.generateRegions?.map((region) => generateRegionFromRaw(region, workspaceRoot));
+
         const module: DesignModule = {
             name: modName,
             file: moduleFile,
             parameters,
             ports: ports,
             nodes: nodes,
+            generateRegions,
             edges: (rawMod.edges || []).map((e, i) => {
                 const sourceNodeId = e.source === 'self' ? stableId('port', modName, e.sourcePort) : e.source;
                 const targetNodeId = e.target === 'self' ? stableId('port', modName, e.targetPort) : e.target;
