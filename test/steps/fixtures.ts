@@ -524,7 +524,9 @@ function resolveFeaturePath(bddContext: any, featureUri: string): string {
 Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext, $testInfo }: any) {
   // Attach Playwright fixtures so helpers can use them
   this.workbox = workbox;
-  await this.workbox.setViewportSize({ width: 1400, height: 1000 });
+  if (!process.env.SKIP_SNAPSHOTS) {
+    await this.workbox.setViewportSize({ width: 1400, height: 1000 });
+  }
   this.webviewPage = workbox
     .frameLocator('iframe.webview')
     .frameLocator('iframe#active-frame');
