@@ -72,6 +72,11 @@ export class BddWorld {
     outsideNodePositions: Map<string, { x: number; y: number }>;
     expectedDelta: { x: number; y: number };
   }> = new Map();
+  pendingNodeDrag?: {
+    nodeId: string;
+    label: string;
+    moduleName: string;
+  };
   // Where a node ended up after the user dragged it (post-move), so reload
   // scenarios can assert the position was preserved.
   movedToPositions: Map<string, { x: number; y: number }> = new Map();

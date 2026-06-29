@@ -1,0 +1,180 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:g_if_one.u_if_one",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 144
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:g_if_other.u_other",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 384
+      },
+      "width": 216,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "inactive": true
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 420
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 912,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:g_if_one.u_if_one:port:top:y:y",
+      "source": "instance:top:g_if_one.u_if_one",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 816 192 L 840 192 L 888 192 L 912 192",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:g_if_other.u_other:port:top:y:y",
+      "source": "instance:top:g_if_other.u_other",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 624 432 L 648 432 L 720 432 L 720 192 L 888 192 L 912 192",
+      "inactive": true
+    },
+    {
+      "id": "edge:port:top:a:instance:top:g_if_one.u_if_one:a",
+      "source": "port:top:a",
+      "target": "instance:top:g_if_one.u_if_one",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 192 L 168 192 L 600 192 L 624 192",
+      "active": true
+    },
+    {
+      "id": "edge:port:top:b:instance:top:g_if_other.u_other:b",
+      "source": "port:top:b",
+      "target": "instance:top:g_if_other.u_other",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:a",
+      "path": "M 144 432 L 168 432 L 384 432 L 408 432",
+      "inactive": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "generate-region:top:else:11:4:1:else__g_if_other_",
+      "kind": "else",
+      "label": "g_if_other /* else */",
+      "bounds": {
+        "x": 360,
+        "y": 336,
+        "width": 312,
+        "height": 192
+      },
+      "inactive": true
+    },
+    {
+      "id": "generate-region:top:if:11:8:0:if__MODE____1___g_if_one_",
+      "kind": "if",
+      "label": "g_if_one /* MODE == 1 */",
+      "bounds": {
+        "x": 384,
+        "y": 96,
+        "width": 480,
+        "height": 192
+      },
+      "active": true
+    }
+  ]
+}

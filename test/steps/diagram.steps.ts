@@ -439,6 +439,15 @@ When('I move the {string} generate region by \\({int}, {int}\\) grid cells', asy
   await waitForLayoutChange(this, before, `After moving ${label} generate region`);
 });
 
+When('I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, block: string, region: string, cellsX: number, cellsY: number) {
+  this.notedRegionBounds.set(region, await getGenerateRegionBounds(this.webviewPage, region));
+  await beginDraggingNodeByGridCells(this, block, cellsX, cellsY);
+});
+
+When('I release the moving block', async function (this: BddWorld) {
+  await releasePendingNodeDrag(this);
+});
+
 When('I have saved the layout to {string}', async function (this: BddWorld, customPath: string) {
   if (!this.workspaceDir) throw new Error('No open workspace');
   const fullPath = path.join(this.workspaceDir, customPath);
@@ -645,6 +654,19 @@ Then('the {string} generate region should have grown on the {word} side', async 
   const delta = regionSide(after, side) - regionSide(before, side);
   const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
   expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} generate region should have expanded on the {word} side while dragging', async function (this: BddWorld, label: string, side: string) {
+  if (!this.pendingNodeDrag) throw new Error('No block is currently being dragged');
+  if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
+  const before = this.notedRegionBounds.get(label);
+  if (!before) throw new Error(`No noted bounds for generate region ${label}`);
+  await expect.poll(async () => {
+    const after = await getGenerateRegionBounds(this.webviewPage, label);
+    const delta = regionSide(after, side) - regionSide(before, side);
+    const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
+    return delta * expectedSign;
+  }, { timeout: 5_000 }).toBeGreaterThanOrEqual(diagramGrid.size);
 });
 
 Then('the {string} generate region should keep {int} grid cells of padding on the {word} side', async function (this: BddWorld, label: string, cells: number, side: string) {
@@ -2002,6 +2024,50 @@ async function dragPortNodeByGridCells(
 
   await syncLastViewModel(world, moduleName);
   await world.takeScreenshot(screenshotLabel);
+}
+
+async function beginDraggingNodeByGridCells(
+  world: BddWorld,
+  label: string,
+  cellsX: number,
+  cellsY: number
+): Promise<void> {
+  const id = await findNodeIdByLabel(world.webviewPage, label);
+  if (!id) throw new Error(`Node not found: ${label}`);
+  const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for node ${id}`);
+  const ratio = await effectiveScreenPerFlow(world);
+  const dxScreen = cellsX * diagramGrid.size * ratio;
+  const dyScreen = cellsY * diagramGrid.size * ratio;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  world.pendingNodeDrag = {
+    nodeId: id,
+    label,
+    moduleName: world.lastViewModel.moduleName
+  };
+
+  await world.workbox.mouse.move(cx, cy);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(cx + Math.sign(dxScreen || 1) * 2, cy + Math.sign(dyScreen || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(cx + dxScreen, cy + dyScreen, { steps: 20 });
+  await world.workbox.waitForTimeout(300);
+}
+
+async function releasePendingNodeDrag(world: BddWorld): Promise<void> {
+  const pending = world.pendingNodeDrag;
+  if (!pending) throw new Error('No block is currently being dragged');
+  await world.workbox.mouse.up();
+  await world.workbox.waitForTimeout(150);
+
+  const after = await getInternalPosition(world.webviewPage, pending.nodeId);
+  if (!after) throw new Error(`Missing position data for ${pending.label} after move`);
+  await waitForNodePersisted(world, pending.moduleName, pending.nodeId, after);
+  world.layout = await readExtensionLayout(world);
+  await syncLastViewModel(world, pending.moduleName);
+  world.pendingNodeDrag = undefined;
+  await world.takeScreenshot(`After moving ${pending.label}`);
 }
 
 // One raw mouse drag of a node by a screen-space delta. React Flow needs a small

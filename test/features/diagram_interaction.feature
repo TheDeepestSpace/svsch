@@ -172,6 +172,33 @@ Feature: Diagram Interaction
     When I resize the "g_if_one" generate region on the right side by -30 grid cells
     Then the "g_if_one" generate region should keep 2 grid cells of padding on the right side
 
+  Scenario: Moving the block within an arm expands its boundary appropriately
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        output logic y
+      );
+        generate
+          if (MODE == 1) begin : g_if_one
+            leaf u_if_one(.a(a), .y(y));
+          end else begin : g_if_other
+            leaf u_other(.a(b), .y(y));
+          end
+        endgenerate
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I begin moving the block "g_if_one.u_if_one" in the "g_if_one" generate region by (8, 0) grid cells
+    Then the "g_if_one" generate region should have expanded on the right side while dragging
+    When I release the moving block
+    Then the "g_if_one" generate region should keep 2 grid cells of padding on the right side
+
   Scenario: Moving a generate arm moves all blocks inside it
     Given I have a file "top.sv" in my workspace:
       """

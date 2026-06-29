@@ -79,6 +79,7 @@ function DiagramApp(): React.ReactElement {
   const [status, setStatus] = useState<'idle' | 'rebuilding'>('idle');
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
   const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
+  const regionsRef = useRef<PositionedGenerateRegion[]>([]);
   const [viewport, setViewport] = useState<FlowViewport>({ x: 0, y: 0, zoom: 1 });
   const groupDragRef = useRef<{
     startPos: { x: number; y: number };
@@ -135,6 +136,10 @@ function DiagramApp(): React.ReactElement {
       }, 500);
     }
   }, []);
+
+  useEffect(() => {
+    regionsRef.current = regions;
+  }, [regions]);
 
   const handleRouteChange = useCallback((changes: RouteChange[], commit: boolean) => {
     const changeMap = new Map(changes.map(c => [c.edgeId, c.routePoints]));
@@ -308,7 +313,10 @@ function DiagramApp(): React.ReactElement {
   );
 
   const onNodeDrag = useCallback(
-    (_: React.MouseEvent, dragged: HdlFlowNode) => {
+    (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[] = [dragged]) => {
+      const positioned = flowNodesToPositioned(allNodes, new Set(allNodes.map((node) => node.id)));
+      setRegions((current) => expandRegionsForNodes(current, positioned));
+
       const state = groupDragRef.current;
       if (!state || state.originalRoutes.size === 0) return;
       const dx = dragged.position.x - state.startPos.x;
@@ -332,7 +340,7 @@ function DiagramApp(): React.ReactElement {
         position: node.id === dragged.id ? dragged.position : node.position,
         fixed: node.data.node.fixed || node.selected || node.id === dragged.id
       }));
-      const expandedRegions = expandRegionsForNodes(regions, positioned);
+      const expandedRegions = expandRegionsForNodes(regionsRef.current, positioned);
       setRegions(expandedRegions);
       vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: expandedRegions });
 
@@ -350,7 +358,7 @@ function DiagramApp(): React.ReactElement {
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange, regions]
+    [view, handleRouteChange]
   );
 
   const rerouteLayout = useCallback(() => {
@@ -769,7 +777,9 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
   if (regions.length === 0) return regions;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   return regions.map((region) => {
-    const content = unionRegionBounds(region.nodeIds
+    const regionIds = descendantRegionIds(region.id, regions, true);
+    const nodeIds = nodeIdsForRegions(regionIds, regions);
+    const content = unionRegionBounds(Array.from(nodeIds)
       .map((nodeId) => {
         const node = nodeById.get(nodeId);
         if (!node) return undefined;
