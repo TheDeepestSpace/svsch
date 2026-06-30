@@ -703,6 +703,39 @@ Then('blocks outside the {string} generate region should not have moved', async 
   }
 });
 
+Then('the {string} generate region should be flagged as overlapping', async function (this: BddWorld, label: string) {
+  const region = generateRegionLocator(this.webviewPage, label);
+  await expect(region).toHaveClass(/generate-region-invalid/);
+  await expect(region).toHaveAttribute('data-warning-note', /arm blocks overlapping/);
+});
+
+Then('I should see a warning icon on the {string} generate region', async function (this: BddWorld, label: string) {
+  const icon = generateRegionLocator(this.webviewPage, label).locator('.generate-region-warning');
+  await expect(icon).toBeVisible();
+});
+
+When('I hover over the warning icon on the {string} generate region', async function (this: BddWorld, label: string) {
+  await generateRegionLocator(this.webviewPage, label).locator('.generate-region-warning').hover({ force: true });
+});
+
+Then('a tooltip should appear reading {string}', async function (this: BddWorld, message: string) {
+  // The preceding hover step left the pointer over the icon; assert the real
+  // Floating UI popover element renders (not just the accessible label).
+  const tooltip = this.webviewPage.locator('.svsch-tooltip', { hasText: message });
+  await expect(tooltip).toBeVisible();
+  // Capture the hovered tooltip as a visual baseline so the popover render is
+  // regression-guarded (the other scenario screenshots never have it on screen).
+  await this.takeScreenshot('Tooltip visible on hover');
+});
+
+Then('no generate region should be flagged as overlapping', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.generate-region-invalid')).toHaveCount(0);
+});
+
+Then('I should not see any generate region warning icons', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.generate-region-warning')).toHaveCount(0);
+});
+
 Then('I should see an instance node {string} of module {string}', async function (this: BddWorld, instanceName: string, moduleName: string) {
   const id = await findNodeIdByLabel(this.webviewPage, instanceName, 'instance');
   if (!id) throw new Error(`Could not find instance node "${instanceName}"`);

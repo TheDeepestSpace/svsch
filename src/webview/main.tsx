@@ -17,8 +17,10 @@ import '@xyflow/react/dist/style.css';
 import './styles.css';
 import { diagramSizing, normalizeWidth } from '../diagram/constants';
 import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { annotateGenerateRegionWarnings } from '../layout/generateRegionValidation';
 import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
+import { Tooltip } from './Tooltip';
 import type {
   DiagramViewModel,
   DiagramEdge,
@@ -314,7 +316,9 @@ function DiagramApp(): React.ReactElement {
 
   const onNodeDrag = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[] = [dragged]) => {
-      const positioned = flowNodesToPositioned(allNodes, new Set(allNodes.map((node) => node.id)));
+      const movedNodes = allNodes.length > 0 ? allNodes : [dragged];
+      const allFlowNodes = mergeDraggedFlowNodes(reactFlow.getNodes() as HdlFlowNode[], movedNodes);
+      const positioned = flowNodesToPositioned(allFlowNodes, new Set(movedNodes.map((node) => node.id)));
       setRegions((current) => expandRegionsForNodes(current, positioned));
 
       const state = groupDragRef.current;
@@ -327,7 +331,7 @@ function DiagramApp(): React.ReactElement {
       }));
       handleRouteChange(changes, false);
     },
-    [handleRouteChange]
+    [handleRouteChange, reactFlow]
   );
 
   const onNodeDragStop = useCallback(
@@ -335,11 +339,11 @@ function DiagramApp(): React.ReactElement {
       if (!view) {
         return;
       }
-      const positioned = allNodes.map((node) => ({
-        ...node.data.node,
-        position: node.id === dragged.id ? dragged.position : node.position,
-        fixed: node.data.node.fixed || node.selected || node.id === dragged.id
-      }));
+      const movedNodes = allNodes.length > 0 ? allNodes : [dragged];
+      const allFlowNodes = mergeDraggedFlowNodes(reactFlow.getNodes() as HdlFlowNode[], movedNodes);
+      const fixedIds = new Set(movedNodes.map((node) => node.id));
+      fixedIds.add(dragged.id);
+      const positioned = flowNodesToPositioned(allFlowNodes, fixedIds);
       const expandedRegions = expandRegionsForNodes(regionsRef.current, positioned);
       setRegions(expandedRegions);
       vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: expandedRegions });
@@ -358,7 +362,7 @@ function DiagramApp(): React.ReactElement {
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange]
+    [view, handleRouteChange, reactFlow]
   );
 
   const rerouteLayout = useCallback(() => {
@@ -606,6 +610,7 @@ function GenerateRegionOverlay({
           ].filter(Boolean).join(' ')}
           data-region-id={region.id}
           data-region-kind={region.kind}
+          data-warning-note={region.warningNote || undefined}
           style={{
             left: region.bounds.x,
             top: region.bounds.y,
@@ -614,6 +619,20 @@ function GenerateRegionOverlay({
           }}
         >
           <div className="generate-region-outline" />
+          {region.warningNote && (
+            <Tooltip content={region.warningNote}>
+              {(trigger) => (
+                <span
+                  {...trigger}
+                  className="generate-region-warning"
+                  role="img"
+                  aria-label={region.warningNote}
+                >
+                  ⚠
+                </span>
+              )}
+            </Tooltip>
+          )}
           <button
             type="button"
             className="generate-region-title"
@@ -631,7 +650,6 @@ function GenerateRegionOverlay({
               onPointerDown={(event) => startDrag(event, region, 'resize', side)}
             />
           ))}
-          {region.warningNote && <div className="generate-region-note">{region.warningNote}</div>}
         </div>
       ))}
     </div>
@@ -643,48 +661,53 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
 
   if (drag.kind === 'resize') {
+    const nodes = drag.startNodes;
+    const regions = drag.startRegions.map((region) => {
+      if (region.id !== drag.regionId) return region;
+      return {
+        ...region,
+        bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag)
+      };
+    });
     return {
-      nodes: drag.startNodes,
-      regions: drag.startRegions.map((region) => {
-        if (region.id !== drag.regionId) return region;
-        return {
-          ...region,
-          bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag)
-        };
-      })
+      nodes,
+      regions: annotateRegionsForFlowNodes(regions, nodes)
     };
   }
 
+  const nodes = drag.startNodes.map((node) => {
+    if (!drag.affectedNodeIds.has(node.id)) return node;
+    const position = {
+      x: node.position.x + dx,
+      y: node.position.y + dy
+    };
+    return {
+      ...node,
+      position,
+      data: {
+        ...node.data,
+        node: {
+          ...node.data.node,
+          position
+        }
+      }
+    };
+  });
+  const regions = drag.startRegions.map((region) => {
+    if (!drag.affectedRegionIds.has(region.id)) return region;
+    return {
+      ...region,
+      bounds: {
+        ...region.bounds,
+        x: region.bounds.x + dx,
+        y: region.bounds.y + dy
+      }
+    };
+  });
+
   return {
-    nodes: drag.startNodes.map((node) => {
-      if (!drag.affectedNodeIds.has(node.id)) return node;
-      const position = {
-        x: node.position.x + dx,
-        y: node.position.y + dy
-      };
-      return {
-        ...node,
-        position,
-        data: {
-          ...node.data,
-          node: {
-            ...node.data.node,
-            position
-          }
-        }
-      };
-    }),
-    regions: drag.startRegions.map((region) => {
-      if (!drag.affectedRegionIds.has(region.id)) return region;
-      return {
-        ...region,
-        bounds: {
-          ...region.bounds,
-          x: region.bounds.x + dx,
-          y: region.bounds.y + dy
-        }
-      };
-    })
+    nodes,
+    regions: annotateRegionsForFlowNodes(regions, nodes)
   };
 }
 
@@ -773,10 +796,26 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
   }));
 }
 
+function mergeDraggedFlowNodes(nodes: HdlFlowNode[], draggedNodes: HdlFlowNode[]): HdlFlowNode[] {
+  const draggedById = new Map(draggedNodes.map((node) => [node.id, node]));
+  const merged = nodes.map((node) => draggedById.get(node.id) ?? node);
+  const seen = new Set(merged.map((node) => node.id));
+  for (const dragged of draggedNodes) {
+    if (!seen.has(dragged.id)) {
+      merged.push(dragged);
+    }
+  }
+  return merged;
+}
+
+function annotateRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
+  return annotateGenerateRegionWarnings(regions, flowNodesToPositioned(nodes, new Set()));
+}
+
 function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
   if (regions.length === 0) return regions;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  return regions.map((region) => {
+  const expanded = regions.map((region) => {
     const regionIds = descendantRegionIds(region.id, regions, true);
     const nodeIds = nodeIdsForRegions(regionIds, regions);
     const content = unionRegionBounds(Array.from(nodeIds)
@@ -804,6 +843,7 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
       fixed: region.fixed
     };
   });
+  return annotateGenerateRegionWarnings(expanded, nodes);
 }
 
 function unionRegionBounds(rects: PositionedGenerateRegion['bounds'][]): PositionedGenerateRegion['bounds'] | undefined {

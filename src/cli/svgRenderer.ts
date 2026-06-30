@@ -182,11 +182,15 @@ export function svgBridgeCss(): string {
   stroke-width: 1.5;
 }
 .svsch-generate-region-label,
-.svsch-generate-region-note {
+.svsch-generate-region-warning {
   fill: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
   dominant-baseline: middle;
+}
+.svsch-generate-region-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-size: 14px;
 }
 .svsch-generate-region-inactive {
   opacity: 0.75;
@@ -197,11 +201,10 @@ export function svgBridgeCss(): string {
   stroke-dasharray: none;
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-charts-red) 9%, transparent);
-  stroke: var(--vscode-charts-red);
-}
-.svsch-generate-region-invalid .svsch-generate-region-note {
-  fill: var(--vscode-charts-red);
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
 }
 `.trim();
 }
@@ -215,12 +218,16 @@ function renderGenerateRegion(region: PositionedGenerateRegion): string {
   ].filter(Boolean).join(' ');
   const labelX = region.bounds.x + 8;
   const labelY = region.bounds.y + 8;
+  // 20px out from the top-right corner on both axes, mirroring the webview icon.
+  const warningX = region.bounds.x + region.bounds.width + 20;
+  const warningY = region.bounds.y - 20;
   return [
     `<g class="${escapeAttr(classes)}" data-region-id="${escapeAttr(region.id)}">`,
+    region.warningNote ? `<title>${escapeXml(region.warningNote)}</title>` : '',
     `<rect class="svsch-generate-region-box" x="${formatNumber(region.bounds.x)}" y="${formatNumber(region.bounds.y)}" width="${formatNumber(region.bounds.width)}" height="${formatNumber(region.bounds.height)}" />`,
     `<text class="svsch-generate-region-label" x="${formatNumber(labelX)}" y="${formatNumber(labelY + 9)}">${escapeXml(region.label)}</text>`,
     region.warningNote
-      ? `<text class="svsch-generate-region-note" x="${formatNumber(region.bounds.x + region.bounds.width - 8)}" y="${formatNumber(region.bounds.y + 18)}" text-anchor="end">${escapeXml(region.warningNote)}</text>`
+      ? `<text class="svsch-generate-region-warning" x="${formatNumber(warningX)}" y="${formatNumber(warningY)}" text-anchor="end">⚠</text>`
       : '',
     '</g>'
   ].filter(Boolean).join('\n');
@@ -938,6 +945,10 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: 
   for (const region of regions) {
     includeBounds(bounds, region.bounds.x, region.bounds.y - diagramSizing.gridSize);
     includeBounds(bounds, region.bounds.x + region.bounds.width, region.bounds.y + region.bounds.height);
+    if (region.warningNote) {
+      // The warning icon sits 20px out from the top-right corner; keep it in frame.
+      includeBounds(bounds, region.bounds.x + region.bounds.width + 24, region.bounds.y - 24);
+    }
   }
 
   if (!Number.isFinite(bounds.minX)) {

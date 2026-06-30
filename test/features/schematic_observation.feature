@@ -361,6 +361,48 @@ Feature: Schematic Observation
     And I should see a "else-if" generate region labeled "g_if_one"
     And I should see a "else" generate region labeled "g_if_other"
 
+  Scenario: Warning when generate arm blocks overlap
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        input logic c,
+        output logic y
+      );
+        logic w;
+
+        generate
+          if (MODE == 0) begin : g_if_zero
+            leaf u_if_zero(.a(a), .y(w));
+          end else if (MODE == 1) begin : g_if_one
+            leaf u_if_one(.a(b), .y(w));
+          end else begin : g_if_other
+            assign w = c;
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 3 generate regions
+    And no generate region should be flagged as overlapping
+    When I move the "g_if_one" generate region by (0, -3) grid cells
+    Then the "g_if_zero" generate region should be flagged as overlapping
+    And the "g_if_one" generate region should be flagged as overlapping
+    And I should see a warning icon on the "g_if_zero" generate region
+    And I should see a warning icon on the "g_if_one" generate region
+    When I hover over the warning icon on the "g_if_one" generate region
+    Then a tooltip should appear reading "arm blocks overlapping"
+    When I move the "g_if_one" generate region by (0, 3) grid cells
+    Then no generate region should be flagged as overlapping
+    And I should not see any generate region warning icons
+
   Scenario: Observing case generate blocks
     Given I have a file "top.sv" in my workspace:
       """

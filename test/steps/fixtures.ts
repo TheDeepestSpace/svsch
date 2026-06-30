@@ -133,7 +133,10 @@ export class BddWorld {
         const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
           const element = region as HTMLElement;
           const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
-          const warningNote = element.querySelector('.generate-region-note')?.textContent?.trim() ?? undefined;
+          const warningNote = element.dataset.warningNote
+            ?? element.querySelector('.generate-region-warning')?.getAttribute('aria-label')
+            ?? element.querySelector('.generate-region-note')?.textContent?.trim()
+            ?? undefined;
           return {
             id: element.dataset.regionId ?? '',
             kind: element.dataset.regionKind,

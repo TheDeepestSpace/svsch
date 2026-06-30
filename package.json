@@ -118,6 +118,7 @@
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.19",
     "@xyflow/react": "^12.10.2",
     "elkjs": "^0.11.1",
     "react": "^19.0.0",

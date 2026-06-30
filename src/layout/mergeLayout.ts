@@ -4,6 +4,7 @@ import { edgeNetKey, endpointKey } from '../ir/edgeNet';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
+import { annotateGenerateRegionWarnings } from './generateRegionValidation';
 import {
   interfaceSidePortCenters,
   interfaceTopHatHeight,
@@ -278,8 +279,7 @@ function positionGenerateRegions(
       };
     });
 
-    markInvalidRegions(result, positionedNodes);
-    return result;
+    return annotateGenerateRegionWarnings(result, positionedNodes);
   }
 
   const computed = new Map<string, PositionedGenerateRegion>();
@@ -303,8 +303,7 @@ function positionGenerateRegions(
     .map((region) => computed.get(region.id))
     .filter((region): region is PositionedGenerateRegion => region !== undefined);
 
-  markInvalidRegions(result, positionedNodes);
-  return result;
+  return annotateGenerateRegionWarnings(result, positionedNodes);
 
   function layoutRegion(region: GenerateRegion, x: number, y: number): PositionedGenerateRegion {
     const existing = computed.get(region.id);
@@ -545,83 +544,6 @@ function expandSavedRegionBounds(saved: RegionBounds, autoBounds: RegionBounds):
     width: maxX - minX,
     height: maxY - minY
   });
-}
-
-function markInvalidRegions(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): void {
-  const byId = new Map(regions.map((region) => [region.id, region]));
-
-  const isAncestor = (ancestorId: string, descendantId: string): boolean => {
-    let current = byId.get(descendantId)?.parentRegionId;
-    while (current) {
-      if (current === ancestorId) return true;
-      current = byId.get(current)?.parentRegionId;
-    }
-    return false;
-  };
-
-  for (let i = 0; i < regions.length; i++) {
-    for (let j = i + 1; j < regions.length; j++) {
-      const a = regions[i];
-      const b = regions[j];
-      if (isAncestor(a.id, b.id) || isAncestor(b.id, a.id)) continue;
-      if (rectsOverlap(a.bounds, b.bounds)) {
-        a.invalid = true;
-        b.invalid = true;
-      }
-    }
-  }
-
-  for (const region of regions) {
-    const owned = new Set(descendantNodeIds(region, regions));
-    for (const node of nodes) {
-      if (owned.has(node.id) || node.kind === 'port') continue;
-      const size = diagramNodeDimensions(node);
-      const center = {
-        x: node.position.x + size.width / 2,
-        y: node.position.y + size.height / 2
-      };
-      if (pointInBounds(center, region.bounds)) {
-        region.invalid = true;
-        region.warningNote = `Block does not belong to ${region.condition || region.label}`;
-        break;
-      }
-    }
-  }
-}
-
-function descendantNodeIds(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): string[] {
-  const ids = new Set(region.nodeIds);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const candidate of regions) {
-      if (!candidate.parentRegionId) continue;
-      if (ids.size === 0 && candidate.parentRegionId !== region.id) continue;
-      let parent: string | undefined = candidate.parentRegionId;
-      let isDescendant = parent === region.id;
-      while (!isDescendant && parent) {
-        const parentRegion = regions.find((item) => item.id === parent);
-        parent = parentRegion?.parentRegionId;
-        isDescendant = parent === region.id;
-      }
-      if (!isDescendant) continue;
-      for (const nodeId of candidate.nodeIds) {
-        if (!ids.has(nodeId)) {
-          ids.add(nodeId);
-          changed = true;
-        }
-      }
-    }
-  }
-  return Array.from(ids);
-}
-
-function rectsOverlap(a: RegionBounds, b: RegionBounds): boolean {
-  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-}
-
-function pointInBounds(point: { x: number; y: number }, bounds: RegionBounds): boolean {
-  return point.x > bounds.x && point.x < bounds.x + bounds.width && point.y > bounds.y && point.y < bounds.y + bounds.height;
 }
 
 interface ActiveNetCut {

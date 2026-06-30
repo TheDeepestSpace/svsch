@@ -57,7 +57,7 @@
       "type": "hdl",
       "position": {
         "x": 408,
-        "y": 144
+        "y": 72
       },
       "width": 216,
       "height": 96,
@@ -184,7 +184,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432",
+      "path": "M 624 120 L 648 120 L 720 120 L 720 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -193,7 +193,7 @@
       "target": "instance:generate_if_else_regions:g_if_zero.u_if_zero",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
+      "path": "M 144 192 L 168 192 L 384 192 L 384 120 L 408 120",
       "inactive": true
     },
     {
@@ -246,7 +246,7 @@
       "label": "g_if_zero /* MODE == 0 */",
       "bounds": {
         "x": 360,
-        "y": 96,
+        "y": 24,
         "width": 312,
         "height": 192
       },

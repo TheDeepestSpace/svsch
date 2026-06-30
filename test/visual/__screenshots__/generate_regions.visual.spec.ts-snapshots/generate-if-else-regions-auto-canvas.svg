@@ -663,6 +663,8 @@ svg.react-flow__connectionline {
   --vscode-charts-orange: #d18616;
   --vscode-inputValidation-warningBackground: #352a05;
   --vscode-inputValidation-warningBorder: #b89500;
+  --svsch-error-highlight: color-mix(in srgb, var(--vscode-errorForeground, #ff3b30) 88%, #ff3b30);
+  --svsch-error-highlight-fill: color-mix(in srgb, var(--svsch-error-highlight) 9%, transparent);
 }
 
 html,
@@ -951,6 +953,34 @@ text {
   white-space: nowrap;
 }
 
+.generate-region-warning {
+  color: var(--svsch-error-highlight);
+  cursor: help;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: auto;
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  z-index: 1;
+}
+
+.svsch-tooltip {
+  /* Border matches the arm-block error highlight; Tooltip.tsx resolves the same
+     token for the arrow's SVG stroke. */
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--svsch-error-highlight);
+  border-radius: 0;
+  color: var(--vscode-editor-foreground);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 280px;
+  padding: 3px 8px;
+  pointer-events: none;
+  width: max-content;
+  z-index: 1000;
+}
+
 .generate-region-resize {
   background: transparent;
   border: 0;
@@ -1005,12 +1035,15 @@ text {
 }
 
 .generate-region-invalid .generate-region-outline {
-  border-color: var(--vscode-charts-red);
-  background: color-mix(in srgb, var(--vscode-charts-red) 9%, transparent);
+  border-color: var(--svsch-error-highlight);
+  border-style: dashed;
+  border-width: 2px;
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
 }
 
 .generate-region-invalid .generate-region-title {
-  color: color-mix(in srgb, var(--vscode-charts-red) 78%, var(--vscode-editor-foreground));
+  color: color-mix(in srgb, var(--svsch-error-highlight) 78%, var(--vscode-editor-foreground));
 }
 
 .generate-region-note {
@@ -2689,7 +2722,7 @@ text {
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;
-  stroke: color-mix(in srgb, var(--vscode-errorForeground, #ff3b30) 88%, #ff3b30);
+  stroke: var(--svsch-error-highlight);
   stroke-dasharray: 7 5;
   stroke-linecap: round;
   stroke-width: 5;
@@ -3352,11 +3385,15 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1.5;
 }
 .svsch-generate-region-label,
-.svsch-generate-region-note {
+.svsch-generate-region-warning {
   fill: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
   dominant-baseline: middle;
+}
+.svsch-generate-region-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-size: 14px;
 }
 .svsch-generate-region-inactive {
   opacity: 0.75;
@@ -3367,11 +3404,10 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: none;
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-charts-red) 9%, transparent);
-  stroke: var(--vscode-charts-red);
-}
-.svsch-generate-region-invalid .svsch-generate-region-note {
-  fill: var(--vscode-charts-red);
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
 }
 </style>
 <g transform="translate(24 -24)">

@@ -1,0 +1,63 @@
+{
+  "nodes": [
+    {
+      "id": "node:warn:a",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": []
+      }
+    },
+    {
+      "id": "node:warn:b",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 80
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": []
+      }
+    }
+  ],
+  "edges": [],
+  "regions": [
+    {
+      "id": "region:g_warn_one",
+      "kind": "else-if",
+      "label": "g_warn_one /* MODE == 1 */",
+      "bounds": {
+        "x": 88,
+        "y": 48,
+        "width": 240,
+        "height": 160
+      },
+      "inactive": true,
+      "invalid": true,
+      "warningNote": "arm blocks overlapping; node does not belong to arm block"
+    },
+    {
+      "id": "region:g_warn_zero",
+      "kind": "if",
+      "label": "g_warn_zero /* MODE == 0 */",
+      "bounds": {
+        "x": 48,
+        "y": 48,
+        "width": 240,
+        "height": 160
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "arm blocks overlapping; node does not belong to arm block"
+    }
+  ]
+}
