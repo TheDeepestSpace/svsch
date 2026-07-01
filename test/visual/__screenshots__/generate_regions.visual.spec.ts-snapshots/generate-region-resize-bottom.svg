@@ -928,7 +928,7 @@ text {
 }
 
 .generate-region-outline {
-  border: 1.5px dashed var(--vscode-charts-orange);
+  border: 1.5px solid var(--vscode-charts-orange);
   background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
@@ -2607,7 +2607,6 @@ text {
 .generate-edge-inactive.svsch-edge {
   opacity: 0.75;
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 42%, var(--vscode-editor-background));
-  stroke-dasharray: 7 5;
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
@@ -3381,7 +3380,6 @@ path.port-skin-body.port-skin-harness {
 .svsch-generate-region-box {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   stroke: var(--vscode-charts-orange);
-  stroke-dasharray: 7 5;
   stroke-width: 1.5;
 }
 .svsch-generate-region-label,
@@ -3401,7 +3399,6 @@ path.port-skin-body.port-skin-harness {
 .svsch-generate-region-active .svsch-generate-region-box {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
-  stroke-dasharray: none;
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
   fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));

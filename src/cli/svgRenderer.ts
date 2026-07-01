@@ -178,7 +178,6 @@ export function svgBridgeCss(): string {
 .svsch-generate-region-box {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   stroke: var(--vscode-charts-orange);
-  stroke-dasharray: 7 5;
   stroke-width: 1.5;
 }
 .svsch-generate-region-label,
@@ -198,7 +197,6 @@ export function svgBridgeCss(): string {
 .svsch-generate-region-active .svsch-generate-region-box {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
-  stroke-dasharray: none;
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
   fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));

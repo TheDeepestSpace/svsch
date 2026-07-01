@@ -290,7 +290,7 @@ text {
 }
 
 .generate-region-outline {
-  border: 1.5px dashed var(--vscode-charts-orange);
+  border: 1.5px solid var(--vscode-charts-orange);
   background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
@@ -1969,7 +1969,6 @@ text {
 .generate-edge-inactive.svsch-edge {
   opacity: 0.75;
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 42%, var(--vscode-editor-background));
-  stroke-dasharray: 7 5;
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
