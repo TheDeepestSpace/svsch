@@ -432,6 +432,7 @@ async function autoLayoutMissingNodes(
     alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
     enforceMinimumBlockGaps(nodes, positions, moduleLayout);
     alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+    enforceMinimumBlockGaps(nodes, positions, moduleLayout);
 
     const routeLayoutOptions = {
       'elk.algorithm': 'layered',
@@ -835,25 +836,13 @@ function alignSimpleLeafNodes(
     const peerElkPort = peerElkNode.ports.find((candidate) => candidate.id === endpointId(peer.id, peerPortId));
     const peerSide = peerElkPort?.properties['org.eclipse.elk.port.side'];
     if ((peerSide === 'NORTH' || peerSide === 'SOUTH') && node.kind === 'port') {
-      const ownElkNode = elkNodeForDiagramNode(node, false);
-      const ownElkPort = ownElkNode.ports.find((candidate) => candidate.id === endpointId(node.id, ownPortId));
-      const ownSide = ownElkPort?.properties['org.eclipse.elk.port.side'];
-      const ownLeadOffset = ownSide === 'EAST'
-        ? diagramSizing.edgeLeadLength
-        : ownSide === 'WEST'
-          ? -diagramSizing.edgeLeadLength
-          : 0;
-      const sameSidePorts = peerElkNode.ports.filter((candidate) => candidate.properties['org.eclipse.elk.port.side'] === peerSide);
-      const sideIndex = Math.max(0, sameSidePorts.findIndex((candidate) => candidate.id === peerElkPort?.id));
-      const verticalGap = diagramSizing.gridSize * (peerSide === 'NORTH' ? 3 + sideIndex * 2 : 2 + sideIndex * 2);
+      const peerLead = renderedLeadPoint(peer.id, peerPortId, nodesById, positions);
+      if (!peerLead || !verticalLeadSitsOutsidePeer(peer, peerPosition, peerLead)) {
+        continue;
+      }
       positions.set(node.id, {
-        x: snapToGrid(peerPosition.x + peerOffset.x - ownOffset.x - ownLeadOffset),
-        y: snapToGrid(
-          peerSide === 'NORTH'
-            ? peerPosition.y - ownOffset.y - verticalGap
-            : peerPosition.y + peerOffset.y + verticalGap,
-          node.kind
-        )
+        ...nodePosition,
+        y: snapToGrid(peerLead.point.y - ownOffset.y, node.kind)
       });
       continue;
     }
@@ -869,11 +858,35 @@ function canAlignSimpleLeafToPeer(node: DiagramNode, portId?: string): boolean {
   const elkNode = elkNodeForDiagramNode(node, false);
   const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
   const side = port?.properties['org.eclipse.elk.port.side'] as ElkPortSide | undefined;
-  if (!side || (side !== 'WEST' && side !== 'EAST')) {
+  if (!side) {
     return false;
   }
 
-  return elkNode.ports.filter((candidate) => candidate.properties['org.eclipse.elk.port.side'] === side).length === 1;
+  const sameSideCount = elkNode.ports.filter((candidate) => candidate.properties['org.eclipse.elk.port.side'] === side).length;
+  if (side === 'WEST' || side === 'EAST') {
+    return sameSideCount === 1;
+  }
+
+  if (side === 'NORTH' || side === 'SOUTH') {
+    return sameSideCount === 1;
+  }
+
+  return false;
+}
+
+function verticalLeadSitsOutsidePeer(
+  peer: DiagramNode,
+  peerPosition: { x: number; y: number },
+  lead: { point: { x: number; y: number }; side: ElkPortSide }
+): boolean {
+  const dimensions = diagramNodeDimensions(peer);
+  if (lead.side === 'NORTH') {
+    return lead.point.y < peerPosition.y;
+  }
+  if (lead.side === 'SOUTH') {
+    return lead.point.y > peerPosition.y + dimensions.height;
+  }
+  return false;
 }
 
 function enforceMinimumBlockGaps(
@@ -883,11 +896,30 @@ function enforceMinimumBlockGaps(
 ): void {
   const blocks = nodes.filter((node) => isBlockSpacingNode(node) && !moduleLayout.nodes[node.id]?.fixed);
   const dimensions = new Map(blocks.map((node) => [node.id, diagramNodeDimensions(node)]));
+
+  // Resolve vertical collisions first (the dominant case for left-to-right
+  // layered layouts), then horizontal, then vertical again so any overlap the
+  // horizontal pass introduced is settled. Every block keeps at least one grid
+  // of clearance from its neighbours; overlapping clearance zones are fine.
+  separateBlocksAlongAxis(blocks, positions, dimensions, 'y');
+  separateBlocksAlongAxis(blocks, positions, dimensions, 'x');
+  separateBlocksAlongAxis(blocks, positions, dimensions, 'y');
+}
+
+function separateBlocksAlongAxis(
+  blocks: DiagramNode[],
+  positions: Map<string, { x: number; y: number }>,
+  dimensions: Map<string, { width: number; height: number }>,
+  axis: 'x' | 'y'
+): void {
+  const cross = axis === 'y' ? 'x' : 'y';
+  const mainSize = axis === 'y' ? 'height' : 'width';
+  const crossSize = axis === 'y' ? 'width' : 'height';
   const minGap = diagramSizing.gridSize;
 
   for (let pass = 0; pass < blocks.length; pass++) {
     let moved = false;
-    const ordered = [...blocks].sort((a, b) => (positions.get(a.id)?.y ?? 0) - (positions.get(b.id)?.y ?? 0));
+    const ordered = [...blocks].sort((a, b) => (positions.get(a.id)?.[axis] ?? 0) - (positions.get(b.id)?.[axis] ?? 0));
 
     for (let i = 1; i < ordered.length; i++) {
       const node = ordered[i];
@@ -895,21 +927,28 @@ function enforceMinimumBlockGaps(
       const size = dimensions.get(node.id);
       if (!pos || !size) continue;
 
-      let requiredY = pos.y;
+      let required = pos[axis];
       for (let j = 0; j < i; j++) {
         const previous = ordered[j];
         const prevPos = positions.get(previous.id);
         const prevSize = dimensions.get(previous.id);
-        if (!prevPos || !prevSize || !horizontallyOverlaps(pos, size, prevPos, prevSize)) continue;
+        if (!prevPos || !prevSize) continue;
 
-        const gap = requiredY - (prevPos.y + prevSize.height);
+        const crossOverlap = pos[cross] < prevPos[cross] + prevSize[crossSize]
+          && prevPos[cross] < pos[cross] + size[crossSize];
+        if (!crossOverlap) continue;
+
+        const gap = required - (prevPos[axis] + prevSize[mainSize]);
         if (gap < minGap) {
-          requiredY = prevPos.y + prevSize.height + minGap;
+          required = prevPos[axis] + prevSize[mainSize] + minGap;
         }
       }
 
-      if (requiredY > pos.y) {
-        positions.set(node.id, { ...pos, y: snapToGrid(requiredY, node.kind, structRole(node)) });
+      if (required > pos[axis]) {
+        const snapped = axis === 'y'
+          ? snapToGrid(required, node.kind, structRole(node))
+          : snapToGrid(required);
+        positions.set(node.id, { ...pos, [axis]: snapped });
         moved = true;
       }
     }
@@ -919,16 +958,10 @@ function enforceMinimumBlockGaps(
 }
 
 function isBlockSpacingNode(node: DiagramNode): boolean {
-  return node.kind !== 'port' && node.kind !== 'literal' && node.kind !== 'replicate';
-}
-
-function horizontallyOverlaps(
-  aPos: { x: number; y: number },
-  aSize: { width: number; height: number },
-  bPos: { x: number; y: number },
-  bSize: { width: number; height: number }
-): boolean {
-  return aPos.x < bPos.x + bSize.width && bPos.x < aPos.x + aSize.width;
+  // Every drawn block participates in spacing so it always keeps a grid of
+  // clearance — including IO ports, literals, and replicate nodes, which used
+  // to be exempt and could end up jammed against a neighbour.
+  return node.kind !== 'netLabel';
 }
 
 function genericNodePortTop(node: DiagramNode): number {
@@ -985,7 +1018,28 @@ function routeWithRenderedLeads(
     const sourceHandle = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, false);
     const targetHandle = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, false);
     if (sourceHandle && targetHandle) {
-      return directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
+      const handleRouteStart = insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port');
+      const handleRouteEnd = insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port');
+      const handleRoute = directLeadRoute(handleRouteStart, handleRouteEnd);
+      const clearanceRoute = directLeadRoute(sourceLead, targetLead);
+      const repairedClearanceRoute = repairForwardHorizontalRoute(
+        clearanceRoute,
+        sourceLead,
+        targetLead,
+        nodesById,
+        nodePositions,
+        routeEndpointObstacles(edge, sourceLead, targetLead)
+      );
+
+      if (!routesEqual(repairedClearanceRoute, clearanceRoute)) {
+        return removeRedundantRoutePoints(makeOrthogonalRoute([
+          handleRouteStart.point,
+          ...repairedClearanceRoute,
+          handleRouteEnd.point
+        ]));
+      }
+
+      return handleRoute;
     }
   }
 
@@ -996,7 +1050,8 @@ function routeWithRenderedLeads(
       sourceLead,
       targetLead,
       nodesById,
-      nodePositions
+      nodePositions,
+      routeEndpointObstacles(edge, sourceLead, targetLead)
     );
   }
 
@@ -1020,7 +1075,8 @@ function routeWithRenderedLeads(
     sourceLead,
     targetLead,
     nodesById,
-    nodePositions
+    nodePositions,
+    routeEndpointObstacles(edge, sourceLead, targetLead)
   );
 }
 
@@ -1090,19 +1146,20 @@ function repairForwardHorizontalRoute(
   sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
   targetLead: { point: { x: number; y: number }; side: ElkPortSide },
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  endpointObstacles: RouteEndpointObstacles
 ): Array<{ x: number; y: number }> {
-  const direction = forwardHorizontalDirection(sourceLead, targetLead);
+  const direction = horizontalSourceOutwardDirection(sourceLead, targetLead);
   if (!direction) {
     return route;
   }
 
-  if (!routeIntersectsNodeInterior(route, nodesById, nodePositions)) {
+  if (!routeIntersectsNodeInterior(route, nodesById, nodePositions, endpointObstacles)) {
     return route;
   }
 
   const candidates = forwardHorizontalCandidates(sourceLead.point, targetLead.point, direction, nodesById, nodePositions);
-  return candidates.find((candidate) => !routeIntersectsNodeInterior(candidate, nodesById, nodePositions)) ?? route;
+  return candidates.find((candidate) => !routeIntersectsNodeInterior(candidate, nodesById, nodePositions, endpointObstacles)) ?? route;
 }
 
 function repairSourceStems(
@@ -1119,7 +1176,7 @@ function repairSourceStems(
       continue;
     }
 
-    const repaired = repairSourceStem(route, sourceLead, targetLead, nodesById, nodePositions);
+    const repaired = repairSourceStem(route, sourceLead, targetLead, nodesById, nodePositions, routeEndpointObstacles(edge, sourceLead, targetLead));
     if (repaired) {
       routes.set(edge.id, repaired);
     }
@@ -1131,7 +1188,8 @@ function repairSourceStem(
   sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
   targetLead: { point: { x: number; y: number }; side: ElkPortSide },
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  endpointObstacles: RouteEndpointObstacles
 ): Array<{ x: number; y: number }> | undefined {
   const direction = forwardHorizontalDirection(sourceLead, targetLead);
   if (!direction || route.length < 3) {
@@ -1164,7 +1222,23 @@ function repairSourceStem(
     ...deduped.slice(1).map((point) => point.x === source.x ? { ...point, x: stemX } : point)
   ]));
 
-  return routeIntersectsNodeInterior(candidate, nodesById, nodePositions) ? undefined : candidate;
+  return routeIntersectsNodeInterior(candidate, nodesById, nodePositions, endpointObstacles) ? undefined : candidate;
+}
+
+type RouteEndpointObstacles = {
+  source: { id: string; lead: { point: { x: number; y: number }; side: ElkPortSide } };
+  target: { id: string; lead: { point: { x: number; y: number }; side: ElkPortSide } };
+};
+
+function routeEndpointObstacles(
+  edge: DiagramEdge,
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide }
+): RouteEndpointObstacles {
+  return {
+    source: { id: edge.source, lead: sourceLead },
+    target: { id: edge.target, lead: targetLead }
+  };
 }
 
 function forwardHorizontalDirection(
@@ -1175,6 +1249,19 @@ function forwardHorizontalDirection(
     return 1;
   }
   if (sourceLead.side === 'WEST' && targetLead.side === 'EAST' && sourceLead.point.x > targetLead.point.x) {
+    return -1;
+  }
+  return undefined;
+}
+
+function horizontalSourceOutwardDirection(
+  sourceLead: { point: { x: number; y: number }; side: ElkPortSide },
+  targetLead: { point: { x: number; y: number }; side: ElkPortSide }
+): 1 | -1 | undefined {
+  if (sourceLead.side === 'EAST' && targetLead.side !== 'EAST') {
+    return 1;
+  }
+  if (sourceLead.side === 'WEST' && targetLead.side !== 'WEST') {
     return -1;
   }
   return undefined;
@@ -1239,29 +1326,76 @@ function uniqueNumbers(values: number[]): number[] {
 function routeIntersectsNodeInterior(
   route: Array<{ x: number; y: number }>,
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  endpointObstacles?: RouteEndpointObstacles
 ): boolean {
-  const obstacles = routeObstacles(nodesById, nodePositions);
+  // Inflate obstacles by one grid so a route is rejected unless it keeps a full
+  // grid of clearance from blocks. Endpoint blocks get one exception: the short
+  // source/target lead segment may pass through their inflated padding, but it
+  // still may not cut through the natural block interior.
+  const obstacles = routeObstacles(nodesById, nodePositions, { inflate: diagramSizing.gridSize });
   return route.slice(0, -1).some((point, index) => {
     const next = route[index + 1];
-    return obstacles.some((rect) => segmentIntersectsRectInterior(point, next, rect));
+    return obstacles.some((rect) => {
+      if (!segmentIntersectsRectInterior(point, next, rect)) {
+        return false;
+      }
+      if (endpointLeadSegmentCanUseClearance(route, index, rect.nodeId, endpointObstacles)) {
+        return segmentIntersectsRectInterior(point, next, rect.natural);
+      }
+      return true;
+    });
   });
 }
 
 function routeObstacles(
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
-): Array<{ x: number; y: number; width: number; height: number }> {
-  const obstacles: Array<{ x: number; y: number; width: number; height: number }> = [];
+  nodePositions: Map<string, { x: number; y: number }>,
+  options?: { inflate?: number }
+): Array<{ nodeId: string; x: number; y: number; width: number; height: number; natural: { x: number; y: number; width: number; height: number } }> {
+  const inflate = options?.inflate ?? 0;
+  const obstacles: Array<{ nodeId: string; x: number; y: number; width: number; height: number; natural: { x: number; y: number; width: number; height: number } }> = [];
   for (const [nodeId, node] of nodesById) {
     const position = nodePositions.get(nodeId);
     if (!position) {
       continue;
     }
     const dimensions = diagramNodeDimensions(node);
-    obstacles.push({ ...position, ...dimensions });
+    const natural = { ...position, ...dimensions };
+    obstacles.push({
+      nodeId,
+      x: position.x - inflate,
+      y: position.y - inflate,
+      width: dimensions.width + inflate * 2,
+      height: dimensions.height + inflate * 2,
+      natural
+    });
   }
   return obstacles;
+}
+
+function endpointLeadSegmentCanUseClearance(
+  route: Array<{ x: number; y: number }>,
+  segmentIndex: number,
+  nodeId: string,
+  endpointObstacles?: RouteEndpointObstacles
+): boolean {
+  if (!endpointObstacles) {
+    return false;
+  }
+
+  const source = endpointObstacles.source;
+  if (nodeId === source.id && segmentIndex === 0 && pointsEqual(route[0], source.lead.point)) {
+    return true;
+  }
+
+  const target = endpointObstacles.target;
+  const lastSegmentIndex = route.length - 2;
+  if (nodeId === target.id && segmentIndex === lastSegmentIndex && pointsEqual(route[route.length - 1], target.lead.point)) {
+    return true;
+  }
+
+  return false;
 }
 
 function segmentIntersectsRectInterior(
@@ -1513,6 +1647,10 @@ function removeConsecutiveDuplicatePoints(points: Array<{ x: number; y: number }
 
 function pointsEqual(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
   return a.x === b.x && a.y === b.y;
+}
+
+function routesEqual(a: Array<{ x: number; y: number }>, b: Array<{ x: number; y: number }>): boolean {
+  return a.length === b.length && a.every((point, index) => pointsEqual(point, b[index]));
 }
 
 export function projectElkRoutes(

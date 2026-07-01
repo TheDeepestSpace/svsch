@@ -87,25 +87,41 @@ function renderedAluInputCenterY(node: PositionedNode, index: number): number {
 }
 
 function routeCrossesNodeInterior(route: Array<{ x: number; y: number }>, node: PositionedNode): boolean {
+  return route.slice(0, -1).some((point, index) => segmentCrossesNodeInterior(point, route[index + 1], node));
+}
+
+function segmentCrossesNodeInterior(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  node: PositionedNode,
+  inflate = 0
+): boolean {
+  if (start.x === end.x && start.y === end.y) {
+    return false;
+  }
+
   const dimensions = diagramNodeDimensions(node);
   const epsilon = 0.5;
+  const rect = {
+    x: node.position.x - inflate,
+    y: node.position.y - inflate,
+    width: dimensions.width + inflate * 2,
+    height: dimensions.height + inflate * 2
+  };
 
-  return route.slice(0, -1).some((point, index) => {
-    const next = route[index + 1];
-    if (point.y === next.y) {
-      return point.y > node.position.y + epsilon
-        && point.y < node.position.y + dimensions.height - epsilon
-        && Math.min(point.x, next.x) < node.position.x + dimensions.width - epsilon
-        && Math.max(point.x, next.x) > node.position.x + epsilon;
-    }
-    if (point.x === next.x) {
-      return point.x > node.position.x + epsilon
-        && point.x < node.position.x + dimensions.width - epsilon
-        && Math.min(point.y, next.y) < node.position.y + dimensions.height - epsilon
-        && Math.max(point.y, next.y) > node.position.y + epsilon;
-    }
-    return false;
-  });
+  if (start.y === end.y) {
+    return start.y > rect.y + epsilon
+      && start.y < rect.y + rect.height - epsilon
+      && Math.min(start.x, end.x) < rect.x + rect.width - epsilon
+      && Math.max(start.x, end.x) > rect.x + epsilon;
+  }
+  if (start.x === end.x) {
+    return start.x > rect.x + epsilon
+      && start.x < rect.x + rect.width - epsilon
+      && Math.min(start.y, end.y) < rect.y + rect.height - epsilon
+      && Math.max(start.y, end.y) > rect.y + epsilon;
+  }
+  return false;
 }
 
 describe('layout merge', () => {
@@ -165,6 +181,47 @@ describe('layout merge', () => {
         expect(node.position.y % diagramSizing.gridSize).toBe(diagramSizing.gridSize / 2);
       } else {
         expect(node.position.y % diagramSizing.gridSize).toBe(0);
+      }
+    }
+  });
+
+  it('keeps at least one grid of clearance between auto-laid-out blocks, including bare IO ports', async () => {
+    const minGap = diagramSizing.gridSize;
+    const ioOnlyGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          edges: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'a', name: 'a', direction: 'output' }] },
+            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'b', name: 'b', direction: 'input' }] },
+            { id: 'c', kind: 'port', label: 'c', ports: [{ id: 'c', name: 'c', direction: 'output' }] }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(ioOnlyGraph, 'top', { version: 1, modules: {} });
+    const blocks = view.nodes.map((node) => ({
+      id: node.id,
+      ...node.position,
+      ...diagramNodeDimensions(node)
+    }));
+    expect(blocks).toHaveLength(3);
+
+    for (let i = 0; i < blocks.length; i++) {
+      for (let j = i + 1; j < blocks.length; j++) {
+        const a = blocks[i];
+        const b = blocks[j];
+        const horizontalGap = Math.max(b.x - (a.x + a.width), a.x - (b.x + b.width));
+        const verticalGap = Math.max(b.y - (a.y + a.height), a.y - (b.y + b.height));
+        const clear = horizontalGap >= minGap - 0.5 || verticalGap >= minGap - 0.5;
+        expect(clear, `${a.id}/${b.id} gaps h=${horizontalGap} v=${verticalGap}`).toBe(true);
       }
     }
   });
@@ -1393,6 +1450,273 @@ describe('layout merge', () => {
     expect(routeCrossesNodeInterior(addrRoute, wenMux)).toBe(false);
     expect(routeCrossesNodeInterior(addrRoute, outData)).toBe(false);
     expect(Math.max(...addrRoute.map((point) => point.y))).toBeGreaterThan(outData.position.y + diagramNodeDimensions(outData).height);
+  });
+
+  it('keeps vertical select feeds one grid away from neighboring select blocks', async () => {
+    const graph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'wide_expr',
+              kind: 'comb',
+              label: 'wide expr',
+              ports: [
+                { id: 'sel_wide', name: 'sel_wide', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ]
+            },
+            {
+              id: 'literal8',
+              kind: 'literal',
+              label: '8',
+              ports: [{ id: 'out', name: '8', direction: 'output' }]
+            },
+            {
+              id: 'bit_out',
+              kind: 'port',
+              label: 'bit_out',
+              ports: [{ id: 'bit_out', name: 'bit_out', direction: 'output' }]
+            },
+            {
+              id: 'bus',
+              kind: 'port',
+              label: 'bus',
+              ports: [{ id: 'bus', name: 'bus', direction: 'input' }]
+            },
+            {
+              id: 'byte_out',
+              kind: 'port',
+              label: 'byte_out',
+              ports: [{ id: 'byte_out', name: 'byte_out', direction: 'output' }]
+            },
+            {
+              id: 'sel',
+              kind: 'port',
+              label: 'sel',
+              ports: [{ id: 'sel', name: 'sel', direction: 'input' }]
+            },
+            {
+              id: 'sel_wide',
+              kind: 'port',
+              label: 'sel_wide',
+              ports: [{ id: 'sel_wide', name: 'sel_wide', direction: 'input' }]
+            },
+            {
+              id: 'wide_select',
+              kind: 'select',
+              label: 'bus[wide]',
+              ports: [
+                { id: 'sel', name: 'sel', direction: 'input', label: 's' },
+                { id: 'width', name: 'width', direction: 'input', label: 'w' },
+                { id: 'in', name: 'in', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ]
+            },
+            {
+              id: 'bit_select',
+              kind: 'select',
+              label: 'bus[sel]',
+              ports: [
+                { id: 'sel', name: 'sel', direction: 'input', label: 's' },
+                { id: 'in', name: 'in', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ]
+            }
+          ],
+          edges: [
+            { id: 'wide-expr-select', source: 'wide_expr', sourcePort: 'out', target: 'wide_select', targetPort: 'sel' },
+            { id: 'literal-width', source: 'literal8', sourcePort: 'out', target: 'wide_select', targetPort: 'width' },
+            { id: 'bus-bit', source: 'bus', sourcePort: 'bus', target: 'bit_select', targetPort: 'in' },
+            { id: 'bus-wide', source: 'bus', sourcePort: 'bus', target: 'wide_select', targetPort: 'in' },
+            { id: 'sel-bit', source: 'sel', sourcePort: 'sel', target: 'bit_select', targetPort: 'sel' },
+            { id: 'sel-wide-expr', source: 'sel_wide', sourcePort: 'sel_wide', target: 'wide_expr', targetPort: 'sel_wide' },
+            { id: 'bit-out', source: 'bit_select', sourcePort: 'out', target: 'bit_out', targetPort: 'bit_out' },
+            { id: 'byte-out', source: 'wide_select', sourcePort: 'out', target: 'byte_out', targetPort: 'byte_out' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+
+    const route = view.edges.find((edge) => edge.id === 'sel-bit')!.routePoints!;
+    const sel = view.nodes.find((node) => node.id === 'sel')!;
+    const upperSelect = view.nodes.find((node) => node.id === 'wide_select')!;
+    const upperClearanceBottom = upperSelect.position.y + diagramNodeDimensions(upperSelect).height + diagramSizing.gridSize;
+
+    expect(sel.position.y + diagramSizing.portHeight / 2).toBe(upperClearanceBottom);
+    expect(route).toHaveLength(3);
+    expect(route[0].y).toBe(upperClearanceBottom);
+    expect(route[1].y).toBe(upperClearanceBottom);
+    expect(route.some((point) => point.y >= upperClearanceBottom)).toBe(true);
+    for (let i = 0; i < route.length - 1; i++) {
+      expect(
+        segmentCrossesNodeInterior(route[i], route[i + 1], upperSelect, diagramSizing.gridSize),
+        `upper select clearance hit on segment ${JSON.stringify(route[i])} -> ${JSON.stringify(route[i + 1])}`
+      ).toBe(false);
+    }
+  });
+
+  it('keeps separate source lanes for multiple interface top ports', async () => {
+    const graph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'request_bus',
+              kind: 'interface',
+              label: 'request_bus',
+              ports: [
+                { id: 'in:clk', name: 'clk', direction: 'input' },
+                { id: 'in:rst_n', name: 'rst_n', direction: 'input' },
+                { id: 'in:requester', name: 'requester', direction: 'input', width: 'interface', preferredSide: 'left' },
+                { id: 'in:arbiter', name: 'arbiter', direction: 'input', width: 'interface', preferredSide: 'left' }
+              ]
+            },
+            {
+              id: 'clk',
+              kind: 'port',
+              label: 'clk',
+              ports: [{ id: 'port:clk', name: 'clk', direction: 'input' }]
+            },
+            {
+              id: 'rst_n',
+              kind: 'port',
+              label: 'rst_n',
+              ports: [{ id: 'port:rst_n', name: 'rst_n', direction: 'input' }]
+            },
+            {
+              id: 'requester',
+              kind: 'instance',
+              label: 'u_requester',
+              ports: [{ id: 'bus', name: 'bus', direction: 'output', width: 'interface' }]
+            },
+            {
+              id: 'arbiter',
+              kind: 'instance',
+              label: 'u_arbiter',
+              ports: [{ id: 'bus', name: 'bus', direction: 'output', width: 'interface' }]
+            }
+          ],
+          edges: [
+            { id: 'clk-bus', source: 'clk', sourcePort: 'port:clk', target: 'request_bus', targetPort: 'in:clk' },
+            { id: 'rst-bus', source: 'rst_n', sourcePort: 'port:rst_n', target: 'request_bus', targetPort: 'in:rst_n' },
+            { id: 'requester-bus', source: 'requester', sourcePort: 'bus', target: 'request_bus', targetPort: 'in:requester' },
+            { id: 'arbiter-bus', source: 'arbiter', sourcePort: 'bus', target: 'request_bus', targetPort: 'in:arbiter' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+
+    const clk = view.nodes.find((node) => node.id === 'clk')!;
+    const rst = view.nodes.find((node) => node.id === 'rst_n')!;
+    const rstRoute = view.edges.find((edge) => edge.id === 'rst-bus')!.routePoints!;
+    const clkCenterY = renderedPortCenterY(clk);
+    const rstCenterY = renderedPortCenterY(rst);
+
+    expect(rstCenterY).toBeLessThan(clkCenterY);
+    expect(rstRoute).toHaveLength(3);
+    expect(rstRoute[0].y).toBe(rstCenterY);
+    expect(rstRoute[1].y).toBe(rstCenterY);
+    expect(rstRoute[0].y).toBeLessThan(clkCenterY);
+  });
+
+  it('keeps stacked feedback lanes one grid away from endpoint blocks after the lead stubs', async () => {
+    const graph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'addr_mux',
+              kind: 'mux',
+              label: 'storage_addr',
+              ports: [
+                { id: 'sel', name: 'sel', direction: 'input' },
+                { id: 'data', name: "2'b0", direction: 'input' },
+                { id: 'hold', name: 'default', direction: 'input' },
+                { id: 'out', name: 'out', direction: 'output' }
+              ],
+              metadata: { isArrayNode: true }
+            },
+            {
+              id: 'reg',
+              kind: 'register',
+              label: 'storage',
+              ports: [
+                { id: 'd', name: 'D', direction: 'input' },
+                { id: 'q', name: 'Q', direction: 'output' },
+                { id: 'clk', name: 'clk', direction: 'input' }
+              ],
+              metadata: { isArrayNode: true, clockSignal: 'clk' }
+            },
+            { id: 'address', kind: 'port', label: 'address', ports: [{ id: 'address', name: 'address', direction: 'input' }] },
+            { id: 'clk', kind: 'port', label: 'clk', ports: [{ id: 'clk', name: 'clk', direction: 'input' }] },
+            { id: 'in_data', kind: 'port', label: 'in_data', ports: [{ id: 'in_data', name: 'in_data', direction: 'input' }] },
+            { id: 'out_data', kind: 'port', label: 'out_data', ports: [{ id: 'out_data', name: 'out_data', direction: 'output' }] }
+          ],
+          edges: [
+            { id: 'addr-reg', source: 'addr_mux', sourcePort: 'out', target: 'reg', targetPort: 'd' },
+            { id: 'address-addr', source: 'address', sourcePort: 'address', target: 'addr_mux', targetPort: 'sel' },
+            { id: 'clk-reg', source: 'clk', sourcePort: 'clk', target: 'reg', targetPort: 'clk' },
+            { id: 'data-addr', source: 'in_data', sourcePort: 'in_data', target: 'addr_mux', targetPort: 'data' },
+            { id: 'reg-addr-fb', source: 'reg', sourcePort: 'q', target: 'addr_mux', targetPort: 'hold' },
+            { id: 'reg-out', source: 'reg', sourcePort: 'q', target: 'out_data', targetPort: 'out_data' }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graph, 'top', {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            addr_mux: { x: 408, y: 120, fixed: true },
+            reg: { x: 768, y: 120, fixed: true },
+            address: { x: 24, y: 36, fixed: true },
+            clk: { x: 432, y: 36, fixed: true },
+            in_data: { x: 24, y: 156, fixed: true },
+            out_data: { x: 1176, y: 156, fixed: true }
+          }
+        }
+      }
+    });
+
+    const route = view.edges.find((edge) => edge.id === 'reg-addr-fb')!.routePoints!;
+    const endpoints = [
+      view.nodes.find((node) => node.id === 'addr_mux')!,
+      view.nodes.find((node) => node.id === 'reg')!
+    ];
+
+    for (let i = 1; i < route.length - 2; i++) {
+      for (const endpoint of endpoints) {
+        expect(
+          segmentCrossesNodeInterior(route[i], route[i + 1], endpoint, diagramSizing.gridSize),
+          `${endpoint.id} clearance hit on segment ${JSON.stringify(route[i])} -> ${JSON.stringify(route[i + 1])}`
+        ).toBe(false);
+      }
+    }
   });
 
   it('keeps source-side fanout stems off the source lead', async () => {

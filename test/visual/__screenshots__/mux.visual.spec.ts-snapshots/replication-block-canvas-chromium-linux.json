@@ -190,7 +190,7 @@
       "type": "hdl",
       "position": {
         "x": 672,
-        "y": 444
+        "y": 468
       },
       "width": 168,
       "height": 24,
@@ -370,7 +370,7 @@
       "type": "hdl",
       "position": {
         "x": 384,
-        "y": 432
+        "y": 456
       },
       "width": 48,
       "height": 48,
@@ -462,7 +462,7 @@
       "target": "replicate:replication_expr:repeated:x20",
       "sourceHandle": "port:some_wire",
       "targetHandle": "port:in",
-      "path": "M 144 336 L 168 336 L 216 336 L 216 456 L 360 456 L 384 456"
+      "path": "M 144 336 L 168 336 L 216 336 L 216 480 L 360 480 L 384 480"
     },
     {
       "id": "edge:port:replication_expr:tail:bus:replication_expr:concat_repeated:expr:tail",
@@ -510,7 +510,7 @@
       "target": "port:replication_expr:repeated",
       "sourceHandle": "port:repeated",
       "targetHandle": "port:repeated",
-      "path": "M 432 456 L 456 456 L 648 456 L 672 456"
+      "path": "M 432 480 L 456 480 L 648 480 L 672 480"
     }
   ]
 }

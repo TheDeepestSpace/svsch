@@ -75,7 +75,7 @@
       "type": "hdl",
       "position": {
         "x": 336,
-        "y": 228
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -194,7 +194,7 @@
       "target": "bus_comp:array_stack_composition_elements:arr",
       "sourceHandle": "port:8_h00",
       "targetHandle": "in:_0_",
-      "path": "M 456 240 L 480 240 L 504 240 L 504 192 L 648 192 L 672 192"
+      "path": "M 456 264 L 480 264 L 504 264 L 504 192 L 648 192 L 672 192"
     },
     {
       "id": "edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01",

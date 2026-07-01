@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 36
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -106,7 +106,7 @@
       "target": "select:top:bus[sel]",
       "sourceHandle": "port:sel",
       "targetHandle": "port:sel",
-      "path": "M 144 48 L 168 48 L 408 48 L 408 72 L 408 117"
+      "path": "M 144 72 L 168 72 L 408 72 L 408 117"
     },
     {
       "id": "edge:select:top:bus_sel_:port:top:bit_out:bit_out",

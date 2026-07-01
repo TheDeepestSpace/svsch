@@ -95,7 +95,7 @@
       "type": "hdl",
       "position": {
         "x": 768,
-        "y": 360
+        "y": 384
       },
       "width": 96,
       "height": 96,
@@ -220,7 +220,7 @@
       "type": "hdl",
       "position": {
         "x": 768,
-        "y": 228
+        "y": 324
       },
       "width": 120,
       "height": 24,
@@ -240,7 +240,7 @@
       "type": "hdl",
       "position": {
         "x": 336,
-        "y": 348
+        "y": 396
       },
       "width": 192,
       "height": 24,
@@ -260,7 +260,7 @@
       "type": "hdl",
       "position": {
         "x": 408,
-        "y": 276
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -280,7 +280,7 @@
       "type": "hdl",
       "position": {
         "x": 384,
-        "y": 384
+        "y": 456
       },
       "width": 144,
       "height": 96,
@@ -321,7 +321,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1645 436 L 1684 436 L 1684 508 L 172 508 L 172 436 L 379 436"
+      "path": "M 1645 436 L 1684 436 L 1684 580 L 364 580 L 364 508 L 379 508"
     },
     {
       "id": "edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate",
@@ -337,7 +337,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 877 412 L 1123 412"
+      "path": "M 877 436 L 1012 436 L 1012 412 L 1123 412"
     },
     {
       "id": "edge:mux:array_register:M_read_address:port:array_register:read_data:read_data",
@@ -369,7 +369,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144 456 L 360 456"
+      "path": "M 144 456 L 264 456 L 264 528 L 360 528"
     },
     {
       "id": "edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst",
@@ -377,7 +377,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "port:rst",
       "targetHandle": "sel",
-      "path": "M 888 240 L 1200 240 L 1200 312 L 1200 309"
+      "path": "M 888 336 L 1056 336 L 1056 309 L 1200 309"
     },
     {
       "id": "edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data",
@@ -385,7 +385,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "port:write_data",
       "targetHandle": "in:true",
-      "path": "M 528 360 L 576 360 L 576 408 L 744 408"
+      "path": "M 528 408 L 576 408 L 576 432 L 744 432"
     },
     {
       "id": "edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en",
@@ -393,7 +393,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "port:write_en",
       "targetHandle": "sel",
-      "path": "M 528 288 L 816 288 L 816 336 L 816 333"
+      "path": "M 528 360 L 816 360 L 816 357"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_addr:M",
@@ -401,7 +401,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 541 436 L 580 436 L 580 460 L 1483 460"
+      "path": "M 541 508 L 1468 508 L 1468 460 L 1483 460"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M",
@@ -409,7 +409,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 541 436 L 763 436"
+      "path": "M 541 508 L 580 508 L 580 460 L 763 460"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_read_address:M",
@@ -417,7 +417,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 541 436 L 580 436 L 580 148 L 744 148"
+      "path": "M 541 508 L 580 508 L 580 148 L 744 148"
     }
   ]
 }

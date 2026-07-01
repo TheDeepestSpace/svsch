@@ -85,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 120,
-        "y": 36
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -144,7 +144,7 @@
       "target": "latch:top:q",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 576 144 L 600 144 L 600 288 L 0 288 L 0 240 L 24 240 L 48 240"
+      "path": "M 576 144 L 600 144 L 624 144 L 624 312 L 24 312 L 24 240 L 48 240"
     },
     {
       "id": "edge:port:top:d:mux:top:q:en:q_latch_d:d",
@@ -160,7 +160,7 @@
       "target": "mux:top:q:en:q_latch_d",
       "sourceHandle": "port:en",
       "targetHandle": "sel",
-      "path": "M 240 48 L 264 48 L 528 48 L 528 72 L 528 117"
+      "path": "M 240 72 L 264 72 L 528 72 L 528 117"
     }
   ]
 }

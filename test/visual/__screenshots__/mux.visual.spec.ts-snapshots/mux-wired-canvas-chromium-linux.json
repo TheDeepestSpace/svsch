@@ -80,7 +80,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 36
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -147,7 +147,7 @@
       "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 117"
+      "path": "M 144 72 L 168 72 L 432 72 L 432 117"
     }
   ]
 }
