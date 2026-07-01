@@ -1231,6 +1231,28 @@ Then('the route of the connection between {string} and {string} should not have 
   expect(currentRoute).toBe(initialRoute);
 });
 
+When('I note the route from {string} to the combinational block', async function (this: BddWorld, source: string) {
+  this.notedRoutes.set(routeKey(source, 'comb'), await combRoutePath(this.webviewPage, source));
+});
+
+Then('the route from {string} to the combinational block should have shifted by \\({int}, {int}\\) grid cells', async function (this: BddWorld, source: string, cellsX: number, cellsY: number) {
+  const before = this.notedRoutes.get(routeKey(source, 'comb'));
+  if (!before) throw new Error(`Missing noted route for ${source} -> comb`);
+  const after = await combRoutePath(this.webviewPage, source);
+  const beforeNums = (before.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const afterNums = (after.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  expect(afterNums.length, 'route point count changed').toBe(beforeNums.length);
+  // Path numbers alternate x, y — every coordinate must translate with the arm
+  // (endpoints follow the blocks even when buggy, but the waypoints in between
+  // are what stayed put before the fix).
+  const dx = cellsX * diagramGrid.size;
+  const dy = cellsY * diagramGrid.size;
+  for (let i = 0; i < beforeNums.length; i += 1) {
+    const expectedDelta = i % 2 === 0 ? dx : dy;
+    expect(afterNums[i] - beforeNums[i], `coordinate ${i} of the route`).toBeCloseTo(expectedDelta, 0);
+  }
+});
+
 Then('the port node {string} should have moved', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
@@ -1764,6 +1786,21 @@ async function connectionRoutePath(webviewPage: FrameLocator, source: string, ta
     if (fallback !== undefined) return fallback;
     throw err;
   }
+}
+
+// Like connectionRoutePath but resolves the target by node kind — the combinational
+// block inside a generate arm has no stable label to look up.
+async function combRoutePath(webviewPage: FrameLocator, source: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(webviewPage, source);
+  const targetId = await webviewPage.locator('html').evaluate(() =>
+    document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb=${targetId}`);
+  const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and comb`);
+  const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
 }
 
 async function waitForViewportTransformToSettle(webviewPage: FrameLocator): Promise<void> {

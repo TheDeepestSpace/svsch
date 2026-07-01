@@ -519,9 +519,11 @@ function DiagramApp(): React.ReactElement {
                     moduleName={view.moduleName}
                     regions={regions}
                     nodes={nodes}
+                    edges={edges}
                     viewport={viewport}
                     setNodes={setNodes}
                     setRegions={setRegions}
+                    onRouteChange={handleRouteChange}
                   />
                 </ViewportPortal>
                 <MiniMap
@@ -551,22 +553,29 @@ interface RegionDragState {
   startNodes: HdlFlowNode[];
   affectedRegionIds: Set<string>;
   affectedNodeIds: Set<string>;
+  // Route waypoints of edges internal to the moved arm, captured at drag start so
+  // they can be translated together with the blocks they connect.
+  startRoutes: Map<string, Array<{ x: number; y: number }>>;
 }
 
 function GenerateRegionOverlay({
   moduleName,
   regions,
   nodes,
+  edges,
   viewport,
   setNodes,
-  setRegions
+  setRegions,
+  onRouteChange
 }: {
   moduleName: string;
   regions: PositionedGenerateRegion[];
   nodes: HdlFlowNode[];
+  edges: Edge[];
   viewport: FlowViewport;
   setNodes: (nodes: HdlFlowNode[] | ((nodes: HdlFlowNode[]) => HdlFlowNode[])) => void;
   setRegions: React.Dispatch<React.SetStateAction<PositionedGenerateRegion[]>>;
+  onRouteChange: (changes: RouteChange[], commit: boolean) => void;
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
 
@@ -579,6 +588,15 @@ function GenerateRegionOverlay({
     const affectedNodeIds = kind === 'move'
       ? nodeIdsForRegions(affectedRegionIds, regions)
       : new Set<string>();
+    const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
+    if (kind === 'move') {
+      for (const edge of edges) {
+        const pts = edge.data?.routePoints as Array<{ x: number; y: number }> | undefined;
+        if (affectedNodeIds.has(edge.source) && affectedNodeIds.has(edge.target) && pts && pts.length > 0) {
+          startRoutes.set(edge.id, pts.map((pt) => ({ ...pt })));
+        }
+      }
+    }
     dragRef.current = {
       kind,
       regionId: region.id,
@@ -595,9 +613,10 @@ function GenerateRegionOverlay({
         }
       })),
       affectedRegionIds,
-      affectedNodeIds
+      affectedNodeIds,
+      startRoutes
     };
-  }, [nodes, regions]);
+  }, [edges, nodes, regions]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -606,6 +625,7 @@ function GenerateRegionOverlay({
       const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
       setRegions(update.regions);
       setNodes(update.nodes);
+      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, false);
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -628,6 +648,7 @@ function GenerateRegionOverlay({
 
       const positioned = flowNodesToPositioned(update.nodes, drag.affectedNodeIds);
       vscode.postMessage({ type: 'layoutChanged', moduleName, nodes: positioned, regions: fixedRegions });
+      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, true);
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -636,7 +657,7 @@ function GenerateRegionOverlay({
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [moduleName, setNodes, setRegions, viewport.zoom]);
+  }, [moduleName, onRouteChange, setNodes, setRegions, viewport.zoom]);
 
   if (regions.length === 0) return null;
 
@@ -697,6 +718,26 @@ function GenerateRegionOverlay({
       ))}
     </div>
   );
+}
+
+// Translate the arm's internal edge routes by the same delta as the blocks so the
+// wires move with them instead of staying put.
+function applyRegionDragRoutes(
+  drag: RegionDragState,
+  clientX: number,
+  clientY: number,
+  zoom: number,
+  onRouteChange: (changes: RouteChange[], commit: boolean) => void,
+  commit: boolean
+): void {
+  if (drag.kind !== 'move' || drag.startRoutes.size === 0) return;
+  const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
+  const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
+  const changes: RouteChange[] = Array.from(drag.startRoutes.entries()).map(([edgeId, points]) => ({
+    edgeId,
+    routePoints: points.map((point) => ({ x: point.x + dx, y: point.y + dy }))
+  }));
+  onRouteChange(changes, commit);
 }
 
 function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number, zoom: number): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {

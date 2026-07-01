@@ -233,9 +233,11 @@ Feature: Diagram Interaction
     And there should be a connection between "g_if_one.u_path_b" and the combinational block in the "g_if_one" generate region
     And there should be a connection between "sel" and the combinational block in the "g_if_one" generate region
     And there should be a connection between the combinational block in the "g_if_one" generate region and "y"
+    And I note the route from "g_if_one.u_path_a" to the combinational block
     When I move the "g_if_one" generate region by (2, -1) grid cells
     Then all blocks in the "g_if_one" generate region should have moved by (2, -1) grid cells
     And blocks outside the "g_if_one" generate region should not have moved
+    And the route from "g_if_one.u_path_a" to the combinational block should have shifted by (2, -1) grid cells
 
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
