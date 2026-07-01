@@ -70,7 +70,7 @@ export function Tooltip({ content, placement = 'right', children }: TooltipProps
     whileElementsMounted: autoUpdate
   });
 
-  const hover = useHover(context, { move: false, delay: { open: 80, close: 0 } });
+  const hover = useHover(context, { move: false, delay: { open: 0, close: 0 } });
   const focus = useFocus(context);
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: 'tooltip' });
