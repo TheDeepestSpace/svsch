@@ -155,13 +155,15 @@ function DiagramApp(): React.ReactElement {
     }));
 
     if (commit && view) {
+      const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
       vscode.postMessage({
         type: 'edgeRoutesChanged',
         moduleName: view.moduleName,
-        changes
+        changes,
+        nodes: flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id)))
       });
     }
-  }, [setEdges, view]);
+  }, [reactFlow, setEdges, view]);
 
   const onEdgeMouseEnter = useCallback((_event: React.MouseEvent, edge: Edge) => {
     const diagramEdge = edge.data?.edge as DiagramEdge | undefined;

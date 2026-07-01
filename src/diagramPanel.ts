@@ -14,7 +14,7 @@ type WebviewMessage =
   | { type: 'regionLayoutChanged'; moduleName: string; regions: PositionedGenerateRegion[] }
   | { type: 'edgeLayoutChanged'; moduleName: string; edgeId: string; waypoint: { x: number; y: number } }
   | { type: 'edgeRouteChanged'; moduleName: string; edgeId: string; routePoints: Array<{ x: number; y: number }> }
-  | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }> }
+  | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>; nodes?: PositionedNode[] }
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
@@ -339,7 +339,7 @@ export class DiagramPanel {
       return;
     }
     if (message.type === 'edgeRoutesChanged') {
-      await this.saveEdgeRoutes(message.moduleName, message.changes);
+      await this.saveEdgeRoutes(message.moduleName, message.changes, message.nodes);
       return;
     }
     if (message.type === 'cutNet') {
@@ -568,7 +568,11 @@ export class DiagramPanel {
     await this.postView(); // Send updated view back to webview immediately
   }
 
-  private async saveEdgeRoutes(moduleName: string, changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>): Promise<void> {
+  private async saveEdgeRoutes(
+    moduleName: string,
+    changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>,
+    nodes?: PositionedNode[]
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -576,7 +580,7 @@ export class DiagramPanel {
     if (!this.layout) {
       this.layout = await store.read();
     }
-    let layout = this.layout;
+    let layout = nodes ? mergeNodePositions(this.layout, moduleName, nodes) : this.layout;
     for (const change of changes) {
       layout = mergeEdgeRoutePoints(layout, moduleName, change.edgeId, change.routePoints);
     }

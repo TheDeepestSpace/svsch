@@ -239,6 +239,29 @@ describe('layout merge', () => {
     ]);
   });
 
+  it('preserves moved node positions when route points are persisted afterward', async () => {
+    const moved = mergeNodePositions({ version: 1, modules: {} }, 'top', [
+      { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 120, y: 132 }, fixed: true },
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 }, fixed: true }
+    ]);
+    const routed = mergeEdgeRoutePoints(moved, 'top', 'e-a-u', [
+      { x: 168, y: 144 },
+      { x: 264, y: 144 }
+    ]);
+    const view = await buildViewModel(graph, 'top', routed);
+
+    expect(routed.modules.top.nodes).toEqual({
+      a: { x: 120, y: 132, fixed: true },
+      u: { x: 360, y: 240, fixed: true }
+    });
+    expect(view.nodes.find((node) => node.id === 'a')?.position).toEqual({ x: 120, y: 132 });
+    expect(view.nodes.find((node) => node.id === 'u')?.position).toEqual({ x: 360, y: 240 });
+    expect(view.edges.find((edge) => edge.id === 'e-a-u')?.routePoints).toEqual([
+      { x: 168, y: 144 },
+      { x: 264, y: 144 }
+    ]);
+  });
+
   it('computes generate region bounds around owned nodes with one-grid inset', async () => {
     const layout: SavedLayout = {
       version: 1,
