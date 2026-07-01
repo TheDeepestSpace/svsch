@@ -294,6 +294,9 @@ export type PositionedNode = DiagramNode & {
     y: number;
   };
   fixed?: boolean;
+  // Set when the block overlaps a generate arm it does not belong to.
+  invalid?: boolean;
+  warningNote?: string;
 };
 
 export interface DiagramViewModel {

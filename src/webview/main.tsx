@@ -17,7 +17,11 @@ import '@xyflow/react/dist/style.css';
 import './styles.css';
 import { diagramSizing, normalizeWidth } from '../diagram/constants';
 import { diagramNodeDimensions } from '../diagram/nodeSizing';
-import { annotateGenerateRegionWarnings } from '../layout/generateRegionValidation';
+import {
+  annotateGenerateRegionWarnings,
+  findExternalBlockIds,
+  GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+} from '../layout/generateRegionValidation';
 import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
 import { Tooltip } from './Tooltip';
@@ -122,6 +126,7 @@ function DiagramApp(): React.ReactElement {
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
 
   const setHovered = useCallback((netKey?: string, immediate = false) => {
     if (hoverTimeoutRef.current) {
@@ -142,6 +147,42 @@ function DiagramApp(): React.ReactElement {
   useEffect(() => {
     regionsRef.current = regions;
   }, [regions]);
+
+  // Flag blocks that overlap a generate arm they don't belong to (or are marked
+  // invalid by the view) so React Flow renders the shared error outline on them.
+  useEffect(() => {
+    const invalidIds = findExternalBlockIds(regions, flowNodesToPositioned(nodes, new Set()));
+    setNodes((current) => {
+      let changed = false;
+      const next = current.map((node) => {
+        const dynamicExternalIds = externalOverlapNodeIdsRef.current;
+        const isExternalOverlap = invalidIds.has(node.id);
+        const hadExternalOverlapWarning = dynamicExternalIds.has(node.id);
+        const keepExistingInvalid = Boolean(node.data.node.invalid) && !hadExternalOverlapWarning;
+        const wantInvalid = keepExistingInvalid || isExternalOverlap;
+        const warningNote = isExternalOverlap
+          ? GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+          : hadExternalOverlapWarning
+            ? undefined
+            : node.data.node.warningNote;
+        if (isExternalOverlap) {
+          dynamicExternalIds.add(node.id);
+        } else {
+          dynamicExternalIds.delete(node.id);
+        }
+        const base = generateStateClass(node.data.node.metadata?.generateActiveState, 'generate-node');
+        const className = [base, wantInvalid ? 'svsch-node-invalid' : ''].filter(Boolean).join(' ') || undefined;
+        const invalid = wantInvalid || undefined;
+        const dataNode = (node.data.node.invalid === invalid && node.data.node.warningNote === warningNote)
+          ? node.data.node
+          : { ...node.data.node, invalid, warningNote };
+        if ((node.className || undefined) === className && dataNode === node.data.node) return node;
+        changed = true;
+        return { ...node, className, data: { ...node.data, node: dataNode } };
+      });
+      return changed ? next : current;
+    });
+  }, [regions, nodes, setNodes]);
 
   const handleRouteChange = useCallback((changes: RouteChange[], commit: boolean) => {
     const changeMap = new Map(changes.map(c => [c.edgeId, c.routePoints]));

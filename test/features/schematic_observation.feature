@@ -403,6 +403,46 @@ Feature: Schematic Observation
     Then no generate region should be flagged as overlapping
     And I should not see any generate region warning icons
 
+  Scenario: Warning when a block overlaps an unrelated generate arm
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        output logic y,
+        output logic z
+      );
+        logic w;
+
+        leaf u_free(.a(a), .y(z));
+
+        generate
+          if (MODE == 1) begin : g_arm
+            leaf u_arm(.a(b), .y(w));
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then no generate region should be flagged as overlapping
+    And no block should be flagged as overlapping an arm
+    When I move the "g_arm" generate region by (0, -3) grid cells
+    Then the "g_arm" generate region should be flagged as containing an unrelated block
+    And the "u_free" block should be flagged as overlapping an arm
+    But the "g_arm.u_arm" block should not be flagged as overlapping an arm
+    And I should see a warning icon on the "g_arm" generate region
+    And I should see a warning icon on the "u_free" block
+    When I hover over the warning icon on the "g_arm" generate region
+    Then a tooltip should appear reading "node does not belong to arm block"
+    When I hover over the warning icon on the "u_free" block
+    Then a tooltip should appear reading "this block does not belong to a generate arm block"
+
   Scenario: Observing case generate blocks
     Given I have a file "top.sv" in my workspace:
       """

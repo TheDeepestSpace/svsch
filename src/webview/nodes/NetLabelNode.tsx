@@ -5,6 +5,7 @@ import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
 import { ArrayStackLeads, handlePositionForSide, NetLabelWire } from './shared/NetLabelWire';
 import type { PositionedNode } from '../../ir/types';
+import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
@@ -130,6 +131,20 @@ export function NetLabelNode({
         >
           Tie
         </button>
+      )}
+      {node.warningNote && (
+        <Tooltip content={node.warningNote}>
+          {(trigger) => (
+            <span
+              {...trigger}
+              className="node-warning"
+              role="img"
+              aria-label={node.warningNote}
+            >
+              ⚠
+            </span>
+          )}
+        </Tooltip>
       )}
     </div>
   );

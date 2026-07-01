@@ -5,6 +5,7 @@ type RegionBounds = PositionedGenerateRegion['bounds'];
 
 export const GENERATE_REGION_OVERLAP_WARNING = 'arm blocks overlapping';
 export const GENERATE_REGION_EXTERNAL_NODE_WARNING = 'node does not belong to arm block';
+export const GENERATE_REGION_EXTERNAL_BLOCK_WARNING = 'this block does not belong to a generate arm block';
 
 export function annotateGenerateRegionWarnings(
   regions: PositionedGenerateRegion[],
@@ -41,20 +42,9 @@ export function annotateGenerateRegionWarnings(
     }
   }
 
-  for (const region of regions) {
-    const owned = new Set(descendantNodeIds(region, regions));
-    for (const node of nodes) {
-      if (owned.has(node.id) || node.kind === 'port') continue;
-      const size = diagramNodeDimensions(node);
-      const center = {
-        x: node.position.x + size.width / 2,
-        y: node.position.y + size.height / 2
-      };
-      if (pointInBounds(center, region.bounds)) {
-        addWarning(region.id, GENERATE_REGION_EXTERNAL_NODE_WARNING);
-        break;
-      }
-    }
+  const { regionIds: regionsWithExternalNode } = classifyExternalBlocks(regions, nodes);
+  for (const regionId of regionsWithExternalNode) {
+    addWarning(regionId, GENERATE_REGION_EXTERNAL_NODE_WARNING);
   }
 
   return regions.map((region) => {
@@ -67,6 +57,43 @@ export function annotateGenerateRegionWarnings(
         : undefined
     };
   });
+}
+
+// Ids of blocks whose visual bounds overlap a generate arm they do not belong to.
+export function findExternalBlockIds(
+  regions: PositionedGenerateRegion[],
+  nodes: PositionedNode[]
+): Set<string> {
+  return classifyExternalBlocks(regions, nodes).nodeIds;
+}
+
+// Single geometry pass shared by the arm warning and the block highlight so the
+// two stay consistent: a block/region pair is flagged when the block is not owned
+// by the region (nor a descendant) yet its bounds overlap the region bounds.
+function classifyExternalBlocks(
+  regions: PositionedGenerateRegion[],
+  nodes: PositionedNode[]
+): { regionIds: Set<string>; nodeIds: Set<string> } {
+  const regionIds = new Set<string>();
+  const nodeIds = new Set<string>();
+  for (const region of regions) {
+    const owned = new Set(descendantNodeIds(region, regions));
+    for (const node of nodes) {
+      if (owned.has(node.id) || node.kind === 'port') continue;
+      const size = diagramNodeDimensions(node);
+      const nodeBounds = {
+        x: node.position.x,
+        y: node.position.y,
+        width: size.width,
+        height: size.height
+      };
+      if (rectsOverlap(nodeBounds, region.bounds)) {
+        regionIds.add(region.id);
+        nodeIds.add(node.id);
+      }
+    }
+  }
+  return { regionIds, nodeIds };
 }
 
 function descendantNodeIds(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): string[] {
@@ -98,8 +125,4 @@ function descendantNodeIds(region: PositionedGenerateRegion, regions: Positioned
 
 function rectsOverlap(a: RegionBounds, b: RegionBounds): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-}
-
-function pointInBounds(point: { x: number; y: number }, bounds: RegionBounds): boolean {
-  return point.x > bounds.x && point.x < bounds.x + bounds.width && point.y > bounds.y && point.y < bounds.y + bounds.height;
 }

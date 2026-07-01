@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { diagramSizing } from '../../src/diagram/constants';
 import type { DiagramViewModel } from '../../src/ir/types';
+import { GENERATE_REGION_EXTERNAL_BLOCK_WARNING } from '../../src/layout/generateRegionValidation';
 import { expectGraphAndScreenshot, openFixture, openView, paddedGraphAndRegionsClip, trackView } from './helper';
 
 type RegionSide = 'left' | 'right' | 'top' | 'bottom';
@@ -131,6 +132,7 @@ test.describe('generate region visual rendering', () => {
 
     await expect(page.locator('.generate-region-invalid')).toHaveCount(1);
     await expect(page.locator('.generate-region-warning[aria-label="node does not belong to arm block"]')).toHaveCount(1);
+    await expect(page.locator(`.node-warning[aria-label="${GENERATE_REGION_EXTERNAL_BLOCK_WARNING}"]`)).toHaveCount(1);
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, externalNodeView));
     await expectGraphAndScreenshot(page, 'generate-region-external-node-warning.png', {
@@ -138,6 +140,22 @@ test.describe('generate region visual rendering', () => {
       maxDiffPixels: 120
     });
     await page.mouse.up();
+  });
+
+  test('renders the shared error highlight for each block type and a generate arm', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1300 });
+    await openView(page, errorHighlightGridView());
+    await page.waitForSelector('.react-flow__node');
+
+    // Every block in the grid plus the arm carries the error style.
+    await expect(page.locator('.react-flow__node.svsch-node-invalid')).toHaveCount(ERROR_BLOCK_VARIANTS.length);
+    await expect(page.locator(`.node-warning[aria-label="${GENERATE_REGION_EXTERNAL_BLOCK_WARNING}"]`)).toHaveCount(ERROR_BLOCK_VARIANTS.length);
+    await expect(page.locator('.generate-region-invalid')).toHaveCount(1);
+
+    await expectGraphAndScreenshot(page, 'error-highlight-block-types.png', {
+      clip: await paddedGraphAndRegionsClip(page),
+      maxDiffPixels: 120
+    });
   });
 
   for (const side of ['left', 'right', 'top', 'bottom'] as const) {
@@ -239,6 +257,244 @@ async function regionBounds(page: Page, label: string): Promise<RegionBounds> {
   });
 }
 
+type ErrorBlockVariant = {
+  key: string;
+  kind: DiagramViewModel['nodes'][number]['kind'];
+  label: string;
+  ports?: DiagramViewModel['nodes'][number]['ports'];
+  instanceOf?: string;
+  role?: string;
+  typeName?: string;
+  modportName?: string;
+  operation?: string;
+  repeatExpression?: string;
+  isArrayNode?: boolean;
+  arrayDimension?: string;
+  metadata?: Record<string, unknown>;
+};
+
+const ERROR_BLOCK_VARIANTS: ErrorBlockVariant[] = [
+  { key: 'input_port', kind: 'port', label: 'input', ports: [port('input_port', 'input', 'input')] },
+  { key: 'output_port', kind: 'port', label: 'output', ports: [port('output_port', 'output', 'output')] },
+  {
+    key: 'interface_port',
+    kind: 'interface',
+    label: 'if_port',
+    role: 'port',
+    typeName: 'stream_if',
+    modportName: 'master',
+    ports: [port('interface_port', 'stream', 'input', { typeName: 'stream_if', modportName: 'master' })]
+  },
+  { key: 'comb', kind: 'comb', label: 'comb' },
+  { key: 'loop', kind: 'loop', label: 'loop' },
+  {
+    key: 'register',
+    kind: 'register',
+    label: 'register',
+    ports: [port('register', 'D', 'input'), port('register', 'clk', 'input'), port('register', 'Q', 'output')],
+    metadata: { clockSignal: 'clk' }
+  },
+  { key: 'latch', kind: 'latch', label: 'latch', ports: [port('latch', 'D', 'input'), port('latch', 'G', 'input'), port('latch', 'Q', 'output')] },
+  { key: 'mux', kind: 'mux', label: 'mux', ports: [port('mux', 'sel', 'input'), port('mux', 'a', 'input'), port('mux', 'b', 'input'), port('mux', 'y', 'output')] },
+  { key: 'select', kind: 'select', label: 'select', ports: [port('select', 's', 'input'), port('select', 'in', 'input'), port('select', 'y', 'output')] },
+  { key: 'alu', kind: 'alu', label: 'alu', operation: '+', ports: defaultPorts('alu') },
+  { key: 'inverter', kind: 'inverter', label: 'inv', ports: [port('inverter', 'a', 'input'), port('inverter', 'y', 'output')] },
+  { key: 'literal', kind: 'literal', label: "1'b1", ports: [port('literal', 'y', 'output')] },
+  {
+    key: 'replicate',
+    kind: 'replicate',
+    label: 'x N',
+    repeatExpression: 'N',
+    ports: [port('replicate', 'a', 'input'), port('replicate', 'y', 'output')]
+  },
+  { key: 'instance', kind: 'instance', label: 'instance', instanceOf: 'sub' },
+  { key: 'module', kind: 'module', label: 'module' },
+  { key: 'unknown', kind: 'unknown', label: 'unknown' },
+  { key: 'bus_comp', kind: 'bus', label: 'bus comp', ports: [port('bus_comp', 'a', 'input'), port('bus_comp', 'b', 'input'), port('bus_comp', 'out', 'output')] },
+  { key: 'bus_break', kind: 'bus', label: 'bus break', ports: [port('bus_break', 'in', 'input'), port('bus_break', 'lo', 'output'), port('bus_break', 'hi', 'output')] },
+  {
+    key: 'struct_comp',
+    kind: 'struct',
+    label: 'packet',
+    role: 'composition',
+    ports: [port('struct_comp', 'opcode', 'input', { width: '[3:0]' }), port('struct_comp', 'valid', 'input'), port('struct_comp', 'pkt', 'output', { typeName: 'packet_t' })]
+  },
+  {
+    key: 'struct_break',
+    kind: 'struct',
+    label: 'packet',
+    role: 'breakout',
+    ports: [port('struct_break', 'pkt', 'input', { typeName: 'packet_t' }), port('struct_break', 'opcode', 'output', { width: '[3:0]' }), port('struct_break', 'valid', 'output')]
+  },
+  {
+    key: 'interface_inst',
+    kind: 'interface',
+    label: 'if_inst',
+    role: 'instance',
+    typeName: 'stream_if',
+    ports: [
+      port('interface_inst', 'clk', 'input'),
+      port('interface_inst', 'ready', 'output'),
+      port('interface_inst', 'master', 'inout', { width: 'interface', preferredSide: 'left', modportName: 'master' }),
+      port('interface_inst', 'slave', 'inout', { width: 'interface', preferredSide: 'right', modportName: 'slave' })
+    ]
+  },
+  {
+    key: 'interface_modport',
+    kind: 'interface',
+    label: 'master',
+    role: 'modport',
+    typeName: 'stream_if',
+    ports: [
+      port('interface_modport', 'req', 'input'),
+      port('interface_modport', 'rsp', 'output'),
+      port('interface_modport', 'bus', 'inout', { width: 'interface', modportName: 'slave' })
+    ]
+  },
+  {
+    key: 'net_label',
+    kind: 'netLabel',
+    label: 'cut_net',
+    ports: [],
+    metadata: { cutNet: { netKey: 'cut_net', role: 'source', align: 'start', handleSide: 'right' } }
+  },
+  { key: 'array_port', kind: 'port', label: 'port[]', ports: [port('array_port', 'p', 'input')], isArrayNode: true, arrayDimension: '[3:0]' },
+  { key: 'array_comb', kind: 'comb', label: 'comb[]', isArrayNode: true, arrayDimension: '[3:0]' },
+  {
+    key: 'array_register',
+    kind: 'register',
+    label: 'reg[]',
+    ports: [port('array_register', 'D', 'input'), port('array_register', 'clk', 'input'), port('array_register', 'Q', 'output')],
+    isArrayNode: true,
+    arrayDimension: '[3:0]',
+    metadata: { clockSignal: 'clk' }
+  },
+  {
+    key: 'array_mux',
+    kind: 'mux',
+    label: 'mux[]',
+    ports: [port('array_mux', 'sel', 'input'), port('array_mux', 'a', 'input'), port('array_mux', 'b', 'input'), port('array_mux', 'y', 'output')],
+    isArrayNode: true,
+    arrayDimension: '[3:0]'
+  },
+  { key: 'array_instance', kind: 'instance', label: 'inst[]', instanceOf: 'sub', isArrayNode: true, arrayDimension: '[3:0]' },
+  {
+    key: 'array_bus',
+    kind: 'bus',
+    label: 'bus[]',
+    ports: [port('array_bus', 'a', 'input'), port('array_bus', 'b', 'input'), port('array_bus', 'out', 'output')],
+    isArrayNode: true,
+    arrayDimension: '[3:0]',
+    metadata: { aggregateKind: 'array' }
+  },
+  { key: 'array_literal', kind: 'literal', label: "8'hAA", ports: [port('array_literal', 'y', 'output')], isArrayNode: true, arrayDimension: '[3:0]' },
+  {
+    key: 'array_replicate',
+    kind: 'replicate',
+    label: 'x N[]',
+    repeatExpression: 'N',
+    ports: [port('array_replicate', 'a', 'input'), port('array_replicate', 'y', 'output')],
+    isArrayNode: true,
+    arrayDimension: '[3:0]'
+  }
+];
+
+// A grid of unconnected blocks (one per kind) plus a generate arm, all forced into
+// the error state, so the snapshot locks in the shared error highlight per block type.
+function errorHighlightGridView(): DiagramViewModel {
+  const cols = 5;
+  const cellX = 270;
+  const cellY = 210;
+  const originX = 80;
+  const originY = 80;
+
+  const nodes = ERROR_BLOCK_VARIANTS.map((variant, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    return errorBlock(variant, originX + col * cellX, originY + row * cellY);
+  });
+
+  // A real owned block inside the arm — it belongs to the arm, so it stays
+  // un-highlighted, and it keeps the arm inside the fitted view for the snapshot.
+  const armY = originY + Math.ceil(ERROR_BLOCK_VARIANTS.length / cols) * cellY;
+  const ownedBlock = errorBlock({ key: 'arm_owned', kind: 'comb', label: 'owned' }, originX + 24, armY + 44);
+  ownedBlock.id = 'err_arm_owned';
+  ownedBlock.label = 'owned';
+  delete (ownedBlock as { invalid?: boolean }).invalid;
+  delete (ownedBlock as { warningNote?: string }).warningNote;
+  nodes.push(ownedBlock);
+
+  const generateRegions: NonNullable<DiagramViewModel['generateRegions']> = [
+    {
+      id: 'region:g_error',
+      kind: 'if',
+      label: 'g_error /* MODE == 0 */',
+      blockLabel: 'g_error',
+      condition: 'MODE == 0',
+      activeState: 'active',
+      nodeIds: ['err_arm_owned'],
+      bounds: { x: originX, y: armY, width: cellX * 2 - 40, height: cellY - 20 },
+      invalid: true,
+      warningNote: 'node does not belong to arm block'
+    }
+  ];
+
+  return {
+    moduleName: 'error_highlight_grid',
+    nodes,
+    edges: [],
+    generateRegions,
+    diagnostics: []
+  } as DiagramViewModel;
+}
+
+function errorBlock(variant: ErrorBlockVariant, x: number, y: number): DiagramViewModel['nodes'][number] {
+  const metadata = {
+    ...(variant.metadata ?? {}),
+    ...(variant.isArrayNode ? { isArrayNode: true, arrayDimension: variant.arrayDimension } : {})
+  };
+  return {
+    id: `err_${variant.key}`,
+    kind: variant.kind,
+    label: variant.label,
+    instanceOf: variant.instanceOf,
+    role: variant.role,
+    typeName: variant.typeName,
+    modportName: variant.modportName,
+    repeatExpression: variant.repeatExpression,
+    ports: variant.ports ?? defaultPorts(variant.key),
+    position: { x, y },
+    isArrayNode: variant.isArrayNode,
+    arrayDimension: variant.arrayDimension,
+    metadata,
+    operation: variant.operation,
+    invalid: true,
+    warningNote: GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+  } as unknown as DiagramViewModel['nodes'][number];
+}
+
+function defaultPorts(key: string): DiagramViewModel['nodes'][number]['ports'] {
+  return [
+    port(key, 'a', 'input'),
+    port(key, 'b', 'input'),
+    port(key, 'y', 'output')
+  ];
+}
+
+function port(
+  key: string,
+  name: string,
+  direction: 'input' | 'output' | 'inout' | 'unknown',
+  extra: Partial<DiagramViewModel['nodes'][number]['ports'][number]> = {}
+): DiagramViewModel['nodes'][number]['ports'][number] {
+  return {
+    id: `${key}:${name}`,
+    name,
+    direction,
+    ...extra
+  };
+}
+
 function generateWarningView(options: { includeSecondRegion: boolean; includeExternalNode: boolean }): DiagramViewModel {
   const nodes: DiagramViewModel['nodes'] = [
     {
@@ -330,11 +586,28 @@ async function viewWithRenderedGenerateRegionBounds(page: Page, view: DiagramVie
     return Object.fromEntries(rf.getNodes().map((node) => [node.id, { x: node.position.x, y: node.position.y }]));
   });
 
+  const invalidNodeStateById: Record<string, { warningNote?: string }> = await page.locator('.react-flow__node.svsch-node-invalid').evaluateAll(
+    (elements) => Object.fromEntries(elements.map((element) => {
+      const html = element as HTMLElement;
+      const id = html.dataset.id ?? '';
+      const warningNote = html.querySelector('.node-warning')?.getAttribute('aria-label') ?? undefined;
+      return [id, { warningNote }];
+    }).filter(([id]) => id))
+  );
+
   return {
     ...view,
     nodes: view.nodes.map((node) => {
       const position = nodePositions[node.id];
-      return position ? { ...node, position } : node;
+      const invalidState = invalidNodeStateById[node.id];
+      const invalid = Boolean(invalidState) || undefined;
+      if (!position && !invalid) return node;
+      return {
+        ...node,
+        ...(position ? { position } : {}),
+        invalid,
+        warningNote: invalidState?.warningNote
+      };
     }),
     generateRegions: view.generateRegions?.map((region) => {
       const state = stateById[region.id];

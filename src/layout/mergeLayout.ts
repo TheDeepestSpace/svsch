@@ -4,7 +4,11 @@ import { edgeNetKey, endpointKey } from '../ir/edgeNet';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
-import { annotateGenerateRegionWarnings } from './generateRegionValidation';
+import {
+  annotateGenerateRegionWarnings,
+  findExternalBlockIds,
+  GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+} from './generateRegionValidation';
 import {
   interfaceSidePortCenters,
   interfaceTopHatHeight,
@@ -89,12 +93,19 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   const positioned = packedGenerateLayout.nodes;
   const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
+  const externalBlockIds = findExternalBlockIds(positionedRegions, positioned);
+  const positionedWithWarnings = externalBlockIds.size > 0
+    ? positioned.map((node) => (externalBlockIds.has(node.id)
+      ? { ...node, invalid: true, warningNote: GENERATE_REGION_EXTERNAL_BLOCK_WARNING }
+      : node))
+    : positioned;
+
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
 
   return {
     moduleName: designModule.name,
     parameters: designModule.parameters,
-    nodes: [...positioned, ...cutProjection.nodes],
+    nodes: [...positionedWithWarnings, ...cutProjection.nodes],
     edges: [
       ...routedDesignEdges.map((edge) => ({
         ...edge,

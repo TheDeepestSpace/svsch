@@ -102,6 +102,9 @@ export class BddWorld {
         if (!rf) return { nodes: [], edges: [] };
         const nodes = rf.getNodes().map((n: any) => {
           const nodeElement = document.querySelector(`.react-flow__node[data-id="${n.id}"]`);
+          const warningNote = nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label')
+            ?? n.data?.node?.warningNote
+            ?? undefined;
           return {
             id: n.id, type: n.type,
             position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
@@ -120,6 +123,8 @@ export class BddWorld {
             } : undefined,
             active: nodeElement?.classList.contains('generate-node-active') || undefined,
             inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined,
+            invalid: nodeElement?.classList.contains('svsch-node-invalid') || undefined,
+            warningNote,
           };
         });
         const edges = rf.getEdges().map((e: any) => {

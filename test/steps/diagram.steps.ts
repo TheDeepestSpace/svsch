@@ -439,6 +439,14 @@ When('I move the {string} generate region by \\({int}, {int}\\) grid cells', asy
   await waitForLayoutChange(this, before, `After moving ${label} generate region`);
 });
 
+When('I move the block {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await dragNodeByGridCells(this, id, cellsX, cellsY);
+  await waitForLayoutChange(this, before, `After moving ${label}`);
+});
+
 When('I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, block: string, region: string, cellsX: number, cellsY: number) {
   this.notedRegionBounds.set(region, await getGenerateRegionBounds(this.webviewPage, region));
   await beginDraggingNodeByGridCells(this, block, cellsX, cellsY);
@@ -718,6 +726,18 @@ When('I hover over the warning icon on the {string} generate region', async func
   await generateRegionLocator(this.webviewPage, label).locator('.generate-region-warning').hover({ force: true });
 });
 
+Then('I should see a warning icon on the {string} block', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"] .node-warning`)).toBeVisible();
+});
+
+When('I hover over the warning icon on the {string} block', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await this.webviewPage.locator(`.react-flow__node[data-id="${id}"] .node-warning`).hover({ force: true });
+});
+
 Then('a tooltip should appear reading {string}', async function (this: BddWorld, message: string) {
   // The preceding hover step left the pointer over the icon; assert the real
   // Floating UI popover element renders (not just the accessible label).
@@ -726,6 +746,28 @@ Then('a tooltip should appear reading {string}', async function (this: BddWorld,
   // Capture the hovered tooltip as a visual baseline so the popover render is
   // regression-guarded (the other scenario screenshots never have it on screen).
   await this.takeScreenshot('Tooltip visible on hover');
+});
+
+Then('the {string} generate region should be flagged as containing an unrelated block', async function (this: BddWorld, label: string) {
+  const region = generateRegionLocator(this.webviewPage, label);
+  await expect(region).toHaveClass(/generate-region-invalid/);
+  await expect(region).toHaveAttribute('data-warning-note', /node does not belong to arm block/);
+});
+
+Then('the {string} block should be flagged as overlapping an arm', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(/svsch-node-invalid/);
+});
+
+Then('no block should be flagged as overlapping an arm', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.react-flow__node.svsch-node-invalid')).toHaveCount(0);
+});
+
+Then('the {string} block should not be flagged as overlapping an arm', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).not.toHaveClass(/svsch-node-invalid/);
 });
 
 Then('no generate region should be flagged as overlapping', async function (this: BddWorld) {

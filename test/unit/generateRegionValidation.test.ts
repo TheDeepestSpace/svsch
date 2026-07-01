@@ -44,6 +44,22 @@ describe('generate region validation', () => {
     }));
   });
 
+  it('marks an arm when an external node partially overlaps its bounds', () => {
+    const [regionWithExternalNode] = annotateGenerateRegionWarnings([
+      region('g0', { x: 120, y: 120, width: 160, height: 160 }, ['owned'])
+    ], [
+      node('owned', 144, 144),
+      // The node overlaps the arm by one grid cell at the top edge, but its
+      // center is outside the arm. This is the case users can see on canvas.
+      node('external', 144, 48, 'instance')
+    ]);
+
+    expect(regionWithExternalNode).toEqual(expect.objectContaining({
+      invalid: true,
+      warningNote: GENERATE_REGION_EXTERNAL_NODE_WARNING
+    }));
+  });
+
   it('does not mark an arm for external ports or descendant arms', () => {
     const regions = annotateGenerateRegionWarnings([
       region('parent', { x: 0, y: 0, width: 240, height: 240 }, ['parent-node']),
