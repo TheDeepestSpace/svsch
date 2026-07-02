@@ -938,6 +938,51 @@ function generateRegionFromRaw(region: NonNullable<RawModule['generateRegions']>
     };
 }
 
+// Wrap each generate expression's arms in a synthesized "generate block" region so the
+// UI can group them. Arms are reparented under the wrapper, so the existing nested-region
+// mechanics (move-together, auto-expand, ancestor/descendant overlap) apply for free.
+function synthesizeGenerateBlockRegions(arms: GenerateRegion[]): GenerateRegion[] {
+    if (arms.length === 0) return arms;
+
+    const groups = new Map<string, GenerateRegion[]>();
+    for (const arm of arms) {
+        const key = arm.siblingGroupId || arm.id;
+        const list = groups.get(key) ?? [];
+        list.push(arm);
+        groups.set(key, list);
+    }
+
+    const wrappers: GenerateRegion[] = [];
+    const reparentedById = new Map<string, GenerateRegion>();
+    for (const [key, groupArms] of groups) {
+        const wrapperId = `generate-block:${key}`;
+        const isCase = groupArms.some((arm) => arm.kind === 'case' || arm.kind === 'case-default');
+        const selector = groupArms.map((arm) => arm.selector).find((value): value is string => Boolean(value));
+        const label = isCase
+            ? (selector ? `generate case (${selector})` : 'generate case')
+            : 'generate if';
+        const anchor = groupArms.reduce((earliest, arm) =>
+            (arm.source?.startLine ?? Infinity) < (earliest.source?.startLine ?? Infinity) ? arm : earliest, groupArms[0]);
+        wrappers.push({
+            id: wrapperId,
+            kind: isCase ? 'generate-case' : 'generate-if',
+            label,
+            isGenerateBlock: true,
+            parentRegionId: anchor.parentRegionId,
+            siblingGroupId: wrapperId,
+            activeState: 'active',
+            source: anchor.source,
+            nodeIds: []
+        });
+        for (const arm of groupArms) {
+            reparentedById.set(arm.id, { ...arm, parentRegionId: wrapperId });
+        }
+    }
+
+    // Wrappers first so they render behind their arms.
+    return [...wrappers, ...arms.map((arm) => reparentedById.get(arm.id) ?? arm)];
+}
+
 function refsForWidthExpression(expression: string, parameters: ParameterDecl[] | undefined): ParameterRef[] | undefined {
     if (!parameters?.length) return undefined;
     const refs = parameters
@@ -1584,7 +1629,8 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
             }
         }
 
-        const generateRegions = rawMod.generateRegions?.map((region) => generateRegionFromRaw(region, workspaceRoot));
+        const armRegions = rawMod.generateRegions?.map((region) => generateRegionFromRaw(region, workspaceRoot));
+        const generateRegions = armRegions ? synthesizeGenerateBlockRegions(armRegions) : armRegions;
 
         const module: DesignModule = {
             name: modName,

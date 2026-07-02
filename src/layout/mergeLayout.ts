@@ -71,7 +71,10 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   const activeCutKeys = new Set(activeCuts.keys());
   const routedDesignEdges = designModule.edges.filter((edge) => !activeCutKeys.has(edgeNetKey(edge)));
   const generateRegions = designModule.generateRegions ?? [];
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, generateRegions);
+  // The generate-block wrappers are derived from their arms, so keep them out of the ELK /
+  // packing layout (arms fall back to roots) and only add their bounds in positionGenerateRegions.
+  const armRegions = generateRegions.filter((region) => !region.isGenerateBlock);
+  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, armRegions);
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
@@ -89,7 +92,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   });
   const packedGenerateLayout = elkLayout.regionBounds.size > 0
     ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
-    : packGenerateRegionSiblings(generateRegions, initialPositioned, moduleLayout);
+    : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
   const positioned = packedGenerateLayout.nodes;
   const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
@@ -266,7 +269,7 @@ function positionGenerateRegions(
   };
 
   if (nativeRegionBounds.size > 0) {
-    const visualRegionBounds = computeVisualGenerateRegionBounds(sorted, childrenByParent, nodeById, graphBounds, nativeRegionBounds);
+    const visualRegionBounds = computeVisualGenerateRegionBounds(sorted, childrenByParent, nodeById, graphBounds, nativeRegionBounds, moduleLayout.regions);
     const result = sorted.map((region, index): PositionedGenerateRegion => {
       const nodeIds = region.nodeIds ?? [];
       const fallbackBounds = boundsForRegionNodes(nodeIds, nodeById) ?? snapRegionBounds({
@@ -321,45 +324,31 @@ function positionGenerateRegions(
     if (existing) return existing;
 
     const nodeIds = region.nodeIds ?? [];
-    const nodeBounds = boundsForRegionNodes(nodeIds, nodeById);
-    const baseBounds = nodeBounds ?? snapRegionBounds({
-      x,
-      y,
-      width: REGION_MIN_WIDTH,
-      height: REGION_MIN_HEIGHT
-    });
+    const tightNodeBounds = tightBoundsForRegionNodes(nodeIds, nodeById);
 
-    let contentBounds: RegionBounds = baseBounds;
+    // Lay out child regions first — arms position themselves by their own nodes, so a
+    // wrapper (no direct nodes) hugs the union of its children rather than a fallback slot.
     const childGroups = groupRegionsBySibling(childrenByParent.get(region.id) ?? []);
-    if (childGroups.length > 0) {
-      const childStartX = baseBounds.x + REGION_INSET;
-      let childCursorY = baseBounds.y + REGION_INSET;
-      let maxChildRight = childStartX + REGION_MIN_WIDTH - REGION_INSET * 2;
-
-      for (const group of childGroups) {
-        let groupCursorY = childCursorY;
-        let groupWidth = REGION_MIN_WIDTH;
-        for (const child of group) {
-          const childRegion = layoutRegion(child, childStartX, groupCursorY);
-          computed.set(child.id, childRegion);
-          groupCursorY = childRegion.bounds.y + childRegion.bounds.height + REGION_GAP;
-          groupWidth = Math.max(groupWidth, childRegion.bounds.width);
-          maxChildRight = Math.max(maxChildRight, childRegion.bounds.x + childRegion.bounds.width);
-        }
-        childCursorY = groupCursorY;
-        maxChildRight = Math.max(maxChildRight, childStartX + groupWidth);
+    const childRects: RegionBounds[] = [];
+    const stackX = (tightNodeBounds?.x ?? x) + REGION_INSET;
+    let stackCursorY = (tightNodeBounds?.y ?? y) + REGION_INSET;
+    for (const group of childGroups) {
+      let groupCursorY = stackCursorY;
+      for (const child of group) {
+        const childRegion = layoutRegion(child, stackX, groupCursorY);
+        computed.set(child.id, childRegion);
+        childRects.push(childRegion.bounds);
+        groupCursorY = childRegion.bounds.y + childRegion.bounds.height + REGION_GAP;
       }
-
-      contentBounds = unionBounds([
-        contentBounds,
-        {
-          x: childStartX - REGION_INSET,
-          y: baseBounds.y,
-          width: maxChildRight - childStartX + REGION_INSET * 2,
-          height: Math.max(REGION_MIN_HEIGHT, childCursorY - baseBounds.y)
-        }
-      ]);
+      stackCursorY = groupCursorY;
     }
+
+    const contentRects: RegionBounds[] = [];
+    if (tightNodeBounds) contentRects.push(tightNodeBounds);
+    contentRects.push(...childRects);
+    const contentBounds: RegionBounds = contentRects.length > 0
+      ? expandRegionContentBounds(unionBounds(contentRects))
+      : snapRegionBounds({ x, y, width: REGION_MIN_WIDTH, height: REGION_MIN_HEIGHT });
 
     const saved = moduleLayout.regions?.[region.id];
     const autoBounds = snapRegionBounds(contentBounds);
@@ -420,7 +409,8 @@ function computeVisualGenerateRegionBounds(
   childrenByParent: Map<string, GenerateRegion[]>,
   nodeById: Map<string, PositionedNode>,
   graphBounds: RegionBounds,
-  nativeRegionBounds: Map<string, RegionBounds>
+  nativeRegionBounds: Map<string, RegionBounds>,
+  savedRegions: SavedModuleLayout['regions']
 ): Map<string, RegionBounds> {
   const computed = new Map<string, RegionBounds>();
 
@@ -437,7 +427,7 @@ function computeVisualGenerateRegionBounds(
       contentBounds.push(compute(child, index));
     }
 
-    const bounds = contentBounds.length > 0
+    const autoBounds = contentBounds.length > 0
       ? expandRegionContentBounds(unionBounds(contentBounds))
       : snapRegionBounds(nativeRegionBounds.get(region.id) ?? {
         x: graphBounds.x + graphBounds.width + diagramSizing.columnGap,
@@ -445,6 +435,10 @@ function computeVisualGenerateRegionBounds(
         width: REGION_MIN_WIDTH,
         height: REGION_MIN_HEIGHT
       });
+    // Fold in a resized/moved region's saved bounds so a parent (e.g. a generate block)
+    // grows to keep surrounding an arm that the user has enlarged past its auto size.
+    const saved = savedRegions?.[region.id];
+    const bounds = saved ? expandSavedRegionBounds(saved, autoBounds) : autoBounds;
     computed.set(region.id, bounds);
     return bounds;
   };

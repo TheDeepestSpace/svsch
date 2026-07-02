@@ -118,12 +118,23 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(ifOther?.siblingGroupId).toBe(ifZero?.siblingGroupId);
     expect(ifOne?.label).toContain('g_if_one');
 
+    // The synthesized generate-block wrappers parent their arms: the top-level "generate
+    // if" wrapper holds the if arms, and a "generate case" wrapper (nested under g_if_one)
+    // holds the case arms.
+    const ifBlock = regions.find((region) => region.isGenerateBlock && !region.parentRegionId);
+    expect(ifBlock?.label).toBe('generate if');
+    expect(ifZero?.parentRegionId).toBe(ifBlock?.id);
+    expect(ifOne?.parentRegionId).toBe(ifBlock?.id);
+
+    const caseBlock = regions.find((region) => region.isGenerateBlock && region.parentRegionId === ifOne?.id);
+    expect(caseBlock?.label).toBe('generate case (MODE)');
+
     const case0 = regions.find((region) => region.blockLabel === 'g_case_0');
     const case1 = regions.find((region) => region.blockLabel === 'g_case_1');
     const caseDefault = regions.find((region) => region.blockLabel === 'g_case_default');
-    expect(case0?.parentRegionId).toBe(ifOne?.id);
-    expect(case1?.parentRegionId).toBe(ifOne?.id);
-    expect(caseDefault?.parentRegionId).toBe(ifOne?.id);
+    expect(case0?.parentRegionId).toBe(caseBlock?.id);
+    expect(case1?.parentRegionId).toBe(caseBlock?.id);
+    expect(caseDefault?.parentRegionId).toBe(caseBlock?.id);
     expect(case0?.condition).toContain('MODE == 0');
     expect(case1?.condition).toContain('MODE == 1');
     expect(caseDefault?.kind).toBe('case-default');

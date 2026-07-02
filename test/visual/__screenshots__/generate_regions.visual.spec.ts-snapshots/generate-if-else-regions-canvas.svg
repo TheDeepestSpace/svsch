@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="792" viewBox="0 0 1080 792" class="svsch-diagram" role="img" aria-label="generate_if_else_regions diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="936" viewBox="0 0 1080 936" class="svsch-diagram" role="img" aria-label="generate_if_else_regions diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -929,7 +929,6 @@ text {
 
 .generate-region-outline {
   border: 1.5px solid var(--vscode-charts-orange);
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
 }
@@ -1039,7 +1038,18 @@ text {
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+}
+
+/* The generate-block wrapper carries the fill (no border); arms are border-only. */
+.generate-block .generate-region-outline {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  border: none;
+}
+
+.generate-block.generate-region-invalid .generate-region-outline {
+  border: 2px dashed var(--svsch-error-highlight);
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
 }
 
 .generate-region-active .generate-region-title {
@@ -3430,9 +3440,13 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1;
 }
 .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  fill: none;
   stroke: var(--vscode-charts-orange);
   stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  stroke: none;
 }
 .svsch-node-error-outline {
   fill: none;
@@ -3470,7 +3484,6 @@ path.port-skin-body.port-skin-harness {
   opacity: 0.75;
 }
 .svsch-generate-region-active .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
@@ -3479,42 +3492,53 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
 </style>
 <g transform="translate(0 24)">
 <g class="svsch-generate-regions">
+<g class="svsch-generate-region svsch-generate-block svsch-generate-region-active" data-region-id="generate-block:generate-group:generate_if_else_regions:if:16:4">
+<rect class="svsch-generate-region-box" x="168" y="48" width="432" height="816" />
+<text class="svsch-generate-region-label" x="176" y="65">generate if</text>
+</g>
 <g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_if_else_regions:if:16:8:0:if__MODE____0___g_if_zero_">
-<rect class="svsch-generate-region-box" x="192" y="48" width="384" height="216" />
-<text class="svsch-generate-region-label" x="200" y="65">g_if_zero /* MODE == 0 */</text>
+<rect class="svsch-generate-region-box" x="216" y="96" width="336" height="216" />
+<text class="svsch-generate-region-label" x="224" y="113">g_if_zero /* MODE == 0 */</text>
 </g>
 <g class="svsch-generate-region svsch-generate-region-active" data-region-id="generate-region:generate_if_else_regions:else-if:18:17:1:else_if__MODE____1___g_if_one_">
-<rect class="svsch-generate-region-box" x="192" y="288" width="384" height="216" />
-<text class="svsch-generate-region-label" x="200" y="305">g_if_one /* MODE == 1 */</text>
+<rect class="svsch-generate-region-box" x="216" y="336" width="336" height="216" />
+<text class="svsch-generate-region-label" x="224" y="353">g_if_one /* MODE == 1 */</text>
 </g>
 <g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_">
-<rect class="svsch-generate-region-box" x="192" y="528" width="384" height="192" />
-<text class="svsch-generate-region-label" x="200" y="545">g_if_other /* else */</text>
+<rect class="svsch-generate-region-box" x="216" y="576" width="336" height="192" />
+<text class="svsch-generate-region-label" x="224" y="593">g_if_other /* else */</text>
 </g>
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:out:w" d="M 456 648 L 480 648 L 624 648 L 624 408 L 888 408 L 912 408" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_one.u_if_one:port:y" d="M 456 408 L 480 408 L 888 408 L 912 408" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_zero.u_if_zero:port:y" d="M 480 168 L 504 168 L 624 168 L 624 408 L 888 408 L 912 408" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a" data-net-key="port:generate_if_else_regions:a:port:a" d="M 168 144 L 192 144 L 216 144 L 216 168 L 240 168 L 264 168" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b" data-net-key="port:generate_if_else_regions:b:port:b" d="M 168 384 L 192 384 L 216 384 L 216 408 L 240 408 L 264 408" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 168 624 L 192 624 L 216 624 L 216 648 L 240 648 L 264 648" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:out:w" d="M 480 696 L 504 696 L 624 696 L 624 408 L 888 408 L 912 408" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y"><path class="svsch-edge-jump-halo" d="M 617 456 Q 624 449 631 456" style="stroke-width: 12" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-jump-index="0" />
+<path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_one.u_if_one:port:y" d="M 480 456 L 504 456 L 617 456 Q 624 449 631 456 L 696 456 L 696 408 L 888 408 L 912 408" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_zero.u_if_zero:port:y" d="M 504 216 L 528 216 L 624 216 L 624 408 L 888 408 L 912 408" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a" data-net-key="port:generate_if_else_regions:a:port:a" d="M 168 144 L 192 144 L 240 144 L 240 216 L 264 216 L 288 216" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b" data-net-key="port:generate_if_else_regions:b:port:b" d="M 168 384 L 192 384 L 240 384 L 240 456 L 264 456 L 288 456" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 168 624 L 192 624 L 240 624 L 240 696 L 264 696 L 288 696" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-instance generate-node-inactive" data-node-id="instance:generate_if_else_regions:g_if_zero.u_if_zero" data-node-kind="instance" transform="translate(264 120)">
+<g class="svsch-node hdl-node hdl-node-instance generate-node-inactive" data-node-id="instance:generate_if_else_regions:g_if_zero.u_if_zero" data-node-kind="instance" transform="translate(288 168)">
 <svg class="hdl-node-svg" width="216" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="216" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">generate_if_else_leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">g_if_zero.u_if_zero</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">a</text><text class="svsch-port-label" x="204" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-instance generate-node-active" data-node-id="instance:generate_if_else_regions:g_if_one.u_if_one" data-node-kind="instance" transform="translate(264 360)">
+<g class="svsch-node hdl-node hdl-node-instance generate-node-active" data-node-id="instance:generate_if_else_regions:g_if_one.u_if_one" data-node-kind="instance" transform="translate(288 408)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">generate_if_else_leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">g_if_one.u_if_one</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">a</text><text class="svsch-port-label" x="180" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign" data-node-kind="comb" transform="translate(264 600)">
+<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign" data-node-kind="comb" transform="translate(288 648)">
 <svg class="hdl-node-svg" width="192" height="72" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="72"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
 </svg>

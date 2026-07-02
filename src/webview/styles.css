@@ -291,7 +291,6 @@ text {
 
 .generate-region-outline {
   border: 1.5px solid var(--vscode-charts-orange);
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
 }
@@ -401,7 +400,18 @@ text {
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+}
+
+/* The generate-block wrapper carries the fill (no border); arms are border-only. */
+.generate-block .generate-region-outline {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  border: none;
+}
+
+.generate-block.generate-region-invalid .generate-region-outline {
+  border: 2px dashed var(--svsch-error-highlight);
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
 }
 
 .generate-region-active .generate-region-title {

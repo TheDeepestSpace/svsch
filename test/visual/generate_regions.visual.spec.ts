@@ -12,7 +12,7 @@ test.describe('generate region visual rendering', () => {
     const view = await openFixture(page, 'generate_if_else_regions.sv', 'generate', 'generate_if_else_regions');
     const regions = view.generateRegions ?? [];
 
-    expect(regions).toHaveLength(3);
+    expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
     expect(regions.map((region) => region.blockLabel)).toEqual(expect.arrayContaining([
       'g_if_zero',
       'g_if_one',
@@ -24,12 +24,12 @@ test.describe('generate region visual rendering', () => {
       'else'
     ]));
 
-    await expect(page.locator('.generate-region')).toHaveCount(3);
+    await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region[data-region-kind="if"] .generate-region-title')).toContainText('g_if_zero');
     await expect(page.locator('.generate-region[data-region-kind="else-if"] .generate-region-title')).toContainText('g_if_one');
     await expect(page.locator('.generate-region[data-region-kind="else"] .generate-region-title')).toContainText('g_if_other');
-    await expect(page.locator('.generate-region-active')).toHaveCount(1);
-    await expect(page.locator('.generate-region-active .generate-region-title')).toContainText('g_if_one');
+    await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
+    await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_if_one');
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
 
     await expectGraphAndScreenshot(page, 'generate-if-else-regions-canvas.png', {
@@ -42,7 +42,7 @@ test.describe('generate region visual rendering', () => {
     const view = await openFixture(page, 'generate_case_regions.sv', 'generate', 'generate_case_regions');
     const regions = view.generateRegions ?? [];
 
-    expect(regions).toHaveLength(3);
+    expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
     expect(regions.map((region) => region.blockLabel)).toEqual(expect.arrayContaining([
       'g_case_0',
       'g_case_1',
@@ -53,12 +53,12 @@ test.describe('generate region visual rendering', () => {
       'case-default'
     ]));
 
-    await expect(page.locator('.generate-region')).toHaveCount(3);
+    await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region[data-region-kind="case"] .generate-region-title', { hasText: 'g_case_0' })).toBeVisible();
     await expect(page.locator('.generate-region[data-region-kind="case"] .generate-region-title', { hasText: 'g_case_1' })).toBeVisible();
     await expect(page.locator('.generate-region[data-region-kind="case-default"] .generate-region-title')).toContainText('g_case_default');
-    await expect(page.locator('.generate-region-active')).toHaveCount(1);
-    await expect(page.locator('.generate-region-active .generate-region-title')).toContainText('g_case_1');
+    await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
+    await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_case_1');
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
 
     await expectGraphAndScreenshot(page, 'generate-case-regions-canvas.png', {
@@ -71,11 +71,13 @@ test.describe('generate region visual rendering', () => {
     const view = await openFixture(page, 'generate_if_else_regions.sv', 'auto', 'generate_if_else_regions');
     const regions = view.generateRegions ?? [];
 
-    expect(regions).toHaveLength(3);
-    await expect(page.locator('.generate-region')).toHaveCount(3);
+    expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
+    await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region-invalid')).toHaveCount(0);
-    await expect(page.locator('.generate-region-active')).toHaveCount(1);
-    await expect(page.locator('.generate-region-active .generate-region-title')).toContainText('g_if_one');
+    await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
+    await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_if_one');
+    await expect(page.locator('.generate-region.generate-block')).toHaveCount(1);
+    await expect(page.locator('.generate-region.generate-block .generate-region-title')).toContainText('generate if');
 
     await expectGraphAndScreenshot(page, 'generate-if-else-regions-auto-canvas.png', {
       clip: await paddedGraphAndRegionsClip(page),
@@ -87,11 +89,12 @@ test.describe('generate region visual rendering', () => {
     const view = await openFixture(page, 'generate_case_regions.sv', 'auto', 'generate_case_regions');
     const regions = view.generateRegions ?? [];
 
-    expect(regions).toHaveLength(3);
-    await expect(page.locator('.generate-region')).toHaveCount(3);
+    expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
+    await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region-invalid')).toHaveCount(0);
-    await expect(page.locator('.generate-region-active')).toHaveCount(1);
-    await expect(page.locator('.generate-region-active .generate-region-title')).toContainText('g_case_1');
+    await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
+    await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_case_1');
+    await expect(page.locator('.generate-region.generate-block .generate-region-title')).toContainText('generate case (MODE)');
 
     await expectGraphAndScreenshot(page, 'generate-case-regions-auto-canvas.png', {
       clip: await paddedGraphAndRegionsClip(page),
@@ -136,6 +139,46 @@ test.describe('generate region visual rendering', () => {
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, externalNodeView));
     await expectGraphAndScreenshot(page, 'generate-region-external-node-warning.png', {
+      clip: await paddedGraphAndRegionsClip(page),
+      maxDiffPixels: 120
+    });
+    await page.mouse.up();
+  });
+
+  test('flags both generate blocks when they overlap', async ({ page }) => {
+    await openView(page, generateBlockWarningView());
+    await page.waitForSelector('.generate-region.generate-block');
+
+    const view = generateBlockWarningView();
+    await moveGenerateRegionByGridCells(page, 'generate if', 8, 0, { release: false });
+
+    await expect(page.locator('.generate-region.generate-block.generate-region-invalid')).toHaveCount(2);
+
+    trackView(page, await viewWithRenderedGenerateRegionBounds(page, view));
+    await expectGraphAndScreenshot(page, 'generate-block-overlap-warning.png', {
+      clip: await paddedGraphAndRegionsClip(page),
+      maxDiffPixels: 120
+    });
+    await page.mouse.up();
+  });
+
+  test('flags a block that overlaps a generate block but no arm', async ({ page }) => {
+    await openView(page, generateBlockIntrusionView());
+    await page.waitForSelector('.generate-region.generate-block');
+
+    const view = generateBlockIntrusionView();
+    // Nudge the generate block one cell to trigger validation; the free block stays put and
+    // remains inside the block's empty area (not the arm).
+    await moveGenerateRegionByGridCells(page, 'generate if', 1, 0, { release: false });
+
+    // The wrapper and the intruding block are flagged; the arm it doesn't reach is not.
+    await expect(page.locator('.generate-region.generate-block.generate-region-invalid')).toHaveCount(1);
+    await expect(page.locator('.generate-region:not(.generate-block).generate-region-invalid')).toHaveCount(0);
+    await expect(page.locator('.react-flow__node[data-id="blk:free"]')).toHaveClass(/svsch-node-invalid/);
+    await expect(page.locator('.react-flow__node[data-id="blk:owned"]')).not.toHaveClass(/svsch-node-invalid/);
+
+    trackView(page, await viewWithRenderedGenerateRegionBounds(page, view));
+    await expectGraphAndScreenshot(page, 'generate-block-intrusion-warning.png', {
       clip: await paddedGraphAndRegionsClip(page),
       maxDiffPixels: 120
     });
@@ -493,6 +536,77 @@ function port(
     direction,
     ...extra
   };
+}
+
+// Two generate blocks (wrappers), each holding one arm + block, placed apart. Dragging
+// the "generate if" block right by 8 cells overlaps them so both wrappers flag.
+function generateBlockWarningView(): DiagramViewModel {
+  const wrapper = (id: string, kind: string, label: string, x: number): NonNullable<DiagramViewModel['generateRegions']>[number] => ({
+    id: `block:${id}`,
+    kind,
+    label,
+    isGenerateBlock: true,
+    activeState: 'active',
+    nodeIds: [],
+    bounds: { x, y: 48, width: 220, height: 200 }
+  } as unknown as NonNullable<DiagramViewModel['generateRegions']>[number]);
+
+  const arm = (id: string, x: number): NonNullable<DiagramViewModel['generateRegions']>[number] => ({
+    id: `arm:${id}`,
+    kind: 'if',
+    label: `g_${id} /* MODE == 0 */`,
+    blockLabel: `g_${id}`,
+    activeState: 'active',
+    parentRegionId: `block:${id}`,
+    nodeIds: [`blk:${id}`],
+    bounds: { x: x + 24, y: 96, width: 160, height: 104 }
+  } as unknown as NonNullable<DiagramViewModel['generateRegions']>[number]);
+
+  const block = (id: string, x: number): DiagramViewModel['nodes'][number] => ({
+    id: `blk:${id}`,
+    kind: 'comb',
+    label: id,
+    ports: [],
+    position: { x: x + 48, y: 116 }
+  } as unknown as DiagramViewModel['nodes'][number]);
+
+  return {
+    moduleName: 'generate_block_warning',
+    nodes: [block('a', 48), block('b', 412)],
+    edges: [],
+    generateRegions: [
+      wrapper('a', 'generate-if', 'generate if', 48),
+      arm('a', 48),
+      wrapper('b', 'generate-case', 'generate case (MODE)', 412),
+      arm('b', 412)
+    ],
+    diagnostics: []
+  } as DiagramViewModel;
+}
+
+// A generate block whose arm sits on the right, with a free block overlapping the block's
+// empty left area — it intrudes the generate block without touching the arm.
+function generateBlockIntrusionView(): DiagramViewModel {
+  return {
+    moduleName: 'generate_block_intrusion',
+    nodes: [
+      { id: 'blk:owned', kind: 'inverter', label: 'owned', ports: [], position: { x: 300, y: 140 } },
+      { id: 'blk:free', kind: 'inverter', label: 'free', ports: [], position: { x: 96, y: 140 } }
+    ],
+    edges: [],
+    generateRegions: [
+      {
+        id: 'block:g', kind: 'generate-if', label: 'generate if', isGenerateBlock: true,
+        activeState: 'active', nodeIds: [], bounds: { x: 48, y: 48, width: 360, height: 200 }
+      },
+      {
+        id: 'arm:g', kind: 'if', label: 'g_x /* MODE == 0 */', blockLabel: 'g_x',
+        activeState: 'active', parentRegionId: 'block:g', nodeIds: ['blk:owned'],
+        bounds: { x: 264, y: 108, width: 120, height: 120 }
+      }
+    ],
+    diagnostics: []
+  } as unknown as DiagramViewModel;
 }
 
 function generateWarningView(options: { includeSecondRegion: boolean; includeExternalNode: boolean }): DiagramViewModel {

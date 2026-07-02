@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="768" viewBox="0 0 1104 768" class="svsch-diagram" role="img" aria-label="generate_if_else_regions diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="864" viewBox="0 0 1104 864" class="svsch-diagram" role="img" aria-label="generate_if_else_regions diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -929,7 +929,6 @@ text {
 
 .generate-region-outline {
   border: 1.5px solid var(--vscode-charts-orange);
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
 }
@@ -1039,7 +1038,18 @@ text {
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+}
+
+/* The generate-block wrapper carries the fill (no border); arms are border-only. */
+.generate-block .generate-region-outline {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  border: none;
+}
+
+.generate-block.generate-region-invalid .generate-region-outline {
+  border: 2px dashed var(--svsch-error-highlight);
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
 }
 
 .generate-region-active .generate-region-title {
@@ -3430,9 +3440,13 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1;
 }
 .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  fill: none;
   stroke: var(--vscode-charts-orange);
   stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  stroke: none;
 }
 .svsch-node-error-outline {
   fill: none;
@@ -3470,7 +3484,6 @@ path.port-skin-body.port-skin-harness {
   opacity: 0.75;
 }
 .svsch-generate-region-active .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
@@ -3479,9 +3492,19 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
 </style>
-<g transform="translate(24 -24)">
+<g transform="translate(24 24)">
 <g class="svsch-generate-regions">
+<g class="svsch-generate-region svsch-generate-block svsch-generate-region-active" data-region-id="generate-block:generate-group:generate_if_else_regions:if:16:4">
+<rect class="svsch-generate-region-box" x="312" y="48" width="480" height="744" />
+<text class="svsch-generate-region-label" x="320" y="65">generate if</text>
+</g>
 <g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_if_else_regions:if:16:8:0:if__MODE____0___g_if_zero_">
 <rect class="svsch-generate-region-box" x="360" y="96" width="312" height="192" />
 <text class="svsch-generate-region-label" x="368" y="113">g_if_zero /* MODE == 0 */</text>

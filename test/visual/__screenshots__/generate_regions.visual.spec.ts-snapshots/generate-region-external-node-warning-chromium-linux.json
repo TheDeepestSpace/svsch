@@ -36,10 +36,10 @@
       "kind": "if",
       "label": "g_warn_zero /* MODE == 0 */",
       "bounds": {
-        "x": 336,
-        "y": 48,
-        "width": 240,
-        "height": 160
+        "x": 312,
+        "y": 24,
+        "width": 288,
+        "height": 168
       },
       "active": true,
       "invalid": true,

@@ -663,11 +663,14 @@ function GenerateRegionOverlay({
 
   return (
     <div className="generate-region-layer">
-      {regions.map((region) => (
+      {[...regions]
+        .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
+        .map((region) => (
         <div
           key={region.id}
           className={[
             'generate-region',
+            region.isGenerateBlock ? 'generate-block' : '',
             region.activeState === 'active' ? 'generate-region-active' : '',
             region.activeState === 'inactive' ? 'generate-region-inactive' : '',
             region.invalid ? 'generate-region-invalid' : ''
@@ -755,7 +758,7 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
     });
     return {
       nodes,
-      regions: annotateRegionsForFlowNodes(regions, nodes)
+      regions: expandRegionsForFlowNodes(regions, nodes)
     };
   }
 
@@ -791,7 +794,7 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
 
   return {
     nodes,
-    regions: annotateRegionsForFlowNodes(regions, nodes)
+    regions: expandRegionsForFlowNodes(regions, nodes)
   };
 }
 
@@ -896,37 +899,69 @@ function annotateRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes:
   return annotateGenerateRegionWarnings(regions, flowNodesToPositioned(nodes, new Set()));
 }
 
+// Expand (never shrink) each region to contain its moved/resized content, then annotate.
+// Used while dragging an arm so its parent generate block grows to keep surrounding it.
+function expandRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
+  return expandRegionsForNodes(regions, flowNodesToPositioned(nodes, new Set()));
+}
+
 function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
   if (regions.length === 0) return regions;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const expanded = regions.map((region) => {
-    const regionIds = descendantRegionIds(region.id, regions, true);
-    const nodeIds = nodeIdsForRegions(regionIds, regions);
-    const content = unionRegionBounds(Array.from(nodeIds)
-      .map((nodeId) => {
-        const node = nodeById.get(nodeId);
-        if (!node) return undefined;
-        const size = diagramNodeDimensions(node);
-        return {
-          x: node.position.x - GENERATE_REGION_MIN_CONTENT_PADDING,
-          y: node.position.y - GENERATE_REGION_MIN_CONTENT_PADDING,
-          width: size.width + GENERATE_REGION_MIN_CONTENT_PADDING * 2,
-          height: size.height + GENERATE_REGION_MIN_CONTENT_PADDING * 2
-        };
-      })
-      .filter((bounds): bounds is PositionedGenerateRegion['bounds'] => bounds !== undefined));
-    if (!content) return region;
-    return {
-      ...region,
-      bounds: snapRegionBounds({
-        x: Math.min(region.bounds.x, content.x),
-        y: Math.min(region.bounds.y, content.y),
-        width: Math.max(region.bounds.x + region.bounds.width, content.x + content.width) - Math.min(region.bounds.x, content.x),
-        height: Math.max(region.bounds.y + region.bounds.height, content.y + content.height) - Math.min(region.bounds.y, content.y)
-      }),
-      fixed: region.fixed
-    };
+  const regionById = new Map(regions.map((region) => [region.id, region]));
+  const childRegionsByParent = new Map<string, PositionedGenerateRegion[]>();
+  for (const region of regions) {
+    const parent = region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
+    const list = childRegionsByParent.get(parent) ?? [];
+    list.push(region);
+    childRegionsByParent.set(parent, list);
+  }
+
+  const pad = GENERATE_REGION_MIN_CONTENT_PADDING;
+  const padRect = (rect: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] => ({
+    x: rect.x - pad,
+    y: rect.y - pad,
+    width: rect.width + pad * 2,
+    height: rect.height + pad * 2
   });
+  const expandedById = new Map<string, PositionedGenerateRegion>();
+
+  // A region hugs its direct content (owned nodes and/or child regions) with one padding
+  // ring, never shrinking. Bottom-up recursion makes wrappers hug their arm regions the
+  // same way arms hug their leaf nodes.
+  const expand = (region: PositionedGenerateRegion): PositionedGenerateRegion => {
+    const cached = expandedById.get(region.id);
+    if (cached) return cached;
+
+    const contentRects: PositionedGenerateRegion['bounds'][] = [];
+    for (const nodeId of region.nodeIds) {
+      const node = nodeById.get(nodeId);
+      if (!node) continue;
+      const size = diagramNodeDimensions(node);
+      contentRects.push(padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }));
+    }
+    for (const child of childRegionsByParent.get(region.id) ?? []) {
+      contentRects.push(padRect(expand(child).bounds));
+    }
+
+    const content = unionRegionBounds(contentRects);
+    const result: PositionedGenerateRegion = content
+      ? {
+        ...region,
+        bounds: snapRegionBounds({
+          x: Math.min(region.bounds.x, content.x),
+          y: Math.min(region.bounds.y, content.y),
+          width: Math.max(region.bounds.x + region.bounds.width, content.x + content.width) - Math.min(region.bounds.x, content.x),
+          height: Math.max(region.bounds.y + region.bounds.height, content.y + content.height) - Math.min(region.bounds.y, content.y)
+        }),
+        fixed: region.fixed
+      }
+      : region;
+    expandedById.set(region.id, result);
+    return result;
+  };
+
+  const expanded = regions.map((region) => expand(region));
   return annotateGenerateRegionWarnings(expanded, nodes);
 }
 

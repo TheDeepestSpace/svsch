@@ -248,6 +248,8 @@ export interface GenerateRegion {
   nodeIds?: string[];
   edgeIds?: string[];
   warnings?: string[];
+  // True for the synthesized wrapper region around a whole if/case expression's arms.
+  isGenerateBlock?: boolean;
 }
 
 export interface PositionedGenerateRegion extends GenerateRegion {

@@ -239,6 +239,39 @@ Feature: Diagram Interaction
     And blocks outside the "g_if_one" generate region should not have moved
     And the route from "g_if_one.u_path_a" to the combinational block should have shifted by (2, -1) grid cells
 
+  Scenario: Moving a generate block moves every arm and block inside it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        input logic c,
+        input logic sel,
+        output logic y
+      );
+        generate
+          if (MODE == 1) begin : g_if_one
+            logic left_tap;
+            logic right_tap;
+
+            leaf u_path_a(.a(a), .y(left_tap));
+            leaf u_path_b(.a(b), .y(right_tap));
+            assign y = sel ? left_tap : right_tap;
+          end else begin : g_if_other
+            leaf u_other(.a(c), .y(y));
+          end
+        endgenerate
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain a "generate if" generate block
+    When I move the "generate if" generate region by (2, -1) grid cells
+    Then all blocks in the "generate if" generate region should have moved by (2, -1) grid cells
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually

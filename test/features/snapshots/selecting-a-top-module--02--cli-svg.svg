@@ -930,7 +930,6 @@ text {
 
 .generate-region-outline {
   border: 1.5px solid var(--vscode-charts-orange);
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
   inset: 0;
   position: absolute;
 }
@@ -1040,7 +1039,18 @@ text {
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
+}
+
+/* The generate-block wrapper carries the fill (no border); arms are border-only. */
+.generate-block .generate-region-outline {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  border: none;
+}
+
+.generate-block.generate-region-invalid .generate-region-outline {
+  border: 2px dashed var(--svsch-error-highlight);
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
 }
 
 .generate-region-active .generate-region-title {
@@ -3431,9 +3441,13 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1;
 }
 .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  fill: none;
   stroke: var(--vscode-charts-orange);
   stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  stroke: none;
 }
 .svsch-node-error-outline {
   fill: none;
@@ -3471,10 +3485,15 @@ path.port-skin-body.port-skin-harness {
   opacity: 0.75;
 }
 .svsch-generate-region-active .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
   fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
   stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
   stroke-dasharray: 7 5;

@@ -660,15 +660,17 @@ function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): Sav
   roots.forEach((region, index) => {
     const baseY = grid * 2 + index * grid * 10;
     const children = childGroups.get(region.id) ?? [];
-    const height = children.length > 0 ? grid * 7 + children.length * grid * 6 : grid * 7;
+    // Space children a full arm apart so they keep clear of one another once each arm
+    // auto-grows to fit its block plus the 2-grid content padding.
+    const height = children.length > 0 ? grid * 4 + children.length * grid * 10 : grid * 8;
     regions[region.id] = { x: grid * 8, y: baseY, width: grid * 16, height, fixed: true };
 
     children.forEach((child, childIndex) => {
       regions[child.id] = {
         x: grid * 9,
-        y: baseY + grid * 2 + childIndex * grid * 6,
+        y: baseY + grid * 2 + childIndex * grid * 10,
         width: grid * 14,
-        height: grid * 5,
+        height: grid * 8,
         fixed: true
       };
     });

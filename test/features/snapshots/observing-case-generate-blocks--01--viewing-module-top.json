@@ -217,6 +217,18 @@
   ],
   "regions": [
     {
+      "id": "generate-block:generate-group:top:case:14:4",
+      "kind": "generate-case",
+      "label": "generate case (MODE)",
+      "bounds": {
+        "x": 312,
+        "y": 48,
+        "width": 384,
+        "height": 744
+      },
+      "active": true
+    },
+    {
       "id": "generate-region:top:case-default:14:4:2:default__g_case_default_",
       "kind": "case-default",
       "label": "g_case_default /* default */",

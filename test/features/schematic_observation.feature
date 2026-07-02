@@ -357,6 +357,7 @@ Feature: Schematic Observation
       """
     When I open the "top" module in SVSCH
     Then the diagram should contain exactly 3 generate regions
+    And the diagram should contain a "generate if" generate block
     And I should see a "if" generate region labeled "g_if_zero"
     And I should see a "else-if" generate region labeled "g_if_one"
     And I should see a "else" generate region labeled "g_if_other"
@@ -442,6 +443,9 @@ Feature: Schematic Observation
     Then a tooltip should appear reading "node does not belong to arm block"
     When I hover over the warning icon on the "u_free" block
     Then a tooltip should appear reading "this block does not belong to a generate arm block"
+    And the "generate if" generate block should be flagged as containing an unrelated block
+    When I hover over the warning icon on the "generate if" generate region
+    Then a tooltip should appear reading "block does not belong to this generate block"
 
   Scenario: Observing case generate blocks
     Given I have a file "top.sv" in my workspace:
@@ -477,6 +481,7 @@ Feature: Schematic Observation
       """
     When I open the "top" module in SVSCH
     Then the diagram should contain exactly 3 generate regions
+    And the diagram should contain a "generate case (MODE)" generate block
     And I should see a "case" generate region labeled "g_case_0"
     And I should see a "case" generate region labeled "g_case_1"
     And I should see a "case-default" generate region labeled "g_case_default"

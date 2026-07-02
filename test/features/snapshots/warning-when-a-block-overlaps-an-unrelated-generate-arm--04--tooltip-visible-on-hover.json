@@ -172,6 +172,20 @@
   ],
   "regions": [
     {
+      "id": "generate-block:generate-group:top:if:16:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 312,
+        "y": 120,
+        "width": 384,
+        "height": 360
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "block does not belong to this generate block"
+    },
+    {
       "id": "generate-region:top:if:16:8:0:if__MODE____1___g_arm_",
       "kind": "if",
       "label": "g_arm /* MODE == 1 */",

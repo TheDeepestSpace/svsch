@@ -636,7 +636,15 @@ Then('I should see a port node {string}', async function (this: BddWorld, name: 
 });
 
 Then('the diagram should contain exactly {int} generate regions', async function (this: BddWorld, count: number) {
-  await expect(this.webviewPage.locator('.generate-region')).toHaveCount(count);
+  // Arm regions only — the synthesized generate-block wrapper is counted separately.
+  await expect(this.webviewPage.locator('.generate-region:not(.generate-block)')).toHaveCount(count);
+});
+
+Then('the diagram should contain a {string} generate block', async function (this: BddWorld, label: string) {
+  const block = this.webviewPage.locator('.generate-region.generate-block').filter({
+    has: this.webviewPage.locator('.generate-region-title', { hasText: label })
+  });
+  await expect(block).toHaveCount(1);
 });
 
 Then('I should see a {string} generate region labeled {string}', async function (this: BddWorld, kind: string, label: string) {
@@ -752,6 +760,14 @@ Then('the {string} generate region should be flagged as containing an unrelated 
   const region = generateRegionLocator(this.webviewPage, label);
   await expect(region).toHaveClass(/generate-region-invalid/);
   await expect(region).toHaveAttribute('data-warning-note', /node does not belong to arm block/);
+});
+
+Then('the {string} generate block should be flagged as containing an unrelated block', async function (this: BddWorld, label: string) {
+  const block = this.webviewPage.locator('.generate-region.generate-block').filter({
+    has: this.webviewPage.locator('.generate-region-title', { hasText: label })
+  });
+  await expect(block).toHaveClass(/generate-region-invalid/);
+  await expect(block).toHaveAttribute('data-warning-note', /block does not belong to this generate block/);
 });
 
 Then('the {string} block should be flagged as overlapping an arm', async function (this: BddWorld, label: string) {

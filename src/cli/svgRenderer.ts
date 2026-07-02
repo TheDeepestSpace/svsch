@@ -130,7 +130,10 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     '</style>',
     `<g transform="translate(${formatNumber(offsetX)} ${formatNumber(offsetY)})">`,
     '<g class="svsch-generate-regions">',
-    ...(view.generateRegions ?? []).map(renderGenerateRegion),
+    // Wrappers first so their fill renders behind the arm borders.
+    ...[...(view.generateRegions ?? [])]
+      .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
+      .map(renderGenerateRegion),
     '</g>',
     '<g class="svsch-edges">',
     ...renderedEdges.map(renderEdge),
@@ -176,9 +179,13 @@ export function svgBridgeCss(): string {
   stroke-width: 1;
 }
 .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  fill: none;
   stroke: var(--vscode-charts-orange);
   stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  stroke: none;
 }
 .svsch-node-error-outline {
   fill: none;
@@ -216,10 +223,15 @@ export function svgBridgeCss(): string {
   opacity: 0.75;
 }
 .svsch-generate-region-active .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 8%, transparent);
   stroke: var(--vscode-charts-orange);
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
   fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
   stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
   stroke-dasharray: 7 5;
@@ -231,6 +243,7 @@ export function svgBridgeCss(): string {
 function renderGenerateRegion(region: PositionedGenerateRegion): string {
   const classes = [
     'svsch-generate-region',
+    region.isGenerateBlock ? 'svsch-generate-block' : '',
     region.activeState === 'active' ? 'svsch-generate-region-active' : '',
     region.activeState === 'inactive' ? 'svsch-generate-region-inactive' : '',
     region.invalid ? 'svsch-generate-region-invalid' : ''

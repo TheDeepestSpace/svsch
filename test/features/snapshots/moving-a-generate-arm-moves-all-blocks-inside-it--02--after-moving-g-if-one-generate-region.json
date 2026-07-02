@@ -291,6 +291,18 @@
   ],
   "regions": [
     {
+      "id": "generate-block:generate-group:top:if:13:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 360,
+        "y": 24,
+        "width": 672,
+        "height": 672
+      },
+      "active": true
+    },
+    {
       "id": "generate-region:top:else:13:4:1:else__g_if_other_",
       "kind": "else",
       "label": "g_if_other /* else */",

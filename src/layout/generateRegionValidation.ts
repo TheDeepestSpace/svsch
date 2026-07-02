@@ -6,6 +6,8 @@ type RegionBounds = PositionedGenerateRegion['bounds'];
 export const GENERATE_REGION_OVERLAP_WARNING = 'arm blocks overlapping';
 export const GENERATE_REGION_EXTERNAL_NODE_WARNING = 'node does not belong to arm block';
 export const GENERATE_REGION_EXTERNAL_BLOCK_WARNING = 'this block does not belong to a generate arm block';
+export const GENERATE_BLOCK_OVERLAP_WARNING = 'generate blocks overlapping';
+export const GENERATE_BLOCK_EXTERNAL_NODE_WARNING = 'block does not belong to this generate block';
 
 export function annotateGenerateRegionWarnings(
   regions: PositionedGenerateRegion[],
@@ -36,15 +38,17 @@ export function annotateGenerateRegionWarnings(
       const b = regions[j];
       if (isAncestor(a.id, b.id) || isAncestor(b.id, a.id)) continue;
       if (rectsOverlap(a.bounds, b.bounds)) {
-        addWarning(a.id, GENERATE_REGION_OVERLAP_WARNING);
-        addWarning(b.id, GENERATE_REGION_OVERLAP_WARNING);
+        addWarning(a.id, a.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING);
+        addWarning(b.id, b.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING);
       }
     }
   }
 
   const { regionIds: regionsWithExternalNode } = classifyExternalBlocks(regions, nodes);
   for (const regionId of regionsWithExternalNode) {
-    addWarning(regionId, GENERATE_REGION_EXTERNAL_NODE_WARNING);
+    addWarning(regionId, byId.get(regionId)?.isGenerateBlock
+      ? GENERATE_BLOCK_EXTERNAL_NODE_WARNING
+      : GENERATE_REGION_EXTERNAL_NODE_WARNING);
   }
 
   return regions.map((region) => {
@@ -78,8 +82,14 @@ function classifyExternalBlocks(
   const nodeIds = new Set<string>();
   for (const region of regions) {
     const owned = new Set(descendantNodeIds(region, regions));
+    const ownedRegionIds = descendantRegionIdSet(region, regions);
     for (const node of nodes) {
-      if (owned.has(node.id) || node.kind === 'port') continue;
+      // A block is "owned" if it's listed in a descendant region, or tagged as belonging
+      // to one (generateRegionId) — the tag survives even when a block sits just outside
+      // its arm's bounds, so it isn't mistaken for an intruder into its own generate block.
+      const tagged = node.metadata?.generateRegionId;
+      const isOwned = owned.has(node.id) || (tagged !== undefined && ownedRegionIds.has(tagged));
+      if (isOwned) continue;
       const size = diagramNodeDimensions(node);
       const nodeBounds = {
         x: node.position.x,
@@ -94,6 +104,22 @@ function classifyExternalBlocks(
     }
   }
   return { regionIds, nodeIds };
+}
+
+// The region itself plus every region nested under it.
+function descendantRegionIdSet(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): Set<string> {
+  const ids = new Set<string>([region.id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const candidate of regions) {
+      if (candidate.parentRegionId && ids.has(candidate.parentRegionId) && !ids.has(candidate.id)) {
+        ids.add(candidate.id);
+        changed = true;
+      }
+    }
+  }
+  return ids;
 }
 
 function descendantNodeIds(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): string[] {

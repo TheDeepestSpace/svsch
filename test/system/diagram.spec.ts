@@ -1,5 +1,5 @@
 import { test, expect } from 'vscode-test-playwright';
-import type { FrameLocator, Page } from '@playwright/test';
+import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
@@ -353,6 +353,48 @@ test('preserves moved node positions after editing a connection route', async ({
   }
 });
 
+test('flags a module port dragged into a generate block', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'generate_arm_intrusion');
+
+    const arm = webview.locator('.generate-region:not(.generate-block)').first();
+    const block = webview.locator('.generate-region.generate-block').first();
+    await arm.waitFor({ state: 'visible', timeout: 30_000 });
+
+    const portId = await findSystemNodeId(webview, 'a', 'port');
+    if (!portId) {
+      throw new Error('Could not find module port "a"');
+    }
+    const portNode = webview.locator(`.react-flow__node[data-id="${portId}"]`);
+
+    // The module port sits at the edge of the diagram, well outside the generate
+    // block, so it is not flagged before the drag. (A port could never be flagged
+    // at all before the fix — the validation skipped every port.)
+    await expect(portNode).not.toHaveClass(/svsch-node-invalid/);
+
+    // Drag the port on top of the generate arm.
+    await dragSystemNodeOntoRegion(workbox, webview, portId, arm);
+
+    // The intruding port now shows the shared error outline, and both the arm and
+    // its enclosing generate block are flagged as containing an unrelated block.
+    await expect(portNode).toHaveClass(/svsch-node-invalid/, { timeout: 15_000 });
+    await expect(arm).toHaveClass(/generate-region-invalid/, { timeout: 15_000 });
+    await expect(block).toHaveClass(/generate-region-invalid/, { timeout: 15_000 });
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
 const SYSTEM_GRID_SIZE = 24;
 const SYSTEM_LAYOUT_PATH = path.resolve(__dirname, '../.svsch/layout.json');
 type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
@@ -563,6 +605,36 @@ async function dragSystemNodeByGridCells(
   await workbox.mouse.move(startX, startY);
   await workbox.mouse.down();
   await workbox.mouse.move(startX + cellsX * SYSTEM_GRID_SIZE * zoom, startY + cellsY * SYSTEM_GRID_SIZE * zoom, { steps: 12 });
+  await workbox.mouse.up();
+
+  await expect.poll(async () => {
+    const current = await systemNodePosition(webview, nodeId);
+    return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+async function dragSystemNodeOntoRegion(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+  region: Locator
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const nodeBox = await node.boundingBox();
+  const regionBox = await region.boundingBox();
+  if (!nodeBox || !regionBox) {
+    throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+  }
+  const before = await systemNodePosition(webview, nodeId);
+  const startX = nodeBox.x + nodeBox.width / 2;
+  const startY = nodeBox.y + nodeBox.height / 2;
+  const endX = regionBox.x + regionBox.width / 2;
+  const endY = regionBox.y + regionBox.height / 2;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  await workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 10 });
+  await workbox.mouse.move(endX, endY, { steps: 10 });
   await workbox.mouse.up();
 
   await expect.poll(async () => {

@@ -4,8 +4,8 @@
       "id": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign",
       "type": "hdl",
       "position": {
-        "x": 264,
-        "y": 600
+        "x": 288,
+        "y": 648
       },
       "width": 192,
       "height": 72,
@@ -30,8 +30,8 @@
       "id": "instance:generate_case_regions:g_case_0.u_case_0",
       "type": "hdl",
       "position": {
-        "x": 264,
-        "y": 120
+        "x": 288,
+        "y": 168
       },
       "width": 192,
       "height": 96,
@@ -56,8 +56,8 @@
       "id": "instance:generate_case_regions:g_case_1.u_case_1",
       "type": "hdl",
       "position": {
-        "x": 264,
-        "y": 360
+        "x": 288,
+        "y": 408
       },
       "width": 192,
       "height": 96,
@@ -166,7 +166,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 456 648 L 480 648 L 600 648 L 600 408 L 888 408 L 912 408",
+      "path": "M 480 696 L 504 696 L 600 696 L 600 408 L 888 408 L 912 408",
       "inactive": true
     },
     {
@@ -175,7 +175,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 456 168 L 480 168 L 600 168 L 600 408 L 888 408 L 912 408",
+      "path": "M 480 216 L 504 216 L 600 216 L 600 408 L 888 408 L 912 408",
       "inactive": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 456 408 L 480 408 L 888 408 L 912 408",
+      "path": "M 480 456 L 504 456 L 593 456 Q 600 449 607 456 L 696 456 L 696 408 L 888 408 L 912 408",
       "active": true
     },
     {
@@ -193,7 +193,7 @@
       "target": "instance:generate_case_regions:g_case_0.u_case_0",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 168 144 L 192 144 L 216 144 L 216 168 L 240 168 L 264 168",
+      "path": "M 168 144 L 192 144 L 240 144 L 240 216 L 264 216 L 288 216",
       "inactive": true
     },
     {
@@ -202,7 +202,7 @@
       "target": "instance:generate_case_regions:g_case_1.u_case_1",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 168 384 L 192 384 L 216 384 L 216 408 L 240 408 L 264 408",
+      "path": "M 168 384 L 192 384 L 240 384 L 240 456 L 264 456 L 288 456",
       "active": true
     },
     {
@@ -211,19 +211,31 @@
       "target": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 168 624 L 192 624 L 216 624 L 216 648 L 240 648 L 264 648",
+      "path": "M 168 624 L 192 624 L 240 624 L 240 696 L 264 696 L 288 696",
       "inactive": true
     }
   ],
   "regions": [
     {
+      "id": "generate-block:generate-group:generate_case_regions:case:16:4",
+      "kind": "generate-case",
+      "label": "generate case (MODE)",
+      "bounds": {
+        "x": 168,
+        "y": 48,
+        "width": 432,
+        "height": 816
+      },
+      "active": true
+    },
+    {
       "id": "generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_",
       "kind": "case-default",
       "label": "g_case_default /* default */",
       "bounds": {
-        "x": 192,
-        "y": 528,
-        "width": 384,
+        "x": 216,
+        "y": 576,
+        "width": 336,
         "height": 192
       },
       "inactive": true
@@ -233,9 +245,9 @@
       "kind": "case",
       "label": "g_case_0 /* MODE == 0 */",
       "bounds": {
-        "x": 192,
-        "y": 48,
-        "width": 384,
+        "x": 216,
+        "y": 96,
+        "width": 336,
         "height": 216
       },
       "inactive": true
@@ -245,9 +257,9 @@
       "kind": "case",
       "label": "g_case_1 /* MODE == 1 */",
       "bounds": {
-        "x": 192,
-        "y": 288,
-        "width": 384,
+        "x": 216,
+        "y": 336,
+        "width": 336,
         "height": 216
       },
       "active": true
