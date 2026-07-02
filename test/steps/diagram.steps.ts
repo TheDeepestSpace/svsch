@@ -722,7 +722,7 @@ Then('blocks outside the {string} generate region should not have moved', async 
 Then('the {string} generate region should be flagged as overlapping', async function (this: BddWorld, label: string) {
   const region = generateRegionLocator(this.webviewPage, label);
   await expect(region).toHaveClass(/generate-region-invalid/);
-  await expect(region).toHaveAttribute('data-warning-note', /arm blocks overlapping/);
+  await expect(region).toHaveAttribute('data-warning-note', /(arm|generate) blocks overlapping/);
 });
 
 Then('I should see a warning icon on the {string} generate region', async function (this: BddWorld, label: string) {

@@ -404,6 +404,49 @@ Feature: Schematic Observation
     Then no generate region should be flagged as overlapping
     And I should not see any generate region warning icons
 
+  Scenario: Warning when two generate blocks overlap
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        output logic z
+      );
+        logic w1;
+
+        generate
+          if (MODE == 1) begin : g_if_on
+            leaf u_if(.a(a), .y(w1));
+          end
+        endgenerate
+
+        generate
+          case (MODE)
+            default: begin : g_case_def
+              leaf u_case_def(.a(w1), .y(z));
+            end
+          endcase
+        endgenerate
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain a "generate if" generate block
+    And the diagram should contain a "generate case (MODE)" generate block
+    And no generate region should be flagged as overlapping
+    When I move the "generate if" generate region by (8, 0) grid cells
+    Then the "generate if" generate region should be flagged as overlapping
+    And the "generate case (MODE)" generate region should be flagged as overlapping
+    And I should see a warning icon on the "generate if" generate region
+    And I should see a warning icon on the "generate case (MODE)" generate region
+    When I hover over the warning icon on the "generate if" generate region
+    Then a tooltip should appear reading "generate blocks overlapping"
+    When I move the "generate if" generate region by (-8, 0) grid cells
+    Then no generate region should be flagged as overlapping
+    And I should not see any generate region warning icons
+
   Scenario: Warning when a block overlaps an unrelated generate arm
     Given I have a file "top.sv" in my workspace:
       """
