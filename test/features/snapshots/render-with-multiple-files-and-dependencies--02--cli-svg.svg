@@ -1043,7 +1043,7 @@ text {
 
 /* The generate-block wrapper carries the fill (no border); arms are border-only. */
 .generate-block .generate-region-outline {
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
   border: none;
 }
 
@@ -2912,6 +2912,27 @@ text {
   stroke-width: 2;
 }
 
+/* Generate/arm region outlines injected into the minimap svg — outlines only, no fill.
+   Generate blocks match the minimap objects' foreground; arms are a bit more transparent. */
+.svsch-minimap-regions {
+  pointer-events: none;
+}
+
+.svsch-minimap-region {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.svsch-minimap-region-block {
+  stroke-opacity: 0.8;
+}
+
+.svsch-minimap-region-arm {
+  stroke-opacity: 0.6;
+}
+
 /* ── SVG-native node components ─────────────────────────── */
 
 /* Node background rect/path */
@@ -3446,7 +3467,7 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1.5;
 }
 .svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
-  fill: color-mix(in srgb, var(--vscode-editor-foreground) 6%, transparent);
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
   stroke: none;
 }
 .svsch-node-error-outline {
