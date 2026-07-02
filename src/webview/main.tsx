@@ -71,6 +71,36 @@ interface FlowViewport {
   zoom: number;
 }
 
+// The React Flow MiniMap has no slot for extra SVG content, so we inject a group of
+// generate/arm region outlines directly into its <svg>. The minimap svg's viewBox is in
+// flow coordinates, so region bounds map straight in and track node moves automatically.
+function MiniMapRegionOutlines({ regions }: { regions: PositionedGenerateRegion[] }): null {
+  useEffect(() => {
+    const svg = document.querySelector('.svsch-minimap .react-flow__minimap-svg');
+    if (!svg) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const group = document.createElementNS(ns, 'g');
+    group.setAttribute('class', 'svsch-minimap-regions');
+    for (const region of regions) {
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('x', String(region.bounds.x));
+      rect.setAttribute('y', String(region.bounds.y));
+      rect.setAttribute('width', String(region.bounds.width));
+      rect.setAttribute('height', String(region.bounds.height));
+      rect.setAttribute(
+        'class',
+        `svsch-minimap-region ${region.isGenerateBlock ? 'svsch-minimap-region-block' : 'svsch-minimap-region-arm'}`
+      );
+      group.appendChild(rect);
+    }
+    svg.appendChild(group);
+    return () => {
+      group.parentNode?.removeChild(group);
+    };
+  }, [regions]);
+  return null;
+}
+
 function App(): React.ReactElement {
   return (
     <ReactFlowProvider>
@@ -532,6 +562,7 @@ function DiagramApp(): React.ReactElement {
                   className="svsch-minimap"
                   nodeComponent={MiniMapNode}
                 />
+                <MiniMapRegionOutlines regions={regions} />
                 <Controls />
               </ReactFlow>
             </LineJumpProvider>

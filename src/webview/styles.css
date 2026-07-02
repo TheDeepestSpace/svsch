@@ -2273,6 +2273,27 @@ text {
   stroke-width: 2;
 }
 
+/* Generate/arm region outlines injected into the minimap svg — outlines only, no fill.
+   Generate blocks match the minimap objects' foreground; arms are a bit more transparent. */
+.svsch-minimap-regions {
+  pointer-events: none;
+}
+
+.svsch-minimap-region {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.svsch-minimap-region-block {
+  stroke-opacity: 0.8;
+}
+
+.svsch-minimap-region-arm {
+  stroke-opacity: 0.6;
+}
+
 /* ── SVG-native node components ─────────────────────────── */
 
 /* Node background rect/path */
