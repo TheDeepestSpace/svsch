@@ -90,7 +90,11 @@ function MiniMapRegionOutlines({ regions }: { regions: PositionedGenerateRegion[
       rect.setAttribute('height', String(region.bounds.height));
       rect.setAttribute(
         'class',
-        `svsch-minimap-region ${region.isGenerateBlock ? 'svsch-minimap-region-block' : 'svsch-minimap-region-arm'}`
+        [
+          'svsch-minimap-region',
+          region.isGenerateBlock ? 'svsch-minimap-region-block' : 'svsch-minimap-region-arm',
+          region.invalid ? 'svsch-minimap-region-invalid' : ''
+        ].filter(Boolean).join(' ')
       );
       group.appendChild(rect);
     }

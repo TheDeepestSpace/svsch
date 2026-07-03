@@ -2932,6 +2932,12 @@ text {
   stroke-opacity: 0.6;
 }
 
+/* Regions flagged with the shared error style render in the same red on the minimap. */
+.svsch-minimap-region-invalid {
+  stroke: var(--svsch-error-highlight);
+  stroke-opacity: 1;
+}
+
 /* ── SVG-native node components ─────────────────────────── */
 
 /* Node background rect/path */
