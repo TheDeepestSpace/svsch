@@ -423,13 +423,12 @@ Feature: Schematic Observation
           end
         endgenerate
 
-        generate
-          case (MODE)
-            default: begin : g_case_def
-              leaf u_case_def(.a(w1), .y(z));
-            end
-          endcase
-        endgenerate
+        // implicit generate: the generate/endgenerate keywords are optional
+        case (MODE)
+          default: begin : g_case_def
+            leaf u_case_def(.a(w1), .y(z));
+          end
+        endcase
       endmodule
       """
     When I open the "top" module in SVSCH
@@ -505,19 +504,18 @@ Feature: Schematic Observation
       );
         logic w;
 
-        generate
-          case (MODE)
-            0: begin : g_case_0
-              leaf u_case_0(.a(a), .y(w));
-            end
-            1: begin : g_case_1
-              leaf u_case_1(.a(b), .y(w));
-            end
-            default: begin : g_case_default
-              assign w = c;
-            end
-          endcase
-        endgenerate
+        // implicit generate: no generate/endgenerate keywords around the case
+        case (MODE)
+          0: begin : g_case_0
+            leaf u_case_0(.a(a), .y(w));
+          end
+          1: begin : g_case_1
+            leaf u_case_1(.a(b), .y(w));
+          end
+          default: begin : g_case_default
+            assign w = c;
+          end
+        endcase
 
         assign y = w;
       endmodule

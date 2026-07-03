@@ -439,7 +439,11 @@ SourceInfo DesignExtractor::generateStmtBodySource(vpiHandle stmt, int depth) {
 
 void DesignExtractor::collectGenerateIfRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth) {
     SourceInfo source = getSourceInfo(gen_handle);
-    std::string groupId = generateGroupId(mod.name, "if", source);
+    // A keyword-less generate if (no generate/endgenerate) reports no location on
+    // its own handle; anchor the sibling group at the condition instead so two
+    // distinct chains in one module don't collapse into a single group.
+    SourceInfo groupAnchor = firstValidSource({source, getSourceInfo(vpi_handle(vpiCondition, gen_handle))});
+    std::string groupId = generateGroupId(mod.name, "if", groupAnchor);
     int armIndex = 0;
     collectGenerateIfArms(gen_handle, mod, groupId, parentRegionId, armIndex, visited, depth + 1, false, source);
 }
@@ -530,7 +534,9 @@ void DesignExtractor::collectGenerateCaseRegions(vpiHandle gen_handle, Module& m
     vpiHandle selector_handle = vpi_handle(vpiCondition, gen_handle);
     const std::string selector = getExprText(selector_handle);
     SourceInfo source = getSourceInfo(gen_handle);
-    const std::string groupId = generateGroupId(mod.name, "case", source);
+    // Keyword-less generate case: anchor the sibling group at the selector when the
+    // case handle itself has no location (see collectGenerateIfRegions).
+    const std::string groupId = generateGroupId(mod.name, "case", firstValidSource({source, getSourceInfo(selector_handle)}));
 
     vpiHandle item_itr = vpi_iterate(vpiCaseItem, gen_handle);
     if (!item_itr) return;

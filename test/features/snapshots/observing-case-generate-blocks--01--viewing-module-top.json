@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "comb:top:generate-region:top:case-default:14:4:2:default__g_case_default_:w:assign",
+      "id": "comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign",
       "type": "hdl",
       "position": {
         "x": 408,
@@ -161,8 +161,8 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:top:generate_region:top:case_default:14:4:2:default__g_case_default_:w:assign:port:top:y:y",
-      "source": "comb:top:generate-region:top:case-default:14:4:2:default__g_case_default_:w:assign",
+      "id": "edge:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:port:top:y:y",
+      "source": "comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign",
       "target": "port:top:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
@@ -206,9 +206,9 @@
       "active": true
     },
     {
-      "id": "edge:port:top:c:comb:top:generate_region:top:case_default:14:4:2:default__g_case_default_:w:assign:c",
+      "id": "edge:port:top:c:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:c",
       "source": "port:top:c",
-      "target": "comb:top:generate-region:top:case-default:14:4:2:default__g_case_default_:w:assign",
+      "target": "comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
       "path": "M 144 672 L 168 672 L 384 672 L 408 672",
@@ -217,7 +217,7 @@
   ],
   "regions": [
     {
-      "id": "generate-block:generate-group:top:case:14:4",
+      "id": "generate-block:generate-group:top:case:14:8",
       "kind": "generate-case",
       "label": "generate case (MODE)",
       "bounds": {
@@ -229,7 +229,7 @@
       "active": true
     },
     {
-      "id": "generate-region:top:case-default:14:4:2:default__g_case_default_",
+      "id": "generate-region:top:case-default:0:0:2:default__g_case_default_",
       "kind": "case-default",
       "label": "g_case_default /* default */",
       "bounds": {
@@ -241,7 +241,7 @@
       "inactive": true
     },
     {
-      "id": "generate-region:top:case:15:6:0:MODE____0__g_case_0_",
+      "id": "generate-region:top:case:15:4:0:MODE____0__g_case_0_",
       "kind": "case",
       "label": "g_case_0 /* MODE == 0 */",
       "bounds": {
@@ -253,7 +253,7 @@
       "inactive": true
     },
     {
-      "id": "generate-region:top:case:18:6:1:MODE____1__g_case_1_",
+      "id": "generate-region:top:case:18:4:1:MODE____1__g_case_1_",
       "kind": "case",
       "label": "g_case_1 /* MODE == 1 */",
       "bounds": {
