@@ -6,6 +6,9 @@
   },
   "remoteUser": "dev",
   "postStartCommand": "bash -c '.devcontainer/scripts/post-start.sh ${containerWorkspaceFolder}'",
+  "containerEnv": {
+    "NODE_OPTIONS": "--dns-result-order=ipv4first"
+  },
   "customizations": {
     "vscode": {
       "settings": {
