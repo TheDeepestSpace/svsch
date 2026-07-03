@@ -15,8 +15,7 @@ test.describe('generate region visual rendering', () => {
     expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
     expect(regions.map((region) => region.blockLabel)).toEqual(expect.arrayContaining([
       'g_if_zero',
-      'g_if_one',
-      'g_if_other'
+      'g_if_one'
     ]));
     expect(regions.map((region) => region.kind)).toEqual(expect.arrayContaining([
       'if',
@@ -24,10 +23,15 @@ test.describe('generate region visual rendering', () => {
       'else'
     ]));
 
+    // The else arm is an unlabeled begin block: no block label, condition comment only.
+    const elseRegion = regions.find((region) => region.kind === 'else');
+    expect(elseRegion?.blockLabel).toBeUndefined();
+    expect(elseRegion?.label).toBe('/* else */');
+
     await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region[data-region-kind="if"] .generate-region-title')).toContainText('g_if_zero');
     await expect(page.locator('.generate-region[data-region-kind="else-if"] .generate-region-title')).toContainText('g_if_one');
-    await expect(page.locator('.generate-region[data-region-kind="else"] .generate-region-title')).toContainText('g_if_other');
+    await expect(page.locator('.generate-region[data-region-kind="else"] .generate-region-title')).toHaveText('/* else */');
     await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
     await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_if_one');
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
@@ -45,18 +49,22 @@ test.describe('generate region visual rendering', () => {
     expect(regions.filter((region) => !region.isGenerateBlock)).toHaveLength(3);
     expect(regions.map((region) => region.blockLabel)).toEqual(expect.arrayContaining([
       'g_case_0',
-      'g_case_1',
-      'g_case_default'
+      'g_case_1'
     ]));
     expect(regions.map((region) => region.kind)).toEqual(expect.arrayContaining([
       'case',
       'case-default'
     ]));
 
+    // The default arm is an unlabeled begin block: no block label, condition comment only.
+    const defaultRegion = regions.find((region) => region.kind === 'case-default');
+    expect(defaultRegion?.blockLabel).toBeUndefined();
+    expect(defaultRegion?.label).toBe('/* default */');
+
     await expect(page.locator('.generate-region:not(.generate-block)')).toHaveCount(3);
     await expect(page.locator('.generate-region[data-region-kind="case"] .generate-region-title', { hasText: 'g_case_0' })).toBeVisible();
     await expect(page.locator('.generate-region[data-region-kind="case"] .generate-region-title', { hasText: 'g_case_1' })).toBeVisible();
-    await expect(page.locator('.generate-region[data-region-kind="case-default"] .generate-region-title')).toContainText('g_case_default');
+    await expect(page.locator('.generate-region[data-region-kind="case-default"] .generate-region-title')).toHaveText('/* default */');
     await expect(page.locator('.generate-region-active:not(.generate-block)')).toHaveCount(1);
     await expect(page.locator('.generate-region-active:not(.generate-block) .generate-region-title')).toContainText('g_case_1');
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
@@ -217,7 +225,7 @@ test.describe('generate region visual rendering', () => {
       if (side === 'top') {
         await moveGenerateRegionByGridCells(page, 'g_if_zero', 0, -3);
       } else if (side === 'bottom') {
-        await moveGenerateRegionByGridCells(page, 'g_if_other', 0, 3);
+        await moveGenerateRegionByGridCells(page, '/* else */', 0, 3);
       }
 
       const before = await regionBounds(page, label);

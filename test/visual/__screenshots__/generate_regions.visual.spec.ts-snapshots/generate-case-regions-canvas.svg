@@ -3534,19 +3534,19 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-generate-region-box" x="216" y="336" width="336" height="216" />
 <text class="svsch-generate-region-label" x="224" y="353">g_case_1 /* MODE == 1 */</text>
 </g>
-<g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_">
+<g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_case_regions:case-default:16:4:2:default">
 <rect class="svsch-generate-region-box" x="216" y="576" width="336" height="192" />
-<text class="svsch-generate-region-label" x="224" y="593">g_case_default /* default */</text>
+<text class="svsch-generate-region-label" x="224" y="593">/* default */</text>
 </g>
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:port:generate_case_regions:y:y" data-net-key="comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign:out:w" d="M 480 696 L 504 696 L 600 696 L 600 408 L 888 408 L 912 408" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:port:generate_case_regions:y:y" data-net-key="comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign:out:w" d="M 480 696 L 504 696 L 600 696 L 600 408 L 888 408 L 912 408" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_case_regions:g_case_0.u_case_0:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_case_regions:g_case_0.u_case_0:port:generate_case_regions:y:y" data-net-key="instance:generate_case_regions:g_case_0.u_case_0:port:y" d="M 480 216 L 504 216 L 600 216 L 600 408 L 888 408 L 912 408" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_case_regions:g_case_1.u_case_1:port:generate_case_regions:y:y"><path class="svsch-edge-jump-halo" d="M 593 456 Q 600 449 607 456" style="stroke-width: 12" data-edge-id="edge:instance:generate_case_regions:g_case_1.u_case_1:port:generate_case_regions:y:y" data-jump-index="0" />
 <path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_case_regions:g_case_1.u_case_1:port:generate_case_regions:y:y" data-net-key="instance:generate_case_regions:g_case_1.u_case_1:port:y" d="M 480 456 L 504 456 L 593 456 Q 600 449 607 456 L 696 456 L 696 408 L 888 408 L 912 408" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:a:instance:generate_case_regions:g_case_0.u_case_0:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_case_regions:a:instance:generate_case_regions:g_case_0.u_case_0:a" data-net-key="port:generate_case_regions:a:port:a" d="M 168 144 L 192 144 L 240 144 L 240 216 L 264 216 L 288 216" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:b:instance:generate_case_regions:g_case_1.u_case_1:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_case_regions:b:instance:generate_case_regions:g_case_1.u_case_1:b" data-net-key="port:generate_case_regions:b:port:b" d="M 168 384 L 192 384 L 240 384 L 240 456 L 264 456 L 288 456" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:c" data-net-key="port:generate_case_regions:c:port:c" d="M 168 624 L 192 624 L 240 624 L 240 696 L 264 696 L 288 696" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:c" data-net-key="port:generate_case_regions:c:port:c" d="M 168 624 L 192 624 L 240 624 L 240 696 L 264 696 L 288 696" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance generate-node-inactive" data-node-id="instance:generate_case_regions:g_case_0.u_case_0" data-node-kind="instance" transform="translate(288 168)">
@@ -3559,7 +3559,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">generate_case_leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">g_case_1.u_case_1</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">a</text><text class="svsch-port-label" x="180" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign" data-node-kind="comb" transform="translate(288 648)">
+<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign" data-node-kind="comb" transform="translate(288 648)">
 <svg class="hdl-node-svg" width="192" height="72" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="72"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
 </svg>

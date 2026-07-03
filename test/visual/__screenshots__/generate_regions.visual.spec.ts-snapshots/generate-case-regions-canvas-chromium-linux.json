@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign",
+      "id": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign",
       "type": "hdl",
       "position": {
         "x": 288,
@@ -161,8 +161,8 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:port:generate_case_regions:y:y",
-      "source": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign",
+      "id": "edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:port:generate_case_regions:y:y",
+      "source": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign",
       "target": "port:generate_case_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
@@ -206,9 +206,9 @@
       "active": true
     },
     {
-      "id": "edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default__g_case_default_:w:assign:c",
+      "id": "edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:c",
       "source": "port:generate_case_regions:c",
-      "target": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_:w:assign",
+      "target": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
       "path": "M 168 624 L 192 624 L 240 624 L 240 696 L 264 696 L 288 696",
@@ -229,9 +229,9 @@
       "active": true
     },
     {
-      "id": "generate-region:generate_case_regions:case-default:16:4:2:default__g_case_default_",
+      "id": "generate-region:generate_case_regions:case-default:16:4:2:default",
       "kind": "case-default",
-      "label": "g_case_default /* default */",
+      "label": "/* default */",
       "bounds": {
         "x": 216,
         "y": 576,

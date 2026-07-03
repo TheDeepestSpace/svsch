@@ -20,7 +20,7 @@ module generate_case_regions #(
       1: begin : g_case_1
         generate_case_leaf u_case_1(.a(b), .y(w));
       end
-      default: begin : g_case_default
+      default: begin
         assign w = c;
       end
     endcase

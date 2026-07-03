@@ -1,7 +1,7 @@
 {
   "nodes": [
     {
-      "id": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign",
+      "id": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "type": "hdl",
       "position": {
         "x": 432,
@@ -161,8 +161,8 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y",
-      "source": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign",
+      "id": "edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y",
+      "source": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
@@ -206,9 +206,9 @@
       "active": true
     },
     {
-      "id": "edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c",
+      "id": "edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c",
       "source": "port:generate_if_else_regions:c",
-      "target": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign",
+      "target": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
       "path": "M 144 672 L 168 672 L 408 672 L 432 672",
@@ -241,9 +241,9 @@
       "active": true
     },
     {
-      "id": "generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_",
+      "id": "generate-region:generate_if_else_regions:else:18:13:2:else",
       "kind": "else",
-      "label": "g_if_other /* else */",
+      "label": "/* else */",
       "bounds": {
         "x": 384,
         "y": 576,

@@ -34,13 +34,23 @@ std::string handleName(vpiHandle handle, bool full) {
     return generateStripWorkPrefix(raw);
 }
 
+bool isGenScopeHandle(vpiHandle handle) {
+    if (!handle) return false;
+    const int type = vpi_get(vpiType, handle);
+    return type == vpiGenScopeArray || type == vpiGenScope;
+}
+
+// An unlabeled arm body is a plain begin block with no vpiName; its vpiFullName is
+// just the enclosing scope path, so falling back to it would leak the parent/module
+// name as the arm's label. Only gen scopes may take their label from the full name.
 std::string blockLabelForStmt(vpiHandle stmt) {
     std::string name = handleName(stmt, false);
-    if (name.empty()) name = handleName(stmt, true);
+    if (name.empty() && isGenScopeHandle(stmt)) name = handleName(stmt, true);
     return lastNameComponent(name);
 }
 
 std::string fullBlockLabelForStmt(vpiHandle stmt) {
+    if (handleName(stmt, false).empty() && !isGenScopeHandle(stmt)) return "";
     std::string full = handleName(stmt, true);
     if (!full.empty()) return full;
     return handleName(stmt, false);

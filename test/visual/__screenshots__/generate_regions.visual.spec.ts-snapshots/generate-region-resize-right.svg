@@ -3534,18 +3534,18 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-generate-region-box" x="384" y="336" width="360" height="192" />
 <text class="svsch-generate-region-label" x="392" y="353">g_if_one /* MODE == 1 */</text>
 </g>
-<g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_">
+<g class="svsch-generate-region svsch-generate-region-inactive" data-region-id="generate-region:generate_if_else_regions:else:18:13:2:else">
 <rect class="svsch-generate-region-box" x="384" y="576" width="288" height="168" />
-<text class="svsch-generate-region-label" x="392" y="593">g_if_other /* else */</text>
+<text class="svsch-generate-region-label" x="392" y="593">/* else */</text>
 </g>
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:out:w" d="M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign:out:w" d="M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_one.u_if_one:port:y" d="M 624 432 L 648 432 L 888 432 L 912 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_zero.u_if_zero:port:y" d="M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a" data-net-key="port:generate_if_else_regions:a:port:a" d="M 144 192 L 168 192 L 384 192 L 408 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b" data-net-key="port:generate_if_else_regions:b:port:b" d="M 144 432 L 168 432 L 408 432 L 432 432" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 144 672 L 168 672 L 408 672 L 432 672" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 144 672 L 168 672 L 408 672 L 432 672" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance generate-node-inactive" data-node-id="instance:generate_if_else_regions:g_if_zero.u_if_zero" data-node-kind="instance" transform="translate(408 144)">
@@ -3558,7 +3558,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">generate_if_else_leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">g_if_one.u_if_one</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">a</text><text class="svsch-port-label" x="180" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else__g_if_other_:w:assign" data-node-kind="comb" transform="translate(432 624)">
+<g class="svsch-node hdl-node hdl-node-comb generate-node-inactive" data-node-id="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign" data-node-kind="comb" transform="translate(432 624)">
 <svg class="hdl-node-svg" width="192" height="72" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="72"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
 </svg>

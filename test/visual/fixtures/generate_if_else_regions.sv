@@ -17,7 +17,7 @@ module generate_if_else_regions #(
       generate_if_else_leaf u_if_zero(.a(a), .y(w));
     end else if (MODE == 1) begin : g_if_one
       generate_if_else_leaf u_if_one(.a(b), .y(w));
-    end else begin : g_if_other
+    end else begin
       assign w = c;
     end
   endgenerate
