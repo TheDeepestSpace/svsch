@@ -524,6 +524,7 @@ json DesignExtractor::extract(const std::string& targetModule) {
                 if (!region.warnings.empty()) j_region["warnings"] = region.warnings;
                 if (!region.source.file.empty()) j_region["source"] = sourceInfoToJson(region.source);
                 if (!region.bodySource.file.empty()) j_region["bodySource"] = sourceInfoToJson(region.bodySource);
+                if (!region.groupSource.file.empty()) j_region["groupSource"] = sourceInfoToJson(region.groupSource);
                 j_mod["generateRegions"].push_back(j_region);
             }
         }

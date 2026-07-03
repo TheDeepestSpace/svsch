@@ -507,6 +507,42 @@ When('I double-click on the mux block for {string}', async function (this: BddWo
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
 });
 
+When('I double-click on the {string} generate region', async function (this: BddWorld, label: string) {
+  await generateRegionLocator(this.webviewPage, label).locator('.generate-region-title').dblclick({ force: true });
+});
+
+When('I note the diagram zoom level', async function (this: BddWorld) {
+  (this as any)._notedZoom = await diagramZoomLevel(this);
+});
+
+Then('the diagram zoom level should be unchanged', async function (this: BddWorld) {
+  const noted = (this as any)._notedZoom;
+  if (noted === undefined) throw new Error('No noted diagram zoom level');
+  expect(await diagramZoomLevel(this)).toBeCloseTo(noted, 5);
+});
+
+Then('the diagram zoom level should have increased', async function (this: BddWorld) {
+  const noted = (this as any)._notedZoom;
+  if (noted === undefined) throw new Error('No noted diagram zoom level');
+  // The canvas double-click zoom animates, so poll until it lands.
+  await expect.poll(async () => diagramZoomLevel(this), { timeout: 5_000 }).toBeGreaterThan(noted);
+});
+
+When('I double-click on an empty area of the canvas', async function (this: BddWorld) {
+  const pane = this.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox();
+  if (!box) throw new Error('Could not find the diagram pane');
+  // Top-right corner: clear of the diagram content, the controls panel
+  // (bottom-left), and the minimap (bottom-right).
+  await pane.dblclick({ position: { x: box.width - 16, y: 16 }, force: true });
+});
+
+async function diagramZoomLevel(world: BddWorld): Promise<number> {
+  return world.webviewPage.locator('html').evaluate(
+    () => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1
+  );
+}
+
 When('I double-click on the connection between the {word} node {string} and the {word} node {string}', async function (this: BddWorld, kind1: string, name1: string, kind2: string, name2: string) {
   const id1 = await findNodeIdByLabel(this.webviewPage, name1, kind1);
   const id2 = await findNodeIdByLabel(this.webviewPage, name2, kind2);

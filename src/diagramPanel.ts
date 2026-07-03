@@ -7,6 +7,7 @@ import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, Positione
 import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
+import { generateArmSpan } from './diagram/generateArmSpan';
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -23,6 +24,7 @@ type WebviewMessage =
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'navigateToSource'; source: SourceRange }
+  | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
   | { type: 'exportSvg' };
 
@@ -358,6 +360,10 @@ export class DiagramPanel {
       await this.navigateToSource(message.source);
       return;
     }
+    if (message.type === 'navigateToRegion') {
+      await this.navigateToRegion(message.region);
+      return;
+    }
     if (message.type === 'navigateToSignal') {
       await this.navigateToSignal(message.edge);
       return;
@@ -434,12 +440,11 @@ export class DiagramPanel {
   }
 
   private async navigateToSource(source: SourceRange): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const opened = await this.openSourceDocument(source);
+    if (!opened) {
       return;
     }
-    const uri = vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath);
-    const document = await vscode.workspace.openTextDocument(uri);
+    const { document } = opened;
     const startLine = Math.max(0, (source.startLine || 1) - 1);
     const endLine = Math.max(0, (source.endLine || source.startLine || 1) - 1);
     const range = new vscode.Range(
@@ -448,16 +453,55 @@ export class DiagramPanel {
       endLine,
       source.endColumn ?? document.lineAt(endLine).text.length
     );
+    await this.revealDocumentRange(document, range);
+  }
 
+  private async openSourceDocument(source: SourceRange): Promise<{ document: vscode.TextDocument } | undefined> {
+    const workspaceRoot = workspaceRootPath();
+    if (!workspaceRoot || !source.file) {
+      return undefined;
+    }
+    const uri = vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath);
+    const document = await vscode.workspace.openTextDocument(uri);
+    return { document };
+  }
+
+  private async revealDocumentRange(document: vscode.TextDocument, range: vscode.Range): Promise<void> {
     // Find if the document is already open in any tab group
     const tab = vscode.window.tabGroups.all
       .flatMap((group) => group.tabs)
-      .find((tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString());
+      .find((tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === document.uri.toString());
 
     await vscode.window.showTextDocument(document, {
       viewColumn: tab?.group.viewColumn ?? vscode.ViewColumn.Active,
       selection: range
     });
+  }
+
+  // Double-click on a generate region. The wrapper block's source already spans the
+  // whole generate statement; an arm's UHDM ranges only give its expression and a
+  // point inside its body, so the arm's begin..end block is recovered from the
+  // document text to highlight the full "expression + body".
+  private async navigateToRegion(region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange }): Promise<void> {
+    const source = region.source ?? region.bodySource;
+    if (!source?.file) {
+      return;
+    }
+    if (region.isGenerateBlock || !region.bodySource) {
+      await this.navigateToSource(source);
+      return;
+    }
+    const opened = await this.openSourceDocument(source);
+    if (!opened) {
+      return;
+    }
+    const { document } = opened;
+    const range = generateArmHighlightRange(document, region.kind, source, region.bodySource);
+    if (!range) {
+      await this.navigateToSource(source);
+      return;
+    }
+    await this.revealDocumentRange(document, range);
   }
 
   private async navigateToSignal(edge: DiagramEdge): Promise<void> {
@@ -711,6 +755,17 @@ export class DiagramPanel {
 
 function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
+function generateArmHighlightRange(
+  document: vscode.TextDocument,
+  kind: string,
+  source: SourceRange,
+  bodySource: SourceRange
+): vscode.Range | undefined {
+  const span = generateArmSpan(document.getText(), kind, source, bodySource);
+  if (!span) return undefined;
+  return new vscode.Range(document.positionAt(span.start), document.positionAt(span.end));
 }
 
 function isHdlUri(uri: vscode.Uri): boolean {

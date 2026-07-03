@@ -858,6 +858,7 @@ interface RawUhdmIr {
             armIndex?: number;
             source?: RawSourceRange;
             bodySource?: RawSourceRange;
+            groupSource?: RawSourceRange;
             nodeIds?: string[];
             edgeIds?: string[];
             warnings?: string[];
@@ -932,6 +933,7 @@ function generateRegionFromRaw(region: NonNullable<RawModule['generateRegions']>
         armIndex: region.armIndex,
         source: sourceRangeFromRaw(region.source, workspaceRoot),
         bodySource: sourceRangeFromRaw(region.bodySource, workspaceRoot),
+        groupSource: sourceRangeFromRaw(region.groupSource, workspaceRoot),
         nodeIds: region.nodeIds?.length ? region.nodeIds : undefined,
         edgeIds: region.edgeIds?.length ? region.edgeIds : undefined,
         warnings: region.warnings?.length ? region.warnings : undefined
@@ -971,7 +973,8 @@ function synthesizeGenerateBlockRegions(arms: GenerateRegion[]): GenerateRegion[
             parentRegionId: anchor.parentRegionId,
             siblingGroupId: wrapperId,
             activeState: 'active',
-            source: anchor.source,
+            // Navigation target: the whole if/else chain or case..endcase statement.
+            source: anchor.groupSource ?? anchor.source,
             nodeIds: []
         });
         for (const arm of groupArms) {

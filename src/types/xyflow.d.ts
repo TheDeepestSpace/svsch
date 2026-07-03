@@ -63,6 +63,7 @@ declare module '@xyflow/react' {
     export const ViewportPortal: React.FC<{ children: React.ReactNode }>;
 
     export function useReactFlow(): any;
+    export function useStore<T = unknown>(selector: (state: any) => T, equalityFn?: (a: T, b: T) => boolean): T;
     export function useEdgesState<T extends Edge = Edge>(initialEdges: T[]): [T[], (edges: T[] | ((eds: T[]) => T[])) => void, any];
     export function useNodesState<T extends Node = Node>(initialNodes: T[]): [T[], (nodes: T[] | ((nds: T[]) => T[])) => void, any];
     export function useNodes<T extends Node = Node>(): T[];

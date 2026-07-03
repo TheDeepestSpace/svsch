@@ -194,6 +194,9 @@ struct GenerateRegion {
     int armIndex = 0;
     SourceInfo source;
     SourceInfo bodySource;
+    // Span of the whole generate statement this arm belongs to (the full if/else
+    // chain or case..endcase) — used by the synthesized generate-block wrapper.
+    SourceInfo groupSource;
     std::vector<std::string> nodeIds;
     std::vector<std::string> edgeIds;
     std::vector<std::string> warnings;
@@ -266,7 +269,7 @@ private:
     void processGenerateRegions(vpiHandle module_handle, Module& mod);
     void walkGenerateRegionTree(vpiHandle handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth = 0);
     void collectGenerateIfRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth);
-    void collectGenerateIfArms(vpiHandle gen_handle, Module& mod, const std::string& siblingGroupId, const std::string& parentRegionId, int& armIndex, std::set<vpiHandle>& visited, int depth, bool isElseIf = false);
+    void collectGenerateIfArms(vpiHandle gen_handle, Module& mod, const std::string& siblingGroupId, const std::string& parentRegionId, int& armIndex, std::set<vpiHandle>& visited, int depth, bool isElseIf = false, const SourceInfo& groupSource = SourceInfo{});
     void collectGenerateCaseRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth);
     void collectGenerateRegionBody(vpiHandle handle, Module& mod, GenerateRegion& region, std::set<vpiHandle>& visited, int depth);
     void processGenerateRegionInstance(vpiHandle inst_handle, Module& mod, GenerateRegion& region);
@@ -374,6 +377,7 @@ private:
     bool isAncestor(vpiHandle ancestor, vpiHandle descendant);
     bool isSameObject(vpiHandle h1, vpiHandle h2);
     SourceInfo getSourceInfo(vpiHandle handle);
+    SourceInfo generateStmtBodySource(vpiHandle stmt, int depth = 0);
     void refineSourceInfo(SourceInfo& src, vpiHandle handle);
     std::string getExprText(vpiHandle expr);
     std::string sanitize(const std::string& name);

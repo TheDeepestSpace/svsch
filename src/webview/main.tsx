@@ -11,7 +11,8 @@ import {
   type Edge,
   useReactFlow,
   useEdgesState,
-  useNodesState
+  useNodesState,
+  useStore
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './styles.css';
@@ -153,7 +154,31 @@ function DiagramApp(): React.ReactElement {
   }, [nodes, onNodesChangeRaw]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
+  const minZoom = useStore((state) => state.minZoom);
+  const maxZoom = useStore((state) => state.maxZoom);
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
+
+  // React Flow's built-in double-click zoom fires for any double-click inside the
+  // pane, including ones that navigate to source (nodes, edges, generate region
+  // titles). It is disabled and re-implemented here for empty-canvas double-clicks
+  // only, keeping d3's behavior: zoom ×2 centered on the cursor, shift to zoom out.
+  const handleCanvasDoubleClick = useCallback((event: React.MouseEvent) => {
+    const target = event.target as Element;
+    if (!target.closest('.react-flow__pane')) return;
+    if (target.closest('.react-flow__node, .react-flow__edge, .generate-region')) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const current = reactFlow.getViewport();
+    const zoom = Math.min(maxZoom, Math.max(minZoom, current.zoom * (event.shiftKey ? 0.5 : 2)));
+    if (zoom === current.zoom) return;
+    const pointerX = event.clientX - bounds.left;
+    const pointerY = event.clientY - bounds.top;
+    const scale = zoom / current.zoom;
+    void reactFlow.setViewport({
+      x: pointerX - (pointerX - current.x) * scale,
+      y: pointerY - (pointerY - current.y) * scale,
+      zoom
+    }, { duration: 250 });
+  }, [reactFlow, minZoom, maxZoom]);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
@@ -537,6 +562,8 @@ function DiagramApp(): React.ReactElement {
                 deleteKeyCode={null}
                 selectionOnDrag
                 panOnDrag={[1, 2]}
+                zoomOnDoubleClick={false}
+                onDoubleClick={handleCanvasDoubleClick}
                 selectionMode="partial"
                 snapToGrid
                 snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
@@ -663,9 +690,17 @@ function GenerateRegionOverlay({
       const drag = dragRef.current;
       if (!drag) return;
       dragRef.current = null;
+      const zoom = Math.max(viewport.zoom || 1, 0.01);
       const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
       setRegions(update.regions);
       setNodes(update.nodes);
+
+      // A zero-delta drag is just a (double-)click on the title or a handle — don't
+      // commit it, or the region's auto-laid-out nodes would be pinned as fixed and
+      // the rest of the diagram would reflow around them.
+      const dx = snapDelta((event.clientX - drag.startClientX) / zoom);
+      const dy = snapDelta((event.clientY - drag.startClientY) / zoom);
+      if (dx === 0 && dy === 0) return;
 
       const fixedRegions = update.regions.map((region) => ({
         ...region,
@@ -735,6 +770,15 @@ function GenerateRegionOverlay({
             type="button"
             className="generate-region-title"
             onPointerDown={(event) => startDrag(event, region, 'move')}
+            onDoubleClick={() => vscode.postMessage({
+              type: 'navigateToRegion',
+              region: {
+                kind: region.kind,
+                isGenerateBlock: region.isGenerateBlock,
+                source: region.source,
+                bodySource: region.bodySource
+              }
+            })}
             title={region.label}
           >
             {region.label}

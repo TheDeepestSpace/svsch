@@ -245,6 +245,9 @@ export interface GenerateRegion {
   armIndex?: number;
   source?: SourceRange;
   bodySource?: SourceRange;
+  // Span of the whole generate statement the arm belongs to (full if/else chain or
+  // case..endcase) — the synthesized generate-block wrapper navigates to this.
+  groupSource?: SourceRange;
   nodeIds?: string[];
   edgeIds?: string[];
   warnings?: string[];

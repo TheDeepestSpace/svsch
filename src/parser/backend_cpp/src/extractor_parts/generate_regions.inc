@@ -403,11 +403,35 @@ void DesignExtractor::walkGenerateRegionTree(vpiHandle handle, Module& mod, cons
     }
 }
 
+// The body of a generate arm is usually a gen_scope_array whose own handle carries no
+// location info; the named gen_scope inside it does. Descend until a located handle is
+// found so arms get a usable begin..end span for source navigation.
+SourceInfo DesignExtractor::generateStmtBodySource(vpiHandle stmt, int depth) {
+    if (!stmt || depth > 8) return SourceInfo{};
+    SourceInfo direct = getSourceInfo(stmt);
+    if (validSource(direct)) return direct;
+
+    for (int iter_type : {vpiGenScopeArray, vpiGenScope, vpiStmt}) {
+        vpiHandle itr = vpi_iterate(iter_type, stmt);
+        if (!itr) continue;
+        while (vpiHandle child = vpi_scan(itr)) {
+            if (child == stmt) continue;
+            SourceInfo nested = generateStmtBodySource(child, depth + 1);
+            if (validSource(nested)) {
+                vpi_release_handle(itr);
+                return nested;
+            }
+        }
+        vpi_release_handle(itr);
+    }
+    return SourceInfo{};
+}
+
 void DesignExtractor::collectGenerateIfRegions(vpiHandle gen_handle, Module& mod, const std::string& parentRegionId, std::set<vpiHandle>& visited, int depth) {
     SourceInfo source = getSourceInfo(gen_handle);
     std::string groupId = generateGroupId(mod.name, "if", source);
     int armIndex = 0;
-    collectGenerateIfArms(gen_handle, mod, groupId, parentRegionId, armIndex, visited, depth + 1, false);
+    collectGenerateIfArms(gen_handle, mod, groupId, parentRegionId, armIndex, visited, depth + 1, false, source);
 }
 
 void DesignExtractor::collectGenerateIfArms(
@@ -418,7 +442,8 @@ void DesignExtractor::collectGenerateIfArms(
     int& armIndex,
     std::set<vpiHandle>& visited,
     int depth,
-    bool isElseIf
+    bool isElseIf,
+    const SourceInfo& groupSource
 ) {
     if (!gen_handle || depth > 128) return;
 
@@ -439,7 +464,8 @@ void DesignExtractor::collectGenerateIfArms(
     region.siblingGroupId = siblingGroupId;
     region.armIndex = armIndex++;
     region.source = firstValidSource({getSourceInfo(cond), branchSource, getSourceInfo(gen_handle)});
-    region.bodySource = getSourceInfo(true_stmt);
+    region.bodySource = generateStmtBodySource(true_stmt);
+    region.groupSource = firstValidSource({groupSource, getSourceInfo(gen_handle)});
     const std::string idLabel = appendBlockLabel(labelPrefix + " (" + (condition.empty() ? "?" : condition) + ")", blockLabel);
     region.label = generateArmDisplayLabel(blockLabel, condition);
     region.id = generateRegionId(mod.name, region.kind, branchSource, region.armIndex, idLabel);
@@ -458,7 +484,7 @@ void DesignExtractor::collectGenerateIfArms(
 
     vpiHandle nested_if = unwrapSingleGenerateStmt(false_stmt);
     if (nested_if && (vpi_get(vpiType, nested_if) == vpiGenIf || vpi_get(vpiType, nested_if) == vpiGenIfElse)) {
-        collectGenerateIfArms(nested_if, mod, siblingGroupId, parentRegionId, armIndex, visited, depth + 1, true);
+        collectGenerateIfArms(nested_if, mod, siblingGroupId, parentRegionId, armIndex, visited, depth + 1, true, firstValidSource({groupSource, getSourceInfo(gen_handle)}));
         return;
     }
 
@@ -474,7 +500,8 @@ void DesignExtractor::collectGenerateIfArms(
     elseRegion.siblingGroupId = siblingGroupId;
     elseRegion.armIndex = armIndex++;
     elseRegion.source = elseSource;
-    elseRegion.bodySource = getSourceInfo(false_stmt);
+    elseRegion.bodySource = generateStmtBodySource(false_stmt);
+    elseRegion.groupSource = firstValidSource({groupSource, getSourceInfo(gen_handle)});
     const std::string elseIdLabel = appendBlockLabel("else", elseBlockLabel);
     elseRegion.label = generateArmDisplayLabel(elseBlockLabel, "else");
     elseRegion.id = generateRegionId(mod.name, elseRegion.kind, elseSource, elseRegion.armIndex, elseIdLabel);
@@ -542,9 +569,10 @@ void DesignExtractor::collectGenerateCaseRegions(vpiHandle gen_handle, Module& m
 
         vpiHandle body = vpi_handle(vpiStmt, item);
         const std::string blockLabel = blockLabelForStmt(body);
-        SourceInfo bodySource = getSourceInfo(body);
+        SourceInfo bodySource = generateStmtBodySource(body);
+        // Note: bodySource is deliberately not an armSource candidate — armSource feeds
+        // the region id, which must stay stable across bodySource improvements.
         std::vector<SourceInfo> sourceCandidates = expr_sources;
-        sourceCandidates.push_back(bodySource);
         sourceCandidates.push_back(getSourceInfo(item));
         sourceCandidates.push_back(source);
         SourceInfo armSource = firstValidSource(sourceCandidates);
@@ -561,6 +589,7 @@ void DesignExtractor::collectGenerateCaseRegions(vpiHandle gen_handle, Module& m
         region.armIndex = armIndex++;
         region.source = armSource;
         region.bodySource = bodySource;
+        region.groupSource = source;
         const std::string idLabel = appendBlockLabel(condition, blockLabel);
         region.label = generateArmDisplayLabel(blockLabel, condition);
         region.id = generateRegionId(mod.name, region.kind, armSource, region.armIndex, idLabel);
