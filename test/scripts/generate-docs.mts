@@ -1,8 +1,9 @@
-const reporter = require('multiple-cucumber-html-reporter');
-const path = require('path');
-const fs = require('fs');
+import { generate } from 'multiple-cucumber-html-reporter';
+import path from 'path';
+import fs from 'fs';
 
-console.log("Processing attachments before generating documentation...");
+async function run() {
+  console.log("Processing attachments before generating documentation...");
 
 const cucumberReportPath = path.resolve('test-results/bdd/cucumber/cucumber-report.json');
 const stepAttachmentsPath = path.resolve('test-results/bdd/step-attachments.json');
@@ -72,7 +73,7 @@ if (fs.existsSync(cucumberReportPath) && fs.existsSync(stepAttachmentsPath)) {
   console.log("Could not find both cucumber-report.json and playwright-report.json, skipping attachment injection.");
 }
 
-reporter.generate({
+await generate({
   jsonDir: 'test-results/bdd/cucumber/',
   reportPath: 'test-results/bdd/',
   openReportInBrowser: false,
@@ -95,4 +96,10 @@ reporter.generate({
   }
 });
 
-console.log('Documentation generated: test-results/bdd/index.html');
+  console.log('Documentation generated: test-results/bdd/index.html');
+}
+
+run().catch(err => {
+  console.error("Failed to generate documentation:", err);
+  process.exit(1);
+});
