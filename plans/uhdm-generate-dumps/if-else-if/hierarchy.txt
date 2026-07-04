@@ -1,5 +1,0 @@
-Design name: work@top
-Instance tree:
-work@top (work@top /workspaces/vscode-svsch/plans/uhdm-generate-dumps/if-else-if/generate_if_else_if_probe.sv:5:)
-work@top.g_if_1 ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/if-else-if/generate_if_else_if_probe.sv:17:)
-work@top.g_if_1.u1 (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/if-else-if/generate_if_else_if_probe.sv:17:)

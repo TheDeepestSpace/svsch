@@ -1,8 +1,0 @@
-Design name: work@top
-Instance tree:
-work@top (work@top /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:5:)
-work@top.g_if_a ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:14:)
-work@top.g_if_a.u_a (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:15:)
-work@top.g_case_0 ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:21:)
-work@top.g_case_0.u_c0 (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:22:)
-work@top.g_imp_true ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/mode-no-default/generate_probe_mode_no_default.sv:33:)

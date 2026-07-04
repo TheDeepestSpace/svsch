@@ -1,5 +1,0 @@
-Design name: work@top
-Instance tree:
-work@top (work@top /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/top_default_multi.sv:5:)
-work@top.g_case_12 ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/top_default_multi.sv:17:)
-work@top.g_case_12.u_c12 (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/top_default_multi.sv:18:)

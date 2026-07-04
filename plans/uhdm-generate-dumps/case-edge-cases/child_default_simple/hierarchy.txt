@@ -1,6 +1,0 @@
-Design name: work@wrapper
-Instance tree:
-work@wrapper (work@wrapper /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/child_default_simple.sv:33:)
-work@wrapper.u_child (work@child /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/child_default_simple.sv:34:)
-work@wrapper.u_child.g_case_2 ( /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/child_default_simple.sv:21:)
-work@wrapper.u_child.g_case_2.u_c2 (work@leaf /workspaces/vscode-svsch/plans/uhdm-generate-dumps/case-edge-cases/child_default_simple.sv:22:)
