@@ -2,6 +2,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "CommonJS",
+    "ignoreDeprecations": "6.0",
+    "noUncheckedSideEffectImports": false,
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "lib": ["ESNext", "dom"],
