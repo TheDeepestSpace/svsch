@@ -272,6 +272,133 @@ Feature: Diagram Interaction
     When I move the "generate if" generate region by (2, -1) grid cells
     Then all blocks in the "generate if" generate region should have moved by (2, -1) grid cells
 
+  Scenario: Warning when generate arm blocks overlap
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        input logic c,
+        output logic y
+      );
+        logic w;
+
+        generate
+          if (MODE == 0) begin : g_if_zero
+            leaf u_if_zero(.a(a), .y(w));
+          end else if (MODE == 1) begin : g_if_one
+            leaf u_if_one(.a(b), .y(w));
+          end else begin : g_if_other
+            assign w = c;
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 3 generate regions
+    And no generate region should be flagged as overlapping
+    When I move the "g_if_one" generate region by (0, -3) grid cells
+    Then the "g_if_zero" generate region should be flagged as overlapping
+    And the "g_if_one" generate region should be flagged as overlapping
+    And I should see a warning icon on the "g_if_zero" generate region
+    And I should see a warning icon on the "g_if_one" generate region
+    When I hover over the warning icon on the "g_if_one" generate region
+    Then a tooltip should appear reading "arm blocks overlapping"
+    When I move the "g_if_one" generate region by (0, 3) grid cells
+    Then no generate region should be flagged as overlapping
+    And I should not see any generate region warning icons
+
+  Scenario: Warning when two generate blocks overlap
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        output logic z
+      );
+        logic w1;
+
+        generate
+          if (MODE == 1) begin : g_if_on
+            leaf u_if(.a(a), .y(w1));
+          end
+        endgenerate
+
+        // implicit generate: the generate/endgenerate keywords are optional
+        case (MODE)
+          default: begin : g_case_def
+            leaf u_case_def(.a(w1), .y(z));
+          end
+        endcase
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain a "generate if" generate block
+    And the diagram should contain a "generate case (MODE)" generate block
+    And no generate region should be flagged as overlapping
+    When I move the "generate if" generate region by (8, 0) grid cells
+    Then the "generate if" generate region should be flagged as overlapping
+    And the "generate case (MODE)" generate region should be flagged as overlapping
+    And I should see a warning icon on the "generate if" generate region
+    And I should see a warning icon on the "generate case (MODE)" generate region
+    When I hover over the warning icon on the "generate if" generate region
+    Then a tooltip should appear reading "generate blocks overlapping"
+    When I move the "generate if" generate region by (-8, 0) grid cells
+    Then no generate region should be flagged as overlapping
+    And I should not see any generate region warning icons
+
+  Scenario: Warning when a block overlaps an unrelated generate arm
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        output logic y,
+        output logic z
+      );
+        logic w;
+
+        leaf u_free(.a(a), .y(z));
+
+        generate
+          if (MODE == 1) begin : g_arm
+            leaf u_arm(.a(b), .y(w));
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then no generate region should be flagged as overlapping
+    And no block should be flagged as overlapping an arm
+    When I move the "g_arm" generate region by (0, -3) grid cells
+    Then the "g_arm" generate region should be flagged as containing an unrelated block
+    And the "u_free" block should be flagged as overlapping an arm
+    But the "g_arm.u_arm" block should not be flagged as overlapping an arm
+    And I should see a warning icon on the "g_arm" generate region
+    And I should see a warning icon on the "u_free" block
+    When I hover over the warning icon on the "g_arm" generate region
+    Then a tooltip should appear reading "node does not belong to arm block"
+    When I hover over the warning icon on the "u_free" block
+    Then a tooltip should appear reading "this block does not belong to a generate arm block"
+    And the "generate if" generate block should be flagged as containing an unrelated block
+    When I hover over the warning icon on the "generate if" generate region
+    Then a tooltip should appear reading "block does not belong to this generate block"
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually
