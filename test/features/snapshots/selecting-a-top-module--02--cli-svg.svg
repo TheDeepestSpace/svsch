@@ -122,6 +122,7 @@
 }
 .react-flow__pane {
   z-index: 1;
+  touch-action: none;
 }
 .react-flow__pane.draggable {
     cursor: grab;

@@ -1523,7 +1523,8 @@ async function checkConnection(webviewPage: FrameLocator, sourceId: string, targ
 
 async function findEdgeIdBetween(webviewPage: FrameLocator, sourceId: string, targetId: string): Promise<string | null> {
   return webviewPage.locator('html').evaluate((_, { s, t }) => {
-    const found = Array.from(document.querySelectorAll('.react-flow__edge')).find(e => {
+    const allEdges = Array.from(document.querySelectorAll('.react-flow__edge'));
+    const found = allEdges.find(e => {
       const id = e.getAttribute('data-id');
       return id?.includes(s) && id?.includes(t);
     });
@@ -1531,15 +1532,29 @@ async function findEdgeIdBetween(webviewPage: FrameLocator, sourceId: string, ta
   }, { s: sourceId, t: targetId });
 }
 
-async function connectionRoutePath(webviewPage: FrameLocator, source: string, target: string): Promise<string> {
-  const sourceId = await findNodeIdByLabel(webviewPage, source);
-  const targetId = await findNodeIdByLabel(webviewPage, target);
-  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
-  const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
-  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${targetId}`);
-  const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
-  if (!route) throw new Error(`Route path not found for ${edgeId}`);
-  return route;
+async function connectionRoutePath(webviewPage: FrameLocator, source: string, target: string, fallback?: string): Promise<string> {
+  try {
+    const sourceId = await findNodeIdByLabel(webviewPage, source);
+    const targetId = await findNodeIdByLabel(webviewPage, target);
+    if (!sourceId || !targetId) {
+      if (fallback !== undefined) return fallback;
+      throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+    }
+    const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
+    if (!edgeId) {
+      if (fallback !== undefined) return fallback;
+      throw new Error(`Edge not found between ${sourceId} and ${targetId}`);
+    }
+    const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+    if (!route) {
+      if (fallback !== undefined) return fallback;
+      throw new Error(`Route path not found for ${edgeId}`);
+    }
+    return route;
+  } catch (err) {
+    if (fallback !== undefined) return fallback;
+    throw err;
+  }
 }
 
 async function waitForViewportTransformToSettle(webviewPage: FrameLocator): Promise<void> {
@@ -1828,7 +1843,7 @@ async function adjustConnectionByGridCells(
 
   // The route must actually have changed for the adjustment to be meaningful.
   await expect.poll(async () => {
-    const current = await connectionRoutePath(world.webviewPage, source, target);
+    const current = await connectionRoutePath(world.webviewPage, source, target, beforeRoute);
     return current !== beforeRoute;
   }, { timeout: 5000 }).toBe(true);
 
