@@ -1036,6 +1036,12 @@ text {
   opacity: 0.75;
 }
 
+/* Selection brightness must not depend on the arm's active state — the inactive
+   dimming would fade the selection border with it, so selection lifts it. */
+.generate-region-inactive.generate-region-selected {
+  opacity: 1;
+}
+
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
@@ -1208,6 +1214,19 @@ text {
 .generate-node-inactive.hdl-net-label {
   filter: grayscale(0.75);
   opacity: 0.75;
+}
+
+/* Selection brightness must not depend on the arm's active state — the inactive
+   dimming (opacity + grayscale on the node) would fade the selection outline with
+   it, so selection lifts the dimming while the node is selected. */
+.react-flow__node.selected.generate-node-inactive .hdl-node,
+.react-flow__node.selected.generate-node-inactive .hdl-bus-node,
+.react-flow__node.selected.generate-node-inactive .hdl-net-label,
+.react-flow__node.selected .generate-node-inactive.hdl-node,
+.react-flow__node.selected .generate-node-inactive.hdl-bus-node,
+.react-flow__node.selected .generate-node-inactive.hdl-net-label {
+  filter: none;
+  opacity: 1;
 }
 
 .generate-node-active .hdl-node,

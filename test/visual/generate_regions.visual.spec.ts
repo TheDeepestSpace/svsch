@@ -87,6 +87,20 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator('.generate-region.generate-block')).toHaveCount(1);
     await expect(page.locator('.generate-region.generate-block .generate-region-title')).toContainText('generate if');
 
+    // Edge paint order: inactive routes render below active ones, so where routes
+    // from an active and an inactive arm share a trunk, the active style shows.
+    const edgeStateOrder = await page.evaluate(() => {
+      const rank = (el: Element) => (
+        el.classList.contains('generate-edge-inactive') ? 0
+          : el.classList.contains('generate-edge-active') ? 2
+            : 1
+      );
+      return [...document.querySelectorAll('.react-flow__edge')].map(rank);
+    });
+    expect(edgeStateOrder).toEqual([...edgeStateOrder].sort((a, b) => a - b));
+    expect(edgeStateOrder).toContain(0);
+    expect(edgeStateOrder).toContain(2);
+
     await expectGraphAndScreenshot(page, 'generate-if-else-regions-auto-canvas.png', {
       clip: await paddedGraphAndRegionsClip(page),
       maxDiffPixels: 120

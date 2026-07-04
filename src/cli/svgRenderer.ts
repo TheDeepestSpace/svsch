@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
+import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
@@ -108,7 +109,7 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
   const arrayConnectionsByNode = buildArrayConnectionsByNode(view);
   const obstacles = nodeObstacles(view.nodes);
   const baseEdges = [...view.edges]
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(compareEdgePaintOrder)
     .map((edge) => renderEdgeGeometry(edge, nodesById, obstacles))
     .filter((edge): edge is RenderedEdgeBase => edge !== undefined);
   const renderedEdges = attachEdgeRendering(baseEdges);

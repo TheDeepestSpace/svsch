@@ -33,6 +33,7 @@ import type {
   PositionedNode
 } from '../ir/types';
 import { edgeNetKey } from '../ir/edgeNet';
+import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
@@ -397,7 +398,7 @@ function DiagramApp(): React.ReactElement {
       netToLeader.set(netKey, ids.sort()[0]);
     });
 
-    const sortedEdges = [...view.edges].sort((a, b) => a.id.localeCompare(b.id));
+    const sortedEdges = [...view.edges].sort(compareEdgePaintOrder);
     setEdges(sortedEdges.map((edge) => {
       const netKey = edgeNetKey(edge);
       const isNetLeader = netToLeader.get(netKey) === edge.id;
