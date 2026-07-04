@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "out"
+    "outDir": "out",
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"]
 }
