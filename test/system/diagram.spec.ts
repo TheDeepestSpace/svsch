@@ -19,6 +19,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
   workbox,
   evaluateInVSCode,
 }) => {
+  // A previous suite invocation can leave a saved layout behind (the extension's
+  // debounced save may re-create layout.json after a test's cleanup) — start clean.
+  await clearSystemLayout();
   try {
     // --- 1. Wait for the VSCode workbench to be interactive.
     await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });

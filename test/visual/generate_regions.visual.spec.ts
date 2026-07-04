@@ -209,6 +209,115 @@ test.describe('generate region visual rendering', () => {
     });
   });
 
+  test('marquee-selects arms with the standard selection border and moves them together', async ({ page }) => {
+    await openFixture(page, 'generate_if_else_regions.sv', 'auto', 'generate_if_else_regions');
+
+    const zeroBefore = await regionBounds(page, 'g_if_zero');
+    const oneBefore = await regionBounds(page, 'g_if_one');
+    const elseBefore = await regionBounds(page, '/* else */');
+
+    // Rubber-band over the two labeled arms: both are fully contained and become
+    // selected; the surrounding generate block is only partially covered and is not.
+    await marqueeSelect(page, {
+      x: Math.min(zeroBefore.x, oneBefore.x) - 6,
+      y: Math.min(zeroBefore.y, oneBefore.y) - 6
+    }, {
+      x: Math.max(zeroBefore.x + zeroBefore.width, oneBefore.x + oneBefore.width) + 6,
+      y: Math.max(zeroBefore.y + zeroBefore.height, oneBefore.y + oneBefore.height) + 6
+    });
+
+    await expect(page.locator('.generate-region-selected')).toHaveCount(2);
+    await expect(generateRegionLocator(page, 'g_if_zero')).toHaveClass(/generate-region-selected/);
+    await expect(generateRegionLocator(page, 'g_if_one')).toHaveClass(/generate-region-selected/);
+    await expect(page.locator('.generate-region.generate-block')).not.toHaveClass(/generate-region-selected/);
+
+    await expectGraphAndScreenshot(page, 'generate-region-selected-canvas.png', {
+      clip: await paddedGraphAndRegionsClip(page),
+      maxDiffPixels: 120
+    });
+
+    // Dragging one selected arm's title moves the whole selection.
+    await moveGenerateRegionByGridCells(page, 'g_if_zero', 2, 0);
+
+    const zeroAfter = await regionBounds(page, 'g_if_zero');
+    const oneAfter = await regionBounds(page, 'g_if_one');
+    const elseAfter = await regionBounds(page, '/* else */');
+    expect(zeroAfter.x).toBe(zeroBefore.x + 2 * diagramSizing.gridSize);
+    expect(oneAfter.x).toBe(oneBefore.x + 2 * diagramSizing.gridSize);
+    expect(elseAfter.x).toBe(elseBefore.x);
+
+    // Dragging the selection rectangle (over the selected nodes) translates the
+    // selected arms with it rather than stretching them.
+    const selectionRect = page.locator('.react-flow__nodesselection-rect');
+    await expect(selectionRect).toBeVisible();
+    const box = await selectionRect.boundingBox();
+    if (!box) throw new Error('Could not find the nodes selection rectangle');
+    const vp = await page.evaluate(() => (window as any).reactFlowInstance.getViewport());
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + diagramSizing.gridSize * vp.zoom, { steps: 4 });
+    await page.mouse.move(startX, startY + 2 * diagramSizing.gridSize * vp.zoom, { steps: 4 });
+    await page.mouse.up();
+
+    const zeroDragged = await regionBounds(page, 'g_if_zero');
+    const oneDragged = await regionBounds(page, 'g_if_one');
+    expect(zeroDragged.y).toBe(zeroAfter.y + 2 * diagramSizing.gridSize);
+    expect(zeroDragged.height).toBe(zeroAfter.height);
+    expect(oneDragged.y).toBe(oneAfter.y + 2 * diagramSizing.gridSize);
+    expect(oneDragged.height).toBe(oneAfter.height);
+  });
+
+  test('selects a region on single click and keeps it highlighted while moving', async ({ page }) => {
+    await openFixture(page, 'generate_if_else_regions.sv', 'auto', 'generate_if_else_regions');
+
+    // Clicking an arm's title selects it with the standard selection border.
+    // g_if_zero is the inactive arm (MODE == 1): selection lifts the inactive
+    // dimming so the highlight is as bright as on an active arm.
+    const inactiveArm = generateRegionLocator(page, 'g_if_zero');
+    expect(await inactiveArm.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.75');
+    await inactiveArm.locator('.generate-region-title').click({ force: true });
+    await expect(inactiveArm).toHaveClass(/generate-region-selected/);
+    await expect(page.locator('.generate-region-selected')).toHaveCount(1);
+    expect(await inactiveArm.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+
+    // Clicking another region replaces the selection — works for the generate block too.
+    // (Pan down first: the fitted view tucks the wrapper title under the toolbar.)
+    await page.evaluate(() => {
+      const instance = (window as any).reactFlowInstance;
+      const vp = instance.getViewport();
+      instance.setViewport({ ...vp, y: vp.y + 60 });
+    });
+    await generateRegionLocator(page, 'generate if').locator('.generate-region-title').click({ force: true });
+    await expect(generateRegionLocator(page, 'generate if')).toHaveClass(/generate-region-selected/);
+    await expect(generateRegionLocator(page, 'g_if_zero')).not.toHaveClass(/generate-region-selected/);
+    await expect(page.locator('.generate-region-selected')).toHaveCount(1);
+
+    // Moving an arm by its title selects and keeps it highlighted after the drop.
+    await moveGenerateRegionByGridCells(page, 'g_if_one', 2, 0);
+    await expect(generateRegionLocator(page, 'g_if_one')).toHaveClass(/generate-region-selected/);
+    await expect(generateRegionLocator(page, 'generate if')).not.toHaveClass(/generate-region-selected/);
+    await expect(page.locator('.generate-region-selected')).toHaveCount(1);
+
+    // Clicking empty canvas clears the region selection; the inactive dim returns.
+    await page.locator('.react-flow__pane').click({ position: { x: 16, y: 16 }, force: true });
+    await expect(page.locator('.generate-region-selected')).toHaveCount(0);
+    expect(await inactiveArm.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.75');
+
+    // Same for a node inside the inactive arm: selecting it lifts the dimming so
+    // the selection outline is full-strength.
+    const inactiveNode = page.locator('.react-flow__node.generate-node-inactive').first();
+    const nodeStyle = () => inactiveNode.locator('.hdl-node').first().evaluate((el) => {
+      const style = getComputedStyle(el);
+      return { opacity: style.opacity, filter: style.filter };
+    });
+    expect(await nodeStyle()).toEqual({ opacity: '0.75', filter: 'grayscale(0.75)' });
+    await inactiveNode.click({ force: true });
+    await expect(inactiveNode).toHaveClass(/selected/);
+    expect(await nodeStyle()).toEqual({ opacity: '1', filter: 'none' });
+  });
+
   for (const side of ['left', 'right', 'top', 'bottom'] as const) {
     test(`resizes the ${side} side of a generate region with a two-grid content clamp`, async ({ page }) => {
       const label = 'g_if_one';
@@ -242,6 +351,24 @@ test.describe('generate region visual rendering', () => {
     });
   }
 });
+
+// Rubber-band select by dragging on empty canvas between two flow-coordinate points.
+async function marqueeSelect(page: Page, from: { x: number; y: number }, to: { x: number; y: number }): Promise<void> {
+  const canvas = await page.locator('.react-flow').boundingBox();
+  if (!canvas) throw new Error('Could not find the flow canvas');
+  const vp = await page.evaluate(() => (window as any).reactFlowInstance.getViewport());
+  const toScreen = (point: { x: number; y: number }) => ({
+    x: canvas.x + point.x * vp.zoom + vp.x,
+    y: canvas.y + point.y * vp.zoom + vp.y
+  });
+  const start = toScreen(from);
+  const end = toScreen(to);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move((start.x + end.x) / 2, (start.y + end.y) / 2, { steps: 4 });
+  await page.mouse.move(end.x, end.y, { steps: 4 });
+  await page.mouse.up();
+}
 
 function generateRegionLocator(page: Page, label: string) {
   return page.locator('.generate-region').filter({

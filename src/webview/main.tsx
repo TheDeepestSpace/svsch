@@ -125,6 +125,9 @@ function DiagramApp(): React.ReactElement {
   const groupDragRef = useRef<{
     startPos: { x: number; y: number };
     originalRoutes: Map<string, Array<{ x: number; y: number }>>;
+    // Region bounds at drag start, so marquee-selected regions can translate with
+    // the dragged selection instead of merely stretching around their nodes.
+    startRegions: PositionedGenerateRegion[];
   } | null>(null);
   const onNodesChange = useCallback((changes: any[]) => {
     const adjusted = changes.map((change) => {
@@ -160,7 +163,55 @@ function DiagramApp(): React.ReactElement {
   const reactFlow = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
   const maxZoom = useStore((state) => state.maxZoom);
+  const userSelectionRect = useStore((state) => state.userSelectionRect);
+  const [selectedRegionIds, setSelectedRegionIds] = useState<Set<string>>(new Set());
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
+
+  // Marquee (drag) selection also selects generate regions. A region is selected
+  // when its bounds are fully inside the selection rectangle — full containment, so
+  // an arm can be selected without always dragging in its surrounding generate block
+  // (whose bounds any marquee over the arm would partially overlap).
+  useEffect(() => {
+    if (!userSelectionRect) return;
+    const zoom = Math.max(viewport.zoom || 1, 0.01);
+    const rect = {
+      x: (userSelectionRect.x - viewport.x) / zoom,
+      y: (userSelectionRect.y - viewport.y) / zoom,
+      width: userSelectionRect.width / zoom,
+      height: userSelectionRect.height / zoom
+    };
+    const inside = new Set(regions
+      .filter((region) => (
+        region.bounds.x >= rect.x &&
+        region.bounds.y >= rect.y &&
+        region.bounds.x + region.bounds.width <= rect.x + rect.width &&
+        region.bounds.y + region.bounds.height <= rect.y + rect.height
+      ))
+      .map((region) => region.id));
+    setSelectedRegionIds((current) => {
+      if (current.size === inside.size && [...inside].every((id) => current.has(id))) return current;
+      return inside;
+    });
+  }, [userSelectionRect, regions, viewport]);
+
+  const clearRegionSelection = useCallback(() => {
+    setSelectedRegionIds((current) => (current.size === 0 ? current : new Set()));
+  }, []);
+
+  // Single-click/drag selection of a region, mirroring node click behavior: the
+  // clicked region becomes the sole selection and any selected nodes are dropped.
+  const selectRegion = useCallback((regionId: string) => {
+    setSelectedRegionIds(new Set([regionId]));
+    setNodes((current) => {
+      let changed = false;
+      const next = current.map((node) => {
+        if (!node.selected) return node;
+        changed = true;
+        return { ...node, selected: false };
+      });
+      return changed ? next : current;
+    });
+  }, [setNodes]);
 
   // React Flow's built-in double-click zoom fires for any double-click inside the
   // pane, including ones that navigate to source (nodes, edges, generate region
@@ -399,8 +450,11 @@ function DiagramApp(): React.ReactElement {
 
   const onNodeDragStart = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[]) => {
+      // Dragging an unselected node drops the node selection (React Flow behavior);
+      // drop the region selection with it.
+      if (!dragged.selected) clearRegionSelection();
       const movedIds = new Set(allNodes.map((n) => n.id));
-      if (movedIds.size < 2) return;
+      if (movedIds.size < 2 && !(dragged.selected && selectedRegionIds.size > 0)) return;
       const originalRoutes = new Map<string, Array<{ x: number; y: number }>>();
       for (const e of edges) {
         const pts = e.data?.routePoints as Array<{ x: number; y: number }> | undefined;
@@ -411,9 +465,10 @@ function DiagramApp(): React.ReactElement {
       groupDragRef.current = {
         startPos: { x: dragged.position.x, y: dragged.position.y },
         originalRoutes,
+        startRegions: regionsRef.current.map((region) => ({ ...region, bounds: { ...region.bounds } })),
       };
     },
-    [edges]
+    [edges, clearRegionSelection, selectedRegionIds]
   );
 
   const onNodeDrag = useCallback(
@@ -421,19 +476,24 @@ function DiagramApp(): React.ReactElement {
       const movedNodes = allNodes.length > 0 ? allNodes : [dragged];
       const allFlowNodes = mergeDraggedFlowNodes(reactFlow.getNodes() as HdlFlowNode[], movedNodes);
       const positioned = flowNodesToPositioned(allFlowNodes, new Set(movedNodes.map((node) => node.id)));
-      setRegions((current) => expandRegionsForNodes(current, positioned));
-
       const state = groupDragRef.current;
+      const dx = state ? dragged.position.x - state.startPos.x : 0;
+      const dy = state ? dragged.position.y - state.startPos.y : 0;
+      setRegions((current) => {
+        const base = state && dragged.selected && selectedRegionIds.size > 0
+          ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+          : current;
+        return expandRegionsForNodes(base, positioned);
+      });
+
       if (!state || state.originalRoutes.size === 0) return;
-      const dx = dragged.position.x - state.startPos.x;
-      const dy = dragged.position.y - state.startPos.y;
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
         edgeId,
         routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
       }));
       handleRouteChange(changes, false);
     },
-    [handleRouteChange, reactFlow]
+    [handleRouteChange, reactFlow, selectedRegionIds]
   );
 
   const onNodeDragStop = useCallback(
@@ -446,16 +506,22 @@ function DiagramApp(): React.ReactElement {
       const fixedIds = new Set(movedNodes.map((node) => node.id));
       fixedIds.add(dragged.id);
       const positioned = flowNodesToPositioned(allFlowNodes, fixedIds);
-      const expandedRegions = expandRegionsForNodes(regionsRef.current, positioned);
+      const state = groupDragRef.current;
+      groupDragRef.current = null;
+      const dx = state ? dragged.position.x - state.startPos.x : 0;
+      const dy = state ? dragged.position.y - state.startPos.y : 0;
+      const translatesRegions = Boolean(state) && dragged.selected && selectedRegionIds.size > 0;
+      const baseRegions = translatesRegions && state
+        ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+        : regionsRef.current;
+      const expandedRegions = expandRegionsForNodes(baseRegions, positioned).map((region) => (
+        translatesRegions && selectedRegionIds.has(region.id) ? { ...region, fixed: true } : region
+      ));
       setRegions(expandedRegions);
       vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: expandedRegions });
 
-      const state = groupDragRef.current;
-      groupDragRef.current = null;
       if (!state || state.originalRoutes.size === 0) return;
 
-      const dx = dragged.position.x - state.startPos.x;
-      const dy = dragged.position.y - state.startPos.y;
       if (dx === 0 && dy === 0) return;
 
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
@@ -464,7 +530,7 @@ function DiagramApp(): React.ReactElement {
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange, reactFlow]
+    [view, handleRouteChange, reactFlow, selectedRegionIds]
   );
 
   const rerouteLayout = useCallback(() => {
@@ -545,6 +611,15 @@ function DiagramApp(): React.ReactElement {
                 onNodeDragStart={onNodeDragStart}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
+                onSelectionDragStart={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                  if (dragNodes.length > 0) onNodeDragStart(event, dragNodes[0], dragNodes);
+                }}
+                onSelectionDrag={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                  if (dragNodes.length > 0) onNodeDrag(event, dragNodes[0], dragNodes);
+                }}
+                onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                  if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
+                }}
                 onEdgeMouseEnter={onEdgeMouseEnter}
                 onEdgeMouseLeave={onEdgeMouseLeave}
                 onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
@@ -568,6 +643,8 @@ function DiagramApp(): React.ReactElement {
                 panOnDrag={[1, 2]}
                 zoomOnDoubleClick={false}
                 onDoubleClick={handleCanvasDoubleClick}
+                onPaneClick={clearRegionSelection}
+                onNodeClick={clearRegionSelection}
                 selectionMode="partial"
                 snapToGrid
                 snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
@@ -585,6 +662,8 @@ function DiagramApp(): React.ReactElement {
                     setNodes={setNodes}
                     setRegions={setRegions}
                     onRouteChange={handleRouteChange}
+                    selectedRegionIds={selectedRegionIds}
+                    selectRegion={selectRegion}
                   />
                 </ViewportPortal>
                 <MiniMap
@@ -628,7 +707,9 @@ function GenerateRegionOverlay({
   viewport,
   setNodes,
   setRegions,
-  onRouteChange
+  onRouteChange,
+  selectedRegionIds,
+  selectRegion
 }: {
   moduleName: string;
   regions: PositionedGenerateRegion[];
@@ -638,14 +719,23 @@ function GenerateRegionOverlay({
   setNodes: (nodes: HdlFlowNode[] | ((nodes: HdlFlowNode[]) => HdlFlowNode[])) => void;
   setRegions: React.Dispatch<React.SetStateAction<PositionedGenerateRegion[]>>;
   onRouteChange: (changes: RouteChange[], commit: boolean) => void;
+  selectedRegionIds: Set<string>;
+  selectRegion: (regionId: string) => void;
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
 
   const startDrag = useCallback((event: React.PointerEvent, region: PositionedGenerateRegion, kind: RegionDragState['kind'], side?: RegionDragSide) => {
     event.preventDefault();
     event.stopPropagation();
+    // Interacting with a selected region moves the whole selection; interacting with
+    // an unselected one selects just it (mirrors React Flow's node behavior — a
+    // click or drag highlights the region with the standard selection border).
+    const moveRoots = kind === 'move' && selectedRegionIds.has(region.id)
+      ? [...selectedRegionIds]
+      : [region.id];
+    if (!selectedRegionIds.has(region.id)) selectRegion(region.id);
     const affectedRegionIds = kind === 'move'
-      ? descendantRegionIds(region.id, regions, true)
+      ? new Set(moveRoots.flatMap((rootId) => [...descendantRegionIds(rootId, regions, true)]))
       : new Set([region.id]);
     const affectedNodeIds = kind === 'move'
       ? nodeIdsForRegions(affectedRegionIds, regions)
@@ -678,7 +768,7 @@ function GenerateRegionOverlay({
       affectedNodeIds,
       startRoutes
     };
-  }, [edges, nodes, regions]);
+  }, [edges, nodes, regions, selectedRegionIds, selectRegion]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -743,7 +833,8 @@ function GenerateRegionOverlay({
             region.isGenerateBlock ? 'generate-block' : '',
             region.activeState === 'active' ? 'generate-region-active' : '',
             region.activeState === 'inactive' ? 'generate-region-inactive' : '',
-            region.invalid ? 'generate-region-invalid' : ''
+            region.invalid ? 'generate-region-invalid' : '',
+            selectedRegionIds.has(region.id) ? 'generate-region-selected' : ''
           ].filter(Boolean).join(' ')}
           data-region-id={region.id}
           data-region-kind={region.kind}
@@ -774,6 +865,7 @@ function GenerateRegionOverlay({
             type="button"
             className="generate-region-title"
             onPointerDown={(event) => startDrag(event, region, 'move')}
+            onClick={(event) => event.stopPropagation()}
             onDoubleClick={() => vscode.postMessage({
               type: 'navigateToRegion',
               region: {
@@ -794,6 +886,7 @@ function GenerateRegionOverlay({
               aria-label={`Resize ${region.label} ${side}`}
               className={`generate-region-resize generate-region-resize-${side}`}
               onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+              onClick={(event) => event.stopPropagation()}
             />
           ))}
         </div>
@@ -982,6 +1075,20 @@ function annotateRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes:
 // Used while dragging an arm so its parent generate block grows to keep surrounding it.
 function expandRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
   return expandRegionsForNodes(regions, flowNodesToPositioned(nodes, new Set()));
+}
+
+// Shift the selected regions' bounds by the drag delta; the following expansion pass
+// reconciles parents/children (e.g. a wrapper grows around a translated arm).
+function translateRegions(
+  regions: PositionedGenerateRegion[],
+  selectedIds: Set<string>,
+  dx: number,
+  dy: number
+): PositionedGenerateRegion[] {
+  if (selectedIds.size === 0 || (dx === 0 && dy === 0)) return regions;
+  return regions.map((region) => (selectedIds.has(region.id)
+    ? { ...region, bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy } }
+    : region));
 }
 
 function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
