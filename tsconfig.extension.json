@@ -12,6 +12,8 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "noUncheckedSideEffectImports": false,
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "types": [

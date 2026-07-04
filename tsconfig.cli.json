@@ -13,6 +13,7 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
+    "noUncheckedSideEffectImports": false,
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,

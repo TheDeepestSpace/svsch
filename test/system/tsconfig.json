@@ -6,6 +6,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "noUncheckedSideEffectImports": false,
     "moduleResolution": "node16",
     "types": ["node"]
   },

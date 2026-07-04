@@ -2,6 +2,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "CommonJS",
+    "ignoreDeprecations": "6.0",
+    "noUncheckedSideEffectImports": false,
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "lib": ["ESNext", "dom"],
@@ -9,7 +11,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "out"
+    "outDir": "out",
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"]
 }
