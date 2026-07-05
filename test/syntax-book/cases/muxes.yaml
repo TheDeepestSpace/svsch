@@ -1,0 +1,113 @@
+group: Muxes
+cases:
+  - id: mux-case-statement
+    title: Case Statement Mux
+    description: A multiplexer inferred from a standard SystemVerilog case statement.
+    tags: [mux, combinational, case, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic sel,
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          always_comb begin
+            case (sel)
+              1'b0: y = a;
+              default: y = b;
+            endcase
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: "case sel"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux]
+      selectedText: |
+        case (sel)
+              1'b0: y = a;
+              default: y = b;
+            endcase
+
+  - id: mux-complex-case-arm
+    title: Mux with Complex Case Arm
+    description: A multiplexer inferred from a case statement with multiple matching selector values on a single case arm.
+    tags: [mux, combinational, case, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [1:0] sel,
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          always_comb begin
+            case (sel)
+              2'b00, 2'b01: y = a;
+              default: y = b;
+            endcase
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: "case sel"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux]
+      selectedText: |
+        case (sel)
+              2'b00, 2'b01: y = a;
+              default: y = b;
+            endcase
+
+  - id: select-variable-index
+    title: Variable Index Selection
+    description: Indexing a bus with a variable index signal becomes a select block.
+    tags: [select, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] bus,
+          input logic [1:0] sel,
+          output logic bit_out
+        );
+          assign bit_out = bus[sel];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: select
+      nodeLabel: "bus[sel]"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, select]
+      selectedText: "sel"
+
+  - id: select-variable-width
+    title: Variable Index Selection with Width
+    description: "Indexing a bus with a variable index and a constant width (using +: syntax) becomes a select block."
+    tags: [select, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [15:0] bus,
+          input logic [2:0] sel,
+          output logic [7:0] byte_out
+        );
+          assign byte_out = bus[sel * 8 +: 8];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: select
+      nodeLabel: "bus[sel * 8+:8]"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, select]
+      selectedText: "sel * 8 +: 8"

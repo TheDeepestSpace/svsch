@@ -1,0 +1,171 @@
+group: Combinational Logic
+cases:
+  - id: comb-expression
+    title: Combinational Expression
+    description: A combinational logic assignment expression.
+    tags: [comb, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic decoded
+        );
+          assign decoded = a & b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comb
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comb]
+      selectedText: "assign decoded = a & b;"
+
+  - id: alu-addition
+    title: Arithmetic Addition
+    description: An arithmetic addition operator becomes an ALU block.
+    tags: [alu, arithmetic, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a + b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: alu
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, alu]
+      selectedText: "a + b"
+
+  - id: inverter-expression
+    title: Bitwise Inversion
+    description: A bitwise NOT operator becomes an inverter gate.
+    tags: [inverter, unary, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = ~a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: inverter
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, inverter]
+      selectedText: "assign y = ~a;"
+
+  - id: latch-inference
+    title: Latch Inference
+    description: An incomplete conditional assignment inside always_comb infers a latch.
+    tags: [latch, sequential, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic enable,
+          input logic d,
+          output logic q
+        );
+          always_comb begin
+            if (enable) begin
+              q = d;
+            end
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: latch
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, latch]
+      selectedText: |
+        always_comb begin
+            if (enable) begin
+              q = d;
+            end
+          end
+
+  - id: literal-value
+    title: Literal Value
+    description: A literal constant expression becomes a literal block.
+    tags: [literal, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          output logic [3:0] y
+        );
+          assign y = 4'b1010;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: literal
+      nodeLabel: "4'b1010"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, literal]
+      selectedText: "4'b1010"
+
+  - id: replicate-expression
+    title: Replicate Expression
+    description: Replicating a signal with a multiplier value becomes a replicate block.
+    tags: [replicate, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic some_wire,
+          output logic [19:0] repeated
+        );
+          assign repeated = {20{some_wire}};
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: replicate
+      nodeLabel: "x20"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, replicate]
+      selectedText: "{20{some_wire}"
+
+  - id: loop-for-loop
+    title: For Loop Block
+    description: A procedural for loop becomes a loop block.
+    tags: [loop, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] in,
+          output logic [3:0] out
+        );
+          always_comb begin
+            out = 4'b0;
+            for (int i = 0; i < 4; i++) begin
+              out[i] = in[i];
+            end
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: loop
+      nodeLabel: "loop"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, loop]
+      selectedText: "for"

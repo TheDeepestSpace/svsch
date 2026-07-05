@@ -239,6 +239,33 @@ jobs:
             playwright-report/**
             test/visual/__screenshots__/**
 
+  test_syntax:
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+      - *download_dist_step
+      - *download_backend_step
+      - *download_cli_step
+      - *fix_perms_step
+      - *pw_version_step
+      - *pw_cache_step
+      - *pw_install_step
+
+      - name: Run Syntax Book Tests
+        run: npm run test:syntax
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: syntax-playwright-artifacts
+          path: |
+            test-results/syntax-book/**
+            playwright-report/**
+
   test_bdd:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
@@ -349,7 +376,7 @@ jobs:
         run: npm audit --audit-level=high
 
   package_extension:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -372,7 +399,7 @@ jobs:
           path: "*.vsix"
 
   pack_npm:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_bdd, test_system, security_audit]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
