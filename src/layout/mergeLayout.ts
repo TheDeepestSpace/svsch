@@ -516,6 +516,7 @@ async function autoLayoutMissingNodes(
       }
     }
     repairSourceStems(edges, routes, nodesById, routePositions);
+    deconflictOverlappingTrunks(edges, routes, nodesById, routePositions);
   } catch {
     return { positions, routes };
   }
@@ -998,7 +999,17 @@ function routeWithRenderedLeads(
     const sourceHandle = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, false);
     const targetHandle = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, false);
     if (sourceHandle && targetHandle) {
-      return directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
+      const candidate = directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
+      // Only take the shortcut when the drop is monotonic (the wire approaches
+      // a NORTH anchor from above / a SOUTH anchor from below) and the direct
+      // route doesn't cut through unrelated nodes. Otherwise keep the ELK
+      // route, which already avoids the boxes.
+      if (
+        verticalFeedIsMonotonic(sourceHandle, targetHandle)
+        && !routeIntersectsNodeInterior(candidate, nodesById, nodePositions, new Set([edge.source, edge.target]))
+      ) {
+        return candidate;
+      }
     }
   }
 
@@ -1035,6 +1046,96 @@ function routeWithRenderedLeads(
     nodesById,
     nodePositions
   );
+}
+
+// Grid snapping of projected ELK routes can collapse parallel trunks of
+// different nets onto the same gridline (ELK separates them by less than a
+// grid in FIXED-position mode). Nudge internal horizontal segments apart so
+// unrelated nets don't render as one wire.
+function deconflictOverlappingTrunks(
+  edges: DiagramEdge[],
+  routes: Map<string, Array<{ x: number; y: number }>>,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>
+): void {
+  interface TrunkSpan { net: string; y: number; x1: number; x2: number }
+  const netByEdgeId = new Map(edges.map((edge) => [edge.id, netKey(edge)]));
+  const occupied: TrunkSpan[] = [];
+
+  const spanFor = (net: string, a: { x: number; y: number }, b: { x: number; y: number }): TrunkSpan | undefined =>
+    a.y === b.y && a.x !== b.x
+      ? { net, y: a.y, x1: Math.min(a.x, b.x), x2: Math.max(a.x, b.x) }
+      : undefined;
+  const collides = (span: TrunkSpan): boolean =>
+    occupied.some((other) => other.net !== span.net
+      && other.y === span.y
+      && Math.min(other.x2, span.x2) - Math.max(other.x1, span.x1) > 1);
+
+  for (const edge of edges) {
+    const route = routes.get(edge.id);
+    const net = netByEdgeId.get(edge.id) ?? edge.id;
+    if (!route || route.length < 4) {
+      route?.forEach((point, index) => {
+        const next = route[index + 1];
+        if (next) {
+          const span = spanFor(net, point, next);
+          if (span) {
+            occupied.push(span);
+          }
+        }
+      });
+      continue;
+    }
+
+    for (let index = 1; index < route.length - 2; index += 1) {
+      const start = route[index];
+      const end = route[index + 1];
+      const span = spanFor(net, start, end);
+      if (!span) {
+        continue;
+      }
+      if (collides(span)) {
+        for (const dy of [-1, 1, -2, 2].map((step) => step * diagramSizing.gridSize)) {
+          const shifted: TrunkSpan = { ...span, y: span.y + dy };
+          const candidate = route.map((point, pointIndex) =>
+            pointIndex === index || pointIndex === index + 1 ? { ...point, y: shifted.y } : point
+          );
+          if (
+            !collides(shifted)
+            && !routeIntersectsNodeInterior(candidate, nodesById, nodePositions, new Set([edge.source, edge.target]))
+          ) {
+            route[index] = candidate[index];
+            route[index + 1] = candidate[index + 1];
+            occupied.push(shifted);
+            break;
+          }
+        }
+        if (route[index].y === span.y) {
+          occupied.push(span);
+        }
+      } else {
+        occupied.push(span);
+      }
+    }
+  }
+}
+
+function verticalFeedIsMonotonic(
+  sourceHandle: { point: { x: number; y: number }; side: ElkPortSide },
+  targetHandle: { point: { x: number; y: number }; side: ElkPortSide }
+): boolean {
+  for (const [handle, other] of [
+    [sourceHandle, targetHandle.point],
+    [targetHandle, sourceHandle.point]
+  ] as const) {
+    if (handle.side === 'NORTH' && other.y > handle.point.y) {
+      return false;
+    }
+    if (handle.side === 'SOUTH' && other.y < handle.point.y) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function insetVerticalBoundaryLead(
@@ -1091,6 +1192,32 @@ function directLeadRoute(
       sourceLead.point,
       { x: sourceLead.point.x, y: midY },
       { x: targetLead.point.x, y: midY },
+      targetLead.point
+    ]));
+  }
+
+  // Mixed sides with a non-monotonic approach: a plain L-corner would reach a
+  // NORTH lead from below (or a SOUTH lead from above) and backtrack through
+  // the node. Dogleg through an approach corridor one grid outside the lead.
+  if (!sourceSideIsVertical && targetSideIsVertical && !verticalFeedIsMonotonic(sourceLead, targetLead)) {
+    const corridorY = targetLead.point.y + (targetLead.side === 'NORTH' ? -diagramSizing.gridSize : diagramSizing.gridSize);
+    const midX = snapToGrid((sourceLead.point.x + targetLead.point.x) / 2);
+    return removeRedundantRoutePoints(makeOrthogonalRoute([
+      sourceLead.point,
+      { x: midX, y: sourceLead.point.y },
+      { x: midX, y: corridorY },
+      { x: targetLead.point.x, y: corridorY },
+      targetLead.point
+    ]));
+  }
+  if (sourceSideIsVertical && !targetSideIsVertical && !verticalFeedIsMonotonic(sourceLead, targetLead)) {
+    const corridorY = sourceLead.point.y + (sourceLead.side === 'NORTH' ? -diagramSizing.gridSize : diagramSizing.gridSize);
+    const midX = snapToGrid((sourceLead.point.x + targetLead.point.x) / 2);
+    return removeRedundantRoutePoints(makeOrthogonalRoute([
+      sourceLead.point,
+      { x: sourceLead.point.x, y: corridorY },
+      { x: midX, y: corridorY },
+      { x: midX, y: targetLead.point.y },
       targetLead.point
     ]));
   }
@@ -1252,9 +1379,10 @@ function uniqueNumbers(values: number[]): number[] {
 function routeIntersectsNodeInterior(
   route: Array<{ x: number; y: number }>,
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  excludeNodeIds?: Set<string>
 ): boolean {
-  const obstacles = routeObstacles(nodesById, nodePositions);
+  const obstacles = routeObstacles(nodesById, nodePositions, excludeNodeIds);
   return route.slice(0, -1).some((point, index) => {
     const next = route[index + 1];
     return obstacles.some((rect) => segmentIntersectsRectInterior(point, next, rect));
@@ -1263,12 +1391,13 @@ function routeIntersectsNodeInterior(
 
 function routeObstacles(
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  excludeNodeIds?: Set<string>
 ): Array<{ x: number; y: number; width: number; height: number }> {
   const obstacles: Array<{ x: number; y: number; width: number; height: number }> = [];
   for (const [nodeId, node] of nodesById) {
     const position = nodePositions.get(nodeId);
-    if (!position) {
+    if (!position || excludeNodeIds?.has(nodeId)) {
       continue;
     }
     const dimensions = diagramNodeDimensions(node);
