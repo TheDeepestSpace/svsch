@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 60
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 60
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -96,7 +96,7 @@
       "target": "port:top:x",
       "sourceHandle": "port:b",
       "targetHandle": "port:x",
-      "path": "M 144 72 L 168 72 L 168 96 L 336 96 L 336 72 L 360 72"
+      "path": "M 144 96 L 168 96 L 168 120 L 336 120 L 336 96 L 360 96"
     }
   ]
 }

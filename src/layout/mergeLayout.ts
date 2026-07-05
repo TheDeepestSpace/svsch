@@ -379,6 +379,10 @@ async function autoLayoutMissingNodes(
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
         'elk.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
+        // Must stay a grid multiple: snapPosition() assumes grid-quantized raw
+        // positions, and ELK's default component spacing (20) is not one, which
+        // let adjacent disconnected nodes collapse to a 0px gap after snapping.
+        'elk.spacing.componentComponent': diagramSizing.sameLayerNodeSeparation.toString(),
         'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
         'elk.edgeRouting': 'ORTHOGONAL',
         'elk.interactive': 'true',
