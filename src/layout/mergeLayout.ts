@@ -18,7 +18,7 @@ interface AutoLayoutResult {
 
 export type ElkPortSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
-interface ElkDiagramNode {
+export interface ElkDiagramNode {
   id: string;
   width: number;
   height: number;
@@ -523,7 +523,7 @@ async function autoLayoutMissingNodes(
   return { positions, routes };
 }
 
-function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
+export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
   const { width, height } = diagramNodeDimensions(node);
   const grid = diagramSizing.gridSize;
   const role = structRole(node);
@@ -541,6 +541,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
 
     let portX = side === 'WEST' ? 0 : width;
     let portY = height / 2;
+    let leadOverride: number | undefined;
 
     if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
@@ -617,7 +618,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     } else if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {
       const isInterfaceModport = node.kind === 'interface' && role === 'modport';
       const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';
-      const shiftY = isInterfaceInstance ? grid * 3 + grid / 2 : 0;
+      const shiftY = isInterfaceInstance ? diagramSizing.interfaceInstanceShiftY : 0;
       const bottomPortsOnSide = isInterfaceInstance ? visiblePorts.filter(p => p.direction === 'output' && p.width !== 'interface') : [];
       const bottomHatHeight = isInterfaceInstance ? interfaceTopHatHeight(bottomPortsOnSide.length > 0) : 0;
       const unshiftedHeight = Math.max(grid, height - shiftY);
@@ -628,6 +629,9 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
         const portIndex = topPorts.indexOf(port);
         portX = interfaceTopPortX(width, topPorts.length, portIndex, Math.max(topPorts.length, bottomPortsOnSide.length));
         portY = 0;
+        // The hat sits below the layout-box top, so the box itself already
+        // provides the vertical approach; no extra lead margin above it.
+        leadOverride = 0;
       } else if (isInterfaceInstance && port.direction === 'output' && port.width !== 'interface') {
         side = 'SOUTH';
         const portIndex = bottomPortsOnSide.indexOf(port);
@@ -655,6 +659,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
              side = 'NORTH';
              portX = width / 2;
              portY = 0;
+             leadOverride = grid; // hat stem: keep the boundary one grid above the node
            } else {
              side = port.direction === 'output' ? 'EAST' : 'WEST';
              portX = side === 'EAST' ? width : 0;
@@ -684,7 +689,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
           if (port.id === singlePort?.id) {
             if (isArrayComposition) {
               side = 'EAST';
-              portX = width - grid * 1.5;
+              portX = width;
             } else if (isArrayBreakout) {
               side = 'WEST';
               portX = 0;
@@ -717,7 +722,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     return {
       id: endpointId(node.id, port.id),
       side,
-      leadLength: includeLeadMargins ? elkLeadLengthForPort(side, port.id) : 0,
+      leadLength: includeLeadMargins ? leadOverride ?? elkLeadLengthForPort(side, port.id) : 0,
       index,
       x: portX,
       y: portY
@@ -725,15 +730,19 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
   });
 
   const arrayLayerPad = nodeIsArrayNode(node) ? 4 : 0;
+  // Reserve only the part of each lead that extends past the node outline:
+  // ports inset into the node (mux/select top selects, the inverter output
+  // bubble) consume part of their lead inside the node, so the ELK box must
+  // not also pad for it.
   const margins = portGeometry.reduce((current, port) => {
     if (port.side === 'WEST') {
-      current.left = Math.max(current.left, port.leadLength);
+      current.left = Math.max(current.left, port.leadLength - port.x);
     } else if (port.side === 'EAST') {
-      current.right = Math.max(current.right, port.leadLength);
+      current.right = Math.max(current.right, port.leadLength - (width - port.x));
     } else if (port.side === 'NORTH') {
-      current.top = Math.max(current.top, port.leadLength);
+      current.top = Math.max(current.top, port.leadLength - port.y);
     } else if (port.side === 'SOUTH') {
-      current.bottom = Math.max(current.bottom, port.leadLength);
+      current.bottom = Math.max(current.bottom, port.leadLength - (height - port.y));
     }
     return current;
   }, { left: arrayLayerPad, right: arrayLayerPad, top: arrayLayerPad, bottom: arrayLayerPad });

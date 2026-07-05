@@ -4,10 +4,10 @@
       "id": "bus:top:aggregate_assign:2:9:n0:breakout",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 720,
         "y": 24
       },
-      "width": 192,
+      "width": 144,
       "height": 144,
       "data": {
         "kind": "bus",
@@ -42,7 +42,7 @@
         "x": 360,
         "y": 24
       },
-      "width": 192,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "bus",
@@ -69,7 +69,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 1176,
+        "x": 1080,
         "y": 36
       },
       "width": 120,
@@ -89,7 +89,7 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 1176,
+        "x": 1080,
         "y": 84
       },
       "width": 120,
@@ -109,7 +109,7 @@
       "id": "port:top:c",
       "type": "hdl",
       "position": {
-        "x": 1176,
+        "x": 1080,
         "y": 132
       },
       "width": 120,
@@ -173,7 +173,7 @@
       "target": "port:top:a",
       "sourceHandle": "out:lhs0",
       "targetHandle": "port:a",
-      "path": "M 960 48 L 984 48 L 1152 48 L 1176 48"
+      "path": "M 864 48 L 888 48 L 1056 48 L 1080 48"
     },
     {
       "id": "edge:bus:top:aggregate_assign:2:9:n0:breakout:port:top:b:b",
@@ -181,7 +181,7 @@
       "target": "port:top:b",
       "sourceHandle": "out:lhs1",
       "targetHandle": "port:b",
-      "path": "M 960 96 L 984 96 L 1152 96 L 1176 96"
+      "path": "M 864 96 L 888 96 L 1056 96 L 1080 96"
     },
     {
       "id": "edge:bus:top:aggregate_assign:2:9:n0:breakout:port:top:c:c",
@@ -189,7 +189,7 @@
       "target": "port:top:c",
       "sourceHandle": "out:lhs2",
       "targetHandle": "port:c",
-      "path": "M 960 144 L 984 144 L 1152 144 L 1176 144"
+      "path": "M 864 144 L 888 144 L 1056 144 L 1080 144"
     },
     {
       "id": "edge:bus:top:aggregate_assign:2:9:n0:compose:bus:top:aggregate_assign:2:9:n0:breakout:aggregate_assign_n0",
@@ -197,7 +197,7 @@
       "target": "bus:top:aggregate_assign:2:9:n0:breakout",
       "sourceHandle": "out:out",
       "targetHandle": "in:in",
-      "path": "M 504 48 L 528 48 L 792 48 L 816 48"
+      "path": "M 504 48 L 528 48 L 696 48 L 720 48"
     },
     {
       "id": "edge:port:top:d:bus:top:aggregate_assign:2:9:n0:compose:d",

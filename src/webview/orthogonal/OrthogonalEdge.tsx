@@ -220,7 +220,9 @@ export function OrthogonalEdge({
     targetPosition as unknown as HdlPosition,
     sourceHandleId,
     targetHandleId,
-    !isDragging
+    !isDragging,
+    sourceNode,
+    targetNode
   );
   const obstacles = React.useMemo(
     () => flowNodes.map(nodeObstacle).filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),

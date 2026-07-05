@@ -14,7 +14,9 @@ describe('diagram node sizing', () => {
     ['comb', diagramSizing.nodeWidth],
     ['alu', diagramSizing.muxWidth],
     ['inverter', diagramSizing.gridSize * 2],
-    ['bus', diagramSizing.nodeWidth],
+    // Bus/struct pipes sit flush with the single-port edge, so they are two
+    // grid units narrower than generic nodes.
+    ['bus', diagramSizing.nodeWidth - diagramSizing.gridSize * 2],
     ['unknown', diagramSizing.nodeWidth]
   ] satisfies Array<[DiagramNodeKind, number]>)('keeps the default %s width', (kind, expectedWidth) => {
     expect(diagramNodeDimensions(nodeOfKind(kind)).width).toBe(expectedWidth);
@@ -73,7 +75,7 @@ describe('diagram node sizing', () => {
       ]
     }).width;
 
-    expect(shortOutput).toBe(diagramSizing.nodeWidth);
+    expect(shortOutput).toBe(diagramSizing.nodeWidth - diagramSizing.gridSize * 2);
     expect(internalOutput).toBe(shortOutput);
   });
 

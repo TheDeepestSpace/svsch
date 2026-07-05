@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 240
+        "y": 120
       },
       "width": 192,
       "height": 96,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 240
+        "y": 120
       },
       "width": 192,
       "height": 96,
@@ -45,10 +45,10 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 144
+        "y": 96
       },
       "width": 240,
-      "height": 185,
+      "height": 113,
       "data": {
         "kind": "interface",
         "ports": [
@@ -105,7 +105,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 372
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -148,7 +148,7 @@
       "target": "interface:interface_output_wire:status",
       "sourceHandle": "port:bus",
       "targetHandle": "in:producer",
-      "path": "M 216 288 L 240 288 L 408 288 L 432 288"
+      "path": "M 216 168 L 240 168 L 408 168 L 432 168"
     },
     {
       "id": "edge:interface:interface_output_wire:status:instance:interface_output_wire:u_sink:status",
@@ -156,7 +156,7 @@
       "target": "instance:interface_output_wire:u_sink",
       "sourceHandle": "out:consumer",
       "targetHandle": "port:bus",
-      "path": "M 672 288 L 696 288 L 864 288 L 888 288"
+      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
     },
     {
       "id": "edge:interface:interface_output_wire:status:port:interface_output_wire:done:done",
@@ -164,7 +164,7 @@
       "target": "port:interface_output_wire:done",
       "sourceHandle": "out:done",
       "targetHandle": "port:done",
-      "path": "M 552 328 L 552 384 L 864 384 L 888 384"
+      "path": "M 552 208 L 552 264 L 864 264 L 888 264"
     },
     {
       "id": "edge:port:interface_output_wire:clk:interface:interface_output_wire:status:clk",
@@ -172,7 +172,7 @@
       "target": "interface:interface_output_wire:status",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 216 96 L 240 96 L 528 96 L 528 216 L 528 252"
+      "path": "M 216 96 L 240 96 L 528 96 L 528 132"
     },
     {
       "id": "edge:port:interface_output_wire:rst_n:interface:interface_output_wire:status:rst_n",
@@ -180,7 +180,7 @@
       "target": "interface:interface_output_wire:status",
       "sourceHandle": "port:rst_n",
       "targetHandle": "in:rst_n",
-      "path": "M 216 48 L 240 48 L 576 48 L 576 216 L 576 252"
+      "path": "M 216 48 L 240 48 L 576 48 L 576 96 L 576 132"
     }
   ]
 }

@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 96
+        "y": 72
       },
       "width": 144,
       "height": 144,
@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 108
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 156
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -85,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 204
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -125,7 +125,7 @@
       "type": "hdl",
       "position": {
         "x": 720,
-        "y": 156
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -148,7 +148,7 @@
       "target": "port:mux_three_inputs:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
-      "path": "M 504 168 L 528 168 L 696 168 L 720 168"
+      "path": "M 504 144 L 528 144 L 696 144 L 720 144"
     },
     {
       "id": "edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a",
@@ -156,7 +156,7 @@
       "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:2_d0",
-      "path": "M 144 120 L 168 120 L 216 120 L 216 144 L 336 144 L 360 144"
+      "path": "M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:mux_three_inputs:b:mux:mux_three_inputs:y:sel:y:b",
@@ -164,7 +164,7 @@
       "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:2_d1",
-      "path": "M 144 168 L 168 168 L 336 168 L 360 168"
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
       "id": "edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c",
@@ -172,7 +172,7 @@
       "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:c",
       "targetHandle": "in:default",
-      "path": "M 144 216 L 168 216 L 216 216 L 216 192 L 336 192 L 360 192"
+      "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
     },
     {
       "id": "edge:port:mux_three_inputs:sel:mux:mux_three_inputs:y:sel:y:sel",
@@ -180,7 +180,7 @@
       "target": "mux:mux_three_inputs:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 117"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
     }
   ]
 }

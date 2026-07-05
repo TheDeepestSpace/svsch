@@ -7,8 +7,8 @@
         "x": 360,
         "y": 24
       },
-      "width": 192,
-      "height": 149,
+      "width": 144,
+      "height": 221,
       "data": {
         "kind": "bus",
         "ports": [
@@ -124,7 +124,7 @@
       "id": "port:array_stack_composition_literal:arr",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 720,
         "y": 204
       },
       "width": 120,
@@ -148,7 +148,7 @@
       "target": "port:array_stack_composition_literal:arr",
       "sourceHandle": "out:arr",
       "targetHandle": "port:arr",
-      "path": "M 514 220 L 763 220"
+      "path": "M 502 220 L 715 220"
     },
     {
       "id": "edge:literal:array_stack_composition_literal:8_h00:8_h00:bus_comp:array_stack_composition_literal:arr:8_h00",

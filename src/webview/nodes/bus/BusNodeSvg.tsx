@@ -78,7 +78,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     const orderedSide = orderedInterfaceSidePorts(sidePorts);
     const topHatH = interfaceTopHatHeight(topPorts.length > 0);
     const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
-    const shiftY = g * 3 + g / 2;
+    const shiftY = diagramSizing.interfaceInstanceShiftY;
     const unshiftedH = Math.max(g, height - shiftY);
     const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
     const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
@@ -272,14 +272,16 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const pipeY = isModuleInterfaceModport ? 0 : tapCenters[0] - g / 2;
   const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
   // Interface modport: pipe is centered (matching original CSS left:50% translateX(-50%))
-  // Bus breakout: pipe on left (g*2). Bus composition: pipe on right (width - g*2 - 6).
+  // Bus breakout: pipe flush with the left edge. Bus composition: pipe flush
+  // with the right edge. Array aggregates keep half a grid for the diagonal
+  // stack exit next to the pipe.
   const pipeX = isArrayAggregate
     ? isComposition
-      ? width - g * 2.5 - 3
-      : g * 1.5 - 3
+      ? width - g * 0.5 - 3
+      : g * 0.5 - 3
     : isInterfaceModport
     ? Math.round(width / 2) - 3
-    : isComposition ? width - g * 2 - 6 : g * 2;
+    : isComposition ? width - 6 : 0;
 
   const pipeWidth = 6;
   const pipeCapWidth = 34;

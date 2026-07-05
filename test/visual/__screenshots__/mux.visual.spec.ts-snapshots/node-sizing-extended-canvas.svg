@@ -122,6 +122,7 @@
 }
 .react-flow__pane {
   z-index: 1;
+  touch-action: none;
 }
 .react-flow__pane.draggable {
     cursor: grab;
@@ -3229,8 +3230,8 @@ path.port-skin-body.port-skin-harness {
 </svg>
 </g>
 <g class="svsch-node hdl-bus-node hdl-bus-breakout" data-node-id="bus" data-node-kind="bus" transform="translate(576 216)">
-<svg class="hdl-node-svg" width="240" height="96" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="24" rx="3"></rect><g class="svsch-bus-tap" data-port-id="tap"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="240" y2="24"></line><rect x="66" y="16" width="146" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="tap" x="76" y="24" dominant-baseline="middle">wide_label_growth</text></g>
+<svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
+<rect class="svsch-bus-pipe" x="0" y="12" width="6" height="24" rx="3"></rect><g class="svsch-bus-tap" data-port-id="tap"><line class="svsch-bus-tap-line" x1="6" y1="24" x2="192" y2="24"></line><rect x="18" y="16" width="146" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="tap" x="28" y="24" dominant-baseline="middle">wide_label_growth</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-alu" data-node-id="alu" data-node-kind="alu" transform="translate(576 456)">

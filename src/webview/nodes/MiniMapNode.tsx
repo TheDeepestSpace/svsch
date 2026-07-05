@@ -85,7 +85,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       const orderedSide = orderedInterfaceSidePorts(sidePorts);
       const topHatHeight = interfaceTopHatHeight(topPorts.length > 0);
       const bottomHatHeight = interfaceTopHatHeight(bottomPorts.length > 0);
-      const shiftY = diagramSizing.gridSize * 3 + diagramSizing.gridSize / 2;
+      const shiftY = diagramSizing.interfaceInstanceShiftY;
       const unshiftedHeight = Math.max(diagramSizing.gridSize, actualHeight - shiftY);
       const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
       const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);

@@ -46,6 +46,11 @@ export const diagramSizing = {
   textWidth: diagramGrid.size * diagramGrid.textWidthUnits,
   minNodeSeparation: diagramGrid.size * diagramGrid.minNodeSeparationUnits,
   sameLayerNodeSeparation: diagramGrid.size * diagramGrid.sameLayerNodeSeparationUnits,
+  // Vertical offset between an interface instance's layout box top and its
+  // rendered content. Half a grid keeps a single side-port center on-grid
+  // (24 hat + 12 + 24 centering + this = 72) so interface routes stay flat;
+  // anything larger just pads the top with dead space.
+  interfaceInstanceShiftY: diagramGrid.size / 2,
   columnGap: diagramGrid.size * diagramGrid.columnGapUnits,
   rowGap: diagramGrid.size * diagramGrid.rowGapUnits
 } as const;
