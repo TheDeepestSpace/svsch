@@ -1,0 +1,268 @@
+{
+  "nodes": [
+    {
+      "id": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 624
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:w",
+            "name": "w",
+            "direction": "output"
+          },
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      },
+      "inactive": true
+    },
+    {
+      "id": "instance:top:g_if_one.u_if_one",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 384
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:g_if_zero.u_if_zero",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 144
+      },
+      "width": 216,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "inactive": true
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 420
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 660
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 912,
+        "y": 420
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:port:top:y:y",
+      "source": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
+      "target": "port:top:y",
+      "sourceHandle": "out:w",
+      "targetHandle": "port:y",
+      "path": "M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432",
+      "inactive": true
+    },
+    {
+      "id": "edge:instance:top:g_if_one.u_if_one:port:top:y:y",
+      "source": "instance:top:g_if_one.u_if_one",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 624 432 L 648 432 L 888 432 L 912 432",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
+      "source": "instance:top:g_if_zero.u_if_zero",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432",
+      "inactive": true
+    },
+    {
+      "id": "edge:port:top:a:instance:top:g_if_zero.u_if_zero:a",
+      "source": "port:top:a",
+      "target": "instance:top:g_if_zero.u_if_zero",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
+      "inactive": true
+    },
+    {
+      "id": "edge:port:top:b:instance:top:g_if_one.u_if_one:b",
+      "source": "port:top:b",
+      "target": "instance:top:g_if_one.u_if_one",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:a",
+      "path": "M 144 432 L 168 432 L 408 432 L 432 432",
+      "active": true
+    },
+    {
+      "id": "edge:port:top:c:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:c",
+      "source": "port:top:c",
+      "target": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:c",
+      "path": "M 144 672 L 168 672 L 408 672 L 432 672",
+      "inactive": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "generate-block:generate-group:top:if:14:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 312,
+        "y": 48,
+        "width": 480,
+        "height": 744
+      },
+      "active": true
+    },
+    {
+      "id": "generate-region:top:else-if:16:17:1:else_if__MODE____1___g_if_one_",
+      "kind": "else-if",
+      "label": "g_if_one /* MODE == 1 */",
+      "bounds": {
+        "x": 384,
+        "y": 336,
+        "width": 360,
+        "height": 192
+      },
+      "active": true
+    },
+    {
+      "id": "generate-region:top:else:16:13:2:else__g_if_other_",
+      "kind": "else",
+      "label": "g_if_other /* else */",
+      "bounds": {
+        "x": 384,
+        "y": 576,
+        "width": 288,
+        "height": 168
+      },
+      "inactive": true
+    },
+    {
+      "id": "generate-region:top:if:14:8:0:if__MODE____0___g_if_zero_",
+      "kind": "if",
+      "label": "g_if_zero /* MODE == 0 */",
+      "bounds": {
+        "x": 360,
+        "y": 96,
+        "width": 312,
+        "height": 192
+      },
+      "inactive": true
+    }
+  ]
+}

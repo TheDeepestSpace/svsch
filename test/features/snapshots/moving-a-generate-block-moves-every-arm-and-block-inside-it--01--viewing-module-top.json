@@ -1,0 +1,330 @@
+{
+  "nodes": [
+    {
+      "id": "comb:top:g_if_one_y_src:expr",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 216
+      },
+      "width": 192,
+      "height": 120,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y",
+            "name": "y",
+            "direction": "output"
+          },
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:left_tap",
+            "name": "left_tap",
+            "direction": "input"
+          },
+          {
+            "id": "port:right_tap",
+            "name": "right_tap",
+            "direction": "input"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:g_if_one.u_path_a",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 144
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:g_if_one.u_path_b",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 264
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:g_if_other.u_other",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 504
+      },
+      "width": 216,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "inactive": true
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 540
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:sel",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:top:g_if_one_y_src:expr:port:top:y:y",
+      "source": "comb:top:g_if_one_y_src:expr",
+      "target": "port:top:y",
+      "sourceHandle": "out:y",
+      "targetHandle": "port:y",
+      "path": "M 888 264 L 912 264 L 1128 264 L 1152 264",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:g_if_one.u_path_a:comb:top:g_if_one_y_src:expr:left_tap",
+      "source": "instance:top:g_if_one.u_path_a",
+      "target": "comb:top:g_if_one_y_src:expr",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:left_tap",
+      "path": "M 600 192 L 624 192 L 672 192 L 672 288 L 696 288",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:g_if_one.u_path_b:comb:top:g_if_one_y_src:expr:right_tap",
+      "source": "instance:top:g_if_one.u_path_b",
+      "target": "comb:top:g_if_one_y_src:expr",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:right_tap",
+      "path": "M 600 312 L 624 312 L 672 312 L 696 312",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:g_if_other.u_other:port:top:y:y",
+      "source": "instance:top:g_if_other.u_other",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 744 552 L 768 552 L 960 552 L 960 264 L 1128 264 L 1152 264",
+      "inactive": true
+    },
+    {
+      "id": "edge:port:top:a:instance:top:g_if_one.u_path_a:a",
+      "source": "port:top:a",
+      "target": "instance:top:g_if_one.u_path_a",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
+      "active": true
+    },
+    {
+      "id": "edge:port:top:b:instance:top:g_if_one.u_path_b:b",
+      "source": "port:top:b",
+      "target": "instance:top:g_if_one.u_path_b",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:a",
+      "path": "M 144 312 L 168 312 L 384 312 L 408 312",
+      "active": true
+    },
+    {
+      "id": "edge:port:top:c:instance:top:g_if_other.u_other:c",
+      "source": "port:top:c",
+      "target": "instance:top:g_if_other.u_other",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:a",
+      "path": "M 144 552 L 168 552 L 504 552 L 528 552",
+      "inactive": true
+    },
+    {
+      "id": "edge:port:top:sel:comb:top:g_if_one_y_src:expr:sel",
+      "source": "port:top:sel",
+      "target": "comb:top:g_if_one_y_src:expr",
+      "sourceHandle": "port:sel",
+      "targetHandle": "port:sel",
+      "path": "M 144 408 L 168 408 L 216 408 L 216 360 L 648 360 L 648 319 Q 655 312 648 305 L 648 264 L 672 264 L 696 264",
+      "active": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "generate-block:generate-group:top:if:13:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 312,
+        "y": 48,
+        "width": 672,
+        "height": 648
+      },
+      "active": true
+    },
+    {
+      "id": "generate-region:top:else:13:4:1:else__g_if_other_",
+      "kind": "else",
+      "label": "g_if_other /* else */",
+      "bounds": {
+        "x": 480,
+        "y": 456,
+        "width": 312,
+        "height": 192
+      },
+      "inactive": true
+    },
+    {
+      "id": "generate-region:top:if:13:8:0:if__MODE____1___g_if_one_",
+      "kind": "if",
+      "label": "g_if_one /* MODE == 1 */",
+      "bounds": {
+        "x": 360,
+        "y": 96,
+        "width": 576,
+        "height": 312
+      },
+      "active": true
+    }
+  ]
+}

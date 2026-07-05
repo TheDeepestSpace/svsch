@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "node:warn:a",
+      "type": "hdl",
+      "position": {
+        "x": 368,
+        "y": 80
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": []
+      }
+    },
+    {
+      "id": "node:warn:external",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 80
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": []
+      }
+    }
+  ],
+  "edges": [],
+  "regions": [
+    {
+      "id": "region:g_warn_zero",
+      "kind": "if",
+      "label": "g_warn_zero /* MODE == 0 */",
+      "bounds": {
+        "x": 312,
+        "y": 24,
+        "width": 288,
+        "height": 168
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "node does not belong to arm block"
+    }
+  ]
+}

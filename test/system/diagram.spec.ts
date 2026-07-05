@@ -1,4 +1,5 @@
 import { test, expect } from 'vscode-test-playwright';
+import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
@@ -18,6 +19,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
   workbox,
   evaluateInVSCode,
 }) => {
+  // A previous suite invocation can leave a saved layout behind (the extension's
+  // debounced save may re-create layout.json after a test's cleanup) — start clean.
+  await clearSystemLayout();
   try {
     // --- 1. Wait for the VSCode workbench to be interactive.
     await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
@@ -312,3 +316,403 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     }
   }
 });
+
+test('preserves moved node positions after editing a connection route', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'assign_wire');
+
+    const sourceId = await findSystemNodeId(webview, 'a', 'port');
+    const targetId = await findSystemNodeId(webview, 'y', 'port');
+    if (!sourceId || !targetId) {
+      throw new Error(`Could not find assign_wire ports: a=${sourceId}, y=${targetId}`);
+    }
+    const edgeId = await findSystemEdgeId(webview, sourceId, targetId);
+    if (!edgeId) {
+      throw new Error(`Could not find connection between ${sourceId} and ${targetId}`);
+    }
+
+    await dragSystemNodeByGridCells(workbox, webview, sourceId, 0, -2);
+    const movedPosition = await systemNodePosition(webview, sourceId);
+    await waitForSystemNodePersisted(sourceId, movedPosition);
+
+    await dragSystemConnectionSegmentByGridCells(workbox, webview, edgeId, -1);
+
+    await expect.poll(async () => {
+      const current = await systemNodePosition(webview, sourceId);
+      return closeTo(current.x, movedPosition.x) && closeTo(current.y, movedPosition.y);
+    }, { timeout: 10_000 }).toBe(true);
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
+test('flags a module port dragged into a generate block', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'generate_arm_intrusion');
+
+    const arm = webview.locator('.generate-region:not(.generate-block)').first();
+    const block = webview.locator('.generate-region.generate-block').first();
+    await arm.waitFor({ state: 'visible', timeout: 30_000 });
+
+    const portId = await findSystemNodeId(webview, 'a', 'port');
+    if (!portId) {
+      throw new Error('Could not find module port "a"');
+    }
+    const portNode = webview.locator(`.react-flow__node[data-id="${portId}"]`);
+
+    // The module port sits at the edge of the diagram, well outside the generate
+    // block, so it is not flagged before the drag. (A port could never be flagged
+    // at all before the fix — the validation skipped every port.)
+    await expect(portNode).not.toHaveClass(/svsch-node-invalid/);
+
+    // Drag the port on top of the generate arm.
+    await dragSystemNodeOntoRegion(workbox, webview, portId, arm);
+
+    // The intruding port now shows the shared error outline, and both the arm and
+    // its enclosing generate block are flagged as containing an unrelated block.
+    await expect(portNode).toHaveClass(/svsch-node-invalid/, { timeout: 15_000 });
+    await expect(arm).toHaveClass(/generate-region-invalid/, { timeout: 15_000 });
+    await expect(block).toHaveClass(/generate-region-invalid/, { timeout: 15_000 });
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
+const SYSTEM_GRID_SIZE = 24;
+const SYSTEM_LAYOUT_PATH = path.resolve(__dirname, '../.svsch/layout.json');
+type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
+
+async function clearSystemLayout(): Promise<void> {
+  await fs.promises.rm(SYSTEM_LAYOUT_PATH, { force: true }).catch(() => {});
+}
+
+async function openSystemDiagram(
+  workbox: Page,
+  evaluateInVSCode: EvaluateInVSCode
+): Promise<void> {
+  await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
+  await dismissSystemNotifications(workbox);
+  await installSystemWebviewBridge(evaluateInVSCode);
+  await evaluateInVSCode(vscode => vscode.commands.executeCommand('svsch.openDiagram'));
+  await workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
+  await dismissSystemNotifications(workbox);
+}
+
+async function installSystemWebviewBridge(
+  evaluateInVSCode: EvaluateInVSCode
+): Promise<void> {
+  await evaluateInVSCode(vscode => {
+    if ((global as any).__svschSystemBridgeInstalled) return;
+    (global as any).__svschSystemBridgeInstalled = true;
+
+    const origCreatePanel = vscode.window.createWebviewPanel;
+    (vscode.window as any).createWebviewPanel = function (viewType: string, title: string, ...args: any[]) {
+      const panel = (origCreatePanel as any).call(vscode.window, viewType, title, ...args);
+      if (viewType !== 'svsch.diagram') {
+        return panel;
+      }
+
+      const origPostMessage = panel.webview.postMessage.bind(panel.webview);
+      panel.webview.postMessage = (msg: any) => {
+        if (msg?.type === 'graph') {
+          (global as any).__svschModules = msg.modules;
+          (global as any).__svschCurrentModule = msg.view?.moduleName;
+          (global as any).__svschGraphCount = ((global as any).__svschGraphCount ?? 0) + 1;
+        }
+        return origPostMessage(msg);
+      };
+
+      const origOnDidReceiveMessage = panel.webview.onDidReceiveMessage;
+      const msgListeners: Array<(msg: any) => void> = [];
+      (panel.webview as any).onDidReceiveMessage = function (listener: any, thisArgs?: any, disposables?: any) {
+        msgListeners.push(thisArgs ? listener.bind(thisArgs) : listener);
+        return (origOnDidReceiveMessage as any).call(panel.webview, listener, thisArgs, disposables);
+      };
+      (global as any).__svschFireWebviewMessage = (msg: any) => {
+        for (const listener of msgListeners) listener(msg);
+      };
+
+      return panel;
+    };
+  });
+}
+
+async function openSystemModule(
+  workbox: Page,
+  webview: FrameLocator,
+  evaluateInVSCode: EvaluateInVSCode,
+  moduleName: string
+): Promise<void> {
+  const switchedViaHost = await evaluateInVSCode((vscode, requestedModule) => {
+    void vscode;
+    const modules: string[] = (global as any).__svschModules ?? [];
+    if (!modules.includes(requestedModule)) {
+      return false;
+    }
+    if ((global as any).__svschCurrentModule === requestedModule) {
+      return true;
+    }
+    if (!(global as any).__svschFireWebviewMessage) {
+      return false;
+    }
+    (global as any).__svschGraphCountBeforeSwitch = (global as any).__svschGraphCount ?? 0;
+    (global as any).__svschFireWebviewMessage({ type: 'openModule', moduleName: requestedModule });
+    return true;
+  }, moduleName);
+
+  if (switchedViaHost) {
+    await expect.poll(async () => evaluateInVSCode(vscode => {
+      void vscode;
+      return (global as any).__svschCurrentModule;
+    }), { timeout: 15_000 }).toBe(moduleName);
+  } else {
+    const moduleSelect = webview.locator('select[aria-label="Module"]');
+    await moduleSelect.selectOption(moduleName);
+    await expect(moduleSelect).toHaveValue(moduleName);
+  }
+
+  await webview.locator('.react-flow__node').first().waitFor({ state: 'attached', timeout: 30_000 });
+  await waitForSystemModuleRendered(webview, moduleName);
+  await waitForViewportToSettle(webview);
+  await workbox.waitForTimeout(300);
+}
+
+async function dismissSystemNotifications(workbox: Page): Promise<void> {
+  for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+    await button.click().catch(() => {});
+  }
+  const closeAll = workbox.locator('.notifications-toasts .codicon-notifications-clear-all');
+  if (await closeAll.isVisible({ timeout: 1_000 }).catch(() => false)) {
+    await closeAll.click().catch(() => {});
+  }
+}
+
+async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
+  await expect.poll(async () => webview.locator('html').evaluate(() => {
+    const transform = document.querySelector('.react-flow__viewport')?.getAttribute('style') ?? '';
+    return transform;
+  }), { timeout: 10_000 }).not.toBe('');
+  await webview.locator('body').evaluate(() => document.fonts.ready);
+}
+
+async function waitForSystemModuleRendered(webview: FrameLocator, moduleName: string): Promise<void> {
+  try {
+    await expect.poll(async () => webview.locator('html').evaluate((_element, expectedModule) => {
+      const rf = (window as any).reactFlowInstance;
+      const nodes = rf?.getNodes?.() ?? [];
+      return nodes.length > 0 && nodes.every((node: any) => node.data?.moduleName === expectedModule);
+    }, moduleName), { timeout: 30_000 }).toBe(true);
+  } catch (error) {
+    const state = await webview.locator('html').evaluate(() => {
+      const rf = (window as any).reactFlowInstance;
+      const nodes = rf?.getNodes?.() ?? [];
+      const edges = rf?.getEdges?.() ?? [];
+      const select = document.querySelector('select[aria-label="Module"]') as HTMLSelectElement | null;
+      return {
+        selectedModule: select?.value ?? null,
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        nodes: nodes.slice(0, 8).map((node: any) => ({
+          id: node.id,
+          moduleName: node.data?.moduleName,
+          label: node.data?.node?.label,
+          kind: node.data?.node?.kind
+        }))
+      };
+    });
+    throw new Error(`Timed out waiting for rendered module ${moduleName}: ${JSON.stringify(state)}`, { cause: error });
+  }
+}
+
+async function findSystemNodeId(webview: FrameLocator, label: string, kind?: string): Promise<string | null> {
+  return webview.locator('html').evaluate((_element, { wantedLabel, wantedKind }) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes?.().find((candidate: any) => (
+      candidate.data?.node?.label === wantedLabel
+      && (!wantedKind || candidate.data?.node?.kind === wantedKind)
+    ));
+    if (node) return node.id;
+
+    const domNodes = Array.from(document.querySelectorAll('.react-flow__node'));
+    const domNode = domNodes.find((element) => {
+      if (wantedKind && !element.querySelector(`[data-node-kind="${wantedKind}"]`)) return false;
+      const labels = Array.from(element.querySelectorAll(
+        '.port-skin-label,.node-title,.node-kind,.svsch-node-title,.svsch-node-kind,.svsch-port-label'
+      )).map((child) => child.textContent?.trim()).filter(Boolean);
+      return labels.includes(wantedLabel);
+    });
+    return domNode?.getAttribute('data-id') ?? null;
+  }, { wantedLabel: label, wantedKind: kind });
+}
+
+async function findSystemEdgeId(webview: FrameLocator, sourceId: string, targetId: string): Promise<string | null> {
+  return webview.locator('html').evaluate((_element, { source, target }) => {
+    const rf = (window as any).reactFlowInstance;
+    const edge = rf?.getEdges?.().find((candidate: any) => candidate.source === source && candidate.target === target);
+    return edge?.id ?? null;
+  }, { source: sourceId, target: targetId });
+}
+
+async function systemNodePosition(webview: FrameLocator, nodeId: string): Promise<{ x: number; y: number }> {
+  return webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNode?.(id);
+    if (!node) {
+      throw new Error(`Node not found: ${id}`);
+    }
+    return { x: Math.round(node.position.x), y: Math.round(node.position.y) };
+  }, nodeId);
+}
+
+async function systemZoom(webview: FrameLocator): Promise<number> {
+  return webview.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
+}
+
+async function dragSystemNodeByGridCells(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+  cellsX: number,
+  cellsY: number
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const box = await node.boundingBox();
+  if (!box) {
+    throw new Error(`Could not get node box for ${nodeId}`);
+  }
+  const before = await systemNodePosition(webview, nodeId);
+  const zoom = await systemZoom(webview);
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  await workbox.mouse.move(startX + cellsX * SYSTEM_GRID_SIZE * zoom, startY + cellsY * SYSTEM_GRID_SIZE * zoom, { steps: 12 });
+  await workbox.mouse.up();
+
+  await expect.poll(async () => {
+    const current = await systemNodePosition(webview, nodeId);
+    return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+async function dragSystemNodeOntoRegion(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+  region: Locator
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const nodeBox = await node.boundingBox();
+  const regionBox = await region.boundingBox();
+  if (!nodeBox || !regionBox) {
+    throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+  }
+  const before = await systemNodePosition(webview, nodeId);
+  const startX = nodeBox.x + nodeBox.width / 2;
+  const startY = nodeBox.y + nodeBox.height / 2;
+  const endX = regionBox.x + regionBox.width / 2;
+  const endY = regionBox.y + regionBox.height / 2;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  await workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 10 });
+  await workbox.mouse.move(endX, endY, { steps: 10 });
+  await workbox.mouse.up();
+
+  await expect.poll(async () => {
+    const current = await systemNodePosition(webview, nodeId);
+    return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+async function dragSystemConnectionSegmentByGridCells(
+  workbox: Page,
+  webview: FrameLocator,
+  edgeId: string,
+  cellsY: number
+): Promise<void> {
+  const edge = webview.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edge.locator('path.svsch-edge-bridge').hover({ force: true });
+  await workbox.waitForTimeout(200);
+
+  const handles = edge.locator('path.svsch-edge-segment-horizontal');
+  const count = await handles.count();
+  if (count === 0) {
+    throw new Error(`No horizontal segment handles for ${edgeId}`);
+  }
+
+  let handle = handles.first();
+  let bestWidth = -1;
+  for (let i = 0; i < count; i += 1) {
+    const candidate = handles.nth(i);
+    const box = await candidate.boundingBox();
+    if (box && box.width > bestWidth) {
+      bestWidth = box.width;
+      handle = candidate;
+    }
+  }
+
+  const box = await handle.boundingBox();
+  if (!box) {
+    throw new Error(`Could not get segment handle box for ${edgeId}`);
+  }
+
+  const layoutBefore = JSON.stringify(await readSystemLayout());
+  const zoom = await systemZoom(webview);
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  const endY = startY + cellsY * SYSTEM_GRID_SIZE * zoom;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  await workbox.mouse.move(startX, startY + Math.sign(cellsY) * 3, { steps: 3 });
+  await workbox.mouse.move(startX, endY, { steps: 16 });
+  await workbox.mouse.up();
+
+  await expect.poll(async () => JSON.stringify(await readSystemLayout()) !== layoutBefore, { timeout: 10_000 }).toBe(true);
+  await expect.poll(async () => {
+    const layout = await readSystemLayout();
+    return !!layout.modules?.assign_wire?.edges?.[edgeId]?.routePoints;
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+async function readSystemLayout(): Promise<any> {
+  try {
+    return JSON.parse(await fs.promises.readFile(SYSTEM_LAYOUT_PATH, 'utf8'));
+  } catch {
+    return { version: 1, modules: {} };
+  }
+}
+
+async function waitForSystemNodePersisted(nodeId: string, position: { x: number; y: number }): Promise<void> {
+  await expect.poll(async () => {
+    const layout = await readSystemLayout();
+    const node = layout.modules?.assign_wire?.nodes?.[nodeId];
+    return !!node && closeTo(node.x, position.x) && closeTo(node.y, position.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+function closeTo(a: number, b: number): boolean {
+  return Math.abs(a - b) <= 1;
+}

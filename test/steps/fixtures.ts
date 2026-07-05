@@ -66,6 +66,17 @@ export class BddWorld {
 
   // Remembered positions/routes for assertions
   notedPositions: Map<string, { x: number; y: number }> = new Map();
+  notedRegionBounds: Map<string, { x: number; y: number; width: number; height: number }> = new Map();
+  notedGenerateRegionMoves: Map<string, {
+    nodePositions: Map<string, { x: number; y: number }>;
+    outsideNodePositions: Map<string, { x: number; y: number }>;
+    expectedDelta: { x: number; y: number };
+  }> = new Map();
+  pendingNodeDrag?: {
+    nodeId: string;
+    label: string;
+    moduleName: string;
+  };
   // Where a node ended up after the user dragged it (post-move), so reload
   // scenarios can assert the position was preserved.
   movedToPositions: Map<string, { x: number; y: number }> = new Map();
@@ -89,32 +100,68 @@ export class BddWorld {
       const graphState = await this.webviewPage.locator('html').evaluate(() => {
         const rf = (window as any).reactFlowInstance;
         if (!rf) return { nodes: [], edges: [] };
-        const nodes = rf.getNodes().map((n: any) => ({
-          id: n.id, type: n.type,
-          position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
-          width: Math.round(n.measured?.width ?? n.width ?? 0),
-          height: Math.round(n.measured?.height ?? n.height ?? 0),
-          data: n.data ? {
-            label: n.data.label,
-            kind: n.data.node?.kind,
-            ports: n.data.node?.ports?.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              side: p.side,
-              direction: p.direction,
-              metadata: p.metadata,
-            })),
-          } : undefined,
-        }));
+        const nodes = rf.getNodes().map((n: any) => {
+          const nodeElement = document.querySelector(`.react-flow__node[data-id="${n.id}"]`);
+          const warningNote = nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label')
+            ?? n.data?.node?.warningNote
+            ?? undefined;
+          return {
+            id: n.id, type: n.type,
+            position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
+            width: Math.round(n.measured?.width ?? n.width ?? 0),
+            height: Math.round(n.measured?.height ?? n.height ?? 0),
+            data: n.data ? {
+              label: n.data.label,
+              kind: n.data.node?.kind,
+              ports: n.data.node?.ports?.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                side: p.side,
+                direction: p.direction,
+                metadata: p.metadata,
+              })),
+            } : undefined,
+            active: nodeElement?.classList.contains('generate-node-active') || undefined,
+            inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined,
+            invalid: nodeElement?.classList.contains('svsch-node-invalid') || undefined,
+            warningNote,
+          };
+        });
         const edges = rf.getEdges().map((e: any) => {
           const el = document.querySelector(`.react-flow__edge[data-id="${e.id}"] path.svsch-edge`);
           return { id: e.id, source: e.source, target: e.target,
             sourceHandle: e.sourceHandle ?? null, targetHandle: e.targetHandle ?? null,
-            path: el?.getAttribute('d') ?? '' };
+            path: el?.getAttribute('d') ?? '',
+            active: el?.closest('.react-flow__edge')?.classList.contains('generate-edge-active') || undefined,
+            inactive: el?.closest('.react-flow__edge')?.classList.contains('generate-edge-inactive') || undefined };
         });
+        const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
+          const element = region as HTMLElement;
+          const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
+          const warningNote = element.dataset.warningNote
+            ?? element.querySelector('.generate-region-warning')?.getAttribute('aria-label')
+            ?? element.querySelector('.generate-region-note')?.textContent?.trim()
+            ?? undefined;
+          return {
+            id: element.dataset.regionId ?? '',
+            kind: element.dataset.regionKind,
+            label: title,
+            bounds: {
+              x: Math.round(Number.parseFloat(element.style.left || '0')),
+              y: Math.round(Number.parseFloat(element.style.top || '0')),
+              width: Math.round(Number.parseFloat(element.style.width || '0')),
+              height: Math.round(Number.parseFloat(element.style.height || '0')),
+            },
+            active: element.classList.contains('generate-region-active') || undefined,
+            inactive: element.classList.contains('generate-region-inactive') || undefined,
+            invalid: element.classList.contains('generate-region-invalid') || undefined,
+            warningNote,
+          };
+        }).filter(region => region.id);
         nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
         edges.sort((a: any, b: any) => a.id.localeCompare(b.id));
-        return { nodes, edges };
+        regions.sort((a: any, b: any) => a.id.localeCompare(b.id));
+        return regions.length > 0 ? { nodes, edges, regions } : { nodes, edges };
       }).catch(() => ({ nodes: [], edges: [] }));
       if (!process.env.SKIP_SNAPSHOTS) {
         await this._compareSnapshots(
@@ -485,7 +532,9 @@ function resolveFeaturePath(bddContext: any, featureUri: string): string {
 Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext, $testInfo }: any) {
   // Attach Playwright fixtures so helpers can use them
   this.workbox = workbox;
-  await this.workbox.setViewportSize({ width: 1400, height: 1000 });
+  if (!process.env.SKIP_SNAPSHOTS) {
+    await this.workbox.setViewportSize({ width: 1400, height: 1000 });
+  }
   this.webviewPage = workbox
     .frameLocator('iframe.webview')
     .frameLocator('iframe#active-frame');
@@ -524,6 +573,8 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.stepCounter = 0;
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
   this.notedPositions = new Map();
+  this.notedRegionBounds = new Map();
+  this.notedGenerateRegionMoves = new Map();
   this.movedToPositions = new Map();
   this.notedRoutes = new Map();
   this._bddWorkspaceFiles = [];

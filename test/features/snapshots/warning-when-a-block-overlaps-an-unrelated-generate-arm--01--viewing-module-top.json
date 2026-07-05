@@ -1,0 +1,197 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:g_arm.u_arm",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 288
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "instance:top:u_free",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 96
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 324
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 324
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:z",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:z",
+            "name": "z",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:g_arm.u_arm:port:top:y:y",
+      "source": "instance:top:g_arm.u_arm",
+      "target": "port:top:y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 600 336 L 624 336 L 864 336 L 888 336",
+      "active": true
+    },
+    {
+      "id": "edge:instance:top:u_free:port:top:z:z",
+      "source": "instance:top:u_free",
+      "target": "port:top:z",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:z",
+      "path": "M 600 144 L 624 144 L 864 144 L 888 144"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:u_free:a",
+      "source": "port:top:a",
+      "target": "instance:top:u_free",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 144 L 168 144 L 384 144 L 408 144"
+    },
+    {
+      "id": "edge:port:top:b:instance:top:g_arm.u_arm:b",
+      "source": "port:top:b",
+      "target": "instance:top:g_arm.u_arm",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:a",
+      "path": "M 144 336 L 168 336 L 384 336 L 408 336",
+      "active": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "generate-block:generate-group:top:if:16:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 312,
+        "y": 192,
+        "width": 384,
+        "height": 288
+      },
+      "active": true
+    },
+    {
+      "id": "generate-region:top:if:16:8:0:if__MODE____1___g_arm_",
+      "kind": "if",
+      "label": "g_arm /* MODE == 1 */",
+      "bounds": {
+        "x": 360,
+        "y": 240,
+        "width": 288,
+        "height": 192
+      },
+      "active": true
+    }
+  ]
+}

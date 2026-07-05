@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedNode } from '../ir/types';
+import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
+import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
@@ -108,11 +109,11 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
   const arrayConnectionsByNode = buildArrayConnectionsByNode(view);
   const obstacles = nodeObstacles(view.nodes);
   const baseEdges = [...view.edges]
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort(compareEdgePaintOrder)
     .map((edge) => renderEdgeGeometry(edge, nodesById, obstacles))
     .filter((edge): edge is RenderedEdgeBase => edge !== undefined);
   const renderedEdges = attachEdgeRendering(baseEdges);
-  const bounds = diagramBounds(view.nodes, renderedEdges, padding);
+  const bounds = diagramBounds(view.nodes, renderedEdges, view.generateRegions ?? [], padding);
   const width = Math.max(diagramSizing.gridSize * 8, Math.ceil(bounds.maxX - bounds.minX));
   const height = Math.max(diagramSizing.gridSize * 6, Math.ceil(bounds.maxY - bounds.minY));
   const offsetX = -bounds.minX;
@@ -129,6 +130,12 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     svgBridgeCss(),
     '</style>',
     `<g transform="translate(${formatNumber(offsetX)} ${formatNumber(offsetY)})">`,
+    '<g class="svsch-generate-regions">',
+    // Wrappers first so their fill renders behind the arm borders.
+    ...[...(view.generateRegions ?? [])]
+      .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
+      .map(renderGenerateRegion),
+    '</g>',
     '<g class="svsch-edges">',
     ...renderedEdges.map(renderEdge),
     '</g>',
@@ -172,7 +179,91 @@ export function svgBridgeCss(): string {
   stroke: var(--svsch-label-border);
   stroke-width: 1;
 }
+.svsch-generate-region-box {
+  fill: none;
+  stroke: var(--vscode-charts-orange);
+  stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  stroke: none;
+}
+.svsch-node-error-outline {
+  fill: none;
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2.5;
+}
+.svsch-node.svsch-node-invalid .node-skin-selection,
+.svsch-node.svsch-node-invalid .port-skin-selection,
+.svsch-node.svsch-node-invalid .hdl-interface-skin-selection {
+  fill: none;
+  opacity: 1;
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: var(--svsch-selection-width, 2.5px);
+}
+.svsch-generate-region-label,
+.svsch-generate-region-warning {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  dominant-baseline: middle;
+}
+.svsch-generate-region-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-size: 14px;
+}
+.svsch-node-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 14px;
+  dominant-baseline: middle;
+}
+.svsch-generate-region-inactive {
+  opacity: 0.75;
+}
+.svsch-generate-region-active .svsch-generate-region-box {
+  stroke: var(--vscode-charts-orange);
+}
+.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
 `.trim();
+}
+
+function renderGenerateRegion(region: PositionedGenerateRegion): string {
+  const classes = [
+    'svsch-generate-region',
+    region.isGenerateBlock ? 'svsch-generate-block' : '',
+    region.activeState === 'active' ? 'svsch-generate-region-active' : '',
+    region.activeState === 'inactive' ? 'svsch-generate-region-inactive' : '',
+    region.invalid ? 'svsch-generate-region-invalid' : ''
+  ].filter(Boolean).join(' ');
+  const labelX = region.bounds.x + 8;
+  const labelY = region.bounds.y + 8;
+  // 20px out from the top-right corner on both axes, mirroring the webview icon.
+  const warningX = region.bounds.x + region.bounds.width + 20;
+  const warningY = region.bounds.y - 20;
+  return [
+    `<g class="${escapeAttr(classes)}" data-region-id="${escapeAttr(region.id)}">`,
+    region.warningNote ? `<title>${escapeXml(region.warningNote)}</title>` : '',
+    `<rect class="svsch-generate-region-box" x="${formatNumber(region.bounds.x)}" y="${formatNumber(region.bounds.y)}" width="${formatNumber(region.bounds.width)}" height="${formatNumber(region.bounds.height)}" />`,
+    `<text class="svsch-generate-region-label" x="${formatNumber(labelX)}" y="${formatNumber(labelY + 9)}">${escapeXml(region.label)}</text>`,
+    region.warningNote
+      ? `<text class="svsch-generate-region-warning" x="${formatNumber(warningX)}" y="${formatNumber(warningY)}" text-anchor="end">⚠</text>`
+      : '',
+    '</g>'
+  ].filter(Boolean).join('\n');
 }
 
 function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, PositionedNode>, obstacles: NodeObstacle[]): RenderedEdgeBase | undefined {
@@ -528,14 +619,24 @@ function renderNetJunctions(rendered: RenderedEdge): string[] {
 }
 
 function edgePath(rendered: RenderedEdge, className: string, d: string, includeNetKey = true, style?: string): string {
+  const classes = [
+    className,
+    generateStateClass(rendered.edge.metadata?.generateActiveState, 'generate-edge')
+  ].filter(Boolean).join(' ');
   return [
-    `<path class="${escapeAttr(className)}"`,
+    `<path class="${escapeAttr(classes)}"`,
     `data-edge-id="${escapeAttr(rendered.edge.id)}"`,
     includeNetKey ? `data-net-key="${escapeAttr(rendered.netKey)}"` : '',
     style ? `style="${escapeAttr(style)}"` : '',
     `d="${escapeAttr(d)}"`,
     '/>'
   ].filter(Boolean).join(' ');
+}
+
+function generateStateClass(state: string | undefined, prefix: string): string | undefined {
+  if (state === 'active') return `${prefix}-active`;
+  if (state === 'inactive') return `${prefix}-inactive`;
+  return undefined;
 }
 
 function buildNetEdgeIdsByNet(edges: RenderedEdgeBase[]): Map<string, string[]> {
@@ -639,8 +740,14 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textAnchor = align === 'end' ? 'end' : 'start';
     const textHtml = `<text class="svsch-net-label" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
-    const content = wirePaths + leadsHtml + '\n' + textHtml;
-    return `<g class="svsch-node hdl-net-label" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
+    const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width);
+    const classes = [
+      'svsch-node',
+      'hdl-net-label',
+      generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
+      node.invalid ? 'svsch-node-invalid' : ''
+    ].filter(Boolean).join(' ');
+    return `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
   }
 
   const classes = nodeWrapperClasses(node);
@@ -653,8 +760,36 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     `<svg class="${escapeAttr(svgClasses)}" width="${formatNumber(width)}" height="${formatNumber(height)}" aria-hidden="true">`,
     content,
     '</svg>',
+    nodeErrorOutline(node, width, height),
+    nodeWarningIcon(node, width),
+    '</g>'
+  ].filter(Boolean).join('\n');
+}
+
+// Error highlight for a block overlapping an unrelated generate arm. SVG-skinned
+// nodes reuse their real selection paths; rectangular nodes get the same
+// straddling rectangle used by the webview selection outline.
+function nodeErrorOutline(node: PositionedNode, width: number, height: number): string {
+  if (!node.invalid) return '';
+  if (nodeUsesSvgSelectionOutline(node)) return '';
+  return `<rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="${formatNumber(width + 2.5)}" height="${formatNumber(height + 2.5)}" />`;
+}
+
+function nodeWarningIcon(node: PositionedNode, width: number): string {
+  if (!node.warningNote) return '';
+  return [
+    `<g class="svsch-node-warning" aria-label="${escapeAttr(node.warningNote)}">`,
+    `<title>${escapeXml(node.warningNote)}</title>`,
+    `<text x="${formatNumber(width - 6)}" y="10" text-anchor="end">⚠</text>`,
     '</g>'
   ].join('\n');
+}
+
+function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
+  if (nodeIsArrayNode(node)) return false;
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return true;
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter') return true;
+  return node.kind === 'interface' && structRole(node) !== 'modport';
 }
 
 function buildArrayConnectionsByNode(view: DiagramViewModel): Map<string, ArrayConnection[]> {
@@ -793,7 +928,9 @@ function nodeWrapperClasses(node: PositionedNode): string {
       `hdl-port-${direction}`,
       isSkinnedPort ? 'hdl-port-skinned' : '',
       isInterfacePort ? 'hdl-port-interface' : '',
-      nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+      nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+      generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
+      node.invalid ? 'svsch-node-invalid' : ''
     ].filter(Boolean).join(' ');
   }
 
@@ -807,7 +944,9 @@ function nodeWrapperClasses(node: PositionedNode): string {
     `hdl-node-${node.kind}`,
     node.kind === 'register' || node.kind === 'latch' ? 'hdl-register-node' : '',
     node.kind === 'instance' && instanceParameterRows(node) > 0 ? 'hdl-node-has-params' : '',
-    nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+    nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+    generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
+    node.invalid ? 'svsch-node-invalid' : ''
   ].filter(Boolean).join(' ');
 }
 
@@ -841,12 +980,14 @@ function busWrapperClasses(node: PositionedNode): string {
     isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout',
     isArrayComposition ? 'hdl-bus-array-composition' : '',
     isArrayBreakout ? 'hdl-bus-array-breakout' : '',
-    nodeIsArrayNode(node) ? 'hdl-node-array' : ''
+    nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+    generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
+    node.invalid ? 'svsch-node-invalid' : ''
   ].filter(Boolean).join(' ');
 }
 
 
-function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], padding: number): RectBounds {
+function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: PositionedGenerateRegion[], padding: number): RectBounds {
   const bounds: RectBounds = {
     minX: Number.POSITIVE_INFINITY,
     minY: Number.POSITIVE_INFINITY,
@@ -858,11 +999,23 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], padding: 
     const size = diagramNodeDimensions(node);
     includeBounds(bounds, node.position.x, node.position.y);
     includeBounds(bounds, node.position.x + size.width, node.position.y + size.height);
+    if (node.warningNote) {
+      includeBounds(bounds, node.position.x + size.width + 24, node.position.y - 24);
+    }
   }
 
   for (const edge of edges) {
     for (const point of edge.points) {
       includeBounds(bounds, point.x, point.y);
+    }
+  }
+
+  for (const region of regions) {
+    includeBounds(bounds, region.bounds.x, region.bounds.y - diagramSizing.gridSize);
+    includeBounds(bounds, region.bounds.x + region.bounds.width, region.bounds.y + region.bounds.height);
+    if (region.warningNote) {
+      // The warning icon sits 20px out from the top-right corner; keep it in frame.
+      includeBounds(bounds, region.bounds.x + region.bounds.width + 24, region.bounds.y - 24);
     }
   }
 

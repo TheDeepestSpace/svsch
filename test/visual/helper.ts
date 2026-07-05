@@ -59,7 +59,7 @@ export async function expectGraphAndScreenshot(
   await expect(page).toHaveScreenshot(name, options);
 }
 
-export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter';
+export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter' | 'generate';
 
 export async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -79,7 +79,9 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
               ? '[data-node-kind="alu"]'
               : layoutMode === 'inverter'
                 ? '[data-node-kind="inverter"]'
-              : '.react-flow__node';
+                : layoutMode === 'generate'
+                  ? '.generate-region'
+                  : '.react-flow__node';
   await page.waitForSelector(readySelector, { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
@@ -142,6 +144,25 @@ export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: nu
   });
   if (!box) {
     throw new Error('Unable to find rendered graph nodes');
+  }
+  return paddedClipFromBox(page, box, padding);
+}
+
+export async function paddedGraphAndRegionsClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  const padding = 48;
+  const box = await page.evaluate(() => {
+    const rects = Array.from(document.querySelectorAll('.react-flow__node, .generate-region'))
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+    if (rects.length === 0) return null;
+    const minX = Math.min(...rects.map((r) => r.left));
+    const minY = Math.min(...rects.map((r) => r.top));
+    const maxX = Math.max(...rects.map((r) => r.right));
+    const maxY = Math.max(...rects.map((r) => r.bottom));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  });
+  if (!box) {
+    throw new Error('Unable to find rendered graph nodes or generate regions');
   }
   return paddedClipFromBox(page, box, padding);
 }
@@ -252,7 +273,9 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
                   ? createAluVisualLayout(graph, moduleName)
                   : layoutMode === 'inverter'
                     ? createInverterVisualLayout(graph, moduleName)
-                  : { version: 1, modules: {} } as SavedLayout;
+                    : layoutMode === 'generate'
+                      ? createGenerateVisualLayout(graph, moduleName)
+                      : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
@@ -592,6 +615,80 @@ function createInverterVisualLayout(graph: DesignGraph, moduleName: string): Sav
     version: 1,
     modules: {
       [moduleName]: { nodes }
+    }
+  };
+}
+
+function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
+  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const regionNodeIds = new Set((designModule.generateRegions ?? []).flatMap((region) => region.nodeIds ?? []));
+  const bodyNodes = designModule.nodes.filter((node) => node.kind !== 'port' && !regionNodeIds.has(node.id));
+  const nodes: Record<string, { x: number; y: number; fixed?: boolean }> = {};
+  const regions: NonNullable<SavedLayout['modules'][string]['regions']> = {};
+  const grid = 24;
+  const fixed = (x: number, y: number) => ({ x, y, fixed: true });
+  const centerY = grid * 5;
+
+  inputPorts.forEach((node, index) => {
+    nodes[node.id] = fixed(grid * 2, centerY + grid * index * 10);
+  });
+
+  bodyNodes.forEach((node, index) => {
+    nodes[node.id] = fixed(grid * 25, centerY + grid * index * 4);
+  });
+
+  outputPorts.forEach((node, index) => {
+    nodes[node.id] = fixed(grid * 38, centerY + grid * 11.5 + grid * index * 2);
+  });
+
+  const roots = designModule.generateRegions
+    ?.filter((region) => !region.parentRegionId)
+    .sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0) || a.id.localeCompare(b.id)) ?? [];
+  const childGroups = new Map<string, typeof roots>();
+  for (const region of designModule.generateRegions ?? []) {
+    if (!region.parentRegionId) continue;
+    const group = childGroups.get(region.parentRegionId) ?? [];
+    group.push(region);
+    childGroups.set(region.parentRegionId, group);
+  }
+  for (const group of childGroups.values()) {
+    group.sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0) || a.id.localeCompare(b.id));
+  }
+
+  roots.forEach((region, index) => {
+    const baseY = grid * 2 + index * grid * 10;
+    const children = childGroups.get(region.id) ?? [];
+    // Space children a full arm apart so they keep clear of one another once each arm
+    // auto-grows to fit its block plus the 2-grid content padding.
+    const height = children.length > 0 ? grid * 4 + children.length * grid * 10 : grid * 8;
+    regions[region.id] = { x: grid * 8, y: baseY, width: grid * 16, height, fixed: true };
+
+    children.forEach((child, childIndex) => {
+      regions[child.id] = {
+        x: grid * 9,
+        y: baseY + grid * 2 + childIndex * grid * 10,
+        width: grid * 14,
+        height: grid * 8,
+        fixed: true
+      };
+    });
+  });
+
+  for (const region of designModule.generateRegions ?? []) {
+    const bounds = regions[region.id];
+    if (!bounds) continue;
+    (region.nodeIds ?? []).forEach((nodeId, index) => {
+      if (!designModule.nodes.some((node) => node.id === nodeId)) return;
+      nodes[nodeId] = fixed(bounds.x + grid * 3, bounds.y + grid * 2.5 + index * grid * 4);
+    });
+  }
+
+  return {
+    version: 1,
+    modules: {
+      [moduleName]: { nodes, regions }
     }
   };
 }

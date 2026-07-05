@@ -12,6 +12,8 @@ import pixelmatch from 'pixelmatch';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
+type RegionSide = 'left' | 'right' | 'top' | 'bottom';
+type NodePosition = { x: number; y: number };
 
 // ---------------------------------------------------------------------------
 // Given steps
@@ -404,6 +406,56 @@ When('I adjust the connection between {string} and {string} downward', async fun
   await adjustConnectionByGridCells(this, source, target, 1);
 });
 
+When('I resize the {string} generate region on the {word} side by {int} grid cells', async function (this: BddWorld, label: string, side: string, cells: number) {
+  if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  this.notedRegionBounds.set(label, await getGenerateRegionBounds(this.webviewPage, label));
+  await dragGenerateRegionSideByGridCells(this, label, side, cells);
+  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`);
+});
+
+When('I move the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const regionNodeIds = await generateRegionNodeIds(this, label);
+  if (regionNodeIds.length === 0) throw new Error(`Generate region ${label} has no owned nodes to move`);
+  const regionNodeIdSet = new Set(regionNodeIds);
+  const allBefore = await getAllFlowNodePositions(this.webviewPage);
+  const nodePositions = pickNodePositions(allBefore, regionNodeIds, `generate region ${label}`);
+  const outsideNodePositions = new Map(
+    [...allBefore.entries()].filter(([id]) => !regionNodeIdSet.has(id))
+  );
+  const before = JSON.stringify(await readExtensionLayout(this));
+
+  this.notedGenerateRegionMoves.set(label, {
+    nodePositions,
+    outsideNodePositions,
+    expectedDelta: {
+      x: cellsX * diagramGrid.size,
+      y: cellsY * diagramGrid.size
+    }
+  });
+  this.notedRegionBounds.set(label, await getGenerateRegionBounds(this.webviewPage, label));
+
+  await dragGenerateRegionByGridCells(this, label, cellsX, cellsY);
+  await waitForLayoutChange(this, before, `After moving ${label} generate region`);
+});
+
+When('I move the block {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await dragNodeByGridCells(this, id, cellsX, cellsY);
+  await waitForLayoutChange(this, before, `After moving ${label}`);
+});
+
+When('I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, block: string, region: string, cellsX: number, cellsY: number) {
+  this.notedRegionBounds.set(region, await getGenerateRegionBounds(this.webviewPage, region));
+  await beginDraggingNodeByGridCells(this, block, cellsX, cellsY);
+});
+
+When('I release the moving block', async function (this: BddWorld) {
+  await releasePendingNodeDrag(this);
+});
+
 When('I have saved the layout to {string}', async function (this: BddWorld, customPath: string) {
   if (!this.workspaceDir) throw new Error('No open workspace');
   const fullPath = path.join(this.workspaceDir, customPath);
@@ -454,6 +506,42 @@ When('I double-click on the mux block for {string}', async function (this: BddWo
   if (!node?.id) throw new Error(`Could not find mux block for "${name}"`);
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
 });
+
+When('I double-click on the {string} generate region', async function (this: BddWorld, label: string) {
+  await generateRegionLocator(this.webviewPage, label).locator('.generate-region-title').dblclick({ force: true });
+});
+
+When('I note the diagram zoom level', async function (this: BddWorld) {
+  (this as any)._notedZoom = await diagramZoomLevel(this);
+});
+
+Then('the diagram zoom level should be unchanged', async function (this: BddWorld) {
+  const noted = (this as any)._notedZoom;
+  if (noted === undefined) throw new Error('No noted diagram zoom level');
+  expect(await diagramZoomLevel(this)).toBeCloseTo(noted, 5);
+});
+
+Then('the diagram zoom level should have increased', async function (this: BddWorld) {
+  const noted = (this as any)._notedZoom;
+  if (noted === undefined) throw new Error('No noted diagram zoom level');
+  // The canvas double-click zoom animates, so poll until it lands.
+  await expect.poll(async () => diagramZoomLevel(this), { timeout: 5_000 }).toBeGreaterThan(noted);
+});
+
+When('I double-click on an empty area of the canvas', async function (this: BddWorld) {
+  const pane = this.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox();
+  if (!box) throw new Error('Could not find the diagram pane');
+  // Top-right corner: clear of the diagram content, the controls panel
+  // (bottom-left), and the minimap (bottom-right).
+  await pane.dblclick({ position: { x: box.width - 16, y: 16 }, force: true });
+});
+
+async function diagramZoomLevel(world: BddWorld): Promise<number> {
+  return world.webviewPage.locator('html').evaluate(
+    () => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1
+  );
+}
 
 When('I double-click on the connection between the {word} node {string} and the {word} node {string}', async function (this: BddWorld, kind1: string, name1: string, kind2: string, name2: string) {
   const id1 = await findNodeIdByLabel(this.webviewPage, name1, kind1);
@@ -581,6 +669,165 @@ Then('I should see a port node {string}', async function (this: BddWorld, name: 
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Could not find port node "${name}"`);
   await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toBeVisible();
+});
+
+Then('the diagram should contain exactly {int} generate regions', async function (this: BddWorld, count: number) {
+  // Arm regions only — the synthesized generate-block wrapper is counted separately.
+  await expect(this.webviewPage.locator('.generate-region:not(.generate-block)')).toHaveCount(count);
+});
+
+Then('the diagram should contain a {string} generate block', async function (this: BddWorld, label: string) {
+  const block = this.webviewPage.locator('.generate-region.generate-block').filter({
+    has: this.webviewPage.locator('.generate-region-title', { hasText: label })
+  });
+  await expect(block).toHaveCount(1);
+});
+
+Then('I should see a {string} generate region labeled {string}', async function (this: BddWorld, kind: string, label: string) {
+  const region = this.webviewPage
+    .locator(`.generate-region[data-region-kind="${kind}"] .generate-region-title`, { hasText: label })
+    .first();
+  await expect(region).toBeVisible();
+});
+
+Then('the {string} generate region should contain at least {int} blocks', async function (this: BddWorld, label: string, count: number) {
+  const nodeIds = await generateRegionNodeIds(this, label);
+  expect(
+    nodeIds.length,
+    `Expected generate region ${label} to own at least ${count} block(s), found ${nodeIds.length}: ${nodeIds.join(', ')}`
+  ).toBeGreaterThanOrEqual(count);
+});
+
+Then('the {string} generate region should have grown on the {word} side', async function (this: BddWorld, label: string, side: string) {
+  if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
+  const before = this.notedRegionBounds.get(label);
+  if (!before) throw new Error(`No noted bounds for generate region ${label}`);
+  const after = await getGenerateRegionBounds(this.webviewPage, label);
+  const delta = regionSide(after, side) - regionSide(before, side);
+  const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
+  expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} generate region should have expanded on the {word} side while dragging', async function (this: BddWorld, label: string, side: string) {
+  if (!this.pendingNodeDrag) throw new Error('No block is currently being dragged');
+  if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
+  const before = this.notedRegionBounds.get(label);
+  if (!before) throw new Error(`No noted bounds for generate region ${label}`);
+  await expect.poll(async () => {
+    const after = await getGenerateRegionBounds(this.webviewPage, label);
+    const delta = regionSide(after, side) - regionSide(before, side);
+    const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
+    return delta * expectedSign;
+  }, { timeout: 5_000 }).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} generate region should keep {int} grid cells of padding on the {word} side', async function (this: BddWorld, label: string, cells: number, side: string) {
+  if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
+  const padding = await getGenerateRegionContentPadding(this, label);
+  expect(padding[side]).toBe(cells * diagramGrid.size);
+});
+
+Then('all blocks in the {string} generate region should have moved by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const remembered = this.notedGenerateRegionMoves.get(label);
+  if (!remembered) throw new Error(`No remembered move for generate region ${label}`);
+  const expectedDelta = { x: cellsX * diagramGrid.size, y: cellsY * diagramGrid.size };
+  expect(remembered.expectedDelta.x).toBe(expectedDelta.x);
+  expect(remembered.expectedDelta.y).toBe(expectedDelta.y);
+
+  const after = await getNodePositions(this.webviewPage, [...remembered.nodePositions.keys()]);
+  for (const [id, before] of remembered.nodePositions) {
+    const current = after.get(id);
+    if (!current) throw new Error(`Missing moved node ${id} after moving generate region ${label}`);
+    expect(current.x - before.x, `${id} x delta`).toBeCloseTo(expectedDelta.x, 0);
+    expect(current.y - before.y, `${id} y delta`).toBeCloseTo(expectedDelta.y, 0);
+  }
+});
+
+Then('blocks outside the {string} generate region should not have moved', async function (this: BddWorld, label: string) {
+  const remembered = this.notedGenerateRegionMoves.get(label);
+  if (!remembered) throw new Error(`No remembered move for generate region ${label}`);
+  const after = await getNodePositions(this.webviewPage, [...remembered.outsideNodePositions.keys()]);
+  for (const [id, before] of remembered.outsideNodePositions) {
+    const current = after.get(id);
+    if (!current) throw new Error(`Missing outside node ${id} after moving generate region ${label}`);
+    expect(current.x, `${id} x position`).toBeCloseTo(before.x, 0);
+    expect(current.y, `${id} y position`).toBeCloseTo(before.y, 0);
+  }
+});
+
+Then('the {string} generate region should be flagged as overlapping', async function (this: BddWorld, label: string) {
+  const region = generateRegionLocator(this.webviewPage, label);
+  await expect(region).toHaveClass(/generate-region-invalid/);
+  await expect(region).toHaveAttribute('data-warning-note', /(arm|generate) blocks overlapping/);
+});
+
+Then('I should see a warning icon on the {string} generate region', async function (this: BddWorld, label: string) {
+  const icon = generateRegionLocator(this.webviewPage, label).locator('.generate-region-warning');
+  await expect(icon).toBeVisible();
+});
+
+When('I hover over the warning icon on the {string} generate region', async function (this: BddWorld, label: string) {
+  await generateRegionLocator(this.webviewPage, label).locator('.generate-region-warning').hover({ force: true });
+});
+
+Then('I should see a warning icon on the {string} block', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"] .node-warning`)).toBeVisible();
+});
+
+When('I hover over the warning icon on the {string} block', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await this.webviewPage.locator(`.react-flow__node[data-id="${id}"] .node-warning`).hover({ force: true });
+});
+
+Then('a tooltip should appear reading {string}', async function (this: BddWorld, message: string) {
+  // The preceding hover step left the pointer over the icon; assert the real
+  // Floating UI popover element renders (not just the accessible label).
+  const tooltip = this.webviewPage.locator('.svsch-tooltip', { hasText: message });
+  await expect(tooltip).toBeVisible();
+  // Capture the hovered tooltip as a visual baseline so the popover render is
+  // regression-guarded (the other scenario screenshots never have it on screen).
+  await this.takeScreenshot('Tooltip visible on hover');
+});
+
+Then('the {string} generate region should be flagged as containing an unrelated block', async function (this: BddWorld, label: string) {
+  const region = generateRegionLocator(this.webviewPage, label);
+  await expect(region).toHaveClass(/generate-region-invalid/);
+  await expect(region).toHaveAttribute('data-warning-note', /node does not belong to arm block/);
+});
+
+Then('the {string} generate block should be flagged as containing an unrelated block', async function (this: BddWorld, label: string) {
+  const block = this.webviewPage.locator('.generate-region.generate-block').filter({
+    has: this.webviewPage.locator('.generate-region-title', { hasText: label })
+  });
+  await expect(block).toHaveClass(/generate-region-invalid/);
+  await expect(block).toHaveAttribute('data-warning-note', /block does not belong to this generate block/);
+});
+
+Then('the {string} block should be flagged as overlapping an arm', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(/svsch-node-invalid/);
+});
+
+Then('no block should be flagged as overlapping an arm', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.react-flow__node.svsch-node-invalid')).toHaveCount(0);
+});
+
+Then('the {string} block should not be flagged as overlapping an arm', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).not.toHaveClass(/svsch-node-invalid/);
+});
+
+Then('no generate region should be flagged as overlapping', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.generate-region-invalid')).toHaveCount(0);
+});
+
+Then('I should not see any generate region warning icons', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('.generate-region-warning')).toHaveCount(0);
 });
 
 Then('I should see an instance node {string} of module {string}', async function (this: BddWorld, instanceName: string, moduleName: string) {
@@ -919,6 +1166,20 @@ Then('there should be a connection between the combinational block and {string}'
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a connection between {string} and the combinational block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(this, region, 'comb');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb in ${region}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the combinational block in the {string} generate region and {string}', async function (this: BddWorld, region: string, target: string) {
+  const sourceId = await findGenerateRegionNodeIdByKind(this, region, 'comb');
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: comb in ${region}=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
 Then('there should be a connection between {string} and the inverter node', async function (this: BddWorld, source: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await this.webviewPage.locator('html').evaluate(() =>
@@ -1020,6 +1281,28 @@ Then('the route of the connection between {string} and {string} should not have 
   if (!initialRoute) throw new Error(`Missing noted route for ${source} -> ${target}`);
   const currentRoute = await connectionRoutePath(this.webviewPage, source, target);
   expect(currentRoute).toBe(initialRoute);
+});
+
+When('I note the route from {string} to the combinational block', async function (this: BddWorld, source: string) {
+  this.notedRoutes.set(routeKey(source, 'comb'), await combRoutePath(this.webviewPage, source));
+});
+
+Then('the route from {string} to the combinational block should have shifted by \\({int}, {int}\\) grid cells', async function (this: BddWorld, source: string, cellsX: number, cellsY: number) {
+  const before = this.notedRoutes.get(routeKey(source, 'comb'));
+  if (!before) throw new Error(`Missing noted route for ${source} -> comb`);
+  const after = await combRoutePath(this.webviewPage, source);
+  const beforeNums = (before.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  const afterNums = (after.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  expect(afterNums.length, 'route point count changed').toBe(beforeNums.length);
+  // Path numbers alternate x, y — every coordinate must translate with the arm
+  // (endpoints follow the blocks even when buggy, but the waypoints in between
+  // are what stayed put before the fix).
+  const dx = cellsX * diagramGrid.size;
+  const dy = cellsY * diagramGrid.size;
+  for (let i = 0; i < beforeNums.length; i += 1) {
+    const expectedDelta = i % 2 === 0 ? dx : dy;
+    expect(afterNums[i] - beforeNums[i], `coordinate ${i} of the route`).toBeCloseTo(expectedDelta, 0);
+  }
 });
 
 Then('the port node {string} should have moved', async function (this: BddWorld, name: string) {
@@ -1557,6 +1840,21 @@ async function connectionRoutePath(webviewPage: FrameLocator, source: string, ta
   }
 }
 
+// Like connectionRoutePath but resolves the target by node kind — the combinational
+// block inside a generate arm has no stable label to look up.
+async function combRoutePath(webviewPage: FrameLocator, source: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(webviewPage, source);
+  const targetId = await webviewPage.locator('html').evaluate(() =>
+    document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb=${targetId}`);
+  const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and comb`);
+  const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
+}
+
 async function waitForViewportTransformToSettle(webviewPage: FrameLocator): Promise<void> {
   await webviewPage.locator('body').evaluate(async () => {
     const getTransform = () => (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
@@ -1642,6 +1940,201 @@ async function waitForExtensionRenderedView(world: BddWorld, screenshotLabel: st
   await world.takeScreenshot(screenshotLabel);
 }
 
+function isRegionSide(side: string): side is RegionSide {
+  return side === 'left' || side === 'right' || side === 'top' || side === 'bottom';
+}
+
+function generateRegionLocator(frame: FrameLocator, label: string) {
+  return frame.locator('.generate-region').filter({
+    has: frame.locator('.generate-region-title', { hasText: label })
+  }).first();
+}
+
+async function getGenerateRegionBounds(frame: FrameLocator, label: string): Promise<{ x: number; y: number; width: number; height: number }> {
+  await expect(generateRegionLocator(frame, label)).toBeVisible();
+  return generateRegionLocator(frame, label).evaluate((element) => {
+    const html = element as HTMLElement;
+    return {
+      x: Number.parseFloat(html.style.left || '0'),
+      y: Number.parseFloat(html.style.top || '0'),
+      width: Number.parseFloat(html.style.width || '0'),
+      height: Number.parseFloat(html.style.height || '0')
+    };
+  });
+}
+
+function regionSide(bounds: { x: number; y: number; width: number; height: number }, side: RegionSide): number {
+  if (side === 'left') return bounds.x;
+  if (side === 'right') return bounds.x + bounds.width;
+  if (side === 'top') return bounds.y;
+  return bounds.y + bounds.height;
+}
+
+async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string, side: RegionSide, cells: number): Promise<void> {
+  const handle = generateRegionLocator(world.webviewPage, label).locator(`.generate-region-resize-${side}`);
+  const box = await handle.boundingBox();
+  if (!box) throw new Error(`Could not find ${side} resize handle for generate region ${label}`);
+  const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
+  const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
+  const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+
+  await world.workbox.mouse.move(startX, startY);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  await world.workbox.mouse.up();
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  if (canvas) {
+    await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
+  }
+  await world.workbox.waitForTimeout(650);
+}
+
+async function dragGenerateRegionByGridCells(world: BddWorld, label: string, cellsX: number, cellsY: number): Promise<void> {
+  const title = generateRegionLocator(world.webviewPage, label).locator('.generate-region-title');
+  const box = await title.boundingBox();
+  if (!box) throw new Error(`Could not find move target for generate region ${label}`);
+  const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
+  const dx = cellsX * diagramGrid.size * zoom;
+  const dy = cellsY * diagramGrid.size * zoom;
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+
+  await world.workbox.mouse.move(startX, startY);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  await world.workbox.mouse.up();
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  if (canvas) {
+    await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
+  }
+  await world.workbox.waitForTimeout(650);
+}
+
+async function generateRegionNodeIds(world: BddWorld, label: string): Promise<string[]> {
+  const regions = world.lastViewModel?.generateRegions ?? [];
+  const root = regions.find((candidate: any) => (
+    candidate.blockLabel === label ||
+    candidate.fullBlockLabel === label ||
+    candidate.label?.includes(label)
+  ));
+
+  if (root) {
+    const regionIds = new Set<string>([root.id]);
+    let added = true;
+    while (added) {
+      added = false;
+      for (const region of regions) {
+        if (region.parentRegionId && regionIds.has(region.parentRegionId) && !regionIds.has(region.id)) {
+          regionIds.add(region.id);
+          added = true;
+        }
+      }
+    }
+
+    const nodeIds = regions
+      .filter((region: any) => regionIds.has(region.id))
+      .flatMap((region: any) => region.nodeIds ?? []);
+    if (nodeIds.length > 0) return [...new Set(nodeIds)];
+  }
+
+  return world.webviewPage.locator('html').evaluate((_element, blockLabel) => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getNodes()
+      .filter((node: any) => String(node.id).includes(blockLabel))
+      .map((node: any) => node.id);
+  }, label);
+}
+
+async function findGenerateRegionNodeIdByKind(world: BddWorld, label: string, kind: string): Promise<string | null> {
+  const nodeIds = await generateRegionNodeIds(world, label);
+  if (nodeIds.length === 0) return null;
+  return world.webviewPage.locator('html').evaluate((_element, { ids, nodeKind }) => {
+    const idSet = new Set(ids);
+    const rf = (window as any).reactFlowInstance;
+    const flowNode = rf?.getNodes?.().find((node: any) => (
+      idSet.has(node.id)
+      && (node.data?.node?.kind === nodeKind || node.data?.kind === nodeKind)
+    ));
+    if (flowNode) return flowNode.id;
+
+    const domNode = Array.from(document.querySelectorAll('.react-flow__node')).find((node) => (
+      idSet.has(node.getAttribute('data-id') ?? '')
+      && !!node.querySelector(`[data-node-kind="${nodeKind}"]`)
+    ));
+    return domNode?.getAttribute('data-id') ?? null;
+  }, { ids: nodeIds, nodeKind: kind });
+}
+
+async function getAllFlowNodePositions(frame: FrameLocator): Promise<Map<string, NodePosition>> {
+  const entries = await frame.locator('html').evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getNodes().map((node: any) => [node.id, {
+      x: node.position.x,
+      y: node.position.y
+    }]);
+  });
+  return new Map(entries as Array<[string, NodePosition]>);
+}
+
+async function getNodePositions(frame: FrameLocator, nodeIds: string[]): Promise<Map<string, NodePosition>> {
+  const all = await getAllFlowNodePositions(frame);
+  return pickNodePositions(all, nodeIds, 'selected nodes');
+}
+
+function pickNodePositions(all: Map<string, NodePosition>, nodeIds: string[], context: string): Map<string, NodePosition> {
+  const picked = new Map<string, NodePosition>();
+  for (const id of nodeIds) {
+    const position = all.get(id);
+    if (!position) throw new Error(`Could not find position for ${id} in ${context}`);
+    picked.set(id, position);
+  }
+  return picked;
+}
+
+async function getGenerateRegionContentPadding(world: BddWorld, label: string): Promise<Record<RegionSide, number>> {
+  const region = world.lastViewModel?.generateRegions?.find((candidate: any) => (
+    candidate.blockLabel === label || candidate.label?.includes(label)
+  ));
+  const nodeIds = region?.nodeIds ?? await world.webviewPage.locator('html').evaluate((_element, blockLabel) => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getNodes()
+      .filter((node: any) => String(node.id).includes(blockLabel))
+      .map((node: any) => node.id);
+  }, label);
+  if (nodeIds.length === 0) throw new Error(`Could not find content nodes for generate region ${label}`);
+  const bounds = await getGenerateRegionBounds(world.webviewPage, label);
+  const content = await world.webviewPage.locator('html').evaluate((_element, nodeIds) => {
+    const rf = (window as any).reactFlowInstance;
+    const rects = rf.getNodes()
+      .filter((node: any) => nodeIds.includes(node.id))
+      .map((node: any) => ({
+        x: node.position.x,
+        y: node.position.y,
+        width: node.measured?.width ?? node.width ?? 0,
+        height: node.measured?.height ?? node.height ?? 0
+      }));
+    if (rects.length === 0) return undefined;
+    return {
+      x: Math.min(...rects.map((rect: any) => rect.x)),
+      y: Math.min(...rects.map((rect: any) => rect.y)),
+      right: Math.max(...rects.map((rect: any) => rect.x + rect.width)),
+      bottom: Math.max(...rects.map((rect: any) => rect.y + rect.height))
+    };
+  }, nodeIds);
+  if (!content) throw new Error(`Could not find content nodes for generate region ${label}`);
+
+  return {
+    left: content.x - bounds.x,
+    top: content.y - bounds.y,
+    right: bounds.x + bounds.width - content.right,
+    bottom: bounds.y + bounds.height - content.bottom
+  };
+}
+
 // Drag a port node to an absolute (x, y) flow position with the mouse, then let
 // the extension persist it. No internal repositioning, no message channel.
 async function dragPortNodeTo(world: BddWorld, name: string, x: number, y: number, screenshotLabel: string): Promise<void> {
@@ -1695,6 +2188,50 @@ async function dragPortNodeByGridCells(
 
   await syncLastViewModel(world, moduleName);
   await world.takeScreenshot(screenshotLabel);
+}
+
+async function beginDraggingNodeByGridCells(
+  world: BddWorld,
+  label: string,
+  cellsX: number,
+  cellsY: number
+): Promise<void> {
+  const id = await findNodeIdByLabel(world.webviewPage, label);
+  if (!id) throw new Error(`Node not found: ${label}`);
+  const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for node ${id}`);
+  const ratio = await effectiveScreenPerFlow(world);
+  const dxScreen = cellsX * diagramGrid.size * ratio;
+  const dyScreen = cellsY * diagramGrid.size * ratio;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  world.pendingNodeDrag = {
+    nodeId: id,
+    label,
+    moduleName: world.lastViewModel.moduleName
+  };
+
+  await world.workbox.mouse.move(cx, cy);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(cx + Math.sign(dxScreen || 1) * 2, cy + Math.sign(dyScreen || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(cx + dxScreen, cy + dyScreen, { steps: 20 });
+  await world.workbox.waitForTimeout(300);
+}
+
+async function releasePendingNodeDrag(world: BddWorld): Promise<void> {
+  const pending = world.pendingNodeDrag;
+  if (!pending) throw new Error('No block is currently being dragged');
+  await world.workbox.mouse.up();
+  await world.workbox.waitForTimeout(150);
+
+  const after = await getInternalPosition(world.webviewPage, pending.nodeId);
+  if (!after) throw new Error(`Missing position data for ${pending.label} after move`);
+  await waitForNodePersisted(world, pending.moduleName, pending.nodeId, after);
+  world.layout = await readExtensionLayout(world);
+  await syncLastViewModel(world, pending.moduleName);
+  world.pendingNodeDrag = undefined;
+  await world.takeScreenshot(`After moving ${pending.label}`);
 }
 
 // One raw mouse drag of a node by a screen-space delta. React Flow needs a small

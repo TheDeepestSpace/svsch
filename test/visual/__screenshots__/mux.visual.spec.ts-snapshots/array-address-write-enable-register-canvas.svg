@@ -122,6 +122,7 @@
 }
 .react-flow__pane {
   z-index: 1;
+  touch-action: none;
 }
 .react-flow__pane.draggable {
     cursor: grab;
@@ -663,6 +664,8 @@ svg.react-flow__connectionline {
   --vscode-charts-orange: #d18616;
   --vscode-inputValidation-warningBackground: #352a05;
   --vscode-inputValidation-warningBorder: #b89500;
+  --svsch-error-highlight: color-mix(in srgb, var(--vscode-errorForeground, #ff3b30) 88%, #ff3b30);
+  --svsch-error-highlight-fill: color-mix(in srgb, var(--svsch-error-highlight) 9%, transparent);
 }
 
 html,
@@ -891,6 +894,7 @@ text {
   height: 100%;
   position: absolute;
   width: 100%;
+  z-index: 1;
 }
 
 .react-flow .react-flow__edges {
@@ -903,6 +907,194 @@ text {
 
 .react-flow__nodes {
   z-index: 2 !important;
+}
+
+.react-flow__viewport-portal {
+  z-index: 1;
+}
+
+.generate-region-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+
+.generate-region {
+  color: var(--vscode-editor-foreground);
+  position: absolute;
+  pointer-events: none;
+}
+
+.generate-region-outline {
+  border: 1.5px solid var(--vscode-charts-orange);
+  inset: 0;
+  position: absolute;
+}
+
+.generate-region-title {
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--vscode-editor-foreground) 90%, var(--vscode-descriptionForeground));
+  cursor: move;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  left: 8px;
+  line-height: 18px;
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 8px;
+  white-space: nowrap;
+}
+
+.generate-region-warning {
+  color: var(--svsch-error-highlight);
+  cursor: help;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: auto;
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  z-index: 1;
+}
+
+.node-warning {
+  color: var(--svsch-error-highlight);
+  cursor: help;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: auto;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  z-index: 11;
+}
+
+.svsch-tooltip {
+  /* Border matches the arm-block error highlight; Tooltip.tsx resolves the same
+     token for the arrow's SVG stroke. */
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--svsch-error-highlight);
+  border-radius: 0;
+  color: var(--vscode-editor-foreground);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 280px;
+  padding: 3px 8px;
+  pointer-events: none;
+  width: max-content;
+  z-index: 1000;
+}
+
+.generate-region-resize {
+  background: transparent;
+  border: 0;
+  pointer-events: auto;
+  position: absolute;
+}
+
+.generate-region-resize-left,
+.generate-region-resize-right {
+  cursor: ew-resize;
+  height: 100%;
+  top: 0;
+  width: 10px;
+}
+
+.generate-region-resize-left {
+  left: -5px;
+}
+
+.generate-region-resize-right {
+  right: -5px;
+}
+
+.generate-region-resize-top,
+.generate-region-resize-bottom {
+  cursor: ns-resize;
+  height: 10px;
+  left: 0;
+  width: 100%;
+}
+
+.generate-region-resize-top {
+  top: -5px;
+}
+
+.generate-region-resize-bottom {
+  bottom: -5px;
+}
+
+.generate-region-inactive {
+  opacity: 0.75;
+}
+
+/* Selection brightness must not depend on the arm's active state — the inactive
+   dimming would fade the selection border with it, so selection lifts it. */
+.generate-region-inactive.generate-region-selected {
+  opacity: 1;
+}
+
+.generate-region-active .generate-region-outline {
+  border-color: var(--vscode-charts-orange);
+  border-style: solid;
+}
+
+/* The generate-block wrapper carries the fill (no border); arms are border-only. */
+.generate-block .generate-region-outline {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  border: none;
+}
+
+.generate-block.generate-region-invalid .generate-region-outline {
+  border: 2px dashed var(--svsch-error-highlight);
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
+}
+
+.generate-region-active .generate-region-title {
+  color: var(--vscode-editor-foreground);
+}
+
+.generate-region-invalid .generate-region-outline {
+  border-color: var(--svsch-error-highlight);
+  border-style: dashed;
+  border-width: 2px;
+  background: var(--svsch-error-highlight-fill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
+}
+
+.generate-region-invalid .generate-region-title {
+  color: color-mix(in srgb, var(--svsch-error-highlight) 78%, var(--vscode-editor-foreground));
+}
+
+/* Selected regions use the standard blue selection border — for arms (border-only)
+   and generate blocks (normally borderless fill) alike. The error style wins over
+   selection, matching node behavior. */
+.generate-region-selected:not(.generate-region-invalid) .generate-region-outline,
+.generate-block.generate-region-selected:not(.generate-region-invalid) .generate-region-outline {
+  border: var(--svsch-selection-width) solid var(--svsch-selection-color);
+}
+
+.generate-region-note {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-charts-red);
+  color: color-mix(in srgb, var(--vscode-charts-red) 82%, var(--vscode-editor-foreground));
+  font-size: 11px;
+  line-height: 16px;
+  max-width: 220px;
+  padding: 2px 6px;
+  pointer-events: none;
+  position: absolute;
+  right: 6px;
+  top: 6px;
 }
 
 .empty {
@@ -955,6 +1147,46 @@ text {
   opacity: 1;
 }
 
+/* Error highlight for a block overlapping an unrelated generate arm — reuses the
+   selection outline geometry in the shared error style (red dashed). */
+.react-flow__node.svsch-node-invalid .hdl-node-selection-rect {
+  border-color: var(--svsch-error-highlight);
+  border-style: dashed;
+  opacity: 1;
+}
+
+.react-flow__node.svsch-node-invalid .node-skin-selection,
+.react-flow__node.svsch-node-invalid .port-skin-selection,
+.react-flow__node.svsch-node-invalid .hdl-interface-skin-selection {
+  fill: none;
+  opacity: 1;
+  stroke: var(--svsch-error-highlight);
+  stroke-dasharray: 7 5;
+  stroke-width: var(--svsch-selection-width);
+}
+
+.react-flow__node.svsch-node-invalid .hdl-node-mux .hdl-node-selection-rect,
+.react-flow__node.svsch-node-invalid .hdl-node-select .hdl-node-selection-rect,
+.react-flow__node.svsch-node-invalid .hdl-node-alu .hdl-node-selection-rect,
+.react-flow__node.svsch-node-invalid .hdl-node-inverter .hdl-node-selection-rect {
+  opacity: 0;
+}
+
+.react-flow__node.svsch-node-invalid .hdl-node-array-selection {
+  opacity: 1;
+  stroke: var(--svsch-error-highlight);
+  stroke-dasharray: 7 5;
+}
+
+.react-flow__node.svsch-node-invalid .hdl-net-label::after {
+  border: var(--svsch-selection-width) dashed var(--svsch-error-highlight);
+  content: "";
+  inset: calc(-1 * var(--svsch-selection-width) / 2);
+  pointer-events: none;
+  position: absolute;
+  z-index: 10;
+}
+
 .hdl-node {
   background: var(--vscode-editorWidget-background);
   border: none;
@@ -972,6 +1204,38 @@ text {
   position: relative;
   text-align: left;
   width: var(--svsch-node-width);
+}
+
+.generate-node-inactive .hdl-node,
+.generate-node-inactive .hdl-bus-node,
+.generate-node-inactive .hdl-net-label,
+.generate-node-inactive.hdl-node,
+.generate-node-inactive.hdl-bus-node,
+.generate-node-inactive.hdl-net-label {
+  filter: grayscale(0.75);
+  opacity: 0.75;
+}
+
+/* Selection brightness must not depend on the arm's active state — the inactive
+   dimming (opacity + grayscale on the node) would fade the selection outline with
+   it, so selection lifts the dimming while the node is selected. */
+.react-flow__node.selected.generate-node-inactive .hdl-node,
+.react-flow__node.selected.generate-node-inactive .hdl-bus-node,
+.react-flow__node.selected.generate-node-inactive .hdl-net-label,
+.react-flow__node.selected .generate-node-inactive.hdl-node,
+.react-flow__node.selected .generate-node-inactive.hdl-bus-node,
+.react-flow__node.selected .generate-node-inactive.hdl-net-label {
+  filter: none;
+  opacity: 1;
+}
+
+.generate-node-active .hdl-node,
+.generate-node-active .hdl-bus-node,
+.generate-node-active .hdl-net-label,
+.generate-node-active.hdl-node,
+.generate-node-active.hdl-bus-node,
+.generate-node-active.hdl-net-label {
+  opacity: 1;
 }
 
 .hdl-node-has-params {
@@ -2429,6 +2693,21 @@ text {
   stroke-width: 1.5;
 }
 
+.generate-edge-inactive .svsch-edge,
+.generate-edge-inactive.svsch-edge {
+  opacity: 0.75;
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 42%, var(--vscode-editor-background));
+}
+
+.generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+.generate-edge-active .svsch-edge,
+.generate-edge-active.svsch-edge {
+  opacity: 1;
+}
+
 .svsch-edge-stacked {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 75%, var(--vscode-editor-background));
 }
@@ -2532,7 +2811,7 @@ text {
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;
-  stroke: color-mix(in srgb, var(--vscode-errorForeground, #ff3b30) 88%, #ff3b30);
+  stroke: var(--svsch-error-highlight);
   stroke-dasharray: 7 5;
   stroke-linecap: round;
   stroke-width: 5;
@@ -2658,6 +2937,33 @@ text {
 .react-flow__minimap-node {
   fill-opacity: 0.8;
   stroke-width: 2;
+}
+
+/* Generate/arm region outlines injected into the minimap svg — outlines only, no fill.
+   Generate blocks match the minimap objects' foreground; arms are a bit more transparent. */
+.svsch-minimap-regions {
+  pointer-events: none;
+}
+
+.svsch-minimap-region {
+  fill: none;
+  stroke: var(--vscode-editor-foreground);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.svsch-minimap-region-block {
+  stroke-opacity: 0.8;
+}
+
+.svsch-minimap-region-arm {
+  stroke-opacity: 0.6;
+}
+
+/* Regions flagged with the shared error style render in the same red on the minimap. */
+.svsch-minimap-region-invalid {
+  stroke: var(--svsch-error-highlight);
+  stroke-opacity: 1;
 }
 
 /* ── SVG-native node components ─────────────────────────── */
@@ -3188,8 +3494,69 @@ path.port-skin-body.port-skin-harness {
   stroke: var(--svsch-label-border);
   stroke-width: 1;
 }
+.svsch-generate-region-box {
+  fill: none;
+  stroke: var(--vscode-charts-orange);
+  stroke-width: 1.5;
+}
+.svsch-generate-region.svsch-generate-block .svsch-generate-region-box {
+  fill: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
+  stroke: none;
+}
+.svsch-node-error-outline {
+  fill: none;
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2.5;
+}
+.svsch-node.svsch-node-invalid .node-skin-selection,
+.svsch-node.svsch-node-invalid .port-skin-selection,
+.svsch-node.svsch-node-invalid .hdl-interface-skin-selection {
+  fill: none;
+  opacity: 1;
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: var(--svsch-selection-width, 2.5px);
+}
+.svsch-generate-region-label,
+.svsch-generate-region-warning {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  dominant-baseline: middle;
+}
+.svsch-generate-region-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-size: 14px;
+}
+.svsch-node-warning {
+  fill: var(--svsch-error-highlight, var(--vscode-charts-red));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 14px;
+  dominant-baseline: middle;
+}
+.svsch-generate-region-inactive {
+  opacity: 0.75;
+}
+.svsch-generate-region-active .svsch-generate-region-box {
+  stroke: var(--vscode-charts-orange);
+}
+.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
+.svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
+  stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
+  stroke-dasharray: 7 5;
+  stroke-width: 2;
+}
 </style>
 <g transform="translate(24 24)">
+<g class="svsch-generate-regions">
+</g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_address_write_enable_register:storage_addr:reg:array_address_write_enable_register:storage:storage_next"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_address_write_enable_register:storage_addr:reg:array_address_write_enable_register:storage:storage_next" data-net-key="mux:array_address_write_enable_register:storage_addr:out" d="M 1285 172 L 1324 172 L 1324 28 L 172 28 L 172 268 L 355 268" />
 <path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_address_write_enable_register:storage_addr:reg:array_address_write_enable_register:storage:storage_next" data-net-key="mux:array_address_write_enable_register:storage_addr:out" d="M 1278 168 L 1320 168 L 1320 24 L 168 24 L 168 264 L 354 264" />

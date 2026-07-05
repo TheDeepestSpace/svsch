@@ -1,0 +1,905 @@
+{
+  "nodes": [
+    {
+      "id": "err_alu",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 290
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "alu",
+        "ports": [
+          {
+            "id": "alu:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "alu:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "alu:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_arm_owned",
+      "type": "hdl",
+      "position": {
+        "x": 104,
+        "y": 1594
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "arm_owned:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "arm_owned:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "arm_owned:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_bus",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 1130
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "array_bus:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "array_bus:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "array_bus:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_comb",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 920
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "array_comb:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "array_comb:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "array_comb:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_instance",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 1130
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "array_instance:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "array_instance:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "array_instance:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_literal",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 1130
+      },
+      "width": 72,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "array_literal:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_mux",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 1130
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "array_mux:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "array_mux:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "array_mux:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "array_mux:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_port",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 920
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "array_port:p",
+            "name": "p",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_register",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 1130
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "array_register:D",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "array_register:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "array_register:Q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_array_replicate",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 1340
+      },
+      "width": 72,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "array_replicate:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "array_replicate:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_bus_break",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 710
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "bus_break:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "bus_break:lo",
+            "name": "lo",
+            "direction": "output"
+          },
+          {
+            "id": "bus_break:hi",
+            "name": "hi",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_bus_comp",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 710
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "bus_comp:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "bus_comp:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "bus_comp:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_comb",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 80
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "comb:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "comb:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "comb:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_input_port",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "input_port:input",
+            "name": "input",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_instance",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 500
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "instance:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "instance:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "instance:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_interface_inst",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 920
+      },
+      "width": 192,
+      "height": 185,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "interface_inst:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "interface_inst:ready",
+            "name": "ready",
+            "direction": "output"
+          },
+          {
+            "id": "interface_inst:master",
+            "name": "master",
+            "direction": "inout"
+          },
+          {
+            "id": "interface_inst:slave",
+            "name": "slave",
+            "direction": "inout"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_interface_modport",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 920
+      },
+      "width": 192,
+      "height": 149,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "interface_modport:req",
+            "name": "req",
+            "direction": "input"
+          },
+          {
+            "id": "interface_modport:rsp",
+            "name": "rsp",
+            "direction": "output"
+          },
+          {
+            "id": "interface_modport:bus",
+            "name": "bus",
+            "direction": "inout"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_interface_port",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 80
+      },
+      "width": 264,
+      "height": 24,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "interface_port:stream",
+            "name": "stream",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_inverter",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 500
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "inverter:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "inverter:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_latch",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 290
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "latch",
+        "ports": [
+          {
+            "id": "latch:D",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "latch:G",
+            "name": "G",
+            "direction": "input"
+          },
+          {
+            "id": "latch:Q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_literal",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 500
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "literal:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_loop",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 80
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "loop",
+        "ports": [
+          {
+            "id": "loop:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "loop:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "loop:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_module",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 500
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "module",
+        "ports": [
+          {
+            "id": "module:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "module:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "module:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_mux",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 290
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "mux:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "mux:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "mux:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "mux:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_net_label",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 920
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": []
+      }
+    },
+    {
+      "id": "err_output_port",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 80
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "output_port:output",
+            "name": "output",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_register",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 290
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "register:D",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "register:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "register:Q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_replicate",
+      "type": "hdl",
+      "position": {
+        "x": 620,
+        "y": 500
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "replicate:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "replicate:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_select",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 290
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "select",
+        "ports": [
+          {
+            "id": "select:s",
+            "name": "s",
+            "direction": "input"
+          },
+          {
+            "id": "select:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "select:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_struct_break",
+      "type": "hdl",
+      "position": {
+        "x": 1160,
+        "y": 710
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "struct",
+        "ports": [
+          {
+            "id": "struct_break:pkt",
+            "name": "pkt",
+            "direction": "input"
+          },
+          {
+            "id": "struct_break:opcode",
+            "name": "opcode",
+            "direction": "output"
+          },
+          {
+            "id": "struct_break:valid",
+            "name": "valid",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_struct_comp",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 710
+      },
+      "width": 192,
+      "height": 101,
+      "data": {
+        "kind": "struct",
+        "ports": [
+          {
+            "id": "struct_comp:opcode",
+            "name": "opcode",
+            "direction": "input"
+          },
+          {
+            "id": "struct_comp:valid",
+            "name": "valid",
+            "direction": "input"
+          },
+          {
+            "id": "struct_comp:pkt",
+            "name": "pkt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_unknown",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 710
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "unknown",
+        "ports": [
+          {
+            "id": "unknown:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "unknown:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "unknown:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [],
+  "regions": [
+    {
+      "id": "region:g_error",
+      "kind": "if",
+      "label": "g_error /* MODE == 0 */",
+      "bounds": {
+        "x": 80,
+        "y": 1550,
+        "width": 500,
+        "height": 190
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "node does not belong to arm block"
+    }
+  ]
+}

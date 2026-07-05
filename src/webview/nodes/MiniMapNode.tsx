@@ -24,6 +24,9 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
     return null;
   }
 
+  // Blocks flagged with the shared error style render in the same red on the minimap.
+  const color = node.invalid ? 'var(--svsch-error-highlight)' : 'var(--vscode-editor-foreground)';
+
   const noseLength = node.kind === 'port' ? (diagramSizing.portNoseLength / diagramSizing.portWidth) * width : 0;
   const midY = y + height / 2;
 
@@ -104,8 +107,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
             className={className}
             data-minimap-node-id={id}
             data-minimap-node-kind={node.kind}
-            fill="var(--vscode-editor-foreground)"
-            stroke="var(--vscode-editor-foreground)"
+            fill={color}
+            stroke={color}
             strokeOpacity={0.4}
           />
         </g>
@@ -119,8 +122,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       className={className}
       data-minimap-node-id={id}
       data-minimap-node-kind={node.kind}
-      fill="var(--vscode-editor-foreground)"
-      stroke="var(--vscode-editor-foreground)"
+      fill={color}
+      stroke={color}
       strokeOpacity={0.4}
     />
   );
