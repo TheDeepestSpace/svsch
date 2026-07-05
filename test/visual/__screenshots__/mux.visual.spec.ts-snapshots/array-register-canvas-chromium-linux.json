@@ -321,7 +321,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1645 388 L 1684 388 L 1684 460 L 172 460 L 172 412 L 379 412"
+      "path": "M 1645 388 L 1684 388 L 1684 484 L 172 484 L 172 412 L 379 412"
     },
     {
       "id": "edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate",
@@ -417,7 +417,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 541 412 L 580 412 L 580 124 L 744 124"
+      "path": "M 541 412 L 556 412 L 556 124 L 744 124"
     }
   ]
 }

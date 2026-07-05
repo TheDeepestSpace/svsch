@@ -138,7 +138,7 @@
       "target": "interface_modport:pair_bridge:upstream",
       "sourceHandle": "out:ready",
       "targetHandle": "in:ready",
-      "path": "M 1152 216 L 1176 216 L 1200 216 L 1200 384 L 360 384 L 360 360 L 528 360 L 552 360"
+      "path": "M 1152 216 L 1176 216 L 1200 216 L 1200 408 L 360 408 L 360 360 L 528 360 L 552 360"
     },
     {
       "id": "edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream",

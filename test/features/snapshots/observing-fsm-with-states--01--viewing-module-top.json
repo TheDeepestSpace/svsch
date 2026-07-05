@@ -376,7 +376,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_IDLE",
       "targetHandle": "in:IDLE",
-      "path": "M 624 48 L 648 48 L 696 48 L 696 240 L 816 240 L 840 240"
+      "path": "M 624 48 L 648 48 L 720 48 L 720 240 L 816 240 L 840 240"
     },
     {
       "id": "edge:literal:top:next_r_START:BUSY:mux:top:next_r:r:next_r_if_true_n0:next_r_START",
@@ -432,7 +432,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "q",
       "targetHandle": "sel",
-      "path": "M 624 168 L 648 168 L 689 168 Q 696 161 703 168 L 936 168 L 936 213"
+      "path": "M 624 168 L 648 168 L 689 168 Q 696 161 703 168 L 713 168 Q 720 161 727 168 L 936 168 L 936 213"
     },
     {
       "id": "edge:reg:top:r:port:top:state:state",
@@ -440,7 +440,7 @@
       "target": "port:top:state",
       "sourceHandle": "q",
       "targetHandle": "port:state",
-      "path": "M 624 168 L 648 168 L 672 168 L 672 144 L 689 144 Q 696 137 703 144 L 816 144 L 840 144"
+      "path": "M 624 168 L 648 168 L 672 168 L 672 144 L 689 144 Q 696 137 703 144 L 713 144 Q 720 137 727 144 L 816 144 L 840 144"
     }
   ]
 }

@@ -422,7 +422,7 @@
       "target": "bus:replication_expr:concat_repeated:expr",
       "sourceHandle": "port:head",
       "targetHandle": "in:_23_",
-      "path": "M 456 192 L 480 192 L 504 192 L 504 312 L 648 312 L 672 312"
+      "path": "M 456 192 L 480 192 L 480 312 L 648 312 L 672 312"
     },
     {
       "id": "edge:port:replication_expr:head:bus:replication_expr:nested_concat_rep_concat0:concat:head",

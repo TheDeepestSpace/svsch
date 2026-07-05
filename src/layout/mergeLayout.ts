@@ -1048,74 +1048,136 @@ function routeWithRenderedLeads(
   );
 }
 
-// Grid snapping of projected ELK routes can collapse parallel trunks of
-// different nets onto the same gridline (ELK separates them by less than a
-// grid in FIXED-position mode). Nudge internal horizontal segments apart so
-// unrelated nets don't render as one wire.
+// Grid snapping of projected ELK routes erodes ELK's sub-grid clearances:
+// parallel trunks of different nets can collapse onto the same gridline, and
+// crossing corridors can land on (or hug) node borders. Nudge interior
+// segments (both orientations) onto free gridlines. Two-phase: register every
+// span as occupancy first, then shift only interior spans (lead and
+// lead-adjacent segments are pinned to their handles).
 function deconflictOverlappingTrunks(
   edges: DiagramEdge[],
   routes: Map<string, Array<{ x: number; y: number }>>,
   nodesById: Map<string, DiagramNode>,
   nodePositions: Map<string, { x: number; y: number }>
 ): void {
-  interface TrunkSpan { net: string; y: number; x1: number; x2: number }
+  // pos is the segment's fixed coordinate (y for horizontal spans, x for
+  // vertical); a1/a2 is its extent along the other axis.
+  interface TrunkSpan { key: string; net: string; horizontal: boolean; pos: number; a1: number; a2: number }
+  const grid = diagramSizing.gridSize;
+  const obstacles = routeObstacles(nodesById, nodePositions);
   const netByEdgeId = new Map(edges.map((edge) => [edge.id, netKey(edge)]));
-  const occupied: TrunkSpan[] = [];
 
-  const spanFor = (net: string, a: { x: number; y: number }, b: { x: number; y: number }): TrunkSpan | undefined =>
-    a.y === b.y && a.x !== b.x
-      ? { net, y: a.y, x1: Math.min(a.x, b.x), x2: Math.max(a.x, b.x) }
-      : undefined;
-  const collides = (span: TrunkSpan): boolean =>
-    occupied.some((other) => other.net !== span.net
-      && other.y === span.y
-      && Math.min(other.x2, span.x2) - Math.max(other.x1, span.x1) > 1);
-
-  for (const edge of edges) {
-    const route = routes.get(edge.id);
-    const net = netByEdgeId.get(edge.id) ?? edge.id;
-    if (!route || route.length < 4) {
+  const spans = new Map<string, TrunkSpan>();
+  const rebuildSpans = (): void => {
+    spans.clear();
+    for (const edge of edges) {
+      const route = routes.get(edge.id);
+      const net = netByEdgeId.get(edge.id) ?? edge.id;
       route?.forEach((point, index) => {
         const next = route[index + 1];
-        if (next) {
-          const span = spanFor(net, point, next);
-          if (span) {
-            occupied.push(span);
-          }
+        if (!next || (point.x === next.x && point.y === next.y)) {
+          return;
         }
+        const horizontal = point.y === next.y;
+        const key = `${edge.id}#${index}`;
+        spans.set(key, {
+          key,
+          net,
+          horizontal,
+          pos: horizontal ? point.y : point.x,
+          a1: Math.min(horizontal ? point.x : point.y, horizontal ? next.x : next.y),
+          a2: Math.max(horizontal ? point.x : point.y, horizontal ? next.x : next.y)
+        });
       });
-      continue;
     }
+  };
 
-    for (let index = 1; index < route.length - 2; index += 1) {
-      const start = route[index];
-      const end = route[index + 1];
-      const span = spanFor(net, start, end);
-      if (!span) {
+  const extentsOverlap = (a: { a1: number; a2: number }, b: { a1: number; a2: number }): boolean =>
+    Math.min(a.a2, b.a2) - Math.max(a.a1, b.a1) > 1;
+  const collidesWithOtherNet = (span: TrunkSpan): boolean => {
+    for (const other of spans.values()) {
+      if (
+        other.key !== span.key
+        && other.net !== span.net
+        && other.horizontal === span.horizontal
+        && Math.abs(other.pos - span.pos) < grid / 2
+        && extentsOverlap(other, span)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const ridesNodeBorder = (span: TrunkSpan): boolean =>
+    obstacles.some((rect) => {
+      const borders = span.horizontal ? [rect.y, rect.y + rect.height] : [rect.x, rect.x + rect.width];
+      const rectExtent = span.horizontal
+        ? { a1: rect.x, a2: rect.x + rect.width }
+        : { a1: rect.y, a2: rect.y + rect.height };
+      return extentsOverlap(rectExtent, span)
+        && borders.some((border) => Math.abs(span.pos - border) < grid / 2);
+    });
+  const crossesNodeInterior = (a: { x: number; y: number }, b: { x: number; y: number }): boolean =>
+    obstacles.some((rect) => segmentIntersectsRectInterior(a, b, rect));
+
+  // Sweep until stable (bounded): a segment's shift can be blocked by a
+  // sibling segment that has not been fixed yet (e.g. a vertical whose
+  // stretched connector would cross a box the adjacent horizontal is about
+  // to vacate), so a single pass is order-sensitive.
+  for (let sweep = 0; sweep < 3; sweep += 1) {
+    let changed = false;
+    rebuildSpans();
+
+    for (const edge of edges) {
+      const route = routes.get(edge.id);
+      if (!route || route.length < 4) {
         continue;
       }
-      if (collides(span)) {
-        for (const dy of [-1, 1, -2, 2].map((step) => step * diagramSizing.gridSize)) {
-          const shifted: TrunkSpan = { ...span, y: span.y + dy };
-          const candidate = route.map((point, pointIndex) =>
-            pointIndex === index || pointIndex === index + 1 ? { ...point, y: shifted.y } : point
-          );
+
+      for (let index = 1; index < route.length - 2; index += 1) {
+        const start = route[index];
+        const end = route[index + 1];
+        const span = spans.get(`${edge.id}#${index}`);
+        if (!span || (!collidesWithOtherNet(span) && !ridesNodeBorder(span))) {
+          continue;
+        }
+        // Only shift when both neighbours connect along the perpendicular
+        // axis, so moving the segment stretches them without breaking
+        // orthogonality.
+        const previous = route[index - 1];
+        const next = route[index + 2];
+        const neighboursPerpendicular = span.horizontal
+          ? previous.x === start.x && next.x === end.x
+          : previous.y === start.y && next.y === end.y;
+        if (!neighboursPerpendicular) {
+          continue;
+        }
+
+        const basePos = snapToGrid(span.pos);
+        for (const delta of [-1, 1, -2, 2].map((step) => step * grid)) {
+          const movedPos = basePos + delta;
+          const moved: TrunkSpan = { ...span, pos: movedPos };
+          const movedStart = span.horizontal ? { x: start.x, y: movedPos } : { x: movedPos, y: start.y };
+          const movedEnd = span.horizontal ? { x: end.x, y: movedPos } : { x: movedPos, y: end.y };
           if (
-            !collides(shifted)
-            && !routeIntersectsNodeInterior(candidate, nodesById, nodePositions, new Set([edge.source, edge.target]))
+            !collidesWithOtherNet(moved)
+            && !ridesNodeBorder(moved)
+            && !crossesNodeInterior(previous, movedStart)
+            && !crossesNodeInterior(movedStart, movedEnd)
+            && !crossesNodeInterior(movedEnd, next)
           ) {
-            route[index] = candidate[index];
-            route[index + 1] = candidate[index + 1];
-            occupied.push(shifted);
+            route[index] = movedStart;
+            route[index + 1] = movedEnd;
+            spans.set(span.key, moved);
+            changed = true;
             break;
           }
         }
-        if (route[index].y === span.y) {
-          occupied.push(span);
-        }
-      } else {
-        occupied.push(span);
       }
+    }
+
+    if (!changed) {
+      break;
     }
   }
 }

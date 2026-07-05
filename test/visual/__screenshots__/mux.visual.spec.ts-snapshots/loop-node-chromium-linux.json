@@ -210,7 +210,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:data_in",
       "targetHandle": "port:data_in_i_",
-      "path": "M 192 120 L 216 120 L 240 120 L 240 161 Q 247 168 240 175 L 240 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192"
+      "path": "M 192 120 L 216 120 L 216 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192"
     },
     {
       "id": "edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in",
@@ -218,7 +218,7 @@
       "target": "loop:loop_logic:20:n3",
       "sourceHandle": "port:data_in",
       "targetHandle": "port:data_in",
-      "path": "M 192 120 L 216 120 L 240 120 L 240 72 L 384 72 L 408 72"
+      "path": "M 192 120 L 216 120 L 216 72 L 384 72 L 408 72"
     },
     {
       "id": "edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt",
