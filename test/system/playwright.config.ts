@@ -5,15 +5,21 @@ import path from 'path';
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
 
+const reporters: any[] = [
+  ['list'],
+  ['html', { open: 'never', outputFolder: path.join(root, 'playwright-report/system') }],
+];
+
+if (process.env.SVSCH_TEST_STATUS_FILE) {
+  reporters.push([path.resolve(root, 'scripts/playwright-progress-reporter.js')]);
+}
+
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   testDir: __dirname,
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
   timeout: 240_000,
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: path.join(root, 'playwright-report/system') }],
-  ],
+  reporter: reporters,
   expect: {
     toHaveScreenshot: {
       // Full VSCode window includes the sidebar and status bar which can

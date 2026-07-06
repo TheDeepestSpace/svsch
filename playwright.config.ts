@@ -1,9 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 import { chromiumStabilizationArgs } from './test/testConstants';
+import path from 'path';
 
-const reporters = process.env.CI
+let reporters: any[] = process.env.CI
   ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
   : [['list']];
+
+if (process.env.SVSCH_TEST_STATUS_FILE) {
+  reporters.push([path.resolve(__dirname, 'scripts/playwright-progress-reporter.js')]);
+}
+
 const visualPort = Number(process.env.SVSCH_VISUAL_PORT ?? 5174);
 const visualBaseUrl = `http://127.0.0.1:${visualPort}`;
 
