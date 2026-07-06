@@ -5,6 +5,10 @@
   "version": "0.0.1",
   "publisher": "thedeepestspace",
   "license": "AGPL-3.0",
+  "files": [
+    "dist",
+    "media"
+  ],
   "bin": {
     "svsch": "./dist/cli.js"
   },
