@@ -1017,6 +1017,94 @@ endmodule
   </tr>
 </table>
 
+## Generate Blocks
+
+### Generate If
+
+A conditional generate block using an if-else statement.
+
+<table>
+  <tr>
+    <td valign="top">
+      <pre><code>module child_a (input logic in, output logic out);
+  assign out = in;
+endmodule
+<br>
+module child_b (input logic in, output logic out);
+  assign out = ~in;
+endmodule
+<br>
+module top #(
+  parameter MODE = 0
+) (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  generate
+    <mark>if (MODE == 0) begin : g_if_a
+      child_a u_child_a (.in(a), .out(y));
+    end else begin : g_if_b
+      child_b u_child_b (.in(b), .out(y));
+    end</mark>
+  endgenerate
+endmodule
+</code></pre>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram">
+    </td>
+  </tr>
+</table>
+
+### Generate Case
+
+A conditional generate block using a case statement.
+
+<table>
+  <tr>
+    <td valign="top">
+      <pre><code>module child_a (input logic in, output logic out);
+  assign out = in;
+endmodule
+<br>
+module child_b (input logic in, output logic out);
+  assign out = ~in;
+endmodule
+<br>
+module top #(
+  parameter MODE = 1
+) (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  generate
+    <mark>case (MODE)
+      0: begin : g_case_a
+        child_a u_child_a (.in(a), .out(y));
+      end
+      1: begin : g_case_b
+        child_b u_child_b (.in(b), .out(y));
+      end
+      default: begin : g_case_def
+        assign y = a &amp; b;
+      end
+    endcase</mark>
+  endgenerate
+endmodule
+</code></pre>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram">
+    </td>
+  </tr>
+</table>
+
 ## Other
 
 ### Unknown Construct

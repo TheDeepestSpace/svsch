@@ -1,0 +1,97 @@
+group: Generate Blocks
+cases:
+  - id: generate-if
+    title: Generate If
+    description: A conditional generate block using an if-else statement.
+    tags: [generate, conditional, source-highlight]
+    files:
+      top.sv: |
+        module child_a (input logic in, output logic out);
+          assign out = in;
+        endmodule
+
+        module child_b (input logic in, output logic out);
+          assign out = ~in;
+        endmodule
+
+        module top #(
+          parameter MODE = 0
+        ) (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          generate
+            if (MODE == 0) begin : g_if_a
+              child_a u_child_a (.in(a), .out(y));
+            end else begin : g_if_b
+              child_b u_child_b (.in(b), .out(y));
+            end
+          endgenerate
+        endmodule
+    module: top
+    target:
+      kind: region
+      regionLabel: "generate if"
+    expect:
+      nodeKinds: [port, instance]
+      selectedText: |
+        if (MODE == 0) begin : g_if_a
+              child_a u_child_a (.in(a), .out(y));
+            end else begin : g_if_b
+              child_b u_child_b (.in(b), .out(y));
+            end
+
+  - id: generate-case
+    title: Generate Case
+    description: A conditional generate block using a case statement.
+    tags: [generate, conditional, source-highlight]
+    files:
+      top.sv: |
+        module child_a (input logic in, output logic out);
+          assign out = in;
+        endmodule
+
+        module child_b (input logic in, output logic out);
+          assign out = ~in;
+        endmodule
+
+        module top #(
+          parameter MODE = 1
+        ) (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          generate
+            case (MODE)
+              0: begin : g_case_a
+                child_a u_child_a (.in(a), .out(y));
+              end
+              1: begin : g_case_b
+                child_b u_child_b (.in(b), .out(y));
+              end
+              default: begin : g_case_def
+                assign y = a & b;
+              end
+            endcase
+          endgenerate
+        endmodule
+    module: top
+    target:
+      kind: region
+      regionLabel: "generate case (MODE)"
+    expect:
+      nodeKinds: [port, instance]
+      selectedText: |
+        case (MODE)
+              0: begin : g_case_a
+                child_a u_child_a (.in(a), .out(y));
+              end
+              1: begin : g_case_b
+                child_b u_child_b (.in(b), .out(y));
+              end
+              default: begin : g_case_def
+                assign y = a & b;
+              end
+            endcase

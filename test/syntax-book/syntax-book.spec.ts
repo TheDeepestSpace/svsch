@@ -80,6 +80,7 @@ const sectionFiles = [
   'buses.yaml',
   'structs.yaml',
   'interfaces.yaml',
+  'generate.yaml',
   'other.yaml'
 ];
 
@@ -230,6 +231,12 @@ test.describe('Syntax Book Generation & Verification', () => {
               console.log(`CASE ${caseData.id}: TARGET NOT FOUND. Kind: ${caseData.target.nodeKind}, Label: ${caseData.target.nodeLabel}. Nodes:`, viewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
             }
             expect(targetExists).toBe(true);
+          } else if (caseData.target.kind === 'region') {
+            const targetExists = viewModel.generateRegions?.some(r => r.label === caseData.target.regionLabel);
+            if (!targetExists) {
+              console.log(`CASE ${caseData.id}: REGION TARGET NOT FOUND. Label: ${caseData.target.regionLabel}. Regions:`, viewModel.generateRegions?.map(r => ({ id: r.id, label: r.label, kind: r.kind })));
+            }
+            expect(targetExists).toBe(true);
           }
 
           // Initialize webview
@@ -285,6 +292,15 @@ test.describe('Syntax Book Generation & Verification', () => {
             const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal);
             const locator = page.locator(`.react-flow__edge[data-id="${targetEdge!.id}"]`).first();
             await locator.dblclick({ force: true });
+          } else if (caseData.target.kind === 'region') {
+            await page.waitForSelector('.generate-region-title', { state: 'attached' });
+            await page.evaluate((labelText) => {
+              const buttons = Array.from(document.querySelectorAll('.generate-region-title'));
+              const targetButton = buttons.find(b => b.textContent?.trim() === labelText);
+              if (targetButton) {
+                targetButton.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+              }
+            }, caseData.target.regionLabel);
           }
 
           await consolePromise;
@@ -297,6 +313,8 @@ test.describe('Syntax Book Generation & Verification', () => {
             range = capturedMsg.source;
           } else if (capturedMsg.type === 'navigateToSignal') {
             range = resolveSignalSource(graph, caseData.module, capturedMsg.edge);
+          } else if (capturedMsg.type === 'navigateToRegion') {
+            range = capturedMsg.region.source;
           }
 
           expect(range).toBeDefined();
