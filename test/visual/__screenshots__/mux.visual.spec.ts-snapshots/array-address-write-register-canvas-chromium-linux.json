@@ -185,7 +185,7 @@
       "target": "mux:array_address_write_register:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 973 148 L 1012 148 L 1012 220 L 220 220 L 220 172 L 403 172"
+      "path": "M 973 148 L 1012 148 L 1012 196 L 220 196 L 220 172 L 403 172"
     },
     {
       "id": "edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data",

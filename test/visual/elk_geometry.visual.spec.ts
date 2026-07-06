@@ -86,6 +86,10 @@ const selections: FixtureSelection[] = [
     fixture: 'interface_multi_modport.sv',
     picks: [{ label: 'interface: multi modport + clk/rst', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
   },
+  {
+    fixture: 'interface_caps_only.sv',
+    picks: [{ label: 'interface: scalar caps only', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
+  },
   { fixture: 'typed_instance_ports.sv', picks: [{ label: 'instance', match: (n) => n.kind === 'instance' }] },
   { fixture: 'replication_expr.sv', picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }] },
   { fixture: 'loop_logic.sv', picks: [{ label: 'loop', match: (n) => n.kind === 'loop' }] },

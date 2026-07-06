@@ -331,7 +331,7 @@
       "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
       "sourceHandle": "port:mem_write_enable_BYTE_2_d0",
       "targetHandle": "in:_BYTE_2_d0_",
-      "path": "M 576 168 L 600 168 L 600 240 L 768 240 L 792 240"
+      "path": "M 576 168 L 600 168 L 624 168 L 624 240 L 768 240 L 792 240"
     },
     {
       "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d1:4_b0010:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d1",
@@ -339,7 +339,7 @@
       "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
       "sourceHandle": "port:mem_write_enable_BYTE_2_d1",
       "targetHandle": "in:_BYTE_2_d1_",
-      "path": "M 576 216 L 600 216 L 624 216 L 624 233 Q 631 240 624 247 L 624 264 L 768 264 L 792 264"
+      "path": "M 576 216 L 600 216 L 624 216 L 624 264 L 768 264 L 792 264"
     },
     {
       "id": "edge:literal:write_enable_decode:mem_write_enable_BYTE_2_d2:4_b0100:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_BYTE_2_d2",
@@ -379,7 +379,7 @@
       "target": "mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable",
       "sourceHandle": "port:mem_write_enable_HALF_2_d2",
       "targetHandle": "in:_HALF_2_d2_",
-      "path": "M 576 408 L 600 408 L 600 360 L 768 360 L 792 360"
+      "path": "M 576 408 L 600 408 L 624 408 L 624 360 L 768 360 L 792 360"
     },
     {
       "id": "edge:literal:write_enable_decode:mem_write_enable_WORD_2_d0:4_b1111:mux:write_enable_decode:mem_write_enable:mem_write_enable_sel:mem_write_enable:mem_write_enable_WORD_2_d0",

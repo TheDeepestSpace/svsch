@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="324" viewBox="0 0 1680 324" class="svsch-diagram" role="img" aria-label="interface_dual_modport_bridge diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="312" viewBox="0 0 1680 312" class="svsch-diagram" role="img" aria-label="interface_dual_modport_bridge diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3190,7 +3190,7 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 1;
 }
 </style>
-<g transform="translate(24 24)">
+<g transform="translate(24 12)">
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:instance:interface_dual_modport_bridge:u_bridge:interface:interface_dual_modport_bridge:downstream:downstream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:instance:interface_dual_modport_bridge:u_bridge:interface:interface_dual_modport_bridge:downstream:downstream" d="M 1104 96 L 1128 96 L 1152 96 L 1152 240 L 1296 240 L 1320 240" />
 <path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:interface_dual_modport_bridge:u_bridge:interface:interface_dual_modport_bridge:downstream:downstream" data-net-key="instance:interface_dual_modport_bridge:u_bridge:port:downstream" d="M 1104 96 L 1128 96 L 1152 96 L 1152 240 L 1296 240 L 1320 240" /></g>
@@ -3199,12 +3199,12 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:downstream:clk"><path class="svsch-edge-jump-halo" d="M 1140 168 Q 1152 156 1164 168" style="stroke-width: 12" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:downstream:clk" data-jump-index="0" />
 <path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:downstream:clk" data-net-key="port:interface_dual_modport_bridge:clk:port:clk" d="M 144 96 L 168 96 L 168 168 L 1140 168 Q 1152 156 1164 168 L 1440 168 L 1440 204" />
 <circle class="svsch-edge-junction" cx="168" cy="96" r="4.75" data-junction-id="port:interface_dual_modport_bridge:clk:port:clk:168:96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk"><path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk" data-net-key="port:interface_dual_modport_bridge:clk:port:clk" d="M 144 96 L 168 96 L 168 24 L 480 24 L 480 72 L 480 108" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n"><path class="svsch-edge-jump-halo" d="M 473 48 Q 480 41 487 48" style="stroke-width: 12" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n" data-net-key="port:interface_dual_modport_bridge:rst_n:port:rst_n" d="M 144 48 L 168 48 L 473 48 Q 480 41 487 48 L 1488 48 L 1488 168 L 1488 204" />
+<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk"><path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk" data-net-key="port:interface_dual_modport_bridge:clk:port:clk" d="M 144 96 L 168 96 L 168 48 L 480 48 L 480 72 L 480 108" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n"><path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n" data-net-key="port:interface_dual_modport_bridge:rst_n:port:rst_n" d="M 144 48 L 168 48 L 1488 48 L 1488 168 L 1488 204" />
+<path class="svsch-edge-overlap-hint" d="M 172 48 L 476 48" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n" data-overlap-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:downstream:rst_n-overlap-1-edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk-2" />
 <circle class="svsch-edge-junction" cx="528" cy="48" r="4.75" data-junction-id="port:interface_dual_modport_bridge:rst_n:port:rst_n:528:48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n"><path class="svsch-edge-jump-halo" d="M 473 48 Q 480 41 487 48" style="stroke-width: 12" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n" data-net-key="port:interface_dual_modport_bridge:rst_n:port:rst_n" d="M 144 48 L 168 48 L 473 48 Q 480 41 487 48 L 528 48 L 528 72 L 528 108" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n"><path class="svsch-edge" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n" data-net-key="port:interface_dual_modport_bridge:rst_n:port:rst_n" d="M 144 48 L 168 48 L 528 48 L 528 72 L 528 108" />
+<path class="svsch-edge-overlap-hint" d="M 172 48 L 476 48" data-edge-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n" data-overlap-id="edge:port:interface_dual_modport_bridge:rst_n:interface:interface_dual_modport_bridge:upstream:rst_n-overlap-1-edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk-2" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:interface_dual_modport_bridge:u_bridge" data-node-kind="instance" transform="translate(864 48)">

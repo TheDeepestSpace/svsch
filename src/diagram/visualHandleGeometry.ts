@@ -6,7 +6,7 @@ import { busTapPortCenterY } from './busGeometry';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
-  interfaceTopHatTop,
+  interfaceSkinPath,
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from './interfaceGeometry';
@@ -109,6 +109,7 @@ function interfaceInstanceScalarHandleGeometry(node: DiagramNode, port: DiagramP
 }
 
 export function interfaceInstanceTopHatY(node: DiagramNode, height: number): number {
+  const { width } = nodeDimensions(node);
   const aggregatePorts = node.ports.filter((candidate) => candidate.width !== 'interface' || candidate.preferredSide);
   const topPorts = aggregatePorts.filter((candidate) => candidate.direction === 'input' && candidate.width !== 'interface');
   const bottomPorts = aggregatePorts.filter((candidate) => candidate.direction === 'output' && candidate.width !== 'interface');
@@ -120,7 +121,14 @@ export function interfaceInstanceTopHatY(node: DiagramNode, height: number): num
   const unshiftedHeight = Math.max(diagramSizing.gridSize, height - shiftY);
   const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedHeight, topHatHeight, bottomHatHeight).map((center) => center + shiftY);
   const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedHeight, topHatHeight, bottomHatHeight).map((center) => center + shiftY);
-  return interfaceTopHatTop([...leftCenters, ...rightCenters], topHatHeight);
+  return interfaceSkinPath({
+    width,
+    height,
+    leftCenters,
+    rightCenters,
+    topPortCount: topPorts.length,
+    bottomPortCount: bottomPorts.length
+  }).topHatTop;
 }
 
 function nodeDimensions(node: DiagramNode): { width: number; height: number } {
