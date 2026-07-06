@@ -1,0 +1,24 @@
+# Ignore local configs and source code
+.vscode/
+.devcontainer/
+.github/
+.vscode-test/
+.agents/
+.svsch/
+src/
+test/
+scripts/
+patches/
+playwright-report/
+test-results/
+Dockerfile
+vscode-versions.json
+tsconfig*.json
+vite.config.ts
+vite.config.cli.ts
+vitest.config.ts
+playwright.config.ts
+*.vsix
+package-lock.json
+.gitignore
+.npmignore

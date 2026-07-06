@@ -27,9 +27,11 @@ Feature: Navigation
       | file   | content |
       | top.sv | module top(a, b, c);\n  input logic a;\n  output wire [3:0] b;\n  input c;\nendmodule |
     When I open the "top" module in SVSCH
+    And I note the diagram zoom level
     And I double-click on the port node "a"
     Then the editor pane for "top.sv" is opened and focused
     Then the editor should highlight the text "input logic a"
+    And the diagram zoom level should be unchanged
 
     When I go back to the SVSCH diagram pane
     And I double-click on the port node "b"
@@ -141,6 +143,94 @@ Feature: Navigation
     And I click on the modport header "master"
     Then the existing editor pane for "top.sv" is focused
     And the editor should highlight the text "modport master(input clk, output data, output valid, input ready);"
+
+  Scenario: Navigating to generate if arms and their generate block
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        output logic y
+      );
+        logic w;
+
+        generate
+          if (MODE == 0) begin : g_zero
+            leaf u_zero(.a(a), .y(w));
+          end else begin : g_other
+            leaf u_other(.a(b), .y(w));
+          end
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I note the diagram zoom level
+    And I double-click on the "g_zero" generate region
+    Then the editor pane for "top.sv" is opened and focused
+    And the editor should highlight the text "if (MODE == 0) begin : g_zero\n      leaf u_zero(.a(a), .y(w));\n    end"
+    And the diagram zoom level should be unchanged
+
+    When I go back to the SVSCH diagram pane
+    And I double-click on the "g_other" generate region
+    Then the existing editor pane for "top.sv" is focused
+    And the editor should highlight the text "else begin : g_other\n      leaf u_other(.a(b), .y(w));\n    end"
+
+    When I go back to the SVSCH diagram pane
+    And I double-click on the "generate if" generate region
+    Then the editor should highlight the text "if (MODE == 0) begin : g_zero\n      leaf u_zero(.a(a), .y(w));\n    end else begin : g_other\n      leaf u_other(.a(b), .y(w));\n    end"
+    And the diagram zoom level should be unchanged
+
+    When I go back to the SVSCH diagram pane
+    And I double-click on an empty area of the canvas
+    Then the diagram zoom level should have increased
+
+  Scenario: Navigating to generate case arms and their generate block
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top #(parameter MODE = 1) (
+        input logic a,
+        input logic b,
+        output logic y
+      );
+        logic w;
+
+        generate
+          case (MODE)
+            0: begin : g_case_zero
+              leaf u_case_zero(.a(a), .y(w));
+            end
+            default: begin : g_case_def
+              leaf u_case_def(.a(b), .y(w));
+            end
+          endcase
+        endgenerate
+
+        assign y = w;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I double-click on the "g_case_zero" generate region
+    Then the editor pane for "top.sv" is opened and focused
+    And the editor should highlight the text "0: begin : g_case_zero\n        leaf u_case_zero(.a(a), .y(w));\n      end"
+
+    When I go back to the SVSCH diagram pane
+    And I double-click on the "g_case_def" generate region
+    Then the existing editor pane for "top.sv" is focused
+    And the editor should highlight the text "default: begin : g_case_def\n        leaf u_case_def(.a(b), .y(w));\n      end"
+
+    When I go back to the SVSCH diagram pane
+    And I double-click on the "generate case (MODE)" generate region
+    Then the editor should highlight the text "case (MODE)\n      0: begin : g_case_zero\n        leaf u_case_zero(.a(a), .y(w));\n      end\n      default: begin : g_case_def\n        leaf u_case_def(.a(b), .y(w));\n      end\n    endcase"
 
   Scenario: Exporting the diagram as SVG
     Given I have a file "top.sv" in my workspace:

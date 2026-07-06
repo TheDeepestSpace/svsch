@@ -35,6 +35,30 @@ function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, sig
   expect(mux?.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)).toBe(true);
 }
 
+function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {
+  const region = module.generateRegions?.find((candidate) => candidate.blockLabel === blockLabel);
+  expect(region, `generate region ${blockLabel}`).toBeDefined();
+  expect(region?.nodeIds, `generate region ${blockLabel} nodeIds`).toBeDefined();
+  return (region?.nodeIds ?? [])
+    .map((id) => module.nodes.find((node) => node.id === id))
+    .filter((node): node is DiagramNode => node !== undefined);
+}
+
+function generatedInstance(module: DesignModule, blockLabel: string, instanceName: string): DiagramNode | undefined {
+  return regionNodes(module, blockLabel).find((node) => (
+    node.kind === 'instance'
+    && (node.label === instanceName || node.label.endsWith(`.${instanceName}`))
+  ));
+}
+
+function expectEdge(module: DesignModule, source: string, target: string, signal: string): void {
+  expect(module.edges.some((edge) => (
+    edge.source === source
+    && edge.target === target
+    && edge.signal === signal
+  )), `edge ${source} -> ${target} carrying ${signal}`).toBe(true);
+}
+
 describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
   it('extracts modules, instances, registers, muxes, and ports', async () => {
     const graph = await runParser(backend, 'simple.sv', fixture('simple.sv'));
@@ -67,6 +91,154 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         expect(complex.nodes.some((node) => node.kind === 'unknown' && node.label === 'generate')).toBe(true);
     }
     expect(complex.nodes.some((node) => node.kind === 'unknown' && node.label === 'initial')).toBe(true);
+  });
+
+  it('extracts source-side generate if and case regions with block labels', async () => {
+    const graph = await runParser(backend, 'generate_regions.sv', fixture('generate_regions.sv'));
+
+    const regions = graph.modules.generate_regions.generateRegions ?? [];
+    expect(regions.map((region) => region.blockLabel)).toEqual(expect.arrayContaining([
+      'g_if_zero',
+      'g_if_one',
+      'g_if_other',
+      'g_case_0',
+      'g_case_1',
+      'g_case_default'
+    ]));
+
+    const ifZero = regions.find((region) => region.blockLabel === 'g_if_zero');
+    const ifOne = regions.find((region) => region.blockLabel === 'g_if_one');
+    const ifOther = regions.find((region) => region.blockLabel === 'g_if_other');
+    expect(ifZero?.kind).toBe('if');
+    expect(ifOne?.kind).toBe('else-if');
+    expect(ifOther?.kind).toBe('else');
+    expect(ifZero?.condition).toContain('ENABLE == 0');
+    expect(ifOne?.condition).toContain('ENABLE == 1');
+    expect(ifOne?.siblingGroupId).toBe(ifZero?.siblingGroupId);
+    expect(ifOther?.siblingGroupId).toBe(ifZero?.siblingGroupId);
+    expect(ifOne?.label).toContain('g_if_one');
+
+    // The synthesized generate-block wrappers parent their arms: the top-level "generate
+    // if" wrapper holds the if arms, and a "generate case" wrapper (nested under g_if_one)
+    // holds the case arms.
+    const ifBlock = regions.find((region) => region.isGenerateBlock && !region.parentRegionId);
+    expect(ifBlock?.label).toBe('generate if');
+    expect(ifZero?.parentRegionId).toBe(ifBlock?.id);
+    expect(ifOne?.parentRegionId).toBe(ifBlock?.id);
+
+    const caseBlock = regions.find((region) => region.isGenerateBlock && region.parentRegionId === ifOne?.id);
+    expect(caseBlock?.label).toBe('generate case (MODE)');
+
+    const case0 = regions.find((region) => region.blockLabel === 'g_case_0');
+    const case1 = regions.find((region) => region.blockLabel === 'g_case_1');
+    const caseDefault = regions.find((region) => region.blockLabel === 'g_case_default');
+    expect(case0?.parentRegionId).toBe(caseBlock?.id);
+    expect(case1?.parentRegionId).toBe(caseBlock?.id);
+    expect(caseDefault?.parentRegionId).toBe(caseBlock?.id);
+    expect(case0?.condition).toContain('MODE == 0');
+    expect(case1?.condition).toContain('MODE == 1');
+    expect(caseDefault?.kind).toBe('case-default');
+    expect(caseDefault?.condition).toBe('default');
+  });
+
+  it('extracts schematic blocks and external connections for every generate arm', async () => {
+    const graph = await runParser(backend, 'generate_regions.sv', fixture('generate_regions.sv'));
+    const module = graph.modules.generate_regions;
+
+    expect(module.nodes.some((node) => (
+      node.kind === 'comb'
+      && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'w')
+      && node.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'y')
+    )), 'top-level assign y = w should collapse to direct wires').toBe(false);
+    expect(module.nodes.find((node) => node.id === 'port:generate_regions:y')).toBeDefined();
+
+    const ifZero = generatedInstance(module, 'g_if_zero', 'u_zero');
+    const case0 = generatedInstance(module, 'g_case_0', 'u_case_0');
+    const case1 = generatedInstance(module, 'g_case_1', 'u_case_1');
+    expect(ifZero?.instanceOf).toBe('leaf');
+    expect(case0?.instanceOf).toBe('leaf');
+    expect(case1?.instanceOf).toBe('leaf');
+    expect(module.generateRegions?.find((region) => region.blockLabel === 'g_if_one')?.activeState).toBe('active');
+    expect(module.generateRegions?.find((region) => region.blockLabel === 'g_if_zero')?.activeState).toBe('inactive');
+    expect(module.generateRegions?.find((region) => region.blockLabel === 'g_case_1')?.activeState).toBe('active');
+    expect(module.generateRegions?.find((region) => region.blockLabel === 'g_case_0')?.activeState).toBe('inactive');
+
+    const caseDefault = regionNodes(module, 'g_case_default').find((node) => (
+      node.kind === 'comb'
+      && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'c')
+      && node.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'w')
+    ));
+    const ifOther = regionNodes(module, 'g_if_other').find((node) => (
+      (node.kind === 'literal' || node.kind === 'comb')
+      && node.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'w')
+    ));
+    expect(caseDefault, 'default arm assignment w = c').toBeDefined();
+    expect(ifOther, "else arm assignment w = 1'b0").toBeDefined();
+
+    expectEdge(module, 'port:generate_regions:a', ifZero!.id, 'a');
+    expectEdge(module, 'port:generate_regions:a', case0!.id, 'a');
+    expectEdge(module, 'port:generate_regions:b', case1!.id, 'b');
+    expectEdge(module, 'port:generate_regions:c', caseDefault!.id, 'c');
+
+    for (const armDriver of [ifZero, case0, case1, caseDefault, ifOther]) {
+      expectEdge(module, armDriver!.id, 'port:generate_regions:y', 'y');
+      expect(armDriver?.metadata?.generateRegionId, `${armDriver?.id} generate metadata`).toBeDefined();
+    }
+
+    expect(graph.diagnostics.filter((diagnostic) => diagnostic.message.includes('generate_regions.y has multiple diagram drivers'))).toEqual([]);
+  });
+
+  it('connects operands of expression assignments inside generate arms', async () => {
+    const graph = await runParser(backend, [{
+      file: 'generate_expression_assign.sv',
+      text: `
+        module leaf(input logic a, output logic y);
+          assign y = a;
+        endmodule
+
+        module generate_expression_assign #(parameter MODE = 1) (
+          input logic a,
+          input logic b,
+          input logic sel,
+          output logic y
+        );
+          generate
+            if (MODE == 1) begin : g_if_one
+              logic left_tap;
+              logic right_tap;
+
+              leaf u_path_a(.a(a), .y(left_tap));
+              leaf u_path_b(.a(b), .y(right_tap));
+              assign y = sel ? left_tap : right_tap;
+            end else begin : g_if_other
+              assign y = b;
+            end
+          endgenerate
+        endmodule
+      `
+    }]);
+
+    const module = graph.modules.generate_expression_assign;
+    const pathA = generatedInstance(module, 'g_if_one', 'u_path_a');
+    const pathB = generatedInstance(module, 'g_if_one', 'u_path_b');
+    const expr = regionNodes(module, 'g_if_one').find((node) => (
+      node.kind === 'comb'
+      && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'sel')
+      && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'left_tap')
+      && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'right_tap')
+      && node.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'y')
+    ));
+
+    expect(pathA, 'left generated leaf instance').toBeDefined();
+    expect(pathB, 'right generated leaf instance').toBeDefined();
+    expect(expr, 'generate ternary assignment expression').toBeDefined();
+
+    expectEdge(module, 'port:generate_expression_assign:a', pathA!.id, 'a');
+    expectEdge(module, 'port:generate_expression_assign:b', pathB!.id, 'b');
+    expectEdge(module, pathA!.id, expr!.id, 'left_tap');
+    expectEdge(module, pathB!.id, expr!.id, 'right_tap');
+    expectEdge(module, 'port:generate_expression_assign:sel', expr!.id, 'sel');
+    expectEdge(module, expr!.id, 'port:generate_expression_assign:y', 'y');
   });
 
   it.skip('extracts a clean single-driver fixture without multi-driver diagnostics', async () => {

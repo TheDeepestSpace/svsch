@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -106,6 +106,24 @@ function routeCrossesNodeInterior(route: Array<{ x: number; y: number }>, node: 
     }
     return false;
   });
+}
+
+function boundsOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number }
+): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+function hasShortInitialStair(points: Array<{ x: number; y: number }>): boolean {
+  if (points.length < 5) return false;
+  const [source, first, second, third, fourth] = points;
+  return first.y === source.y
+    && second.x === first.x
+    && third.y === second.y
+    && fourth.x === third.x
+    && second.y !== source.y
+    && Math.abs(third.x - first.x) <= diagramSizing.gridSize * 2;
 }
 
 describe('layout merge', () => {
@@ -219,6 +237,268 @@ describe('layout merge', () => {
       { x: 10, y: 21 },
       { x: 30, y: 41 }
     ]);
+  });
+
+  it('preserves moved node positions when route points are persisted afterward', async () => {
+    const moved = mergeNodePositions({ version: 1, modules: {} }, 'top', [
+      { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 120, y: 132 }, fixed: true },
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 }, fixed: true }
+    ]);
+    const routed = mergeEdgeRoutePoints(moved, 'top', 'e-a-u', [
+      { x: 168, y: 144 },
+      { x: 264, y: 144 }
+    ]);
+    const view = await buildViewModel(graph, 'top', routed);
+
+    expect(routed.modules.top.nodes).toEqual({
+      a: { x: 120, y: 132, fixed: true },
+      u: { x: 360, y: 240, fixed: true }
+    });
+    expect(view.nodes.find((node) => node.id === 'a')?.position).toEqual({ x: 120, y: 132 });
+    expect(view.nodes.find((node) => node.id === 'u')?.position).toEqual({ x: 360, y: 240 });
+    expect(view.edges.find((edge) => edge.id === 'e-a-u')?.routePoints).toEqual([
+      { x: 168, y: 144 },
+      { x: 264, y: 144 }
+    ]);
+  });
+
+  it('computes generate region bounds around owned nodes with one-grid inset', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 240, y: 120, fixed: true }
+          }
+        }
+      }
+    };
+    const graphWithRegion: DesignGraph = {
+      ...graph,
+      modules: {
+        top: {
+          ...graph.modules.top,
+          nodes: [{ id: 'u', kind: 'instance', label: 'u', ports: [] }],
+          edges: [],
+          generateRegions: [{
+            id: 'r0',
+            kind: 'case',
+            label: 'MODE == 0 (g_case_0)',
+            condition: 'MODE == 0',
+            blockLabel: 'g_case_0',
+            siblingGroupId: 'case:1',
+            nodeIds: ['u']
+          }]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithRegion, 'top', layout);
+    const node = view.nodes.find((candidate) => candidate.id === 'u')!;
+    const region = view.generateRegions?.[0]!;
+    const size = diagramNodeDimensions(node);
+
+    expect(region.blockLabel).toBe('g_case_0');
+    expect(region.bounds.x).toBeLessThanOrEqual(node.position.x - diagramSizing.gridSize);
+    expect(region.bounds.y).toBeLessThanOrEqual(node.position.y - diagramSizing.gridSize);
+    expect(region.bounds.x + region.bounds.width).toBeGreaterThanOrEqual(node.position.x + size.width + diagramSizing.gridSize);
+    expect(region.bounds.y + region.bounds.height).toBeGreaterThanOrEqual(node.position.y + size.height + diagramSizing.gridSize);
+  });
+
+  it('keeps saved generate region bounds from shrinking automatically', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 240, y: 120, fixed: true }
+          },
+          regions: {
+            r0: { x: 96, y: 48, width: 480, height: 360, fixed: true }
+          }
+        }
+      }
+    };
+    const graphWithRegion: DesignGraph = {
+      ...graph,
+      modules: {
+        top: {
+          ...graph.modules.top,
+          nodes: [{ id: 'u', kind: 'instance', label: 'u', ports: [] }],
+          edges: [],
+          generateRegions: [{
+            id: 'r0',
+            kind: 'if',
+            label: 'if (ENABLE)',
+            condition: 'ENABLE',
+            siblingGroupId: 'if:1',
+            nodeIds: ['u']
+          }]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithRegion, 'top', layout);
+
+    expect(view.generateRegions?.[0].bounds).toEqual({ x: 96, y: 48, width: 480, height: 360 });
+    expect(view.generateRegions?.[0].fixed).toBe(true);
+  });
+
+  it('persists fixed generate region bounds and marks removed fixed regions stale', () => {
+    const merged = mergeRegionBounds({
+      version: 1,
+      modules: {
+        top: {
+          nodes: {},
+          regions: {
+            old: { x: 1, y: 2, width: 3, height: 4, fixed: true }
+          }
+        }
+      }
+    }, 'top', [{
+      id: 'r0',
+      kind: 'case',
+      label: 'MODE == 0',
+      bounds: { x: 24.4, y: 48.5, width: 191.8, height: 96.2 },
+      nodeIds: [],
+      fixed: true
+    }]);
+
+    expect(merged.modules.top.regions?.old).toEqual({ x: 1, y: 2, width: 3, height: 4, fixed: true, stale: true });
+    expect(merged.modules.top.regions?.r0).toEqual({ x: 24, y: 49, width: 192, height: 96, fixed: true });
+  });
+
+  it('places nested empty generate regions inside their parent placeholder', async () => {
+    const graphWithRegions: DesignGraph = {
+      ...graph,
+      modules: {
+        top: {
+          ...graph.modules.top,
+          nodes: [],
+          edges: [],
+          generateRegions: [
+            {
+              id: 'outer',
+              kind: 'if',
+              label: 'if (ENABLE) (g_if_on)',
+              condition: 'ENABLE',
+              blockLabel: 'g_if_on',
+              siblingGroupId: 'if:1',
+              nodeIds: []
+            },
+            {
+              id: 'inner',
+              kind: 'case',
+              label: 'MODE == 0 (g_case_0)',
+              condition: 'MODE == 0',
+              blockLabel: 'g_case_0',
+              parentRegionId: 'outer',
+              siblingGroupId: 'case:1',
+              nodeIds: []
+            }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithRegions, 'top', { version: 1, modules: {} });
+    const outer = view.generateRegions?.find((region) => region.id === 'outer')!;
+    const inner = view.generateRegions?.find((region) => region.id === 'inner')!;
+
+    expect(inner.bounds.x).toBeGreaterThan(outer.bounds.x);
+    expect(inner.bounds.y).toBeGreaterThan(outer.bounds.y);
+    expect(inner.bounds.x + inner.bounds.width).toBeLessThanOrEqual(outer.bounds.x + outer.bounds.width);
+    expect(inner.bounds.y + inner.bounds.height).toBeLessThanOrEqual(outer.bounds.y + outer.bounds.height);
+  });
+
+  it('uses ELK compound regions to keep generate arm siblings separated during auto-layout', async () => {
+    const graphWithCaseRegions: DesignGraph = {
+      ...graph,
+      modules: {
+        top: {
+          ...graph.modules.top,
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'input' }] },
+            { id: 'c', kind: 'port', label: 'c', ports: [{ id: 'p', name: 'c', direction: 'input' }] },
+            { id: 'u0', kind: 'instance', label: 'u0', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
+            { id: 'u1', kind: 'instance', label: 'u1', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
+            { id: 'ud', kind: 'instance', label: 'ud', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            { id: 'e-a-u0', source: 'a', sourcePort: 'p', target: 'u0', targetPort: 'a', signal: 'w0' },
+            { id: 'e-u0-y', source: 'u0', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' },
+            { id: 'e-b-u1', source: 'b', sourcePort: 'p', target: 'u1', targetPort: 'a', signal: 'w1' },
+            { id: 'e-u1-y', source: 'u1', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' },
+            { id: 'e-c-ud', source: 'c', sourcePort: 'p', target: 'ud', targetPort: 'a', signal: 'wd' },
+            { id: 'e-ud-y', source: 'ud', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' }
+          ],
+          generateRegions: [
+            {
+              id: 'r0',
+              kind: 'case',
+              label: 'g_case_0 /* MODE == 0 */',
+              blockLabel: 'g_case_0',
+              caseValue: 'MODE == 0',
+              siblingGroupId: 'case:1',
+              armIndex: 0,
+              nodeIds: ['u0']
+            },
+            {
+              id: 'r1',
+              kind: 'case',
+              label: 'g_case_1 /* MODE == 1 */',
+              blockLabel: 'g_case_1',
+              caseValue: 'MODE == 1',
+              siblingGroupId: 'case:1',
+              armIndex: 1,
+              nodeIds: ['u1']
+            },
+            {
+              id: 'rd',
+              kind: 'case-default',
+              label: 'g_case_default /* default */',
+              blockLabel: 'g_case_default',
+              caseValue: 'default',
+              siblingGroupId: 'case:1',
+              armIndex: 2,
+              nodeIds: ['ud']
+            }
+          ]
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithCaseRegions, 'top', { version: 1, modules: {} });
+    const regions = [...view.generateRegions!].sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0));
+
+    expect(regions.map((region) => region.blockLabel)).toEqual(['g_case_0', 'g_case_1', 'g_case_default']);
+    expect(regions[0].bounds.y).toBeLessThan(regions[1].bounds.y);
+    expect(regions[1].bounds.y).toBeLessThan(regions[2].bounds.y);
+    for (let i = 0; i < regions.length; i++) {
+      for (let j = i + 1; j < regions.length; j++) {
+        expect(boundsOverlap(regions[i].bounds, regions[j].bounds)).toBe(false);
+      }
+    }
+
+    for (const region of regions) {
+      const node = view.nodes.find((candidate) => candidate.id === region.nodeIds[0])!;
+      const size = diagramNodeDimensions(node);
+      const padding = {
+        left: node.position.x - region.bounds.x,
+        top: node.position.y - region.bounds.y,
+        right: region.bounds.x + region.bounds.width - node.position.x - size.width,
+        bottom: region.bounds.y + region.bounds.height - node.position.y - size.height
+      };
+      expect(padding.left).toBeGreaterThanOrEqual(diagramSizing.gridSize);
+      expect(padding.right).toBe(padding.left);
+      expect(padding.top).toBe(padding.left);
+      expect(padding.bottom).toBe(padding.left);
+    }
+
+    const defaultArmRoute = view.edges.find((edge) => edge.id === 'e-ud-y')?.routePoints ?? [];
+    expect(hasShortInitialStair(defaultArmRoute)).toBe(false);
   });
 
   it('freezes active nodes and clears manual edge routes for rerouting', () => {

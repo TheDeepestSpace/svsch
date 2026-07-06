@@ -42,6 +42,7 @@ import { SelectNodeSvg } from './mux/SelectNodeSvg';
 import { AluNodeSvg } from './alu/AluNodeSvg';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { InstanceNodeSvg } from './instance/InstanceNodeSvg';
+import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
@@ -73,6 +74,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     '--svsch-node-height': `${nodeHeight}px`,
     '--svsch-port-width': `${node.kind === 'port' || isInterfacePortNode ? nodeWidth : diagramSizing.portWidth}px`,
   } as React.CSSProperties;
+  const warningIcon = <NodeWarningIcon message={node.warningNote} />;
 
   if (node.kind === 'netLabel') {
     return (
@@ -151,6 +153,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           : isSkinnedPort
             ? null
             : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -192,6 +195,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         <Handle type="target" id={port?.id} position={handlePosition} />
         <Handle type="source" id={port?.id} position={handlePosition} />
         <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {warningIcon}
       </button>
     );
   }
@@ -382,6 +386,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           ))}
         </div>
         {isInterfaceInstance ? null : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -438,6 +443,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -470,6 +476,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -499,6 +506,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -525,6 +533,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
         ))}
         <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {warningIcon}
       </button>
     );
   }
@@ -562,6 +571,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -588,6 +598,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{ top: nodeHeight / 2 }} />
         ))}
         <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {warningIcon}
       </button>
     );
   }
@@ -616,6 +627,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {warningIcon}
       </button>
     );
   }
@@ -665,6 +677,26 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       {isArray
         ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
         : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+      {warningIcon}
     </button>
+  );
+}
+
+function NodeWarningIcon({ message }: { message?: string }): React.ReactElement | null {
+  if (!message) return null;
+
+  return (
+    <Tooltip content={message}>
+      {(trigger) => (
+        <span
+          {...trigger}
+          className="node-warning"
+          role="img"
+          aria-label={message}
+        >
+          ⚠
+        </span>
+      )}
+    </Tooltip>
   );
 }

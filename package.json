@@ -2,7 +2,7 @@
   "name": "svsch",
   "displayName": "SVSCH",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "thedeepestspace",
   "license": "AGPL-3.0",
   "bin": {
@@ -118,6 +118,7 @@
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.19",
     "@xyflow/react": "^12.10.2",
     "elkjs": "^0.11.1",
     "react": "^19.0.0",

@@ -1,3 +1,17 @@
+namespace {
+
+json sourceInfoToJson(const SourceInfo& source) {
+    return {
+        {"file", source.file},
+        {"line", source.line},
+        {"col", source.col},
+        {"endLine", source.endLine},
+        {"endCol", source.endCol}
+    };
+}
+
+} // namespace
+
 json DesignExtractor::extract(const std::string& targetModule) {
     if (!design_) return json::object();
     collectInterfaceTypesFromDesign();
@@ -102,6 +116,7 @@ json DesignExtractor::extract(const std::string& targetModule) {
     json j_modules = json::array();
     for (auto& mod : modules_) {
         buildEdges(mod);
+        tagGenerateRegionEdges(mod);
 
         json j_mod;
         j_mod["name"] = mod.name;
@@ -341,6 +356,8 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (!n.metadata.arrayDimension.empty()) j_meta["arrayDimension"] = n.metadata.arrayDimension;
             if (n.metadata.arraySize > 0) j_meta["arraySize"] = n.metadata.arraySize;
             if (!n.metadata.arrayIndexSignal.empty()) j_meta["arrayIndexSignal"] = n.metadata.arrayIndexSignal;
+            if (!n.metadata.generateRegionId.empty()) j_meta["generateRegionId"] = n.metadata.generateRegionId;
+            if (!n.metadata.generateActiveState.empty()) j_meta["generateActiveState"] = n.metadata.generateActiveState;
             if (!n.metadata.parameterRefs.empty()) {
                 json refs = json::array();
                 for (const auto& ref : n.metadata.parameterRefs) {
@@ -467,13 +484,49 @@ json DesignExtractor::extract(const std::string& targetModule) {
                     {"endCol", e.sourceInfo.endCol}
                 };
             }
+            json j_edge_meta = json::object();
             if (!e.aggregateKind.empty()) {
-                j_edge["metadata"] = {{"aggregate", e.aggregateKind}};
+                j_edge_meta["aggregate"] = e.aggregateKind;
             } else if (e.aggregateStruct) {
-                j_edge["metadata"] = {{"aggregate", "struct"}};
+                j_edge_meta["aggregate"] = "struct";
+            }
+            if (!e.generateRegionId.empty()) {
+                j_edge_meta["generateRegionId"] = e.generateRegionId;
+            }
+            if (!e.generateActiveState.empty()) {
+                j_edge_meta["generateActiveState"] = e.generateActiveState;
+            }
+            if (!j_edge_meta.empty()) {
+                j_edge["metadata"] = j_edge_meta;
             }
             if (e.isStacked) j_edge["isStacked"] = true;
             j_mod["edges"].push_back(j_edge);
+        }
+        if (!mod.generateRegions.empty()) {
+            j_mod["generateRegions"] = json::array();
+            for (const auto& region : mod.generateRegions) {
+                json j_region = {
+                    {"id", region.id},
+                    {"kind", region.kind},
+                    {"label", region.label},
+                    {"condition", region.condition},
+                    {"activeState", region.activeState},
+                    {"armIndex", region.armIndex}
+                };
+                if (!region.selector.empty()) j_region["selector"] = region.selector;
+                if (!region.caseValue.empty()) j_region["caseValue"] = region.caseValue;
+                if (!region.blockLabel.empty()) j_region["blockLabel"] = region.blockLabel;
+                if (!region.fullBlockLabel.empty()) j_region["fullBlockLabel"] = region.fullBlockLabel;
+                if (!region.parentRegionId.empty()) j_region["parentRegionId"] = region.parentRegionId;
+                if (!region.siblingGroupId.empty()) j_region["siblingGroupId"] = region.siblingGroupId;
+                if (!region.nodeIds.empty()) j_region["nodeIds"] = region.nodeIds;
+                if (!region.edgeIds.empty()) j_region["edgeIds"] = region.edgeIds;
+                if (!region.warnings.empty()) j_region["warnings"] = region.warnings;
+                if (!region.source.file.empty()) j_region["source"] = sourceInfoToJson(region.source);
+                if (!region.bodySource.file.empty()) j_region["bodySource"] = sourceInfoToJson(region.bodySource);
+                if (!region.groupSource.file.empty()) j_region["groupSource"] = sourceInfoToJson(region.groupSource);
+                j_mod["generateRegions"].push_back(j_region);
+            }
         }
         j_modules.push_back(j_mod);
     }

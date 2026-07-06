@@ -20,6 +20,15 @@ export interface SavedEdgeLayout {
   stale?: boolean;
 }
 
+export interface SavedRegionLayout {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  stale?: boolean;
+  fixed?: boolean;
+}
+
 export interface SavedViewport {
   x: number;
   y: number;
@@ -37,6 +46,7 @@ export interface SavedNetCut {
 export interface SavedModuleLayout {
   nodes: Record<string, SavedNodeLayout>;
   edges?: Record<string, SavedEdgeLayout>;
+  regions?: Record<string, SavedRegionLayout>;
   viewport?: SavedViewport;
   expanded?: Record<string, boolean>;
   netCuts?: Record<string, SavedNetCut>;

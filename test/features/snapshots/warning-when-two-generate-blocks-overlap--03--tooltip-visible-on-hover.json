@@ -1,0 +1,176 @@
+{
+  "nodes": [
+    {
+      "id": "instance:top:g_case_def.u_case_def",
+      "type": "hdl",
+      "position": {
+        "x": 936,
+        "y": 144
+      },
+      "width": 240,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:g_if_on.u_if",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 144
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      },
+      "active": true
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:z",
+      "type": "hdl",
+      "position": {
+        "x": 1440,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:z",
+            "name": "z",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:g_case_def.u_case_def:port:top:z:z",
+      "source": "instance:top:g_case_def.u_case_def",
+      "target": "port:top:z",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:z",
+      "path": "M 1176 192 L 1200 192 L 1416 192 L 1440 192"
+    },
+    {
+      "id": "edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "source": "instance:top:g_if_on.u_if",
+      "target": "instance:top:g_case_def.u_case_def",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:a",
+      "path": "M 792 192 L 816 192 L 912 192 L 936 192",
+      "active": true
+    },
+    {
+      "id": "edge:port:top:a:instance:top:g_if_on.u_if:a",
+      "source": "port:top:a",
+      "target": "instance:top:g_if_on.u_if",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:a",
+      "path": "M 144 192 L 168 192 L 576 192 L 600 192",
+      "active": true
+    }
+  ],
+  "regions": [
+    {
+      "id": "generate-block:generate-group:top:case:18:8",
+      "kind": "generate-case",
+      "label": "generate case (MODE)",
+      "bounds": {
+        "x": 840,
+        "y": 48,
+        "width": 432,
+        "height": 288
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "generate blocks overlapping"
+    },
+    {
+      "id": "generate-block:generate-group:top:if:12:4",
+      "kind": "generate-if",
+      "label": "generate if",
+      "bounds": {
+        "x": 504,
+        "y": 48,
+        "width": 384,
+        "height": 288
+      },
+      "active": true,
+      "invalid": true,
+      "warningNote": "generate blocks overlapping"
+    },
+    {
+      "id": "generate-region:top:case-default:0:0:0:default__g_case_def_",
+      "kind": "case-default",
+      "label": "g_case_def /* default */",
+      "bounds": {
+        "x": 888,
+        "y": 96,
+        "width": 336,
+        "height": 192
+      }
+    },
+    {
+      "id": "generate-region:top:if:12:8:0:if__MODE____1___g_if_on_",
+      "kind": "if",
+      "label": "g_if_on /* MODE == 1 */",
+      "bounds": {
+        "x": 552,
+        "y": 96,
+        "width": 288,
+        "height": 192
+      },
+      "active": true
+    }
+  ]
+}

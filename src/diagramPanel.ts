@@ -3,17 +3,19 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
 import { logger } from './logger';
-import type { DesignGraph, DiagramViewModel, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
+import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
+import { generateArmSpan } from './diagram/generateArmSpan';
 
 type WebviewMessage =
   | { type: 'ready' }
-  | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[] }
+  | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[]; regions?: PositionedGenerateRegion[] }
+  | { type: 'regionLayoutChanged'; moduleName: string; regions: PositionedGenerateRegion[] }
   | { type: 'edgeLayoutChanged'; moduleName: string; edgeId: string; waypoint: { x: number; y: number } }
   | { type: 'edgeRouteChanged'; moduleName: string; edgeId: string; routePoints: Array<{ x: number; y: number }> }
-  | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }> }
+  | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>; nodes?: PositionedNode[] }
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
@@ -22,6 +24,7 @@ type WebviewMessage =
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'navigateToSource'; source: SourceRange }
+  | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
   | { type: 'exportSvg' };
 
@@ -322,7 +325,11 @@ export class DiagramPanel {
       return;
     }
     if (message.type === 'layoutChanged') {
-      await this.saveLayout(message.moduleName, message.nodes);
+      await this.saveLayout(message.moduleName, message.nodes, message.regions);
+      return;
+    }
+    if (message.type === 'regionLayoutChanged') {
+      await this.saveRegionLayout(message.moduleName, message.regions);
       return;
     }
     if (message.type === 'edgeLayoutChanged') {
@@ -334,7 +341,7 @@ export class DiagramPanel {
       return;
     }
     if (message.type === 'edgeRoutesChanged') {
-      await this.saveEdgeRoutes(message.moduleName, message.changes);
+      await this.saveEdgeRoutes(message.moduleName, message.changes, message.nodes);
       return;
     }
     if (message.type === 'cutNet') {
@@ -351,6 +358,10 @@ export class DiagramPanel {
     }
     if (message.type === 'navigateToSource') {
       await this.navigateToSource(message.source);
+      return;
+    }
+    if (message.type === 'navigateToRegion') {
+      await this.navigateToRegion(message.region);
       return;
     }
     if (message.type === 'navigateToSignal') {
@@ -429,12 +440,11 @@ export class DiagramPanel {
   }
 
   private async navigateToSource(source: SourceRange): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const opened = await this.openSourceDocument(source);
+    if (!opened) {
       return;
     }
-    const uri = vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath);
-    const document = await vscode.workspace.openTextDocument(uri);
+    const { document } = opened;
     const startLine = Math.max(0, (source.startLine || 1) - 1);
     const endLine = Math.max(0, (source.endLine || source.startLine || 1) - 1);
     const range = new vscode.Range(
@@ -443,16 +453,55 @@ export class DiagramPanel {
       endLine,
       source.endColumn ?? document.lineAt(endLine).text.length
     );
+    await this.revealDocumentRange(document, range);
+  }
 
+  private async openSourceDocument(source: SourceRange): Promise<{ document: vscode.TextDocument } | undefined> {
+    const workspaceRoot = workspaceRootPath();
+    if (!workspaceRoot || !source.file) {
+      return undefined;
+    }
+    const uri = vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath);
+    const document = await vscode.workspace.openTextDocument(uri);
+    return { document };
+  }
+
+  private async revealDocumentRange(document: vscode.TextDocument, range: vscode.Range): Promise<void> {
     // Find if the document is already open in any tab group
     const tab = vscode.window.tabGroups.all
       .flatMap((group) => group.tabs)
-      .find((tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === uri.toString());
+      .find((tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === document.uri.toString());
 
     await vscode.window.showTextDocument(document, {
       viewColumn: tab?.group.viewColumn ?? vscode.ViewColumn.Active,
       selection: range
     });
+  }
+
+  // Double-click on a generate region. The wrapper block's source already spans the
+  // whole generate statement; an arm's UHDM ranges only give its expression and a
+  // point inside its body, so the arm's begin..end block is recovered from the
+  // document text to highlight the full "expression + body".
+  private async navigateToRegion(region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange }): Promise<void> {
+    const source = region.source ?? region.bodySource;
+    if (!source?.file) {
+      return;
+    }
+    if (region.isGenerateBlock || !region.bodySource) {
+      await this.navigateToSource(source);
+      return;
+    }
+    const opened = await this.openSourceDocument(source);
+    if (!opened) {
+      return;
+    }
+    const { document } = opened;
+    const range = generateArmHighlightRange(document, region.kind, source, region.bodySource);
+    if (!range) {
+      await this.navigateToSource(source);
+      return;
+    }
+    await this.revealDocumentRange(document, range);
   }
 
   private async navigateToSignal(edge: DiagramEdge): Promise<void> {
@@ -487,7 +536,7 @@ export class DiagramPanel {
     vscode.window.showWarningMessage('This is an internal wire.');
   }
 
-  private async saveLayout(moduleName: string, nodes: PositionedNode[]): Promise<void> {
+  private async saveLayout(moduleName: string, nodes: PositionedNode[], regions?: PositionedGenerateRegion[]): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -496,6 +545,21 @@ export class DiagramPanel {
       this.layout = await store.read();
     }
     this.layout = mergeNodePositions(this.layout, moduleName, nodes);
+    if (regions) {
+      this.layout = mergeRegionBounds(this.layout, moduleName, regions);
+    }
+    await store.write(this.layout);
+  }
+
+  private async saveRegionLayout(moduleName: string, regions: PositionedGenerateRegion[]): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.layout = mergeRegionBounds(this.layout, moduleName, regions);
     await store.write(this.layout);
   }
 
@@ -548,7 +612,11 @@ export class DiagramPanel {
     await this.postView(); // Send updated view back to webview immediately
   }
 
-  private async saveEdgeRoutes(moduleName: string, changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>): Promise<void> {
+  private async saveEdgeRoutes(
+    moduleName: string,
+    changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>,
+    nodes?: PositionedNode[]
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -556,7 +624,7 @@ export class DiagramPanel {
     if (!this.layout) {
       this.layout = await store.read();
     }
-    let layout = this.layout;
+    let layout = nodes ? mergeNodePositions(this.layout, moduleName, nodes) : this.layout;
     for (const change of changes) {
       layout = mergeEdgeRoutePoints(layout, moduleName, change.edgeId, change.routePoints);
     }
@@ -687,6 +755,17 @@ export class DiagramPanel {
 
 function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
+function generateArmHighlightRange(
+  document: vscode.TextDocument,
+  kind: string,
+  source: SourceRange,
+  bodySource: SourceRange
+): vscode.Range | undefined {
+  const span = generateArmSpan(document.getText(), kind, source, bodySource);
+  if (!span) return undefined;
+  return new vscode.Range(document.positionAt(span.start), document.positionAt(span.end));
 }
 
 function isHdlUri(uri: vscode.Uri): boolean {
