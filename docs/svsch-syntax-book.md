@@ -57,7 +57,7 @@ A module port typed with a specific interface modport.
 <table>
   <tr>
     <td valign="top">
-      <pre><code>i<mark>nterface simple_if;</mark>
+      <pre><code><mark>interface simple_if;</mark>
   logic data;
   modport slave(input data);
 endinterface
@@ -914,7 +914,7 @@ Instantiating an interface block and connecting it becomes an interface node.
 <table>
   <tr>
     <td valign="top">
-      <pre><code>i<mark>nterface simple_if(input logic clk);</mark>
+      <pre><code><mark>interface simple_if(input logic clk);</mark>
   logic data;
   modport master(input clk, output data);
   modport slave(input clk, input data);
@@ -950,7 +950,7 @@ An interface block with all modports explicitly laid out on the left side using 
 <table>
   <tr>
     <td valign="top">
-      <pre><code>i<mark>nterface stream_if(input logic clk);</mark>
+      <pre><code><mark>interface stream_if(input logic clk);</mark>
   logic data;
   // svsch:modport:pos=left
   modport producer(input clk, output data);
@@ -987,7 +987,7 @@ An interface block with modports distributed on both sides.
 <table>
   <tr>
     <td valign="top">
-      <pre><code>i<mark>nterface stream_if(input logic clk);</mark>
+      <pre><code><mark>interface stream_if(input logic clk);</mark>
   logic data;
   // svsch:modport:pos=left
   modport producer(input clk, output data);

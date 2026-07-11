@@ -838,6 +838,22 @@ SourceInfo DesignExtractor::getSourceInfo(vpiHandle handle) {
     s.endLine = getEndLine(handle);
     s.endCol = getEndCol(handle);
     
+    // Fix off-by-one for "interface" keyword reporting in Surelog (0-indexed col)
+    if (!s.file.empty() && s.line > 0 && s.col >= 1) {
+        std::ifstream file = openSourceFile(s.file);
+        if (file.is_open()) {
+            std::string lineContent;
+            for (int i = 1; i <= s.line; ++i) {
+                if (!std::getline(file, lineContent)) break;
+            }
+            if (static_cast<int>(lineContent.size()) >= s.col - 1 + 9) {
+                if (lineContent.substr(s.col - 1, 9) == "interface") {
+                    s.col--;
+                }
+            }
+        }
+    }
+
     source_depth_--;
     return s;
 }

@@ -33,7 +33,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [interface]
-      selectedText: "nterface simple_if(input logic clk);"
+      selectedText: "interface simple_if(input logic clk);"
 
   - id: interface-modports-left
     title: Interface Modports on One Side
@@ -69,7 +69,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [interface]
-      selectedText: "nterface stream_if(input logic clk);"
+      selectedText: "interface stream_if(input logic clk);"
 
   - id: interface-modports-both-sides
     title: Interface Modports on Both Sides
@@ -105,4 +105,4 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [interface]
-      selectedText: "nterface stream_if(input logic clk);"
+      selectedText: "interface stream_if(input logic clk);"

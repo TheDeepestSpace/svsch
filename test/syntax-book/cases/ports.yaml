@@ -66,7 +66,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [interface]
-      selectedText: "nterface simple_if;"
+      selectedText: "interface simple_if;"
 
   - id: port-array
     title: Array Port
