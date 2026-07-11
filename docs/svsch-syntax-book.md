@@ -1,4 +1,4 @@
-# SystemVerilog Syntax Book
+# SVSCH Syntax Book
 
 This book contains generated block diagrams representing various SystemVerilog constructs.
 
@@ -22,7 +22,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/port-input.svg" alt="Input Port diagram">
+      <img src="syntax-book/assets/port-input.svg" alt="Input Port diagram" />
     </td>
   </tr>
 </table>
@@ -45,7 +45,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/port-output.svg" alt="Output Port diagram">
+      <img src="syntax-book/assets/port-output.svg" alt="Output Port diagram" />
     </td>
   </tr>
 </table>
@@ -61,7 +61,7 @@ A module port typed with a specific interface modport.
   logic data;
   modport slave(input data);
 endinterface
-<br>
+<br />
 module top(simple_if.slave bus, output logic y);
   assign y = bus.data;
 endmodule
@@ -70,7 +70,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram">
+      <img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram" />
     </td>
   </tr>
 </table>
@@ -93,7 +93,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/port-array.svg" alt="Array Port diagram">
+      <img src="syntax-book/assets/port-array.svg" alt="Array Port diagram" />
     </td>
   </tr>
 </table>
@@ -116,7 +116,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram">
+      <img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
     </td>
   </tr>
 </table>
@@ -141,7 +141,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram">
+      <img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram" />
     </td>
   </tr>
 </table>
@@ -162,7 +162,7 @@ Instantiating a submodule with both default parameters and overridden values.
 );
   assign b = a;
 endmodule
-<br>
+<br />
 module top (
   input logic [7:0] a,
   output logic [7:0] b
@@ -177,7 +177,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram">
+      <img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
     </td>
   </tr>
 </table>
@@ -205,7 +205,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram">
+      <img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram" />
     </td>
   </tr>
 </table>
@@ -236,7 +236,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram">
+      <img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram" />
     </td>
   </tr>
 </table>
@@ -267,7 +267,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram">
+      <img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram" />
     </td>
   </tr>
 </table>
@@ -298,7 +298,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram">
+      <img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram" />
     </td>
   </tr>
 </table>
@@ -324,7 +324,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram">
+      <img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram" />
     </td>
   </tr>
 </table>
@@ -350,7 +350,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram">
+      <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
     </td>
   </tr>
 </table>
@@ -382,7 +382,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram">
+      <img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram" />
     </td>
   </tr>
 </table>
@@ -412,7 +412,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram">
+      <img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
     </td>
   </tr>
 </table>
@@ -436,7 +436,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram">
+      <img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram" />
     </td>
   </tr>
 </table>
@@ -460,7 +460,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram">
+      <img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram" />
     </td>
   </tr>
 </table>
@@ -486,7 +486,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram">
+      <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
     </td>
   </tr>
 </table>
@@ -510,7 +510,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram">
+      <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
     </td>
   </tr>
 </table>
@@ -533,7 +533,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram">
+      <img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram" />
     </td>
   </tr>
 </table>
@@ -561,7 +561,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram">
+      <img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram" />
     </td>
   </tr>
 </table>
@@ -583,7 +583,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram">
+      <img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram" />
     </td>
   </tr>
 </table>
@@ -606,7 +606,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram">
+      <img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram" />
     </td>
   </tr>
 </table>
@@ -634,7 +634,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram">
+      <img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
     </td>
   </tr>
 </table>
@@ -660,7 +660,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram">
+      <img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram" />
     </td>
   </tr>
 </table>
@@ -685,7 +685,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram">
+      <img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram" />
     </td>
   </tr>
 </table>
@@ -709,7 +709,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram">
+      <img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram" />
     </td>
   </tr>
 </table>
@@ -732,7 +732,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram">
+      <img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram" />
     </td>
   </tr>
 </table>
@@ -759,7 +759,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram">
+      <img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram" />
     </td>
   </tr>
 </table>
@@ -784,7 +784,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram">
+      <img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram" />
     </td>
   </tr>
 </table>
@@ -809,7 +809,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram">
+      <img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram" />
     </td>
   </tr>
 </table>
@@ -834,7 +834,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram">
+      <img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram" />
     </td>
   </tr>
 </table>
@@ -867,7 +867,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram">
+      <img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram" />
     </td>
   </tr>
 </table>
@@ -884,7 +884,7 @@ Breaking out fields from a packed struct.
   logic valid;
   logic [1:0] lane;
 } packet_t;
-<br>
+<br />
 module top(
   input packet_t <mark>pkt</mark>,
   output logic [3:0] opcode,
@@ -900,7 +900,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram">
+      <img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram" />
     </td>
   </tr>
 </table>
@@ -919,15 +919,15 @@ Instantiating an interface block and connecting it becomes an interface node.
   modport master(input clk, output data);
   modport slave(input clk, input data);
 endinterface
-<br>
+<br />
 module producer(simple_if.master bus);
   assign bus.data = 1&#39;b1;
 endmodule
-<br>
+<br />
 module consumer(simple_if.slave bus, output logic observed);
   assign observed = bus.data;
 endmodule
-<br>
+<br />
 module top(input logic clk, output logic observed);
   simple_if link(clk);
   producer u_producer(.bus(link));
@@ -938,7 +938,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram">
+      <img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram" />
     </td>
   </tr>
 </table>
@@ -957,14 +957,14 @@ An interface block with all modports explicitly laid out on the left side using 
   // svsch:modport:pos=left
   modport consumer(input clk, input data);
 endinterface
-<br>
+<br />
 module producer_mod(stream_if.producer bus);
   assign bus.data = 1&#39;b1;
 endmodule
-<br>
+<br />
 module consumer_mod(stream_if.consumer bus);
 endmodule
-<br>
+<br />
 module top(input logic clk);
   stream_if stream(clk);
   producer_mod u_prod(.bus(stream));
@@ -975,7 +975,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram">
+      <img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram" />
     </td>
   </tr>
 </table>
@@ -994,14 +994,14 @@ An interface block with modports distributed on both sides.
   // svsch:modport:pos=right
   modport consumer(input clk, input data);
 endinterface
-<br>
+<br />
 module producer_mod(stream_if.producer bus);
   assign bus.data = 1&#39;b1;
 endmodule
-<br>
+<br />
 module consumer_mod(stream_if.consumer bus);
 endmodule
-<br>
+<br />
 module top(input logic clk);
   stream_if stream(clk);
   producer_mod u_prod(.bus(stream));
@@ -1012,7 +1012,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram">
+      <img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram" />
     </td>
   </tr>
 </table>
@@ -1029,11 +1029,11 @@ A conditional generate block using an if-else statement.
       <pre><code>module child_a (input logic in, output logic out);
   assign out = in;
 endmodule
-<br>
+<br />
 module child_b (input logic in, output logic out);
   assign out = ~in;
 endmodule
-<br>
+<br />
 module top #(
   parameter MODE = 0
 ) (
@@ -1054,7 +1054,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram">
+      <img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram" />
     </td>
   </tr>
 </table>
@@ -1069,11 +1069,11 @@ A conditional generate block using a case statement.
       <pre><code>module child_a (input logic in, output logic out);
   assign out = in;
 endmodule
-<br>
+<br />
 module child_b (input logic in, output logic out);
   assign out = ~in;
 endmodule
-<br>
+<br />
 module top #(
   parameter MODE = 1
 ) (
@@ -1100,7 +1100,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram">
+      <img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram" />
     </td>
   </tr>
 </table>
@@ -1128,7 +1128,7 @@ endmodule
   </tr>
   <tr>
     <td valign="top">
-      <img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram">
+      <img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
     </td>
   </tr>
 </table>

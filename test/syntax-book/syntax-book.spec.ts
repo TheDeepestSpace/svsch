@@ -112,7 +112,7 @@ test.describe('Syntax Book Generation & Verification', () => {
       return;
     }
 
-    let mdContent = `# SystemVerilog Syntax Book\n\n`;
+    let mdContent = `# SVSCH Syntax Book\n\n`;
     mdContent += `This book contains generated block diagrams representing various SystemVerilog constructs.\n\n`;
 
     for (const sectionFile of sectionFiles) {
@@ -132,7 +132,7 @@ test.describe('Syntax Book Generation & Verification', () => {
       for (const entry of groupEntries) {
         let codeHtml = entry.highlightedHtml;
         while (codeHtml.includes('\n\n')) {
-          codeHtml = codeHtml.replace(/\n\n/g, '\n<br>\n');
+          codeHtml = codeHtml.replace(/\n\n/g, '\n<br />\n');
         }
 
         mdContent += `### ${entry.title}\n\n`;
@@ -145,7 +145,7 @@ test.describe('Syntax Book Generation & Verification', () => {
         mdContent += `  </tr>\n`;
         mdContent += `  <tr>\n`;
         mdContent += `    <td valign="top">\n`;
-        mdContent += `      <img src="syntax-book/assets/${entry.id}.svg" alt="${entry.title} diagram">\n`;
+        mdContent += `      <img src="syntax-book/assets/${entry.id}.svg" alt="${entry.title} diagram" />\n`;
         mdContent += `    </td>\n`;
         mdContent += `  </tr>\n`;
         mdContent += `</table>\n\n`;
@@ -154,7 +154,7 @@ test.describe('Syntax Book Generation & Verification', () => {
 
     const docsDir = path.resolve(__dirname, '../../docs');
     const assetsDir = path.resolve(docsDir, 'syntax-book/assets');
-    const mdPath = path.join(docsDir, 'syntax-book.md');
+    const mdPath = path.join(docsDir, 'svsch-syntax-book.md');
 
     if (process.env.GENERATE_SYNTAX_BOOK === '1') {
       fs.mkdirSync(assetsDir, { recursive: true });
