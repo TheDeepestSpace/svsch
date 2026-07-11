@@ -24,7 +24,7 @@
       "id": "port:top:flat",
       "type": "hdl",
       "position": {
-        "x": 1224,
+        "x": 1176,
         "y": 60
       },
       "width": 120,
@@ -147,7 +147,7 @@
         "x": 816,
         "y": 48
       },
-      "width": 192,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "struct",
@@ -226,7 +226,7 @@
       "target": "port:top:flat",
       "sourceHandle": "out:pkt",
       "targetHandle": "port:flat",
-      "path": "M 960 72 L 984 72 L 1200 72 L 1224 72"
+      "path": "M 960 72 L 984 72 L 1152 72 L 1176 72"
     }
   ]
 }

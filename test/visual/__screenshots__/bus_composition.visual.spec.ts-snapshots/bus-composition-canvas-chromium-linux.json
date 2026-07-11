@@ -7,8 +7,8 @@
         "x": 720,
         "y": 120
       },
-      "width": 192,
-      "height": 125,
+      "width": 144,
+      "height": 149,
       "data": {
         "kind": "bus",
         "ports": [
@@ -99,7 +99,7 @@
       "id": "port:bus_composition:r",
       "type": "hdl",
       "position": {
-        "x": 1128,
+        "x": 1080,
         "y": 132
       },
       "width": 120,
@@ -233,7 +233,7 @@
       "target": "port:bus_composition:r",
       "sourceHandle": "out:r",
       "targetHandle": "port:r",
-      "path": "M 864 144 L 888 144 L 1104 144 L 1128 144"
+      "path": "M 864 144 L 888 144 L 1056 144 L 1080 144"
     },
     {
       "id": "edge:port:bus_composition:a:reg:bus_composition:r_0_:a",

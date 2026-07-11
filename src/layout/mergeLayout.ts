@@ -24,7 +24,7 @@ interface AutoLayoutResult {
 
 export type ElkPortSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
-interface ElkDiagramNode {
+export interface ElkDiagramNode {
   id: string;
   width: number;
   height: number;
@@ -963,6 +963,10 @@ function nodePlacementLayoutOptions(useCompoundGenerateLayout: boolean): Record<
     'elk.algorithm': 'layered',
     'elk.direction': 'RIGHT',
     'elk.spacing.nodeNode': diagramSizing.sameLayerNodeSeparation.toString(),
+    // Must stay a grid multiple: snapPosition() assumes grid-quantized raw
+    // positions, and ELK's default component spacing (20) is not one, which
+    // let adjacent disconnected nodes collapse to a 0px gap after snapping.
+    'elk.spacing.componentComponent': diagramSizing.sameLayerNodeSeparation.toString(),
     'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
     'elk.edgeRouting': 'ORTHOGONAL',
     'elk.interactive': 'true',
@@ -1234,7 +1238,7 @@ function collectElkPositionsAndRegionBounds(
   }
 }
 
-function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
+export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
   const { width, height } = diagramNodeDimensions(node);
   const grid = diagramSizing.gridSize;
   const role = structRole(node);
@@ -1252,6 +1256,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
 
     let portX = side === 'WEST' ? 0 : width;
     let portY = height / 2;
+    let leadOverride: number | undefined;
 
     if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
@@ -1328,7 +1333,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     } else if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {
       const isInterfaceModport = node.kind === 'interface' && role === 'modport';
       const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';
-      const shiftY = isInterfaceInstance ? grid * 3 + grid / 2 : 0;
+      const shiftY = isInterfaceInstance ? diagramSizing.interfaceInstanceShiftY : 0;
       const bottomPortsOnSide = isInterfaceInstance ? visiblePorts.filter(p => p.direction === 'output' && p.width !== 'interface') : [];
       const bottomHatHeight = isInterfaceInstance ? interfaceTopHatHeight(bottomPortsOnSide.length > 0) : 0;
       const unshiftedHeight = Math.max(grid, height - shiftY);
@@ -1339,6 +1344,9 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
         const portIndex = topPorts.indexOf(port);
         portX = interfaceTopPortX(width, topPorts.length, portIndex, Math.max(topPorts.length, bottomPortsOnSide.length));
         portY = 0;
+        // The hat sits below the layout-box top, so the box itself already
+        // provides the vertical approach; no extra lead margin above it.
+        leadOverride = 0;
       } else if (isInterfaceInstance && port.direction === 'output' && port.width !== 'interface') {
         side = 'SOUTH';
         const portIndex = bottomPortsOnSide.indexOf(port);
@@ -1366,6 +1374,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
              side = 'NORTH';
              portX = width / 2;
              portY = 0;
+             leadOverride = grid; // hat stem: keep the boundary one grid above the node
            } else {
              side = port.direction === 'output' ? 'EAST' : 'WEST';
              portX = side === 'EAST' ? width : 0;
@@ -1395,7 +1404,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
           if (port.id === singlePort?.id) {
             if (isArrayComposition) {
               side = 'EAST';
-              portX = width - grid * 1.5;
+              portX = width;
             } else if (isArrayBreakout) {
               side = 'WEST';
               portX = 0;
@@ -1428,7 +1437,7 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
     return {
       id: endpointId(node.id, port.id),
       side,
-      leadLength: includeLeadMargins ? elkLeadLengthForPort(side, port.id) : 0,
+      leadLength: includeLeadMargins ? leadOverride ?? elkLeadLengthForPort(side, port.id) : 0,
       index,
       x: portX,
       y: portY
@@ -1436,15 +1445,19 @@ function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): E
   });
 
   const arrayLayerPad = nodeIsArrayNode(node) ? 4 : 0;
+  // Reserve only the part of each lead that extends past the node outline:
+  // ports inset into the node (mux/select top selects, the inverter output
+  // bubble) consume part of their lead inside the node, so the ELK box must
+  // not also pad for it.
   const margins = portGeometry.reduce((current, port) => {
     if (port.side === 'WEST') {
-      current.left = Math.max(current.left, port.leadLength);
+      current.left = Math.max(current.left, port.leadLength - port.x);
     } else if (port.side === 'EAST') {
-      current.right = Math.max(current.right, port.leadLength);
+      current.right = Math.max(current.right, port.leadLength - (width - port.x));
     } else if (port.side === 'NORTH') {
-      current.top = Math.max(current.top, port.leadLength);
+      current.top = Math.max(current.top, port.leadLength - port.y);
     } else if (port.side === 'SOUTH') {
-      current.bottom = Math.max(current.bottom, port.leadLength);
+      current.bottom = Math.max(current.bottom, port.leadLength - (height - port.y));
     }
     return current;
   }, { left: arrayLayerPad, right: arrayLayerPad, top: arrayLayerPad, bottom: arrayLayerPad });
@@ -1700,7 +1713,17 @@ function routeWithRenderedLeads(
     const sourceHandle = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, false);
     const targetHandle = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, false);
     if (sourceHandle && targetHandle) {
-      return directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
+      const candidate = directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
+      // Only take the shortcut when the drop is monotonic (the wire approaches
+      // a NORTH anchor from above / a SOUTH anchor from below) and the direct
+      // route doesn't cut through unrelated nodes. Otherwise keep the ELK
+      // route, which already avoids the boxes.
+      if (
+        verticalFeedIsMonotonic(sourceHandle, targetHandle)
+        && !routeIntersectsNodeInterior(candidate, nodesById, nodePositions, new Set([edge.source, edge.target]))
+      ) {
+        return candidate;
+      }
     }
   }
 
@@ -1739,6 +1762,24 @@ function routeWithRenderedLeads(
     nodesById,
     nodePositions
   );
+}
+
+function verticalFeedIsMonotonic(
+  sourceHandle: { point: { x: number; y: number }; side: ElkPortSide },
+  targetHandle: { point: { x: number; y: number }; side: ElkPortSide }
+): boolean {
+  for (const [handle, other] of [
+    [sourceHandle, targetHandle.point],
+    [targetHandle, sourceHandle.point]
+  ] as const) {
+    if (handle.side === 'NORTH' && other.y > handle.point.y) {
+      return false;
+    }
+    if (handle.side === 'SOUTH' && other.y < handle.point.y) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function smoothInitialForwardHierarchyStair(
@@ -1829,6 +1870,32 @@ function directLeadRoute(
       sourceLead.point,
       { x: sourceLead.point.x, y: midY },
       { x: targetLead.point.x, y: midY },
+      targetLead.point
+    ]));
+  }
+
+  // Mixed sides with a non-monotonic approach: a plain L-corner would reach a
+  // NORTH lead from below (or a SOUTH lead from above) and backtrack through
+  // the node. Dogleg through an approach corridor one grid outside the lead.
+  if (!sourceSideIsVertical && targetSideIsVertical && !verticalFeedIsMonotonic(sourceLead, targetLead)) {
+    const corridorY = targetLead.point.y + (targetLead.side === 'NORTH' ? -diagramSizing.gridSize : diagramSizing.gridSize);
+    const midX = snapToGrid((sourceLead.point.x + targetLead.point.x) / 2);
+    return removeRedundantRoutePoints(makeOrthogonalRoute([
+      sourceLead.point,
+      { x: midX, y: sourceLead.point.y },
+      { x: midX, y: corridorY },
+      { x: targetLead.point.x, y: corridorY },
+      targetLead.point
+    ]));
+  }
+  if (sourceSideIsVertical && !targetSideIsVertical && !verticalFeedIsMonotonic(sourceLead, targetLead)) {
+    const corridorY = sourceLead.point.y + (sourceLead.side === 'NORTH' ? -diagramSizing.gridSize : diagramSizing.gridSize);
+    const midX = snapToGrid((sourceLead.point.x + targetLead.point.x) / 2);
+    return removeRedundantRoutePoints(makeOrthogonalRoute([
+      sourceLead.point,
+      { x: sourceLead.point.x, y: corridorY },
+      { x: midX, y: corridorY },
+      { x: midX, y: targetLead.point.y },
       targetLead.point
     ]));
   }
@@ -1990,9 +2057,10 @@ function uniqueNumbers(values: number[]): number[] {
 function routeIntersectsNodeInterior(
   route: Array<{ x: number; y: number }>,
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  excludeNodeIds?: Set<string>
 ): boolean {
-  const obstacles = routeObstacles(nodesById, nodePositions);
+  const obstacles = routeObstacles(nodesById, nodePositions, excludeNodeIds);
   return route.slice(0, -1).some((point, index) => {
     const next = route[index + 1];
     return obstacles.some((rect) => segmentIntersectsRectInterior(point, next, rect));
@@ -2001,12 +2069,13 @@ function routeIntersectsNodeInterior(
 
 function routeObstacles(
   nodesById: Map<string, DiagramNode>,
-  nodePositions: Map<string, { x: number; y: number }>
+  nodePositions: Map<string, { x: number; y: number }>,
+  excludeNodeIds?: Set<string>
 ): Array<{ x: number; y: number; width: number; height: number }> {
   const obstacles: Array<{ x: number; y: number; width: number; height: number }> = [];
   for (const [nodeId, node] of nodesById) {
     const position = nodePositions.get(nodeId);
-    if (!position) {
+    if (!position || excludeNodeIds?.has(nodeId)) {
       continue;
     }
     const dimensions = diagramNodeDimensions(node);

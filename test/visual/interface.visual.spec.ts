@@ -313,4 +313,18 @@ test.describe('interface visual rendering', () => {
 
     await expectGraphAndScreenshot(page,'interface-output-wire-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
   });
+
+  test('renders interface scalar caps without side modports', async ({ page }) => {
+    await openFixture(page, 'interface_caps_only.sv', 'auto', 'interface_caps_only');
+
+    const status = page.locator('[data-node-id="interface:interface_caps_only:status"]');
+    await expect(status).toBeVisible();
+    await expect(status.locator('.hdl-interface-skin-with-tophat')).toBeVisible();
+    await expect(status.locator('.hdl-interface-skin-with-bottomhat')).toBeVisible();
+    await expect(status.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
+    await expect(status.locator('.svsch-interface-bottom-label', { hasText: 'done' })).toBeVisible();
+    await expect(status.locator('.svsch-interface-side-label')).toHaveCount(0);
+
+    await expectGraphAndScreenshot(page,'interface-caps-only-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+  });
 });

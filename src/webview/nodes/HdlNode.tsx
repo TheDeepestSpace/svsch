@@ -220,7 +220,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const capPortCount = Math.max(topPorts.length, bottomPorts.length);
     const topHatHeight = isInterfaceInstance ? interfaceTopHatHeight(topPorts.length > 0) : 0;
     const bottomHatHeight = isInterfaceInstance ? interfaceTopHatHeight(bottomPorts.length > 0) : 0;
-    const shiftY = isInterfaceInstance ? diagramSizing.gridSize * 3 + diagramSizing.gridSize / 2 : 0;
+    const shiftY = isInterfaceInstance ? diagramSizing.interfaceInstanceShiftY : 0;
     const unshiftedHeight = Math.max(diagramSizing.gridSize, nodeHeight - shiftY);
     const leftInterfaceCenters = distributedInterfaceSideCenters(leftSidePorts.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
     const rightInterfaceCenters = distributedInterfaceSideCenters(rightSidePorts.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);

@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 768,
-        "y": 192
+        "y": 72
       },
       "width": 192,
       "height": 96,
@@ -30,10 +30,10 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 96
+        "y": 48
       },
       "width": 192,
-      "height": 180,
+      "height": 84,
       "data": {
         "kind": "interface",
         "ports": [
@@ -80,7 +80,7 @@
       "type": "hdl",
       "position": {
         "x": 1176,
-        "y": 228
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -103,7 +103,7 @@
       "target": "port:top:observed",
       "sourceHandle": "port:observed",
       "targetHandle": "port:observed",
-      "path": "M 960 240 L 984 240 L 1152 240 L 1176 240"
+      "path": "M 960 120 L 984 120 L 1152 120 L 1176 120"
     },
     {
       "id": "edge:interface:top:link:instance:top:u_consumer:link",
@@ -111,7 +111,7 @@
       "target": "instance:top:u_consumer",
       "sourceHandle": "out:slave",
       "targetHandle": "port:bus",
-      "path": "M 552 240 L 576 240 L 744 240 L 768 240"
+      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
     },
     {
       "id": "edge:port:top:clk:interface:top:link:clk",
@@ -119,7 +119,7 @@
       "target": "interface:top:link",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 48 L 168 48 L 456 48 L 456 168 L 456 204"
+      "path": "M 144 48 L 168 48 L 456 48 L 456 84"
     }
   ]
 }

@@ -49,7 +49,7 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 624,
+        "x": 600,
         "y": 36
       },
       "width": 120,
@@ -73,7 +73,7 @@
       "target": "port:top:b",
       "sourceHandle": "out:b",
       "targetHandle": "port:b",
-      "path": "M 390.797 48 L 408 48 L 600 48 L 624 48"
+      "path": "M 390.797 48 L 408 48 L 576 48 L 600 48"
     },
     {
       "id": "edge:port:top:a:inverter:top:b:expr:a",

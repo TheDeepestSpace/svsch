@@ -5,9 +5,9 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 168
+        "y": 144
       },
-      "width": 192,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "bus",
@@ -30,10 +30,10 @@
       "type": "hdl",
       "position": {
         "x": 480,
-        "y": 96
+        "y": 72
       },
       "width": 192,
-      "height": 240,
+      "height": 216,
       "data": {
         "kind": "interface",
         "ports": [
@@ -89,8 +89,8 @@
       "id": "port:consumer:observed",
       "type": "hdl",
       "position": {
-        "x": 1296,
-        "y": 180
+        "x": 1248,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -113,7 +113,7 @@
       "target": "port:consumer:observed",
       "sourceHandle": "out:data_0_",
       "targetHandle": "port:observed",
-      "path": "M 1080 192 L 1104 192 L 1272 192 L 1296 192"
+      "path": "M 1032 168 L 1056 168 L 1224 168 L 1248 168"
     },
     {
       "id": "edge:interface_modport:consumer:bus:bus:consumer:data:bus.data",
@@ -121,7 +121,7 @@
       "target": "bus:consumer:data",
       "sourceHandle": "out:data",
       "targetHandle": "in:data",
-      "path": "M 672 192 L 696 192 L 912 192 L 936 192"
+      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
     },
     {
       "id": "edge:interface_modport:consumer:bus:interface_modport:consumer:bus:bus.valid",
@@ -129,7 +129,7 @@
       "target": "interface_modport:consumer:bus",
       "sourceHandle": "out:valid",
       "targetHandle": "in:ready",
-      "path": "M 672 240 L 696 240 L 696 336 L 432 336 L 432 288 L 456 288 L 480 288"
+      "path": "M 672 216 L 696 216 L 696 288 L 432 288 L 432 264 L 456 264 L 480 264"
     },
     {
       "id": "edge:interface:consumer:bus:interface_modport:consumer:bus:bus",
@@ -137,7 +137,7 @@
       "target": "interface_modport:consumer:bus",
       "sourceHandle": "out:slave",
       "targetHandle": "in:slave",
-      "path": "M 240 48 L 264 48 L 576 48 L 576 93"
+      "path": "M 240 48 L 264 48 L 576 48 L 576 69"
     }
   ]
 }

@@ -4,7 +4,7 @@
       "id": "port:top:lane",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 132
       },
       "width": 120,
@@ -24,7 +24,7 @@
       "id": "port:top:opcode",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 36
       },
       "width": 144,
@@ -64,7 +64,7 @@
       "id": "port:top:valid",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 84
       },
       "width": 120,
@@ -87,7 +87,7 @@
         "x": 384,
         "y": 24
       },
-      "width": 192,
+      "width": 144,
       "height": 144,
       "data": {
         "kind": "struct",
@@ -123,7 +123,7 @@
       "target": "struct:top:pkt",
       "sourceHandle": "port:pkt",
       "targetHandle": "in:pkt",
-      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+      "path": "M 168 48 L 192 48 L 360 48 L 384 48"
     },
     {
       "id": "edge:struct:top:pkt:port:top:lane:pkt.lane",
@@ -131,7 +131,7 @@
       "target": "port:top:lane",
       "sourceHandle": "out:pkt.lane",
       "targetHandle": "port:lane",
-      "path": "M 576 144 L 600 144 L 768 144 L 792 144"
+      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
     },
     {
       "id": "edge:struct:top:pkt:port:top:opcode:pkt.opcode",
@@ -139,7 +139,7 @@
       "target": "port:top:opcode",
       "sourceHandle": "out:pkt.opcode",
       "targetHandle": "port:opcode",
-      "path": "M 576 48 L 600 48 L 768 48 L 792 48"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:struct:top:pkt:port:top:valid:pkt.valid",
@@ -147,7 +147,7 @@
       "target": "port:top:valid",
       "sourceHandle": "out:pkt.valid",
       "targetHandle": "port:valid",
-      "path": "M 576 96 L 600 96 L 768 96 L 792 96"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     }
   ]
 }

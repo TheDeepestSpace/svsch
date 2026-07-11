@@ -7,7 +7,7 @@
         "x": 384,
         "y": 24
       },
-      "width": 192,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "bus",
@@ -34,7 +34,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 36
       },
       "width": 120,
@@ -54,7 +54,7 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 84
       },
       "width": 120,
@@ -98,7 +98,7 @@
       "target": "port:top:a",
       "sourceHandle": "out:bus_in_0_",
       "targetHandle": "port:a",
-      "path": "M 576 48 L 600 48 L 768 48 L 792 48"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:bus:top:bus_in:port:top:b:b",
@@ -106,7 +106,7 @@
       "target": "port:top:b",
       "sourceHandle": "out:bus_in_1_",
       "targetHandle": "port:b",
-      "path": "M 576 96 L 600 96 L 768 96 L 792 96"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:port:top:bus_in:bus:top:bus_in:bus_in",
@@ -114,7 +114,7 @@
       "target": "bus:top:bus_in",
       "sourceHandle": "port:bus_in",
       "targetHandle": "in:bus_in",
-      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+      "path": "M 168 48 L 192 48 L 360 48 L 384 48"
     }
   ]
 }
