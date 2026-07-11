@@ -111,6 +111,7 @@ export async function postView(page: Page, view: DiagramViewModel): Promise<void
 }
 
 export async function paddedLocatorClip(page: Page, selector: string): Promise<{ x: number; y: number; width: number; height: number }> {
+  await page.evaluate(() => document.fonts.ready);
   const padding = 24;
   const box = await page.locator(selector).first().boundingBox();
   if (!box) {
@@ -120,6 +121,7 @@ export async function paddedLocatorClip(page: Page, selector: string): Promise<{
 }
 
 export async function paddedGraphClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.locator('.react-flow__nodes').boundingBox();
   if (!box) {
@@ -132,6 +134,7 @@ export async function paddedGraphClip(page: Page): Promise<{ x: number; y: numbe
 // above canvas y=0 (which fall above the .react-flow__nodes container bbox) are
 // included correctly.
 export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.evaluate(() => {
     const rects = Array.from(document.querySelectorAll('.react-flow__node'))
@@ -151,6 +154,7 @@ export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: nu
 }
 
 export async function paddedGraphAndRegionsClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.evaluate(() => {
     const rects = Array.from(document.querySelectorAll('.react-flow__node, .generate-region'))
@@ -170,6 +174,7 @@ export async function paddedGraphAndRegionsClip(page: Page): Promise<{ x: number
 }
 
 export async function canvasClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  await page.evaluate(() => document.fonts.ready);
   const box = await page.locator('.canvas').boundingBox();
   if (!box) {
     throw new Error('Unable to find rendered canvas');
