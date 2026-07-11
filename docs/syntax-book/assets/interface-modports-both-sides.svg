@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="348" viewBox="0 0 1104 348" class="svsch-diagram" role="img" aria-label="top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1104" height="228" viewBox="0 0 1104 228" class="svsch-diagram" role="img" aria-label="top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3563,26 +3563,26 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream" d="M 216 240 L 240 240 L 408 240 L 432 240" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream" data-net-key="instance:top:u_prod:port:bus" d="M 216 240 L 240 240 L 408 240 L 432 240" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream" d="M 624 240 L 648 240 L 816 240 L 840 240" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream" data-net-key="interface:top:stream:out:consumer" d="M 624 240 L 648 240 L 816 240 L 840 240" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:clk:interface:top:stream:clk"><path class="svsch-edge" data-edge-id="edge:port:top:clk:interface:top:stream:clk" data-net-key="port:top:clk:port:clk" d="M 216 48 L 240 48 L 528 48 L 528 168 L 528 204" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream" d="M 216 120 L 240 120 L 408 120 L 432 120" />
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:top:u_prod:interface:top:stream:stream" data-net-key="instance:top:u_prod:port:bus" d="M 216 120 L 240 120 L 408 120 L 432 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream" d="M 624 120 L 648 120 L 816 120 L 840 120" />
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:top:stream:instance:top:u_cons:stream" data-net-key="interface:top:stream:out:consumer" d="M 624 120 L 648 120 L 816 120 L 840 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:clk:interface:top:stream:clk"><path class="svsch-edge" data-edge-id="edge:port:top:clk:interface:top:stream:clk" data-net-key="port:top:clk:port:clk" d="M 216 48 L 240 48 L 528 48 L 528 84" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:u_prod" data-node-kind="instance" transform="translate(24 192)">
+<g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:u_prod" data-node-kind="instance" transform="translate(24 72)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">producer_mod</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u_prod</text><text class="svsch-port-label" x="180" y="48" text-anchor="end" dominant-baseline="middle">bus<tspan class="svsch-port-type-suffix-blue">{}</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:u_cons" data-node-kind="instance" transform="translate(840 192)">
+<g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:u_cons" data-node-kind="instance" transform="translate(840 72)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">consumer_mod</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u_cons</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">bus<tspan class="svsch-port-type-suffix-blue">{}</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-bus-node hdl-interface-node hdl-interface-instance hdl-bus-breakout" data-node-id="interface:top:stream" data-node-kind="interface" transform="translate(432 96)">
-<svg class="hdl-node-svg" width="192" height="180" aria-hidden="true">
-<g class="hdl-interface-skin hdl-interface-skin-with-tophat"><path class="hdl-interface-skin-body" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><path class="hdl-interface-skin-selection" d="M 48 108 H 144 V 132 H 144 V 132 L 144 132 H 180 L 192 144 L 180 156 H 144 L 144 156 H 48 L 48 156 H 12 L 0 144 L 12 132 H 48 L 48 132 V 132 H 48 Z"></path><text class="svsch-node-title svsch-interface-instance-title" x="50" y="144" text-anchor="start" dominant-baseline="middle">stream</text><text class="svsch-type-label svsch-interface-type-label svsch-svg-link" x="91" y="144" dominant-baseline="middle">stream_if</text><line class="svsch-svg-link-underline svsch-interface-type-link-underline" x1="91" x2="135.55" y1="149.58" y2="149.58"></line><text class="svsch-interface-side-label svsch-interface-side-left svsch-interface-side-modport-label svsch-svg-link" data-port-id="in:producer" x="18" y="144" dominant-baseline="middle">producer</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="18" x2="70.80000000000001" y1="151.44" y2="151.44"></line><text class="svsch-interface-side-label svsch-interface-side-right svsch-interface-side-modport-label svsch-svg-link" data-port-id="out:consumer" x="174" y="144" text-anchor="end" dominant-baseline="middle">consumer</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="121.19999999999999" x2="174" y1="151.44" y2="151.44"></line><text class="svsch-interface-port-label svsch-interface-top-label" data-port-id="in:clk" x="96" y="120" text-anchor="middle" dominant-baseline="middle">clk</text></g>
+<g class="svsch-node hdl-bus-node hdl-interface-node hdl-interface-instance hdl-bus-breakout" data-node-id="interface:top:stream" data-node-kind="interface" transform="translate(432 48)">
+<svg class="hdl-node-svg" width="192" height="84" aria-hidden="true">
+<g class="hdl-interface-skin hdl-interface-skin-with-tophat"><path class="hdl-interface-skin-body" d="M 48 36 H 144 V 60 H 144 V 60 L 144 60 H 180 L 192 72 L 180 84 H 144 L 144 84 H 48 L 48 84 H 12 L 0 72 L 12 60 H 48 L 48 60 V 60 H 48 Z"></path><path class="hdl-interface-skin-selection" d="M 48 36 H 144 V 60 H 144 V 60 L 144 60 H 180 L 192 72 L 180 84 H 144 L 144 84 H 48 L 48 84 H 12 L 0 72 L 12 60 H 48 L 48 60 V 60 H 48 Z"></path><text class="svsch-node-title svsch-interface-instance-title" x="50" y="72" text-anchor="start" dominant-baseline="middle">stream</text><text class="svsch-type-label svsch-interface-type-label svsch-svg-link" x="91" y="72" dominant-baseline="middle">stream_if</text><line class="svsch-svg-link-underline svsch-interface-type-link-underline" x1="91" x2="135.55" y1="77.58" y2="77.58"></line><text class="svsch-interface-side-label svsch-interface-side-left svsch-interface-side-modport-label svsch-svg-link" data-port-id="in:producer" x="18" y="72" dominant-baseline="middle">producer</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="18" x2="70.80000000000001" y1="79.44" y2="79.44"></line><text class="svsch-interface-side-label svsch-interface-side-right svsch-interface-side-modport-label svsch-svg-link" data-port-id="out:consumer" x="174" y="72" text-anchor="end" dominant-baseline="middle">consumer</text><line class="svsch-svg-link-underline svsch-interface-side-link-underline" x1="121.19999999999999" x2="174" y1="79.44" y2="79.44"></line><text class="svsch-interface-port-label svsch-interface-top-label" data-port-id="in:clk" x="96" y="48" text-anchor="middle" dominant-baseline="middle">clk</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:clk" data-node-kind="port" transform="translate(96 36)">

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1008" height="240" viewBox="0 0 1008 240" class="svsch-diagram" role="img" aria-label="top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="240" viewBox="0 0 960 240" class="svsch-diagram" role="img" aria-label="top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3563,15 +3563,15 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:port:top:pkt:struct:top:pkt:pkt"><path class="svsch-edge svsch-edge-struct" data-edge-id="edge:port:top:pkt:struct:top:pkt:pkt" data-net-key="port:top:pkt:port:pkt" d="M 168 48 L 192 48 L 408 48 L 432 48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:lane:pkt.lane"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:lane:pkt.lane" data-net-key="struct:top:pkt:out:pkt.lane" d="M 576 144 L 600 144 L 768 144 L 792 144" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:opcode:pkt.opcode"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:opcode:pkt.opcode" data-net-key="struct:top:pkt:out:pkt.opcode" d="M 576 48 L 600 48 L 768 48 L 792 48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:valid:pkt.valid"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:valid:pkt.valid" data-net-key="struct:top:pkt:out:pkt.valid" d="M 576 96 L 600 96 L 768 96 L 792 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:pkt:struct:top:pkt:pkt"><path class="svsch-edge svsch-edge-struct" data-edge-id="edge:port:top:pkt:struct:top:pkt:pkt" data-net-key="port:top:pkt:port:pkt" d="M 168 48 L 192 48 L 360 48 L 384 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:lane:pkt.lane"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:lane:pkt.lane" data-net-key="struct:top:pkt:out:pkt.lane" d="M 528 144 L 552 144 L 720 144 L 744 144" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:opcode:pkt.opcode"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:opcode:pkt.opcode" data-net-key="struct:top:pkt:out:pkt.opcode" d="M 528 48 L 552 48 L 720 48 L 744 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:struct:top:pkt:port:top:valid:pkt.valid"><path class="svsch-edge" data-edge-id="edge:struct:top:pkt:port:top:valid:pkt.valid" data-net-key="struct:top:pkt:out:pkt.valid" d="M 528 96 L 552 96 L 720 96 L 744 96" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-bus-node hdl-struct-node hdl-bus-breakout" data-node-id="struct:top:pkt" data-node-kind="struct" transform="translate(384 24)">
-<svg class="hdl-node-svg" width="192" height="144" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="48" y="12" width="6" height="120" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:pkt.opcode"><line class="svsch-bus-tap-line" x1="54" y1="24" x2="192" y2="24"></line><rect x="66" y="16" width="109" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.opcode" x="76" y="24" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [6:3]</tspan></text></g><g class="svsch-bus-tap" data-port-id="out:pkt.valid"><line class="svsch-bus-tap-line" x1="54" y1="72" x2="192" y2="72"></line><rect x="66" y="64" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.valid" x="76" y="72" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [2]</tspan></text></g><g class="svsch-bus-tap" data-port-id="out:pkt.lane"><line class="svsch-bus-tap-line" x1="54" y1="120" x2="192" y2="120"></line><rect x="66" y="112" width="94" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.lane" x="76" y="120" dominant-baseline="middle">lane<tspan class="svsch-struct-field-annotation"> [1:0]</tspan></text></g>
+<svg class="hdl-node-svg" width="144" height="144" aria-hidden="true">
+<rect class="svsch-bus-pipe" x="0" y="12" width="6" height="120" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:pkt.opcode"><line class="svsch-bus-tap-line" x1="6" y1="24" x2="144" y2="24"></line><rect x="18" y="16" width="109" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.opcode" x="28" y="24" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [6:3]</tspan></text></g><g class="svsch-bus-tap" data-port-id="out:pkt.valid"><line class="svsch-bus-tap-line" x1="6" y1="72" x2="144" y2="72"></line><rect x="18" y="64" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.valid" x="28" y="72" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [2]</tspan></text></g><g class="svsch-bus-tap" data-port-id="out:pkt.lane"><line class="svsch-bus-tap-line" x1="6" y1="120" x2="144" y2="120"></line><rect x="18" y="112" width="94" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:pkt.lane" x="28" y="120" dominant-baseline="middle">lane<tspan class="svsch-struct-field-annotation"> [1:0]</tspan></text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:pkt" data-node-kind="port" transform="translate(24 36)">
@@ -3579,17 +3579,17 @@ path.port-skin-body.port-skin-harness {
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 132 L 144 12 L 132 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 132 L 144 12 L 132 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="72" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">pkt</tspan><tspan> </tspan><tspan class="svsch-type-label svsch-port-type-label svsch-svg-link">packet_t</tspan></text><line class="svsch-svg-link-underline svsch-port-type-link-underline" x1="60.096" x2="107.61600000000001" y1="18.696" y2="18.696"></line></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:opcode" data-node-kind="port" transform="translate(792 36)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:opcode" data-node-kind="port" transform="translate(744 36)">
 <svg class="hdl-node-svg" width="144" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 144 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 144 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="72" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">opcode</tspan><tspan class="svsch-port-width-suffix"> [3:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:valid" data-node-kind="port" transform="translate(792 84)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:valid" data-node-kind="port" transform="translate(744 84)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">valid</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:lane" data-node-kind="port" transform="translate(792 132)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:lane" data-node-kind="port" transform="translate(744 132)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">lane</tspan><tspan class="svsch-port-width-suffix"> [1:0]</tspan></text></g>
 </svg>
