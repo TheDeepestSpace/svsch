@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 96
+        "y": 72
       },
       "width": 144,
       "height": 96,
@@ -40,7 +40,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 132
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -60,7 +60,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 180
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -100,7 +100,7 @@
       "type": "hdl",
       "position": {
         "x": 720,
-        "y": 132
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -123,7 +123,7 @@
       "target": "port:mux_only:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
-      "path": "M 504 144 L 528 144 L 696 144 L 720 144"
+      "path": "M 504 120 L 528 120 L 696 120 L 720 120"
     },
     {
       "id": "edge:port:mux_only:a:mux:mux_only:y:sel:y:a",
@@ -131,7 +131,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
-      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
+      "path": "M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:mux_only:b:mux:mux_only:y:sel:y:b",
@@ -139,7 +139,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:default",
-      "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
       "id": "edge:port:mux_only:sel:mux:mux_only:y:sel:y:sel",
@@ -147,7 +147,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 72 L 432 117"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
     }
   ]
 }

@@ -7,7 +7,7 @@
         "x": 384,
         "y": 24
       },
-      "width": 192,
+      "width": 144,
       "height": 101,
       "data": {
         "kind": "bus",
@@ -49,7 +49,7 @@
       "id": "port:bus_one_tap:opcode",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": 744,
         "y": 36
       },
       "width": 144,
@@ -73,7 +73,7 @@
       "target": "port:bus_one_tap:opcode",
       "sourceHandle": "out:instr_6:0_",
       "targetHandle": "port:opcode",
-      "path": "M 576 48 L 600 48 L 768 48 L 792 48"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:port:bus_one_tap:instr:bus:bus_one_tap:instr:instr",
@@ -81,7 +81,7 @@
       "target": "bus:bus_one_tap:instr",
       "sourceHandle": "port:instr",
       "targetHandle": "in:instr",
-      "path": "M 168 48 L 192 48 L 408 48 L 432 48"
+      "path": "M 168 48 L 192 48 L 360 48 L 384 48"
     }
   ]
 }

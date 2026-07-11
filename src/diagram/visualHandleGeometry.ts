@@ -6,7 +6,7 @@ import { busTapPortCenterY } from './busGeometry';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
-  interfaceTopHatTop,
+  interfaceSkinPath,
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from './interfaceGeometry';
@@ -54,9 +54,11 @@ function busSingleHandleGeometry(node: DiagramNode, port: DiagramPort): VisualHa
   const y = isArrayComposition || isArrayBreakout
     ? lastTapCenter + diagramSizing.gridSize
     : firstTapCenter;
+  // The pipe sits flush with the single-port edge, so scalar aggregates plug
+  // in at the node border; array breakouts keep a grid for the diagonal exit.
   const x = isComposition
-    ? width - diagramSizing.gridSize * (isArrayComposition ? 1.5 : 2)
-    : diagramSizing.gridSize * (isArrayBreakout ? 2.5 : 2);
+    ? width
+    : diagramSizing.gridSize * (isArrayBreakout ? 1.5 : 0);
 
   return {
     offset: { x, y },
@@ -107,6 +109,7 @@ function interfaceInstanceScalarHandleGeometry(node: DiagramNode, port: DiagramP
 }
 
 export function interfaceInstanceTopHatY(node: DiagramNode, height: number): number {
+  const { width } = nodeDimensions(node);
   const aggregatePorts = node.ports.filter((candidate) => candidate.width !== 'interface' || candidate.preferredSide);
   const topPorts = aggregatePorts.filter((candidate) => candidate.direction === 'input' && candidate.width !== 'interface');
   const bottomPorts = aggregatePorts.filter((candidate) => candidate.direction === 'output' && candidate.width !== 'interface');
@@ -114,11 +117,18 @@ export function interfaceInstanceTopHatY(node: DiagramNode, height: number): num
   const orderedSide = orderedInterfaceSidePorts(sidePorts);
   const topHatHeight = interfaceTopHatHeight(topPorts.length > 0);
   const bottomHatHeight = interfaceTopHatHeight(bottomPorts.length > 0);
-  const shiftY = diagramSizing.gridSize * 3 + diagramSizing.gridSize / 2;
+  const shiftY = diagramSizing.interfaceInstanceShiftY;
   const unshiftedHeight = Math.max(diagramSizing.gridSize, height - shiftY);
   const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedHeight, topHatHeight, bottomHatHeight).map((center) => center + shiftY);
   const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedHeight, topHatHeight, bottomHatHeight).map((center) => center + shiftY);
-  return interfaceTopHatTop([...leftCenters, ...rightCenters], topHatHeight);
+  return interfaceSkinPath({
+    width,
+    height,
+    leftCenters,
+    rightCenters,
+    topPortCount: topPorts.length,
+    bottomPortCount: bottomPorts.length
+  }).topHatTop;
 }
 
 function nodeDimensions(node: DiagramNode): { width: number; height: number } {

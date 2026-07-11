@@ -50,10 +50,14 @@ export function distributedInterfaceSideCenters(count: number, height: number, t
   const grid = diagramSizing.gridSize;
   const rowSpacing = grid * 2;
   const requiredHeight = rowSpacing * (count - 1) + grid;
-  const usableHeight = Math.max(requiredHeight, height - topOffset - bottomOffset);
+  // Content starts one grid below the top offset (hat), so the box keeps a
+  // fixed entry corridor; with content-derived node heights the leftover
+  // slack is zero and the last notch sits flush with the box bottom.
+  const contentTop = topOffset + grid;
+  const usableHeight = Math.max(requiredHeight, height - contentTop - bottomOffset);
   const start = count === 1 && bottomOffset > 0
-    ? topOffset + usableHeight - grid / 2
-    : topOffset + grid / 2 + (usableHeight - requiredHeight) / 2;
+    ? contentTop + usableHeight - grid / 2
+    : contentTop + grid / 2 + (usableHeight - requiredHeight) / 2;
   return Array.from({ length: count }, (_, index) => {
     const snap = grid / 2;
     return Math.round((start + rowSpacing * index) / snap) * snap;

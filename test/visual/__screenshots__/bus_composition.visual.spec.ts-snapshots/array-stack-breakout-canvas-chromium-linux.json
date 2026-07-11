@@ -7,8 +7,8 @@
         "x": 360,
         "y": 24
       },
-      "width": 192,
-      "height": 197,
+      "width": 168,
+      "height": 221,
       "data": {
         "kind": "bus",
         "ports": [
@@ -64,7 +64,7 @@
       "id": "port:array_stack_breakout:elem0",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 744,
         "y": 36
       },
       "width": 144,
@@ -84,7 +84,7 @@
       "id": "port:array_stack_breakout:elem1",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 744,
         "y": 84
       },
       "width": 144,
@@ -104,7 +104,7 @@
       "id": "port:array_stack_breakout:elem2",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 744,
         "y": 132
       },
       "width": 144,
@@ -124,7 +124,7 @@
       "id": "port:array_stack_breakout:elem3",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 744,
         "y": 180
       },
       "width": 144,
@@ -148,7 +148,7 @@
       "target": "port:array_stack_breakout:elem0",
       "sourceHandle": "out:arr_0_",
       "targetHandle": "port:elem0",
-      "path": "M 552 48 L 576 48 L 744 48 L 768 48"
+      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem1:elem1",
@@ -156,7 +156,7 @@
       "target": "port:array_stack_breakout:elem1",
       "sourceHandle": "out:arr_1_",
       "targetHandle": "port:elem1",
-      "path": "M 552 96 L 576 96 L 744 96 L 768 96"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem2:elem2",
@@ -164,7 +164,7 @@
       "target": "port:array_stack_breakout:elem2",
       "sourceHandle": "out:arr_2_",
       "targetHandle": "port:elem2",
-      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem3:elem3",
@@ -172,7 +172,7 @@
       "target": "port:array_stack_breakout:elem3",
       "sourceHandle": "out:arr_3_",
       "targetHandle": "port:elem3",
-      "path": "M 552 192 L 576 192 L 744 192 L 768 192"
+      "path": "M 528 192 L 552 192 L 720 192 L 744 192"
     },
     {
       "id": "edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr",
@@ -180,7 +180,7 @@
       "target": "bus:array_stack_breakout:arr",
       "sourceHandle": "port:arr",
       "targetHandle": "in:arr",
-      "path": "M 157 220 L 418 220"
+      "path": "M 157 220 L 394 220"
     }
   ]
 }

@@ -1,4 +1,8 @@
 import { diagramSizing } from '../../diagram/constants';
+import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import { interfaceInstanceTopHatY } from '../../diagram/visualHandleGeometry';
+import { nodeTypeName, structRole } from '../../ir/nodeMetadata';
+import type { DiagramNode } from '../../ir/types';
 import { HdlPosition, type OrthogonalPoint, type SerializableOrthogonalRoute } from './types';
 
 export interface NodeObstacle {
@@ -33,11 +37,13 @@ export function normalizeRoutePoints(
   targetPosition: HdlPosition,
   sourceHandleId?: string | null,
   targetHandleId?: string | null,
-  simplify = true
+  simplify = true,
+  sourceNode?: DiagramNode,
+  targetNode?: DiagramNode
 ): OrthogonalPoint[] {
   const forceStraight = (route as any)?.edge?.metadata?.forceStraight === true;
-  const sourceLeadLen = forceStraight ? 0 : leadLengthForHandle(sourcePosition, sourceHandleId);
-  const targetLeadLen = forceStraight ? 0 : leadLengthForHandle(targetPosition, targetHandleId);
+  const sourceLeadLen = forceStraight ? 0 : leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode);
+  const targetLeadLen = forceStraight ? 0 : leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode);
   // For forceStraight stubs the handle may land on a half-grid coordinate (e.g. the
   // centre of a port node). Snapping to the nearest full grid would shift the lead 12 px
   // in both axes, producing a visible 45-degree entry segment. Use the exact handle
@@ -112,10 +118,14 @@ function pointsAlmostEqual(a: OrthogonalPoint, b: OrthogonalPoint): boolean {
   return Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1;
 }
 
-export function leadLengthForHandle(position: HdlPosition, handleId?: string | null, maxLead?: number): number {
+export function leadLengthForHandle(position: HdlPosition, handleId?: string | null, maxLead?: number, node?: DiagramNode): number {
   let length = diagramSizing.edgeLeadLength;
   if (position === HdlPosition.Top || position === HdlPosition.Bottom) {
-    if (handleId === 'reset') {
+    if (position === HdlPosition.Top && isInterfaceInstanceNode(node)) {
+      // Top-hat handles sit inside the layout box; the ELK anchor is at the
+      // box top (zero lead margin), so the lead spans exactly the hat offset.
+      length = interfaceInstanceTopHatY(node!, diagramNodeDimensions(node!).height);
+    } else if (handleId === 'reset' || isModuleModportHatNode(node)) {
       length = diagramSizing.gridSize;
     } else {
       length = diagramSizing.gridSize * 2;
@@ -126,6 +136,17 @@ export function leadLengthForHandle(position: HdlPosition, handleId?: string | n
     return Math.min(length, maxLead);
   }
   return length;
+}
+
+// Module-level interface modports use a single-grid hat stem. Must match the
+// leadOverride in elkNodeForDiagramNode so webview routes and ELK anchors agree.
+function isModuleModportHatNode(node?: DiagramNode): boolean {
+  return !!node && node.kind === 'interface' && structRole(node) === 'modport' && node.label !== nodeTypeName(node);
+}
+
+function isInterfaceInstanceNode(node?: DiagramNode): boolean {
+  const role = node ? structRole(node) : undefined;
+  return !!node && node.kind === 'interface' && role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
 }
 
 export function migrateRoutePoints(

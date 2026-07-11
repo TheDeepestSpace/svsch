@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 408,
-        "y": 96
+        "y": 72
       },
       "width": 144,
       "height": 96,
@@ -55,7 +55,7 @@
       "type": "hdl",
       "position": {
         "x": 72,
-        "y": 132
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -75,7 +75,7 @@
       "type": "hdl",
       "position": {
         "x": 768,
-        "y": 132
+        "y": 108
       },
       "width": 168,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "port:array_address_read:read_data",
       "sourceHandle": "out",
       "targetHandle": "port:read_data",
-      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
     },
     {
       "id": "edge:port:array_address_read:address:mux:array_address_read:M_read_address:address",
@@ -106,7 +106,7 @@
       "target": "mux:array_address_read:M_read_address",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 192 48 L 216 48 L 480 48 L 480 72 L 480 117"
+      "path": "M 192 48 L 216 48 L 480 48 L 480 93"
     },
     {
       "id": "edge:port:array_address_read:M:mux:array_address_read:M_read_address:M",
@@ -114,7 +114,7 @@
       "target": "mux:array_address_read:M_read_address",
       "sourceHandle": "port:M",
       "targetHandle": "in:in",
-      "path": "M 205 148 L 408 148"
+      "path": "M 205 124 L 408 124"
     }
   ]
 }

@@ -169,7 +169,7 @@
       "id": "port:inverter_expr:bus_y",
       "type": "hdl",
       "position": {
-        "x": 624,
+        "x": 600,
         "y": 252
       },
       "width": 144,
@@ -269,7 +269,7 @@
       "id": "port:inverter_expr:s_y",
       "type": "hdl",
       "position": {
-        "x": 624,
+        "x": 600,
         "y": 108
       },
       "width": 120,
@@ -289,7 +289,7 @@
       "id": "port:inverter_expr:valid_out",
       "type": "hdl",
       "position": {
-        "x": 624,
+        "x": 600,
         "y": 180
       },
       "width": 120,
@@ -309,7 +309,7 @@
       "id": "port:inverter_expr:y",
       "type": "hdl",
       "position": {
-        "x": 624,
+        "x": 600,
         "y": 36
       },
       "width": 120,
@@ -333,7 +333,7 @@
       "target": "port:inverter_expr:bus_y",
       "sourceHandle": "out:bus_y",
       "targetHandle": "port:bus_y",
-      "path": "M 390.797 264 L 408 264 L 600 264 L 624 264"
+      "path": "M 390.797 264 L 408 264 L 576 264 L 600 264"
     },
     {
       "id": "edge:inverter:inverter_expr:is_nonzero:expr:port:inverter_expr:is_nonzero:is_nonzero",
@@ -349,7 +349,7 @@
       "target": "port:inverter_expr:s_y",
       "sourceHandle": "out:s_y",
       "targetHandle": "port:s_y",
-      "path": "M 390.797 120 L 408 120 L 600 120 L 624 120"
+      "path": "M 390.797 120 L 408 120 L 576 120 L 600 120"
     },
     {
       "id": "edge:inverter:inverter_expr:valid_out:expr:port:inverter_expr:valid_out:valid_out",
@@ -357,7 +357,7 @@
       "target": "port:inverter_expr:valid_out",
       "sourceHandle": "out:valid_out",
       "targetHandle": "port:valid_out",
-      "path": "M 390.797 192 L 408 192 L 600 192 L 624 192"
+      "path": "M 390.797 192 L 408 192 L 576 192 L 600 192"
     },
     {
       "id": "edge:inverter:inverter_expr:y:expr:port:inverter_expr:y:y",
@@ -365,7 +365,7 @@
       "target": "port:inverter_expr:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 390.797 48 L 408 48 L 600 48 L 624 48"
+      "path": "M 390.797 48 L 408 48 L 576 48 L 600 48"
     },
     {
       "id": "edge:port:inverter_expr:a:inverter:inverter_expr:y:expr:a",

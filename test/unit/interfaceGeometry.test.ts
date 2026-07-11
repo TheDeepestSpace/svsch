@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { diagramSizing } from '../../src/diagram/constants';
 import {
   distributedInterfaceSideCenters,
+  interfaceSkinPath,
   interfaceTopHatBounds,
   interfaceTopHatHeight,
   interfaceTopHatTop,
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from '../../src/diagram/interfaceGeometry';
-import type { DiagramPort } from '../../src/ir/types';
+import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { interfaceInstanceTopHatY } from '../../src/diagram/visualHandleGeometry';
+import type { DiagramNode, DiagramPort } from '../../src/ir/types';
 
 describe('interface instance geometry', () => {
   it('orders side modports by source line while preserving preferred side', () => {
@@ -52,19 +55,24 @@ describe('interface instance geometry', () => {
 
   it('keeps minimal all-one-side modports inside the interface body', () => {
     const grid = diagramSizing.gridSize;
-    const sideCenters = distributedInterfaceSideCenters(2, grid * 4, interfaceTopHatHeight(true));
+    // Content-derived height: 1 grid corridor + hat + 3-grid row span.
+    const height = grid * 5;
+    const sideCenters = distributedInterfaceSideCenters(2, height, interfaceTopHatHeight(true));
 
-    expect(sideCenters).toEqual([grid * 1.5, grid * 3.5]);
-    expect(sideCenters[0] - grid / 2).toBe(interfaceTopHatHeight(true));
-    expect(sideCenters[1] + grid / 2).toBe(grid * 4);
+    expect(sideCenters).toEqual([grid * 2.5, grid * 4.5]);
+    // First notch top sits one grid below the hat; last notch bottom is flush.
+    expect(sideCenters[0] - grid / 2).toBe(interfaceTopHatHeight(true) + grid);
+    expect(sideCenters[1] + grid / 2).toBe(height);
   });
 
   it('reserves bottom cap space when interface outputs are present', () => {
     const grid = diagramSizing.gridSize;
-    const sideCenters = distributedInterfaceSideCenters(2, grid * 5, interfaceTopHatHeight(true), interfaceTopHatHeight(true));
+    // Content-derived height: corridor + hat + rows + bottom cap.
+    const height = grid * 6;
+    const sideCenters = distributedInterfaceSideCenters(2, height, interfaceTopHatHeight(true), interfaceTopHatHeight(true));
 
-    expect(sideCenters).toEqual([grid * 1.5, grid * 3.5]);
-    expect(sideCenters[1] + grid / 2).toBe(grid * 4);
+    expect(sideCenters).toEqual([grid * 2.5, grid * 4.5]);
+    expect(sideCenters[1] + grid / 2 + interfaceTopHatHeight(true)).toBe(height);
   });
 
   it('biases a single side modport down against the bottom cap', () => {
@@ -87,6 +95,31 @@ describe('interface instance geometry', () => {
     // topHatTop = sideTop - topHatHeight = 96 - 24 = 72
     expect(topHatTop).toBe(72);
     expect(topHatTop % (grid / 2)).toBe(0);
+  });
+
+  it('uses the rendered fallback top-hat position when no side modports exist', () => {
+    const node: DiagramNode = {
+      id: 'interface:caps_only:status',
+      kind: 'interface',
+      label: 'status',
+      metadata: { role: 'breakout', typeName: 'caps_only_if' },
+      ports: [
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'done', name: 'done', direction: 'output' }
+      ]
+    };
+    const { width, height } = diagramNodeDimensions(node);
+    const rendered = interfaceSkinPath({
+      width,
+      height,
+      leftCenters: [],
+      rightCenters: [],
+      topPortCount: 1,
+      bottomPortCount: 1
+    });
+
+    expect(interfaceInstanceTopHatY(node, height)).toBe(rendered.topHatTop);
+    expect(rendered.topHatTop).toBeGreaterThan(0);
   });
 });
 

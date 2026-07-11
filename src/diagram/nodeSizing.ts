@@ -11,6 +11,8 @@ import {
   snapUpToGrid
 } from './constants';
 import { selectPortLabel } from './selectLabels';
+import { isBusComposition } from './busGeometry';
+import { interfaceTopHatHeight, orderedInterfaceSidePorts } from './interfaceGeometry';
 
 export interface DiagramNodeDimensions {
   width: number;
@@ -63,15 +65,22 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
     }
 
     const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';
+    // Taps set the real height: composition taps are the inputs, breakout taps
+    // the outputs, and array aggregates need one extra row for the diagonal
+    // single-port exit below the last tap.
+    const tapRows = node.kind === 'interface' ? 0 : (isBusComposition(node, role) ? inputsCount : outputsCount);
+    const arrayExtraRow = node.kind === 'bus' && node.metadata?.aggregateKind === 'array' ? 1 : 0;
     const height = (node.kind === 'interface' && role === 'port')
       ? diagramSizing.gridSize
       : (node.kind === 'interface' && role === 'modport')
-        ? diagramSizing.gridSize * Math.max(4, (inputsCount + outputsCount) * 2 + 2)
-        : Math.max(
-          nodeHeightForPortRows(Math.max(inputsCount, outputsCount)),
-          diagramSizing.gridSize * Math.max(node.kind === 'interface' ? 4 : 2, node.kind === 'interface' ? (inputsCount + outputsCount) * 2 : outputsCount * 2)
-        );
-    return height + (isInterfaceInstance ? diagramSizing.gridSize * 3 + diagramSizing.gridSize / 2 : 0);
+        ? diagramSizing.gridSize * Math.max(4, (inputsCount + outputsCount) * 2 + 1)
+        : isInterfaceInstance
+          ? interfaceInstanceContentHeight(node)
+          : Math.max(
+            nodeHeightForPortRows(Math.max(inputsCount, outputsCount)),
+            diagramSizing.gridSize * Math.max(2, tapRows * 2 + arrayExtraRow)
+          );
+    return height + (isInterfaceInstance ? diagramSizing.interfaceInstanceShiftY : 0);
   }
 
   if (node.kind === 'mux' || node.kind === 'select') {
@@ -108,6 +117,25 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
     return baseHeight + diagramSizing.gridSize * parameterRows;
   }
   return baseHeight;
+}
+
+// Interface instance boxes wrap their content exactly: one grid of entry
+// corridor above the hat (mirrored in distributedInterfaceSideCenters), the
+// side-notch rows, and the bottom hat flush with the box bottom.
+function interfaceInstanceContentHeight(node: DiagramNode): number {
+  const grid = diagramSizing.gridSize;
+  const visible = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'));
+  const topPorts = visible.filter((port) => port.direction === 'input' && port.width !== 'interface');
+  const bottomPorts = visible.filter((port) => port.direction === 'output' && port.width !== 'interface');
+  const sidePorts = visible.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'));
+  const ordered = orderedInterfaceSidePorts(sidePorts);
+  const maxSideRows = Math.max(ordered.left.length, ordered.right.length);
+  const sideSpan = grid * Math.max(1, maxSideRows * 2 - 1);
+  const content = grid
+    + interfaceTopHatHeight(topPorts.length > 0)
+    + sideSpan
+    + interfaceTopHatHeight(bottomPorts.length > 0);
+  return Math.max(grid * 3, content);
 }
 
 export function instanceParameterRows(node: DiagramNode): number {
@@ -272,20 +300,26 @@ function nodeWidthForKind(
     }
 
     const capPortCount = Math.max(topPorts.length, bottomPorts.length);
-    const tbPortNeededWidth = capPortCount > 0 
+    const tbPortNeededWidth = capPortCount > 0
       ? Math.max(diagramSizing.gridSize * 4, capPortCount * diagramSizing.gridSize * 3)
       : 0;
-    
+
     // Ensure at least 2 grid widths of clearance on each side of the hat/labels
     const tbClearance = capPortCount > 0 ? diagramSizing.gridSize * 4 : 0;
     const tbWidthNeeded = Math.max(tbPortNeededWidth, topLabelWidth, bottomLabelWidth) + tbClearance;
 
+    // Bus/struct nodes keep the pipe flush with the single-port side, so they
+    // don't need the 2-grid stub area interfaces reserve. Array breakouts keep
+    // one grid for the diagonal stack exit next to the pipe.
+    const isArrayBreakoutBus = node.kind === 'bus' && node.metadata?.aggregateKind === 'array' && !isBusComposition(node, role);
+    const singleSideInset = node.kind === 'interface' ? 0 : diagramSizing.gridSize * (isArrayBreakoutBus ? 1 : 2);
+
     return snappedWidth(
-      diagramSizing.nodeWidth,
+      diagramSizing.nodeWidth - singleSideInset,
       Math.max(
         tbWidthNeeded,
         interfaceInstanceTitleWidth + diagramSizing.nodeHorizontalPadding * 2,
-        longestPortLabel + diagramSizing.gridSize * 3 + diagramSizing.nodeHorizontalPadding
+        longestPortLabel + diagramSizing.gridSize * 3 - singleSideInset + diagramSizing.nodeHorizontalPadding
       ),
       (isCenteredInterfaceInstance || isModport) ? snapUpToEvenGrid : snapUpToGrid
     );

@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 840,
-        "y": 336
+        "y": 240
       },
       "width": 192,
       "height": 96,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 840,
-        "y": 216
+        "y": 120
       },
       "width": 192,
       "height": 96,
@@ -45,10 +45,10 @@
       "type": "hdl",
       "position": {
         "x": 336,
-        "y": 144
+        "y": 96
       },
       "width": 288,
-      "height": 185,
+      "height": 137,
       "data": {
         "kind": "interface",
         "ports": [
@@ -123,7 +123,7 @@
       "target": "instance:interface_all_right_modports:u_observer",
       "sourceHandle": "out:observer",
       "targetHandle": "port:bus",
-      "path": "M 624 312 L 648 312 L 672 312 L 672 384 L 816 384 L 840 384"
+      "path": "M 624 216 L 648 216 L 672 216 L 672 288 L 816 288 L 840 288"
     },
     {
       "id": "edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus",
@@ -131,7 +131,7 @@
       "target": "instance:interface_all_right_modports:u_sink",
       "sourceHandle": "out:sink",
       "targetHandle": "port:bus",
-      "path": "M 624 264 L 648 264 L 816 264 L 840 264"
+      "path": "M 624 168 L 648 168 L 816 168 L 840 168"
     },
     {
       "id": "edge:port:interface_all_right_modports:clk:interface:interface_all_right_modports:event_bus:clk",
@@ -139,7 +139,7 @@
       "target": "interface:interface_all_right_modports:event_bus",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 96 L 168 96 L 456 96 L 456 192 L 456 228"
+      "path": "M 144 96 L 168 96 L 456 96 L 456 132"
     },
     {
       "id": "edge:port:interface_all_right_modports:rst_n:interface:interface_all_right_modports:event_bus:rst_n",
@@ -147,7 +147,7 @@
       "target": "interface:interface_all_right_modports:event_bus",
       "sourceHandle": "port:rst_n",
       "targetHandle": "in:rst_n",
-      "path": "M 144 48 L 168 48 L 504 48 L 504 192 L 504 228"
+      "path": "M 144 48 L 168 48 L 504 48 L 504 96 L 504 132"
     }
   ]
 }

@@ -298,7 +298,10 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     sourcePosition,
     targetPosition,
     edge.sourcePort,
-    edge.targetPort
+    edge.targetPort,
+    true,
+    source,
+    target
   );
   const officialPoints = edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
     ? normalizedOfficialPoints

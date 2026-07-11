@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 336
+        "y": 240
       },
       "width": 192,
       "height": 96,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 216
+        "y": 120
       },
       "width": 192,
       "height": 96,
@@ -45,10 +45,10 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 144
+        "y": 96
       },
       "width": 288,
-      "height": 185,
+      "height": 137,
       "data": {
         "kind": "interface",
         "ports": [
@@ -123,7 +123,7 @@
       "target": "interface:interface_all_left_modports:request_bus",
       "sourceHandle": "port:bus",
       "targetHandle": "in:arbiter",
-      "path": "M 216 384 L 240 384 L 288 384 L 288 312 L 408 312 L 432 312"
+      "path": "M 216 288 L 240 288 L 288 288 L 288 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:instance:interface_all_left_modports:u_requester:interface:interface_all_left_modports:request_bus:request_bus",
@@ -131,7 +131,7 @@
       "target": "interface:interface_all_left_modports:request_bus",
       "sourceHandle": "port:bus",
       "targetHandle": "in:requester",
-      "path": "M 216 264 L 240 264 L 408 264 L 432 264"
+      "path": "M 216 168 L 240 168 L 408 168 L 432 168"
     },
     {
       "id": "edge:port:interface_all_left_modports:clk:interface:interface_all_left_modports:request_bus:clk",
@@ -139,7 +139,7 @@
       "target": "interface:interface_all_left_modports:request_bus",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 216 96 L 240 96 L 552 96 L 552 192 L 552 228"
+      "path": "M 216 96 L 240 96 L 552 96 L 552 132"
     },
     {
       "id": "edge:port:interface_all_left_modports:rst_n:interface:interface_all_left_modports:request_bus:rst_n",
@@ -147,7 +147,7 @@
       "target": "interface:interface_all_left_modports:request_bus",
       "sourceHandle": "port:rst_n",
       "targetHandle": "in:rst_n",
-      "path": "M 216 48 L 240 48 L 600 48 L 600 192 L 600 228"
+      "path": "M 216 48 L 240 48 L 600 48 L 600 96 L 600 132"
     }
   ]
 }
