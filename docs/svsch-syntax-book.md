@@ -16,7 +16,9 @@ An input port declaration defines a module boundary input signal.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/port-input.svg" alt="Input Port diagram" />
+<p align="center">
+  <img src="syntax-book/assets/port-input.svg" alt="Input Port diagram" />
+</p>
 
 ### Output Port
 
@@ -30,7 +32,9 @@ An output port declaration defines a module boundary output signal.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/port-output.svg" alt="Output Port diagram" />
+<p align="center">
+  <img src="syntax-book/assets/port-output.svg" alt="Output Port diagram" />
+</p>
 
 ### Modport Port
 
@@ -46,7 +50,9 @@ module top(simple_if.slave bus, output logic y);
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram" />
+<p align="center">
+  <img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram" />
+</p>
 
 ### Array Port
 
@@ -60,7 +66,9 @@ A module port declaration defining an array of signal vectors.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/port-array.svg" alt="Array Port diagram" />
+<p align="center">
+  <img src="syntax-book/assets/port-array.svg" alt="Array Port diagram" />
+</p>
 
 ### Array Output Port
 
@@ -74,7 +82,9 @@ A module output port declaration defining an array of signal vectors.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
+<p align="center">
+  <img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
+</p>
 
 ## Modules & Hierarchy
 
@@ -90,7 +100,9 @@ Instantiating a submodule creates a hierarchical module instance block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram" />
+<p align="center">
+  <img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram" />
+</p>
 
 ### Parameterized Submodule Instance
 
@@ -117,7 +129,9 @@ module top (
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
+<p align="center">
+  <img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
+</p>
 
 ## Registers
 
@@ -136,7 +150,9 @@ A simple sequential register without any reset signal.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram" />
+</p>
 
 ### Register with Reset
 
@@ -158,7 +174,9 @@ An always_ff register with an active-high reset signal.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram" />
+</p>
 
 ### Register with Inverted Reset
 
@@ -180,7 +198,9 @@ An always_ff register with an active-low (inverted) reset signal.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram" />
+</p>
 
 ### Register with Reset Value
 
@@ -202,7 +222,9 @@ A register with a non-zero reset value.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram" />
+</p>
 
 ### Multi-bit Register
 
@@ -219,7 +241,9 @@ A register storing a multi-bit vector.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram" />
+</p>
 
 ### Array of Registers
 
@@ -236,7 +260,9 @@ A sequential register file representing an array of register cells.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
+<p align="center">
+  <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
+</p>
 
 ## Muxes
 
@@ -259,7 +285,9 @@ A multiplexer inferred from a standard SystemVerilog case statement.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram" />
+<p align="center">
+  <img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram" />
+</p>
 
 ### Mux with Complex Case Arm
 
@@ -280,7 +308,9 @@ A multiplexer inferred from a case statement with multiple matching selector val
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
+<p align="center">
+  <img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
+</p>
 
 ### Variable Index Selection
 
@@ -295,7 +325,9 @@ Indexing a bus with a variable index signal becomes a select block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram" />
+<p align="center">
+  <img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram" />
+</p>
 
 ### Variable Index Selection with Width
 
@@ -310,7 +342,9 @@ Indexing a bus with a variable index and a constant width (using +: syntax) beco
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram" />
+<p align="center">
+  <img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram" />
+</p>
 
 ## Combinational Logic
 
@@ -327,7 +361,9 @@ A combinational logic assignment expression.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
+<p align="center">
+  <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
+</p>
 
 ### Arithmetic Addition
 
@@ -342,7 +378,9 @@ An arithmetic addition operator becomes an ALU block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
+<p align="center">
+  <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
+</p>
 
 ### Bitwise Inversion
 
@@ -356,7 +394,9 @@ A bitwise NOT operator becomes an inverter gate.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram" />
+<p align="center">
+  <img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram" />
+</p>
 
 ### Latch Inference
 
@@ -375,7 +415,9 @@ An incomplete conditional assignment inside always_comb infers a latch.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram" />
+<p align="center">
+  <img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram" />
+</p>
 
 ### Literal Value
 
@@ -388,7 +430,9 @@ A literal constant expression becomes a literal block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram" />
+<p align="center">
+  <img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram" />
+</p>
 
 ### Replicate Expression
 
@@ -402,7 +446,9 @@ Replicating a signal with a multiplier value becomes a replicate block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram" />
+<p align="center">
+  <img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram" />
+</p>
 
 ### For Loop Block
 
@@ -421,7 +467,9 @@ A procedural for loop becomes a loop block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
+<p align="center">
+  <img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
+</p>
 
 ## Buses
 
@@ -438,7 +486,9 @@ Concatenating signals forms a bus block.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram" />
+</p>
 
 ### Bus Composition (Three Wires)
 
@@ -454,7 +504,9 @@ Composing a bus from three single-bit signals.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram" />
+</p>
 
 ### Bus Composition (One Single, One Multi-bit)
 
@@ -469,7 +521,9 @@ Composing a bus from a single-bit signal and a multi-bit slice.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram" />
+</p>
 
 ### Simple Bus Breakout
 
@@ -483,7 +537,9 @@ Breaking out a single bit signal from a bus.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram" />
+</p>
 
 ### Bus Breakout (Three Wires)
 
@@ -501,7 +557,9 @@ Breaking out three individual bit signals from a bus.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram" />
+</p>
 
 ### Bus Breakout (One Single, One Multi-bit)
 
@@ -517,7 +575,9 @@ Breaking out a single bit signal and a multi-bit slice from a bus.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram" />
+</p>
 
 ### Array Composition
 
@@ -533,7 +593,9 @@ Composing an array of busses from individual bus elements.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram" />
+</p>
 
 ### Array Breakout
 
@@ -549,7 +611,9 @@ Breaking out individual bus elements from an array of busses.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram" />
+<p align="center">
+  <img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram" />
+</p>
 
 ## Structs
 
@@ -573,7 +637,9 @@ Assigning to individual struct fields forms a struct composition node.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram" />
+<p align="center">
+  <img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram" />
+</p>
 
 ### Struct Breakout
 
@@ -597,7 +663,9 @@ module top(
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram" />
+<p align="center">
+  <img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram" />
+</p>
 
 ## Interfaces
 
@@ -626,7 +694,9 @@ module top(input logic clk, output logic observed);
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram" />
+<p align="center">
+  <img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram" />
+</p>
 
 ### Interface Modports on One Side
 
@@ -654,7 +724,9 @@ module top(input logic clk);
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram" />
+<p align="center">
+  <img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram" />
+</p>
 
 ### Interface Modports on Both Sides
 
@@ -682,7 +754,9 @@ module top(input logic clk);
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram" />
+<p align="center">
+  <img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram" />
+</p>
 
 ## Generate Blocks
 
@@ -715,7 +789,9 @@ module top #(
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram" />
+<p align="center">
+  <img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram" />
+</p>
 
 ### Generate Case
 
@@ -752,7 +828,9 @@ module top #(
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram" />
+<p align="center">
+  <img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram" />
+</p>
 
 ## Other
 
@@ -771,5 +849,7 @@ An unsupported procedural block is rendered as an unknown node.
 endmodule
 </code></pre>
 
-<img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
+<p align="center">
+  <img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
+</p>
 

@@ -138,7 +138,9 @@ test.describe('Syntax Book Generation & Verification', () => {
         mdContent += `### ${entry.title}\n\n`;
         mdContent += `${entry.description}\n\n`;
         mdContent += `<pre><code>${codeHtml}</code></pre>\n\n`;
-        mdContent += `<img src="syntax-book/assets/${entry.id}.svg" alt="${entry.title} diagram" />\n\n`;
+        mdContent += `<p align="center">\n`;
+        mdContent += `  <img src="syntax-book/assets/${entry.id}.svg" alt="${entry.title} diagram" />\n`;
+        mdContent += `</p>\n\n`;
       }
     }
 
