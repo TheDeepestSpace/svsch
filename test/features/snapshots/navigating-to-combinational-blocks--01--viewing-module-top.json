@@ -114,7 +114,7 @@
       "target": "comb:top:b:expr",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
     }
   ]
 }

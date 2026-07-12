@@ -2,7 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
-import { elkNodeForDiagramNode } from '../../src/layout/mergeLayout';
+import { elkNodeForDiagramNode, type ElkPortSide } from '../../src/layout/mergeLayout';
+import { routingVerticalMargins } from '../../src/layout/routingObstacleGeometry';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
 import { renderSvg } from '../../src/cli/svgRenderer';
@@ -10,10 +11,10 @@ import { compareSvgSnapshot } from '../graphRegression';
 import type { DiagramNode, DiagramViewModel, PositionedNode } from '../../src/ir/types';
 
 // Renders one node of every diagram kind in a grid and overlays the geometry
-// ELK actually lays out: dashed rect = the ELK node bounds (base size plus
-// lead margins), filled dot = the ELK port anchor where routes plug in,
-// hollow dot = the port position on the rendered node surface, joined by the
-// lead segment between them.
+// routing sees: pink dashed rect = the placement box with lead margins,
+// purple dashed rect = the candidate route obstacle with vertical safety
+// margins, filled dot = the route anchor, hollow dot = the rendered handle,
+// and the orange segment joins the two.
 
 const GRID = 24;
 const COLUMNS = 5;
@@ -103,7 +104,8 @@ interface OverlayPort {
 
 interface OverlayEntry {
   label: string;
-  rect: { x: number; y: number; width: number; height: number };
+  placementRect: { x: number; y: number; width: number; height: number };
+  routingRect: { x: number; y: number; width: number; height: number };
   ports: OverlayPort[];
 }
 
@@ -162,11 +164,23 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
       };
       positioned.push({ ...node, position, fixed: true });
 
-      const rect = {
+      const placementRect = {
         x: position.x - offset.x,
         y: position.y - offset.y,
         width: withLeads.width,
         height: withLeads.height
+      };
+      const portSides = withLeads.ports.map((port) => (
+        port.properties['org.eclipse.elk.port.side']
+        ?? port.layoutOptions['elk.port.side']
+        ?? 'EAST'
+      ) as ElkPortSide);
+      const verticalMargins = routingVerticalMargins(node, portSides);
+      const routingRect = {
+        x: placementRect.x,
+        y: placementRect.y - verticalMargins.top,
+        width: placementRect.width,
+        height: placementRect.height + verticalMargins.top + verticalMargins.bottom
       };
       const barePortsById = new Map(bare.ports.map((port) => [port.id, port]));
       const ports = withLeads.ports.map((port) => {
@@ -183,16 +197,16 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
         // stacked nodes), so strip its layoutOffset to get the raw on-node
         // port position before re-basing onto the rendered node origin.
         return {
-          anchor: { x: rect.x + port.x, y: rect.y + port.y },
+          anchor: { x: placementRect.x + port.x, y: placementRect.y + port.y },
           surface: visual
-            ? { x: rect.x + offset.x + visual.offset.x, y: rect.y + offset.y + visual.offset.y }
+            ? { x: placementRect.x + offset.x + visual.offset.x, y: placementRect.y + offset.y + visual.offset.y }
             : {
-              x: rect.x + offset.x + barePort.x - bare.layoutOffset.x,
-              y: rect.y + offset.y + barePort.y - bare.layoutOffset.y
+              x: placementRect.x + offset.x + barePort.x - bare.layoutOffset.x,
+              y: placementRect.y + offset.y + barePort.y - bare.layoutOffset.y
             }
         };
       });
-      overlay.push({ label, rect, ports });
+      overlay.push({ label, placementRect, routingRect, ports });
 
       x += Math.ceil(withLeads.width / GRID) * GRID + COLUMN_GAP;
       rowHeight = Math.max(rowHeight, withLeads.height);
@@ -210,8 +224,9 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
   return { view, overlay };
 }
 
-const BOUNDS_COLOR = '#ff5f9e';
-const ANCHOR_COLOR = '#ffb020';
+const PLACEMENT_BOUNDS_COLOR = '#ff5f9e';
+const ROUTING_BOUNDS_COLOR = '#a855f7';
+const LEAD_COLOR = '#fb7a1f';
 
 function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -223,14 +238,15 @@ function overlayMarkup(overlay: OverlayEntry[]): string {
   const parts: string[] = ['<g class="elk-geometry-overlay">'];
   for (const entry of overlay) {
     parts.push(
-      `<rect x="${entry.rect.x}" y="${entry.rect.y}" width="${entry.rect.width}" height="${entry.rect.height}" fill="none" stroke="${BOUNDS_COLOR}" stroke-width="1.5" stroke-dasharray="6 4" />`,
-      `<text x="${entry.rect.x}" y="${entry.rect.y - 8}" fill="${BOUNDS_COLOR}" font-size="13" font-family="monospace">${escapeXml(entry.label)}</text>`
+      `<rect x="${entry.placementRect.x}" y="${entry.placementRect.y}" width="${entry.placementRect.width}" height="${entry.placementRect.height}" fill="none" stroke="${PLACEMENT_BOUNDS_COLOR}" stroke-width="1.5" stroke-dasharray="6 4" />`,
+      `<rect x="${entry.routingRect.x}" y="${entry.routingRect.y}" width="${entry.routingRect.width}" height="${entry.routingRect.height}" fill="none" stroke="${ROUTING_BOUNDS_COLOR}" stroke-width="1.75" stroke-dasharray="7 5" />`,
+      `<text x="${entry.routingRect.x}" y="${entry.routingRect.y - 8}" fill="${ROUTING_BOUNDS_COLOR}" font-size="13" font-family="monospace">${escapeXml(entry.label)}</text>`
     );
     for (const port of entry.ports) {
       parts.push(
-        `<line x1="${port.surface.x}" y1="${port.surface.y}" x2="${port.anchor.x}" y2="${port.anchor.y}" stroke="${ANCHOR_COLOR}" stroke-width="1.5" />`,
-        `<circle cx="${port.surface.x}" cy="${port.surface.y}" r="5" fill="none" stroke="${ANCHOR_COLOR}" stroke-width="2" />`,
-        `<circle cx="${port.anchor.x}" cy="${port.anchor.y}" r="7" fill="${ANCHOR_COLOR}" fill-opacity="0.85" />`
+        `<line x1="${port.surface.x}" y1="${port.surface.y}" x2="${port.anchor.x}" y2="${port.anchor.y}" stroke="${LEAD_COLOR}" stroke-width="1.75" />`,
+        `<circle cx="${port.surface.x}" cy="${port.surface.y}" r="5" fill="none" stroke="${LEAD_COLOR}" stroke-width="2" />`,
+        `<circle cx="${port.anchor.x}" cy="${port.anchor.y}" r="7" fill="${LEAD_COLOR}" fill-opacity="0.9" />`
       );
     }
   }
@@ -292,10 +308,10 @@ test.describe('elk geometry grid', () => {
     // fitView: the webview's own auto-fit races with it and can settle on a
     // clamped zoom that pushes the first grid row off screen.
     const margin = GRID * 2;
-    const minX = Math.min(...overlay.map((e) => e.rect.x)) - margin;
-    const minY = Math.min(...overlay.map((e) => e.rect.y)) - margin;
-    const maxX = Math.max(...overlay.map((e) => e.rect.x + e.rect.width)) + margin;
-    const maxY = Math.max(...overlay.map((e) => e.rect.y + e.rect.height)) + margin;
+    const minX = Math.min(...overlay.map((e) => e.routingRect.x)) - margin;
+    const minY = Math.min(...overlay.map((e) => e.routingRect.y)) - margin;
+    const maxX = Math.max(...overlay.map((e) => e.routingRect.x + e.routingRect.width)) + margin;
+    const maxY = Math.max(...overlay.map((e) => e.routingRect.y + e.routingRect.height)) + margin;
     await page.waitForFunction(() => Boolean((window as any).reactFlowInstance));
     await page.evaluate(async (bounds) => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };

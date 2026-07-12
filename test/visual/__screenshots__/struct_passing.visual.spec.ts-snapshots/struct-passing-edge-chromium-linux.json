@@ -106,7 +106,7 @@
       "target": "port:top:b",
       "sourceHandle": "port:b_out",
       "targetHandle": "port:b",
-      "path": "M 648 96 L 672 96 L 696 96 L 696 120 L 840 120 L 864 120"
+      "path": "M 648 96 L 672 96 L 768 96 L 768 120 L 840 120 L 864 120"
     },
     {
       "id": "edge:instance:top:p:instance:top:c:s",

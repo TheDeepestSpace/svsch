@@ -98,7 +98,7 @@
       "target": "reg:array_port_register:storage",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 120 L 240 120 L 240 96 L 384 96"
+      "path": "M 192 120 L 312 120 L 312 96 L 384 96"
     },
     {
       "id": "edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data",

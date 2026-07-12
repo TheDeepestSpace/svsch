@@ -462,7 +462,7 @@
       "target": "replicate:replication_expr:repeated:x20",
       "sourceHandle": "port:some_wire",
       "targetHandle": "port:in",
-      "path": "M 144 360 L 168 360 L 216 360 L 216 480 L 360 480 L 384 480"
+      "path": "M 144 360 L 168 360 L 336 360 L 336 480 L 360 480 L 384 480"
     },
     {
       "id": "edge:port:replication_expr:tail:bus:replication_expr:concat_repeated:expr:tail",

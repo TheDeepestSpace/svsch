@@ -123,7 +123,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "port:c_main",
       "targetHandle": "c_main",
-      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
     },
     {
       "id": "edge:port:register_async_reset:d:reg:register_async_reset:q:d",

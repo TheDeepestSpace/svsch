@@ -143,7 +143,7 @@
       "target": "interface:interface_dual_modport_bridge:downstream",
       "sourceHandle": "port:downstream",
       "targetHandle": "in:slave",
-      "path": "M 1104 96 L 1128 96 L 1152 96 L 1152 240 L 1296 240 L 1320 240"
+      "path": "M 1104 96 L 1128 96 L 1224 96 L 1224 240 L 1296 240 L 1320 240"
     },
     {
       "id": "edge:interface:interface_dual_modport_bridge:upstream:instance:interface_dual_modport_bridge:u_bridge:upstream",
@@ -151,7 +151,7 @@
       "target": "instance:interface_dual_modport_bridge:u_bridge",
       "sourceHandle": "out:master",
       "targetHandle": "port:upstream",
-      "path": "M 648 144 L 672 144 L 696 144 L 696 96 L 840 96 L 864 96"
+      "path": "M 648 144 L 672 144 L 768 144 L 768 96 L 840 96 L 864 96"
     },
     {
       "id": "edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:downstream:clk",
@@ -159,7 +159,7 @@
       "target": "interface:interface_dual_modport_bridge:downstream",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 96 L 168 96 L 168 168 L 1140 168 Q 1152 156 1164 168 L 1440 168 L 1440 204"
+      "path": "M 144 96 L 168 96 L 168 168 L 1212 168 Q 1224 156 1236 168 L 1440 168 L 1440 204"
     },
     {
       "id": "edge:port:interface_dual_modport_bridge:clk:interface:interface_dual_modport_bridge:upstream:clk",

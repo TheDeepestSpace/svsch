@@ -123,7 +123,7 @@
       "target": "instance:interface_all_right_modports:u_observer",
       "sourceHandle": "out:observer",
       "targetHandle": "port:bus",
-      "path": "M 624 216 L 648 216 L 672 216 L 672 288 L 816 288 L 840 288"
+      "path": "M 624 216 L 648 216 L 744 216 L 744 288 L 816 288 L 840 288"
     },
     {
       "id": "edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus",

@@ -198,7 +198,7 @@
       "target": "interface:interface_multi_modport:stream",
       "sourceHandle": "port:bus",
       "targetHandle": "in:controller",
-      "path": "M 216 288 L 240 288 L 288 288 L 288 216 L 408 216 L 432 216"
+      "path": "M 216 288 L 240 288 L 336 288 L 336 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:instance:interface_multi_modport:u_monitor:port:interface_multi_modport:transfer_seen:transfer_seen",
@@ -222,7 +222,7 @@
       "target": "instance:interface_multi_modport:u_monitor",
       "sourceHandle": "out:monitor",
       "targetHandle": "port:bus",
-      "path": "M 672 216 L 696 216 L 720 216 L 720 288 L 864 288 L 888 288"
+      "path": "M 672 216 L 696 216 L 792 216 L 792 288 L 864 288 L 888 288"
     },
     {
       "id": "edge:interface:interface_multi_modport:stream:instance:interface_multi_modport:u_sink:stream",

@@ -313,7 +313,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "port:32_b0",
       "targetHandle": "in:true",
-      "path": "M 888 264 L 936 264 L 936 336 L 1104 336"
+      "path": "M 888 264 L 1008 264 L 1008 336 L 1104 336"
     },
     {
       "id": "edge:mux:array_register:M_addr:reg:array_register:M:M_next",
@@ -329,7 +329,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "out",
       "targetHandle": "in:3_b0",
-      "path": "M 1285 340 L 1324 340 L 1324 388 L 1483 388"
+      "path": "M 1285 340 L 1396 340 L 1396 388 L 1483 388"
     },
     {
       "id": "edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next",
@@ -393,7 +393,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "port:write_en",
       "targetHandle": "sel",
-      "path": "M 528 264 L 816 264 L 816 288 L 816 285"
+      "path": "M 528 264 L 648 264 L 648 285 L 816 285"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_addr:M",
@@ -401,7 +401,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 541 412 L 1483 412"
+      "path": "M 541 412 L 724 412 L 724 436 L 1180 436 L 1180 412 L 1483 412"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M",
@@ -409,7 +409,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 541 412 L 580 412 L 580 388 L 763 388"
+      "path": "M 541 412 L 724 412 L 724 388 L 763 388"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_read_address:M",
@@ -417,7 +417,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 541 412 L 580 412 L 580 124 L 744 124"
+      "path": "M 541 412 L 724 412 L 724 124 L 744 124"
     }
   ]
 }

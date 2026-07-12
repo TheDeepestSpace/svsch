@@ -412,7 +412,7 @@
       "target": "comb:var_bit_select_complex:bus[sel_1bit * 8+:8]_sel:expr",
       "sourceHandle": "port:sel_1bit",
       "targetHandle": "port:sel_1bit",
-      "path": "M 192 48 L 216 48 L 240 48 L 240 240 L 384 240 L 408 240"
+      "path": "M 192 48 L 216 48 L 384 48 L 384 113 Q 391 120 384 127 L 384 240 L 408 240"
     },
     {
       "id": "edge:port:var_bit_select_complex:sel_1bit:select:var_bit_select_complex:bus_sel_1bit_:sel_1bit",

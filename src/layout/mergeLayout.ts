@@ -15,6 +15,7 @@ import {
   interfaceTopHatTop,
   interfaceTopPortX
 } from '../diagram/interfaceGeometry';
+import { routeDiagramWithLibavoid, selectLibavoidRoutesAgainstFallbacks } from './libavoidRouter';
 
 interface AutoLayoutResult {
   positions: Map<string, { x: number; y: number }>;
@@ -103,6 +104,26 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
       : node))
     : positioned;
 
+  const libavoidRoutes = new Map<string, Array<{ x: number; y: number }>>();
+  if (generateRegions.length === 0) {
+    const nodesById = new Map<string, DiagramNode>(positionedWithWarnings.map((node) => [node.id, node]));
+    const nodePositions = new Map(positionedWithWarnings.map((node) => [node.id, node.position]));
+    const candidates = routedDesignEdges.filter((edge) => !moduleLayout.edges?.[edge.id]?.routePoints);
+    const result = await routeDiagramWithLibavoid(
+      positionedWithWarnings,
+      candidates,
+      (nodeId, portId, includeLeadMargins) => renderedLeadPoint(
+        nodeId,
+        portId,
+        nodesById,
+        nodePositions,
+        includeLeadMargins
+      )
+    );
+    const selectedRoutes = selectLibavoidRoutesAgainstFallbacks(candidates, result.routes, elkLayout.routes);
+    for (const [edgeId, route] of selectedRoutes) libavoidRoutes.set(edgeId, route);
+  }
+
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
 
   return {
@@ -114,6 +135,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
         ...edge,
         waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
         routePoints: moduleLayout.edges?.[edge.id]?.routePoints
+          ?? libavoidRoutes.get(edge.id)
           ?? (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds) ? undefined : elkLayout.routes.get(edge.id))
       })),
       ...cutProjection.edges

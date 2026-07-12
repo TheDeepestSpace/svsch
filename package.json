@@ -121,6 +121,7 @@
     "@floating-ui/react": "^0.27.19",
     "@xyflow/react": "^12.10.2",
     "elkjs": "^0.11.1",
+    "libavoid-js": "^0.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

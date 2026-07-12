@@ -3565,7 +3565,7 @@ path.port-skin-body.port-skin-harness {
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk" data-net-key="port:array_complete_reset:clk:port:clk" d="M 192 120 L 240 120 L 240 96 L 384 96" />
+<path class="svsch-edge" data-edge-id="edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk" data-net-key="port:array_complete_reset:clk:port:clk" d="M 192 120 L 312 120 L 312 96 L 384 96" />
 <path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk" style="stroke: url(#svsch-stack-fanout-gradient-s3eqiz)" d="M 380 92 L 388 100" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk" data-net-key="port:array_complete_reset:clk:port:clk" d="M 380 92 L 401 92" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_complete_reset:clk:reg:array_complete_reset:arr:clk" data-net-key="port:array_complete_reset:clk:port:clk" d="M 384 96 L 402 96" />

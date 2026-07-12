@@ -188,7 +188,7 @@
       "target": "interface:interface_consumer_fanout:link",
       "sourceHandle": "port:bus",
       "targetHandle": "in:controller",
-      "path": "M 216 288 L 240 288 L 288 288 L 288 216 L 408 216 L 432 216"
+      "path": "M 216 288 L 240 288 L 336 288 L 336 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:instance:interface_consumer_fanout:u_source:interface:interface_consumer_fanout:link:link",

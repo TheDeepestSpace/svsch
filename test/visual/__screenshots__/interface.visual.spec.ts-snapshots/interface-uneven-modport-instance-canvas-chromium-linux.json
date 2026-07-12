@@ -148,7 +148,7 @@
       "target": "interface:interface_uneven_modport:link",
       "sourceHandle": "port:bus",
       "targetHandle": "in:controller",
-      "path": "M 216 288 L 240 288 L 288 288 L 288 216 L 408 216 L 432 216"
+      "path": "M 216 288 L 240 288 L 336 288 L 336 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:instance:interface_uneven_modport:u_source:interface:interface_uneven_modport:link:link",

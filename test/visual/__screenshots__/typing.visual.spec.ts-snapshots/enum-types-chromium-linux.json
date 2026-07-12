@@ -148,7 +148,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 216 144 L 240 144 L 288 144 L 288 120 L 408 120 L 432 120"
+      "path": "M 216 144 L 240 144 L 336 144 L 336 120 L 408 120 L 432 120"
     },
     {
       "id": "edge:port:enum_types:clk:reg:enum_types:current_state:clk",
@@ -164,7 +164,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:in_state",
       "targetHandle": "d",
-      "path": "M 216 48 L 240 48 L 288 48 L 288 72 L 408 72 L 432 72"
+      "path": "M 216 48 L 240 48 L 336 48 L 336 72 L 408 72 L 432 72"
     },
     {
       "id": "edge:port:enum_types:rst_n:reg:enum_types:current_state:rst_n",
