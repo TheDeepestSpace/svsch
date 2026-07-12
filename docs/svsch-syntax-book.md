@@ -8,56 +8,35 @@ This book contains generated block diagrams representing various SystemVerilog c
 
 An input port declaration defines a module boundary input signal.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic <mark>a</mark>,
   output logic y
 );
   assign y = a;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/port-input.svg" alt="Input Port diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/port-input.svg" alt="Input Port diagram" />
 
 ### Output Port
 
 An output port declaration defines a module boundary output signal.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   output logic <mark>y</mark>
 );
   assign y = a;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/port-output.svg" alt="Output Port diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/port-output.svg" alt="Output Port diagram" />
 
 ### Modport Port
 
 A module port typed with a specific interface modport.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code><mark>interface simple_if;</mark>
+<pre><code><mark>interface simple_if;</mark>
   logic data;
   modport slave(input data);
 endinterface
@@ -66,60 +45,36 @@ module top(simple_if.slave bus, output logic y);
   assign y = bus.data;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/port-modport.svg" alt="Modport Port diagram" />
 
 ### Array Port
 
 A module port declaration defining an array of signal vectors.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [7:0] <mark>a</mark> [0:1],
   output logic [7:0] y [0:1]
 );
   assign y = a;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/port-array.svg" alt="Array Port diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/port-array.svg" alt="Array Port diagram" />
 
 ### Array Output Port
 
 A module output port declaration defining an array of signal vectors.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [7:0] a [0:1],
   output logic [7:0] <mark>y</mark> [0:1]
 );
   assign y = a;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
 
 ## Modules & Hierarchy
 
@@ -127,33 +82,21 @@ endmodule
 
 Instantiating a submodule creates a hierarchical module instance block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   output logic b
 );<mark>
   child u_child (.a(a), .b(b));</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/submodule-instance.svg" alt="Submodule Instance diagram" />
 
 ### Parameterized Submodule Instance
 
 Instantiating a submodule with both default parameters and overridden values.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module child #(
+<pre><code>module child #(
   parameter WIDTH = 8,
   parameter DEPTH = 4
 ) (
@@ -173,14 +116,8 @@ module top (
   );</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
 
 ## Registers
 
@@ -188,10 +125,7 @@ endmodule
 
 A simple sequential register without any reset signal.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic d,
   output logic q
@@ -201,23 +135,14 @@ A simple sequential register without any reset signal.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-no-reset.svg" alt="Register without Reset diagram" />
 
 ### Register with Reset
 
 An always_ff register with an active-high reset signal.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic rst,
   input logic d,
@@ -232,23 +157,14 @@ An always_ff register with an active-high reset signal.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-reset.svg" alt="Register with Reset diagram" />
 
 ### Register with Inverted Reset
 
 An always_ff register with an active-low (inverted) reset signal.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic rst_n,
   input logic d,
@@ -263,23 +179,14 @@ An always_ff register with an active-low (inverted) reset signal.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-inverted-reset.svg" alt="Register with Inverted Reset diagram" />
 
 ### Register with Reset Value
 
 A register with a non-zero reset value.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic rst_n,
   input logic [3:0] d,
@@ -294,23 +201,14 @@ A register with a non-zero reset value.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-reset-value.svg" alt="Register with Reset Value diagram" />
 
 ### Multi-bit Register
 
 A register storing a multi-bit vector.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic [7:0] d,
   output logic [7:0] q
@@ -320,23 +218,14 @@ A register storing a multi-bit vector.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-multibit.svg" alt="Multi-bit Register diagram" />
 
 ### Array of Registers
 
 A sequential register file representing an array of register cells.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic clk,
   input logic [7:0] d [0:1],
   output logic [7:0] q [0:1]
@@ -346,14 +235,8 @@ A sequential register file representing an array of register cells.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
 
 ## Muxes
 
@@ -361,10 +244,7 @@ endmodule
 
 A multiplexer inferred from a standard SystemVerilog case statement.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic sel,
   input logic a,
   input logic b,
@@ -378,23 +258,14 @@ A multiplexer inferred from a standard SystemVerilog case statement.
   end
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/mux-case-statement.svg" alt="Case Statement Mux diagram" />
 
 ### Mux with Complex Case Arm
 
 A multiplexer inferred from a case statement with multiple matching selector values on a single case arm.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [1:0] sel,
   input logic a,
   input logic b,
@@ -408,23 +279,14 @@ A multiplexer inferred from a case statement with multiple matching selector val
   end
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
 
 ### Variable Index Selection
 
 Indexing a bus with a variable index signal becomes a select block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [3:0] bus,
   input logic [1:0] sel,
   output logic bit_out
@@ -432,23 +294,14 @@ Indexing a bus with a variable index signal becomes a select block.
   assign bit_out = bus[<mark>sel</mark>];
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/select-variable-index.svg" alt="Variable Index Selection diagram" />
 
 ### Variable Index Selection with Width
 
 Indexing a bus with a variable index and a constant width (using +: syntax) becomes a select block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [15:0] bus,
   input logic [2:0] sel,
   output logic [7:0] byte_out
@@ -456,14 +309,8 @@ Indexing a bus with a variable index and a constant width (using +: syntax) beco
   assign byte_out = bus[<mark>sel * 8 +: 8</mark>];
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/select-variable-width.svg" alt="Variable Index Selection with Width diagram" />
 
 ## Combinational Logic
 
@@ -471,10 +318,7 @@ endmodule
 
 A combinational logic assignment expression.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   input logic b,
   output logic decoded
@@ -482,23 +326,14 @@ A combinational logic assignment expression.
   <mark>assign decoded = a &amp; b;</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
 
 ### Arithmetic Addition
 
 An arithmetic addition operator becomes an ALU block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   input logic b,
   output logic y
@@ -506,46 +341,28 @@ An arithmetic addition operator becomes an ALU block.
   assign y = <mark>a + b</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
 
 ### Bitwise Inversion
 
 A bitwise NOT operator becomes an inverter gate.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   output logic y
 );
   <mark>assign y = ~a;</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/inverter-expression.svg" alt="Bitwise Inversion diagram" />
 
 ### Latch Inference
 
 An incomplete conditional assignment inside always_comb infers a latch.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic enable,
   input logic d,
   output logic q
@@ -557,68 +374,41 @@ An incomplete conditional assignment inside always_comb infers a latch.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/latch-inference.svg" alt="Latch Inference diagram" />
 
 ### Literal Value
 
 A literal constant expression becomes a literal block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   output logic [3:0] y
 );
   assign y = <mark>4&#39;b1010</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/literal-value.svg" alt="Literal Value diagram" />
 
 ### Replicate Expression
 
 Replicating a signal with a multiplier value becomes a replicate block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic some_wire,
   output logic [19:0] repeated
 );
   assign repeated = <mark>{20{some_wire}</mark>};
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/replicate-expression.svg" alt="Replicate Expression diagram" />
 
 ### For Loop Block
 
 A procedural for loop becomes a loop block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [3:0] in,
   output logic [3:0] out
 );
@@ -630,14 +420,8 @@ A procedural for loop becomes a loop block.
   end
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
 
 ## Buses
 
@@ -645,10 +429,7 @@ endmodule
 
 Concatenating signals forms a bus block.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   input logic b,
   output logic [1:0] y
@@ -656,23 +437,14 @@ Concatenating signals forms a bus block.
   assign y = <mark>{a, b}</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-concatenation.svg" alt="Bus Concatenation diagram" />
 
 ### Bus Composition (Three Wires)
 
 Composing a bus from three single-bit signals.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   input logic b,
   input logic c,
@@ -681,23 +453,14 @@ Composing a bus from three single-bit signals.
   assign y = <mark>{a, b, c}</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-composition-three-wires.svg" alt="Bus Composition (Three Wires) diagram" />
 
 ### Bus Composition (One Single, One Multi-bit)
 
 Composing a bus from a single-bit signal and a multi-bit slice.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   input logic [3:0] b,
   output logic [2:0] y
@@ -705,46 +468,28 @@ Composing a bus from a single-bit signal and a multi-bit slice.
   assign y = <mark>{a, b[1:0]}</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-composition-one-single-one-multi.svg" alt="Bus Composition (One Single, One Multi-bit) diagram" />
 
 ### Simple Bus Breakout
 
 Breaking out a single bit signal from a bus.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [3:0] bus,
   output logic y
 );
   assign <mark>y = bus[0]</mark>;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-breakout-simple.svg" alt="Simple Bus Breakout diagram" />
 
 ### Bus Breakout (Three Wires)
 
 Breaking out three individual bit signals from a bus.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [3:0] bus,
   output logic x,
   output logic y,
@@ -755,23 +500,14 @@ Breaking out three individual bit signals from a bus.
   assign z = bus[2];
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-breakout-three-wires.svg" alt="Bus Breakout (Three Wires) diagram" />
 
 ### Bus Breakout (One Single, One Multi-bit)
 
 Breaking out a single bit signal and a multi-bit slice from a bus.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [7:0] bus,
   output logic x,
   output logic [2:0] y
@@ -780,23 +516,14 @@ Breaking out a single bit signal and a multi-bit slice from a bus.
   assign y = bus[3:1];
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-breakout-one-single-one-multi.svg" alt="Bus Breakout (One Single, One Multi-bit) diagram" />
 
 ### Array Composition
 
 Composing an array of busses from individual bus elements.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [7:0] a,
   input logic [7:0] b,
   output logic [7:0] y [0:1]
@@ -805,23 +532,14 @@ Composing an array of busses from individual bus elements.
   assign y[1] = b;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-array-composition.svg" alt="Array Composition diagram" />
 
 ### Array Breakout
 
 Breaking out individual bus elements from an array of busses.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [7:0] bus [0:1],
   output logic [7:0] y0,
   output logic [7:0] y1
@@ -830,14 +548,8 @@ Breaking out individual bus elements from an array of busses.
   assign y1 = bus[1];
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/bus-array-breakout.svg" alt="Array Breakout diagram" />
 
 ## Structs
 
@@ -845,10 +557,7 @@ endmodule
 
 Assigning to individual struct fields forms a struct composition node.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic [3:0] opcode_i,
   input logic valid_i,
   output logic [4:0] flat
@@ -863,23 +572,14 @@ Assigning to individual struct fields forms a struct composition node.
   assign flat = pkt;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/struct-composition.svg" alt="Struct Composition diagram" />
 
 ### Struct Breakout
 
 Breaking out fields from a packed struct.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>typedef struct packed {
+<pre><code>typedef struct packed {
   logic [3:0] opcode;
   logic valid;
   logic [1:0] lane;
@@ -896,14 +596,8 @@ module top(
   assign lane = pkt.lane;
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/struct-breakout.svg" alt="Struct Breakout diagram" />
 
 ## Interfaces
 
@@ -911,10 +605,7 @@ endmodule
 
 Instantiating an interface block and connecting it becomes an interface node.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code><mark>interface simple_if(input logic clk);</mark>
+<pre><code><mark>interface simple_if(input logic clk);</mark>
   logic data;
   modport master(input clk, output data);
   modport slave(input clk, input data);
@@ -934,23 +625,14 @@ module top(input logic clk, output logic observed);
   consumer u_consumer(.bus(link), .observed(observed));
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/interface-instantiation.svg" alt="Interface Instantiation diagram" />
 
 ### Interface Modports on One Side
 
 An interface block with all modports explicitly laid out on the left side using position comments.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code><mark>interface stream_if(input logic clk);</mark>
+<pre><code><mark>interface stream_if(input logic clk);</mark>
   logic data;
   // svsch:modport:pos=left
   modport producer(input clk, output data);
@@ -971,23 +653,14 @@ module top(input logic clk);
   consumer_mod u_cons(.bus(stream));
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/interface-modports-left.svg" alt="Interface Modports on One Side diagram" />
 
 ### Interface Modports on Both Sides
 
 An interface block with modports distributed on both sides.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code><mark>interface stream_if(input logic clk);</mark>
+<pre><code><mark>interface stream_if(input logic clk);</mark>
   logic data;
   // svsch:modport:pos=left
   modport producer(input clk, output data);
@@ -1008,14 +681,8 @@ module top(input logic clk);
   consumer_mod u_cons(.bus(stream));
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/interface-modports-both-sides.svg" alt="Interface Modports on Both Sides diagram" />
 
 ## Generate Blocks
 
@@ -1023,10 +690,7 @@ endmodule
 
 A conditional generate block using an if-else statement.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module child_a (input logic in, output logic out);
+<pre><code>module child_a (input logic in, output logic out);
   assign out = in;
 endmodule
 <br />
@@ -1050,23 +714,14 @@ module top #(
   endgenerate
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/generate-if.svg" alt="Generate If diagram" />
 
 ### Generate Case
 
 A conditional generate block using a case statement.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module child_a (input logic in, output logic out);
+<pre><code>module child_a (input logic in, output logic out);
   assign out = in;
 endmodule
 <br />
@@ -1096,14 +751,8 @@ module top #(
   endgenerate
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/generate-case.svg" alt="Generate Case diagram" />
 
 ## Other
 
@@ -1111,10 +760,7 @@ endmodule
 
 An unsupported procedural block is rendered as an unknown node.
 
-<table>
-  <tr>
-    <td valign="top">
-      <pre><code>module top (
+<pre><code>module top (
   input logic a,
   output logic y
 );
@@ -1124,12 +770,6 @@ An unsupported procedural block is rendered as an unknown node.
   end</mark>
 endmodule
 </code></pre>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top">
-      <img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
-    </td>
-  </tr>
-</table>
+
+<img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
 
