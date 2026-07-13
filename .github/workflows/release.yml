@@ -44,6 +44,7 @@ jobs:
           version: npx changeset version
           # This publishes the NPM package and the VS Code Marketplace extension
           publish: npm run release
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
