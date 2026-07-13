@@ -178,7 +178,7 @@
       "target": "reg:register_clock_enable:q",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 768 120 L 792 120 L 792 24 L 336 24 L 336 168 L 360 168"
+      "path": "M 768 120 L 792 120 L 792 24 L 312 24 L 312 168 L 336 168 L 360 168"
     },
     {
       "id": "edge:port:register_clock_enable:clk:reg:register_clock_enable:q:clk",

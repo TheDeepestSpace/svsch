@@ -4,7 +4,7 @@ import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import type { DiagramEdge, DiagramNode, PositionedNode } from '../ir/types';
 import { normalizeRoutePoints } from '../webview/orthogonal/logic';
 import { HdlPosition } from '../webview/orthogonal/types';
-import { ROUTING_OBSTACLE_MARGIN, routingVerticalMargins } from './routingObstacleGeometry';
+import { ROUTING_OBSTACLE_MARGIN, routingObstacleMargins } from './routingObstacleGeometry';
 
 const SHAPE_BUFFER_DISTANCE = 4;
 
@@ -143,9 +143,9 @@ function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLe
   const size = diagramNodeDimensions(node);
   const leads = node.ports.map((port) => resolveLead(node.id, port.id, true));
   const leadPoints = leads.flatMap((lead) => lead ? [lead.point] : []);
-  const margins = routingVerticalMargins(node, leads.map((lead) => lead?.side));
-  const left = Math.min(node.position.x, ...leadPoints.map((point) => point.x));
-  const right = Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x));
+  const margins = routingObstacleMargins(node, leads.map((lead) => lead?.side));
+  const left = Math.min(node.position.x, ...leadPoints.map((point) => point.x)) - margins.left;
+  const right = Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x)) + margins.right;
   const top = Math.min(node.position.y, ...leadPoints.map((point) => point.y)) - margins.top;
   const bottom = Math.max(node.position.y + size.height, ...leadPoints.map((point) => point.y)) + margins.bottom;
 

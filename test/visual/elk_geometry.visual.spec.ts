@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
 import { elkNodeForDiagramNode, type ElkPortSide } from '../../src/layout/mergeLayout';
-import { routingVerticalMargins } from '../../src/layout/routingObstacleGeometry';
+import { routingObstacleMargins } from '../../src/layout/routingObstacleGeometry';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
 import { renderSvg } from '../../src/cli/svgRenderer';
@@ -12,8 +12,8 @@ import type { DiagramNode, DiagramViewModel, PositionedNode } from '../../src/ir
 
 // Renders one node of every diagram kind in a grid and overlays the geometry
 // routing sees: pink dashed rect = the placement box with lead margins,
-// purple dashed rect = the candidate route obstacle with vertical safety
-// margins, filled dot = the route anchor, hollow dot = the rendered handle,
+// purple dashed rect = the candidate route obstacle with safety margins,
+// filled dot = the route anchor, hollow dot = the rendered handle,
 // and the orange segment joins the two.
 
 const GRID = 24;
@@ -175,12 +175,12 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
         ?? port.layoutOptions['elk.port.side']
         ?? 'EAST'
       ) as ElkPortSide);
-      const verticalMargins = routingVerticalMargins(node, portSides);
+      const routingMargins = routingObstacleMargins(node, portSides);
       const routingRect = {
-        x: placementRect.x,
-        y: placementRect.y - verticalMargins.top,
-        width: placementRect.width,
-        height: placementRect.height + verticalMargins.top + verticalMargins.bottom
+        x: placementRect.x - routingMargins.left,
+        y: placementRect.y - routingMargins.top,
+        width: placementRect.width + routingMargins.left + routingMargins.right,
+        height: placementRect.height + routingMargins.top + routingMargins.bottom
       };
       const barePortsById = new Map(bare.ports.map((port) => [port.id, port]));
       const ports = withLeads.ports.map((port) => {

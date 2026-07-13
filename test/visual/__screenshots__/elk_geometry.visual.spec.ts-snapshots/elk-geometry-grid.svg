@@ -3708,14 +3708,14 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="elk-geometry-overlay">
 <rect x="0" y="12" width="144" height="24" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="0" y="12" width="144" height="24" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="0" y="4" fill="#a855f7" font-size="13" font-family="monospace">port: input</text>
+<rect x="-24" y="0" width="168" height="48" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="-24" y="-8" fill="#a855f7" font-size="13" font-family="monospace">port: input</text>
 <line x1="120" y1="24" x2="144" y2="24" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="120" cy="24" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="144" cy="24" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="216" y="12" width="144" height="24" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="216" y="12" width="144" height="24" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="216" y="4" fill="#a855f7" font-size="13" font-family="monospace">port: output</text>
+<rect x="216" y="0" width="168" height="48" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="216" y="-8" fill="#a855f7" font-size="13" font-family="monospace">port: output</text>
 <line x1="240" y1="24" x2="216" y2="24" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="240" cy="24" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="216" cy="24" r="7" fill="#fb7a1f" fill-opacity="0.9" />
@@ -3735,8 +3735,8 @@ path.port-skin-body.port-skin-harness {
 <circle cx="528" cy="96" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="528" cy="144" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="696" y="12" width="144" height="24" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="696" y="12" width="144" height="24" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="696" y="4" fill="#a855f7" font-size="13" font-family="monospace">port: wide input</text>
+<rect x="672" y="0" width="168" height="48" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="672" y="-8" fill="#a855f7" font-size="13" font-family="monospace">port: wide input</text>
 <line x1="816" y1="24" x2="840" y2="24" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="816" cy="24" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="840" cy="24" r="7" fill="#fb7a1f" fill-opacity="0.9" />
@@ -3753,14 +3753,14 @@ path.port-skin-body.port-skin-harness {
 <circle cx="936" cy="72" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="912" cy="72" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="-4" y="248" width="196" height="32" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="-4" y="248" width="196" height="32" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="-4" y="240" fill="#a855f7" font-size="13" font-family="monospace">port: stacked input</text>
+<rect x="-28" y="236" width="220" height="56" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="-28" y="228" fill="#a855f7" font-size="13" font-family="monospace">port: stacked input</text>
 <line x1="168" y1="264" x2="192" y2="264" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="168" cy="264" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="192" cy="264" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="288" y="248" width="196" height="32" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="288" y="248" width="196" height="32" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="288" y="240" fill="#a855f7" font-size="13" font-family="monospace">port: stacked output</text>
+<rect x="288" y="236" width="220" height="56" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="288" y="228" fill="#a855f7" font-size="13" font-family="monospace">port: stacked output</text>
 <line x1="312" y1="264" x2="288" y2="264" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="312" cy="264" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="288" cy="264" r="7" fill="#fb7a1f" fill-opacity="0.9" />
