@@ -1,6 +1,6 @@
 {
   "name": "svsch",
-  "displayName": "SVSCH",
+  "displayName": "svsch",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
   "version": "0.1.0",
   "publisher": "thedeepestspace",
@@ -30,23 +30,23 @@
     "commands": [
       {
         "command": "svsch.openDiagram",
-        "title": "SVSCH: Open Diagram"
+        "title": "svsch: Open Diagram"
       },
       {
         "command": "svsch.setProjectFolder",
-        "title": "SVSCH: Set Project Folder"
+        "title": "svsch: Set Project Folder"
       },
       {
         "command": "svsch.rebuildDiagram",
-        "title": "SVSCH: Rebuild Diagram"
+        "title": "svsch: Rebuild Diagram"
       },
       {
         "command": "svsch.resetLayout",
-        "title": "SVSCH: Reset Layout For Current Module"
+        "title": "svsch: Reset Layout For Current Module"
       }
     ],
     "configuration": {
-      "title": "SVSCH",
+      "title": "svsch",
       "properties": {
         "svsch.projectFolder": {
           "type": "string",
