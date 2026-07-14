@@ -10,12 +10,15 @@ import {
   nodeTypeName,
   nodeTypeSource
 } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 
 export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
@@ -74,8 +77,8 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const modportStartX = typeStartX + typeWidth;
   const modportUnderlineWidth = linkTextWidth(modportText, typeFontSize);
   const underlineY = height / 2 + typeFontSize * 0.62;
-  const labelShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const labelShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const labelShiftX = isArray ? stackLayers.front.dx : 0;
+  const labelShiftY = isArray ? stackLayers.front.dy : 0;
   const stopSvgInteraction = (event: React.SyntheticEvent) => {
     if (onNavigateToSource) event.stopPropagation();
   };
@@ -93,7 +96,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
       {isArray && (
         <path
           className="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back"
-          transform={`translate(${ARRAY_STACK_LAYERS.back.dx}, ${ARRAY_STACK_LAYERS.back.dy})`}
+          transform={`translate(${stackLayers.back.dx}, ${stackLayers.back.dy})`}
           d={d}
           opacity={0.5}
         />
@@ -107,7 +110,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
       {isArray && (
         <path
           className="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front"
-          transform={`translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`}
+          transform={`translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`}
           d={d}
         />
       )}
@@ -189,10 +192,10 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
 
       {/* Array stack leads */}
       {isArray && skinDirection === 'output' && port && hasArrayConnection(port.id, 'target') && (
-        <SvgArrayStackLeads side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (
-        <SvgArrayStackLeads side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
+        <SvgArrayStackLeads wide={stackWide} side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
       )}
     </g>
   );

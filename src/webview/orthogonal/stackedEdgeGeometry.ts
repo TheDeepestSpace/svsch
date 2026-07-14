@@ -1,7 +1,7 @@
 import { pathFromPoints, type OrthogonalPoint } from '../../core/pathUtils';
 import {
-  ARRAY_STACK_LAYERS,
-  ARRAY_STACK_LEAD_LAYERS,
+  arrayStackLayer,
+  arrayStackLeadLayersFor,
   arrayStackLayerTrim,
   type ArrayStackLayerId
 } from '../arrayStackGeometry';
@@ -38,8 +38,8 @@ export function shortenStackTarget(points: OrthogonalPoint[], amount: number, ta
   return next;
 }
 
-export function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId): OrthogonalPoint[] {
-  const layer = ARRAY_STACK_LAYERS[layerId];
+export function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId, wide = false): OrthogonalPoint[] {
+  const layer = arrayStackLayer(layerId, wide);
   return offsetPoints(points, layer.dx, layer.dy);
 }
 
@@ -97,11 +97,12 @@ export function convergingStackPath(
   points: OrthogonalPoint[],
   layerId: ArrayStackLayerId,
   sourcePosition: HdlPosition,
-  targetPosition: HdlPosition
+  targetPosition: HdlPosition,
+  wide = false
 ): ConvergingStackPath | undefined {
   if (points.length < 2) return undefined;
 
-  const offsetted = offsetPointsForArrayStackLayer(points, layerId);
+  const offsetted = offsetPointsForArrayStackLayer(points, layerId, wide);
   const rawTarget = points[points.length - 1];
   const last = offsetted[offsetted.length - 1];
 
@@ -115,11 +116,11 @@ export function convergingStackPath(
   const layerPoints = shortenStackSource(
     dropFinalApproachStub(
       orthogonal.map((point, index) => (
-        index === orthogonal.length - 1 ? last : offsetPointsForArrayStackLayer([point], layerId)[0]
+        index === orthogonal.length - 1 ? last : offsetPointsForArrayStackLayer([point], layerId, wide)[0]
       )),
       targetPosition
     ),
-    arrayStackLayerTrim(layerId),
+    arrayStackLayerTrim(layerId, wide),
     sourcePosition
   );
   const start = layerPoints[0];
@@ -138,7 +139,8 @@ export function convergingStackPath(
 export function promotedStackFanoutPath(
   points: OrthogonalPoint[],
   targetPosition: HdlPosition,
-  splitDistance: number
+  splitDistance: number,
+  wide = false
 ): PromotedStackFanout | undefined {
   if (points.length < 2) return undefined;
 
@@ -151,10 +153,11 @@ export function promotedStackFanoutPath(
   else split = { x: target.x, y: target.y + splitDistance };
 
   const trunkPoints = makeOrthogonal([...points.slice(0, -1), split]);
-  const branchStarts = ARRAY_STACK_LEAD_LAYERS.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
-  const branchTargets = ARRAY_STACK_LEAD_LAYERS.map((layer) => shortenStackTarget(
+  const leadLayers = arrayStackLeadLayersFor(wide);
+  const branchStarts = leadLayers.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
+  const branchTargets = leadLayers.map((layer) => shortenStackTarget(
     [{ x: target.x + layer.dx, y: target.y + layer.dy }],
-    arrayStackLayerTrim(layer.id),
+    arrayStackLayerTrim(layer.id, wide),
     targetPosition
   )[0]);
 
@@ -164,7 +167,7 @@ export function promotedStackFanoutPath(
     barEnd: branchStarts[branchStarts.length - 1],
     bar: pathFromPoints([branchStarts[0], branchStarts[branchStarts.length - 1]]),
     branches: branchTargets.map((branchTarget, index) => ({
-      layerId: ARRAY_STACK_LEAD_LAYERS[index].id,
+      layerId: leadLayers[index].id,
       path: pathFromPoints([branchStarts[index], branchTarget])
     }))
   };

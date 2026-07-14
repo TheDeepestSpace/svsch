@@ -1,26 +1,28 @@
 import React from 'react';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_EDGE_GAP, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import { arrayStackLayer, ARRAY_STACK_LEAD_EDGE_GAP, arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
 
 export function SvgArrayStackLeads({
   side,
   width,
   y,
   x,
-  trimSink = false
+  trimSink = false,
+  wide = false
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
   y: number;
   x?: number;
   trimSink?: boolean;
+  wide?: boolean;
 }): React.ReactElement {
   return (
     <g
       className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
       aria-hidden="true"
     >
-      {ARRAY_STACK_LEAD_LAYERS.map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id);
+      {arrayStackLeadLayersFor(wide).map((layer) => {
+        const trim = arrayStackLayerTrim(layer.id, wide);
         const shapeX = (side === 'top' || side === 'bottom')
           ? Math.round((x ?? width / 2) + layer.dx)
           : side === 'left'
@@ -30,8 +32,8 @@ export function SvgArrayStackLeads({
         const endY = Math.round(side === 'top' && trimSink
           ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
           : shapeY);
-        const sourceRightExitX = Math.round(width + ARRAY_STACK_LAYERS.back.dx + ARRAY_STACK_LEAD_EDGE_GAP);
-        const bottomExitY = Math.round(y + ARRAY_STACK_LAYERS.back.dy + ARRAY_STACK_LEAD_EDGE_GAP);
+        const sourceRightExitX = Math.round(width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP);
+        const bottomExitY = Math.round(y + arrayStackLayer('back', wide).dy + ARRAY_STACK_LEAD_EDGE_GAP);
         const leadX = Math.round((side === 'top' || side === 'bottom')
           ? shapeX
           : side === 'left'

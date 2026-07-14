@@ -6,20 +6,24 @@ import {
   repeatExpression,
   repeatExpressionSource,
 } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
-  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const contentShiftX = isArray ? stackLayers.front.dx : 0;
+  const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const shapeTransform = isArray
-    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    ? `translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`
     : undefined;
   const source = repeatExpressionSource(node);
   const expression = repeatExpression(node);
@@ -37,7 +41,7 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
+      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -87,7 +91,7 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
         hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads key={port.id} side="right" width={width} y={height / 2} />
+          <SvgArrayStackLeads wide={stackWide} key={port.id} side="right" width={width} y={height / 2} />
         ) : null
       )}
     </>

@@ -9,6 +9,7 @@ import {
   nodeModportName,
   nodeModportSource
 } from '../../../ir/nodeMetadata';
+import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import {
   interfaceSkinPath,
   distributedInterfaceSideCenters,
@@ -16,7 +17,7 @@ import {
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from '../../../diagram/interfaceGeometry';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { busTapPortCenterY } from '../../../diagram/busGeometry';
 import type { DiagramPort, SourceRange } from '../../../ir/types';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
@@ -24,6 +25,8 @@ import { SvgPortLabel, portDisplayLabel, SvgStructFieldAnnotation, getSvgStructF
 
 export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
@@ -281,9 +284,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       : g * 0.5 - 3
     : isInterfaceModport
     ? Math.round(width / 2) - 3
-    : isComposition ? width - 6 : 0;
+    : isComposition ? width - (node.kind === 'struct' ? 8 : 6) : 0;
 
-  const pipeWidth = 6;
+  // Struct trunks match the 8px striped struct wire band.
+  const pipeWidth = node.kind === 'struct' ? 8 : 6;
   const pipeCapWidth = 34;
   const pipeCapHeight = 6;
   const pipeCapCenterX = pipeX + 2;
@@ -324,7 +328,21 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           </linearGradient>
         </defs>
       )}
-      <rect className={`svsch-bus-pipe${isArrayAggregate ? ' svsch-bus-pipe-array' : ''}`} x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+      {node.kind === 'struct' ? (
+        // Struct trunks render in the same striped style as struct wires:
+        // dimmed underlay below the foreground stripe pattern.
+        <>
+          <defs>
+            <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+              <line className="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
+            </pattern>
+          </defs>
+          <rect className="svsch-bus-pipe-struct-bg" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+          <rect className="svsch-bus-pipe-struct" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+        </>
+      ) : (
+        <rect className={`svsch-bus-pipe${isArrayAggregate ? ' svsch-bus-pipe-array' : ''}`} x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+      )}
       {isArrayAggregate && (
         <rect
           className="svsch-bus-array-pipe-cap"
@@ -359,10 +377,14 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         const interfaceFieldClass = isInterface
           ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}`
           : '';
+        // Tap lines mirror the connected wire's weight: multi-bit (or typedef)
+        // ports draw thick, scalars stay thin. Interface/modport fields keep
+        // their blue tint but follow the same weight rule.
+        const tapThickClass = portSuggestsThickWire(port) ? ' svsch-bus-tap-line-thick' : '';
         return !tapGoesRight ? (
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className="svsch-bus-tap-line" x1={0} y1={cy} x2={pipeX} y2={cy} />
+            <line className={`svsch-bus-tap-line${tapThickClass}`} x1={0} y1={cy} x2={pipeX} y2={cy} />
             <rect x={Math.round(leftLabelX + labelMaskPaddingX - labelMaskWidth)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
@@ -387,7 +409,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className="svsch-bus-tap-line" x1={pipeX + pipeWidth} y1={cy} x2={width} y2={cy} />
+            <line className={`svsch-bus-tap-line${tapThickClass}`} x1={pipeX + pipeWidth} y1={cy} x2={width} y2={cy} />
             <rect x={Math.round(rightLabelX - labelMaskPaddingX)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
@@ -415,10 +437,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         const cy = tapCenters[i];
         return isComposition
           ? hasArrayConnection(port.id, 'target')
-            ? <SvgArrayStackLeads key={`lead-${port.id}`} side="left" width={width} y={cy} trimSink />
+            ? <SvgArrayStackLeads wide={stackWide} key={`lead-${port.id}`} side="left" width={width} y={cy} trimSink />
             : null
           : hasArrayConnection(port.id, 'source')
-            ? <SvgArrayStackLeads key={`lead-${port.id}`} side="right" width={width} y={cy} />
+            ? <SvgArrayStackLeads wide={stackWide} key={`lead-${port.id}`} side="right" width={width} y={cy} />
             : null;
       })}
     </>

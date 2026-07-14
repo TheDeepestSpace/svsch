@@ -27,6 +27,7 @@ import {
   InstanceParameterList,
 } from './shared/labels';
 import { ArrayStackSelection } from './shared/skins';
+import { nodeStackIsWide } from '../../ir/edgeStyle';
 import { NetLabelNode } from './NetLabelNode';
 import type { HdlFlowNode } from './types';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
@@ -123,7 +124,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
     return (
       <button
-        className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -149,7 +150,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
         {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
         {isArray && isSkinnedPort
-          ? <ArrayStackSelection kind={isOutput ? 'output' : 'input'} width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind={isOutput ? 'output' : 'input'} width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : isSkinnedPort
             ? null
             : <div className="hdl-node-selection-rect" aria-hidden="true" />}
@@ -410,7 +411,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
 
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind} hdl-register-node${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-${node.kind} hdl-register-node${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -441,7 +442,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{ top: registerExtraInputPortTop(index, nodeHeight, hasRv) + diagramSizing.gridSize / 2 }} />
         ))}
         {isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
@@ -451,7 +452,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   if (node.kind === 'replicate') {
     return (
       <button
-        className={`hdl-node hdl-node-replicate${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-replicate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -474,7 +475,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
         {isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
@@ -484,7 +485,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   if (node.kind === 'literal') {
     return (
       <button
-        className={`hdl-node hdl-node-literal${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-literal${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -504,7 +505,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
         {isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
@@ -542,7 +543,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const SvgComp = node.kind === 'mux' ? MuxNodeSvg : SelectNodeSvg;
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind}${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -569,7 +570,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{ top: nodeHeight / 2 }} />
         ))}
         {isArray
-          ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
@@ -580,7 +581,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const g = diagramSizing.gridSize;
     return (
       <button
-        className={`hdl-node hdl-node-alu${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-alu${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -607,7 +608,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
     const SvgComp = node.kind === 'comb' ? CombNodeSvg : LoopNodeSvg;
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind}${isArray ? ' hdl-node-array' : ''}`}
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -625,7 +626,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{ top: nodePortCenterOffset(i) }} />
         ))}
         {isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
@@ -635,7 +636,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
   // Catch-all: instance and unknown kinds
   return (
     <button
-      className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ' hdl-node-array' : ''}`}
+      className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
       style={nodeStyle}
@@ -675,7 +676,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
           style={{ top: nodePortCenterOffset(i + parameterRows) }} />
       ))}
       {isArray
-        ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} />
+        ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
         : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       {warningIcon}
     </button>

@@ -2,12 +2,15 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 export function InverterNodeSvg({ node, width: _width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const inputs = node.ports.filter((p: DiagramPort) => p.direction !== 'output');
@@ -25,7 +28,7 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.map(layer => (
+      {isArray && skinLayers.map(layer => (
         <g key={layer.id}
            className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
            transform={`translate(${layer.dx}, ${layer.dy})`}
@@ -39,10 +42,10 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
 
       {/* Array stack leads */}
       {isArray && inputs[0] && hasArrayConnection(inputs[0].id, 'target') && (
-        <SvgArrayStackLeads side="left" width={_width} y={height / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} side="left" width={_width} y={height / 2} trimSink />
       )}
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads side="right" width={_width} y={height / 2} />
+        <SvgArrayStackLeads wide={stackWide} side="right" width={_width} y={height / 2} />
       )}
       <path className="node-skin-selection" d={path} />
       <circle className="node-skin-selection inverter-bubble-selection" cx={bubbleCx} cy={midY} r={bubbleRadius} />

@@ -7,12 +7,13 @@ import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSiz
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
+import { edgeIsThick } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
 import { avoidFeedbackObstacles, makeOrthogonal, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
 import { findNetJunctions, type NetJunction } from '../webview/orthogonal/netGeometry';
 import { pathFromPoints, type OrthogonalPoint } from '../core/pathUtils';
-import { ARRAY_STACK_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
+import { arrayStackLayersFor, arrayStackLayerTrim, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
 import {
   buildLineJumpRender,
   getEdgeOverlapHints,
@@ -73,6 +74,7 @@ interface RenderedEdgeBase {
   targetHdlPosition: HdlPosition;
   isStructAggregate: boolean;
   isInterfaceAggregate: boolean;
+  isThickWire: boolean;
   isStacked: boolean;
   sourceIsArray: boolean;
   targetIsArray: boolean;
@@ -157,7 +159,10 @@ function renderDefs(): string {
     '    <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />',
     '  </linearGradient>',
     '  <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
-    '    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />',
+    '    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />',
+    '  </pattern>',
+    '  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
+    '    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />',
     '  </pattern>',
     '</defs>'
   ].join('\n');
@@ -321,6 +326,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const targetIsArrayBreakout = target.kind === 'bus' && !targetIsComposition && target.metadata?.aggregateKind === 'array';
   const isStructAggregate = edge.metadata?.aggregate === 'struct';
   const isInterfaceAggregate = edge.metadata?.aggregate === 'interface';
+  const isThickWire = edgeIsThick(edge, source, target);
   const isStacked = edge.isStacked === true;
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
@@ -329,29 +335,29 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
 
   const backStackPoints = shortenStackTarget(
     shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back')) : 0,
+      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back', isThickWire)),
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back', isThickWire)) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back')) : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back', isThickWire)) : 0,
     targetHdlPosition
   );
   const middleStackPoints = shortenStackTarget(
     shortenStackSource(
       makeOrthogonal(points),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle')) : 0,
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle')) : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
     targetHdlPosition
   );
   const frontStackPoints = shortenStackTarget(
     shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front')) : 0,
+      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front', isThickWire)),
+      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front', isThickWire)) : 0,
       sourceHdlPosition
     ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front')) : 0,
+    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front', isThickWire)) : 0,
     targetHdlPosition
   );
 
@@ -365,6 +371,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     targetHandlePoint: targetPoint,
     isStruct: isStructAggregate,
     isInterface: isInterfaceAggregate,
+    isThick: isThickWire,
     isStacked: isStacked && !isPromotedStack && !isConvergingStack
   };
 
@@ -376,6 +383,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     targetHdlPosition,
     isStructAggregate,
     isInterfaceAggregate,
+    isThickWire,
     isStacked,
     sourceIsArray,
     targetIsArray,
@@ -439,18 +447,19 @@ function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
       ? promotedStackFanoutPath(
         edge.points,
         edge.targetPosition,
-        diagramSizing.gridSize * (edge.isMuxSelectorPromotion ? 2 : 1)
+        diagramSizing.gridSize * (edge.isMuxSelectorPromotion ? 2 : 1),
+        edge.isThickWire
       )
       : undefined;
     const convergingStackPaths = edge.isConvergingStack
       ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-        .map((layerId) => convergingStackPath(edge.points, layerId, edge.sourceHdlPosition, edge.targetHdlPosition))
+        .map((layerId) => convergingStackPath(edge.points, layerId, edge.sourceHdlPosition, edge.targetHdlPosition, edge.isThickWire))
         .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
       : [];
     const netEdgeIds = netEdgeIdsByNet.get(edge.netKey) ?? [];
     const isNetLeader = netEdgeIds[0] === edge.edge.id;
     const netGeometries = geometries.filter((geometry) => netEdgeIds.includes(geometry.edgeId));
-    const netJunctions = isNetLeader || edge.isInterfaceAggregate ? findNetJunctions(netGeometries) : [];
+    const netJunctions = isNetLeader || edge.isInterfaceAggregate || edge.isStructAggregate ? findNetJunctions(netGeometries) : [];
 
     return {
       ...edge,
@@ -486,8 +495,11 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
     if (rendered.isInterfaceAggregate) {
       paths.push(edgePath(rendered, 'svsch-edge svsch-edge-interface-bg', rendered.edgeRender.path, false));
     }
+    if (rendered.isStructAggregate) {
+      paths.push(edgePath(rendered, 'svsch-edge svsch-edge-struct-bg', rendered.edgeRender.path, false));
+    }
     if (!rendered.isPromotedStack && !rendered.isConvergingStack) {
-      paths.push(edgePath(rendered, 'svsch-edge svsch-edge-stacked-back', rendered.backRender?.path ?? pathFromPoints(rendered.backStackPoints)));
+      paths.push(edgePath(rendered, `svsch-edge svsch-edge-stacked-back${rendered.isThickWire ? ' svsch-edge-thick' : ''}`, rendered.backRender?.path ?? pathFromPoints(rendered.backStackPoints)));
     }
     if (rendered.promotedFanout) {
       paths.push(...renderPromotedStackFanout(rendered, rendered.promotedFanout));
@@ -498,12 +510,13 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
         'svsch-edge',
         rendered.isStacked ? 'svsch-edge-stacked' : '',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
-        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : ''
+        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
+        rendered.isThickWire ? 'svsch-edge-thick' : ''
       ].filter(Boolean).join(' ');
       paths.push(edgePath(rendered, classes, rendered.middleRender?.path ?? rendered.edgeRender.path));
     }
     if (!rendered.isPromotedStack && !rendered.isConvergingStack) {
-      paths.push(edgePath(rendered, 'svsch-edge svsch-edge-stacked-front', rendered.frontRender?.path ?? pathFromPoints(rendered.frontStackPoints)));
+      paths.push(edgePath(rendered, `svsch-edge svsch-edge-stacked-front${rendered.isThickWire ? ' svsch-edge-thick' : ''}`, rendered.frontRender?.path ?? pathFromPoints(rendered.frontStackPoints)));
     }
     return paths;
   }
@@ -512,12 +525,16 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
     rendered.isInterfaceAggregate
       ? edgePath(rendered, 'svsch-edge svsch-edge-interface-bg', rendered.edgeRender.path, false)
       : '',
+    rendered.isStructAggregate
+      ? edgePath(rendered, 'svsch-edge svsch-edge-struct-bg', rendered.edgeRender.path, false)
+      : '',
     edgePath(
       rendered,
       [
         'svsch-edge',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
-        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : ''
+        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
+        rendered.isThickWire ? 'svsch-edge-thick' : ''
       ].filter(Boolean).join(' '),
       rendered.edgeRender.path
     )
@@ -541,14 +558,15 @@ function renderPromotedStackFanout(rendered: RenderedEdge, fanout: PromotedStack
       [
         'svsch-edge',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
-        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : ''
+        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
+        rendered.isThickWire ? 'svsch-edge-thick' : ''
       ].filter(Boolean).join(' '),
       fanout.trunk
     ),
     edgePath(rendered, 'svsch-edge svsch-edge-stacked-breakout', fanout.bar, false, `stroke: url(#${gradientId})`),
     ...fanout.branches.map((branch) => edgePath(
       rendered,
-      `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`,
+      `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
       branch.path
     ))
   ];
@@ -577,7 +595,8 @@ function renderConvergingStackPaths(rendered: RenderedEdge): string[] {
         'svsch-edge-stacked-converge',
         stackedLayerEdgeClass(stackPath.layerId),
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
-        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : ''
+        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
+        rendered.isThickWire ? 'svsch-edge-thick' : ''
       ].filter(Boolean).join(' '),
       stackPath.path,
       true,
@@ -602,22 +621,22 @@ function renderNetJunctions(rendered: RenderedEdge): string[] {
   if (rendered.netJunctions.length === 0) {
     return [];
   }
-  const useStackedJunctionDots = rendered.sourceIsArray && rendered.isNetLeader && !rendered.isInterfaceAggregate;
+  const useStackedJunctionDots = rendered.sourceIsArray && rendered.isNetLeader && !rendered.isInterfaceAggregate && !rendered.isStructAggregate;
   return rendered.netJunctions.map((junction) => {
     if (useStackedJunctionDots) {
       return [
         `<g class="svsch-edge-junction-stacked" data-junction-id="${escapeAttr(junction.id)}">`,
-        ...[
-          { layer: ARRAY_STACK_LAYERS.front, opacity: 1 },
-          { layer: ARRAY_STACK_LAYERS.middle, opacity: 0.75 },
-          { layer: ARRAY_STACK_LAYERS.back, opacity: 0.5 }
-        ].map(({ layer, opacity }) => (
+        ...(() => { const junctionLayers = arrayStackLayersFor(rendered.isThickWire); return [
+          { layer: junctionLayers.front, opacity: 1 },
+          { layer: junctionLayers.middle, opacity: 0.75 },
+          { layer: junctionLayers.back, opacity: 0.5 }
+        ]; })().map(({ layer, opacity }) => (
           `<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="${formatNumber(junction.x + layer.dx)}" cy="${formatNumber(junction.y + layer.dy)}" r="2.15" style="opacity: ${opacity}" />`
         )),
         '</g>'
       ].join('\n');
     }
-    return `<circle class="svsch-edge-junction${rendered.isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}" cx="${formatNumber(junction.x)}" cy="${formatNumber(junction.y)}" r="${rendered.isInterfaceAggregate ? '6.5' : '4.75'}" data-junction-id="${escapeAttr(junction.id)}" />`;
+    return `<circle class="svsch-edge-junction${rendered.isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}${rendered.isStructAggregate ? ' svsch-edge-junction-struct' : ''}" cx="${formatNumber(junction.x)}" cy="${formatNumber(junction.y)}" r="${rendered.isInterfaceAggregate || rendered.isStructAggregate ? '6.5' : '4.75'}" data-junction-id="${escapeAttr(junction.id)}" />`;
   });
 }
 
@@ -730,7 +749,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     // Array stack leads
     let leadsHtml = '';
     if (isSourceStacked) {
-      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source' }));
+      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source', wide: cutNet?.edgeStyle?.thick === true }));
       leadsHtml = '\n' + renderToStaticMarkup(React.createElement('svg', null, leadsEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
     }
 

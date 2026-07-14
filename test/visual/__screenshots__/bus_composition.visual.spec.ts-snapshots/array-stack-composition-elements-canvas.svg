@@ -7,7 +7,10 @@
     <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
   </linearGradient>
   <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
   </pattern>
 </defs>
 <style>
@@ -1466,6 +1469,12 @@ text {
   overflow: visible;
 }
 
+/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
+   content shift toward the front card scales with it. */
+.hdl-node-array-wide {
+  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
+}
+
 .hdl-node-array-layer {
   border-radius: inherit;
   pointer-events: none;
@@ -1476,20 +1485,19 @@ text {
   box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
+/* Layer offsets come from the SVG transform attribute (see arrayStackGeometry);
+   CSS must not set transform here or it would override the per-node wide spread. */
 .hdl-node-array-back {
-  transform: translate(4px, 4px);
   z-index: 0;
   opacity: 0.5;
 }
 
 .hdl-node-array-middle {
-  transform: translate(0, 0);
   z-index: 1;
   opacity: 0.75;
 }
 
 .hdl-node-array-front {
-  transform: translate(-4px, -4px);
   z-index: 2;
 }
 
@@ -2223,8 +2231,8 @@ text {
   stroke-width: 1.5;
 }
 
+/* Offsets come from the SVG transform attribute — do not set transform here. */
 .port-skin-array-back {
-  transform: translate(4px, 4px);
   opacity: 0.5;
 }
 
@@ -2233,7 +2241,6 @@ text {
 }
 
 .port-skin-array-front {
-  transform: translate(-4px, -4px);
 }
 
 .port-skin-selection {
@@ -2748,12 +2755,22 @@ text {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
 }
 
-.svsch-edge-struct {
+.svsch-edge-thick {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-struct {
+.svsch-edge-bridge-thick {
   stroke-width: 13.5;
+}
+
+.svsch-edge-struct {
+  stroke: url("#svsch-struct-stripes");
+  stroke-linecap: butt;
+  stroke-width: 8;
+}
+
+.svsch-edge-bridge-struct {
+  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2762,13 +2779,21 @@ text {
   stroke-width: 8;
 }
 
-.svsch-edge-interface-bg {
+.svsch-edge-interface-bg,
+.svsch-edge-struct-bg {
   stroke: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
+/* Stripe width stays aligned with .svsch-interface-stripe. */
+.svsch-struct-stripe {
+  stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
 }
 
@@ -2826,6 +2851,11 @@ text {
 
 .svsch-edge-junction-interface {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 92%, var(--vscode-charts-blue));
+  stroke-width: 2.5;
+}
+
+.svsch-edge-junction-struct {
+  fill: var(--vscode-editor-foreground);
   stroke-width: 2.5;
 }
 
@@ -3219,6 +3249,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3234,6 +3273,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3401,25 +3445,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
@@ -3558,16 +3585,16 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:alu:array_stack_composition_elements:arr_elem_1:expr:bus_comp:array_stack_composition_elements:arr:arr_elem_1"><path class="svsch-edge" data-edge-id="edge:alu:array_stack_composition_elements:arr_elem_1:expr:bus_comp:array_stack_composition_elements:arr:arr_elem_1" data-net-key="alu:array_stack_composition_elements:arr_elem_1:expr:out:arr_elem_1" d="M 456 168 L 480 168 L 504 168 L 504 144 L 648 144 L 672 144" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 814 220 L 1027 220" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 810 216 L 1026 216" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 806 212 L 1025 212" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_h00:8_h00:bus_comp:array_stack_composition_elements:arr:8_h00"><path class="svsch-edge" data-edge-id="edge:literal:array_stack_composition_elements:8_h00:8_h00:bus_comp:array_stack_composition_elements:arr:8_h00" data-net-key="literal:array_stack_composition_elements:8_h00:8_h00" d="M 456 240 L 480 240 L 504 240 L 504 192 L 648 192 L 672 192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01"><path class="svsch-edge" data-edge-id="edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01" data-net-key="literal:array_stack_composition_elements:8_h01:8_h01" d="M 144 192 L 168 192 L 336 192 L 360 192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_hAB:8_hAB:bus_comp:array_stack_composition_elements:arr:8_hAB"><path class="svsch-edge" data-edge-id="edge:literal:array_stack_composition_elements:8_hAB:8_hAB:bus_comp:array_stack_composition_elements:arr:8_hAB" data-net-key="literal:array_stack_composition_elements:8_hAB:8_hAB" d="M 456 48 L 480 48 L 648 48 L 672 48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_composition_elements:seed:alu:array_stack_composition_elements:arr_elem_1:expr:seed"><path class="svsch-edge" data-edge-id="edge:port:array_stack_composition_elements:seed:alu:array_stack_composition_elements:arr_elem_1:expr:seed" data-net-key="port:array_stack_composition_elements:seed:port:seed" d="M 144 96 L 168 96 L 216 96 L 216 144 L 336 144 L 360 144" />
+<g class="svsch-edge-group" data-edge-id="edge:alu:array_stack_composition_elements:arr_elem_1:expr:bus_comp:array_stack_composition_elements:arr:arr_elem_1"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:alu:array_stack_composition_elements:arr_elem_1:expr:bus_comp:array_stack_composition_elements:arr:arr_elem_1" data-net-key="alu:array_stack_composition_elements:arr_elem_1:expr:out:arr_elem_1" d="M 456 168 L 480 168 L 504 168 L 504 144 L 648 144 L 672 144" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 816 222 L 1024.5 222" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 810 216 L 1023 216" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:bus_comp:array_stack_composition_elements:arr:port:array_stack_composition_elements:arr:arr" data-net-key="bus_comp:array_stack_composition_elements:arr:out:arr" d="M 804 210 L 1021.5 210" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_h00:8_h00:bus_comp:array_stack_composition_elements:arr:8_h00"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:array_stack_composition_elements:8_h00:8_h00:bus_comp:array_stack_composition_elements:arr:8_h00" data-net-key="literal:array_stack_composition_elements:8_h00:8_h00" d="M 456 240 L 480 240 L 504 240 L 504 192 L 648 192 L 672 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:array_stack_composition_elements:8_h01:8_h01:alu:array_stack_composition_elements:arr_elem_1:expr:8_h01" data-net-key="literal:array_stack_composition_elements:8_h01:8_h01" d="M 144 192 L 168 192 L 336 192 L 360 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:array_stack_composition_elements:8_hAB:8_hAB:bus_comp:array_stack_composition_elements:arr:8_hAB"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:array_stack_composition_elements:8_hAB:8_hAB:bus_comp:array_stack_composition_elements:arr:8_hAB" data-net-key="literal:array_stack_composition_elements:8_hAB:8_hAB" d="M 456 48 L 480 48 L 648 48 L 672 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_composition_elements:seed:alu:array_stack_composition_elements:arr_elem_1:expr:seed"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:array_stack_composition_elements:seed:alu:array_stack_composition_elements:arr_elem_1:expr:seed" data-net-key="port:array_stack_composition_elements:seed:port:seed" d="M 144 96 L 168 96 L 216 96 L 216 144 L 336 144 L 360 144" />
 <circle class="svsch-edge-junction" cx="216" cy="96" r="4.75" data-junction-id="port:array_stack_composition_elements:seed:port:seed:216:96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_composition_elements:seed:bus_comp:array_stack_composition_elements:arr:seed"><path class="svsch-edge" data-edge-id="edge:port:array_stack_composition_elements:seed:bus_comp:array_stack_composition_elements:arr:seed" data-net-key="port:array_stack_composition_elements:seed:port:seed" d="M 144 96 L 168 96 L 648 96 L 672 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_composition_elements:seed:bus_comp:array_stack_composition_elements:arr:seed"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:array_stack_composition_elements:seed:bus_comp:array_stack_composition_elements:arr:seed" data-net-key="port:array_stack_composition_elements:seed:port:seed" d="M 144 96 L 168 96 L 648 96 L 672 96" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:array_stack_composition_elements:8_h00:8_h00" data-node-kind="literal" transform="translate(336 228)">
@@ -3577,7 +3604,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-bus-node hdl-bus-composition hdl-bus-array-composition hdl-node-array" data-node-id="bus_comp:array_stack_composition_elements:arr" data-node-kind="bus" transform="translate(672 24)">
 <svg class="hdl-node-svg" width="144" height="216" aria-hidden="true">
-<defs><linearGradient id="svsch-bus-array-cap-bus_comp-array_stack_composition_elements-arr" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" class="svsch-bus-array-cap-stop-strong"></stop><stop offset="100%" class="svsch-bus-array-cap-stop-dim"></stop></linearGradient></defs><rect class="svsch-bus-pipe svsch-bus-pipe-array" x="129" y="12" width="6" height="168" rx="3"></rect><rect class="svsch-bus-array-pipe-cap" x="131" y="174" width="34" height="6" rx="3" fill="url(#svsch-bus-array-cap-bus_comp-array_stack_composition_elements-arr)" transform="rotate(45 131 177)"></rect><g class="svsch-bus-tap" data-port-id="in:_3_"><line class="svsch-bus-tap-line" x1="0" y1="24" x2="129" y2="24"></line><rect x="75" y="16" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_3_" x="107" y="24" text-anchor="end" dominant-baseline="middle">[3]</text></g><g class="svsch-bus-tap" data-port-id="in:_2_"><line class="svsch-bus-tap-line" x1="0" y1="72" x2="129" y2="72"></line><rect x="75" y="64" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_2_" x="107" y="72" text-anchor="end" dominant-baseline="middle">[2]</text></g><g class="svsch-bus-tap" data-port-id="in:_1_"><line class="svsch-bus-tap-line" x1="0" y1="120" x2="129" y2="120"></line><rect x="75" y="112" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_1_" x="107" y="120" text-anchor="end" dominant-baseline="middle">[1]</text></g><g class="svsch-bus-tap" data-port-id="in:_0_"><line class="svsch-bus-tap-line" x1="0" y1="168" x2="129" y2="168"></line><rect x="75" y="160" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_0_" x="107" y="168" text-anchor="end" dominant-baseline="middle">[0]</text></g>
+<defs><linearGradient id="svsch-bus-array-cap-bus_comp-array_stack_composition_elements-arr" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" class="svsch-bus-array-cap-stop-strong"></stop><stop offset="100%" class="svsch-bus-array-cap-stop-dim"></stop></linearGradient></defs><rect class="svsch-bus-pipe svsch-bus-pipe-array" x="129" y="12" width="6" height="168" rx="3"></rect><rect class="svsch-bus-array-pipe-cap" x="131" y="174" width="34" height="6" rx="3" fill="url(#svsch-bus-array-cap-bus_comp-array_stack_composition_elements-arr)" transform="rotate(45 131 177)"></rect><g class="svsch-bus-tap" data-port-id="in:_3_"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="0" y1="24" x2="129" y2="24"></line><rect x="75" y="16" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_3_" x="107" y="24" text-anchor="end" dominant-baseline="middle">[3]</text></g><g class="svsch-bus-tap" data-port-id="in:_2_"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="0" y1="72" x2="129" y2="72"></line><rect x="75" y="64" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_2_" x="107" y="72" text-anchor="end" dominant-baseline="middle">[2]</text></g><g class="svsch-bus-tap" data-port-id="in:_1_"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="0" y1="120" x2="129" y2="120"></line><rect x="75" y="112" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_1_" x="107" y="120" text-anchor="end" dominant-baseline="middle">[1]</text></g><g class="svsch-bus-tap" data-port-id="in:_0_"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="0" y1="168" x2="129" y2="168"></line><rect x="75" y="160" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:_0_" x="107" y="168" text-anchor="end" dominant-baseline="middle">[0]</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:array_stack_composition_elements:8_h01:8_h01" data-node-kind="literal" transform="translate(24 180)">
@@ -3602,7 +3629,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned hdl-node-array" data-node-id="port:array_stack_composition_elements:arr" data-node-kind="port" transform="translate(1032 204)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
-<g class="port-skin port-skin-output"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 12 0 H 120 V 24 H 12 L 0 12 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="56" y="8" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">arr</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="123" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 8 L -4 8"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 12 L 0 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 16 L 4 16"></path></g></g>
+<g class="port-skin port-skin-output"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 12 0 H 120 V 24 H 12 L 0 12 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="54" y="6" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">arr</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="123" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -10 6 L -6 6"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -9 12 L 0 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -7 18 L 6 18"></path></g></g>
 </svg>
 </g>
 </g>

@@ -208,7 +208,7 @@
       "target": "reg:array_address_write_enable_register:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1285 148 L 1324 148 L 1324 28 L 172 28 L 172 244 L 355 244"
+      "path": "M 1291.5 150 L 1326 150 L 1326 30 L 174 30 L 174 246 L 352.5 246"
     },
     {
       "id": "edge:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:mux:array_address_write_enable_register:storage_addr:storage_address__next",
@@ -216,7 +216,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "out",
       "targetHandle": "in:2_b0",
-      "path": "M 901 148 L 1123 148"
+      "path": "M 907.5 150 L 1120.5 150"
     },
     {
       "id": "edge:port:array_address_write_enable_register:address:mux:array_address_write_enable_register:storage_addr:address",
@@ -256,7 +256,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 565 244 L 604 244 L 604 268 L 964 268 L 964 172 L 1123 172"
+      "path": "M 571.5 246 L 606 246 L 606 270 L 966 270 L 966 174 L 1120.5 174"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:storage",
@@ -264,7 +264,7 @@
       "target": "mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 565 244 L 604 244 L 604 172 L 787 172"
+      "path": "M 571.5 246 L 606 246 L 606 174 L 784.5 174"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:port:array_address_write_enable_register:out_data:out_data",
@@ -272,7 +272,7 @@
       "target": "port:array_address_write_enable_register:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 565 244 L 763 244"
+      "path": "M 571.5 246 L 760.5 246"
     }
   ]
 }

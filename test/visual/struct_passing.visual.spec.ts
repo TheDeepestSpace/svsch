@@ -35,7 +35,7 @@ test.describe('struct passing visual rendering', () => {
 
     console.log(`[test] Struct edge style:`, JSON.stringify(edgeStyle, null, 2));
 
-    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-interface):not(.svsch-edge-interface-bg):not(.svsch-edge-struct)').first().evaluate((element) => {
+    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-interface):not(.svsch-edge-interface-bg):not(.svsch-edge-struct):not(.svsch-edge-struct-bg):not(.svsch-edge-thick)').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
     });
 

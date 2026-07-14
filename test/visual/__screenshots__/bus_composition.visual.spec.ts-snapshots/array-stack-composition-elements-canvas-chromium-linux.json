@@ -186,7 +186,7 @@
       "target": "port:array_stack_composition_elements:arr",
       "sourceHandle": "out:arr",
       "targetHandle": "port:arr",
-      "path": "M 814 220 L 1027 220"
+      "path": "M 816 222 L 1024.5 222"
     },
     {
       "id": "edge:literal:array_stack_composition_elements:8_h00:8_h00:bus_comp:array_stack_composition_elements:arr:8_h00",

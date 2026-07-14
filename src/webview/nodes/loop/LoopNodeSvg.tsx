@@ -3,12 +3,16 @@ import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { nodePortCenterOffset } from '../../../diagram/constants';
 import { instanceParameterRows } from '../../../diagram/nodeSizing';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const inputs: DiagramPort[] = node.ports.filter(
@@ -16,15 +20,15 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   );
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const paramRows = instanceParameterRows(node);
-  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const contentShiftX = isArray ? stackLayers.front.dx : 0;
+  const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const shapeTransform = isArray
-    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    ? `translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`
     : undefined;
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
+      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -47,6 +51,7 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {isArray && inputs.map((port: DiagramPort, i: number) =>
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
+            wide={stackWide}
             key={`lead-${port.id}`}
             side="left"
             width={width}
@@ -58,6 +63,7 @@ export function LoopNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {isArray && outputs.map((port: DiagramPort, i: number) =>
         hasArrayConnection(port.id, 'source') ? (
           <SvgArrayStackLeads
+            wide={stackWide}
             key={`lead-${port.id}`}
             side="right"
             width={width}

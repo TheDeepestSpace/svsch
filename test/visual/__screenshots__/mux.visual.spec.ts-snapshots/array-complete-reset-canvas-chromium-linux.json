@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 72,
-        "y": 108
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -123,7 +123,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 120 L 240 120 L 240 96 L 384 96"
+      "path": "M 192 144 L 240 144 L 240 96 L 384 96"
     },
     {
       "id": "edge:port:array_complete_reset:in_data:reg:array_complete_reset:arr:in_data",
@@ -131,7 +131,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:in_data",
       "targetHandle": "d",
-      "path": "M 205 76 L 403 76"
+      "path": "M 211.5 78 L 400.5 78"
     },
     {
       "id": "edge:port:array_complete_reset:rst:reg:array_complete_reset:arr:rst",
@@ -147,7 +147,7 @@
       "target": "port:array_complete_reset:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 565 76 L 763 76"
+      "path": "M 571.5 78 L 760.5 78"
     }
   ]
 }

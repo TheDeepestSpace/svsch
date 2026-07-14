@@ -1,14 +1,18 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { normalizeWidth } from '../../../diagram/constants';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
 export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
@@ -34,10 +38,10 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
   const underlineY = height / 2 + typeFontSize * 0.62;
   const shapeWidth = Math.max(0, width - 1);
   const shapeHeight = Math.max(0, height - 1);
-  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const contentShiftX = isArray ? stackLayers.front.dx : 0;
+  const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const shapeTransform = isArray
-    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    ? `translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`
     : undefined;
   const stopSvgInteraction = (event: React.SyntheticEvent) => {
     if (onNavigateToSource) event.stopPropagation();
@@ -50,7 +54,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
+      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
           className={`svsch-node-shape svsch-literal-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -119,7 +123,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
         hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads key={port.id} side="right" width={width} y={Math.round(height / 2)} />
+          <SvgArrayStackLeads wide={stackWide} key={port.id} side="right" width={width} y={Math.round(height / 2)} />
         ) : null
       )}
     </>

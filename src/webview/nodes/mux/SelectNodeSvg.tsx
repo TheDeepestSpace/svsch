@@ -9,12 +9,16 @@ import {
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { selectPortLabel } from '../../../diagram/selectLabels';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const g = diagramSizing.gridSize;
@@ -34,16 +38,17 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
   const rightTop = (height - rightSideHeight) / 2;
   const rightBottom = rightTop + rightSideHeight;
   const trapPath = `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
-  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const contentShiftX = isArray ? stackLayers.front.dx : 0;
+  const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const bodyTransform = isArray
-    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    ? `translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`
     : undefined;
   const targetLeads = (
     <>
       {muxTopPorts.map((port: DiagramPort, index: number) =>
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
+            wide={stackWide}
             key={`lead-top-${port.id}`}
             side="top"
             width={width}
@@ -56,6 +61,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
       {sideInputs.map((port: DiagramPort, index: number) =>
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
+            wide={stackWide}
             key={`lead-left-${port.id}`}
             side="left"
             width={width}
@@ -70,7 +76,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
   return (
     <>
       {targetLeads}
-      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
+      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <path
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -140,7 +146,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
 
       {/* Array stack leads */}
       {outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads side="right" width={width} y={Math.round(height / 2)} />
+        <SvgArrayStackLeads wide={stackWide} side="right" width={width} y={Math.round(height / 2)} />
       )}
       {!isArray && <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />}
     </>
