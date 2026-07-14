@@ -30,4 +30,20 @@ describe('routing obstacle geometry', () => {
       bottom: diagramSizing.gridSize / 2
     });
   });
+
+  it('keeps a left-side and half-grid vertical corridor around literals', () => {
+    const literal: DiagramNode = {
+      id: 'literal',
+      kind: 'literal',
+      label: '1',
+      ports: [{ id: 'out', name: 'out', direction: 'output' }]
+    };
+
+    expect(routingObstacleMargins(literal, ['EAST'])).toEqual({
+      left: diagramSizing.gridSize,
+      right: 0,
+      top: diagramSizing.gridSize / 2,
+      bottom: diagramSizing.gridSize / 2
+    });
+  });
 });

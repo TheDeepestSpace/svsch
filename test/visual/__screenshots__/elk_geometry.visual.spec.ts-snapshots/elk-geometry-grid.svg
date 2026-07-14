@@ -3891,8 +3891,8 @@ path.port-skin-body.port-skin-harness {
 <circle cx="24" cy="1008" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="0" cy="1008" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="264" y="852" width="144" height="24" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
-<rect x="264" y="852" width="144" height="24" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
-<text x="264" y="844" fill="#a855f7" font-size="13" font-family="monospace">literal</text>
+<rect x="240" y="840" width="168" height="48" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
+<text x="240" y="832" fill="#a855f7" font-size="13" font-family="monospace">literal</text>
 <line x1="384" y1="864" x2="408" y2="864" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="384" cy="864" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="408" cy="864" r="7" fill="#fb7a1f" fill-opacity="0.9" />

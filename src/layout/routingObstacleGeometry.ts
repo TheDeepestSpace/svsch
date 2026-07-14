@@ -14,12 +14,18 @@ export function routingObstacleMargins(
   node: DiagramNode,
   portSides: Array<string | undefined>
 ): RoutingObstacleMargins {
-  const vertical = node.kind === 'literal'
-    ? { top: 0, bottom: 0 }
-    : {
-      top: portSides.includes('NORTH') ? 0 : ROUTING_OBSTACLE_MARGIN,
-      bottom: portSides.includes('SOUTH') ? 0 : ROUTING_OBSTACLE_MARGIN
+  const vertical = {
+    top: portSides.includes('NORTH') ? 0 : ROUTING_OBSTACLE_MARGIN,
+    bottom: portSides.includes('SOUTH') ? 0 : ROUTING_OBSTACLE_MARGIN
+  };
+
+  if (node.kind === 'literal') {
+    return {
+      left: diagramSizing.gridSize,
+      right: 0,
+      ...vertical
     };
+  }
 
   if (node.kind !== 'port') {
     return { left: 0, right: 0, ...vertical };
