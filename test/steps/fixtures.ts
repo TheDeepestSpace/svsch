@@ -351,7 +351,14 @@ export class BddWorld {
         const rf = (window as any).reactFlowInstance;
         if (!rf) return false;
         const nodes = rf.getNodes();
-        return nodes.length > 0 && nodes.every((node: any) => node.data?.moduleName === expectedModule);
+        if (nodes.length === 0 || !nodes.every((node: any) => node.data?.moduleName === expectedModule)) {
+          return false;
+        }
+        const edges = rf.getEdges();
+        return edges.every((edge: any) => {
+          const el = document.querySelector(`.react-flow__edge[data-id="${edge.id}"] path.svsch-edge`);
+          return !!el?.getAttribute('d');
+        });
       }, moduleName).catch(() => false);
     }, { timeout }).toBe(true);
   }
