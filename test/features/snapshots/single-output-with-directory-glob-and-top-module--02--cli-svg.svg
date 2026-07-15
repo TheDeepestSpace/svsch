@@ -2785,14 +2785,16 @@ text {
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
-  stroke-width: 5;
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
 }
 
+/* Stripe width stays aligned with .svsch-interface-stripe. */
 .svsch-struct-stripe {
   stroke: var(--vscode-editor-foreground);
-  stroke-width: 5;
+  stroke-width: 2;
 }
 
 .svsch-edge-bridge-interface {
@@ -3247,6 +3249,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3262,6 +3273,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3429,25 +3445,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
