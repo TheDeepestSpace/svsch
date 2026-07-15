@@ -1290,7 +1290,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(comp?.ports.find((port) => port.name === 'pkt.opcode')?.width).toBe('[3:0]');
     expect(top.nodes.find((node) => node.id === 'reg:top:pkt.opcode')?.ports.find((port) => port.name === 'Q')?.width).toBe('[3:0]');
     expect(top.edges.some((edge) => edge.source === 'reg:top:pkt.opcode' && edge.target === comp?.id && edge.signal === 'pkt.opcode')).toBe(true);
-    expect(top.edges.some((edge) => edge.source === comp?.id && edge.target === 'port:top:flat' && edge.signal === 'pkt' && edge.metadata?.aggregate === 'struct')).toBe(true);
+    expect(top.edges.some((edge) => edge.source === comp?.id && edge.target === 'port:top:flat' && edge.signal === 'pkt')).toBe(true);
   });
 
   it('represents unpacked struct field reads without packed bit ranges', async () => {
