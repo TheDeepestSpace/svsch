@@ -85,9 +85,9 @@
   --xy-minimap-node-stroke-width-default: 2;
 
   --xy-background-color-default: #141414;
-  --xy-background-pattern-dots-color-default: #777;
-  --xy-background-pattern-lines-color-default: #777;
-  --xy-background-pattern-cross-color-default: #777;
+  --xy-background-pattern-dots-color-default: #555;
+  --xy-background-pattern-lines-color-default: #333;
+  --xy-background-pattern-cross-color-default: #333;
   --xy-node-color-default: #f8f8f8;
   --xy-node-border-default: 1px solid #3c3c3c;
   --xy-node-background-color-default: #1e1e1e;
@@ -3589,9 +3589,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem1:elem1"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem1:elem1" data-net-key="bus:array_stack_breakout:arr:out:arr_1_" d="M 528 96 L 552 96 L 720 96 L 744 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem2:elem2"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem2:elem2" data-net-key="bus:array_stack_breakout:arr:out:arr_2_" d="M 528 144 L 552 144 L 720 144 L 744 144" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem3:elem3"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem3:elem3" data-net-key="bus:array_stack_breakout:arr:out:arr_3_" d="M 528 192 L 552 192 L 720 192 L 744 192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 163.5 222 L 396 222" />
-<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 153 216 L 390 216" />
-<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 142.5 210 L 384 210" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 163.5 222 L 392 222" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 153 216 L 386 216" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr" data-net-key="port:array_stack_breakout:arr:port:arr" d="M 142.5 210 L 380 210" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-bus-node hdl-bus-breakout hdl-bus-array-breakout hdl-node-array" data-node-id="bus:array_stack_breakout:arr" data-node-kind="bus" transform="translate(360 24)">

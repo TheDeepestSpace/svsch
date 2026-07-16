@@ -290,6 +290,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const pipeWidth = node.kind === 'struct' ? 8 : 6;
   const pipeCapWidth = 34;
   const pipeCapHeight = 6;
+  // Array-breakout pivot (pipeX+2, pipeY+pipeH-3) is mirrored in
+  // arrayBreakoutPipeCapPivot (busGeometry.ts) so OrthogonalEdge can align
+  // stacked wires onto this same rotated cap without duplicating this math —
+  // keep them in sync if this formula changes for the breakout case.
   const pipeCapCenterX = pipeX + 2;
   const pipeCapCenterY = pipeY + pipeH - 3;
   const pipeCapGradientId = `svsch-bus-array-cap-${node.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;

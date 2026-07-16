@@ -10,10 +10,10 @@ import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
-import { avoidFeedbackObstacles, makeOrthogonal, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
+import { avoidFeedbackObstacles, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
 import { findNetJunctions, type NetJunction } from '../webview/orthogonal/netGeometry';
 import { pathFromPoints, type OrthogonalPoint } from '../core/pathUtils';
-import { arrayStackLayersFor, arrayStackLayerTrim, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
+import { arrayStackLayersFor, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
 import {
   buildLineJumpRender,
   getEdgeOverlapHints,
@@ -23,11 +23,9 @@ import {
   type PolylineEdgeGeometry
 } from '../webview/react-flow-line-jumps';
 import {
+  computeStackedEdgeLayerPoints,
   convergingStackPath,
-  offsetPointsForArrayStackLayer,
   promotedStackFanoutPath,
-  shortenStackSource,
-  shortenStackTarget,
   stableFragmentId,
   stackedLayerEdgeClass,
   stackedLayerGradientStopClass,
@@ -333,33 +331,18 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const isMuxSelectorPromotion = target.kind === 'mux' && edge.targetPort === 'sel';
   const netKey = edgeNetKey(edge);
 
-  const backStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back', isThickWire)),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back', isThickWire)) : 0,
-    targetHdlPosition
-  );
-  const middleStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(points),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
-    targetHdlPosition
-  );
-  const frontStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front', isThickWire)),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front', isThickWire)) : 0,
-    targetHdlPosition
-  );
+  const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
+    points,
+    sourceHdlPosition,
+    targetHdlPosition,
+    sourceIsArray,
+    sourceIsArrayComposition,
+    sourceNode: source,
+    targetIsArray,
+    targetIsArrayBreakout,
+    targetNode: target,
+    isThickWire
+  });
 
   const geometry: PolylineEdgeGeometry = {
     edgeId: edge.id,

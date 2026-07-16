@@ -25,14 +25,12 @@ import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, bui
 import { InteractionContext } from '../nodes/shared/context';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { edgeIsThick } from '../../ir/edgeStyle';
-import { arrayStackLayersFor, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
+import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import {
+  computeStackedEdgeLayerPoints,
   convergingStackPath,
-  offsetPointsForArrayStackLayer,
   promotedStackFanoutPath,
-  shortenStackSource,
-  shortenStackTarget,
   stableFragmentId,
   stackedLayerEdgeClass,
   stackedLayerGradientStopClass,
@@ -262,33 +260,18 @@ export function OrthogonalEdge({
   const sourceHdlPosition = forceStraight && isVertical
     ? HdlPosition.Bottom
     : sourcePosition as unknown as HdlPosition;
-  const backStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back', isThickWire)),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back', isThickWire)) : 0,
-    targetHdlPosition
-  );
-  const middleStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(points),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle', isThickWire)) : 0,
-    targetHdlPosition
-  );
-  const frontStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front', isThickWire)),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front', isThickWire)) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front', isThickWire)) : 0,
-    targetHdlPosition
-  );
+  const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
+    points,
+    sourceHdlPosition,
+    targetHdlPosition,
+    sourceIsArray,
+    sourceIsArrayComposition,
+    sourceNode,
+    targetIsArray,
+    targetIsArrayBreakout,
+    targetNode,
+    isThickWire
+  });
 
   const edgeGeometry = React.useMemo(() => ({
     edgeId: id,

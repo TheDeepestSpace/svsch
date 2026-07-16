@@ -180,7 +180,7 @@
       "target": "bus:array_stack_breakout:arr",
       "sourceHandle": "port:arr",
       "targetHandle": "in:arr",
-      "path": "M 163.5 222 L 396 222"
+      "path": "M 163.5 222 L 392 222"
     }
   ]
 }
