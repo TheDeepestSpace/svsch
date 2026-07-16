@@ -1,0 +1,191 @@
+group: Buses
+cases:
+  - id: bus-concatenation
+    title: Bus Concatenation
+    description: Concatenating signals forms a bus block.
+    tags: [bus, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic [1:0] y
+        );
+          assign y = {a, b};
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "y"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "{a, b}"
+
+  - id: bus-composition-three-wires
+    title: Bus Composition (Three Wires)
+    description: Composing a bus from three single-bit signals.
+    tags: [bus, composition, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          input logic c,
+          output logic [2:0] y
+        );
+          assign y = {a, b, c};
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "y"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "{a, b, c}"
+
+  - id: bus-composition-one-single-one-multi
+    title: Bus Composition (One Single, One Multi-bit)
+    description: Composing a bus from a single-bit signal and a multi-bit slice.
+    tags: [bus, composition, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic [3:0] b,
+          output logic [2:0] y
+        );
+          assign y = {a, b[1:0]};
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "y"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "{a, b[1:0]}"
+
+  - id: bus-breakout-simple
+    title: Simple Bus Breakout
+    description: Breaking out a single bit signal from a bus.
+    tags: [bus, breakout, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] bus,
+          output logic y
+        );
+          assign y = bus[0];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "bus"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "y = bus[0]"
+
+  - id: bus-breakout-three-wires
+    title: Bus Breakout (Three Wires)
+    description: Breaking out three individual bit signals from a bus.
+    tags: [bus, breakout, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] bus,
+          output logic x,
+          output logic y,
+          output logic z
+        );
+          assign x = bus[0];
+          assign y = bus[1];
+          assign z = bus[2];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "bus"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "x = bus[0]"
+
+  - id: bus-breakout-one-single-one-multi
+    title: Bus Breakout (One Single, One Multi-bit)
+    description: Breaking out a single bit signal and a multi-bit slice from a bus.
+    tags: [bus, breakout, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [7:0] bus,
+          output logic x,
+          output logic [2:0] y
+        );
+          assign x = bus[0];
+          assign y = bus[3:1];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "bus"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "x = bus[0]"
+
+  - id: bus-array-composition
+    title: Array Composition
+    description: Composing an array of busses from individual bus elements.
+    tags: [bus, array, composition, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [7:0] a,
+          input logic [7:0] b,
+          output logic [7:0] y [0:1]
+        );
+          assign y[0] = a;
+          assign y[1] = b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "y"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "y[0]"
+
+  - id: bus-array-breakout
+    title: Array Breakout
+    description: Breaking out individual bus elements from an array of busses.
+    tags: [bus, array, breakout, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [7:0] bus [0:1],
+          output logic [7:0] y0,
+          output logic [7:0] y1
+        );
+          assign y0 = bus[0];
+          assign y1 = bus[1];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: bus
+      nodeLabel: "bus"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, bus]
+      selectedText: "y0 = bus[0]"

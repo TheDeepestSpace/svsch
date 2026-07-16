@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildDesignGraph } from './parser/backend';
+import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
 import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
@@ -505,31 +506,13 @@ export class DiagramPanel {
   }
 
   private async navigateToSignal(edge: DiagramEdge): Promise<void> {
-    if (!this.currentModule || !this.graph || !edge.signal) {
+    if (!this.currentModule || !this.graph) {
       return;
     }
 
-    if (edge.sourceRange) {
-      await this.navigateToSource(edge.sourceRange);
-      return;
-    }
-
-    const module = this.graph.modules[this.currentModule];
-    if (!module) return;
-
-    // Try to find the signal declaration in ports, or register/computational nodes with a matching name.
-    // However, if the user requested a signal that is declared as an internal wire not shown as a node with source, we could fall back to a search or just show warning.
-    // For now, if the port exists we have its source.
-    const port = module.ports.find((p) => p.name === edge.signal);
-    if (port?.source) {
-      await this.navigateToSource(port.source);
-      return;
-    }
-
-    // Try finding an internal node representing this signal.
-    const sourceNode = module.nodes.find((n) => n.label === edge.signal && (n.kind === 'register' || n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter'));
-    if (sourceNode?.source) {
-      await this.navigateToSource(sourceNode.source);
+    const source = resolveSignalSource(this.graph, this.currentModule, edge);
+    if (source) {
+      await this.navigateToSource(source);
       return;
     }
 
