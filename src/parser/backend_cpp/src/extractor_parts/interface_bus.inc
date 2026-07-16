@@ -3,9 +3,28 @@ SourceInfo DesignExtractor::getSourceInfo(const UHDM::BaseClass* object) {
     if (!object) return src;
     src.file = std::string(object->VpiFile());
     src.line = static_cast<int>(object->VpiLineNo());
-    src.col = static_cast<int>(object->VpiColumnNo());
+    int col = static_cast<int>(object->VpiColumnNo());
+    src.col = col > 0 ? col - 1 : 0;
     src.endLine = static_cast<int>(object->VpiEndLineNo());
-    src.endCol = static_cast<int>(object->VpiEndColumnNo());
+    int endCol = static_cast<int>(object->VpiEndColumnNo());
+    src.endCol = endCol > 0 ? endCol - 1 : 0;
+
+    // Fix off-by-one for "interface" keyword reporting in Surelog (0-indexed col)
+    if (!src.file.empty() && src.line > 0 && src.col >= 1) {
+        std::ifstream file = openSourceFile(src.file);
+        if (file.is_open()) {
+            std::string lineContent;
+            for (int i = 1; i <= src.line; ++i) {
+                if (!std::getline(file, lineContent)) break;
+            }
+            if (static_cast<int>(lineContent.size()) >= src.col - 1 + 9) {
+                if (lineContent.substr(src.col - 1, 9) == "interface") {
+                    src.col--;
+                }
+            }
+        }
+    }
+
     return src;
 }
 
@@ -84,9 +103,9 @@ SourceInfo DesignExtractor::fallbackDeclarationSource(const SourceInfo& source, 
         if (!std::regex_search(line, match, pattern)) continue;
         SourceInfo fixed = source;
         fixed.line = line_no;
-        fixed.col = static_cast<int>(match.position()) + 1;
+        fixed.col = static_cast<int>(match.position());
         fixed.endLine = line_no;
-        fixed.endCol = static_cast<int>(line.size()) + 1;
+        fixed.endCol = static_cast<int>(line.size());
         return fixed;
     }
     return source;

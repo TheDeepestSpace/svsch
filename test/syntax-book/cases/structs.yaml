@@ -1,0 +1,63 @@
+group: Structs
+cases:
+  - id: struct-composition
+    title: Struct Composition
+    description: Assigning to individual struct fields forms a struct composition node.
+    tags: [struct, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] opcode_i,
+          input logic valid_i,
+          output logic [4:0] flat
+        );
+          typedef struct packed {
+            logic [3:0] opcode;
+            logic valid;
+          } packet_t;
+          packet_t pkt;
+          assign pkt.opcode = opcode_i;
+          assign pkt.valid = valid_i;
+          assign flat = pkt;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: struct
+      nodeLabel: pkt
+      action: doubleClick
+    expect:
+      nodeKinds: [port, struct]
+      selectedText: "pkt"
+
+  - id: struct-breakout
+    title: Struct Breakout
+    description: Breaking out fields from a packed struct.
+    tags: [struct, breakout, source-highlight]
+    files:
+      top.sv: |
+        typedef struct packed {
+          logic [3:0] opcode;
+          logic valid;
+          logic [1:0] lane;
+        } packet_t;
+
+        module top(
+          input packet_t pkt,
+          output logic [3:0] opcode,
+          output logic valid,
+          output logic [1:0] lane
+        );
+          assign opcode = pkt.opcode;
+          assign valid = pkt.valid;
+          assign lane = pkt.lane;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: struct
+      nodeLabel: pkt
+      action: doubleClick
+    expect:
+      nodeKinds: [port, struct]
+      selectedText: "pkt"

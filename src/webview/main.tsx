@@ -867,15 +867,19 @@ function GenerateRegionOverlay({
             className="generate-region-title"
             onPointerDown={(event) => startDrag(event, region, 'move')}
             onClick={(event) => event.stopPropagation()}
-            onDoubleClick={() => vscode.postMessage({
-              type: 'navigateToRegion',
-              region: {
-                kind: region.kind,
-                isGenerateBlock: region.isGenerateBlock,
-                source: region.source,
-                bodySource: region.bodySource
-              }
-            })}
+            onDoubleClick={() => {
+              const msg = {
+                type: 'navigateToRegion',
+                region: {
+                  kind: region.kind,
+                  isGenerateBlock: region.isGenerateBlock,
+                  source: region.source,
+                  bodySource: region.bodySource
+                }
+              } as const;
+              console.log('NAVIGATE:', JSON.stringify(msg));
+              vscode.postMessage(msg);
+            }}
             title={region.label}
           >
             {region.label}

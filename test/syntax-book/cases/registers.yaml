@@ -1,0 +1,196 @@
+group: Registers
+cases:
+  - id: register-no-reset
+    title: Register without Reset
+    description: A simple sequential register without any reset signal.
+    tags: [register, sequential, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic d,
+          output logic q
+        );
+          always_ff @(posedge clk) begin
+            q <= d;
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register]
+      selectedText: |
+        always_ff @(posedge clk) begin
+            q <= d;
+          end
+
+  - id: register-reset
+    title: Register with Reset
+    description: An always_ff register with an active-high reset signal.
+    tags: [register, sequential, reset, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic rst,
+          input logic d,
+          output logic q
+        );
+          always_ff @(posedge clk or posedge rst) begin
+            if (rst) begin
+              q <= 1'b0;
+            end else begin
+              q <= d;
+            end
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register]
+      selectedText: |
+        always_ff @(posedge clk or posedge rst) begin
+            if (rst) begin
+              q <= 1'b0;
+            end else begin
+              q <= d;
+            end
+          end
+
+  - id: register-inverted-reset
+    title: Register with Inverted Reset
+    description: An always_ff register with an active-low (inverted) reset signal.
+    tags: [register, sequential, reset, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic rst_n,
+          input logic d,
+          output logic q
+        );
+          always_ff @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+              q <= 1'b0;
+            end else begin
+              q <= d;
+            end
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register]
+      selectedText: |
+        always_ff @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+              q <= 1'b0;
+            end else begin
+              q <= d;
+            end
+          end
+
+  - id: register-reset-value
+    title: Register with Reset Value
+    description: A register with a non-zero reset value.
+    tags: [register, sequential, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic rst_n,
+          input logic [3:0] d,
+          output logic [3:0] q
+        );
+          always_ff @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+              q <= 4'hA;
+            end else begin
+              q <= d;
+            end
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register, literal]
+      selectedText: |
+        always_ff @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+              q <= 4'hA;
+            end else begin
+              q <= d;
+            end
+          end
+
+  - id: register-multibit
+    title: Multi-bit Register
+    description: A register storing a multi-bit vector.
+    tags: [register, sequential, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic [7:0] d,
+          output logic [7:0] q
+        );
+          always_ff @(posedge clk) begin
+            q <= d;
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: q
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register]
+      selectedText: |
+        always_ff @(posedge clk) begin
+            q <= d;
+          end
+
+  - id: register-array
+    title: Array of Registers
+    description: A sequential register file representing an array of register cells.
+    tags: [register, array, sequential, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic clk,
+          input logic [7:0] d [0:1],
+          output logic [7:0] q [0:1]
+        );
+          always_ff @(posedge clk) begin
+            q <= d;
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: register
+      nodeLabel: "q"
+      action: doubleClick
+    expect:
+      nodeKinds: [port, register]
+      selectedText: |
+        always_ff @(posedge clk) begin
+            q <= d;
+          end
