@@ -22,6 +22,8 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const port = node.ports[0];
   const direction = port?.direction ?? 'unknown';
   const isInterface = Boolean(
@@ -192,10 +194,10 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
 
       {/* Array stack leads */}
       {isArray && skinDirection === 'output' && port && hasArrayConnection(port.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
       )}
     </g>
   );

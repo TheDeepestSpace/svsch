@@ -17,6 +17,8 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(
     (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
@@ -164,6 +166,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
             wide={stackWide}
+            thick={arrayConnectionThick(port.id, 'target')}
             key={`lead-${port.id}`}
             side="left"
             width={width}
@@ -176,6 +179,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
         hasArrayConnection(port.id, 'source') ? (
           <SvgArrayStackLeads
             wide={stackWide}
+            thick={arrayConnectionThick(port.id, 'source')}
             key={`lead-${port.id}`}
             side="right"
             width={width}

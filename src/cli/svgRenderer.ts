@@ -7,7 +7,7 @@ import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSiz
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
-import { edgeIsThick } from '../ir/edgeStyle';
+import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
 import { avoidFeedbackObstacles, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
@@ -78,6 +78,8 @@ interface RenderedEdgeBase {
   targetIsArray: boolean;
   isPromotedStack: boolean;
   isConvergingStack: boolean;
+  promotedStackWide: boolean;
+  convergingStackWide: boolean;
   isMuxSelectorPromotion: boolean;
   netKey: string;
   geometry: PolylineEdgeGeometry;
@@ -330,6 +332,11 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
   const isMuxSelectorPromotion = target.kind === 'mux' && edge.targetPort === 'sel';
   const netKey = edgeNetKey(edge);
+  // See the matching comment in OrthogonalEdge.tsx: fork/fanout spacing must
+  // track the array-stacked endpoint's own lane offset, not this specific
+  // (possibly scalar) edge's thickness.
+  const promotedStackWide = nodeStackIsWide(target);
+  const convergingStackWide = nodeStackIsWide(source);
 
   const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
     points,
@@ -372,6 +379,8 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     targetIsArray,
     isPromotedStack,
     isConvergingStack,
+    promotedStackWide,
+    convergingStackWide,
     isMuxSelectorPromotion,
     netKey,
     geometry,
@@ -431,12 +440,12 @@ function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
         edge.points,
         edge.targetPosition,
         diagramSizing.gridSize * (edge.isMuxSelectorPromotion ? 2 : 1),
-        edge.isThickWire
+        edge.promotedStackWide
       )
       : undefined;
     const convergingStackPaths = edge.isConvergingStack
       ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-        .map((layerId) => convergingStackPath(edge.points, layerId, edge.sourceHdlPosition, edge.targetHdlPosition, edge.isThickWire))
+        .map((layerId) => convergingStackPath(edge.points, layerId, edge.sourceHdlPosition, edge.targetHdlPosition, edge.convergingStackWide))
         .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
       : [];
     const netEdgeIds = netEdgeIdsByNet.get(edge.netKey) ?? [];
@@ -732,7 +741,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     // Array stack leads
     let leadsHtml = '';
     if (isSourceStacked) {
-      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source', wide: cutNet?.edgeStyle?.thick === true }));
+      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source', wide: cutNet?.edgeStyle?.thick === true, thick: cutNet?.edgeStyle?.thick === true }));
       leadsHtml = '\n' + renderToStaticMarkup(React.createElement('svg', null, leadsEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
     }
 
@@ -816,12 +825,17 @@ function buildArrayConnectionsByNode(view: DiagramViewModel): Map<string, ArrayC
     const targetNode = nodeById.get(edge.target);
     const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
     const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
+    // Ports synthesized from procedural code (register/mux ports built from
+    // always_ff/case blocks) don't always carry a reliable width of their
+    // own, so thickness is derived from the edge (both endpoints) rather
+    // than the local port alone.
+    const thick = edgeIsThick(edge, sourceNode, targetNode);
     if (sourceIsArray) {
-      addConnection(edge.source, { portId: edge.sourcePort, role: 'source' });
-      addConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+      addConnection(edge.source, { portId: edge.sourcePort, role: 'source', thick });
+      addConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
     }
     if (targetIsArray) {
-      addConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+      addConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
     }
   }
 

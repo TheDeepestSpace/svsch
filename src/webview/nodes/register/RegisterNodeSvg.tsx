@@ -21,6 +21,8 @@ import type { DiagramPort } from '../../../ir/types';
 export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
 
   const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
@@ -94,10 +96,10 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const targetStackLeads = (
     <>
       {isArray && dPort && hasArrayConnection(dPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="left" width={width} y={dTop + g / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(dPort.id, 'target')} side="left" width={width} y={dTop + g / 2} trimSink />
       )}
       {isArray && clockPort && hasArrayConnection(clockPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="left" width={width} y={clkTop + g / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(clockPort.id, 'target')} side="left" width={width} y={clkTop + g / 2} trimSink />
       )}
     </>
   );
@@ -223,10 +225,10 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* Array stack leads */}
       {isArray && resetPort && hasArrayConnection(resetPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="bottom" width={width} y={rstTop + g} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(resetPort.id, 'target')} side="bottom" width={width} y={rstTop + g} trimSink />
       )}
       {isArray && qPort && hasArrayConnection(qPort.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} side="right" width={width} y={qTop + g / 2} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(qPort.id, 'source')} side="right" width={width} y={qTop + g / 2} />
       )}
     </>
   );

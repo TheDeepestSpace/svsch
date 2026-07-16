@@ -85,9 +85,9 @@
   --xy-minimap-node-stroke-width-default: 2;
 
   --xy-background-color-default: #141414;
-  --xy-background-pattern-dots-color-default: #777;
-  --xy-background-pattern-lines-color-default: #777;
-  --xy-background-pattern-cross-color-default: #777;
+  --xy-background-pattern-dots-color-default: #555;
+  --xy-background-pattern-lines-color-default: #333;
+  --xy-background-pattern-cross-color-default: #333;
   --xy-node-color-default: #f8f8f8;
   --xy-node-border-default: 1px solid #3c3c3c;
   --xy-node-background-color-default: #1e1e1e;
@@ -1603,6 +1603,12 @@ text {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Matches .svsch-edge-thick — the lead is a stub of the same wire, so it
+   must carry the same stroke weight where the wire itself renders thick. */
+.svsch-array-stack-lead-thick {
+  stroke-width: 4.5;
 }
 
 .svsch-array-stack-lead-back {
@@ -3375,12 +3381,6 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
   stroke-width: 1.5;
   fill: none;
-}
-
-/* Array stack leads */
-.svsch-array-stack-lead {
-  fill: none;
-  stroke-width: 1.5;
 }
 
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */

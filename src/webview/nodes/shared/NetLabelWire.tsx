@@ -11,14 +11,18 @@ export function ArrayStackLeads({
   y,
   x,
   trimSink = false,
-  wide = false
+  wide = false,
+  thick = false
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
   y: number;
   x?: number;
   trimSink?: boolean;
+  /** Lane spread: tracks the node's own card layout. */
   wide?: boolean;
+  /** Stroke weight: tracks this specific connection's own thickness. */
+  thick?: boolean;
 }): React.ReactElement {
   return (
     <svg
@@ -54,7 +58,7 @@ export function ArrayStackLeads({
         return (
           <path
             key={layer.id}
-            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
+            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
             d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
           />
         );

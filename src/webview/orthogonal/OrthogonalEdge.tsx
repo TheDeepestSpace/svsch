@@ -24,7 +24,7 @@ import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender, type LineJumpHalo } from '../react-flow-line-jumps';
 import { InteractionContext } from '../nodes/shared/context';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
-import { edgeIsThick } from '../../ir/edgeStyle';
+import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import {
@@ -194,6 +194,12 @@ export function OrthogonalEdge({
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
   const isMuxSelectorPromotion = targetNode?.kind === 'mux' && targetHandleId === 'sel';
   const isThickWire = edgeIsThick(diagramEdge, sourceNode, targetNode);
+  // The fork/fanout geometry must spread at the array-stacked endpoint's own
+  // lane offset (matching its card layers), independent of whether this
+  // particular scalar control wire (e.g. clk/rst into a wide data register)
+  // is itself thick — see nodeStackIsWide's doc comment.
+  const promotedStackWide = targetNode ? nodeStackIsWide(targetNode) : false;
+  const convergingStackWide = sourceNode ? nodeStackIsWide(sourceNode) : false;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
@@ -363,12 +369,12 @@ export function OrthogonalEdge({
     points,
     targetPosition as unknown as HdlPosition,
     diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1),
-    isThickWire
+    promotedStackWide
   ) : undefined;
   const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
   const convergingStackPaths = isConvergingStack
     ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition, isThickWire))
+      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition, convergingStackWide))
       .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
     : [];
   const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;

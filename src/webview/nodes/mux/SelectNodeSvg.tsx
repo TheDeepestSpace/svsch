@@ -21,6 +21,8 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(
     (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
@@ -49,6 +51,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
             wide={stackWide}
+            thick={arrayConnectionThick(port.id, 'target')}
             key={`lead-top-${port.id}`}
             side="top"
             width={width}
@@ -62,6 +65,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
             wide={stackWide}
+            thick={arrayConnectionThick(port.id, 'target')}
             key={`lead-left-${port.id}`}
             side="left"
             width={width}
@@ -146,7 +150,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
 
       {/* Array stack leads */}
       {outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} side="right" width={width} y={Math.round(height / 2)} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={Math.round(height / 2)} />
       )}
       {!isArray && <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />}
     </>

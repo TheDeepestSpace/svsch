@@ -29,6 +29,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
   const linkTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.55;
   const dottedUnderline = (
@@ -441,10 +443,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         const cy = tapCenters[i];
         return isComposition
           ? hasArrayConnection(port.id, 'target')
-            ? <SvgArrayStackLeads wide={stackWide} key={`lead-${port.id}`} side="left" width={width} y={cy} trimSink />
+            ? <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} key={`lead-${port.id}`} side="left" width={width} y={cy} trimSink />
             : null
           : hasArrayConnection(port.id, 'source')
-            ? <SvgArrayStackLeads wide={stackWide} key={`lead-${port.id}`} side="right" width={width} y={cy} />
+            ? <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={`lead-${port.id}`} side="right" width={width} y={cy} />
             : null;
       })}
     </>

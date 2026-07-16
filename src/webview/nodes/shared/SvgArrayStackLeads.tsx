@@ -7,14 +7,23 @@ export function SvgArrayStackLeads({
   y,
   x,
   trimSink = false,
-  wide = false
+  wide = false,
+  thick = false
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
   y: number;
   x?: number;
   trimSink?: boolean;
+  /** Lane spread: tracks the node's own card layout (nodeStackIsWide). */
   wide?: boolean;
+  /**
+   * Stroke weight: tracks THIS port's own connected wire (portSuggestsThickWire
+   * or the specific edge's thickness) — independent of `wide`. A node can be
+   * wide overall (its data path is thick) while a scalar control port on the
+   * same node (clk, rst) stays thin.
+   */
+  thick?: boolean;
 }): React.ReactElement {
   return (
     <g
@@ -49,7 +58,7 @@ export function SvgArrayStackLeads({
         return (
           <path
             key={layer.id}
-            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
+            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
             d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
           />
         );

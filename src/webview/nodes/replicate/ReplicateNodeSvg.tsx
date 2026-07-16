@@ -19,6 +19,8 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
   const contentShiftY = isArray ? stackLayers.front.dy : 0;
@@ -91,7 +93,7 @@ export function ReplicateNodeSvg({ node, width, height, arrayConnections, onNavi
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
         hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads wide={stackWide} key={port.id} side="right" width={width} y={height / 2} />
+          <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={port.id} side="right" width={width} y={height / 2} />
         ) : null
       )}
     </>

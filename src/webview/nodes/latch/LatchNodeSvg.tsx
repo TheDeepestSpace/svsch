@@ -21,6 +21,8 @@ import type { DiagramPort } from '../../../ir/types';
 export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
 
   const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
@@ -212,16 +214,16 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
 
       {/* Array stack leads */}
       {isArray && dPort && hasArrayConnection(dPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="left" width={width} y={Math.round(dTop + g / 2)} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(dPort.id, 'target')} side="left" width={width} y={Math.round(dTop + g / 2)} trimSink />
       )}
       {isArray && clockPort && hasArrayConnection(clockPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="left" width={width} y={Math.round(clkTop + g / 2)} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(clockPort.id, 'target')} side="left" width={width} y={Math.round(clkTop + g / 2)} trimSink />
       )}
       {isArray && resetPort && hasArrayConnection(resetPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} side="bottom" width={width} y={Math.round(rstTop + g)} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(resetPort.id, 'target')} side="bottom" width={width} y={Math.round(rstTop + g)} trimSink />
       )}
       {isArray && qPort && hasArrayConnection(qPort.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} side="right" width={width} y={Math.round(qTop + g / 2)} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(qPort.id, 'source')} side="right" width={width} y={Math.round(qTop + g / 2)} />
       )}
     </>
   );

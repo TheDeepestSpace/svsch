@@ -16,6 +16,8 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const outputPort = outputs[0];
   const nodeDeclaredWidth = normalizeWidth(metadataNodeWidth(node));
@@ -123,7 +125,7 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
       {/* Array stack leads */}
       {isArray && outputs.map((port: DiagramPort) =>
         hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads wide={stackWide} key={port.id} side="right" width={width} y={Math.round(height / 2)} />
+          <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={port.id} side="right" width={width} y={Math.round(height / 2)} />
         ) : null
       )}
     </>
