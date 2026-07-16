@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 960,
-        "y": 72
+        "y": 96
       },
       "width": 192,
       "height": 269,
@@ -50,7 +50,7 @@
       "type": "hdl",
       "position": {
         "x": 552,
-        "y": 120
+        "y": 144
       },
       "width": 192,
       "height": 269,
@@ -138,7 +138,7 @@
       "target": "interface_modport:pair_bridge:upstream",
       "sourceHandle": "out:ready",
       "targetHandle": "in:ready",
-      "path": "M 1152 216 L 1176 216 L 1176 408 L 528 408 L 528 360 L 552 360"
+      "path": "M 1152 240 L 1176 240 L 1176 432 L 528 432 L 528 384 L 552 384"
     },
     {
       "id": "edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream",
@@ -146,7 +146,7 @@
       "target": "interface:pair_bridge:downstream",
       "sourceHandle": "out:slave",
       "targetHandle": "in:slave",
-      "path": "M 1056 69 L 1056 48 L 1344 48 L 1368 48"
+      "path": "M 1056 93 L 1056 72 L 1056 48 L 1344 48 L 1368 48"
     },
     {
       "id": "edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data",
@@ -154,7 +154,7 @@
       "target": "interface_modport:pair_bridge:downstream",
       "sourceHandle": "out:data",
       "targetHandle": "in:data",
-      "path": "M 744 264 L 768 264 L 936 264 L 960 264"
+      "path": "M 744 288 L 768 288 L 936 288 L 960 288"
     },
     {
       "id": "edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid",
@@ -162,7 +162,7 @@
       "target": "interface_modport:pair_bridge:downstream",
       "sourceHandle": "out:valid",
       "targetHandle": "in:valid",
-      "path": "M 744 312 L 768 312 L 936 312 L 960 312"
+      "path": "M 744 336 L 768 336 L 936 336 L 960 336"
     },
     {
       "id": "edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream",
@@ -170,7 +170,7 @@
       "target": "interface_modport:pair_bridge:upstream",
       "sourceHandle": "out:master",
       "targetHandle": "in:master",
-      "path": "M 336 96 L 360 96 L 648 96 L 648 117"
+      "path": "M 336 96 L 360 96 L 648 96 L 648 120 L 648 141"
     }
   ]
 }

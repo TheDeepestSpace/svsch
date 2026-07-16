@@ -4,8 +4,8 @@
       "id": "bus:replication_expr:concat_repeated:expr",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 288
+        "x": 720,
+        "y": 384
       },
       "width": 144,
       "height": 149,
@@ -39,8 +39,8 @@
       "id": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 168
+        "x": 720,
+        "y": 240
       },
       "width": 144,
       "height": 101,
@@ -69,8 +69,8 @@
       "id": "literal:replication_expr:1_b1:1_b1",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": 48,
+        "y": 60
       },
       "width": 48,
       "height": 24,
@@ -89,8 +89,8 @@
       "id": "port:replication_expr:concat_repeated",
       "type": "hdl",
       "position": {
-        "x": 1032,
-        "y": 300
+        "x": 1104,
+        "y": 396
       },
       "width": 240,
       "height": 24,
@@ -109,8 +109,8 @@
       "id": "port:replication_expr:fill_ones",
       "type": "hdl",
       "position": {
-        "x": 576,
-        "y": 36
+        "x": 600,
+        "y": 60
       },
       "width": 168,
       "height": 24,
@@ -129,8 +129,8 @@
       "id": "port:replication_expr:head",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 180
+        "x": 384,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -149,8 +149,8 @@
       "id": "port:replication_expr:nested_concat",
       "type": "hdl",
       "position": {
-        "x": 1464,
-        "y": 180
+        "x": 1560,
+        "y": 252
       },
       "width": 216,
       "height": 24,
@@ -169,8 +169,8 @@
       "id": "port:replication_expr:pair",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 108
+        "x": 384,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -189,8 +189,8 @@
       "id": "port:replication_expr:repeated",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 468
+        "x": 720,
+        "y": 564
       },
       "width": 168,
       "height": 24,
@@ -209,8 +209,8 @@
       "id": "port:replication_expr:repeated_pair",
       "type": "hdl",
       "position": {
-        "x": 1032,
-        "y": 108
+        "x": 1104,
+        "y": 156
       },
       "width": 216,
       "height": 24,
@@ -229,8 +229,8 @@
       "id": "port:replication_expr:some_wire",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 348
+        "x": 48,
+        "y": 396
       },
       "width": 120,
       "height": 24,
@@ -249,8 +249,8 @@
       "id": "port:replication_expr:tail",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 396
+        "x": 384,
+        "y": 492
       },
       "width": 120,
       "height": 24,
@@ -269,8 +269,8 @@
       "id": "replicate:replication_expr:concat_repeated_concat_in1:x22",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 336
+        "x": 432,
+        "y": 384
       },
       "width": 48,
       "height": 48,
@@ -294,8 +294,8 @@
       "id": "replicate:replication_expr:fill_ones:xFILL",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 24
+        "x": 312,
+        "y": 48
       },
       "width": 72,
       "height": 48,
@@ -319,8 +319,8 @@
       "id": "replicate:replication_expr:nested_concat:x2",
       "type": "hdl",
       "position": {
-        "x": 1128,
-        "y": 168
+        "x": 1200,
+        "y": 240
       },
       "width": 48,
       "height": 48,
@@ -344,8 +344,8 @@
       "id": "replicate:replication_expr:repeated_pair:x4",
       "type": "hdl",
       "position": {
-        "x": 720,
-        "y": 96
+        "x": 792,
+        "y": 144
       },
       "width": 48,
       "height": 48,
@@ -369,8 +369,8 @@
       "id": "replicate:replication_expr:repeated:x20",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 456
+        "x": 432,
+        "y": 552
       },
       "width": 48,
       "height": 48,
@@ -398,7 +398,7 @@
       "target": "port:replication_expr:concat_repeated",
       "sourceHandle": "out:concat_repeated",
       "targetHandle": "port:concat_repeated",
-      "path": "M 816 312 L 840 312 L 1008 312 L 1032 312"
+      "path": "M 864 408 L 888 408 L 1080 408 L 1104 408"
     },
     {
       "id": "edge:bus:replication_expr:nested_concat_rep_concat0:concat:replicate:replication_expr:nested_concat:x2:nested_concat_rep_concat0",
@@ -406,7 +406,7 @@
       "target": "replicate:replication_expr:nested_concat:x2",
       "sourceHandle": "out:nested_concat_rep_concat0",
       "targetHandle": "port:in",
-      "path": "M 816 192 L 840 192 L 1104 192 L 1128 192"
+      "path": "M 864 264 L 888 264 L 1176 264 L 1200 264"
     },
     {
       "id": "edge:literal:replication_expr:1_b1:1_b1:replicate:replication_expr:fill_ones:xFILL:1_b1",
@@ -414,7 +414,7 @@
       "target": "replicate:replication_expr:fill_ones:xFILL",
       "sourceHandle": "port:1_b1",
       "targetHandle": "port:in",
-      "path": "M 72 48 L 96 48 L 264 48 L 288 48"
+      "path": "M 96 72 L 120 72 L 288 72 L 312 72"
     },
     {
       "id": "edge:port:replication_expr:head:bus:replication_expr:concat_repeated:expr:head",
@@ -422,7 +422,7 @@
       "target": "bus:replication_expr:concat_repeated:expr",
       "sourceHandle": "port:head",
       "targetHandle": "in:_23_",
-      "path": "M 456 192 L 480 192 L 504 192 L 504 312 L 648 312 L 672 312"
+      "path": "M 504 264 L 528 264 L 552 264 L 552 408 L 696 408 L 720 408"
     },
     {
       "id": "edge:port:replication_expr:head:bus:replication_expr:nested_concat_rep_concat0:concat:head",
@@ -430,7 +430,7 @@
       "target": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "sourceHandle": "port:head",
       "targetHandle": "in:_2_",
-      "path": "M 456 192 L 480 192 L 648 192 L 672 192"
+      "path": "M 504 264 L 528 264 L 696 264 L 720 264"
     },
     {
       "id": "edge:port:replication_expr:pair:bus:replication_expr:nested_concat_rep_concat0:concat:pair",
@@ -438,7 +438,7 @@
       "target": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "sourceHandle": "port:pair",
       "targetHandle": "in:_1:0_",
-      "path": "M 456 120 L 480 120 L 504 120 L 504 185 Q 511 192 504 199 L 504 240 L 648 240 L 672 240"
+      "path": "M 504 168 L 528 168 L 552 168 L 552 257 Q 559 264 552 271 L 552 312 L 696 312 L 720 312"
     },
     {
       "id": "edge:port:replication_expr:pair:replicate:replication_expr:repeated_pair:x4:pair",
@@ -446,7 +446,7 @@
       "target": "replicate:replication_expr:repeated_pair:x4",
       "sourceHandle": "port:pair",
       "targetHandle": "port:in",
-      "path": "M 456 120 L 480 120 L 696 120 L 720 120"
+      "path": "M 504 168 L 528 168 L 768 168 L 792 168"
     },
     {
       "id": "edge:port:replication_expr:some_wire:replicate:replication_expr:concat_repeated_concat_in1:x22:some_wire",
@@ -454,7 +454,7 @@
       "target": "replicate:replication_expr:concat_repeated_concat_in1:x22",
       "sourceHandle": "port:some_wire",
       "targetHandle": "port:in",
-      "path": "M 144 360 L 168 360 L 360 360 L 384 360"
+      "path": "M 168 408 L 192 408 L 408 408 L 432 408"
     },
     {
       "id": "edge:port:replication_expr:some_wire:replicate:replication_expr:repeated:x20:some_wire",
@@ -462,7 +462,7 @@
       "target": "replicate:replication_expr:repeated:x20",
       "sourceHandle": "port:some_wire",
       "targetHandle": "port:in",
-      "path": "M 144 360 L 168 360 L 312 360 L 312 480 L 360 480 L 384 480"
+      "path": "M 168 408 L 192 408 L 360 408 L 360 576 L 408 576 L 432 576"
     },
     {
       "id": "edge:port:replication_expr:tail:bus:replication_expr:concat_repeated:expr:tail",
@@ -470,7 +470,7 @@
       "target": "bus:replication_expr:concat_repeated:expr",
       "sourceHandle": "port:tail",
       "targetHandle": "in:_0_",
-      "path": "M 456 408 L 480 408 L 648 408 L 672 408"
+      "path": "M 504 504 L 528 504 L 696 504 L 720 504"
     },
     {
       "id": "edge:replicate:replication_expr:concat_repeated_concat_in1:x22:bus:replication_expr:concat_repeated:expr:concat_repeated_concat_in1",
@@ -478,7 +478,7 @@
       "target": "bus:replication_expr:concat_repeated:expr",
       "sourceHandle": "port:concat_repeated_concat_in1",
       "targetHandle": "in:_22:1_",
-      "path": "M 432 360 L 456 360 L 648 360 L 672 360"
+      "path": "M 480 408 L 504 408 L 552 408 L 552 456 L 696 456 L 720 456"
     },
     {
       "id": "edge:replicate:replication_expr:fill_ones:xFILL:port:replication_expr:fill_ones:fill_ones",
@@ -486,7 +486,7 @@
       "target": "port:replication_expr:fill_ones",
       "sourceHandle": "port:fill_ones",
       "targetHandle": "port:fill_ones",
-      "path": "M 360 48 L 384 48 L 552 48 L 576 48"
+      "path": "M 384 72 L 408 72 L 576 72 L 600 72"
     },
     {
       "id": "edge:replicate:replication_expr:nested_concat:x2:port:replication_expr:nested_concat:nested_concat",
@@ -494,7 +494,7 @@
       "target": "port:replication_expr:nested_concat",
       "sourceHandle": "port:nested_concat",
       "targetHandle": "port:nested_concat",
-      "path": "M 1176 192 L 1200 192 L 1440 192 L 1464 192"
+      "path": "M 1248 264 L 1272 264 L 1536 264 L 1560 264"
     },
     {
       "id": "edge:replicate:replication_expr:repeated_pair:x4:port:replication_expr:repeated_pair:repeated_pair",
@@ -502,7 +502,7 @@
       "target": "port:replication_expr:repeated_pair",
       "sourceHandle": "port:repeated_pair",
       "targetHandle": "port:repeated_pair",
-      "path": "M 768 120 L 792 120 L 1008 120 L 1032 120"
+      "path": "M 840 168 L 864 168 L 1080 168 L 1104 168"
     },
     {
       "id": "edge:replicate:replication_expr:repeated:x20:port:replication_expr:repeated:repeated",
@@ -510,7 +510,7 @@
       "target": "port:replication_expr:repeated",
       "sourceHandle": "port:repeated",
       "targetHandle": "port:repeated",
-      "path": "M 432 480 L 456 480 L 648 480 L 672 480"
+      "path": "M 480 576 L 504 576 L 696 576 L 720 576"
     }
   ]
 }

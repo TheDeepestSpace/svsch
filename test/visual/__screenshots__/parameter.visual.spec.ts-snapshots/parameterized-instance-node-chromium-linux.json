@@ -4,8 +4,8 @@
       "id": "instance:parameter_sizing_top:u_default",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 24
+        "x": 432,
+        "y": 48
       },
       "width": 192,
       "height": 144,
@@ -29,8 +29,8 @@
       "id": "instance:parameter_sizing_top:u_override",
       "type": "hdl",
       "position": {
-        "x": 480,
-        "y": 192
+        "x": 504,
+        "y": 240
       },
       "width": 216,
       "height": 144,
@@ -54,8 +54,8 @@
       "id": "port:parameter_sizing_top:default_i",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 108
+        "x": 48,
+        "y": 132
       },
       "width": 168,
       "height": 24,
@@ -74,8 +74,8 @@
       "id": "port:parameter_sizing_top:default_o",
       "type": "hdl",
       "position": {
-        "x": 816,
-        "y": 108
+        "x": 840,
+        "y": 132
       },
       "width": 168,
       "height": 24,
@@ -94,8 +94,8 @@
       "id": "port:parameter_sizing_top:override_i",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 276
+        "x": 48,
+        "y": 324
       },
       "width": 240,
       "height": 24,
@@ -114,8 +114,8 @@
       "id": "port:parameter_sizing_top:override_o",
       "type": "hdl",
       "position": {
-        "x": 912,
-        "y": 276
+        "x": 936,
+        "y": 324
       },
       "width": 240,
       "height": 24,
@@ -138,7 +138,7 @@
       "target": "port:parameter_sizing_top:default_o",
       "sourceHandle": "port:data_o",
       "targetHandle": "port:default_o",
-      "path": "M 600 120 L 624 120 L 792 120 L 816 120"
+      "path": "M 624 144 L 648 144 L 816 144 L 840 144"
     },
     {
       "id": "edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o",
@@ -146,7 +146,7 @@
       "target": "port:parameter_sizing_top:override_o",
       "sourceHandle": "port:data_o",
       "targetHandle": "port:override_o",
-      "path": "M 696 288 L 720 288 L 888 288 L 912 288"
+      "path": "M 720 336 L 744 336 L 912 336 L 936 336"
     },
     {
       "id": "edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i",
@@ -154,7 +154,7 @@
       "target": "instance:parameter_sizing_top:u_default",
       "sourceHandle": "port:default_i",
       "targetHandle": "port:data_i",
-      "path": "M 192 120 L 216 120 L 384 120 L 408 120"
+      "path": "M 216 144 L 240 144 L 408 144 L 432 144"
     },
     {
       "id": "edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i",
@@ -162,7 +162,7 @@
       "target": "instance:parameter_sizing_top:u_override",
       "sourceHandle": "port:override_i",
       "targetHandle": "port:data_i",
-      "path": "M 264 288 L 288 288 L 456 288 L 480 288"
+      "path": "M 288 336 L 312 336 L 480 336 L 504 336"
     }
   ]
 }

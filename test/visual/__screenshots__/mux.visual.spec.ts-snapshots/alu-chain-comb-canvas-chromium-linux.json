@@ -4,8 +4,8 @@
       "id": "comb:alu_chain:y:expr",
       "type": "hdl",
       "position": {
-        "x": 360,
-        "y": 24
+        "x": 384,
+        "y": 48
       },
       "width": 192,
       "height": 120,
@@ -39,7 +39,7 @@
       "id": "port:alu_chain:a",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 36
       },
       "width": 120,
@@ -59,8 +59,8 @@
       "id": "port:alu_chain:b",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 84
+        "x": 48,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -79,8 +79,8 @@
       "id": "port:alu_chain:c",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 132
+        "x": 48,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -99,8 +99,8 @@
       "id": "port:alu_chain:y",
       "type": "hdl",
       "position": {
-        "x": 768,
-        "y": 60
+        "x": 792,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -123,7 +123,7 @@
       "target": "port:alu_chain:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
+      "path": "M 576 96 L 600 96 L 768 96 L 792 96"
     },
     {
       "id": "edge:port:alu_chain:a:comb:alu_chain:y:expr:a",
@@ -131,7 +131,7 @@
       "target": "comb:alu_chain:y:expr",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 48 L 168 48 L 264 48 L 264 72 L 336 72 L 360 72"
+      "path": "M 168 48 L 192 48 L 288 48 L 288 96 L 360 96 L 384 96"
     },
     {
       "id": "edge:port:alu_chain:b:comb:alu_chain:y:expr:b",
@@ -139,7 +139,7 @@
       "target": "comb:alu_chain:y:expr",
       "sourceHandle": "port:b",
       "targetHandle": "port:b",
-      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+      "path": "M 168 120 L 192 120 L 360 120 L 384 120"
     },
     {
       "id": "edge:port:alu_chain:c:comb:alu_chain:y:expr:c",
@@ -147,7 +147,7 @@
       "target": "comb:alu_chain:y:expr",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 144 144 L 168 144 L 264 144 L 264 120 L 336 120 L 360 120"
+      "path": "M 168 192 L 192 192 L 288 192 L 288 144 L 360 144 L 384 144"
     }
   ]
 }

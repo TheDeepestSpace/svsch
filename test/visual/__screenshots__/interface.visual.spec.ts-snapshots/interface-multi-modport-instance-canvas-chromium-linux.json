@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 240
+        "y": 336
       },
       "width": 192,
       "height": 96,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 240
+        "y": 336
       },
       "width": 216,
       "height": 96,
@@ -50,7 +50,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 120
+        "y": 192
       },
       "width": 192,
       "height": 96,
@@ -70,7 +70,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 120
+        "y": 192
       },
       "width": 192,
       "height": 96,
@@ -90,7 +90,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 96
+        "y": 168
       },
       "width": 240,
       "height": 137,
@@ -135,7 +135,7 @@
       "type": "hdl",
       "position": {
         "x": 96,
-        "y": 84
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -175,7 +175,7 @@
       "type": "hdl",
       "position": {
         "x": 1320,
-        "y": 276
+        "y": 372
       },
       "width": 168,
       "height": 24,
@@ -198,7 +198,7 @@
       "target": "interface:interface_multi_modport:stream",
       "sourceHandle": "port:bus",
       "targetHandle": "in:controller",
-      "path": "M 216 288 L 240 288 L 336 288 L 336 216 L 408 216 L 432 216"
+      "path": "M 216 384 L 240 384 L 336 384 L 336 288 L 408 288 L 432 288"
     },
     {
       "id": "edge:instance:interface_multi_modport:u_monitor:port:interface_multi_modport:transfer_seen:transfer_seen",
@@ -206,7 +206,7 @@
       "target": "port:interface_multi_modport:transfer_seen",
       "sourceHandle": "port:transfer_seen",
       "targetHandle": "port:transfer_seen",
-      "path": "M 1104 288 L 1128 288 L 1296 288 L 1320 288"
+      "path": "M 1104 384 L 1128 384 L 1296 384 L 1320 384"
     },
     {
       "id": "edge:instance:interface_multi_modport:u_source:interface:interface_multi_modport:stream:stream",
@@ -214,7 +214,7 @@
       "target": "interface:interface_multi_modport:stream",
       "sourceHandle": "port:bus",
       "targetHandle": "in:producer",
-      "path": "M 216 168 L 240 168 L 408 168 L 432 168"
+      "path": "M 216 240 L 240 240 L 408 240 L 432 240"
     },
     {
       "id": "edge:interface:interface_multi_modport:stream:instance:interface_multi_modport:u_monitor:stream",
@@ -222,7 +222,7 @@
       "target": "instance:interface_multi_modport:u_monitor",
       "sourceHandle": "out:monitor",
       "targetHandle": "port:bus",
-      "path": "M 672 216 L 696 216 L 792 216 L 792 288 L 864 288 L 888 288"
+      "path": "M 672 288 L 696 288 L 792 288 L 792 384 L 864 384 L 888 384"
     },
     {
       "id": "edge:interface:interface_multi_modport:stream:instance:interface_multi_modport:u_sink:stream",
@@ -230,7 +230,7 @@
       "target": "instance:interface_multi_modport:u_sink",
       "sourceHandle": "out:consumer",
       "targetHandle": "port:bus",
-      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
+      "path": "M 672 240 L 696 240 L 864 240 L 888 240"
     },
     {
       "id": "edge:port:interface_multi_modport:clk:interface:interface_multi_modport:stream:clk",
@@ -238,7 +238,7 @@
       "target": "interface:interface_multi_modport:stream",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 216 96 L 240 96 L 528 96 L 528 132"
+      "path": "M 216 120 L 240 120 L 528 120 L 528 168 L 528 204"
     },
     {
       "id": "edge:port:interface_multi_modport:rst_n:interface:interface_multi_modport:stream:rst_n",
@@ -246,7 +246,7 @@
       "target": "interface:interface_multi_modport:stream",
       "sourceHandle": "port:rst_n",
       "targetHandle": "in:rst_n",
-      "path": "M 216 48 L 240 48 L 576 48 L 576 96 L 576 132"
+      "path": "M 216 48 L 240 48 L 576 48 L 576 168 L 576 204"
     }
   ]
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1224" height="408" viewBox="0 0 1224 408" class="svsch-diagram" role="img" aria-label="parameter_sizing_top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1224" height="432" viewBox="0 0 1224 432" class="svsch-diagram" role="img" aria-label="parameter_sizing_top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3554,42 +3554,42 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 2;
 }
 </style>
-<g transform="translate(24 24)">
+<g transform="translate(0 0)">
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:instance:parameter_sizing_top:u_default:port:parameter_sizing_top:default_o:default_o"><path class="svsch-edge" data-edge-id="edge:instance:parameter_sizing_top:u_default:port:parameter_sizing_top:default_o:default_o" data-net-key="instance:parameter_sizing_top:u_default:port:data_o" d="M 600 120 L 624 120 L 792 120 L 816 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o"><path class="svsch-edge" data-edge-id="edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o" data-net-key="instance:parameter_sizing_top:u_override:port:data_o" d="M 696 288 L 720 288 L 888 288 L 912 288" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i"><path class="svsch-edge" data-edge-id="edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i" data-net-key="port:parameter_sizing_top:default_i:port:default_i" d="M 192 120 L 216 120 L 384 120 L 408 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i"><path class="svsch-edge" data-edge-id="edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i" data-net-key="port:parameter_sizing_top:override_i:port:override_i" d="M 264 288 L 288 288 L 456 288 L 480 288" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:parameter_sizing_top:u_default:port:parameter_sizing_top:default_o:default_o"><path class="svsch-edge" data-edge-id="edge:instance:parameter_sizing_top:u_default:port:parameter_sizing_top:default_o:default_o" data-net-key="instance:parameter_sizing_top:u_default:port:data_o" d="M 624 144 L 648 144 L 816 144 L 840 144" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o"><path class="svsch-edge" data-edge-id="edge:instance:parameter_sizing_top:u_override:port:parameter_sizing_top:override_o:override_o" data-net-key="instance:parameter_sizing_top:u_override:port:data_o" d="M 720 336 L 744 336 L 912 336 L 936 336" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i"><path class="svsch-edge" data-edge-id="edge:port:parameter_sizing_top:default_i:instance:parameter_sizing_top:u_default:default_i" data-net-key="port:parameter_sizing_top:default_i:port:default_i" d="M 216 144 L 240 144 L 408 144 L 432 144" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i"><path class="svsch-edge" data-edge-id="edge:port:parameter_sizing_top:override_i:instance:parameter_sizing_top:u_override:override_i" data-net-key="port:parameter_sizing_top:override_i:port:override_i" d="M 288 336 L 312 336 L 480 336 L 504 336" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-instance hdl-node-has-params" data-node-id="instance:parameter_sizing_top:u_default" data-node-kind="instance" transform="translate(408 24)">
+<g class="svsch-node hdl-node hdl-node-instance hdl-node-has-params" data-node-id="instance:parameter_sizing_top:u_default" data-node-kind="instance" transform="translate(432 48)">
 <svg class="hdl-node-svg" width="192" height="144" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="144"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">param_child</text><g class="svsch-instance-param-chip"><rect class="svsch-instance-param-chip-bg" x="12" y="23" width="54.400000000000006" height="16" rx="4"></rect><text class="svsch-instance-param" x="16" y="31" dominant-baseline="middle" font-size="10"><tspan class="svsch-instance-param-name">WIDTH</tspan><tspan class="svsch-instance-param-equals">=</tspan><tspan class="svsch-instance-param-value">8</tspan></text></g><g class="svsch-instance-param-chip"><rect class="svsch-instance-param-chip-bg" x="12" y="41" width="54.400000000000006" height="16" rx="4"></rect><text class="svsch-instance-param" x="16" y="49" dominant-baseline="middle" font-size="10"><tspan class="svsch-instance-param-name">DEPTH</tspan><tspan class="svsch-instance-param-equals">=</tspan><tspan class="svsch-instance-param-value">4</tspan></text></g><text class="svsch-node-title" x="12" y="74" text-anchor="start" dominant-baseline="middle">u_default</text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">data_i<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="180" y="96" text-anchor="end" dominant-baseline="middle">data_o<tspan class="svsch-port-type-suffix">[]</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-instance hdl-node-has-params" data-node-id="instance:parameter_sizing_top:u_override" data-node-kind="instance" transform="translate(480 192)">
+<g class="svsch-node hdl-node hdl-node-instance hdl-node-has-params" data-node-id="instance:parameter_sizing_top:u_override" data-node-kind="instance" transform="translate(504 240)">
 <svg class="hdl-node-svg" width="216" height="144" aria-hidden="true">
 <rect class="svsch-node-shape" width="216" height="144"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">param_child</text><g class="svsch-instance-param-chip"><rect class="svsch-instance-param-chip-bg" x="12" y="23" width="79.2" height="16" rx="4"></rect><text class="svsch-instance-param" x="16" y="31" dominant-baseline="middle" font-size="10"><tspan class="svsch-instance-param-name">WIDTH</tspan><tspan class="svsch-instance-param-equals">=</tspan><tspan class="svsch-instance-param-value"><tspan class="svsch-param-token">TOP_W</tspan></tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-instance-param-link-underline" x1="56" x2="87" y1="37" y2="37"></line></g><g class="svsch-instance-param-chip"><rect class="svsch-instance-param-chip-bg" x="12" y="41" width="135" height="16" rx="4"></rect><text class="svsch-instance-param" x="16" y="49" dominant-baseline="middle" font-size="10"><tspan class="svsch-instance-param-name">DEPTH</tspan><tspan class="svsch-instance-param-equals">=</tspan><tspan class="svsch-instance-param-value"><tspan class="svsch-param-token">DEPTH_OVERRIDE</tspan></tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-instance-param-link-underline" x1="56" x2="143" y1="55" y2="55"></line></g><text class="svsch-node-title" x="12" y="74" text-anchor="start" dominant-baseline="middle">u_override</text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">data_i<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="204" y="96" text-anchor="end" dominant-baseline="middle">data_o<tspan class="svsch-port-type-suffix">[]</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:parameter_sizing_top:default_i" data-node-kind="port" transform="translate(24 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:parameter_sizing_top:default_i" data-node-kind="port" transform="translate(48 132)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">default_i</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:parameter_sizing_top:override_i" data-node-kind="port" transform="translate(24 276)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:parameter_sizing_top:override_i" data-node-kind="port" transform="translate(48 324)">
 <svg class="hdl-node-svg" width="240" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 228 L 240 12 L 228 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 228 L 240 12 L 228 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="120" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">override_i</tspan><tspan class="svsch-port-width-suffix"> [<tspan class="svsch-param-token">TOP_W</tspan>-1:0]</tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-port-type-link-underline" x1="130" x2="164" y1="19" y2="19"></line></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:parameter_sizing_top:default_o" data-node-kind="port" transform="translate(816 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:parameter_sizing_top:default_o" data-node-kind="port" transform="translate(840 132)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">default_o</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:parameter_sizing_top:override_o" data-node-kind="port" transform="translate(912 276)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:parameter_sizing_top:override_o" data-node-kind="port" transform="translate(936 324)">
 <svg class="hdl-node-svg" width="240" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 240 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 240 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="120" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">override_o</tspan><tspan class="svsch-port-width-suffix"> [<tspan class="svsch-param-token">TOP_W</tspan>-1:0]</tspan></text><line class="svsch-svg-link-underline svsch-param-token-underline svsch-port-type-link-underline" x1="130" x2="164" y1="19" y2="19"></line></g>
 </svg>

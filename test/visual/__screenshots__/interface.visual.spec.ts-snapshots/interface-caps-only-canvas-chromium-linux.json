@@ -4,8 +4,8 @@
       "id": "interface:interface_caps_only:status",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 48
+        "x": 360,
+        "y": 72
       },
       "width": 240,
       "height": 113,
@@ -29,7 +29,7 @@
       "id": "port:interface_caps_only:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 36
       },
       "width": 120,
@@ -49,7 +49,7 @@
       "id": "port:interface_caps_only:done",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 792,
         "y": 204
       },
       "width": 120,
@@ -73,7 +73,7 @@
       "target": "port:interface_caps_only:done",
       "sourceHandle": "out:done",
       "targetHandle": "port:done",
-      "path": "M 456 160 L 456 216 L 744 216 L 768 216"
+      "path": "M 480 184 L 480 240 L 768 240 L 768 216 L 792 216"
     },
     {
       "id": "edge:port:interface_caps_only:clk:interface:interface_caps_only:status:clk",
@@ -81,7 +81,7 @@
       "target": "interface:interface_caps_only:status",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 48 L 168 48 L 456 48 L 456 66"
+      "path": "M 168 48 L 192 48 L 480 48 L 480 72 L 480 90"
     }
   ]
 }

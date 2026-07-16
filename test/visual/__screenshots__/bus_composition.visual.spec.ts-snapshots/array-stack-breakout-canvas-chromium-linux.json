@@ -4,8 +4,8 @@
       "id": "bus:array_stack_breakout:arr",
       "type": "hdl",
       "position": {
-        "x": 360,
-        "y": 24
+        "x": 384,
+        "y": 48
       },
       "width": 168,
       "height": 221,
@@ -44,8 +44,8 @@
       "id": "port:array_stack_breakout:arr",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 204
+        "x": 48,
+        "y": 228
       },
       "width": 120,
       "height": 24,
@@ -64,7 +64,7 @@
       "id": "port:array_stack_breakout:elem0",
       "type": "hdl",
       "position": {
-        "x": 744,
+        "x": 768,
         "y": 36
       },
       "width": 144,
@@ -84,8 +84,8 @@
       "id": "port:array_stack_breakout:elem1",
       "type": "hdl",
       "position": {
-        "x": 744,
-        "y": 84
+        "x": 768,
+        "y": 108
       },
       "width": 144,
       "height": 24,
@@ -104,8 +104,8 @@
       "id": "port:array_stack_breakout:elem2",
       "type": "hdl",
       "position": {
-        "x": 744,
-        "y": 132
+        "x": 768,
+        "y": 180
       },
       "width": 144,
       "height": 24,
@@ -124,8 +124,8 @@
       "id": "port:array_stack_breakout:elem3",
       "type": "hdl",
       "position": {
-        "x": 744,
-        "y": 180
+        "x": 768,
+        "y": 252
       },
       "width": 144,
       "height": 24,
@@ -148,7 +148,7 @@
       "target": "port:array_stack_breakout:elem0",
       "sourceHandle": "out:arr_0_",
       "targetHandle": "port:elem0",
-      "path": "M 528 48 L 552 48 L 720 48 L 744 48"
+      "path": "M 552 72 L 576 72 L 672 72 L 672 48 L 744 48 L 768 48"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem1:elem1",
@@ -156,7 +156,7 @@
       "target": "port:array_stack_breakout:elem1",
       "sourceHandle": "out:arr_1_",
       "targetHandle": "port:elem1",
-      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
+      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem2:elem2",
@@ -164,7 +164,7 @@
       "target": "port:array_stack_breakout:elem2",
       "sourceHandle": "out:arr_2_",
       "targetHandle": "port:elem2",
-      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
+      "path": "M 552 168 L 576 168 L 672 168 L 672 192 L 744 192 L 768 192"
     },
     {
       "id": "edge:bus:array_stack_breakout:arr:port:array_stack_breakout:elem3:elem3",
@@ -172,7 +172,7 @@
       "target": "port:array_stack_breakout:elem3",
       "sourceHandle": "out:arr_3_",
       "targetHandle": "port:elem3",
-      "path": "M 528 192 L 552 192 L 720 192 L 744 192"
+      "path": "M 552 216 L 576 216 L 672 216 L 672 264 L 744 264 L 768 264"
     },
     {
       "id": "edge:port:array_stack_breakout:arr:bus:array_stack_breakout:arr:arr",
@@ -180,7 +180,7 @@
       "target": "bus:array_stack_breakout:arr",
       "sourceHandle": "port:arr",
       "targetHandle": "in:arr",
-      "path": "M 157 220 L 394 220"
+      "path": "M 181 244 L 418 244"
     }
   ]
 }

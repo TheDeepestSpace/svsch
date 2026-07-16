@@ -4,7 +4,7 @@
       "id": "port:param_child:data_i",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 36
       },
       "width": 192,
@@ -24,7 +24,7 @@
       "id": "port:param_child:data_o",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 456,
         "y": 36
       },
       "width": 192,
@@ -48,7 +48,7 @@
       "target": "port:param_child:data_o",
       "sourceHandle": "port:data_i",
       "targetHandle": "port:data_o",
-      "path": "M 216 48 L 240 48 L 408 48 L 432 48"
+      "path": "M 240 48 L 264 48 L 432 48 L 456 48"
     }
   ]
 }

@@ -4,8 +4,8 @@
       "id": "cut-label:port:register_async_reset:rst:port:rst:sink:edge:port:register_async_reset:rst:reg:register_async_reset:q:rst",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 168
+        "x": 408,
+        "y": 192
       },
       "width": 96,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:port:register_async_reset:rst:port:rst:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 144
+        "x": 192,
+        "y": 168
       },
       "width": 96,
       "height": 48,
@@ -44,7 +44,7 @@
       "id": "port:register_async_reset:c_main",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 108
       },
       "width": 120,
@@ -64,8 +64,8 @@
       "id": "port:register_async_reset:d",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 60
+        "x": 48,
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -84,8 +84,8 @@
       "id": "port:register_async_reset:q",
       "type": "hdl",
       "position": {
-        "x": 720,
-        "y": 60
+        "x": 744,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -104,8 +104,8 @@
       "id": "port:register_async_reset:rst",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 156
+        "x": 48,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -124,8 +124,8 @@
       "id": "reg:register_async_reset:q",
       "type": "hdl",
       "position": {
-        "x": 360,
-        "y": 24
+        "x": 384,
+        "y": 48
       },
       "width": 144,
       "height": 96,
@@ -163,7 +163,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "cut",
       "targetHandle": "rst",
-      "path": "M 432 168 L 432 168 L 432 120 L 432 120"
+      "path": "M 456 192 L 456 192 L 456 144 L 456 144"
     },
     {
       "id": "cut-stub:port:register_async_reset:rst:port:rst:source",
@@ -171,7 +171,7 @@
       "target": "cut-label:port:register_async_reset:rst:port:rst:source",
       "sourceHandle": "port:rst",
       "targetHandle": "cut",
-      "path": "M 144 168 L 144 168 L 168 168 L 168 168"
+      "path": "M 168 192 L 168 192 L 192 192 L 192 192"
     },
     {
       "id": "edge:port:register_async_reset:c_main:reg:register_async_reset:q:c_main",
@@ -179,7 +179,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "port:c_main",
       "targetHandle": "c_main",
-      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
+      "path": "M 168 120 L 192 120 L 360 120 L 384 120"
     },
     {
       "id": "edge:port:register_async_reset:d:reg:register_async_reset:q:d",
@@ -187,7 +187,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "port:d",
       "targetHandle": "d",
-      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+      "path": "M 168 48 L 192 48 L 288 48 L 288 96 L 360 96 L 384 96"
     },
     {
       "id": "edge:reg:register_async_reset:q:port:register_async_reset:q:q",
@@ -195,7 +195,7 @@
       "target": "port:register_async_reset:q",
       "sourceHandle": "q",
       "targetHandle": "port:q",
-      "path": "M 504 72 L 528 72 L 696 72 L 720 72"
+      "path": "M 528 96 L 552 96 L 720 96 L 744 96"
     }
   ]
 }
