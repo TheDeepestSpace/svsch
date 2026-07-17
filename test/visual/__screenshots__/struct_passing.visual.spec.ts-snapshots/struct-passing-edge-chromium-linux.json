@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 48
+        "y": 24
       },
       "width": 216,
       "height": 96,
@@ -35,7 +35,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 48
+        "y": 24
       },
       "width": 192,
       "height": 96,
@@ -55,7 +55,7 @@
       "type": "hdl",
       "position": {
         "x": 864,
-        "y": 84
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -75,7 +75,7 @@
       "type": "hdl",
       "position": {
         "x": 864,
-        "y": 156
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "port:top:a",
       "sourceHandle": "port:a_out",
       "targetHandle": "port:a",
-      "path": "M 648 96 L 672 96 L 840 96 L 864 96"
+      "path": "M 648 72 L 672 72 L 840 72 L 864 72"
     },
     {
       "id": "edge:instance:top:c:port:top:b:b",
@@ -106,7 +106,7 @@
       "target": "port:top:b",
       "sourceHandle": "port:b_out",
       "targetHandle": "port:b",
-      "path": "M 648 120 L 672 120 L 768 120 L 768 168 L 840 168 L 864 168"
+      "path": "M 648 96 L 672 96 L 768 96 L 768 120 L 840 120 L 864 120"
     },
     {
       "id": "edge:instance:top:p:instance:top:c:s",
@@ -114,7 +114,7 @@
       "target": "instance:top:c",
       "sourceHandle": "port:out_struct",
       "targetHandle": "port:in_struct",
-      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
+      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
     }
   ]
 }

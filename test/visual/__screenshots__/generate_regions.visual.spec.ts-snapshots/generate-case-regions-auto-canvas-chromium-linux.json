@@ -4,8 +4,8 @@
       "id": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 696
+        "x": 408,
+        "y": 624
       },
       "width": 192,
       "height": 72,
@@ -30,8 +30,8 @@
       "id": "instance:generate_case_regions:g_case_0.u_case_0",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 168
+        "x": 408,
+        "y": 144
       },
       "width": 192,
       "height": 96,
@@ -56,8 +56,8 @@
       "id": "instance:generate_case_regions:g_case_1.u_case_1",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 432
+        "x": 408,
+        "y": 384
       },
       "width": 192,
       "height": 96,
@@ -82,8 +82,8 @@
       "id": "port:generate_case_regions:a",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 204
+        "x": 24,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -102,8 +102,8 @@
       "id": "port:generate_case_regions:b",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 468
+        "x": 24,
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -122,8 +122,8 @@
       "id": "port:generate_case_regions:c",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 732
+        "x": 24,
+        "y": 660
       },
       "width": 120,
       "height": 24,
@@ -142,8 +142,8 @@
       "id": "port:generate_case_regions:y",
       "type": "hdl",
       "position": {
-        "x": 912,
-        "y": 468
+        "x": 888,
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -166,7 +166,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 624 744 L 648 744 L 720 744 L 720 480 L 888 480 L 912 480",
+      "path": "M 600 672 L 624 672 L 696 672 L 696 432 L 864 432 L 888 432",
       "inactive": true
     },
     {
@@ -175,7 +175,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 216 L 648 216 L 720 216 L 720 480 L 888 480 L 912 480",
+      "path": "M 600 192 L 624 192 L 696 192 L 696 432 L 864 432 L 888 432",
       "inactive": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_case_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 480 L 648 480 L 888 480 L 912 480",
+      "path": "M 600 432 L 624 432 L 864 432 L 888 432",
       "active": true
     },
     {
@@ -193,7 +193,7 @@
       "target": "instance:generate_case_regions:g_case_0.u_case_0",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 168 216 L 192 216 L 408 216 L 432 216",
+      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
       "inactive": true
     },
     {
@@ -202,7 +202,7 @@
       "target": "instance:generate_case_regions:g_case_1.u_case_1",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 168 480 L 192 480 L 408 480 L 432 480",
+      "path": "M 144 432 L 168 432 L 384 432 L 408 432",
       "active": true
     },
     {
@@ -211,7 +211,7 @@
       "target": "comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 168 744 L 192 744 L 408 744 L 432 744",
+      "path": "M 144 672 L 168 672 L 384 672 L 408 672",
       "inactive": true
     }
   ],
@@ -221,10 +221,10 @@
       "kind": "generate-case",
       "label": "generate case (MODE)",
       "bounds": {
-        "x": 336,
-        "y": 72,
+        "x": 312,
+        "y": 48,
         "width": 384,
-        "height": 792
+        "height": 744
       },
       "active": true
     },
@@ -233,8 +233,8 @@
       "kind": "case-default",
       "label": "/* default */",
       "bounds": {
-        "x": 384,
-        "y": 648,
+        "x": 360,
+        "y": 576,
         "width": 288,
         "height": 168
       },
@@ -245,8 +245,8 @@
       "kind": "case",
       "label": "g_case_0 /* MODE == 0 */",
       "bounds": {
-        "x": 384,
-        "y": 120,
+        "x": 360,
+        "y": 96,
         "width": 288,
         "height": 192
       },
@@ -257,8 +257,8 @@
       "kind": "case",
       "label": "g_case_1 /* MODE == 1 */",
       "bounds": {
-        "x": 384,
-        "y": 384,
+        "x": 360,
+        "y": 336,
         "width": 288,
         "height": 192
       },

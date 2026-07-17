@@ -4,8 +4,8 @@
       "id": "port:struct_composition:clk",
       "type": "hdl",
       "position": {
-        "x": 96,
-        "y": 156
+        "x": 72,
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -24,8 +24,8 @@
       "id": "port:struct_composition:flat",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 84
+        "x": 1176,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -44,8 +44,8 @@
       "id": "port:struct_composition:opcode_i",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 84
+        "x": 24,
+        "y": 60
       },
       "width": 168,
       "height": 24,
@@ -64,8 +64,8 @@
       "id": "port:struct_composition:valid_i",
       "type": "hdl",
       "position": {
-        "x": 96,
-        "y": 228
+        "x": 72,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -84,8 +84,8 @@
       "id": "reg:struct_composition:pkt.opcode",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 48
+        "x": 408,
+        "y": 24
       },
       "width": 192,
       "height": 96,
@@ -114,8 +114,8 @@
       "id": "reg:struct_composition:pkt.valid",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 192
+        "x": 432,
+        "y": 144
       },
       "width": 144,
       "height": 96,
@@ -144,8 +144,8 @@
       "id": "struct_comp:struct_composition:pkt",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": 72
+        "x": 816,
+        "y": 48
       },
       "width": 144,
       "height": 101,
@@ -178,7 +178,7 @@
       "target": "reg:struct_composition:pkt.opcode",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 216 168 L 240 168 L 408 168 L 408 120 L 432 120"
+      "path": "M 192 144 L 216 144 L 384 144 L 384 96 L 408 96"
     },
     {
       "id": "edge:port:struct_composition:clk:reg:struct_composition:pkt.valid:clk",
@@ -186,7 +186,7 @@
       "target": "reg:struct_composition:pkt.valid",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 216 168 L 240 168 L 408 168 L 408 264 L 432 264 L 456 264"
+      "path": "M 192 144 L 216 144 L 384 144 L 384 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i",
@@ -194,7 +194,7 @@
       "target": "reg:struct_composition:pkt.opcode",
       "sourceHandle": "port:opcode_i",
       "targetHandle": "d",
-      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
+      "path": "M 192 72 L 216 72 L 384 72 L 408 72"
     },
     {
       "id": "edge:port:struct_composition:valid_i:reg:struct_composition:pkt.valid:valid_i",
@@ -202,7 +202,7 @@
       "target": "reg:struct_composition:pkt.valid",
       "sourceHandle": "port:valid_i",
       "targetHandle": "d",
-      "path": "M 216 240 L 240 240 L 401 240 Q 408 233 415 240 L 432 240 L 456 240"
+      "path": "M 192 192 L 216 192 L 377 192 Q 384 185 391 192 L 408 192 L 432 192"
     },
     {
       "id": "edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode",
@@ -210,7 +210,7 @@
       "target": "struct_comp:struct_composition:pkt",
       "sourceHandle": "q",
       "targetHandle": "in:pkt.opcode",
-      "path": "M 624 96 L 648 96 L 816 96 L 840 96"
+      "path": "M 600 72 L 624 72 L 792 72 L 816 72"
     },
     {
       "id": "edge:reg:struct_composition:pkt.valid:struct_comp:struct_composition:pkt:pkt.valid",
@@ -218,7 +218,7 @@
       "target": "struct_comp:struct_composition:pkt",
       "sourceHandle": "q",
       "targetHandle": "in:pkt.valid",
-      "path": "M 600 240 L 624 240 L 744 240 L 744 144 L 816 144 L 840 144"
+      "path": "M 576 192 L 600 192 L 720 192 L 720 120 L 792 120 L 816 120"
     },
     {
       "id": "edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt",
@@ -226,7 +226,7 @@
       "target": "port:struct_composition:flat",
       "sourceHandle": "out:pkt",
       "targetHandle": "port:flat",
-      "path": "M 984 96 L 1008 96 L 1176 96 L 1200 96"
+      "path": "M 960 72 L 984 72 L 1152 72 L 1176 72"
     }
   ]
 }

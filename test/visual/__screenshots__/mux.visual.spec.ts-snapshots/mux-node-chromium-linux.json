@@ -4,8 +4,8 @@
       "id": "mux:mux_only:y:sel:y",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 96
+        "x": 360,
+        "y": 72
       },
       "width": 144,
       "height": 96,
@@ -39,8 +39,8 @@
       "id": "port:mux_only:a",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 108
+        "x": 24,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -59,8 +59,8 @@
       "id": "port:mux_only:b",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 180
+        "x": 24,
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -79,7 +79,7 @@
       "id": "port:mux_only:sel",
       "type": "hdl",
       "position": {
-        "x": 48,
+        "x": 24,
         "y": 36
       },
       "width": 120,
@@ -99,8 +99,8 @@
       "id": "port:mux_only:y",
       "type": "hdl",
       "position": {
-        "x": 744,
-        "y": 132
+        "x": 720,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -123,7 +123,7 @@
       "target": "port:mux_only:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
-      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
+      "path": "M 504 120 L 528 120 L 696 120 L 720 120"
     },
     {
       "id": "edge:port:mux_only:a:mux:mux_only:y:sel:y:a",
@@ -131,7 +131,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
-      "path": "M 168 120 L 192 120 L 288 120 L 288 144 L 360 144 L 384 144"
+      "path": "M 144 96 L 168 96 L 264 96 L 264 120 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:mux_only:b:mux:mux_only:y:sel:y:b",
@@ -139,7 +139,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:b",
       "targetHandle": "in:default",
-      "path": "M 168 192 L 192 192 L 288 192 L 288 168 L 360 168 L 384 168"
+      "path": "M 144 144 L 168 144 L 336 144 L 360 144"
     },
     {
       "id": "edge:port:mux_only:sel:mux:mux_only:y:sel:y:sel",
@@ -147,7 +147,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 168 48 L 192 48 L 456 48 L 456 72 L 456 117"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
     }
   ]
 }

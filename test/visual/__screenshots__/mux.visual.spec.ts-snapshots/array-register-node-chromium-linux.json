@@ -4,8 +4,8 @@
       "id": "literal:array_register:32_b0:32_b0",
       "type": "hdl",
       "position": {
-        "x": 816,
-        "y": 300
+        "x": 768,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -24,8 +24,8 @@
       "id": "mux:array_register:M_addr",
       "type": "hdl",
       "position": {
-        "x": 1560,
-        "y": 432
+        "x": 1488,
+        "y": 336
       },
       "width": 144,
       "height": 96,
@@ -59,8 +59,8 @@
       "id": "mux:array_register:M_address_:rst:M_rst_candidate",
       "type": "hdl",
       "position": {
-        "x": 1176,
-        "y": 360
+        "x": 1128,
+        "y": 288
       },
       "width": 144,
       "height": 96,
@@ -94,8 +94,8 @@
       "id": "mux:array_register:M_address_:write_en:M_address__next",
       "type": "hdl",
       "position": {
-        "x": 816,
-        "y": 384
+        "x": 768,
+        "y": 336
       },
       "width": 96,
       "height": 96,
@@ -129,8 +129,8 @@
       "id": "mux:array_register:M_read_address",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 96
+        "x": 744,
+        "y": 72
       },
       "width": 144,
       "height": 96,
@@ -159,7 +159,7 @@
       "id": "port:array_register:address",
       "type": "hdl",
       "position": {
-        "x": 408,
+        "x": 360,
         "y": 36
       },
       "width": 168,
@@ -179,8 +179,8 @@
       "id": "port:array_register:clk",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 516
+        "x": 24,
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -199,8 +199,8 @@
       "id": "port:array_register:read_data",
       "type": "hdl",
       "position": {
-        "x": 1152,
-        "y": 132
+        "x": 1104,
+        "y": 108
       },
       "width": 192,
       "height": 24,
@@ -219,8 +219,8 @@
       "id": "port:array_register:rst",
       "type": "hdl",
       "position": {
-        "x": 816,
-        "y": 228
+        "x": 768,
+        "y": 204
       },
       "width": 120,
       "height": 24,
@@ -239,8 +239,8 @@
       "id": "port:array_register:write_data",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 372
+        "x": 336,
+        "y": 300
       },
       "width": 192,
       "height": 24,
@@ -259,8 +259,8 @@
       "id": "port:array_register:write_en",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 300
+        "x": 408,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -279,8 +279,8 @@
       "id": "reg:array_register:M",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 456
+        "x": 384,
+        "y": 360
       },
       "width": 144,
       "height": 96,
@@ -313,7 +313,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "port:32_b0",
       "targetHandle": "in:true",
-      "path": "M 936 312 L 1056 312 L 1056 408 L 1152 408"
+      "path": "M 888 264 L 1008 264 L 1008 336 L 1104 336"
     },
     {
       "id": "edge:mux:array_register:M_addr:reg:array_register:M:M_next",
@@ -321,7 +321,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1717 484 L 1732 484 L 1732 556 L 700 556 L 700 436 L 388 436 L 388 508 L 403 508"
+      "path": "M 1645 388 L 1684 388 L 1684 460 L 172 460 L 172 412 L 379 412"
     },
     {
       "id": "edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate",
@@ -329,7 +329,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "out",
       "targetHandle": "in:3_b0",
-      "path": "M 1333 412 L 1444 412 L 1444 484 L 1555 484"
+      "path": "M 1285 340 L 1396 340 L 1396 388 L 1483 388"
     },
     {
       "id": "edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next",
@@ -337,7 +337,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 925 436 L 1171 436"
+      "path": "M 877 388 L 1012 388 L 1012 364 L 1123 364"
     },
     {
       "id": "edge:mux:array_register:M_read_address:port:array_register:read_data:read_data",
@@ -345,7 +345,7 @@
       "target": "port:array_register:read_data",
       "sourceHandle": "out",
       "targetHandle": "port:read_data",
-      "path": "M 936 144 L 960 144 L 1128 144 L 1152 144"
+      "path": "M 888 120 L 912 120 L 1080 120 L 1104 120"
     },
     {
       "id": "edge:port:array_register:address:mux:array_register:M_addr:address",
@@ -353,7 +353,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 576 48 L 1632 48 L 1632 408 L 1632 405"
+      "path": "M 528 48 L 1560 48 L 1560 312 L 1560 309"
     },
     {
       "id": "edge:port:array_register:address:mux:array_register:M_read_address:address",
@@ -361,7 +361,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 576 48 L 600 48 L 768 48 L 768 69 L 864 69 L 864 72 L 864 117"
+      "path": "M 528 48 L 552 48 L 816 48 L 816 93"
     },
     {
       "id": "edge:port:array_register:clk:reg:array_register:M:clk",
@@ -369,7 +369,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 168 528 L 384 528"
+      "path": "M 144 432 L 360 432"
     },
     {
       "id": "edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst",
@@ -377,7 +377,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "port:rst",
       "targetHandle": "sel",
-      "path": "M 936 240 L 1248 240 L 1248 336 L 1248 333"
+      "path": "M 888 216 L 1200 216 L 1200 264 L 1200 261"
     },
     {
       "id": "edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data",
@@ -385,7 +385,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "port:write_data",
       "targetHandle": "in:true",
-      "path": "M 576 384 L 696 384 L 696 432 L 792 432"
+      "path": "M 528 312 L 576 312 L 576 384 L 744 384"
     },
     {
       "id": "edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en",
@@ -393,7 +393,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "port:write_en",
       "targetHandle": "sel",
-      "path": "M 576 312 L 696 312 L 696 357 L 864 357"
+      "path": "M 528 264 L 672 264 L 672 309 L 816 309"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_addr:M",
@@ -401,7 +401,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 565 508 L 684 508 Q 696 496 708 508 L 1555 508"
+      "path": "M 541 412 L 580 412 L 580 460 L 1468 460 L 1468 412 L 1483 412"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M",
@@ -409,7 +409,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 565 508 L 684 508 Q 696 496 708 508 L 772 508 L 772 460 L 811 460"
+      "path": "M 541 412 L 763 412"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_read_address:M",
@@ -417,7 +417,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 565 508 L 772 508 L 772 148 L 792 148"
+      "path": "M 541 412 L 580 412 L 580 124 L 744 124"
     }
   ]
 }

@@ -4,8 +4,8 @@
       "id": "inverter:inverter_expr:bus_y:expr",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 336
+        "x": 360,
+        "y": 240
       },
       "width": 48,
       "height": 48,
@@ -29,8 +29,8 @@
       "id": "inverter:inverter_expr:is_nonzero:expr",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 432
+        "x": 360,
+        "y": 312
       },
       "width": 192,
       "height": 72,
@@ -54,8 +54,8 @@
       "id": "inverter:inverter_expr:s_y:expr",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 144
+        "x": 360,
+        "y": 96
       },
       "width": 48,
       "height": 48,
@@ -79,8 +79,8 @@
       "id": "inverter:inverter_expr:valid_out:expr",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 240
+        "x": 360,
+        "y": 168
       },
       "width": 48,
       "height": 48,
@@ -104,8 +104,8 @@
       "id": "inverter:inverter_expr:y:expr",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 48
+        "x": 360,
+        "y": 24
       },
       "width": 48,
       "height": 48,
@@ -129,8 +129,8 @@
       "id": "port:inverter_expr:a",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 60
+        "x": 24,
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -149,8 +149,8 @@
       "id": "port:inverter_expr:bus",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 348
+        "x": 24,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -169,8 +169,8 @@
       "id": "port:inverter_expr:bus_y",
       "type": "hdl",
       "position": {
-        "x": 624,
-        "y": 348
+        "x": 600,
+        "y": 252
       },
       "width": 144,
       "height": 24,
@@ -189,8 +189,8 @@
       "id": "port:inverter_expr:bus4",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 468
+        "x": 24,
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -209,8 +209,8 @@
       "id": "port:inverter_expr:is_nonzero",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 468
+        "x": 768,
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -229,8 +229,8 @@
       "id": "port:inverter_expr:n_valid",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 252
+        "x": 24,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -249,8 +249,8 @@
       "id": "port:inverter_expr:s",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 156
+        "x": 24,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -269,8 +269,8 @@
       "id": "port:inverter_expr:s_y",
       "type": "hdl",
       "position": {
-        "x": 624,
-        "y": 156
+        "x": 600,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -289,8 +289,8 @@
       "id": "port:inverter_expr:valid_out",
       "type": "hdl",
       "position": {
-        "x": 624,
-        "y": 252
+        "x": 600,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -309,8 +309,8 @@
       "id": "port:inverter_expr:y",
       "type": "hdl",
       "position": {
-        "x": 624,
-        "y": 60
+        "x": 600,
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -333,7 +333,7 @@
       "target": "port:inverter_expr:bus_y",
       "sourceHandle": "out:bus_y",
       "targetHandle": "port:bus_y",
-      "path": "M 414.797 360 L 432 360 L 600 360 L 624 360"
+      "path": "M 390.797 264 L 408 264 L 576 264 L 600 264"
     },
     {
       "id": "edge:inverter:inverter_expr:is_nonzero:expr:port:inverter_expr:is_nonzero:is_nonzero",
@@ -341,7 +341,7 @@
       "target": "port:inverter_expr:is_nonzero",
       "sourceHandle": "out:is_nonzero",
       "targetHandle": "port:is_nonzero",
-      "path": "M 576 480 L 600 480 L 768 480 L 792 480"
+      "path": "M 552 360 L 576 360 L 744 360 L 768 360"
     },
     {
       "id": "edge:inverter:inverter_expr:s_y:expr:port:inverter_expr:s_y:s_y",
@@ -349,7 +349,7 @@
       "target": "port:inverter_expr:s_y",
       "sourceHandle": "out:s_y",
       "targetHandle": "port:s_y",
-      "path": "M 414.797 168 L 432 168 L 600 168 L 624 168"
+      "path": "M 390.797 120 L 408 120 L 576 120 L 600 120"
     },
     {
       "id": "edge:inverter:inverter_expr:valid_out:expr:port:inverter_expr:valid_out:valid_out",
@@ -357,7 +357,7 @@
       "target": "port:inverter_expr:valid_out",
       "sourceHandle": "out:valid_out",
       "targetHandle": "port:valid_out",
-      "path": "M 414.797 264 L 432 264 L 600 264 L 624 264"
+      "path": "M 390.797 192 L 408 192 L 576 192 L 600 192"
     },
     {
       "id": "edge:inverter:inverter_expr:y:expr:port:inverter_expr:y:y",
@@ -365,7 +365,7 @@
       "target": "port:inverter_expr:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 414.797 72 L 432 72 L 600 72 L 624 72"
+      "path": "M 390.797 48 L 408 48 L 576 48 L 600 48"
     },
     {
       "id": "edge:port:inverter_expr:a:inverter:inverter_expr:y:expr:a",
@@ -373,7 +373,7 @@
       "target": "inverter:inverter_expr:y:expr",
       "sourceHandle": "port:a",
       "targetHandle": "in:a",
-      "path": "M 168 72 L 192 72 L 360 72 L 384 72"
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
     },
     {
       "id": "edge:port:inverter_expr:bus:inverter:inverter_expr:bus_y:expr:bus",
@@ -381,7 +381,7 @@
       "target": "inverter:inverter_expr:bus_y:expr",
       "sourceHandle": "port:bus",
       "targetHandle": "in:bus",
-      "path": "M 168 360 L 192 360 L 360 360 L 384 360"
+      "path": "M 144 264 L 168 264 L 336 264 L 360 264"
     },
     {
       "id": "edge:port:inverter_expr:bus4:inverter:inverter_expr:is_nonzero:expr:bus4",
@@ -389,7 +389,7 @@
       "target": "inverter:inverter_expr:is_nonzero:expr",
       "sourceHandle": "port:bus4",
       "targetHandle": "in:bus4",
-      "path": "M 168 480 L 192 480 L 360 480 L 384 480"
+      "path": "M 144 360 L 168 360 L 336 360 L 360 360"
     },
     {
       "id": "edge:port:inverter_expr:n_valid:inverter:inverter_expr:valid_out:expr:n_valid",
@@ -397,7 +397,7 @@
       "target": "inverter:inverter_expr:valid_out:expr",
       "sourceHandle": "port:n_valid",
       "targetHandle": "in:n_valid",
-      "path": "M 168 264 L 192 264 L 360 264 L 384 264"
+      "path": "M 144 192 L 168 192 L 336 192 L 360 192"
     },
     {
       "id": "edge:port:inverter_expr:s:inverter:inverter_expr:s_y:expr:s",
@@ -405,7 +405,7 @@
       "target": "inverter:inverter_expr:s_y:expr",
       "sourceHandle": "port:s",
       "targetHandle": "in:s",
-      "path": "M 168 168 L 192 168 L 360 168 L 384 168"
+      "path": "M 144 120 L 168 120 L 336 120 L 360 120"
     }
   ]
 }

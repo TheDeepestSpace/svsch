@@ -4,8 +4,8 @@
       "id": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 696
+        "x": 432,
+        "y": 624
       },
       "width": 192,
       "height": 72,
@@ -30,8 +30,8 @@
       "id": "instance:generate_if_else_regions:g_if_one.u_if_one",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 432
+        "x": 432,
+        "y": 384
       },
       "width": 192,
       "height": 96,
@@ -56,8 +56,8 @@
       "id": "instance:generate_if_else_regions:g_if_zero.u_if_zero",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 168
+        "x": 408,
+        "y": 144
       },
       "width": 216,
       "height": 96,
@@ -82,8 +82,8 @@
       "id": "port:generate_if_else_regions:a",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 204
+        "x": 24,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -102,8 +102,8 @@
       "id": "port:generate_if_else_regions:b",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 468
+        "x": 24,
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -122,8 +122,8 @@
       "id": "port:generate_if_else_regions:c",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 732
+        "x": 24,
+        "y": 660
       },
       "width": 120,
       "height": 24,
@@ -142,8 +142,8 @@
       "id": "port:generate_if_else_regions:y",
       "type": "hdl",
       "position": {
-        "x": 936,
-        "y": 468
+        "x": 912,
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -166,7 +166,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 648 744 L 672 744 L 744 744 L 744 480 L 912 480 L 936 480",
+      "path": "M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -175,7 +175,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 648 480 L 672 480 L 912 480 L 936 480",
+      "path": "M 624 432 L 648 432 L 888 432 L 912 432",
       "active": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 648 216 L 672 216 L 744 216 L 744 480 L 912 480 L 936 480",
+      "path": "M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -193,7 +193,7 @@
       "target": "instance:generate_if_else_regions:g_if_zero.u_if_zero",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 168 216 L 192 216 L 408 216 L 432 216",
+      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
       "inactive": true
     },
     {
@@ -202,7 +202,7 @@
       "target": "instance:generate_if_else_regions:g_if_one.u_if_one",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 168 480 L 192 480 L 432 480 L 456 480",
+      "path": "M 144 432 L 168 432 L 408 432 L 432 432",
       "active": true
     },
     {
@@ -211,7 +211,7 @@
       "target": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 168 744 L 192 744 L 432 744 L 456 744",
+      "path": "M 144 672 L 168 672 L 408 672 L 432 672",
       "inactive": true
     }
   ],
@@ -221,10 +221,10 @@
       "kind": "generate-if",
       "label": "generate if",
       "bounds": {
-        "x": 288,
-        "y": 72,
+        "x": 264,
+        "y": 48,
         "width": 456,
-        "height": 792
+        "height": 744
       },
       "active": true
     },
@@ -233,8 +233,8 @@
       "kind": "else-if",
       "label": "g_if_one /* MODE == 1 */",
       "bounds": {
-        "x": 336,
-        "y": 384,
+        "x": 312,
+        "y": 336,
         "width": 360,
         "height": 192
       },
@@ -245,8 +245,8 @@
       "kind": "else",
       "label": "/* else */",
       "bounds": {
-        "x": 408,
-        "y": 648,
+        "x": 384,
+        "y": 576,
         "width": 288,
         "height": 168
       },
@@ -257,8 +257,8 @@
       "kind": "if",
       "label": "g_if_zero /* MODE == 0 */",
       "bounds": {
-        "x": 384,
-        "y": 120,
+        "x": 360,
+        "y": 96,
         "width": 312,
         "height": 192
       },

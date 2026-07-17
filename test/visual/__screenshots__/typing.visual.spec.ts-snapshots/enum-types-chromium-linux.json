@@ -4,8 +4,8 @@
       "id": "literal:enum_types:IDLE:IDLE",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 180
+        "x": 96,
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -24,8 +24,8 @@
       "id": "port:enum_types:clk",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 108
+        "x": 96,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -44,7 +44,7 @@
       "id": "port:enum_types:in_state",
       "type": "hdl",
       "position": {
-        "x": 48,
+        "x": 24,
         "y": 36
       },
       "width": 192,
@@ -64,8 +64,8 @@
       "id": "port:enum_types:out_state",
       "type": "hdl",
       "position": {
-        "x": 912,
-        "y": 84
+        "x": 888,
+        "y": 60
       },
       "width": 192,
       "height": 24,
@@ -84,8 +84,8 @@
       "id": "port:enum_types:rst_n",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 252
+        "x": 96,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -104,8 +104,8 @@
       "id": "reg:enum_types:current_state",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 48
+        "x": 432,
+        "y": 24
       },
       "width": 240,
       "height": 120,
@@ -148,7 +148,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 240 192 L 264 192 L 360 192 L 360 144 L 432 144 L 456 144"
+      "path": "M 216 144 L 240 144 L 336 144 L 336 120 L 408 120 L 432 120"
     },
     {
       "id": "edge:port:enum_types:clk:reg:enum_types:current_state:clk",
@@ -156,7 +156,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 240 120 L 264 120 L 432 120 L 456 120"
+      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
     },
     {
       "id": "edge:port:enum_types:in_state:reg:enum_types:current_state:in_state",
@@ -164,7 +164,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:in_state",
       "targetHandle": "d",
-      "path": "M 240 48 L 264 48 L 360 48 L 360 96 L 432 96 L 456 96"
+      "path": "M 216 48 L 240 48 L 336 48 L 336 72 L 408 72 L 432 72"
     },
     {
       "id": "edge:port:enum_types:rst_n:reg:enum_types:current_state:rst_n",
@@ -172,7 +172,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 240 264 L 264 264 L 576 264 L 576 216 L 576 168"
+      "path": "M 216 192 L 240 192 L 552 192 L 552 144"
     },
     {
       "id": "edge:reg:enum_types:current_state:port:enum_types:out_state:out_state",
@@ -180,7 +180,7 @@
       "target": "port:enum_types:out_state",
       "sourceHandle": "q",
       "targetHandle": "port:out_state",
-      "path": "M 696 96 L 720 96 L 888 96 L 912 96"
+      "path": "M 672 72 L 696 72 L 864 72 L 888 72"
     }
   ]
 }

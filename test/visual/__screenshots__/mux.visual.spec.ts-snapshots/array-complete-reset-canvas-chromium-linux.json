@@ -4,7 +4,7 @@
       "id": "port:array_complete_reset:clk",
       "type": "hdl",
       "position": {
-        "x": 96,
+        "x": 72,
         "y": 108
       },
       "width": 120,
@@ -24,8 +24,8 @@
       "id": "port:array_complete_reset:in_data",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 36
+        "x": 24,
+        "y": 60
       },
       "width": 168,
       "height": 24,
@@ -44,8 +44,8 @@
       "id": "port:array_complete_reset:out_data",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 84
+        "x": 768,
+        "y": 60
       },
       "width": 168,
       "height": 24,
@@ -64,7 +64,7 @@
       "id": "port:array_complete_reset:rst",
       "type": "hdl",
       "position": {
-        "x": 96,
+        "x": 72,
         "y": 180
       },
       "width": 120,
@@ -84,8 +84,8 @@
       "id": "reg:array_complete_reset:arr",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 48
+        "x": 408,
+        "y": 24
       },
       "width": 144,
       "height": 96,
@@ -123,7 +123,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 216 120 L 408 120"
+      "path": "M 192 120 L 312 120 L 312 96 L 384 96"
     },
     {
       "id": "edge:port:array_complete_reset:in_data:reg:array_complete_reset:arr:in_data",
@@ -131,7 +131,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:in_data",
       "targetHandle": "d",
-      "path": "M 229 52 L 340 52 L 340 100 L 427 100"
+      "path": "M 205 76 L 403 76"
     },
     {
       "id": "edge:port:array_complete_reset:rst:reg:array_complete_reset:arr:rst",
@@ -139,7 +139,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:rst",
       "targetHandle": "rst",
-      "path": "M 216 192 L 504 192 L 504 168"
+      "path": "M 192 192 L 480 192 L 480 144"
     },
     {
       "id": "edge:reg:array_complete_reset:arr:port:array_complete_reset:out_data:out_data",
@@ -147,7 +147,7 @@
       "target": "port:array_complete_reset:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 589 100 L 787 100"
+      "path": "M 565 76 L 763 76"
     }
   ]
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1224" height="360" viewBox="0 0 1224 360" class="svsch-diagram" role="img" aria-label="loop_logic diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1224" height="336" viewBox="0 0 1224 336" class="svsch-diagram" role="img" aria-label="loop_logic diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3554,56 +3554,57 @@ path.port-skin-body.port-skin-harness {
   stroke-width: 2;
 }
 </style>
-<g transform="translate(0 0)">
+<g transform="translate(24 24)">
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:11:n1:data_out_branch_n0"><path class="svsch-edge" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:11:n1:data_out_branch_n0" data-net-key="literal:loop_logic:data_out_branch_n0:8_b0" d="M 216 192 L 240 192 L 288 192 L 288 288 L 432 288 L 456 288" />
-<circle class="svsch-edge-junction" cx="264" cy="192" r="4.75" data-junction-id="literal:loop_logic:data_out_branch_n0:8_b0:264:192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2"><path class="svsch-edge" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2" data-net-key="literal:loop_logic:data_out_branch_n0:8_b0" d="M 216 192 L 240 192 L 264 192 L 264 120 L 408 120 L 432 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out"><path class="svsch-edge" data-edge-id="edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out" data-net-key="loop:loop_logic:11:n1:port:data_out" d="M 744 240 L 768 240 L 960 240 L 984 240" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:loop:loop_logic:20:n3:port:loop_logic:parity_bits:parity_bits"><path class="svsch-edge" data-edge-id="edge:loop:loop_logic:20:n3:port:loop_logic:parity_bits:parity_bits" data-net-key="loop:loop_logic:20:n3:port:parity_bits" d="M 768 96 L 792 96 L 960 96 L 984 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in"><path class="svsch-edge-jump-halo" d="M 264 185 Q 271 192 264 199" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-jump-index="0" />
-<path class="svsch-edge-jump-halo" d="M 281 240 Q 288 233 295 240" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-jump-index="1" />
-<path class="svsch-edge" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-net-key="port:loop_logic:data_in:port:data_in" d="M 216 120 L 240 120 L 264 120 L 264 185 Q 271 192 264 199 L 264 240 L 281 240 Q 288 233 295 240 L 432 240 L 456 240" />
-<path class="svsch-edge-overlap-hint" d="M 264 124 L 264 188" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-overlap-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in-overlap-2-edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2-2" />
-<circle class="svsch-edge-junction" cx="264" cy="120" r="4.75" data-junction-id="port:loop_logic:data_in:port:data_in:264:120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in"><path class="svsch-edge" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in" data-net-key="port:loop_logic:data_in:port:data_in" d="M 216 120 L 240 120 L 264 120 L 264 96 L 408 96 L 432 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt"><path class="svsch-edge-jump-halo" d="M 281 264 Q 288 257 295 264" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt" data-net-key="port:loop_logic:shift_amt:port:shift_amt" d="M 216 264 L 240 264 L 281 264 Q 288 257 295 264 L 432 264 L 456 264" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:11:n1:data_out_branch_n0"><path class="svsch-edge" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:11:n1:data_out_branch_n0" data-net-key="literal:loop_logic:data_out_branch_n0:8_b0" d="M 192 168 L 216 168 L 264 168 L 264 240 L 408 240 L 432 240" />
+<circle class="svsch-edge-junction" cx="240" cy="168" r="4.75" data-junction-id="literal:loop_logic:data_out_branch_n0:8_b0:240:168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2"><path class="svsch-edge" data-edge-id="edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2" data-net-key="literal:loop_logic:data_out_branch_n0:8_b0" d="M 192 168 L 216 168 L 240 168 L 240 96 L 384 96 L 408 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out"><path class="svsch-edge" data-edge-id="edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out" data-net-key="loop:loop_logic:11:n1:port:data_out" d="M 720 192 L 744 192 L 936 192 L 960 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:loop:loop_logic:20:n3:port:loop_logic:parity_bits:parity_bits"><path class="svsch-edge" data-edge-id="edge:loop:loop_logic:20:n3:port:loop_logic:parity_bits:parity_bits" data-net-key="loop:loop_logic:20:n3:port:parity_bits" d="M 744 72 L 768 72 L 936 72 L 960 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in"><path class="svsch-edge-jump-halo" d="M 240 161 Q 247 168 240 175" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-jump-index="0" />
+<path class="svsch-edge-jump-halo" d="M 257 192 Q 264 185 271 192" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-jump-index="1" />
+<path class="svsch-edge" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-net-key="port:loop_logic:data_in:port:data_in" d="M 192 120 L 216 120 L 240 120 L 240 161 Q 247 168 240 175 L 240 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192" />
+<path class="svsch-edge-overlap-hint" d="M 240 124 L 240 164" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in" data-overlap-id="edge:port:loop_logic:data_in:loop:loop_logic:11:n1:data_in-overlap-2-edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2-2" />
+<circle class="svsch-edge-junction" cx="240" cy="120" r="4.75" data-junction-id="port:loop_logic:data_in:port:data_in:240:120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in"><path class="svsch-edge" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in" data-net-key="port:loop_logic:data_in:port:data_in" d="M 192 120 L 216 120 L 240 120 L 240 72 L 384 72 L 408 72" />
+<path class="svsch-edge-overlap-hint" d="M 240 100 L 240 116" data-edge-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in" data-overlap-id="edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in-overlap-2-edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2-2" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt"><path class="svsch-edge-jump-halo" d="M 257 216 Q 264 209 271 216" style="stroke-width: 12" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt" data-jump-index="0" />
+<path class="svsch-edge" data-edge-id="edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt" data-net-key="port:loop_logic:shift_amt:port:shift_amt" d="M 192 216 L 216 216 L 257 216 Q 264 209 271 216 L 408 216 L 432 216" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:loop_logic:data_out_branch_n0:8_b0" data-node-kind="literal" transform="translate(120 180)">
+<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:loop_logic:data_out_branch_n0:8_b0" data-node-kind="literal" transform="translate(96 156)">
 <svg class="hdl-node-svg" width="96" height="24" aria-hidden="true">
 <rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="95" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="48" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>8&#x27;b0</tspan><tspan dx="4">[7:0]</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-loop" data-node-id="loop:loop_logic:11:n1" data-node-kind="loop" transform="translate(456 192)">
+<g class="svsch-node hdl-node hdl-node-loop" data-node-id="loop:loop_logic:11:n1" data-node-kind="loop" transform="translate(432 144)">
 <svg class="hdl-node-svg" width="288" height="120" aria-hidden="true">
 <rect class="svsch-node-shape" width="288" height="120"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">LOOP</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-loop" data-node-id="loop:loop_logic:20:n3" data-node-kind="loop" transform="translate(432 48)">
+<g class="svsch-node hdl-node hdl-node-loop" data-node-id="loop:loop_logic:20:n3" data-node-kind="loop" transform="translate(408 24)">
 <svg class="hdl-node-svg" width="336" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="336" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">LOOP</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:loop_logic:data_in" data-node-kind="port" transform="translate(48 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:loop_logic:data_in" data-node-kind="port" transform="translate(24 108)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">data_in</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:loop_logic:shift_amt" data-node-kind="port" transform="translate(48 252)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:loop_logic:shift_amt" data-node-kind="port" transform="translate(24 204)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">shift_amt</tspan><tspan class="svsch-port-width-suffix"> [2:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:loop_logic:data_out" data-node-kind="port" transform="translate(984 228)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:loop_logic:data_out" data-node-kind="port" transform="translate(960 180)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">data_out</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:loop_logic:parity_bits" data-node-kind="port" transform="translate(984 84)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:loop_logic:parity_bits" data-node-kind="port" transform="translate(960 60)">
 <svg class="hdl-node-svg" width="192" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 192 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 192 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="96" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">parity_bits</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>

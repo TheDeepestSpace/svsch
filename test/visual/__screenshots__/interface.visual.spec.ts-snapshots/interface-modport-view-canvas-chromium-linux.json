@@ -4,8 +4,8 @@
       "id": "interface_modport:simple_if:master",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 48
+        "x": 360,
+        "y": 24
       },
       "width": 192,
       "height": 221,
@@ -39,8 +39,8 @@
       "id": "interface_modport:simple_if:slave",
       "type": "hdl",
       "position": {
-        "x": 384,
-        "y": 312
+        "x": 360,
+        "y": 264
       },
       "width": 192,
       "height": 221,
@@ -74,8 +74,8 @@
       "id": "port:interface_simple_if:clk",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 84
+        "x": 24,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "interface_modport:simple_if:master",
       "sourceHandle": "handle",
       "targetHandle": "in:clk",
-      "path": "M 168 96 L 192 96 L 360 96 L 384 96"
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     },
     {
       "id": "edge:port:interface_simple_if:clk:interface_modport:simple_if:slave:clk",
@@ -106,7 +106,7 @@
       "target": "interface_modport:simple_if:slave",
       "sourceHandle": "handle",
       "targetHandle": "in:clk",
-      "path": "M 168 96 L 192 96 L 240 96 L 240 360 L 360 360 L 384 360"
+      "path": "M 144 72 L 168 72 L 216 72 L 216 312 L 336 312 L 360 312"
     }
   ]
 }
