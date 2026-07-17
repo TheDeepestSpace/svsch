@@ -184,7 +184,7 @@
       "target": "bus:mixed_select_breakout:data_i",
       "sourceHandle": "port:data_i",
       "targetHandle": "in:data_i",
-      "path": "M 192 168 L 216 168 L 264 168 L 264 264 L 384 264 L 408 264"
+      "path": "M 192 168 L 216 168 L 240 168 L 240 264 L 384 264 L 408 264"
     },
     {
       "id": "edge:port:mixed_select_breakout:data_i:select:mixed_select_breakout:data_i_sel_i_:P_WIDTH_:data_i",

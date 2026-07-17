@@ -106,7 +106,7 @@
       "target": "interface_modport:simple_if:slave",
       "sourceHandle": "handle",
       "targetHandle": "in:clk",
-      "path": "M 144 72 L 168 72 L 216 72 L 216 312 L 336 312 L 360 312"
+      "path": "M 144 72 L 168 72 L 192 72 L 192 312 L 336 312 L 360 312"
     }
   ]
 }

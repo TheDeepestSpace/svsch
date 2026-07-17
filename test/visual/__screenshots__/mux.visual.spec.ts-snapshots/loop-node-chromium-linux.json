@@ -178,7 +178,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:data_out_branch_n0",
       "targetHandle": "port:data_out_in",
-      "path": "M 192 168 L 216 168 L 264 168 L 264 240 L 408 240 L 432 240"
+      "path": "M 192 168 L 216 168 L 240 168 L 240 240 L 408 240 L 432 240"
     },
     {
       "id": "edge:literal:loop_logic:data_out_branch_n0:8_b0:loop:loop_logic:20:n3:parity_bits_branch_n2",
@@ -186,7 +186,7 @@
       "target": "loop:loop_logic:20:n3",
       "sourceHandle": "port:parity_bits_branch_n2",
       "targetHandle": "port:parity_bits_in",
-      "path": "M 192 168 L 216 168 L 240 168 L 240 96 L 384 96 L 408 96"
+      "path": "M 192 168 L 216 168 L 264 168 L 264 96 L 384 96 L 408 96"
     },
     {
       "id": "edge:loop:loop_logic:11:n1:port:loop_logic:data_out:data_out",
@@ -210,7 +210,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:data_in",
       "targetHandle": "port:data_in_i_",
-      "path": "M 192 120 L 216 120 L 240 120 L 240 161 Q 247 168 240 175 L 240 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192"
+      "path": "M 192 120 L 216 120 L 264 120 L 264 192 L 408 192 L 432 192"
     },
     {
       "id": "edge:port:loop_logic:data_in:loop:loop_logic:20:n3:data_in",
@@ -218,7 +218,7 @@
       "target": "loop:loop_logic:20:n3",
       "sourceHandle": "port:data_in",
       "targetHandle": "port:data_in",
-      "path": "M 192 120 L 216 120 L 240 120 L 240 72 L 384 72 L 408 72"
+      "path": "M 192 120 L 216 120 L 264 120 L 264 72 L 384 72 L 408 72"
     },
     {
       "id": "edge:port:loop_logic:shift_amt:loop:loop_logic:11:n1:shift_amt",
@@ -226,7 +226,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:shift_amt",
       "targetHandle": "port:shift_amt",
-      "path": "M 192 216 L 216 216 L 257 216 Q 264 209 271 216 L 408 216 L 432 216"
+      "path": "M 192 216 L 216 216 L 233 216 Q 240 209 247 216 L 408 216 L 432 216"
     }
   ]
 }

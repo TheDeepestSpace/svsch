@@ -16,6 +16,7 @@ import {
   interfaceTopPortX
 } from '../diagram/interfaceGeometry';
 import { routeDiagramWithLibavoid, selectLibavoidRoutesAgainstFallbacks } from './libavoidRouter';
+import { routingObstacleMargins } from './routingObstacleGeometry';
 
 interface AutoLayoutResult {
   positions: Map<string, { x: number; y: number }>;
@@ -906,12 +907,14 @@ async function autoLayoutMissingNodes(
     const routeChildren = useCompoundGenerateLayout
       ? buildGenerateCompoundElkChildren(nodes, generateRegions, moduleLayout, {
         includeLeadMargins: true,
+        includeRoutingObstacleMargins: true,
         forceFixed: true,
         nodePositions: fixedRoutePositions,
         regionBounds
       })
       : nodes.map((node) => elkNodeForLayout(node, moduleLayout, {
         includeLeadMargins: true,
+        includeRoutingObstacleMargins: true,
         forceFixed: true,
         nodePositions: fixedRoutePositions
       }));
@@ -1056,13 +1059,17 @@ function elkNodeForLayout(
   moduleLayout: SavedModuleLayout,
   options: {
     includeLeadMargins: boolean;
+    includeRoutingObstacleMargins?: boolean;
     useSavedPosition?: boolean;
     forceFixed?: boolean;
     nodePositions?: Map<string, { x: number; y: number }>;
     parentBounds?: RegionBounds;
   }
 ): ElkLayoutNode {
-  const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, options.includeLeadMargins);
+  const geometry = options.includeRoutingObstacleMargins
+    ? elkRoutingNodeForDiagramNode(node)
+    : elkNodeForDiagramNode(node, options.includeLeadMargins);
+  const { layoutOffset, ...elkNode } = geometry;
   const saved = moduleLayout.nodes[node.id];
   const position = options.nodePositions?.get(node.id)
     ?? (options.useSavedPosition && saved ? { x: saved.x, y: saved.y } : undefined);
@@ -1104,6 +1111,7 @@ function buildGenerateCompoundElkChildren(
   moduleLayout: SavedModuleLayout,
   options: {
     includeLeadMargins: boolean;
+    includeRoutingObstacleMargins?: boolean;
     forceFixed?: boolean;
     nodePositions?: Map<string, { x: number; y: number }>;
     regionBounds?: Map<string, RegionBounds>;
@@ -1145,6 +1153,7 @@ function buildGenerateCompoundElkChildren(
 
   const buildNode = (node: DiagramNode, parentBounds?: RegionBounds): ElkLayoutNode => elkNodeForLayout(node, moduleLayout, {
     includeLeadMargins: options.includeLeadMargins,
+    includeRoutingObstacleMargins: options.includeRoutingObstacleMargins,
     forceFixed: options.forceFixed,
     nodePositions: options.nodePositions,
     parentBounds
@@ -1528,6 +1537,30 @@ export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = fa
       'org.eclipse.elk.portConstraints': 'FIXED_POS'
     },
     layoutOffset: { x: margins.left, y: margins.top }
+  };
+}
+
+export function elkRoutingNodeForDiagramNode(node: DiagramNode): ElkDiagramNode {
+  const elkNode = elkNodeForDiagramNode(node, true);
+  const portSides = elkNode.ports.map((port) => (
+    port.properties['org.eclipse.elk.port.side']
+    ?? port.layoutOptions['elk.port.side']
+  ));
+  const margins = routingObstacleMargins(node, portSides);
+
+  return {
+    ...elkNode,
+    width: elkNode.width + margins.left + margins.right,
+    height: elkNode.height + margins.top + margins.bottom,
+    ports: elkNode.ports.map((port) => ({
+      ...port,
+      x: port.x === undefined ? undefined : port.x + margins.left,
+      y: port.y === undefined ? undefined : port.y + margins.top
+    })),
+    layoutOffset: {
+      x: elkNode.layoutOffset.x + margins.left,
+      y: elkNode.layoutOffset.y + margins.top
+    }
   };
 }
 

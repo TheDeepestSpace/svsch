@@ -166,7 +166,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 624 744 L 648 744 L 720 744 L 720 432 L 888 432 L 912 432",
+      "path": "M 624 744 L 648 744 L 744 744 L 744 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432",
+      "path": "M 624 192 L 648 192 L 744 192 L 744 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -211,7 +211,7 @@
       "target": "comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 144 672 L 168 672 L 408 672 L 408 744 L 432 744",
+      "path": "M 144 672 L 168 672 L 384 672 L 384 744 L 408 744 L 432 744",
       "inactive": true
     }
   ],

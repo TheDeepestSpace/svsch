@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -241,6 +241,41 @@ describe('layout merge', () => {
     const doneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
 
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
+  });
+
+  it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'M',
+      isArrayNode: true,
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk' }
+    };
+    const placement = elkNodeForDiagramNode(register, true);
+    const routing = elkRoutingNodeForDiagramNode(register);
+
+    expect(routing.width).toBe(placement.width);
+    expect(routing.height).toBe(placement.height + diagramSizing.gridSize);
+    expect(routing.layoutOffset).toEqual({
+      x: placement.layoutOffset.x,
+      y: placement.layoutOffset.y + diagramSizing.gridSize / 2
+    });
+
+    for (const placementPort of placement.ports) {
+      const routingPort = routing.ports.find((port) => port.id === placementPort.id)!;
+      expect({
+        x: routingPort.x! - routing.layoutOffset.x,
+        y: routingPort.y! - routing.layoutOffset.y
+      }).toEqual({
+        x: placementPort.x! - placement.layoutOffset.x,
+        y: placementPort.y! - placement.layoutOffset.y
+      });
+    }
   });
 
   it('marks removed fixed layout entries stale and writes active fixed positions', () => {

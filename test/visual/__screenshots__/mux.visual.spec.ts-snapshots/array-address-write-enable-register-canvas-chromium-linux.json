@@ -208,7 +208,7 @@
       "target": "reg:array_address_write_enable_register:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1285 148 L 1324 148 L 1324 28 L 172 28 L 172 244 L 355 244"
+      "path": "M 1285 148 L 1372 148 L 1372 28 L 196 28 L 196 244 L 355 244"
     },
     {
       "id": "edge:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:mux:array_address_write_enable_register:storage_addr:storage_address__next",
@@ -256,7 +256,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 565 244 L 604 244 L 604 268 L 964 268 L 964 172 L 1123 172"
+      "path": "M 565 244 L 628 244 L 628 340 L 1012 340 L 1012 172 L 1123 172"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:storage",
@@ -264,7 +264,7 @@
       "target": "mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 565 244 L 604 244 L 604 172 L 787 172"
+      "path": "M 565 244 L 628 244 L 628 172 L 787 172"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:port:array_address_write_enable_register:out_data:out_data",

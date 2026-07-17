@@ -558,6 +558,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
             style={{
               left: `${((index + 1) / (muxTopPorts.length + 1)) * nodeWidth}px`,
               top: diagramSizing.gridSize,  // matches original .mux-select-port { top: var(--svsch-grid) }
+              transform: 'translateX(-50%)',
             }} />
         ))}
         {sideInputs.map((port: DiagramPort, index: number) => (

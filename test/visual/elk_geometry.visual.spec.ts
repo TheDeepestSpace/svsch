@@ -2,8 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
-import { elkNodeForDiagramNode, type ElkPortSide } from '../../src/layout/mergeLayout';
-import { routingObstacleMargins } from '../../src/layout/routingObstacleGeometry';
+import { elkNodeForDiagramNode, elkRoutingNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
 import { renderSvg } from '../../src/cli/svgRenderer';
@@ -155,6 +154,7 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
     let rowHeight = 0;
     for (const { label, node } of row) {
       const withLeads = elkNodeForDiagramNode(node, true);
+      const withRoutingMargins = elkRoutingNodeForDiagramNode(node);
       const bare = elkNodeForDiagramNode(node, false);
       const offset = withLeads.layoutOffset;
 
@@ -170,17 +170,11 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
         width: withLeads.width,
         height: withLeads.height
       };
-      const portSides = withLeads.ports.map((port) => (
-        port.properties['org.eclipse.elk.port.side']
-        ?? port.layoutOptions['elk.port.side']
-        ?? 'EAST'
-      ) as ElkPortSide);
-      const routingMargins = routingObstacleMargins(node, portSides);
       const routingRect = {
-        x: placementRect.x - routingMargins.left,
-        y: placementRect.y - routingMargins.top,
-        width: placementRect.width + routingMargins.left + routingMargins.right,
-        height: placementRect.height + routingMargins.top + routingMargins.bottom
+        x: position.x - withRoutingMargins.layoutOffset.x,
+        y: position.y - withRoutingMargins.layoutOffset.y,
+        width: withRoutingMargins.width,
+        height: withRoutingMargins.height
       };
       const barePortsById = new Map(bare.ports.map((port) => [port.id, port]));
       const ports = withLeads.ports.map((port) => {
