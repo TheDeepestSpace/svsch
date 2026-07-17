@@ -1632,34 +1632,54 @@ export function enforceMinimumBlockGaps(
   moduleLayout: SavedModuleLayout
 ): void {
   const blocks = nodes.filter((node) => isBlockSpacingNode(node) && !moduleLayout.nodes[node.id]?.fixed);
-  const dimensions = new Map(blocks.map((node) => [node.id, diagramNodeDimensions(node)]));
+  const geometries = new Map(blocks.map((node) => {
+    const elkNode = elkNodeForDiagramNode(node, true);
+    return [node.id, {
+      width: elkNode.width,
+      height: elkNode.height,
+      offset: elkNode.layoutOffset
+    }];
+  }));
   const minGap = diagramSizing.gridSize;
+
+  const boundsFor = (node: DiagramNode): RegionBounds | undefined => {
+    const position = positions.get(node.id);
+    const geometry = geometries.get(node.id);
+    if (!position || !geometry) return undefined;
+    return {
+      x: position.x - geometry.offset.x,
+      y: position.y - geometry.offset.y,
+      width: geometry.width,
+      height: geometry.height
+    };
+  };
 
   for (let pass = 0; pass < blocks.length; pass++) {
     let moved = false;
-    const ordered = [...blocks].sort((a, b) => (positions.get(a.id)?.y ?? 0) - (positions.get(b.id)?.y ?? 0));
+    const ordered = [...blocks].sort((a, b) => (boundsFor(a)?.y ?? 0) - (boundsFor(b)?.y ?? 0));
 
     for (let i = 1; i < ordered.length; i++) {
       const node = ordered[i];
       const pos = positions.get(node.id);
-      const size = dimensions.get(node.id);
-      if (!pos || !size) continue;
+      const geometry = geometries.get(node.id);
+      const bounds = boundsFor(node);
+      if (!pos || !geometry || !bounds) continue;
 
-      let requiredY = pos.y;
+      let requiredTop = bounds.y;
       for (let j = 0; j < i; j++) {
         const previous = ordered[j];
-        const prevPos = positions.get(previous.id);
-        const prevSize = dimensions.get(previous.id);
-        if (!prevPos || !prevSize || !horizontallyOverlaps(pos, size, prevPos, prevSize)) continue;
+        const previousBounds = boundsFor(previous);
+        if (!previousBounds || !horizontallyOverlaps(bounds, previousBounds)) continue;
 
-        const gap = requiredY - (prevPos.y + prevSize.height);
+        const gap = requiredTop - (previousBounds.y + previousBounds.height);
         if (gap < minGap) {
-          requiredY = prevPos.y + prevSize.height + minGap;
+          requiredTop = previousBounds.y + previousBounds.height + minGap;
         }
       }
 
-      if (requiredY > pos.y) {
-        positions.set(node.id, { ...pos, y: snapToGrid(requiredY, node.kind, structRole(node)) });
+      if (requiredTop > bounds.y) {
+        const requiredY = requiredTop + geometry.offset.y;
+        positions.set(node.id, { ...pos, y: snapToGridAtOrAfter(requiredY, node.kind, structRole(node)) });
         moved = true;
       }
     }
@@ -1673,12 +1693,10 @@ function isBlockSpacingNode(node: DiagramNode): boolean {
 }
 
 function horizontallyOverlaps(
-  aPos: { x: number; y: number },
-  aSize: { width: number; height: number },
-  bPos: { x: number; y: number },
-  bSize: { width: number; height: number }
+  a: { x: number; width: number },
+  b: { x: number; width: number }
 ): boolean {
-  return aPos.x < bPos.x + bSize.width && bPos.x < aPos.x + aSize.width;
+  return a.x < b.x + b.width && b.x < a.x + a.width;
 }
 
 function genericNodePortTop(node: DiagramNode): number {
@@ -2718,6 +2736,11 @@ function snapToGrid(value: number, kind?: string, role?: string): number {
     return Math.round((value - grid / 2) / grid) * grid + grid / 2;
   }
   return Math.round(value / grid) * grid;
+}
+
+function snapToGridAtOrAfter(value: number, kind?: string, role?: string): number {
+  const snapped = snapToGrid(value, kind, role);
+  return snapped < value ? snapped + diagramSizing.gridSize : snapped;
 }
 
 function snapPosition(position: { x: number; y: number }, kind?: string, role?: string): { x: number; y: number } {

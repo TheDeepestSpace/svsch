@@ -60,7 +60,7 @@
       "type": "hdl",
       "position": {
         "x": 504,
-        "y": 300
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -368,7 +368,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_BUSY",
       "targetHandle": "in:BUSY",
-      "path": "M 624 312 L 648 312 L 696 312 L 696 288 L 816 288 L 840 288"
+      "path": "M 624 360 L 648 360 L 744 360 L 744 343 Q 751 336 744 329 L 744 319 Q 751 312 744 305 L 744 288 L 816 288 L 840 288"
     },
     {
       "id": "edge:literal:top:next_r_IDLE:START:mux:top:next_r:r:next_r_if_true_n0:next_r_IDLE",

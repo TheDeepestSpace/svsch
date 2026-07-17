@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -204,6 +204,43 @@ describe('layout merge', () => {
 
     expect(ordered[1].position.y - (ordered[0].position.y + diagramNodeDimensions(ordered[0]).height))
       .toBeGreaterThanOrEqual(diagramSizing.gridSize);
+  });
+
+  it('preserves a full grid gap below a register reset lead after snapping', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'state',
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        { id: 'rv', name: 'RV', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' }
+    };
+    const done: DiagramNode = { id: 'done', kind: 'literal', label: 'DONE', ports: [] };
+    const positions = new Map([
+      [register.id, { x: 480, y: 144 }],
+      [done.id, { x: 504, y: 300 }]
+    ]);
+
+    const registerGeometry = elkNodeForDiagramNode(register, true);
+    const doneGeometry = elkNodeForDiagramNode(done, true);
+    const originalRegisterBottom = positions.get(register.id)!.y
+      - registerGeometry.layoutOffset.y
+      + registerGeometry.height;
+    const originalDoneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
+    expect(originalRegisterBottom).toBeGreaterThan(originalDoneTop);
+
+    enforceMinimumBlockGaps([register, done], positions, { nodes: {} });
+    const registerBottom = positions.get(register.id)!.y
+      - registerGeometry.layoutOffset.y
+      + registerGeometry.height;
+    const doneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
+
+    expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
   it('marks removed fixed layout entries stale and writes active fixed positions', () => {
