@@ -235,7 +235,7 @@ test.describe('interface visual rendering', () => {
     await expect(observer.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
     await expect(allRight.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveCount(0);
     await expect(allRight.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['sink', 'observer']);
-    await expectGraphAndScreenshot(page,'interface-all-right-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
+    await expectGraphAndScreenshot(page,'interface-all-right-modports-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders modules with multiple interface modport ports', async ({ page }) => {
