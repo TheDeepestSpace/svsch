@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
-import type { DesignGraph, PositionedNode } from '../../src/ir/types';
+import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
 const graph: DesignGraph = {
@@ -185,6 +185,25 @@ describe('layout merge', () => {
         expect(node.position.y % diagramSizing.gridSize).toBe(0);
       }
     }
+  });
+
+  it('preserves a full grid gap between literals after snapping', () => {
+    const literals: DiagramNode[] = [
+      { id: 'start', kind: 'literal', label: 'START', ports: [] },
+      { id: 'busy', kind: 'literal', label: 'BUSY', ports: [] }
+    ];
+    const positions = new Map([
+      ['start', { x: 504, y: 36 }],
+      ['busy', { x: 504, y: 60 }]
+    ]);
+
+    enforceMinimumBlockGaps(literals, positions, { nodes: {} });
+    const ordered = literals
+      .map((node) => ({ ...node, position: positions.get(node.id)! }))
+      .sort((a, b) => a.position.y - b.position.y);
+
+    expect(ordered[1].position.y - (ordered[0].position.y + diagramNodeDimensions(ordered[0]).height))
+      .toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
   it('marks removed fixed layout entries stale and writes active fixed positions', () => {

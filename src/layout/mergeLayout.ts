@@ -1626,7 +1626,7 @@ function canAlignSimpleLeafToPeer(node: DiagramNode, portId?: string): boolean {
   return elkNode.ports.filter((candidate) => candidate.properties['org.eclipse.elk.port.side'] === side).length === 1;
 }
 
-function enforceMinimumBlockGaps(
+export function enforceMinimumBlockGaps(
   nodes: DiagramNode[],
   positions: Map<string, { x: number; y: number }>,
   moduleLayout: SavedModuleLayout
@@ -1669,7 +1669,7 @@ function enforceMinimumBlockGaps(
 }
 
 function isBlockSpacingNode(node: DiagramNode): boolean {
-  return node.kind !== 'port' && node.kind !== 'literal' && node.kind !== 'replicate';
+  return node.kind !== 'port' && node.kind !== 'replicate';
 }
 
 function horizontallyOverlaps(

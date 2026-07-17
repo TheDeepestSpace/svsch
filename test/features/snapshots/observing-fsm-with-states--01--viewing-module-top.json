@@ -100,7 +100,7 @@
       "type": "hdl",
       "position": {
         "x": 504,
-        "y": 60
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -285,7 +285,7 @@
       "type": "hdl",
       "position": {
         "x": 480,
-        "y": 120
+        "y": 144
       },
       "width": 144,
       "height": 120,
@@ -336,7 +336,7 @@
       "target": "reg:top:r",
       "sourceHandle": "q",
       "targetHandle": "d",
-      "path": "M 240 168 L 264 168 L 456 168 L 480 168"
+      "path": "M 240 168 L 264 168 L 288 168 L 288 192 L 456 192 L 480 192"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:mux:top:next_r:r:next_r_if_true_n0:next_r_default",
@@ -360,7 +360,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 240 336 L 264 336 L 288 336 L 288 216 L 456 216 L 480 216"
+      "path": "M 240 336 L 264 336 L 288 336 L 288 240 L 456 240 L 480 240"
     },
     {
       "id": "edge:literal:top:next_r_BUSY:DONE:mux:top:next_r:r:next_r_if_true_n0:next_r_BUSY",
@@ -376,7 +376,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_IDLE",
       "targetHandle": "in:IDLE",
-      "path": "M 624 48 L 648 48 L 744 48 L 744 240 L 816 240 L 840 240"
+      "path": "M 624 48 L 648 48 L 696 48 L 696 240 L 816 240 L 840 240"
     },
     {
       "id": "edge:literal:top:next_r_START:BUSY:mux:top:next_r:r:next_r_if_true_n0:next_r_START",
@@ -384,7 +384,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_START",
       "targetHandle": "in:START",
-      "path": "M 624 72 L 648 72 L 720 72 L 720 264 L 816 264 L 840 264"
+      "path": "M 624 96 L 648 96 L 689 96 Q 696 89 703 96 L 720 96 L 720 233 Q 727 240 720 247 L 720 264 L 816 264 L 840 264"
     },
     {
       "id": "edge:mux:top:next_r:next_state_en:next_r_latch_d:latch:top:next_r:next_r_latch_d",
@@ -392,7 +392,7 @@
       "target": "latch:top:next_r",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1392 120 L 1416 120 L 1416 432 L 0 432 L 0 168 L 24 168 L 48 168"
+      "path": "M 1392 120 L 1416 120 L 1416 0 L 24 0 L 24 168 L 48 168"
     },
     {
       "id": "edge:mux:top:next_r:r:next_r_if_true_n0:mux:top:next_r:next_state_en:next_r_latch_d:next_r_if_true_n0",
@@ -408,7 +408,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 240 288 L 264 288 L 281 288 Q 288 281 295 288 L 360 288 L 360 223 Q 367 216 360 209 L 360 192 L 456 192 L 480 192"
+      "path": "M 240 288 L 264 288 L 281 288 Q 288 281 295 288 L 360 288 L 360 247 Q 367 240 360 233 L 360 216 L 456 216 L 480 216"
     },
     {
       "id": "edge:port:top:next_state_en:mux:top:next_r:next_state_en:next_r_latch_d:next_state_en",
@@ -424,7 +424,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 240 240 L 264 240 L 281 240 Q 288 233 295 240 L 353 240 Q 360 233 367 240 L 552 240 L 552 288 L 552 240"
+      "path": "M 240 240 L 264 240 L 353 240 Q 360 233 367 240 L 408 240 L 408 336 L 552 336 L 552 312 L 552 264"
     },
     {
       "id": "edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
@@ -432,7 +432,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "q",
       "targetHandle": "sel",
-      "path": "M 624 168 L 648 168 L 713 168 Q 720 161 727 168 L 737 168 Q 744 161 751 168 L 936 168 L 936 213"
+      "path": "M 624 192 L 648 192 L 689 192 Q 696 185 703 192 L 713 192 Q 720 185 727 192 L 816 192 L 816 165 L 936 165 L 936 168 L 936 213"
     },
     {
       "id": "edge:reg:top:r:port:top:state:state",
@@ -440,7 +440,7 @@
       "target": "port:top:state",
       "sourceHandle": "q",
       "targetHandle": "port:state",
-      "path": "M 624 168 L 648 168 L 713 168 Q 720 161 727 168 L 737 168 Q 744 161 751 168 L 816 168 L 816 144 L 840 144"
+      "path": "M 624 192 L 648 192 L 689 192 Q 696 185 703 192 L 713 192 Q 720 185 727 192 L 816 192 L 816 144 L 840 144"
     }
   ]
 }
