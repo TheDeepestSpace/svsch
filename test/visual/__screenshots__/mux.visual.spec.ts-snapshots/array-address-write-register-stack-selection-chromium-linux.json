@@ -161,7 +161,7 @@
       "target": "mux:array_address_write_register:storage_addr",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 192 48 L 312 48 L 312 69 L 480 69"
+      "path": "M 192 48 L 312 48 L 312 72 L 480 72"
     },
     {
       "id": "edge:port:array_address_write_register:clk:reg:array_address_write_register:storage:clk",

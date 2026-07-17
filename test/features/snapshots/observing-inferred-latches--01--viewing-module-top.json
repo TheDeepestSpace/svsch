@@ -160,7 +160,7 @@
       "target": "mux:top:q:en:q_latch_d",
       "sourceHandle": "port:en",
       "targetHandle": "sel",
-      "path": "M 240 48 L 264 48 L 528 48 L 528 93"
+      "path": "M 240 48 L 264 48 L 528 48 L 528 96"
     }
   ]
 }

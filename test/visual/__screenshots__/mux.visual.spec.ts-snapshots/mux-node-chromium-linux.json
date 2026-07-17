@@ -147,7 +147,7 @@
       "target": "mux:mux_only:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 96"
     }
   ]
 }

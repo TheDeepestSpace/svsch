@@ -26,38 +26,6 @@ export interface LibavoidRoutingResult {
   rejectedNets: Map<string, string>;
 }
 
-export function selectLibavoidRoutesAgainstFallbacks(
-  edges: DiagramEdge[],
-  candidates: Map<string, Array<{ x: number; y: number }>>,
-  fallbacks: Map<string, Array<{ x: number; y: number }>>
-): Map<string, Array<{ x: number; y: number }>> {
-  const selected = new Map(candidates);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const rejectedNets = new Set<string>();
-    for (const edge of edges) {
-      const route = selected.get(edge.id);
-      if (!route) continue;
-      const net = edgeNetKey(edge);
-      for (const other of edges) {
-        if (other.id === edge.id || edgeNetKey(other) === net) continue;
-        const otherRoute = selected.get(other.id) ?? fallbacks.get(other.id);
-        if (otherRoute && routesHaveCollinearOverlap(route, otherRoute)) {
-          rejectedNets.add(net);
-          break;
-        }
-      }
-    }
-    if (rejectedNets.size > 0) {
-      for (const edge of edges) {
-        if (rejectedNets.has(edgeNetKey(edge)) && selected.delete(edge.id)) changed = true;
-      }
-    }
-  }
-  return selected;
-}
-
 interface LibavoidNode {
   id: string;
   x: number;
@@ -346,12 +314,10 @@ function validateRoutes(
     }
 
     const normalized = normalizeRenderedRoute(item.edge, stitched, nodesById, resolveLead);
-    const rejection = validateNormalizedRoute(item, normalized, nodes, resolveLead);
+    const rejection = validateNormalizedRoute(normalized, nodes);
     if (rejection) rejectedNets.set(netKey, rejection);
     else candidates.set(item.edge.id, normalized);
   }
-
-  rejectOverlappingNets(edges, candidates, rejectedNets);
 
   const routes = new Map<string, Array<{ x: number; y: number }>>();
   for (const item of edges) {
@@ -360,60 +326,6 @@ function validateRoutes(
     if (route && !rejectedNets.has(netKey)) routes.set(item.edge.id, route);
   }
   return { routes, rejectedNets };
-}
-
-function rejectOverlappingNets(
-  edges: LibavoidEdge[],
-  routes: Map<string, Array<{ x: number; y: number }>>,
-  rejectedNets: Map<string, string>
-): void {
-  for (let leftIndex = 0; leftIndex < edges.length; leftIndex += 1) {
-    const left = edges[leftIndex];
-    const leftNet = edgeNetKey(left.edge);
-    const leftRoute = routes.get(left.edge.id);
-    if (!leftRoute) continue;
-    for (let rightIndex = leftIndex + 1; rightIndex < edges.length; rightIndex += 1) {
-      const right = edges[rightIndex];
-      const rightNet = edgeNetKey(right.edge);
-      const rightRoute = routes.get(right.edge.id);
-      if (!rightRoute || leftNet === rightNet || !routesHaveCollinearOverlap(leftRoute, rightRoute)) continue;
-      rejectedNets.set(leftNet, `overlaps net ${rightNet}`);
-      rejectedNets.set(rightNet, `overlaps net ${leftNet}`);
-    }
-  }
-}
-
-function routesHaveCollinearOverlap(
-  left: Array<{ x: number; y: number }>,
-  right: Array<{ x: number; y: number }>
-): boolean {
-  for (let leftIndex = 1; leftIndex < left.length; leftIndex += 1) {
-    for (let rightIndex = 1; rightIndex < right.length; rightIndex += 1) {
-      if (segmentsHaveCollinearOverlap(
-        left[leftIndex - 1], left[leftIndex], right[rightIndex - 1], right[rightIndex]
-      )) return true;
-    }
-  }
-  return false;
-}
-
-function segmentsHaveCollinearOverlap(
-  aStart: { x: number; y: number },
-  aEnd: { x: number; y: number },
-  bStart: { x: number; y: number },
-  bEnd: { x: number; y: number }
-): boolean {
-  const aHorizontal = aStart.y === aEnd.y;
-  const bHorizontal = bStart.y === bEnd.y;
-  if (aHorizontal !== bHorizontal) return false;
-  if (aHorizontal) {
-    if (aStart.y !== bStart.y) return false;
-    return Math.min(Math.max(aStart.x, aEnd.x), Math.max(bStart.x, bEnd.x))
-      - Math.max(Math.min(aStart.x, aEnd.x), Math.min(bStart.x, bEnd.x)) > 0.5;
-  }
-  if (aStart.x !== bStart.x) return false;
-  return Math.min(Math.max(aStart.y, aEnd.y), Math.max(bStart.y, bEnd.y))
-    - Math.max(Math.min(aStart.y, aEnd.y), Math.min(bStart.y, bEnd.y)) > 0.5;
 }
 
 function normalizeRenderedRoute(
@@ -442,10 +354,8 @@ function normalizeRenderedRoute(
 }
 
 function validateNormalizedRoute(
-  item: LibavoidEdge,
   route: Array<{ x: number; y: number }>,
-  nodes: PositionedNode[],
-  resolveLead: RoutingLeadResolver
+  nodes: PositionedNode[]
 ): string | undefined {
   if (!routeIsOrthogonal(route)) return 'non-orthogonal normalized route';
 
@@ -454,22 +364,6 @@ function validateNormalizedRoute(
     if (routeIntersectsRectInterior(route, bounds)) return `intersects node ${node.id}`;
   }
 
-  const nodesById = new Map(nodes.map((node) => [node.id, node]));
-  const sourcePort = item.edge.sourcePort ?? nodesById.get(item.edge.source)?.ports[0]?.id;
-  const targetPort = item.edge.targetPort ?? nodesById.get(item.edge.target)?.ports[0]?.id;
-  for (const node of nodes) {
-    for (const port of node.ports) {
-      if (
-        (node.id === item.edge.source && port.id === sourcePort)
-        || (node.id === item.edge.target && port.id === targetPort)
-      ) continue;
-      const handle = resolveLead(node.id, port.id, false);
-      const lead = resolveLead(node.id, port.id, true);
-      if (handle && lead && routeIntersectsSegment(route, handle.point, lead.point)) {
-        return `intersects port ${node.id}:${port.id}`;
-      }
-    }
-  }
   return undefined;
 }
 
@@ -513,44 +407,6 @@ function segmentIntersectsRectInterior(
       && Math.min(start.y, end.y) < bottom;
   }
   return true;
-}
-
-function routeIntersectsSegment(
-  points: Array<{ x: number; y: number }>,
-  segmentStart: { x: number; y: number },
-  segmentEnd: { x: number; y: number }
-): boolean {
-  return points.slice(1).some((point, index) => orthogonalSegmentsIntersect(
-    points[index], point, segmentStart, segmentEnd
-  ));
-}
-
-function orthogonalSegmentsIntersect(
-  aStart: { x: number; y: number },
-  aEnd: { x: number; y: number },
-  bStart: { x: number; y: number },
-  bEnd: { x: number; y: number }
-): boolean {
-  const aHorizontal = aStart.y === aEnd.y;
-  const bHorizontal = bStart.y === bEnd.y;
-  if (aHorizontal && bHorizontal) {
-    return aStart.y === bStart.y
-      && Math.max(Math.min(aStart.x, aEnd.x), Math.min(bStart.x, bEnd.x))
-        <= Math.min(Math.max(aStart.x, aEnd.x), Math.max(bStart.x, bEnd.x));
-  }
-  if (!aHorizontal && !bHorizontal) {
-    return aStart.x === bStart.x
-      && Math.max(Math.min(aStart.y, aEnd.y), Math.min(bStart.y, bEnd.y))
-        <= Math.min(Math.max(aStart.y, aEnd.y), Math.max(bStart.y, bEnd.y));
-  }
-  const horizontalStart = aHorizontal ? aStart : bStart;
-  const horizontalEnd = aHorizontal ? aEnd : bEnd;
-  const verticalStart = aHorizontal ? bStart : aStart;
-  const verticalEnd = aHorizontal ? bEnd : aEnd;
-  return verticalStart.x >= Math.min(horizontalStart.x, horizontalEnd.x)
-    && verticalStart.x <= Math.max(horizontalStart.x, horizontalEnd.x)
-    && horizontalStart.y >= Math.min(verticalStart.y, verticalEnd.y)
-    && horizontalStart.y <= Math.max(verticalStart.y, verticalEnd.y);
 }
 
 function fanoutJunctionPosition(node: LibavoidNode, port: LibavoidNode['ports'][number]): { x: number; y: number } {

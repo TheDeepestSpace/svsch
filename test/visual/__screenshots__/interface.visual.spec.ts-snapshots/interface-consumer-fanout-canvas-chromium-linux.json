@@ -212,7 +212,7 @@
       "target": "instance:interface_consumer_fanout:u_sink1",
       "sourceHandle": "out:consumer",
       "targetHandle": "port:bus",
-      "path": "M 672 192 L 696 192 L 720 192 L 720 312 L 864 312 L 888 312"
+      "path": "M 672 192 L 696 192 L 864 192 L 864 312 L 888 312"
     },
     {
       "id": "edge:interface:interface_consumer_fanout:link:instance:interface_consumer_fanout:u_sink2:link",
@@ -220,7 +220,7 @@
       "target": "instance:interface_consumer_fanout:u_sink2",
       "sourceHandle": "out:consumer",
       "targetHandle": "port:bus",
-      "path": "M 672 192 L 696 192 L 720 192 L 720 72 L 864 72 L 888 72"
+      "path": "M 672 192 L 696 192 L 864 192 L 864 72 L 888 72"
     },
     {
       "id": "edge:port:interface_consumer_fanout:clk:interface:interface_consumer_fanout:link:clk",

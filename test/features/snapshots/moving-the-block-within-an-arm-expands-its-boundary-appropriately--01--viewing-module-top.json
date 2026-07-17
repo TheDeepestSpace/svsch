@@ -129,7 +129,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 432 L 648 432 L 720 432 L 720 192 L 888 192 L 912 192",
+      "path": "M 624 432 L 648 432 L 768 432 L 768 192 L 888 192 L 912 192",
       "inactive": true
     },
     {

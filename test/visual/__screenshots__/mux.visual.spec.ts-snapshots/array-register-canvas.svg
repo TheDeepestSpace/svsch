@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1824" height="636" viewBox="0 0 1824 636" class="svsch-diagram" role="img" aria-label="array_register diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1728" height="516" viewBox="0 0 1728 516" class="svsch-diagram" role="img" aria-label="array_register diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3570,9 +3570,9 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1100 332 L 1121 332" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1104 336 L 1122 336" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1108 340 L 1123 340" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1645 388 L 1756 388 L 1756 580 L 196 580 L 196 412 L 379 412" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1638 384 L 1752 384 L 1752 576 L 192 576 L 192 408 L 378 408" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1631 380 L 1748 380 L 1748 572 L 188 572 L 188 404 L 377 404" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1645 388 L 1660 388 L 1660 460 L 652 460 L 652 340 L 364 340 L 364 412 L 379 412" />
+<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1638 384 L 1656 384 L 1656 456 L 648 456 L 648 336 L 360 336 L 360 408 L 378 408" />
+<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1631 380 L 1652 380 L 1652 452 L 644 452 L 644 332 L 356 332 L 356 404 L 377 404" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1285 340 L 1396 340 L 1396 388 L 1483 388" />
 <path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1278 336 L 1392 336 L 1392 384 L 1482 384" />
 <path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1271 332 L 1388 332 L 1388 380 L 1481 380" /></g>
@@ -3587,15 +3587,14 @@ path.port-skin-body.port-skin-harness {
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 1560 48 L 1560 312" />
+<path class="svsch-edge" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 720 48 L 720 192 L 1560 192 L 1560 312" />
 <path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" style="stroke: url(#svsch-stack-fanout-gradient-3ep2y1)" d="M 1556 308 L 1564 316" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1556 308 L 1556 353" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1560 312 L 1560 354" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1564 316 L 1564 355" />
-<circle class="svsch-edge-junction" cx="816" cy="48" r="4.75" data-junction-id="port:array_register:address:port:address:816:48" /></g>
+<circle class="svsch-edge-junction" cx="720" cy="48" r="4.75" data-junction-id="port:array_register:address:port:address:720:48" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address"><path class="svsch-edge" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 552 48 L 816 48 L 816 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk"><path class="svsch-edge-jump-halo" d="M 180 432 Q 192 420 204 432" style="stroke-width: 12" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-jump-index="0" />
-<defs>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk"><defs>
 <linearGradient id="svsch-stack-fanout-gradient-1noqwtz" gradientUnits="userSpaceOnUse" x1="356" y1="428" x2="364" y2="436">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
@@ -3626,11 +3625,12 @@ path.port-skin-body.port-skin-harness {
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 528 312 L 624 312 L 624 384 L 744 384" />
+<path class="svsch-edge" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 528 312 L 648 312 L 648 384 L 744 384" />
 <path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" style="stroke: url(#svsch-stack-fanout-gradient-111mxnz)" d="M 740 380 L 748 388" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 740 380 L 761 380" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 744 384 L 762 384" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 748 388 L 763 388" /></g>
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 748 388 L 763 388" />
+<path class="svsch-edge-overlap-hint" d="M 648 340 L 648 380" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-overlap-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data-overlap-2-edge:mux:array_register:M_addr:reg:array_register:M:M_next-3" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en"><defs>
 <linearGradient id="svsch-stack-fanout-gradient-19h00vh" gradientUnits="userSpaceOnUse" x1="812" y1="308" x2="820" y2="316">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
@@ -3643,23 +3643,27 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 812 308 L 812 353" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 816 312 L 816 354" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 820 316 L 820 355" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 580 412 L 580 460 L 1468 460 L 1468 412 L 1483 412" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 576 408 L 576 456 L 1464 456 L 1464 408 L 1482 408" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 572 404 L 572 452 L 1460 452 L 1460 404 L 1481 404" />
-<g class="svsch-edge-junction-stacked" data-junction-id="reg:array_register:M:q:576:408">
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="572" cy="404" r="2.15" style="opacity: 1" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="576" cy="408" r="2.15" style="opacity: 0.75" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="580" cy="412" r="2.15" style="opacity: 0.5" />
-</g>
-<g class="svsch-edge-junction-stacked" data-junction-id="reg:array_register:M:q:624:408">
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="620" cy="404" r="2.15" style="opacity: 1" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="624" cy="408" r="2.15" style="opacity: 0.75" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="628" cy="412" r="2.15" style="opacity: 0.5" />
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M"><path class="svsch-edge-jump-halo" d="M 636 412 Q 648 400 660 412" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-jump-index="0" />
+<path class="svsch-edge-jump-halo" d="M 636 408 Q 648 396 660 408" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-jump-index="1" />
+<path class="svsch-edge-jump-halo" d="M 636 404 Q 648 392 660 404" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-jump-index="2" />
+<path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 636 412 Q 648 400 660 412 L 724 412 L 724 460 L 1180 460 L 1180 412 L 1483 412" />
+<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 636 408 Q 648 396 660 408 L 720 408 L 720 456 L 1176 456 L 1176 408 L 1482 408" />
+<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 636 404 Q 648 392 660 404 L 716 404 L 716 452 L 1172 452 L 1172 404 L 1481 404" />
+<path class="svsch-edge-overlap-hint" d="M 724 456 L 1172 456" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-overlap-id="edge:reg:array_register:M:mux:array_register:M_addr:M-overlap-3-edge:mux:array_register:M_addr:reg:array_register:M:M_next-2" />
+<g class="svsch-edge-junction-stacked" data-junction-id="reg:array_register:M:q:720:408">
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="716" cy="404" r="2.15" style="opacity: 1" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="720" cy="408" r="2.15" style="opacity: 0.75" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="724" cy="412" r="2.15" style="opacity: 0.5" />
 </g></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 763 412" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 762 408" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 761 404" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M"><path class="svsch-edge-jump-halo" d="M 624 271 Q 631 264 624 257" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="0" />
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M"><path class="svsch-edge-jump-halo" d="M 636 412 Q 648 400 660 412" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-jump-index="0" />
+<path class="svsch-edge-jump-halo" d="M 636 408 Q 648 396 660 408" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-jump-index="1" />
+<path class="svsch-edge-jump-halo" d="M 636 404 Q 648 392 660 404" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-jump-index="2" />
+<path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 636 412 Q 648 400 660 412 L 763 412" />
+<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 636 408 Q 648 396 660 408 L 762 408" />
+<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 636 404 Q 648 392 660 404 L 761 404" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M"><path class="svsch-edge-jump-halo" d="M 636 408 Q 648 396 660 408" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="0" />
+<path class="svsch-edge-jump-halo" d="M 720 391 Q 727 384 720 377" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="1" />
+<path class="svsch-edge-jump-halo" d="M 720 319 Q 727 312 720 305" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="2" />
 <defs>
 <linearGradient id="svsch-stack-converge-gradient-back-5mree4" gradientUnits="userSpaceOnUse" x1="541" y1="412" x2="744" y2="124">
 <stop offset="0%" class="svsch-stack-gradient-back-stop" />
@@ -3677,10 +3681,10 @@ path.port-skin-body.port-skin-harness {
 <stop offset="100%" class="svsch-stack-gradient-regular-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-back-5mree4)" d="M 541 412 L 628 412 L 628 124 L 744 124" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-middle-5mree4)" d="M 534 408 L 624 408 L 624 120 L 744 120" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-front-5mree4)" d="M 527 404 L 620 404 L 620 116 L 744 116" />
-<path class="svsch-edge-overlap-hint" d="M 624 316 L 624 380" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-overlap-id="edge:reg:array_register:M:mux:array_register:M_read_address:M-overlap-2-edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data-2" /></g>
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-back-5mree4)" d="M 541 412 L 724 412 L 724 124 L 744 124" />
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-middle-5mree4)" d="M 534 408 L 720 408 L 720 120 L 744 120" />
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-front-5mree4)" d="M 527 404 L 716 404 L 716 116 L 744 116" />
+<path class="svsch-edge-overlap-hint" d="M 720 124 L 720 188" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-overlap-id="edge:reg:array_register:M:mux:array_register:M_read_address:M-overlap-2-edge:port:array_register:address:mux:array_register:M_addr:address-2" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:array_register:M_read_address" data-node-kind="mux" transform="translate(744 72)">

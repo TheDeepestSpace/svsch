@@ -4,7 +4,6 @@ import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DiagramEdge, PositionedNode } from '../../src/ir/types';
 import {
   routeDiagramWithLibavoid,
-  selectLibavoidRoutesAgainstFallbacks,
   setLibavoidRuntimeForTests,
   type RoutingLeadPoint
 } from '../../src/layout/libavoidRouter';
@@ -84,22 +83,6 @@ describe('libavoid production router', () => {
     expect(route.length).toBeGreaterThanOrEqual(4);
     expect(route[1].y).toBe(route[0].y);
     expect(route.at(-2)!.y).toBe(route.at(-1)!.y);
-  });
-
-  it('falls back when a candidate overlaps a net already using fallback routing', () => {
-    const edges: DiagramEdge[] = [
-      { id: 'candidate', source: 'a', sourcePort: 'out', target: 'b', targetPort: 'in' },
-      { id: 'fallback', source: 'c', sourcePort: 'out', target: 'd', targetPort: 'in' }
-    ];
-    const candidates = new Map([
-      ['candidate', [{ x: 0, y: 24 }, { x: 96, y: 24 }]]
-    ]);
-    const fallbacks = new Map([
-      ['candidate', [{ x: 0, y: 48 }, { x: 96, y: 48 }]],
-      ['fallback', [{ x: 24, y: 24 }, { x: 72, y: 24 }]]
-    ]);
-
-    expect(selectLibavoidRoutesAgainstFallbacks(edges, candidates, fallbacks).size).toBe(0);
   });
 });
 

@@ -218,7 +218,7 @@
       "target": "select:var_bit_select:bus[sel_wide * 8+:8]",
       "sourceHandle": "out:bus_sel_wide_8_:8__sel",
       "targetHandle": "port:sel",
-      "path": "M 600 144 L 624 144 L 864 144 L 864 189"
+      "path": "M 600 144 L 624 144 L 864 144 L 864 192"
     },
     {
       "id": "edge:literal:var_bit_select:8:8:select:var_bit_select:bus_sel_wide_8_:8_:8",
@@ -226,7 +226,7 @@
       "target": "select:var_bit_select:bus[sel_wide * 8+:8]",
       "sourceHandle": "port:8",
       "targetHandle": "port:width",
-      "path": "M 600 48 L 624 48 L 912 48 L 912 144 L 912 189"
+      "path": "M 600 48 L 624 48 L 912 48 L 912 144 L 912 192"
     },
     {
       "id": "edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_:bus",
@@ -234,7 +234,7 @@
       "target": "select:var_bit_select:bus[sel]",
       "sourceHandle": "port:bus",
       "targetHandle": "port:in",
-      "path": "M 600 216 L 624 216 L 672 216 L 672 360 L 816 360 L 840 360"
+      "path": "M 600 216 L 624 216 L 792 216 L 792 360 L 816 360 L 840 360"
     },
     {
       "id": "edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_wide_8_:8_:bus",
@@ -258,7 +258,7 @@
       "target": "select:var_bit_select:bus[sel]",
       "sourceHandle": "port:sel",
       "targetHandle": "port:sel",
-      "path": "M 600 264 L 624 264 L 665 264 Q 672 257 679 264 L 720 264 L 720 285 L 888 285 L 888 288 L 888 333"
+      "path": "M 600 264 L 624 264 L 720 264 L 720 288 L 785 288 Q 792 281 799 288 L 888 288 L 888 336"
     },
     {
       "id": "edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out",
