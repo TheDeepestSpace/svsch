@@ -3383,6 +3383,11 @@ text {
   fill: none;
 }
 
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
+}
+
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
 .register-clock-glyph path {
   fill: none;
@@ -3585,7 +3590,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:select:var_bit_select:bus_sel_wide_8_:8_:bus_sel_wide_8_:8__sel"><path class="svsch-edge" data-edge-id="edge:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:select:var_bit_select:bus_sel_wide_8_:8_:bus_sel_wide_8_:8__sel" data-net-key="comb:var_bit_select:bus[sel_wide * 8+:8]_sel:expr:out:bus_sel_wide_8_:8__sel" d="M 600 120 L 624 120 L 864 120 L 864 144 L 864 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:select:var_bit_select:bus_sel_wide_8_:8_:bus_sel_wide_8_:8__sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:select:var_bit_select:bus_sel_wide_8_:8_:bus_sel_wide_8_:8__sel" data-net-key="comb:var_bit_select:bus[sel_wide * 8+:8]_sel:expr:out:bus_sel_wide_8_:8__sel" d="M 600 120 L 624 120 L 864 120 L 864 144 L 864 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:var_bit_select:8:8:select:var_bit_select:bus_sel_wide_8_:8_:8"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:var_bit_select:8:8:select:var_bit_select:bus_sel_wide_8_:8_:8" data-net-key="literal:var_bit_select:8:8" d="M 600 48 L 624 48 L 912 48 L 912 144 L 912 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select:bus:select:var_bit_select:bus_sel_:bus" data-net-key="port:var_bit_select:bus:port:bus" d="M 600 216 L 624 216 L 648 216 L 648 336 L 816 336 L 840 336" />
 <circle class="svsch-edge-junction" cx="648" cy="216" r="4.75" data-junction-id="port:var_bit_select:bus:port:bus:648:216" /></g>

@@ -61,6 +61,33 @@ test.describe('Bus Composition Visual Rendering', () => {
     await expectGraphAndScreenshot(page, 'array-stack-composition-literal-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
+  test('renders an always_comb array assignment pattern as stacked array composition (single-bit)', async ({ page }) => {
+    const view = await openFixture(page, 'array_stack_composition_literal_1bit.sv', 'auto');
+    const arrayComp = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+
+    expect(arrayComp).toBeDefined();
+    expect(arrayComp?.ports.filter(port => port.direction === 'input').map(port => [port.label, port.connectedSignal, port.width])).toEqual([
+      ['[3]', "1'b1", '[0:0]'],
+      ['[2]', "1'b0", '[0:0]'],
+      ['[1]', "1'b1", '[0:0]'],
+      ['[0]', "1'b0", '[0:0]']
+    ]);
+    expect(view.edges.find(edge => edge.source === arrayComp?.id && edge.target === 'port:array_stack_composition_literal_1bit:arr')?.isStacked).toBe(true);
+    expect(view.edges.some(edge => edge.target === arrayComp?.id && edge.isStacked)).toBe(false);
+
+    const busCompNode = page.locator('.hdl-bus-array-composition');
+    await expect(busCompNode).toBeVisible();
+    await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(4);
+
+    // Single-bit elements: neither the taps nor the stub feeding the output port
+    // should pick up the thick-wire styling reserved for multi-bit connections.
+    await expect(busCompNode.locator('.svsch-bus-tap-line-thick')).toHaveCount(0);
+    await expect(page.locator('.react-flow__edge[data-id*="array_stack_composition_literal_1bit:arr"] .svsch-edge-thick')).toHaveCount(0);
+    await expect(page.locator('[data-node-id="port:array_stack_composition_literal_1bit:arr"] .svsch-array-stack-lead-thick')).toHaveCount(0);
+
+    await expectGraphAndScreenshot(page, 'array-stack-composition-literal-1bit-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('renders per-element array assignments as stacked array composition', async ({ page }) => {
     const view = await openFixture(page, 'array_stack_composition_elements.sv', 'auto');
     const arrayComp = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
@@ -86,6 +113,35 @@ test.describe('Bus Composition Visual Rendering', () => {
     await expectGraphAndScreenshot(page, 'array-stack-composition-elements-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
+  test('renders per-element array assignments as stacked array composition (single-bit)', async ({ page }) => {
+    const view = await openFixture(page, 'array_stack_composition_elements_1bit.sv', 'auto');
+    const arrayComp = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+    const inverter = view.nodes.find(node => node.kind === 'inverter');
+
+    expect(arrayComp).toBeDefined();
+    expect(inverter).toBeDefined();
+    expect(arrayComp?.ports.filter(port => port.direction === 'input').map(port => [port.label, port.width])).toEqual([
+      ['[3]', '[0:0]'],
+      ['[2]', '[0:0]'],
+      ['[1]', '[0:0]'],
+      ['[0]', '[0:0]']
+    ]);
+    expect(arrayComp?.ports.find(port => port.label === '[2]')?.connectedSignal).toBe('seed');
+    expect(arrayComp?.ports.find(port => port.label === '[1]')?.connectedSignal).toBe(inverter?.ports.find(port => port.direction === 'output')?.connectedSignal);
+    expect(view.edges.find(edge => edge.source === arrayComp?.id && edge.target === 'port:array_stack_composition_elements_1bit:arr')?.isStacked).toBe(true);
+    expect(view.edges.some(edge => edge.target === arrayComp?.id && edge.source === 'port:array_stack_composition_elements_1bit:seed' && edge.isStacked)).toBe(false);
+
+    const busCompNode = page.locator('.hdl-bus-array-composition');
+    await expect(busCompNode).toBeVisible();
+    await expect(busCompNode.locator('.svsch-bus-tap')).toHaveCount(4);
+
+    await expect(busCompNode.locator('.svsch-bus-tap-line-thick')).toHaveCount(0);
+    await expect(page.locator('.react-flow__edge[data-id*="array_stack_composition_elements_1bit:arr"] .svsch-edge-thick')).toHaveCount(0);
+    await expect(page.locator('[data-node-id="port:array_stack_composition_elements_1bit:arr"] .svsch-array-stack-lead-thick')).toHaveCount(0);
+
+    await expectGraphAndScreenshot(page, 'array-stack-composition-elements-1bit-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('renders array element accesses as stacked array breakouts', async ({ page }) => {
     // Force cpp backend for array breakouts since uhdm currently misses the aggregateKind tag
     const originalBackend = process.env.SVSCH_BACKEND;
@@ -101,6 +157,39 @@ test.describe('Bus Composition Visual Rendering', () => {
       await expect(busBreakoutNode.locator('.svsch-bus-tap')).toHaveCount(4);
 
       await expectGraphAndScreenshot(page, 'array-stack-breakout-canvas.png', { clip: await paddedGraphClip(page) });
+    } finally {
+      if (originalBackend === undefined) {
+        delete process.env.SVSCH_BACKEND;
+      } else {
+        process.env.SVSCH_BACKEND = originalBackend;
+      }
+    }
+  });
+
+  test('renders array element accesses as stacked array breakouts (single-bit)', async ({ page }) => {
+    // Force cpp backend for array breakouts since uhdm currently misses the aggregateKind tag
+    const originalBackend = process.env.SVSCH_BACKEND;
+    process.env.SVSCH_BACKEND = 'cpp';
+    try {
+      const view = await openFixture(page, 'array_stack_breakout_1bit.sv', 'auto');
+      const arrayBreakout = view.nodes.find(node => node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+
+      expect(arrayBreakout).toBeDefined();
+      // The aggregate "arr" input resolves as a genuine scalar (undefined width,
+      // same as omitting a width suffix) now that the backend no longer reports
+      // a spurious "[0:0]" for procedurally-resolved single-bit signals; the
+      // per-element outputs still carry their own explicit [0:0] bit-select range.
+      expect(arrayBreakout?.ports.map(port => port.width)).toEqual([undefined, '[0:0]', '[0:0]', '[0:0]', '[0:0]']);
+
+      const busBreakoutNode = page.locator('.hdl-bus-array-breakout');
+      await expect(busBreakoutNode).toBeVisible();
+      await expect(busBreakoutNode.locator('.svsch-bus-tap')).toHaveCount(4);
+
+      await expect(busBreakoutNode.locator('.svsch-bus-tap-line-thick')).toHaveCount(0);
+      await expect(page.locator('.react-flow__edge[data-id*="array_stack_breakout_1bit:arr"] .svsch-edge-thick')).toHaveCount(0);
+      await expect(page.locator('[data-node-id="port:array_stack_breakout_1bit:arr"] .svsch-array-stack-lead-thick')).toHaveCount(0);
+
+      await expectGraphAndScreenshot(page, 'array-stack-breakout-1bit-canvas.png', { clip: await paddedGraphClip(page) });
     } finally {
       if (originalBackend === undefined) {
         delete process.env.SVSCH_BACKEND;

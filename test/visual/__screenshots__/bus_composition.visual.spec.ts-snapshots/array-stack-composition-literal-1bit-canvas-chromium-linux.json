@@ -1,0 +1,146 @@
+{
+  "nodes": [
+    {
+      "id": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 24
+      },
+      "width": 144,
+      "height": 221,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:arr",
+            "name": "arr",
+            "direction": "output"
+          },
+          {
+            "id": "in:_3_",
+            "name": "[3]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_2_",
+            "name": "[2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1_",
+            "name": "[1]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_0_",
+            "name": "[0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:array_stack_composition_literal_1bit:1_b0:1_b0",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:1_b0",
+            "name": "1'b0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:array_stack_composition_literal_1bit:1_b1:1_b1",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:1_b1",
+            "name": "1'b1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:array_stack_composition_literal_1bit:arr",
+      "type": "hdl",
+      "position": {
+        "x": 648,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:arr",
+            "name": "arr",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus_comp:array_stack_composition_literal_1bit:arr:port:array_stack_composition_literal_1bit:arr:arr",
+      "source": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "target": "port:array_stack_composition_literal_1bit:arr",
+      "sourceHandle": "out:arr",
+      "targetHandle": "port:arr",
+      "path": "M 438 220 L 643 220"
+    },
+    {
+      "id": "edge:literal:array_stack_composition_literal_1bit:1_b0:1_b0:bus_comp:array_stack_composition_literal_1bit:arr:1_b0:port:1_b0:in:_0_",
+      "source": "literal:array_stack_composition_literal_1bit:1_b0:1_b0",
+      "target": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "sourceHandle": "port:1_b0",
+      "targetHandle": "in:_0_",
+      "path": "M 72 192 L 96 192 L 264 192 L 288 192"
+    },
+    {
+      "id": "edge:literal:array_stack_composition_literal_1bit:1_b0:1_b0:bus_comp:array_stack_composition_literal_1bit:arr:1_b0:port:1_b0:in:_2_",
+      "source": "literal:array_stack_composition_literal_1bit:1_b0:1_b0",
+      "target": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "sourceHandle": "port:1_b0",
+      "targetHandle": "in:_2_",
+      "path": "M 72 192 L 96 192 L 120 192 L 120 96 L 264 96 L 288 96"
+    },
+    {
+      "id": "edge:literal:array_stack_composition_literal_1bit:1_b1:1_b1:bus_comp:array_stack_composition_literal_1bit:arr:1_b1:port:1_b1:in:_1_",
+      "source": "literal:array_stack_composition_literal_1bit:1_b1:1_b1",
+      "target": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "sourceHandle": "port:1_b1",
+      "targetHandle": "in:_1_",
+      "path": "M 72 144 L 96 144 L 113 144 Q 120 137 127 144 L 264 144 L 288 144"
+    },
+    {
+      "id": "edge:literal:array_stack_composition_literal_1bit:1_b1:1_b1:bus_comp:array_stack_composition_literal_1bit:arr:1_b1:port:1_b1:in:_3_",
+      "source": "literal:array_stack_composition_literal_1bit:1_b1:1_b1",
+      "target": "bus_comp:array_stack_composition_literal_1bit:arr",
+      "sourceHandle": "port:1_b1",
+      "targetHandle": "in:_3_",
+      "path": "M 72 144 L 96 144 L 113 144 Q 120 137 127 144 L 144 144 L 144 103 Q 151 96 144 89 L 144 48 L 264 48 L 288 48"
+    }
+  ]
+}

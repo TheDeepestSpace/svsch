@@ -9,7 +9,7 @@ import {
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import { selectPortLabel } from '../../../diagram/selectLabels';
 import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
@@ -109,7 +109,7 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className="svsch-mux-select-lead" x1={Math.round(portX + contentShiftX)} y1={Math.round(g + contentShiftY)} x2={Math.round(portX + contentShiftX)} y2={Math.round(skinEdgeY + contentShiftY)} />
+              <line className={`svsch-mux-select-lead${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`} x1={Math.round(portX + contentShiftX)} y1={Math.round(g + contentShiftY)} x2={Math.round(portX + contentShiftX)} y2={Math.round(skinEdgeY + contentShiftY)} />
             )}
             <text
               className="svsch-port-label"

@@ -3383,6 +3383,11 @@ text {
   fill: none;
 }
 
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
+}
+
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
 .register-clock-glyph path {
   fill: none;
@@ -3590,7 +3595,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:top:bus_sel_8_:8__sel:expr:select:top:bus_sel_8_:8_:bus_sel_8_:8__sel"><path class="svsch-edge" data-edge-id="edge:comb:top:bus_sel_8_:8__sel:expr:select:top:bus_sel_8_:8_:bus_sel_8_:8__sel" data-net-key="comb:top:bus[sel * 8+:8]_sel:expr:out:bus_sel_8_:8__sel" d="M 552 120 L 576 120 L 816 120 L 816 144 L 816 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:comb:top:bus_sel_8_:8__sel:expr:select:top:bus_sel_8_:8_:bus_sel_8_:8__sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:comb:top:bus_sel_8_:8__sel:expr:select:top:bus_sel_8_:8_:bus_sel_8_:8__sel" data-net-key="comb:top:bus[sel * 8+:8]_sel:expr:out:bus_sel_8_:8__sel" d="M 552 120 L 576 120 L 816 120 L 816 144 L 816 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:top:8:8:select:top:bus_sel_8_:8_:8"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:top:8:8:select:top:bus_sel_8_:8_:8" data-net-key="literal:top:8:8" d="M 552 48 L 576 48 L 864 48 L 864 144 L 864 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus" data-net-key="port:top:bus:port:bus" d="M 552 216 L 576 216 L 744 216 L 768 216" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel" data-net-key="port:top:sel:port:sel" d="M 144 120 L 168 120 L 336 120 L 360 120" /></g>

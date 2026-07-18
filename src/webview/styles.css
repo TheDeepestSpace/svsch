@@ -2741,6 +2741,11 @@ text {
   fill: none;
 }
 
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
+}
+
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
 .register-clock-glyph path {
   fill: none;
