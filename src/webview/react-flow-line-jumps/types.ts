@@ -15,6 +15,7 @@ export interface PolylineEdgeGeometry {
   targetHandlePoint?: Point;
   isStruct?: boolean;
   isInterface?: boolean;
+  isThick?: boolean;
   isStacked?: boolean;
 }
 

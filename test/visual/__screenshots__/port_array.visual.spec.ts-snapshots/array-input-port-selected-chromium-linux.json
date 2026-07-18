@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 72,
-        "y": 108
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -98,7 +98,7 @@
       "target": "reg:array_port_register:storage",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 120 L 240 120 L 240 96 L 384 96"
+      "path": "M 192 144 L 240 144 L 240 96 L 384 96"
     },
     {
       "id": "edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data",
@@ -106,7 +106,7 @@
       "target": "reg:array_port_register:storage",
       "sourceHandle": "port:in_data",
       "targetHandle": "d",
-      "path": "M 205 76 L 403 76"
+      "path": "M 211.5 78 L 400.5 78"
     },
     {
       "id": "edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data",
@@ -114,7 +114,7 @@
       "target": "port:array_port_register:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 613 76 L 811 76"
+      "path": "M 619.5 78 L 808.5 78"
     }
   ]
 }

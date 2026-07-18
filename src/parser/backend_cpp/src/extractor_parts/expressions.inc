@@ -679,7 +679,12 @@ std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, co
         int inferred_size = expressionBitSize(expr);
         if (inferred_size > 1) {
             width = "[" + std::to_string(inferred_size - 1) + ":0]";
-        } else {
+        } else if (vpi_get(vpiOpType, expr) != vpiNotOp) {
+            // Bitwise negation (~) preserves its operand's width, so inheriting
+            // input_width here is a reasonable last resort. Logical NOT (!)
+            // always reduces to a single bit regardless of operand width — for
+            // that case leave width empty (scalar) rather than wrongly
+            // inheriting a wide operand's width.
             width = input_width;
         }
     }

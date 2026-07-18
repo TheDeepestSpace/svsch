@@ -1,11 +1,11 @@
 {
   "nodes": [
     {
-      "id": "g1_h_int_src",
+      "id": "a_h2_int_src",
       "type": "hdl",
       "position": {
-        "x": -144,
-        "y": 300
+        "x": 960,
+        "y": 396
       },
       "width": 120,
       "height": 24,
@@ -21,11 +21,11 @@
       }
     },
     {
-      "id": "g1_h_int_tgt",
+      "id": "a_h2_int_tgt",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 300
+        "x": 1800,
+        "y": 396
       },
       "width": 120,
       "height": 24,
@@ -41,10 +41,50 @@
       }
     },
     {
-      "id": "g1_h_reg_src",
+      "id": "a_h2_mbit_src",
       "type": "hdl",
       "position": {
-        "x": -144,
+        "x": 960,
+        "y": 204
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_h2_mbit_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1800,
+        "y": 204
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_h2_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": 960,
         "y": 108
       },
       "width": 120,
@@ -61,10 +101,10 @@
       }
     },
     {
-      "id": "g1_h_reg_tgt",
+      "id": "a_h2_reg_tgt",
       "type": "hdl",
       "position": {
-        "x": 504,
+        "x": 1800,
         "y": 108
       },
       "width": 120,
@@ -81,11 +121,11 @@
       }
     },
     {
-      "id": "g1_h_stk_src",
+      "id": "a_h2_stk_src",
       "type": "hdl",
       "position": {
-        "x": -144,
-        "y": 396
+        "x": 960,
+        "y": 492
       },
       "width": 120,
       "height": 24,
@@ -101,11 +141,11 @@
       }
     },
     {
-      "id": "g1_h_stk_tgt",
+      "id": "a_h2_stk_tgt",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 396
+        "x": 1800,
+        "y": 492
       },
       "width": 120,
       "height": 24,
@@ -121,11 +161,11 @@
       }
     },
     {
-      "id": "g1_h_str_src",
+      "id": "a_h2_str_src",
       "type": "hdl",
       "position": {
-        "x": -144,
-        "y": 204
+        "x": 960,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -141,11 +181,11 @@
       }
     },
     {
-      "id": "g1_h_str_tgt",
+      "id": "a_h2_str_tgt",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 204
+        "x": 1800,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -161,11 +201,51 @@
       }
     },
     {
-      "id": "g1_v_int_src",
+      "id": "a_h2_wstk_src",
       "type": "hdl",
       "position": {
-        "x": 96,
-        "y": -108
+        "x": 960,
+        "y": 588
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_h2_wstk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1800,
+        "y": 588
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_v1_int_src",
+      "type": "hdl",
+      "position": {
+        "x": 192,
+        "y": -60
       },
       "width": 120,
       "height": 24,
@@ -181,11 +261,11 @@
       }
     },
     {
-      "id": "g1_v_int_tgt",
+      "id": "a_v1_int_tgt",
       "type": "hdl",
       "position": {
-        "x": 312,
-        "y": 516
+        "x": 408,
+        "y": 756
       },
       "width": 120,
       "height": 24,
@@ -201,7 +281,47 @@
       }
     },
     {
-      "id": "g1_v_reg_src",
+      "id": "a_v1_mbit_src",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": -156
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_v1_mbit_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 216,
+        "y": 852
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_v1_reg_src",
       "type": "hdl",
       "position": {
         "x": -96,
@@ -221,11 +341,11 @@
       }
     },
     {
-      "id": "g1_v_reg_tgt",
+      "id": "a_v1_reg_tgt",
       "type": "hdl",
       "position": {
         "x": 120,
-        "y": 612
+        "y": 900
       },
       "width": 120,
       "height": 24,
@@ -241,11 +361,11 @@
       }
     },
     {
-      "id": "g1_v_stk_src",
+      "id": "a_v1_stk_src",
       "type": "hdl",
       "position": {
-        "x": 192,
-        "y": -60
+        "x": 288,
+        "y": -12
       },
       "width": 120,
       "height": 24,
@@ -261,11 +381,11 @@
       }
     },
     {
-      "id": "g1_v_stk_tgt",
+      "id": "a_v1_stk_tgt",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 468
+        "x": 504,
+        "y": 708
       },
       "width": 120,
       "height": 24,
@@ -281,11 +401,11 @@
       }
     },
     {
-      "id": "g1_v_str_src",
+      "id": "a_v1_str_src",
       "type": "hdl",
       "position": {
-        "x": 0,
-        "y": -156
+        "x": 96,
+        "y": -108
       },
       "width": 120,
       "height": 24,
@@ -301,11 +421,11 @@
       }
     },
     {
-      "id": "g1_v_str_tgt",
+      "id": "a_v1_str_tgt",
       "type": "hdl",
       "position": {
-        "x": 216,
-        "y": 564
+        "x": 312,
+        "y": 804
       },
       "width": 120,
       "height": 24,
@@ -321,11 +441,51 @@
       }
     },
     {
-      "id": "g2_h_int_src",
+      "id": "a_v1_wstk_src",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 300
+        "x": 360,
+        "y": 36
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a_v1_wstk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 660
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_h1_int_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
+        "y": 396
       },
       "width": 120,
       "height": 24,
@@ -341,11 +501,11 @@
       }
     },
     {
-      "id": "g2_h_int_tgt",
+      "id": "z_h1_int_tgt",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 300
+        "x": 696,
+        "y": 396
       },
       "width": 120,
       "height": 24,
@@ -361,10 +521,50 @@
       }
     },
     {
-      "id": "g2_h_reg_src",
+      "id": "z_h1_mbit_src",
       "type": "hdl",
       "position": {
-        "x": 672,
+        "x": -144,
+        "y": 204
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_h1_mbit_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 204
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_h1_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": -144,
         "y": 108
       },
       "width": 120,
@@ -381,10 +581,10 @@
       }
     },
     {
-      "id": "g2_h_reg_tgt",
+      "id": "z_h1_reg_tgt",
       "type": "hdl",
       "position": {
-        "x": 1200,
+        "x": 696,
         "y": 108
       },
       "width": 120,
@@ -401,11 +601,11 @@
       }
     },
     {
-      "id": "g2_h_stk_src",
+      "id": "z_h1_stk_src",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 396
+        "x": -144,
+        "y": 492
       },
       "width": 120,
       "height": 24,
@@ -421,11 +621,11 @@
       }
     },
     {
-      "id": "g2_h_stk_tgt",
+      "id": "z_h1_stk_tgt",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 396
+        "x": 696,
+        "y": 492
       },
       "width": 120,
       "height": 24,
@@ -441,11 +641,11 @@
       }
     },
     {
-      "id": "g2_h_str_src",
+      "id": "z_h1_str_src",
       "type": "hdl",
       "position": {
-        "x": 672,
-        "y": 204
+        "x": -144,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -461,11 +661,11 @@
       }
     },
     {
-      "id": "g2_h_str_tgt",
+      "id": "z_h1_str_tgt",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 204
+        "x": 696,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -481,11 +681,51 @@
       }
     },
     {
-      "id": "g2_v_int_src",
+      "id": "z_h1_wstk_src",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": -108
+        "x": -144,
+        "y": 588
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_h1_wstk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 588
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_v2_int_src",
+      "type": "hdl",
+      "position": {
+        "x": 1296,
+        "y": -60
       },
       "width": 120,
       "height": 24,
@@ -501,11 +741,11 @@
       }
     },
     {
-      "id": "g2_v_int_tgt",
+      "id": "z_v2_int_tgt",
       "type": "hdl",
       "position": {
-        "x": 1056,
-        "y": 516
+        "x": 1512,
+        "y": 756
       },
       "width": 120,
       "height": 24,
@@ -521,10 +761,50 @@
       }
     },
     {
-      "id": "g2_v_reg_src",
+      "id": "z_v2_mbit_src",
       "type": "hdl",
       "position": {
-        "x": 648,
+        "x": 1104,
+        "y": -156
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_v2_mbit_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1320,
+        "y": 852
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "mbit_tgt",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_v2_reg_src",
+      "type": "hdl",
+      "position": {
+        "x": 1008,
         "y": -204
       },
       "width": 120,
@@ -541,11 +821,11 @@
       }
     },
     {
-      "id": "g2_v_reg_tgt",
+      "id": "z_v2_reg_tgt",
       "type": "hdl",
       "position": {
-        "x": 864,
-        "y": 612
+        "x": 1224,
+        "y": 900
       },
       "width": 120,
       "height": 24,
@@ -561,11 +841,11 @@
       }
     },
     {
-      "id": "g2_v_stk_src",
+      "id": "z_v2_stk_src",
       "type": "hdl",
       "position": {
-        "x": 936,
-        "y": -60
+        "x": 1392,
+        "y": -12
       },
       "width": 120,
       "height": 24,
@@ -581,11 +861,11 @@
       }
     },
     {
-      "id": "g2_v_stk_tgt",
+      "id": "z_v2_stk_tgt",
       "type": "hdl",
       "position": {
-        "x": 1152,
-        "y": 468
+        "x": 1608,
+        "y": 708
       },
       "width": 120,
       "height": 24,
@@ -601,11 +881,11 @@
       }
     },
     {
-      "id": "g2_v_str_src",
+      "id": "z_v2_str_src",
       "type": "hdl",
       "position": {
-        "x": 744,
-        "y": -156
+        "x": 1200,
+        "y": -108
       },
       "width": 120,
       "height": 24,
@@ -621,11 +901,11 @@
       }
     },
     {
-      "id": "g2_v_str_tgt",
+      "id": "z_v2_str_tgt",
       "type": "hdl",
       "position": {
-        "x": 960,
-        "y": 564
+        "x": 1416,
+        "y": 804
       },
       "width": 120,
       "height": 24,
@@ -639,136 +919,240 @@
           }
         ]
       }
+    },
+    {
+      "id": "z_v2_wstk_src",
+      "type": "hdl",
+      "position": {
+        "x": 1464,
+        "y": 36
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_src",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "z_v2_wstk_tgt",
+      "type": "hdl",
+      "position": {
+        "x": 1704,
+        "y": 660
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "wstk_tgt",
+            "direction": "output"
+          }
+        ]
+      }
     }
   ],
   "edges": [
     {
       "id": "a_h2_int",
-      "source": "g2_h_int_src",
-      "target": "g2_h_int_tgt",
+      "source": "a_h2_int_src",
+      "target": "a_h2_int_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 792 312 L 816 312 L 1176 312 L 1200 312"
+      "path": "M 1080 408 L 1104 408 L 1776 408 L 1800 408"
+    },
+    {
+      "id": "a_h2_mbit",
+      "source": "a_h2_mbit_src",
+      "target": "a_h2_mbit_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 1128 216 L 1152 216 L 1776 216 L 1800 216"
     },
     {
       "id": "a_h2_reg",
-      "source": "g2_h_reg_src",
-      "target": "g2_h_reg_tgt",
+      "source": "a_h2_reg_src",
+      "target": "a_h2_reg_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 792 120 L 816 120 L 1176 120 L 1200 120"
+      "path": "M 1080 120 L 1104 120 L 1776 120 L 1800 120"
     },
     {
       "id": "a_h2_stk",
-      "source": "g2_h_stk_src",
-      "target": "g2_h_stk_tgt",
+      "source": "a_h2_stk_src",
+      "target": "a_h2_stk_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 805 412 L 1195 412"
+      "path": "M 1093 508 L 1795 508"
     },
     {
       "id": "a_h2_str",
-      "source": "g2_h_str_src",
-      "target": "g2_h_str_tgt",
+      "source": "a_h2_str_src",
+      "target": "a_h2_str_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 792 216 L 816 216 L 1176 216 L 1200 216"
+      "path": "M 1080 312 L 1104 312 L 1776 312 L 1800 312"
+    },
+    {
+      "id": "a_h2_wstk",
+      "source": "a_h2_wstk_src",
+      "target": "a_h2_wstk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 1147.5 606 L 1792.5 606"
     },
     {
       "id": "a_v1_int",
-      "source": "g1_v_int_src",
-      "target": "g1_v_int_tgt",
+      "source": "a_v1_int_src",
+      "target": "a_v1_int_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 216 -96 L 216 -96 L 264 -96 L 264 528 L 312 528 L 312 528"
+      "path": "M 312 -48 L 312 -48 L 360 -48 L 360 768 L 408 768 L 408 768"
+    },
+    {
+      "id": "a_v1_mbit",
+      "source": "a_v1_mbit_src",
+      "target": "a_v1_mbit_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 168 -144 L 168 -144 L 168 864 L 216 864 L 216 864"
     },
     {
       "id": "a_v1_reg",
-      "source": "g1_v_reg_src",
-      "target": "g1_v_reg_tgt",
+      "source": "a_v1_reg_src",
+      "target": "a_v1_reg_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 24 -192 L 24 -192 L 72 -192 L 72 624 L 120 624 L 120 624"
+      "path": "M 24 -192 L 24 -192 L 72 -192 L 72 912 L 120 912 L 120 912"
     },
     {
       "id": "a_v1_stk",
-      "source": "g1_v_stk_src",
-      "target": "g1_v_stk_tgt",
+      "source": "a_v1_stk_src",
+      "target": "a_v1_stk_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 325 -44 L 364 -44 L 364 484 L 403 484"
+      "path": "M 421 4 L 460 4 L 460 724 L 499 724"
     },
     {
       "id": "a_v1_str",
-      "source": "g1_v_str_src",
-      "target": "g1_v_str_tgt",
+      "source": "a_v1_str_src",
+      "target": "a_v1_str_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 120 -144 L 120 -144 L 168 -144 L 168 576 L 216 576 L 216 576"
+      "path": "M 216 -96 L 216 -96 L 264 -96 L 264 816 L 312 816 L 312 816"
+    },
+    {
+      "id": "a_v1_wstk",
+      "source": "a_v1_wstk_src",
+      "target": "a_v1_wstk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 547.5 54 L 558 54 L 558 678 L 592.5 678"
     },
     {
       "id": "z_h1_int",
-      "source": "g1_h_int_src",
-      "target": "g1_h_int_tgt",
+      "source": "z_h1_int_src",
+      "target": "z_h1_int_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M -24 312 L 0 312 L 60 312 Q 72 300 84 312 L 156 312 Q 168 300 180 312 L 252 312 Q 264 300 276 312 L 348 312 Q 360 300 372 312 L 480 312 L 504 312"
+      "path": "M -24 408 L 0 408 L 60 408 Q 72 396 84 408 L 156 408 Q 168 396 180 408 L 252 408 Q 264 396 276 408 L 348 408 Q 360 396 372 408 L 444 408 Q 456 396 468 408 L 540 408 Q 552 396 564 408 L 672 408 L 696 408"
+    },
+    {
+      "id": "z_h1_mbit",
+      "source": "z_h1_mbit_src",
+      "target": "z_h1_mbit_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 24 216 L 48 216 L 63 216 Q 72 207 81 216 L 159 216 Q 168 207 177 216 L 252 216 Q 264 204 276 216 L 348 216 Q 360 204 372 216 L 444 216 Q 456 204 468 216 L 540 216 Q 552 204 564 216 L 672 216 L 696 216"
     },
     {
       "id": "z_h1_reg",
-      "source": "g1_h_reg_src",
-      "target": "g1_h_reg_tgt",
+      "source": "z_h1_reg_src",
+      "target": "z_h1_reg_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M -24 120 L 0 120 L 65 120 Q 72 113 79 120 L 159 120 Q 168 111 177 120 L 252 120 Q 264 108 276 120 L 348 120 Q 360 108 372 120 L 480 120 L 504 120"
+      "path": "M -24 120 L 0 120 L 65 120 Q 72 113 79 120 L 159 120 Q 168 111 177 120 L 252 120 Q 264 108 276 120 L 348 120 Q 360 108 372 120 L 444 120 Q 456 108 468 120 L 540 120 Q 552 108 564 120 L 672 120 L 696 120"
     },
     {
       "id": "z_h1_stk",
-      "source": "g1_h_stk_src",
-      "target": "g1_h_stk_tgt",
+      "source": "z_h1_stk_src",
+      "target": "z_h1_stk_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M -11 412 L 65 412 Q 72 405 79 412 L 159 412 Q 168 403 177 412 L 252 412 Q 264 400 276 412 L 348 412 Q 360 400 372 412 L 499 412"
+      "path": "M -11 508 L 65 508 Q 72 501 79 508 L 159 508 Q 168 499 177 508 L 252 508 Q 264 496 276 508 L 348 508 Q 360 496 372 508 L 444 508 Q 456 496 468 508 L 540 508 Q 552 496 564 508 L 691 508"
     },
     {
       "id": "z_h1_str",
-      "source": "g1_h_str_src",
-      "target": "g1_h_str_tgt",
+      "source": "z_h1_str_src",
+      "target": "z_h1_str_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M -24 216 L 0 216 L 63 216 Q 72 207 81 216 L 159 216 Q 168 207 177 216 L 252 216 Q 264 204 276 216 L 348 216 Q 360 204 372 216 L 480 216 L 504 216"
+      "path": "M -24 312 L 0 312 L 60 312 Q 72 300 84 312 L 156 312 Q 168 300 180 312 L 252 312 Q 264 300 276 312 L 348 312 Q 360 300 372 312 L 444 312 Q 456 300 468 312 L 540 312 Q 552 300 564 312 L 672 312 L 696 312"
+    },
+    {
+      "id": "z_h1_wstk",
+      "source": "z_h1_wstk_src",
+      "target": "z_h1_wstk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 43.5 606 L 63 606 Q 72 597 81 606 L 159 606 Q 168 597 177 606 L 252 606 Q 264 594 276 606 L 348 606 Q 360 594 372 606 L 444 606 Q 456 594 468 606 L 540 606 Q 552 594 564 606 L 688.5 606"
     },
     {
       "id": "z_v2_int",
-      "source": "g2_v_int_src",
-      "target": "g2_v_int_tgt",
+      "source": "z_v2_int_src",
+      "target": "z_v2_int_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 960 -96 L 960 -96 L 1008 -96 L 1008 108 Q 1020 120 1008 132 L 1008 204 Q 1020 216 1008 228 L 1008 300 Q 1020 312 1008 324 L 1008 396 Q 1020 408 1008 420 L 1008 528 L 1056 528 L 1056 528"
+      "path": "M 1416 -48 L 1416 -48 L 1464 -48 L 1464 108 Q 1476 120 1464 132 L 1464 204 Q 1476 216 1464 228 L 1464 300 Q 1476 312 1464 324 L 1464 396 Q 1476 408 1464 420 L 1464 492 Q 1476 504 1464 516 L 1464 588 Q 1476 600 1464 612 L 1464 768 L 1512 768 L 1512 768"
+    },
+    {
+      "id": "z_v2_mbit",
+      "source": "z_v2_mbit_src",
+      "target": "z_v2_mbit_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 1272 -144 L 1272 -144 L 1272 111 Q 1281 120 1272 129 L 1272 207 Q 1281 216 1272 225 L 1272 300 Q 1284 312 1272 324 L 1272 396 Q 1284 408 1272 420 L 1272 492 Q 1284 504 1272 516 L 1272 588 Q 1284 600 1272 612 L 1272 864 L 1320 864 L 1320 864"
     },
     {
       "id": "z_v2_reg",
-      "source": "g2_v_reg_src",
-      "target": "g2_v_reg_tgt",
+      "source": "z_v2_reg_src",
+      "target": "z_v2_reg_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 768 -192 L 768 -192 L 816 -192 L 816 624 L 864 624 L 864 624"
+      "path": "M 1128 -192 L 1128 -192 L 1176 -192 L 1176 113 Q 1183 120 1176 127 L 1176 207 Q 1185 216 1176 225 L 1176 300 Q 1188 312 1176 324 L 1176 396 Q 1188 408 1176 420 L 1176 492 Q 1188 504 1176 516 L 1176 588 Q 1188 600 1176 612 L 1176 912 L 1224 912 L 1224 912"
     },
     {
       "id": "z_v2_stk",
-      "source": "g2_v_stk_src",
-      "target": "g2_v_stk_tgt",
+      "source": "z_v2_stk_src",
+      "target": "z_v2_stk_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 1069 -44 L 1108 -44 L 1108 113 Q 1115 120 1108 127 L 1108 207 Q 1117 216 1108 225 L 1108 300 Q 1120 312 1108 324 L 1108 396 Q 1120 408 1108 420 L 1108 484 L 1147 484"
+      "path": "M 1525 4 L 1564 4 L 1564 113 Q 1571 120 1564 127 L 1564 207 Q 1573 216 1564 225 L 1564 300 Q 1576 312 1564 324 L 1564 396 Q 1576 408 1564 420 L 1564 492 Q 1576 504 1564 516 L 1564 588 Q 1576 600 1564 612 L 1564 724 L 1603 724"
     },
     {
       "id": "z_v2_str",
-      "source": "g2_v_str_src",
-      "target": "g2_v_str_tgt",
+      "source": "z_v2_str_src",
+      "target": "z_v2_str_tgt",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 864 -144 L 864 -144 L 912 -144 L 912 111 Q 921 120 912 129 L 912 207 Q 921 216 912 225 L 912 300 Q 924 312 912 324 L 912 396 Q 924 408 912 420 L 912 576 L 960 576 L 960 576"
+      "path": "M 1320 -96 L 1320 -96 L 1368 -96 L 1368 108 Q 1380 120 1368 132 L 1368 204 Q 1380 216 1368 228 L 1368 300 Q 1380 312 1368 324 L 1368 396 Q 1380 408 1368 420 L 1368 492 Q 1380 504 1368 516 L 1368 588 Q 1380 600 1368 612 L 1368 816 L 1416 816 L 1416 816"
+    },
+    {
+      "id": "z_v2_wstk",
+      "source": "z_v2_wstk_src",
+      "target": "z_v2_wstk_tgt",
+      "sourceHandle": "p",
+      "targetHandle": "p",
+      "path": "M 1651.5 54 L 1662 54 L 1662 111 Q 1671 120 1662 129 L 1662 207 Q 1671 216 1662 225 L 1662 300 Q 1674 312 1662 324 L 1662 396 Q 1674 408 1662 420 L 1662 492 Q 1674 504 1662 516 L 1662 588 Q 1674 600 1662 612 L 1662 678 L 1696.5 678"
     }
   ]
 }

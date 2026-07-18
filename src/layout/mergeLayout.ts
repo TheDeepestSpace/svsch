@@ -1,6 +1,8 @@
 import type { DesignGraph, DesignModule, DiagramEdge, DiagramNode, DiagramViewModel, GenerateRegion, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { nodeIsArrayNode, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey, endpointKey } from '../ir/edgeNet';
+import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
+import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../webview/arrayStackGeometry';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
@@ -616,7 +618,7 @@ function buildNetCutProjection(
         align: 'end',
         originalEdgeId: firstEdge.id,
         handleSide: sourceHandleSide,
-        edgeStyle: cutLabelEdgeStyle(firstEdge),
+        edgeStyle: cutLabelEdgeStyle(firstEdge, nodesById),
         isSourceStacked
       },
       moduleLayout,
@@ -655,7 +657,7 @@ function buildNetCutProjection(
           align: 'start',
           originalEdgeId: edge.id,
           handleSide: sinkHandleSide,
-          edgeStyle: cutLabelEdgeStyle(edge),
+          edgeStyle: cutLabelEdgeStyle(edge, nodesById),
           isSourceStacked
         },
         moduleLayout,
@@ -693,15 +695,17 @@ function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string)
     : `cut-stub:${netKey}:sink:${edgeId ?? ''}`;
 }
 
-function cutLabelEdgeStyle(edge: DiagramEdge): NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'] | undefined {
+function cutLabelEdgeStyle(edge: DiagramEdge, nodesById: Map<string, DiagramNode>): NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'] | undefined {
   const aggregate = edge.metadata?.aggregate;
   const isStacked = edge.isStacked === true;
-  if (!aggregate && !isStacked) {
+  const thick = edgeIsThick(edge, nodesById.get(edge.source), nodesById.get(edge.target));
+  if (!aggregate && !isStacked && !thick) {
     return undefined;
   }
   return {
     ...(aggregate ? { aggregate } : {}),
-    ...(isStacked ? { isStacked } : {})
+    ...(isStacked ? { isStacked } : {}),
+    ...(thick ? { thick } : {})
   };
 }
 
@@ -1444,7 +1448,7 @@ export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = fa
     };
   });
 
-  const arrayLayerPad = nodeIsArrayNode(node) ? 4 : 0;
+  const arrayLayerPad = nodeIsArrayNode(node) ? (nodeStackIsWide(node) ? ARRAY_STACK_WIDE_LANE_OFFSET : ARRAY_STACK_LANE_OFFSET) : 0;
   // Reserve only the part of each lead that extends past the node outline:
   // ports inset into the node (mux/select top selects, the inverter output
   // bubble) consume part of their lead inside the node, so the ELK box must

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1752" height="516" viewBox="0 0 1752 516" class="svsch-diagram" role="img" aria-label="array_register diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="516" viewBox="0 0 1800 516" class="svsch-diagram" role="img" aria-label="array_register diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -7,7 +7,10 @@
     <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
   </linearGradient>
   <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
   </pattern>
 </defs>
 <style>
@@ -82,9 +85,9 @@
   --xy-minimap-node-stroke-width-default: 2;
 
   --xy-background-color-default: #141414;
-  --xy-background-pattern-dots-color-default: #777;
-  --xy-background-pattern-lines-color-default: #777;
-  --xy-background-pattern-cross-color-default: #777;
+  --xy-background-pattern-dots-color-default: #555;
+  --xy-background-pattern-lines-color-default: #333;
+  --xy-background-pattern-cross-color-default: #333;
   --xy-node-color-default: #f8f8f8;
   --xy-node-border-default: 1px solid #3c3c3c;
   --xy-node-background-color-default: #1e1e1e;
@@ -1466,6 +1469,12 @@ text {
   overflow: visible;
 }
 
+/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
+   content shift toward the front card scales with it. */
+.hdl-node-array-wide {
+  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
+}
+
 .hdl-node-array-layer {
   border-radius: inherit;
   pointer-events: none;
@@ -1476,20 +1485,19 @@ text {
   box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
+/* Layer offsets come from the SVG transform attribute (see arrayStackGeometry);
+   CSS must not set transform here or it would override the per-node wide spread. */
 .hdl-node-array-back {
-  transform: translate(4px, 4px);
   z-index: 0;
   opacity: 0.5;
 }
 
 .hdl-node-array-middle {
-  transform: translate(0, 0);
   z-index: 1;
   opacity: 0.75;
 }
 
 .hdl-node-array-front {
-  transform: translate(-4px, -4px);
   z-index: 2;
 }
 
@@ -1595,6 +1603,12 @@ text {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Matches .svsch-edge-thick — the lead is a stub of the same wire, so it
+   must carry the same stroke weight where the wire itself renders thick. */
+.svsch-array-stack-lead-thick {
+  stroke-width: 4.5;
 }
 
 .svsch-array-stack-lead-back {
@@ -2223,8 +2237,8 @@ text {
   stroke-width: 1.5;
 }
 
+/* Offsets come from the SVG transform attribute — do not set transform here. */
 .port-skin-array-back {
-  transform: translate(4px, 4px);
   opacity: 0.5;
 }
 
@@ -2233,7 +2247,6 @@ text {
 }
 
 .port-skin-array-front {
-  transform: translate(-4px, -4px);
 }
 
 .port-skin-selection {
@@ -2748,12 +2761,22 @@ text {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
 }
 
-.svsch-edge-struct {
+.svsch-edge-thick {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-struct {
+.svsch-edge-bridge-thick {
   stroke-width: 13.5;
+}
+
+.svsch-edge-struct {
+  stroke: url("#svsch-struct-stripes");
+  stroke-linecap: butt;
+  stroke-width: 8;
+}
+
+.svsch-edge-bridge-struct {
+  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2762,13 +2785,21 @@ text {
   stroke-width: 8;
 }
 
-.svsch-edge-interface-bg {
+.svsch-edge-interface-bg,
+.svsch-edge-struct-bg {
   stroke: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
+/* Stripe width stays aligned with .svsch-interface-stripe. */
+.svsch-struct-stripe {
+  stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
 }
 
@@ -2826,6 +2857,11 @@ text {
 
 .svsch-edge-junction-interface {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 92%, var(--vscode-charts-blue));
+  stroke-width: 2.5;
+}
+
+.svsch-edge-junction-struct {
+  fill: var(--vscode-editor-foreground);
   stroke-width: 2.5;
 }
 
@@ -3219,6 +3255,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3234,6 +3279,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3333,10 +3383,9 @@ text {
   fill: none;
 }
 
-/* Array stack leads */
-.svsch-array-stack-lead {
-  fill: none;
-  stroke-width: 1.5;
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
 }
 
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
@@ -3401,25 +3450,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
@@ -3559,157 +3591,157 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-6q3wjf" gradientUnits="userSpaceOnUse" x1="1100" y1="332" x2="1108" y2="340">
+<linearGradient id="svsch-stack-fanout-gradient-6q3wjf" gradientUnits="userSpaceOnUse" x1="1146" y1="330" x2="1158" y2="342">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 888 264 L 936 264 L 936 336 L 1104 336" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" style="stroke: url(#svsch-stack-fanout-gradient-6q3wjf)" d="M 1100 332 L 1108 340" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1100 332 L 1121 332" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1104 336 L 1122 336" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1108 340 L 1123 340" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1645 388 L 1684 388 L 1684 460 L 172 460 L 172 412 L 379 412" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1638 384 L 1680 384 L 1680 456 L 168 456 L 168 408 L 378 408" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1631 380 L 1676 380 L 1676 452 L 164 452 L 164 404 L 377 404" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1285 340 L 1324 340 L 1324 388 L 1483 388" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1278 336 L 1320 336 L 1320 384 L 1482 384" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1271 332 L 1316 332 L 1316 380 L 1481 380" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 877 364 L 1123 364" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 870 360 L 1122 360" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 863 356 L 1121 356" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data"><path class="svsch-edge" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data" data-net-key="mux:array_register:M_read_address:out" d="M 888 120 L 912 120 L 1080 120 L 1104 120" /></g>
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 936 264 L 984 264 L 984 336 L 1152 336" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" style="stroke: url(#svsch-stack-fanout-gradient-6q3wjf)" d="M 1146 330 L 1158 342" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1146 330 L 1165.5 330" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1152 336 L 1167 336" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:literal:array_register:32_b0:32_b0:mux:array_register:M_address_:rst:M_rst_candidate:32_b0" data-net-key="literal:array_register:32_b0:32_b0" d="M 1158 342 L 1168.5 342" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1699.5 414 L 1734 414 L 1734 462 L 174 462 L 174 414 L 376.5 414" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1689 408 L 1728 408 L 1728 456 L 168 456 L 168 408 L 375 408" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:mux:array_register:M_addr:reg:array_register:M:M_next" data-net-key="mux:array_register:M_addr:out" d="M 1678.5 402 L 1722 402 L 1722 450 L 162 450 L 162 402 L 373.5 402" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1339.5 342 L 1374 342 L 1374 414 L 1528.5 414" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1329 336 L 1368 336 L 1368 408 L 1527 408" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate" data-net-key="mux:array_register:M_address_:rst:M_rst_candidate:out" d="M 1318.5 330 L 1362 330 L 1362 402 L 1525.5 402" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 883.5 366 L 1168.5 366" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 873 360 L 1167 360" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 862.5 354 L 1165.5 354" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data" data-net-key="mux:array_register:M_read_address:out" d="M 936 120 L 960 120 L 1128 120 L 1152 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-3ep2y1" gradientUnits="userSpaceOnUse" x1="1556" y1="308" x2="1564" y2="316">
+<linearGradient id="svsch-stack-fanout-gradient-3ep2y1" gradientUnits="userSpaceOnUse" x1="1602" y1="330" x2="1614" y2="342">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 1560 48 L 1560 312" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" style="stroke: url(#svsch-stack-fanout-gradient-3ep2y1)" d="M 1556 308 L 1564 316" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1556 308 L 1556 353" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1560 312 L 1560 354" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1564 316 L 1564 355" />
-<circle class="svsch-edge-junction" cx="816" cy="48" r="4.75" data-junction-id="port:array_register:address:port:address:816:48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address"><path class="svsch-edge" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 552 48 L 816 48 L 816 96" /></g>
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 1608 48 L 1608 336" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" style="stroke: url(#svsch-stack-fanout-gradient-3ep2y1)" d="M 1602 330 L 1614 342" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1602 330 L 1602 373.5" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1608 336 L 1608 375" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address" data-net-key="port:array_register:address:port:address" d="M 1614 342 L 1614 376.5" />
+<circle class="svsch-edge-junction" cx="840" cy="48" r="4.75" data-junction-id="port:array_register:address:port:address:840:48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:array_register:address:mux:array_register:M_read_address:address" data-net-key="port:array_register:address:port:address" d="M 528 48 L 552 48 L 840 48 L 840 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-1noqwtz" gradientUnits="userSpaceOnUse" x1="356" y1="428" x2="364" y2="436">
+<linearGradient id="svsch-stack-fanout-gradient-1noqwtz" gradientUnits="userSpaceOnUse" x1="354" y1="426" x2="366" y2="438">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
 <path class="svsch-edge" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 144 432 L 360 432" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" style="stroke: url(#svsch-stack-fanout-gradient-1noqwtz)" d="M 356 428 L 364 436" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 356 428 L 377 428" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 360 432 L 378 432" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 364 436 L 379 436" /></g>
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" style="stroke: url(#svsch-stack-fanout-gradient-1noqwtz)" d="M 354 426 L 366 438" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 354 426 L 373.5 426" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 360 432 L 375 432" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:clk:reg:array_register:M:clk" data-net-key="port:array_register:clk:port:clk" d="M 366 438 L 376.5 438" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-8oclgl" gradientUnits="userSpaceOnUse" x1="1196" y1="260" x2="1204" y2="268">
+<linearGradient id="svsch-stack-fanout-gradient-8oclgl" gradientUnits="userSpaceOnUse" x1="1242" y1="258" x2="1254" y2="270">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 888 216 L 1200 216 L 1200 264" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" style="stroke: url(#svsch-stack-fanout-gradient-8oclgl)" d="M 1196 260 L 1204 268" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1196 260 L 1196 305" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1200 264 L 1200 306" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1204 268 L 1204 307" /></g>
+<path class="svsch-edge" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 936 216 L 1248 216 L 1248 264" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" style="stroke: url(#svsch-stack-fanout-gradient-8oclgl)" d="M 1242 258 L 1254 270" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1242 258 L 1242 301.5" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1248 264 L 1248 303" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:rst:mux:array_register:M_address_:rst:M_rst_candidate:rst" data-net-key="port:array_register:rst:port:rst" d="M 1254 270 L 1254 304.5" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-111mxnz" gradientUnits="userSpaceOnUse" x1="740" y1="356" x2="748" y2="364">
+<linearGradient id="svsch-stack-fanout-gradient-111mxnz" gradientUnits="userSpaceOnUse" x1="738" y1="354" x2="750" y2="366">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 528 312 L 576 312 L 576 360 L 744 360" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" style="stroke: url(#svsch-stack-fanout-gradient-111mxnz)" d="M 740 356 L 748 364" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 740 356 L 761 356" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 744 360 L 762 360" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 748 364 L 763 364" /></g>
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 528 312 L 576 312 L 576 360 L 744 360" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" style="stroke: url(#svsch-stack-fanout-gradient-111mxnz)" d="M 738 354 L 750 366" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 738 354 L 757.5 354" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 744 360 L 759 360" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data" data-net-key="port:array_register:write_data:port:write_data" d="M 750 366 L 760.5 366" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-19h00vh" gradientUnits="userSpaceOnUse" x1="812" y1="284" x2="820" y2="292">
+<linearGradient id="svsch-stack-fanout-gradient-19h00vh" gradientUnits="userSpaceOnUse" x1="810" y1="282" x2="822" y2="294">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
 <path class="svsch-edge" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 528 264 L 816 264 L 816 288" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" style="stroke: url(#svsch-stack-fanout-gradient-19h00vh)" d="M 812 284 L 820 292" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 812 284 L 812 329" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 816 288 L 816 330" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 820 292 L 820 331" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 1483 412" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 1482 408" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 1481 404" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" style="stroke: url(#svsch-stack-fanout-gradient-19h00vh)" d="M 810 282 L 822 294" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 810 282 L 810 325.5" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 816 288 L 816 327" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_register:write_en:mux:array_register:M_address_:write_en:M_address__next:write_en" data-net-key="port:array_register:write_en:port:write_en" d="M 822 294 L 822 328.5" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 547.5 414 L 582 414 L 582 438 L 1528.5 438" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 537 408 L 576 408 L 576 432 L 1527 432" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_addr:M" data-net-key="reg:array_register:M:q" d="M 526.5 402 L 570 402 L 570 426 L 1525.5 426" />
 <g class="svsch-edge-junction-stacked" data-junction-id="reg:array_register:M:q:576:408">
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="572" cy="404" r="2.15" style="opacity: 1" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="570" cy="402" r="2.15" style="opacity: 1" />
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="576" cy="408" r="2.15" style="opacity: 0.75" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="580" cy="412" r="2.15" style="opacity: 0.5" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="582" cy="414" r="2.15" style="opacity: 0.5" />
 </g>
 <g class="svsch-edge-junction-stacked" data-junction-id="reg:array_register:M:q:576:384">
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="572" cy="380" r="2.15" style="opacity: 1" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="570" cy="378" r="2.15" style="opacity: 1" />
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="576" cy="384" r="2.15" style="opacity: 0.75" />
-<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="580" cy="388" r="2.15" style="opacity: 0.5" />
+<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="582" cy="390" r="2.15" style="opacity: 0.5" />
 </g></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 541 412 L 580 412 L 580 388 L 763 388" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 534 408 L 576 408 L 576 384 L 762 384" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 527 404 L 572 404 L 572 380 L 761 380" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M"><path class="svsch-edge-jump-halo" d="M 576 271 Q 583 264 576 257" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="0" />
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 547.5 414 L 582 414 L 582 390 L 760.5 390" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 537 408 L 576 408 L 576 384 L 759 384" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 526.5 402 L 570 402 L 570 378 L 757.5 378" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M"><path class="svsch-edge-jump-halo" d="M 576 273 Q 585 264 576 255" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="0" />
 <defs>
-<linearGradient id="svsch-stack-converge-gradient-back-5mree4" gradientUnits="userSpaceOnUse" x1="541" y1="412" x2="744" y2="124">
+<linearGradient id="svsch-stack-converge-gradient-back-5mree4" gradientUnits="userSpaceOnUse" x1="547.5" y1="414" x2="744" y2="126">
 <stop offset="0%" class="svsch-stack-gradient-back-stop" />
 <stop offset="78%" class="svsch-stack-gradient-regular-stop" />
 <stop offset="100%" class="svsch-stack-gradient-regular-stop" />
 </linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-middle-5mree4" gradientUnits="userSpaceOnUse" x1="534" y1="408" x2="744" y2="120">
+<linearGradient id="svsch-stack-converge-gradient-middle-5mree4" gradientUnits="userSpaceOnUse" x1="537" y1="408" x2="744" y2="120">
 <stop offset="0%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="78%" class="svsch-stack-gradient-regular-stop" />
 <stop offset="100%" class="svsch-stack-gradient-regular-stop" />
 </linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-front-5mree4" gradientUnits="userSpaceOnUse" x1="527" y1="404" x2="744" y2="116">
+<linearGradient id="svsch-stack-converge-gradient-front-5mree4" gradientUnits="userSpaceOnUse" x1="526.5" y1="402" x2="744" y2="114">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="78%" class="svsch-stack-gradient-regular-stop" />
 <stop offset="100%" class="svsch-stack-gradient-regular-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-back-5mree4)" d="M 541 412 L 580 412 L 580 124 L 744 124" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-middle-5mree4)" d="M 534 408 L 576 408 L 576 120 L 744 120" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-front-5mree4)" d="M 527 404 L 572 404 L 572 116 L 744 116" />
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-back-5mree4)" d="M 547.5 414 L 582 414 L 582 126 L 744 126" />
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-middle-5mree4)" d="M 537 408 L 576 408 L 576 120 L 744 120" />
+<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-front-5mree4)" d="M 526.5 402 L 570 402 L 570 114 L 744 114" />
 <path class="svsch-edge-overlap-hint" d="M 576 316 L 576 356" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-overlap-id="edge:reg:array_register:M:mux:array_register:M_read_address:M-overlap-2-edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data-2" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:array_register:M_read_address" data-node-kind="mux" transform="translate(744 72)">
-<svg class="hdl-node-svg mux-skin" width="144" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><path class="svsch-node-shape hdl-node-mux node-skin-body" d="M 0 0 L 144 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="72" y="36" text-anchor="middle" dominant-baseline="middle">s<tspan class="svsch-port-type-suffix">[]</tspan></text></g><text class="svsch-port-label svsch-mux-side-port" x="12" y="48" dominant-baseline="middle">in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="132" y="48" text-anchor="end" dominant-baseline="middle">read_data</text><path class="node-skin-selection" d="M 0 0 L 144 24 V 72 L 0 96 Z" style="stroke-linejoin:round"></path>
+<svg class="hdl-node-svg mux-skin" width="192" height="96" aria-hidden="true">
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -5 52 L 4 52"></path></g><path class="svsch-node-shape hdl-node-mux node-skin-body" d="M 0 0 L 192 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="96" y="36" text-anchor="middle" dominant-baseline="middle">s<tspan class="svsch-port-type-suffix">[]</tspan></text></g><text class="svsch-port-label svsch-mux-side-port" x="12" y="48" dominant-baseline="middle">in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="180" y="48" text-anchor="end" dominant-baseline="middle">read_data<tspan class="svsch-port-type-suffix">[]</tspan></text><path class="node-skin-selection" d="M 0 0 L 192 24 V 72 L 0 96 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-mux hdl-node-array" data-node-id="mux:array_register:M_address_:write_en:M_address__next" data-node-kind="mux" transform="translate(768 312)">
 <svg class="hdl-node-svg mux-skin" width="96" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top" d="M 44 4 L 44 7"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top" d="M 48 5 L 48 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top" d="M 52 6 L 52 15"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 68 L -4 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 76 L 4 76"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 L 96 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 96 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 L 96 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="44" y="32" text-anchor="middle" dominant-baseline="middle">s</text></g><text class="svsch-port-label svsch-mux-side-port" x="8" y="44" dominant-baseline="middle">true</text><text class="svsch-port-label svsch-mux-side-port" x="8" y="68" dominant-baseline="middle">false</text><text class="svsch-port-label svsch-mux-output-port" x="80" y="44" text-anchor="end" dominant-baseline="middle">out</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 102 44 L 92 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 102 48 L 96 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 109 52 L 100 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top" d="M 42 1 L 42 5"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top" d="M 48 2 L 48 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top" d="M 54 4 L 54 17"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 42 L -6 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 54 L 6 54"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 66 L -6 66"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 78 L 6 78"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 0 0 L 96 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 96 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 0 0 L 96 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="42" y="30" text-anchor="middle" dominant-baseline="middle">s</text></g><text class="svsch-port-label svsch-mux-side-port" x="6" y="42" dominant-baseline="middle">true</text><text class="svsch-port-label svsch-mux-side-port" x="6" y="66" dominant-baseline="middle">false</text><text class="svsch-port-label svsch-mux-output-port" x="78" y="42" text-anchor="end" dominant-baseline="middle">out</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 104 42 L 90 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 105 48 L 96 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 116 54 L 102 54"></path></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node hdl-node-array" data-node-id="reg:array_register:M" data-node-kind="register" transform="translate(384 360)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 68 L -4 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 76 L 4 76"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="144" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="144" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="144" height="96"></rect><text class="svsch-node-kind" x="6" y="10" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="6" y="22" text-anchor="start" dominant-baseline="middle"><tspan>M</tspan><tspan class="svsch-register-width-suffix" dx="4">[31:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">D</text><text class="svsch-port-label" x="128" y="44" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-4" y="62" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="147" y="-4" text-anchor="start">[0:7]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 150 44 L 140 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 150 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 157 52 L 148 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 42 L -6 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 54 L 6 54"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -10 66 L -6 66"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -9 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -7 78 L 6 78"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" width="144" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="144" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" width="144" height="96"></rect><text class="svsch-node-kind" x="4" y="8" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="4" y="20" text-anchor="start" dominant-baseline="middle"><tspan>M</tspan><tspan class="svsch-register-width-suffix" dx="4">[31:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="6" y="42" dominant-baseline="middle">D</text><text class="svsch-port-label" x="126" y="42" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-6" y="60" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="147" y="-4" text-anchor="start">[0:7]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 152 42 L 138 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 153 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 164 54 L 150 54"></path></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:array_register:32_b0:32_b0" data-node-kind="literal" transform="translate(768 252)">
+<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:array_register:32_b0:32_b0" data-node-kind="literal" transform="translate(816 252)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="119" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="60" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>32&#x27;b0</tspan><tspan dx="4">[31:0]</tspan></text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-mux hdl-node-array" data-node-id="mux:array_register:M_address_:rst:M_rst_candidate" data-node-kind="mux" transform="translate(1128 288)">
+<g class="svsch-node hdl-node hdl-node-mux hdl-node-array" data-node-id="mux:array_register:M_address_:rst:M_rst_candidate" data-node-kind="mux" transform="translate(1176 288)">
 <svg class="hdl-node-svg mux-skin" width="144" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top" d="M 68 4 L 68 7"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top" d="M 72 5 L 72 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top" d="M 76 6 L 76 15"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 68 L -4 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 76 L 4 76"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 L 144 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="68" y="32" text-anchor="middle" dominant-baseline="middle">s</text></g><text class="svsch-port-label svsch-mux-side-port" x="8" y="44" dominant-baseline="middle">true<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-side-port" x="8" y="68" dominant-baseline="middle">false<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="128" y="44" text-anchor="end" dominant-baseline="middle">out<tspan class="svsch-port-type-suffix">[]</tspan></text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 150 44 L 140 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 150 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 157 52 L 148 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top" d="M 66 1 L 66 5"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top" d="M 72 2 L 72 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top" d="M 78 4 L 78 17"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 42 L -6 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 54 L 6 54"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 66 L -6 66"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 78 L 6 78"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 0 0 L 144 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="66" y="30" text-anchor="middle" dominant-baseline="middle">s</text></g><text class="svsch-port-label svsch-mux-side-port" x="6" y="42" dominant-baseline="middle">true<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-side-port" x="6" y="66" dominant-baseline="middle">false<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="126" y="42" text-anchor="end" dominant-baseline="middle">out<tspan class="svsch-port-type-suffix">[]</tspan></text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 152 42 L 138 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 153 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 164 54 L 150 54"></path></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-mux hdl-node-array" data-node-id="mux:array_register:M_addr" data-node-kind="mux" transform="translate(1488 336)">
+<g class="svsch-node hdl-node hdl-node-mux hdl-node-array" data-node-id="mux:array_register:M_addr" data-node-kind="mux" transform="translate(1536 360)">
 <svg class="hdl-node-svg mux-skin" width="144" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top" d="M 68 4 L 68 7"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top" d="M 72 5 L 72 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top" d="M 76 6 L 76 15"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 68 L -4 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 76 L 4 76"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 L 144 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="68" y="32" text-anchor="middle" dominant-baseline="middle">s<tspan class="svsch-port-type-suffix">[]</tspan></text></g><text class="svsch-port-label svsch-mux-side-port" x="8" y="44" dominant-baseline="middle">3&#x27;b0<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-side-port" x="8" y="68" dominant-baseline="middle">default<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="128" y="44" text-anchor="end" dominant-baseline="middle">out<tspan class="svsch-port-type-suffix">[]</tspan></text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 150 44 L 140 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 150 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 157 52 L 148 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-top" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-top svsch-array-stack-lead-thick" d="M 66 1 L 66 5"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-top svsch-array-stack-lead-thick" d="M 72 2 L 72 11"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-top svsch-array-stack-lead-thick" d="M 78 4 L 78 17"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 42 L -6 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 54 L 6 54"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 66 L -6 66"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 78 L 6 78"></path></g><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.5"></path><path class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" d="M 0 0 L 144 24 V 72 L 0 96 Z" opacity="0.75"></path><path class="svsch-node-shape hdl-node-mux node-skin-body hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 0 0 L 144 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="66" y="30" text-anchor="middle" dominant-baseline="middle">s<tspan class="svsch-port-type-suffix">[]</tspan></text></g><text class="svsch-port-label svsch-mux-side-port" x="6" y="42" dominant-baseline="middle">3&#x27;b0<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-side-port" x="6" y="66" dominant-baseline="middle">default<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label svsch-mux-output-port" x="126" y="42" text-anchor="end" dominant-baseline="middle">out<tspan class="svsch-port-type-suffix">[]</tspan></text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 152 42 L 138 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 153 48 L 144 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 164 54 L 150 54"></path></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:array_register:clk" data-node-kind="port" transform="translate(24 420)">
@@ -3717,7 +3749,7 @@ path.port-skin-body.port-skin-harness {
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">clk</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:array_register:rst" data-node-kind="port" transform="translate(768 204)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:array_register:rst" data-node-kind="port" transform="translate(816 204)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">rst</tspan></text></g>
 </svg>
@@ -3737,7 +3769,7 @@ path.port-skin-body.port-skin-harness {
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 180 L 192 12 L 180 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 180 L 192 12 L 180 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="96" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">write_data</tspan><tspan class="svsch-port-width-suffix"> [31:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:array_register:read_data" data-node-kind="port" transform="translate(1104 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:array_register:read_data" data-node-kind="port" transform="translate(1152 108)">
 <svg class="hdl-node-svg" width="192" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 192 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 192 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="96" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">read_data</tspan><tspan class="svsch-port-width-suffix"> [31:0]</tspan></text></g>
 </svg>
