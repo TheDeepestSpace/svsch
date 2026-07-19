@@ -246,8 +246,7 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator('.generate-region.generate-block')).not.toHaveClass(/generate-region-selected/);
 
     await expectGraphAndScreenshot(page, 'generate-region-selected-canvas.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: 120
+      clip: await paddedGraphAndRegionsClip(page)
     });
 
     // Dragging one selected arm's title moves the whole selection.

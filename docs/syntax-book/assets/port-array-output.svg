@@ -2447,6 +2447,7 @@ text {
   padding: 0 3px;
   position: absolute;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -2829,16 +2830,6 @@ text {
   stroke-width: 12;
 }
 
-.svsch-edge-group-selected {
-  fill: none;
-  pointer-events: none;
-  stroke: var(--vscode-focusBorder);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 8;
-  opacity: 0.4;
-}
-
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;
@@ -2914,6 +2905,40 @@ text {
 }
 
 .svsch-edge-connection-controls-inner button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.svsch-selection-toolbar-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 12;
+}
+
+.svsch-selection-toolbar {
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-100%, 8px);
+}
+
+.svsch-selection-relayout-control {
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-family: var(--vscode-font-family);
+  font-size: 10px;
+  height: 22px;
+  line-height: 1;
+  padding: 0 9px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.svsch-selection-relayout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 

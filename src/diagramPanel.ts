@@ -5,7 +5,7 @@ import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -21,7 +21,10 @@ type WebviewMessage =
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
   | { type: 'rerouteEdge'; moduleName: string; edgeId: string; nodes: PositionedNode[] }
+  | { type: 'rerouteEdges'; moduleName: string; edgeIds: string[]; nodes: PositionedNode[] }
   | { type: 'cutNet'; moduleName: string; edge: DiagramEdge; nodes: PositionedNode[] }
+  | { type: 'cutNets'; moduleName: string; edges: DiagramEdge[]; nodes: PositionedNode[] }
+  | { type: 'relayoutSelection'; moduleName: string; nodeIds: string[]; nodes: PositionedNode[] }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'navigateToSource'; source: SourceRange }
@@ -325,6 +328,16 @@ export class DiagramPanel {
       await this.rerouteSingleEdge(message.moduleName, message.edgeId, message.nodes);
       return;
     }
+    if (message.type === 'rerouteEdges') {
+      this.currentModule = message.moduleName;
+      await this.rerouteSelectedEdges(message.moduleName, message.edgeIds, message.nodes);
+      return;
+    }
+    if (message.type === 'relayoutSelection') {
+      this.currentModule = message.moduleName;
+      await this.relayoutSelection(message.moduleName, message.nodeIds, message.nodes);
+      return;
+    }
     if (message.type === 'layoutChanged') {
       await this.saveLayout(message.moduleName, message.nodes, message.regions);
       return;
@@ -347,6 +360,10 @@ export class DiagramPanel {
     }
     if (message.type === 'cutNet') {
       await this.saveNetCut(message.moduleName, message.edge, message.nodes);
+      return;
+    }
+    if (message.type === 'cutNets') {
+      await this.saveNetCuts(message.moduleName, message.edges, message.nodes);
       return;
     }
     if (message.type === 'renameCutNet') {
@@ -570,6 +587,63 @@ export class DiagramPanel {
     await this.postView();
   }
 
+  private async rerouteSelectedEdges(moduleName: string, edgeIds: string[], nodes: PositionedNode[]): Promise<void> {
+    const workspaceRoot = workspaceRootPath();
+    if (!workspaceRoot) {
+      return;
+    }
+    const store = new LayoutStore(workspaceRoot);
+    const base = await store.read();
+    this.layout = mergeRerouteEdges(base, moduleName, edgeIds, nodes);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async relayoutSelection(moduleName: string, nodeIds: string[], nodes: PositionedNode[]): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule || !this.graph) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+
+    const selected = new Set(nodeIds);
+    const originalCentroid = centroidOfPositions(nodes.filter((node) => selected.has(node.id)));
+
+    this.layout = mergeRelayoutSelection(this.layout, moduleName, nodeIds, nodes, designModule);
+
+    if (originalCentroid) {
+      // ELK's layered algorithm doesn't reliably keep a released group near where
+      // it started — if the group is only wired to other released nodes (not to
+      // anything still fixed), ELK treats it as its own connected component and
+      // packs components independently, which can drop the whole group far from
+      // the original selection. Run the layout once to see where ELK placed it,
+      // then rigidly translate the group so its centroid lands back on the
+      // original selection's centroid, and commit that as the new fixed
+      // position — the same as if the user had dragged it there by hand.
+      const relaidView = await buildViewModel(this.graph, moduleName, this.layout);
+      const relaidCentroid = centroidOfPositions(relaidView.nodes.filter((node) => selected.has(node.id)));
+      if (relaidCentroid) {
+        const dx = originalCentroid.x - relaidCentroid.x;
+        const dy = originalCentroid.y - relaidCentroid.y;
+        const anchoredNodes = relaidView.nodes
+          .filter((node) => selected.has(node.id))
+          .map((node) => ({
+            ...node,
+            position: { x: node.position.x + dx, y: node.position.y + dy },
+            fixed: true
+          }));
+        this.layout = mergeNodePositions(this.layout, moduleName, anchoredNodes);
+      }
+    }
+
+    await store.write(this.layout);
+    await this.postView();
+  }
+
   private async saveEdgeLayout(moduleName: string, edgeId: string, waypoint: { x: number; y: number }): Promise<void> {
     const store = this.getStore();
     if (!store) {
@@ -627,6 +701,21 @@ export class DiagramPanel {
     }
     this.currentModule = moduleName;
     this.layout = mergeNetCut(this.layout, moduleName, edge, designModule, nodes);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async saveNetCuts(moduleName: string, edges: DiagramEdge[], nodes: PositionedNode[]): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = mergeNetCuts(this.layout, moduleName, edges, designModule, nodes);
     await store.write(this.layout);
     await this.postView();
   }
@@ -738,6 +827,14 @@ export class DiagramPanel {
 
 function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
+function centroidOfPositions(nodes: Array<{ position: { x: number; y: number } }>): { x: number; y: number } | undefined {
+  if (nodes.length === 0) {
+    return undefined;
+  }
+  const sum = nodes.reduce((acc, node) => ({ x: acc.x + node.position.x, y: acc.y + node.position.y }), { x: 0, y: 0 });
+  return { x: sum.x / nodes.length, y: sum.y / nodes.length };
 }
 
 function generateArmHighlightRange(

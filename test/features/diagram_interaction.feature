@@ -399,6 +399,111 @@ Feature: Diagram Interaction
     When I hover over the warning icon on the "generate if" generate region
     Then a tooltip should appear reading "block does not belong to this generate block"
 
+  Scenario: Drag-selecting a connection highlights the wire itself
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "y" together
+    Then the connection between "a" and "y" should be shown as selected
+
+  Scenario: Hovering one wire in a multi-wire selection reveals every selected wire's controls
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x"
+    Then the connection between "a" and "x" should show its controls
+    And the connection between "b" and "y" should show its controls
+
+  Scenario: Rerouting one wire in a multi-wire selection reroutes every selected wire
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    And I move the port node "b"
+    And I adjust the connection between "a" and "x" upward
+    And I adjust the connection between "b" and "y" downward
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x" and click its Reroute control
+    Then the route of the connection between "a" and "x" should have changed
+    And the route of the connection between "b" and "y" should have changed
+    And the port node "a" should not have moved
+    And the port node "b" should not have moved
+
+  Scenario: Cutting one wire in a multi-wire selection cuts every selected wire
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 2 cut net labels named "a"
+    And I should see 2 cut net labels named "b"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "b" and "y" should be hidden
+
+  Scenario: The Auto Layout control only appears once multiple blocks are selected
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the "Auto Layout" button should not be visible
+    When click and drag the mouse to select the blocks "u1" and "u2"
+    Then the "Auto Layout" button should be visible
+
+  Scenario: Auto-laying out one connection's blocks anchors the result and leaves the other connection untouched
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    And I move the block "u1" by (2, 0) grid cells
+    And I note the position of the block "u1"
+    And I move the port node "b" by (0, 72)
+    And I move the block "u2" by (3, 5) grid cells
+    And I move the port node "y" by (0, 72)
+    And click and drag the mouse to select "b", "u2", and "y" together
+    And I click the "Auto Layout" button
+    Then the block "u2" should be re-placed and fixed in the saved layout
+    And the block "u2" should stay near its pre-auto-layout position
+    And the block "u2" should remain selected
+    And the block "u1" should not have moved
+    And the port node "a" should still be fixed in the saved layout
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually
