@@ -35,6 +35,7 @@ RUN cd /tmp && \
     wget ${NODE_STANDALONE_URL} && \
     echo ${NODE_STANDALONE_HASH} | sha256sum -c && \
     tar -xJf ${NODE_STANDALONE_NAME} -C /usr/local --strip-components=1 --no-same-owner && \
+    chmod -R a+rX /usr/local/bin /usr/local/lib/node_modules /usr/local/include /usr/local/share && \
     rm ${NODE_STANDALONE_NAME}
 
 # Install verible
@@ -46,6 +47,7 @@ RUN cd /tmp && \
     wget ${VERIBLE_BIN_URL} && \
     echo ${VERIBLE_BIN_HASH} | sha256sum -c && \
     tar -xf ${VERIBLE_BIN_NAME} -C /usr/local --strip-components=1 --no-same-owner && \
+    chmod -R a+rX /usr/local/bin /usr/local/lib /usr/local/include /usr/local/share && \
     rm ${VERIBLE_BIN_NAME}
 
 # Install surelog (via pip for simplicity in CI)

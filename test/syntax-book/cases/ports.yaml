@@ -1,0 +1,114 @@
+group: Ports
+cases:
+  - id: port-input
+    title: Input Port
+    description: An input port declaration defines a module boundary input signal.
+    tags: [port, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: port
+      nodeLabel: a
+      action: doubleClick
+    expect:
+      nodeKinds: [port]
+      selectedText: "a"
+
+  - id: port-output
+    title: Output Port
+    description: An output port declaration defines a module boundary output signal.
+    tags: [port, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: port
+      nodeLabel: y
+      action: doubleClick
+    expect:
+      nodeKinds: [port]
+      selectedText: "y"
+
+  - id: port-modport
+    title: Modport Port
+    description: A module port typed with a specific interface modport.
+    tags: [port, modport, source-highlight]
+    files:
+      top.sv: |
+        interface simple_if;
+          logic data;
+          modport slave(input data);
+        endinterface
+
+        module top(simple_if.slave bus, output logic y);
+          assign y = bus.data;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: interface
+      nodeLabel: bus
+      action: doubleClick
+    expect:
+      nodeKinds: [interface]
+      selectedText: "interface simple_if;"
+
+  - id: port-array
+    title: Array Port
+    description: A module port declaration defining an array of signal vectors.
+    tags: [port, array, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [7:0] a [0:1],
+          output logic [7:0] y [0:1]
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: port
+      nodeLabel: "a"
+      action: doubleClick
+    expect:
+      nodeKinds: [port]
+      selectedText: "a"
+
+  - id: port-array-output
+    title: Array Output Port
+    description: A module output port declaration defining an array of signal vectors.
+    tags: [port, array, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [7:0] a [0:1],
+          output logic [7:0] y [0:1]
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: port
+      nodeLabel: "y"
+      action: doubleClick
+    expect:
+      nodeKinds: [port]
+      selectedText: "y"
+

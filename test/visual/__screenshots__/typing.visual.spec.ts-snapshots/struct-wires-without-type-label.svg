@@ -7,7 +7,10 @@
     <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
   </linearGradient>
   <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
   </pattern>
 </defs>
 <style>
@@ -1466,6 +1469,12 @@ text {
   overflow: visible;
 }
 
+/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
+   content shift toward the front card scales with it. */
+.hdl-node-array-wide {
+  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
+}
+
 .hdl-node-array-layer {
   border-radius: inherit;
   pointer-events: none;
@@ -1476,20 +1485,19 @@ text {
   box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
+/* Layer offsets come from the SVG transform attribute (see arrayStackGeometry);
+   CSS must not set transform here or it would override the per-node wide spread. */
 .hdl-node-array-back {
-  transform: translate(4px, 4px);
   z-index: 0;
   opacity: 0.5;
 }
 
 .hdl-node-array-middle {
-  transform: translate(0, 0);
   z-index: 1;
   opacity: 0.75;
 }
 
 .hdl-node-array-front {
-  transform: translate(-4px, -4px);
   z-index: 2;
 }
 
@@ -1595,6 +1603,12 @@ text {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Matches .svsch-edge-thick — the lead is a stub of the same wire, so it
+   must carry the same stroke weight where the wire itself renders thick. */
+.svsch-array-stack-lead-thick {
+  stroke-width: 4.5;
 }
 
 .svsch-array-stack-lead-back {
@@ -2223,8 +2237,8 @@ text {
   stroke-width: 1.5;
 }
 
+/* Offsets come from the SVG transform attribute — do not set transform here. */
 .port-skin-array-back {
-  transform: translate(4px, 4px);
   opacity: 0.5;
 }
 
@@ -2233,7 +2247,6 @@ text {
 }
 
 .port-skin-array-front {
-  transform: translate(-4px, -4px);
 }
 
 .port-skin-selection {
@@ -2748,12 +2761,22 @@ text {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
 }
 
-.svsch-edge-struct {
+.svsch-edge-thick {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-struct {
+.svsch-edge-bridge-thick {
   stroke-width: 13.5;
+}
+
+.svsch-edge-struct {
+  stroke: url("#svsch-struct-stripes");
+  stroke-linecap: butt;
+  stroke-width: 8;
+}
+
+.svsch-edge-bridge-struct {
+  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2762,13 +2785,21 @@ text {
   stroke-width: 8;
 }
 
-.svsch-edge-interface-bg {
+.svsch-edge-interface-bg,
+.svsch-edge-struct-bg {
   stroke: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
+/* Stripe width stays aligned with .svsch-interface-stripe. */
+.svsch-struct-stripe {
+  stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
 }
 
@@ -2826,6 +2857,11 @@ text {
 
 .svsch-edge-junction-interface {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 92%, var(--vscode-charts-blue));
+  stroke-width: 2.5;
+}
+
+.svsch-edge-junction-struct {
+  fill: var(--vscode-editor-foreground);
   stroke-width: 2.5;
 }
 
@@ -3219,6 +3255,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3234,6 +3279,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3333,10 +3383,9 @@ text {
   fill: none;
 }
 
-/* Array stack leads */
-.svsch-array-stack-lead {
-  fill: none;
-  stroke-width: 1.5;
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
 }
 
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
@@ -3401,25 +3450,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
@@ -3561,12 +3593,12 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:struct_composition:clk:reg:struct_composition:pkt.opcode:clk"><path class="svsch-edge" data-edge-id="edge:port:struct_composition:clk:reg:struct_composition:pkt.opcode:clk" data-net-key="port:struct_composition:clk:port:clk" d="M 192 144 L 216 144 L 264 144 L 264 96 L 384 96 L 408 96" />
 <circle class="svsch-edge-junction" cx="264" cy="144" r="4.75" data-junction-id="port:struct_composition:clk:port:clk:264:144" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:struct_composition:clk:reg:struct_composition:pkt.valid:clk"><path class="svsch-edge" data-edge-id="edge:port:struct_composition:clk:reg:struct_composition:pkt.valid:clk" data-net-key="port:struct_composition:clk:port:clk" d="M 192 144 L 216 144 L 264 144 L 264 216 L 408 216 L 432 216" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i"><path class="svsch-edge" data-edge-id="edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i" data-net-key="port:struct_composition:opcode_i:port:opcode_i" d="M 192 72 L 216 72 L 384 72 L 408 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:struct_composition:opcode_i:reg:struct_composition:pkt.opcode:opcode_i" data-net-key="port:struct_composition:opcode_i:port:opcode_i" d="M 192 72 L 216 72 L 384 72 L 408 72" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:struct_composition:valid_i:reg:struct_composition:pkt.valid:valid_i"><path class="svsch-edge-jump-halo" d="M 257 192 Q 264 185 271 192" style="stroke-width: 12" data-edge-id="edge:port:struct_composition:valid_i:reg:struct_composition:pkt.valid:valid_i" data-jump-index="0" />
 <path class="svsch-edge" data-edge-id="edge:port:struct_composition:valid_i:reg:struct_composition:pkt.valid:valid_i" data-net-key="port:struct_composition:valid_i:port:valid_i" d="M 192 192 L 216 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode"><path class="svsch-edge" data-edge-id="edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode" data-net-key="reg:struct_composition:pkt.opcode:q" d="M 600 72 L 624 72 L 792 72 L 816 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:reg:struct_composition:pkt.opcode:struct_comp:struct_composition:pkt:pkt.opcode" data-net-key="reg:struct_composition:pkt.opcode:q" d="M 600 72 L 624 72 L 792 72 L 816 72" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:reg:struct_composition:pkt.valid:struct_comp:struct_composition:pkt:pkt.valid"><path class="svsch-edge" data-edge-id="edge:reg:struct_composition:pkt.valid:struct_comp:struct_composition:pkt:pkt.valid" data-net-key="reg:struct_composition:pkt.valid:q" d="M 576 192 L 600 192 L 648 192 L 648 120 L 792 120 L 816 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt"><path class="svsch-edge svsch-edge-struct" data-edge-id="edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt" data-net-key="struct_comp:struct_composition:pkt:out:pkt" d="M 960 72 L 984 72 L 1152 72 L 1176 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:struct_comp:struct_composition:pkt:port:struct_composition:flat:pkt" data-net-key="struct_comp:struct_composition:pkt:out:pkt" d="M 960 72 L 984 72 L 1152 72 L 1176 72" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:struct_composition:pkt.opcode" data-node-kind="register" transform="translate(408 24)">
@@ -3581,7 +3613,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-bus-node hdl-struct-node hdl-bus-composition" data-node-id="struct_comp:struct_composition:pkt" data-node-kind="struct" transform="translate(816 48)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
-<rect class="svsch-bus-pipe" x="138" y="12" width="6" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="in:pkt.opcode"><line class="svsch-bus-tap-line" x1="0" y1="24" x2="138" y2="24"></line><rect x="17" y="16" width="109" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.opcode" x="116" y="24" text-anchor="end" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [4:1]</tspan></text></g><g class="svsch-bus-tap" data-port-id="in:pkt.valid"><line class="svsch-bus-tap-line" x1="0" y1="72" x2="138" y2="72"></line><rect x="39" y="64" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.valid" x="116" y="72" text-anchor="end" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [0]</tspan></text></g>
+<defs><pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10"></line></pattern></defs><rect class="svsch-bus-pipe-struct-bg" x="136" y="12" width="8" height="72" rx="3"></rect><rect class="svsch-bus-pipe-struct" x="136" y="12" width="8" height="72" rx="3"></rect><g class="svsch-bus-tap" data-port-id="in:pkt.opcode"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="0" y1="24" x2="136" y2="24"></line><rect x="15" y="16" width="109" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.opcode" x="114" y="24" text-anchor="end" dominant-baseline="middle">opcode<tspan class="svsch-struct-field-annotation"> [4:1]</tspan></text></g><g class="svsch-bus-tap" data-port-id="in:pkt.valid"><line class="svsch-bus-tap-line" x1="0" y1="72" x2="136" y2="72"></line><rect x="37" y="64" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="in:pkt.valid" x="114" y="72" text-anchor="end" dominant-baseline="middle">valid<tspan class="svsch-struct-field-annotation"> [0]</tspan></text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:struct_composition:clk" data-node-kind="port" transform="translate(72 132)">

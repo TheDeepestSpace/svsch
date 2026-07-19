@@ -35,6 +35,7 @@ import type {
 import { edgeNetKey } from '../ir/edgeNet';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
+import { edgeIsThick } from '../ir/edgeStyle';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
 import { InteractionContext } from './nodes/shared/context';
@@ -365,12 +366,17 @@ function DiagramApp(): React.ReactElement {
       const targetNode = nodeById.get(edge.target);
       const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
       const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
+      // Ports synthesized from procedural code (register/mux ports built from
+      // always_ff/case blocks) don't always carry a reliable width of their
+      // own, so thickness is derived from the edge (both endpoints) rather
+      // than the local port alone.
+      const thick = edgeIsThick(edge, sourceNode, targetNode);
       if (sourceIsArray) {
-        addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source' });
-        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+        addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source', thick });
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
       if (targetIsArray) {
-        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
     });
 
@@ -867,15 +873,19 @@ function GenerateRegionOverlay({
             className="generate-region-title"
             onPointerDown={(event) => startDrag(event, region, 'move')}
             onClick={(event) => event.stopPropagation()}
-            onDoubleClick={() => vscode.postMessage({
-              type: 'navigateToRegion',
-              region: {
-                kind: region.kind,
-                isGenerateBlock: region.isGenerateBlock,
-                source: region.source,
-                bodySource: region.bodySource
-              }
-            })}
+            onDoubleClick={() => {
+              const msg = {
+                type: 'navigateToRegion',
+                region: {
+                  kind: region.kind,
+                  isGenerateBlock: region.isGenerateBlock,
+                  source: region.source,
+                  bodySource: region.bodySource
+                }
+              } as const;
+              console.log('NAVIGATE:', JSON.stringify(msg));
+              vscode.postMessage(msg);
+            }}
             title={region.label}
           >
             {region.label}

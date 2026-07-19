@@ -44,17 +44,32 @@ const selections: FixtureSelection[] = [
     fixture: 'register_file.sv',
     picks: [
       { label: 'port: wide input', match: (n) => n.kind === 'port' && n.label === 'addr' },
-      { label: 'register: stacked', match: (n) => n.kind === 'register' && nodeIsArrayNode(n) }
+      { label: 'register: stacked (wide)', match: (n) => n.kind === 'register' && nodeIsArrayNode(n) }
     ]
   },
   {
     fixture: 'array_port_register.sv',
     picks: [
-      { label: 'port: stacked input', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input' },
-      { label: 'port: stacked output', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output' }
+      { label: 'port: stacked input (wide)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input' },
+      { label: 'port: stacked output (wide)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output' }
+    ]
+  },
+  {
+    fixture: 'array_port_register_bit.sv',
+    picks: [
+      { label: 'port: stacked input (1-bit)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input' },
+      { label: 'port: stacked output (1-bit)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output' },
+      { label: 'register: stacked (1-bit)', match: (n) => n.kind === 'register' && nodeIsArrayNode(n) }
     ]
   },
   { fixture: 'mux_three_inputs.sv', picks: [{ label: 'mux', match: (n) => n.kind === 'mux' }] },
+  {
+    fixture: 'array_register.sv',
+    picks: [
+      { label: 'mux: stacked write address', match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'write address' },
+      { label: 'mux: stacked write enable', match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'if write_en' }
+    ]
+  },
   { fixture: 'alu_connected.sv', picks: [{ label: 'alu', match: (n) => n.kind === 'alu' }] },
   { fixture: 'inverter_expr.sv', picks: [{ label: 'inverter', match: (n) => n.kind === 'inverter' }] },
   { fixture: 'comb_assigns.sv', picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }] },

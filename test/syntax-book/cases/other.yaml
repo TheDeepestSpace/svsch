@@ -1,0 +1,29 @@
+group: Other
+cases:
+  - id: unknown-construct
+    title: Unknown Construct
+    description: An unsupported procedural block is rendered as an unknown node.
+    tags: [unknown, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = a;
+          initial begin
+            $display("hello");
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: unknown
+      nodeLabel: initial
+      action: doubleClick
+    expect:
+      nodeKinds: [port, unknown]
+      selectedText: |
+        initial begin
+            $display("hello");
+          end

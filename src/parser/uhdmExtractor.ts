@@ -5,6 +5,7 @@ import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { DesignGraph, DesignModule, DiagramNode, DiagramPort, DiagramEdge, DiagramNodeMetadata, DiagramEdgeMetadata, GenerateRegion, InstanceParameter, ParameterDecl, ParameterRef, SourceRange } from '../ir/types';
 import { edgeId, stableId } from '../ir/ids';
+import { annotateWireStyles } from '../ir/edgeStyle';
 import { orderGraphModules } from './moduleOrdering';
 import { extractDesignFromText } from './textExtractor';
 import { logger } from '../logger';
@@ -197,6 +198,26 @@ export async function extractDesignWithUhdm(
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);
     mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
+
+    // Array aggregate bus nodes: UHDM reports full-element taps (arr[i]) as
+    // [0:0]; they carry one whole element, so inherit the element width from
+    // the aggregate-side port for correct wire/tap styling.
+    for (const module of Object.values(graph.modules)) {
+        for (const node of module.nodes) {
+            if (node.kind !== 'bus' || node.metadata?.aggregateKind !== 'array') continue;
+            const aggregatePort = node.ports.find(p => !p.name.includes('['));
+            const elementWidth = aggregatePort?.width;
+            if (!elementWidth || elementWidth === '[0:0]') continue;
+            const fullElementPattern = /^[^[\]]+\[[^\]]+\]$/;
+            for (const port of node.ports) {
+                if (port === aggregatePort) continue;
+                if ((port.width && port.width !== '[0:0]')) continue;
+                if (fullElementPattern.test(port.name)) {
+                    port.width = elementWidth;
+                }
+            }
+        }
+    }
 
     // Mark edges connected to array nodes as stacked appropriately
     for (const module of Object.values(graph.modules)) {
@@ -414,6 +435,12 @@ export async function extractDesignWithUhdm(
                 });
             }
         }
+    }
+
+    // Stamp wire-style classification (thick wires, wide array stacks) so
+    // renderers do not re-derive it from widths at draw time.
+    for (const module of Object.values(graph.modules)) {
+        annotateWireStyles(module);
     }
 
     onProgress?.('Finalizing...', 10);
@@ -1174,7 +1201,7 @@ function findInterfaceMemberDeclaration(
     sourceFile: string | undefined,
     interfaceName: string | undefined,
     memberName: string | undefined
-): RawSourceRange | undefined {
+): { source: RawSourceRange; width?: string } | undefined {
     const text = getSourceText(cache, sourceFile);
     if (!sourceFile || !text || !interfaceName || !memberName) return undefined;
 
@@ -1191,7 +1218,10 @@ function findInterfaceMemberDeclaration(
     const headerMatch = headerPattern.exec(headerText);
     if (headerMatch) {
         const startOffset = interfaceOffset + (headerMatch.index ?? 0);
-        return offsetToRawSource(text, sourceFile, startOffset, startOffset + headerMatch[0].length);
+        return {
+            source: offsetToRawSource(text, sourceFile, startOffset, startOffset + headerMatch[0].length),
+            width: headerMatch[0].match(/\[[^\]]+\]/)?.[0]
+        };
     }
 
     const bodyOffset = headerEnd >= 0 ? headerEnd + 1 : 0;
@@ -1207,7 +1237,10 @@ function findInterfaceMemberDeclaration(
     const startInMatch = leading >= 0 ? leading : 0;
     const startOffset = interfaceOffset + bodyOffset + (declarationMatch.index ?? 0) + startInMatch;
     const endOffset = interfaceOffset + bodyOffset + (declarationMatch.index ?? 0) + declarationMatch[0].length;
-    return offsetToRawSource(text, sourceFile, startOffset, endOffset);
+    return {
+        source: offsetToRawSource(text, sourceFile, startOffset, endOffset),
+        width: declarationMatch[0].match(/\[[^\]]+\]/)?.[0]
+    };
 }
 
 function findLiteralOccurrence(
@@ -1526,7 +1559,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                         const declaredSignalWidth = rawPortWidth && rawPortWidth !== '[0:0]'
                             ? rawPortWidth
                             : (sourceDeclaredWidth ?? rawPortWidth);
-                        const resolvedInterfaceMemberSource = n.kind === 'interface' && p.width !== 'interface'
+                        const resolvedInterfaceMember = n.kind === 'interface' && p.width !== 'interface'
                             ? findInterfaceMemberDeclaration(
                                 sourceTextCache,
                                 p.source?.file || n.source?.file || rawMod.file,
@@ -1534,7 +1567,12 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                                 p.label || p.name
                             )
                             : undefined;
-                        const portSource = resolvedInterfaceMemberSource ?? p.source;
+                        const portSource = resolvedInterfaceMember?.source ?? p.source;
+                        // UHDM reports interface members as [0:0]; recover the declared
+                        // range from the interface body so styling reflects the width.
+                        const interfaceMemberWidth = (!p.width || p.width === '[0:0]')
+                            ? resolvedInterfaceMember?.width
+                            : undefined;
 
                         const common = {
                             name: p.name,
@@ -1552,6 +1590,8 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                                     ? (declaredSignalWidth
                                         ?? p.width
                                         ?? undefined)
+                                : n.kind === 'interface'
+                                    ? (interfaceMemberWidth ?? p.width ?? undefined)
                                 : (p.width || undefined),
                             widthExpression: p.widthExpression || undefined,
                             parameterRefs: p.parameterRefs?.map((ref) => parameterRefFromRaw(ref, workspaceRoot)),
@@ -1689,11 +1729,22 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 const tgtPort = targetNode?.ports.find(p => p.id === targetPortId);
                 const hasStructTypedPort = (node: DiagramNode | undefined) =>
                     node?.kind === 'port' && node.ports.some(p => p.typeName && !p.modportName && structTypeNames.has(p.typeName));
+                const nodeIsStructTyped = (node: DiagramNode | undefined) => {
+                    const typeName = node?.typeName ?? node?.metadata?.typeName;
+                    return Boolean(typeName && structTypeNames.has(typeName));
+                };
+                const targetIsStructTyped = Boolean(tgtPort?.typeName && structTypeNames.has(tgtPort.typeName))
+                    || hasStructTypedPort(targetNode)
+                    || nodeIsStructTyped(targetNode);
+                // SV semantics: assigning a struct composition to a plain vector
+                // is an implicit cast — struct styling only continues while the
+                // receiving declaration is itself struct-typed.
                 const isStructEdge = isStructComposition
-                    || (srcPort?.typeName && structTypeNames.has(srcPort.typeName))
-                    || (tgtPort?.typeName && structTypeNames.has(tgtPort.typeName))
-                    || hasStructTypedPort(sourceNode)
-                    || hasStructTypedPort(targetNode);
+                    ? targetIsStructTyped
+                    : (srcPort?.typeName && structTypeNames.has(srcPort.typeName))
+                        || (tgtPort?.typeName && structTypeNames.has(tgtPort.typeName))
+                        || hasStructTypedPort(sourceNode)
+                        || hasStructTypedPort(targetNode);
 
                 const edge: DiagramEdge = {
                     id: edgeId(sourceNodeId, targetNodeId, edgeLabel),
@@ -1713,7 +1764,13 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                     } : undefined,
                     metadata: {
                         ...e.metadata,
-                        aggregate: (isInterfaceInstanceSource || isInterfaceInstanceTarget) && (e.source !== 'self' && e.target !== 'self') ? 'interface' : (isStructEdge ? 'struct' : e.metadata?.aggregate)
+                        aggregate: (isInterfaceInstanceSource || isInterfaceInstanceTarget) && (e.source !== 'self' && e.target !== 'self')
+                            ? 'interface'
+                            : isStructEdge
+                                ? 'struct'
+                                // The backend stamps struct by signal name; a composition
+                                // feeding a plain vector is an implicit cast, so drop it.
+                                : (isStructComposition && !targetIsStructTyped ? undefined : e.metadata?.aggregate)
                     }
                 };
                 return edge;
