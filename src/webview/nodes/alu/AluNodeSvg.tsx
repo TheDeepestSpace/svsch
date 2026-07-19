@@ -2,14 +2,20 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
 import { nodeOperation, nodeIsArrayNode } from '../../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { nodeStackIsWide } from '../../../ir/edgeStyle';
+import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
+  const stackWide = isArray && nodeStackIsWide(node);
+  const stackLayers = arrayStackLayersFor(stackWide);
+  const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+  const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
+    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(
     (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
@@ -40,15 +46,15 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   const inputYs = [g * 1, g * 3];
 
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
-  const contentShiftX = isArray ? ARRAY_STACK_LAYERS.front.dx : 0;
-  const contentShiftY = isArray ? ARRAY_STACK_LAYERS.front.dy : 0;
+  const contentShiftX = isArray ? stackLayers.front.dx : 0;
+  const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const bodyTransform = isArray
-    ? `translate(${ARRAY_STACK_LAYERS.front.dx}, ${ARRAY_STACK_LAYERS.front.dy})`
+    ? `translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`
     : undefined;
 
   return (
     <>
-      {isArray && ARRAY_STACK_SKIN_LAYERS.filter(layer => layer.id !== 'front').map(layer => (
+      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <path
           key={layer.id}
           className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
@@ -79,6 +85,8 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       {isArray && inputs.slice(0, 2).map((port: DiagramPort, index: number) =>
         hasArrayConnection(port.id, 'target') ? (
           <SvgArrayStackLeads
+            wide={stackWide}
+            thick={arrayConnectionThick(port.id, 'target')}
             key={`lead-${port.id}`}
             side="left"
             width={width}
@@ -88,7 +96,7 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         ) : null
       )}
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads side="right" width={width} y={height / 2} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
       )}
       {!isArray && <path className="node-skin-selection" d={path} style={{ strokeLinejoin: 'round' }} />}
     </>

@@ -258,7 +258,7 @@
       "target": "select:var_bit_select:bus[sel]",
       "sourceHandle": "port:sel",
       "targetHandle": "port:sel",
-      "path": "M 600 264 L 624 264 L 641 264 Q 648 257 655 264 L 888 264 L 888 309"
+      "path": "M 600 264 L 624 264 L 639 264 Q 648 255 657 264 L 888 264 L 888 309"
     },
     {
       "id": "edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out",

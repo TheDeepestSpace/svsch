@@ -1,10 +1,13 @@
 import { pathFromPoints, type OrthogonalPoint } from '../../core/pathUtils';
 import {
-  ARRAY_STACK_LAYERS,
-  ARRAY_STACK_LEAD_LAYERS,
+  arrayStackLayer,
+  arrayStackLeadLayersFor,
   arrayStackLayerTrim,
   type ArrayStackLayerId
 } from '../arrayStackGeometry';
+import { arrayBreakoutPipeCapPivot, arrayCompositionPipeCapPivot } from '../../diagram/busGeometry';
+import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import type { PositionedNode } from '../../ir/types';
 import { makeOrthogonal } from './logic';
 import { HdlPosition } from './types';
 
@@ -38,9 +41,115 @@ export function shortenStackTarget(points: OrthogonalPoint[], amount: number, ta
   return next;
 }
 
-export function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId): OrthogonalPoint[] {
-  const layer = ARRAY_STACK_LAYERS[layerId];
+export function offsetPointsForArrayStackLayer(points: OrthogonalPoint[], layerId: ArrayStackLayerId, wide = false): OrthogonalPoint[] {
+  const layer = arrayStackLayer(layerId, wide);
   return offsetPoints(points, layer.dx, layer.dy);
+}
+
+/**
+ * Array-breakout bus pipes cap their merge point with a rect rotated 45°
+ * about a fixed pivot (see arrayBreakoutPipeCapPivot / BusNodeSvg's pipeCap).
+ * A stacked layer's own fan-out offset (dx=dy, applied by
+ * offsetPointsForArrayStackLayer) moves it exactly along that same 45°
+ * direction, so it never changes the layer's perpendicular distance from the
+ * cap's centerline — only how far along the centerline it sits. That means
+ * aligning any one layer's raw (pre-offset) target onto the centerline
+ * aligns all layers onto it identically, regardless of their fan-out.
+ *
+ * This computes the horizontal-only shift (matching shortenStackTarget's
+ * Left/Right sign convention) that does that alignment: for a point at
+ * (dx, dy) from the pivot, moving x by (dx - dy) makes the point's
+ * perpendicular offset from the pivot's 45° line exactly zero.
+ */
+export function horizontalShiftOntoDiagonal(point: OrthogonalPoint, pivot: OrthogonalPoint): number {
+  return (point.x - pivot.x) - (point.y - pivot.y);
+}
+
+/**
+ * Direction-aware wrapper around horizontalShiftOntoDiagonal: returns the
+ * value to pass as `amount` into shortenStackTarget/shortenStackSource so
+ * the resulting point lands on `pivot`'s 45° diagonal — regardless of
+ * whether that function adds the amount (Right) or subtracts it (Left).
+ */
+function capAlignmentTrim(point: OrthogonalPoint, pivot: OrthogonalPoint, hdlPosition: HdlPosition): number {
+  const delta = horizontalShiftOntoDiagonal(point, pivot);
+  return hdlPosition === HdlPosition.Right ? -delta : delta;
+}
+
+export interface StackedEdgeLayerPoints {
+  back: OrthogonalPoint[];
+  middle: OrthogonalPoint[];
+  front: OrthogonalPoint[];
+}
+
+export interface StackedEdgeLayerPointsOptions {
+  points: OrthogonalPoint[];
+  sourceHdlPosition: HdlPosition;
+  targetHdlPosition: HdlPosition;
+  sourceIsArray: boolean;
+  sourceIsArrayComposition: boolean;
+  targetIsArray: boolean;
+  targetIsArrayBreakout: boolean;
+  /** Required when sourceIsArrayComposition is true, to locate its pipe cap's pivot. */
+  sourceNode: PositionedNode | undefined;
+  /** Required when targetIsArrayBreakout is true, to locate its pipe cap's pivot. */
+  targetNode: PositionedNode | undefined;
+  isThickWire: boolean;
+}
+
+/**
+ * Computes the three parallel wire paths (back/middle/front) for a "stacked"
+ * edge touching an array-visualized node. Shared by the live webview
+ * (OrthogonalEdge) and the CLI/static exporter (svgRenderer) so this routing
+ * — including the array-breakout/composition pipe-cap alignment below —
+ * only needs fixing in one place.
+ */
+export function computeStackedEdgeLayerPoints(options: StackedEdgeLayerPointsOptions): StackedEdgeLayerPoints {
+  const {
+    points, sourceHdlPosition, targetHdlPosition,
+    sourceIsArray, sourceIsArrayComposition, sourceNode,
+    targetIsArray, targetIsArrayBreakout, targetNode, isThickWire
+  } = options;
+
+  const rawSource = points[0];
+  const rawTarget = points[points.length - 1];
+
+  const arrayBreakoutCapTrim = targetIsArrayBreakout && targetNode
+    ? (() => {
+        const localPivot = arrayBreakoutPipeCapPivot(targetNode);
+        const pivot = { x: targetNode.position.x + localPivot.x, y: targetNode.position.y + localPivot.y };
+        return capAlignmentTrim(rawTarget, pivot, targetHdlPosition);
+      })()
+    : 0;
+
+  const arrayCompositionCapTrim = sourceIsArrayComposition && sourceNode
+    ? (() => {
+        const width = diagramNodeDimensions(sourceNode).width;
+        const localPivot = arrayCompositionPipeCapPivot(sourceNode, width);
+        const pivot = { x: sourceNode.position.x + localPivot.x, y: sourceNode.position.y + localPivot.y };
+        return capAlignmentTrim(rawSource, pivot, sourceHdlPosition);
+      })()
+    : 0;
+
+  const applyTargetTrim = (layerId: ArrayStackLayerId, layerPoints: OrthogonalPoint[]) =>
+    shortenStackTarget(
+      layerPoints,
+      targetIsArrayBreakout ? arrayBreakoutCapTrim : targetIsArray ? arrayStackLayerTrim(layerId, isThickWire) : 0,
+      targetHdlPosition
+    );
+
+  const applySourceTrim = (layerId: ArrayStackLayerId, layerPoints: OrthogonalPoint[]) =>
+    shortenStackSource(
+      layerPoints,
+      sourceIsArray ? (sourceIsArrayComposition ? arrayCompositionCapTrim : arrayStackLayerTrim(layerId, isThickWire)) : 0,
+      sourceHdlPosition
+    );
+
+  return {
+    back: applyTargetTrim('back', applySourceTrim('back', makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back', isThickWire)))),
+    middle: applyTargetTrim('middle', applySourceTrim('middle', makeOrthogonal(points))),
+    front: applyTargetTrim('front', applySourceTrim('front', makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front', isThickWire))))
+  };
 }
 
 export function shortenStackSource(points: OrthogonalPoint[], amount: number, sourcePosition: HdlPosition): OrthogonalPoint[] {
@@ -97,11 +206,12 @@ export function convergingStackPath(
   points: OrthogonalPoint[],
   layerId: ArrayStackLayerId,
   sourcePosition: HdlPosition,
-  targetPosition: HdlPosition
+  targetPosition: HdlPosition,
+  wide = false
 ): ConvergingStackPath | undefined {
   if (points.length < 2) return undefined;
 
-  const offsetted = offsetPointsForArrayStackLayer(points, layerId);
+  const offsetted = offsetPointsForArrayStackLayer(points, layerId, wide);
   const rawTarget = points[points.length - 1];
   const last = offsetted[offsetted.length - 1];
 
@@ -115,11 +225,11 @@ export function convergingStackPath(
   const layerPoints = shortenStackSource(
     dropFinalApproachStub(
       orthogonal.map((point, index) => (
-        index === orthogonal.length - 1 ? last : offsetPointsForArrayStackLayer([point], layerId)[0]
+        index === orthogonal.length - 1 ? last : offsetPointsForArrayStackLayer([point], layerId, wide)[0]
       )),
       targetPosition
     ),
-    arrayStackLayerTrim(layerId),
+    arrayStackLayerTrim(layerId, wide),
     sourcePosition
   );
   const start = layerPoints[0];
@@ -138,7 +248,8 @@ export function convergingStackPath(
 export function promotedStackFanoutPath(
   points: OrthogonalPoint[],
   targetPosition: HdlPosition,
-  splitDistance: number
+  splitDistance: number,
+  wide = false
 ): PromotedStackFanout | undefined {
   if (points.length < 2) return undefined;
 
@@ -151,10 +262,11 @@ export function promotedStackFanoutPath(
   else split = { x: target.x, y: target.y + splitDistance };
 
   const trunkPoints = makeOrthogonal([...points.slice(0, -1), split]);
-  const branchStarts = ARRAY_STACK_LEAD_LAYERS.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
-  const branchTargets = ARRAY_STACK_LEAD_LAYERS.map((layer) => shortenStackTarget(
+  const leadLayers = arrayStackLeadLayersFor(wide);
+  const branchStarts = leadLayers.map((layer) => ({ x: split.x + layer.dx, y: split.y + layer.dy }));
+  const branchTargets = leadLayers.map((layer) => shortenStackTarget(
     [{ x: target.x + layer.dx, y: target.y + layer.dy }],
-    arrayStackLayerTrim(layer.id),
+    arrayStackLayerTrim(layer.id, wide),
     targetPosition
   )[0]);
 
@@ -164,7 +276,7 @@ export function promotedStackFanoutPath(
     barEnd: branchStarts[branchStarts.length - 1],
     bar: pathFromPoints([branchStarts[0], branchStarts[branchStarts.length - 1]]),
     branches: branchTargets.map((branchTarget, index) => ({
-      layerId: ARRAY_STACK_LEAD_LAYERS[index].id,
+      layerId: leadLayers[index].id,
       path: pathFromPoints([branchStarts[index], branchTarget])
     }))
   };

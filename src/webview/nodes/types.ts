@@ -13,4 +13,5 @@ export type HdlFlowNode = Node<HdlNodeData>;
 export interface ArrayStackConnection {
   portId?: string;
   role: 'source' | 'target';
+  thick?: boolean;
 }

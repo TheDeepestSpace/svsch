@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 120
+        "y": 336
       },
       "width": 96,
       "height": 48,
@@ -22,6 +22,46 @@
     },
     {
       "id": "cut-label:styled:interface:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 336
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:plain:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 120
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:plain:source",
       "type": "hdl",
       "position": {
         "x": 168,
@@ -45,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 192
+        "y": 408
       },
       "width": 96,
       "height": 48,
@@ -65,7 +105,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 192
+        "y": 408
       },
       "width": 96,
       "height": 48,
@@ -85,7 +125,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 48
+        "y": 264
       },
       "width": 96,
       "height": 48,
@@ -105,7 +145,87 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 48
+        "y": 264
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:thick:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:thick:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:wstacked:sink",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 480
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:styled:wstacked:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 480
       },
       "width": 96,
       "height": 48,
@@ -125,7 +245,7 @@
       "type": "hdl",
       "position": {
         "x": 0,
-        "y": 132
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -141,11 +261,31 @@
       }
     },
     {
+      "id": "source:plain",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "bit_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "source:stacked",
       "type": "hdl",
       "position": {
         "x": 0,
-        "y": 204
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -165,7 +305,7 @@
       "type": "hdl",
       "position": {
         "x": 0,
-        "y": 60
+        "y": 276
       },
       "width": 120,
       "height": 24,
@@ -181,11 +321,51 @@
       }
     },
     {
+      "id": "source:thick",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 204
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "data_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:wstacked",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 492
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "abus_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "target:interface",
       "type": "hdl",
       "position": {
         "x": 600,
-        "y": 132
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -201,11 +381,31 @@
       }
     },
     {
+      "id": "target:plain",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "bit_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
       "id": "target:stacked",
       "type": "hdl",
       "position": {
         "x": 600,
-        "y": 204
+        "y": 420
       },
       "width": 120,
       "height": 24,
@@ -225,7 +425,7 @@
       "type": "hdl",
       "position": {
         "x": 600,
-        "y": 60
+        "y": 276
       },
       "width": 120,
       "height": 24,
@@ -239,6 +439,46 @@
           }
         ]
       }
+    },
+    {
+      "id": "target:thick",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 204
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "data_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "target:wstacked",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 492
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "abus_o",
+            "direction": "output"
+          }
+        ]
+      }
     }
   ],
   "edges": [
@@ -248,12 +488,28 @@
       "target": "target:interface",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 144 L 528 144 L 600 144 L 600 144"
+      "path": "M 528 360 L 528 360 L 600 360 L 600 360"
     },
     {
       "id": "cut-stub:styled:interface:source",
       "source": "source:interface",
       "target": "cut-label:styled:interface:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 360 L 120 360 L 168 360 L 168 360"
+    },
+    {
+      "id": "cut-stub:styled:plain:sink",
+      "source": "cut-label:styled:plain:sink",
+      "target": "target:plain",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 528 144 L 528 144 L 600 144 L 600 144"
+    },
+    {
+      "id": "cut-stub:styled:plain:source",
+      "source": "source:plain",
+      "target": "cut-label:styled:plain:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
       "path": "M 120 144 L 120 144 L 168 144 L 168 144"
@@ -264,7 +520,7 @@
       "target": "target:stacked",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 541 220 L 595 220"
+      "path": "M 541 436 L 595 436"
     },
     {
       "id": "cut-stub:styled:stacked:source",
@@ -272,7 +528,7 @@
       "target": "cut-label:styled:stacked:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 133 220 L 163 220"
+      "path": "M 133 436 L 163 436"
     },
     {
       "id": "cut-stub:styled:struct:sink",
@@ -280,7 +536,7 @@
       "target": "target:struct",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 72 L 528 72 L 600 72 L 600 72"
+      "path": "M 528 288 L 528 288 L 600 288 L 600 288"
     },
     {
       "id": "cut-stub:styled:struct:source",
@@ -288,7 +544,39 @@
       "target": "cut-label:styled:struct:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 72 L 120 72 L 168 72 L 168 72"
+      "path": "M 120 288 L 120 288 L 168 288 L 168 288"
+    },
+    {
+      "id": "cut-stub:styled:thick:sink",
+      "source": "cut-label:styled:thick:sink",
+      "target": "target:thick",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 528 216 L 528 216 L 600 216 L 600 216"
+    },
+    {
+      "id": "cut-stub:styled:thick:source",
+      "source": "source:thick",
+      "target": "cut-label:styled:thick:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 144 216 L 144 216 L 168 216 L 168 216"
+    },
+    {
+      "id": "cut-stub:styled:wstacked:sink",
+      "source": "cut-label:styled:wstacked:sink",
+      "target": "target:wstacked",
+      "sourceHandle": "cut",
+      "targetHandle": "p",
+      "path": "M 547.5 510 L 592.5 510"
+    },
+    {
+      "id": "cut-stub:styled:wstacked:source",
+      "source": "source:wstacked",
+      "target": "cut-label:styled:wstacked:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 163.5 510 L 160.5 510"
     }
   ]
 }

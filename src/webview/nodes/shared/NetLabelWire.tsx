@@ -2,7 +2,7 @@ import React from 'react';
 import { Position } from '@xyflow/react';
 import { diagramSizing } from '../../../diagram/constants';
 import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_LEAD_EDGE_GAP, ARRAY_STACK_LEAD_LAYERS, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import { arrayStackLayer, ARRAY_STACK_LEAD_EDGE_GAP, arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
 import type { PositionedNode } from '../../../ir/types';
 
 export function ArrayStackLeads({
@@ -10,13 +10,19 @@ export function ArrayStackLeads({
   width,
   y,
   x,
-  trimSink = false
+  trimSink = false,
+  wide = false,
+  thick = false
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
   y: number;
   x?: number;
   trimSink?: boolean;
+  /** Lane spread: tracks the node's own card layout. */
+  wide?: boolean;
+  /** Stroke weight: tracks this specific connection's own thickness. */
+  thick?: boolean;
 }): React.ReactElement {
   return (
     <svg
@@ -24,8 +30,8 @@ export function ArrayStackLeads({
       aria-hidden="true"
       focusable="false"
     >
-      {ARRAY_STACK_LEAD_LAYERS.map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id);
+      {arrayStackLeadLayersFor(wide).map((layer) => {
+        const trim = arrayStackLayerTrim(layer.id, wide);
         const shapeX = (side === 'top' || side === 'bottom')
           ? (x ?? width / 2) + layer.dx
           : side === 'left'
@@ -35,8 +41,8 @@ export function ArrayStackLeads({
         const endY = side === 'top' && trimSink
           ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
           : shapeY;
-        const sourceRightExitX = width + ARRAY_STACK_LAYERS.back.dx + ARRAY_STACK_LEAD_EDGE_GAP;
-        const bottomExitY = y + ARRAY_STACK_LAYERS.back.dy + ARRAY_STACK_LEAD_EDGE_GAP;
+        const sourceRightExitX = width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP;
+        const bottomExitY = y + arrayStackLayer('back', wide).dy + ARRAY_STACK_LEAD_EDGE_GAP;
         const leadX = (side === 'top' || side === 'bottom')
           ? shapeX
           : side === 'left'
@@ -52,7 +58,7 @@ export function ArrayStackLeads({
         return (
           <path
             key={layer.id}
-            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}`}
+            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
             d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
           />
         );
@@ -77,7 +83,7 @@ export function NetLabelWirePaths({
   height
 }: {
   handleSide: 'left' | 'right' | 'top' | 'bottom';
-  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean };
+  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean; thick?: boolean };
   align?: 'start' | 'end';
   isSourceStacked?: boolean;
   width: number;
@@ -85,6 +91,7 @@ export function NetLabelWirePaths({
 }): React.ReactElement {
   const isInterface = edgeStyle?.aggregate === 'interface';
   const isStruct = edgeStyle?.aggregate === 'struct';
+  const isThick = !isInterface && !isStruct && edgeStyle?.thick === true;
   const isStacked = isSourceStacked;
 
   const horizontalPath = (handleSide === 'top' || handleSide === 'bottom')
@@ -106,14 +113,15 @@ export function NetLabelWirePaths({
   return (
     <>
       {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
+      {isStruct && <path className="svsch-edge svsch-edge-struct-bg" d={horizontalPath + verticalPath} />}
       {isStacked ? (
         <>
-          {renderPath('svsch-edge svsch-edge-stacked-back', 'translate(4, 4)')}
-          {renderPath('svsch-edge svsch-edge-stacked')}
-          {renderPath('svsch-edge svsch-edge-stacked-front', 'translate(-4, -4)')}
+          {renderPath(`svsch-edge svsch-edge-stacked-back${isThick ? ' svsch-edge-thick' : ''}`, `translate(${arrayStackLayer('back', isThick).dx}, ${arrayStackLayer('back', isThick).dy})`)}
+          {renderPath(`svsch-edge svsch-edge-stacked${isThick ? ' svsch-edge-thick' : ''}`)}
+          {renderPath(`svsch-edge svsch-edge-stacked-front${isThick ? ' svsch-edge-thick' : ''}`, `translate(${arrayStackLayer('front', isThick).dx}, ${arrayStackLayer('front', isThick).dy})`)}
         </>
       ) : (
-        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : ''}`} d={horizontalPath + verticalPath} />
+        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : isThick ? ' svsch-edge-thick' : ''}`} d={horizontalPath + verticalPath} />
       )}
     </>
   );
@@ -128,12 +136,13 @@ export function NetLabelWire({
 }: {
   node: PositionedNode;
   handleSide: 'left' | 'right' | 'top' | 'bottom';
-  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean };
+  edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean; thick?: boolean };
   align?: 'start' | 'end';
   isSourceStacked?: boolean;
 }): React.ReactElement {
   const isInterface = edgeStyle?.aggregate === 'interface';
   const isStruct = edgeStyle?.aggregate === 'struct';
+  const isThick = !isInterface && !isStruct && edgeStyle?.thick === true;
   const isStacked = isSourceStacked;
 
   const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
@@ -142,6 +151,7 @@ export function NetLabelWire({
     'hdl-net-label-wire-svg',
     isInterface ? 'svsch-edge-interface' : '',
     isStruct ? 'svsch-edge-struct' : '',
+    isThick ? 'svsch-edge-thick' : '',
     isStacked ? 'svsch-edge-stacked' : ''
   ].filter(Boolean).join(' ');
 

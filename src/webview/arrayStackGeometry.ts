@@ -1,7 +1,16 @@
 import { diagramSizing } from '../diagram/constants';
 
 export const ARRAY_STACK_LANE_OFFSET = 4;
+/** Multi-bit array stacks spread wider (0.25 grid) so the thicker lines keep clear gaps. */
+export const ARRAY_STACK_WIDE_LANE_OFFSET = diagramSizing.gridSize * 0.25;
 export const ARRAY_STACK_LEAD_EDGE_GAP = 1.5;
+
+export interface ArrayStackLayer {
+  id: ArrayStackLayerId;
+  dx: number;
+  dy: number;
+  trimUnits: number;
+}
 
 export const ARRAY_STACK_LAYERS = {
   front: { id: 'front', dx: -ARRAY_STACK_LANE_OFFSET, dy: -ARRAY_STACK_LANE_OFFSET, trimUnits: 1 / 8 },
@@ -10,6 +19,28 @@ export const ARRAY_STACK_LAYERS = {
 } as const;
 
 export type ArrayStackLayerId = keyof typeof ARRAY_STACK_LAYERS;
+
+export function arrayStackScale(wide: boolean): number {
+  return wide ? ARRAY_STACK_WIDE_LANE_OFFSET / ARRAY_STACK_LANE_OFFSET : 1;
+}
+
+function scaledLayer(layer: ArrayStackLayer, wide: boolean): ArrayStackLayer {
+  if (!wide) return layer;
+  const scale = arrayStackScale(true);
+  return { ...layer, dx: layer.dx * scale, dy: layer.dy * scale, trimUnits: layer.trimUnits * scale };
+}
+
+export function arrayStackLayer(layerId: ArrayStackLayerId, wide: boolean): ArrayStackLayer {
+  return scaledLayer(ARRAY_STACK_LAYERS[layerId], wide);
+}
+
+export function arrayStackLayersFor(wide: boolean): Record<ArrayStackLayerId, ArrayStackLayer> {
+  return {
+    front: arrayStackLayer('front', wide),
+    middle: arrayStackLayer('middle', wide),
+    back: arrayStackLayer('back', wide)
+  };
+}
 
 export const ARRAY_STACK_LEAD_LAYERS = [
   ARRAY_STACK_LAYERS.front,
@@ -23,6 +54,14 @@ export const ARRAY_STACK_SKIN_LAYERS = [
   ARRAY_STACK_LAYERS.front
 ] as const;
 
-export function arrayStackLayerTrim(layerId: ArrayStackLayerId): number {
-  return diagramSizing.gridSize * ARRAY_STACK_LAYERS[layerId].trimUnits;
+export function arrayStackLeadLayersFor(wide: boolean): ArrayStackLayer[] {
+  return ARRAY_STACK_LEAD_LAYERS.map((layer) => scaledLayer(layer, wide));
+}
+
+export function arrayStackSkinLayersFor(wide: boolean): ArrayStackLayer[] {
+  return ARRAY_STACK_SKIN_LAYERS.map((layer) => scaledLayer(layer, wide));
+}
+
+export function arrayStackLayerTrim(layerId: ArrayStackLayerId, wide = false): number {
+  return diagramSizing.gridSize * arrayStackLayer(layerId, wide).trimUnits;
 }

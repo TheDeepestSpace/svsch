@@ -1,7 +1,7 @@
 import React from 'react';
 import { diagramSizing } from '../../../diagram/constants';
 import { portSkinPath, interfaceSkinPath } from '../../../diagram/interfaceGeometry';
-import { ARRAY_STACK_LAYERS, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
+import { arrayStackLayer, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 
 export function muxSkinPath(width: number, height: number): string {
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
@@ -18,7 +18,7 @@ export function OutputPortSkin({ title, width, isArray = false }: { title: React
   return <PortSkin title={title} direction="output" width={width} isArray={isArray} />;
 }
 
-export function PortSkin({ title, direction, width, isArray = false }: { title: React.ReactNode; direction: 'input' | 'output' | 'harness'; width: number; isArray?: boolean }): React.ReactElement {
+export function PortSkin({ title, direction, width, isArray = false, arrayWide = false }: { title: React.ReactNode; direction: 'input' | 'output' | 'harness'; width: number; isArray?: boolean; arrayWide?: boolean }): React.ReactElement {
   const height = diagramSizing.portHeight;
   const skinHeight = diagramSizing.portSkinHeight;
   const noseLength = diagramSizing.portNoseLength;
@@ -41,7 +41,7 @@ export function PortSkin({ title, direction, width, isArray = false }: { title: 
         <path className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''}`} d={path} />
         {isArray && <path className="port-skin-array-layer port-skin-array-front" d={path} />}
         {isArray ? (
-          <path className="hdl-node-array-selection" d={arrayStackSelectionPath(direction, width, height)} />
+          <path className="hdl-node-array-selection" d={arrayStackSelectionPath(direction, width, height, arrayWide)} />
         ) : (
           <path className="port-skin-selection" d={path} />
         )}
@@ -135,9 +135,9 @@ export function MuxArrayLayers({ width, height }: { width: number; height: numbe
   );
 }
 
-export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output' | 'harness', width: number, height: number): string {
-  const front = ARRAY_STACK_LAYERS.front;
-  const back = ARRAY_STACK_LAYERS.back;
+export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output' | 'harness', width: number, height: number, wide = false): string {
+  const front = arrayStackLayer('front', wide);
+  const back = arrayStackLayer('back', wide);
 
   if (kind === 'mux') {
     const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
@@ -211,7 +211,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
   ].join(' ');
 }
 
-export function ArrayStackSelection({ kind, width, height }: { kind: 'rect' | 'mux' | 'input' | 'output' | 'harness'; width: number; height: number }): React.ReactElement {
+export function ArrayStackSelection({ kind, width, height, wide = false }: { kind: 'rect' | 'mux' | 'input' | 'output' | 'harness'; width: number; height: number; wide?: boolean }): React.ReactElement {
   return (
     <svg
       className="hdl-node-array-selection-skin"
@@ -220,7 +220,7 @@ export function ArrayStackSelection({ kind, width, height }: { kind: 'rect' | 'm
       aria-hidden="true"
       focusable="false"
     >
-      <path className="hdl-node-array-selection" d={arrayStackSelectionPath(kind, width, height)} />
+      <path className="hdl-node-array-selection" d={arrayStackSelectionPath(kind, width, height, wide)} />
     </svg>
   );
 }
