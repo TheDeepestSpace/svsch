@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Position,
   type EdgeProps,
+  useEdges,
   useNodes,
   useReactFlow
 } from '@xyflow/react';
@@ -160,12 +161,21 @@ export function OrthogonalEdge({
   sourceHandleId,
   targetHandleId,
   label,
+  selected,
   data
 }: EdgeProps): React.ReactElement {
   const reactFlow = useReactFlow();
   const flowNodes = useNodes();
+  const flowEdges = useEdges();
   const context = useOptionalLineJumpContext();
-  const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
+  const {
+    hoveredNetKey,
+    setHovered,
+    selectionHoverActive,
+    setSelectionHoverActive,
+    pendingSelectionAction,
+    setPendingSelectionAction
+  } = React.useContext(InteractionContext);
 
   const edgeData = data as OrthogonalEdgeData | undefined;
   const diagramEdge = edgeData?.edge;
@@ -204,7 +214,21 @@ export function OrthogonalEdge({
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
   const isGroupSelected = (sourceFlowNode?.selected === true) && (targetFlowNode?.selected === true);
-  
+
+  // Every other cuttable/reroutable wire that's part of the same multi-selection
+  // as this one, so hovering or acting on any one of them can target them all.
+  const selectedCuttableEdges = React.useMemo(
+    () => flowEdges.filter((edge) => (
+      edge.selected === true
+      && edge.data?.edge !== undefined
+      && edge.data.edge.metadata?.cutStub === undefined
+    )),
+    [flowEdges]
+  );
+  const isMultiSelected = selected === true && selectedCuttableEdges.length > 1;
+  const isPendingCutTarget = isMultiSelected && pendingSelectionAction === 'cut';
+  const isPendingRerouteTarget = isMultiSelected && pendingSelectionAction === 'reroute';
+
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = React.useState<number | null>(null);
   const [isEdgeHovered, setIsEdgeHovered] = React.useState(false);
   // localPoints represents the "structured" path during a drag
@@ -382,7 +406,11 @@ export function OrthogonalEdge({
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
-  const showCutButton = isEdgeHovered && diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub;
+  // A wire's own controls normally only appear while it's directly hovered. When
+  // it's part of a multi-wire selection, hovering ANY selected wire reveals every
+  // selected wire's controls, so the user can see (and act on) the whole batch.
+  const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub
+    && (isEdgeHovered || (isMultiSelected && selectionHoverActive));
   const netGeometries = context && edgeData?.netEdgeIds
     ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
     : [];
@@ -398,7 +426,10 @@ export function OrthogonalEdge({
     }
     setIsEdgeHovered(true);
     setHovered(netKey);
-  }, [netKey, setHovered]);
+    if (isMultiSelected) {
+      setSelectionHoverActive(true);
+    }
+  }, [netKey, setHovered, isMultiSelected, setSelectionHoverActive]);
 
   const releaseEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -407,9 +438,10 @@ export function OrthogonalEdge({
     setHovered(undefined);
     hoverClearTimeoutRef.current = setTimeout(() => {
       setIsEdgeHovered(false);
+      setSelectionHoverActive(false);
       hoverClearTimeoutRef.current = undefined;
     }, 500);
-  }, [setHovered]);
+  }, [setHovered, setSelectionHoverActive]);
 
   React.useEffect(() => () => {
     if (hoverClearTimeoutRef.current) {
@@ -579,8 +611,18 @@ export function OrthogonalEdge({
           })()}
         </g>
       )}
-      {isGroupSelected && isLeaderInNet && (
-        <path className="svsch-edge-group-selected" d={edgeRender.path} />
+      {/* Selection and pending batch-action preview reuse the exact same halo
+          used when hovering a net (svsch-edge-net-highlight), so every "this
+          wire matters right now" state reads as one consistent style instead
+          of introducing new ones. Covers: React Flow flagging the edge itself
+          (selected — marquee, single click), both endpoint nodes selected
+          without the edge itself being flagged (isGroupSelected — e.g.
+          shift/ctrl-click on each node), and hovering the Cut/Reroute control
+          of a multi-wire selection. */}
+      {(selected || (isGroupSelected && isLeaderInNet) || isPendingCutTarget || isPendingRerouteTarget) && (
+        <g className="svsch-edge-net-highlight-group">
+          <path className="svsch-edge-net-highlight" d={edgeRender.path} />
+        </g>
       )}
       {isStacked && (sourceIsArray || targetIsArray) ? (
         <>
@@ -757,10 +799,19 @@ export function OrthogonalEdge({
             <button
               type="button"
               className="svsch-edge-reroute-control"
-              title="Reroute this connection"
+              title={isMultiSelected ? `Reroute ${selectedCuttableEdges.length} selected connections` : 'Reroute this connection'}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                if (isMultiSelected) {
+                  vscode.postMessage({
+                    type: 'rerouteEdges',
+                    moduleName: edgeData.moduleName,
+                    edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                  });
                   return;
                 }
                 vscode.postMessage({
@@ -773,16 +824,27 @@ export function OrthogonalEdge({
               onDoubleClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
+              onMouseEnter={() => setPendingSelectionAction('reroute')}
+              onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Reroute
             </button>
             <button
               type="button"
               className="svsch-edge-cut-control"
-              title="Cut net"
+              title={isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                if (isMultiSelected) {
+                  vscode.postMessage({
+                    type: 'cutNets',
+                    moduleName: edgeData.moduleName,
+                    edges: selectedCuttableEdges.map((edge) => edge.data?.edge).filter((edge): edge is DiagramEdge => edge !== undefined),
+                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                  });
                   return;
                 }
                 vscode.postMessage({
@@ -795,6 +857,8 @@ export function OrthogonalEdge({
               onDoubleClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
+              onMouseEnter={() => setPendingSelectionAction('cut')}
+              onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Cut
             </button>

@@ -364,9 +364,10 @@ export class BddWorld {
   }
 
   async _settleWorkbenchForScreenshot(): Promise<void> {
-    await this.workbox.locator('.notification-toast', { hasText: 'SVSCH' })
-      .waitFor({ state: 'hidden', timeout: 5_000 })
-      .catch(() => {});
+    const toasts = await this.workbox.locator('.notification-toast', { hasText: 'SVSCH' }).all().catch(() => []);
+    for (const toast of toasts) {
+      await toast.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
+    }
 
     for (const btn of await this.workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
       await btn.click().catch(() => {});
