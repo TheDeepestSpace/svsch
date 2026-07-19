@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
-import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
+import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
 import { renderSvg } from '../../src/cli/svgRenderer';
@@ -61,7 +61,7 @@ export async function expectGraphAndScreenshot(
   await expect(page).toHaveScreenshot(name, options);
 }
 
-export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter' | 'generate';
+export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter' | 'generate' | 'cutNet';
 
 export async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
@@ -282,12 +282,39 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
                     ? createInverterVisualLayout(graph, moduleName)
                     : layoutMode === 'generate'
                       ? createGenerateVisualLayout(graph, moduleName)
-                      : { version: 1, modules: {} } as SavedLayout;
+                      : layoutMode === 'cutNet'
+                        ? createCutNetVisualLayout(graph, moduleName)
+                        : { version: 1, modules: {} } as SavedLayout;
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+}
+
+// Cuts the module's first edge and leaves its dangling `netLabel` ends
+// unpinned (no saved position for them), so they land at the geometry-derived
+// fallback position ELK's port geometry drives — exactly what the elk-geometry
+// grid overlay is meant to visualize for every node kind, netLabel included.
+function createCutNetVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
+  const designModule = graph.modules[moduleName];
+  const edge = designModule.edges[0];
+  if (!edge) {
+    throw new Error(`No edge found in module "${moduleName}" to cut for the cut-net visual fixture`);
+  }
+  const sourceNode = designModule.nodes.find((node) => node.id === edge.source);
+  const targetNode = designModule.nodes.find((node) => node.id === edge.target);
+  if (!sourceNode || !targetNode) {
+    throw new Error(`Could not resolve edge endpoints for the cut-net visual fixture in "${moduleName}"`);
+  }
+
+  const grid = 24;
+  const positionedNodes: PositionedNode[] = [
+    { ...sourceNode, position: { x: grid * 4, y: grid * 4 } },
+    { ...targetNode, position: { x: grid * 24, y: grid * 4 } }
+  ];
+
+  return mergeNetCut({ version: 1, modules: {} }, moduleName, edge, designModule, positionedNodes);
 }
 
 function createRegisterVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {

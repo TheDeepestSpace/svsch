@@ -718,7 +718,12 @@ function makeCutLabelNode(
   fallbackPosition: { x: number; y: number }
 ): PositionedNode {
   const saved = moduleLayout.nodes[id];
-  const position = saved
+  // Only a *pinned* (fixed) save wins over the geometry-derived fallback — a
+  // released/un-pinned save (e.g. an auto-layout hint) must keep tracking the
+  // owning block's current lead point, exactly like a real node whose `fixed`
+  // is false falls through to its freshly computed position instead of a
+  // stale saved one.
+  const position = saved?.fixed
     ? { x: saved.x, y: saved.y }
     : fallbackPosition;
 

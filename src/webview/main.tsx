@@ -692,6 +692,7 @@ function DiagramApp(): React.ReactElement {
                   <NodeSelectionToolbar
                     moduleName={view.moduleName}
                     nodes={nodes}
+                    edges={edges}
                     pendingReselectIdsRef={pendingReselectIdsRef}
                   />
                 </ViewportPortal>
@@ -938,10 +939,12 @@ function GenerateRegionOverlay({
 function NodeSelectionToolbar({
   moduleName,
   nodes,
+  edges,
   pendingReselectIdsRef
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
+  edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
 }): React.ReactElement | null {
   const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes]);
@@ -961,6 +964,24 @@ function NodeSelectionToolbar({
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
     const selectedIds = new Set(selected.map((node) => node.id));
+    // A cut net's dangling end is a `netLabel` node that ELK never places
+    // directly — it's re-derived every render from the real block's current
+    // port position. Selecting the real block already selects its stub edge
+    // too (React Flow selects every edge touching a selected node), so pull
+    // that edge's netLabel endpoint into the release set even when the
+    // marquee never physically covered the label itself. A netLabel that's
+    // neither selected nor attached to a selected stub edge is left alone.
+    const nodesById = new Map(nodes.map((node) => [node.id, node]));
+    for (const edge of edges) {
+      if (edge.selected !== true) continue;
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      if (diagramEdge?.metadata?.cutStub === undefined) continue;
+      for (const endpointId of [edge.source, edge.target]) {
+        if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
+          selectedIds.add(endpointId);
+        }
+      }
+    }
     const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
       ...node,
       fixed: !selectedIds.has(node.id)

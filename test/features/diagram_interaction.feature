@@ -504,6 +504,51 @@ Feature: Diagram Interaction
     And the block "u1" should not have moved
     And the port node "a" should still be fixed in the saved layout
 
+  Scenario: Auto-laying out a cut net's block carries its dangling wire end along, even without marqueeing over it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic a, input logic b, output logic x, output logic y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 2 cut net labels named "a"
+    # Pin the dangling end somewhere of the user's choosing, exactly like a
+    # manual drag would — this is the "position gets retained" state the bug
+    # report describes.
+    And I move the cut net label attached to "x" by (2, 0) grid cells
+    And I note the position of the cut net label attached to "x"
+    And I move the port node "b" by (0, 72)
+    And I move the port node "y" by (0, 72)
+    # The lasso is only sized to fit "a" and "x" themselves, not the label
+    # sitting outside them — the label is still released because selecting
+    # "x" selects its stub wire too (React Flow selects every edge touching a
+    # selected node), and that's enough.
+    And click and drag the mouse to select "a" and "x" together
+    And I click the "Auto Layout" button
+    Then the cut net label attached to "x" should have moved
+
+  Scenario: Auto-laying out blocks that don't touch a cut net leaves its dangling wire end alone
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic a, input logic b, output logic x, output logic y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 2 cut net labels named "a"
+    And I move the cut net label attached to "x" by (2, 0) grid cells
+    And I note the position of the cut net label attached to "x"
+    And I move the port node "b" by (0, 72)
+    And I move the port node "y" by (0, 72)
+    When click and drag the mouse to select "b" and "y" together
+    And I click the "Auto Layout" button
+    Then the cut net label attached to "x" should not have moved
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
+import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
 import { elkNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
@@ -28,6 +28,7 @@ interface NodePick {
 interface FixtureSelection {
   fixture: string;
   module?: string;
+  layoutMode?: VisualLayoutMode;
   picks: NodePick[];
 }
 
@@ -108,7 +109,15 @@ const selections: FixtureSelection[] = [
   { fixture: 'typed_instance_ports.sv', picks: [{ label: 'instance', match: (n) => n.kind === 'instance' }] },
   { fixture: 'replication_expr.sv', picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }] },
   { fixture: 'loop_logic.sv', picks: [{ label: 'loop', match: (n) => n.kind === 'loop' }] },
-  { fixture: 'latch_simple.sv', picks: [{ label: 'latch', match: (n) => n.kind === 'latch' }] }
+  { fixture: 'latch_simple.sv', picks: [{ label: 'latch', match: (n) => n.kind === 'latch' }] },
+  {
+    fixture: 'cut_net_simple.sv',
+    layoutMode: 'cutNet',
+    picks: [
+      { label: 'netLabel: cut source end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source' },
+      { label: 'netLabel: cut sink end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'sink' }
+    ]
+  }
 ];
 
 interface OverlayPort {
@@ -137,7 +146,7 @@ function snapForKind(value: number, node: DiagramNode): number {
 async function collectNodes(): Promise<Array<{ label: string; node: DiagramNode }>> {
   const collected: Array<{ label: string; node: DiagramNode }> = [];
   for (const selection of selections) {
-    const view = await buildFixtureView(selection.fixture, 'auto', selection.module);
+    const view = await buildFixtureView(selection.fixture, selection.layoutMode ?? 'auto', selection.module);
     for (const pick of selection.picks) {
       const node = view.nodes.find((candidate) => pick.match(candidate));
       if (!node) {

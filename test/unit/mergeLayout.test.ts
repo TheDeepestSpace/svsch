@@ -780,6 +780,66 @@ describe('layout merge', () => {
     ]);
   });
 
+  it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {
+    const baseLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const baseline = await buildViewModel(fanoutGraph, 'top', baseLayout);
+    const baselineSource = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+
+    // Simulate a stale, non-fixed position hint left behind for the label —
+    // e.g. by an earlier selection Auto Layout pass that released it without
+    // ELK ever placing it. This must not stick: only a *pinned* (fixed) save
+    // should override the geometry-derived fallback.
+    const staleLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          ...baseLayout.modules.top,
+          nodes: {
+            ...baseLayout.modules.top.nodes,
+            'cut-label:clk:p:source': { x: 999, y: 999, fixed: false }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', staleLayout);
+    const source = view.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    expect(source.position).toEqual(baselineSource.position);
+
+    // A genuinely pinned (fixed: true) save — e.g. the user dragged the label
+    // by hand — is still honored verbatim.
+    const pinnedLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          ...baseLayout.modules.top,
+          nodes: {
+            ...baseLayout.modules.top.nodes,
+            'cut-label:clk:p:source': { x: 999, y: 999, fixed: true }
+          }
+        }
+      }
+    };
+    const pinnedView = await buildViewModel(fanoutGraph, 'top', pinnedLayout);
+    const pinnedSource = pinnedView.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    expect(pinnedSource.position).toEqual({ x: 999, y: 999 });
+  });
+
   it('uses ELK routes for ordinary feedback edges so wires wrap around default node boxes', async () => {
     const feedbackGraph: DesignGraph = {
       rootModules: ['top'],

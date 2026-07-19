@@ -815,6 +815,63 @@ Then('the port node {string} should still be fixed in the saved layout', async f
   expect(saved?.fixed, `${name} should still be fixed in the saved layout`).toBe(true);
 });
 
+// Cut net labels are re-derived from geometry every render, so unlike a real
+// block they can't be resolved by their visible text alone (fanout cuts share
+// one label across several dangling ends). Resolve the one specific label
+// attached to a given block instead, by walking its stub edge.
+async function cutLabelNodeIdAttachedTo(webviewPage: FrameLocator, blockLabel: string): Promise<string> {
+  const blockId = await findNodeIdByLabel(webviewPage, blockLabel);
+  if (!blockId) throw new Error(`Could not find block "${blockLabel}"`);
+  const labelId = await webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const stub = rf.getEdges().find((e: any) => (
+      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
+    ));
+    if (!stub) return null;
+    const otherEndId = stub.source === id ? stub.target : stub.source;
+    const otherNode = nodesById.get(otherEndId) as any;
+    return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
+  }, blockId);
+  if (!labelId) throw new Error(`Could not find a cut net label attached to "${blockLabel}"`);
+  return labelId;
+}
+
+When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, blockLabel: string, cellsX: number, cellsY: number) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await dragNodeByGridCells(this, id, cellsX, cellsY);
+  await waitForLayoutChange(this, before, `After moving the cut net label attached to ${blockLabel}`);
+});
+
+When('I note the position of the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  if (!pos) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  this.notedPositions.set(`cut-label:${blockLabel}`, pos);
+});
+
+Then('the cut net label attached to {string} should have moved', async function (this: BddWorld, blockLabel: string) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!pos || !before) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  const distance = Math.hypot(pos.x - before.x, pos.y - before.y);
+  expect(
+    distance,
+    `expected the cut net label attached to ${blockLabel} to move from (${before.x}, ${before.y}), but it stayed there`
+  ).toBeGreaterThan(1);
+});
+
+Then('the cut net label attached to {string} should not have moved', async function (this: BddWorld, blockLabel: string) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!pos || !before) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  expect(pos.x, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.x, 0);
+  expect(pos.y, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.y, 0);
+});
+
 Then('I should see a port node {string}', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Could not find port node "${name}"`);
