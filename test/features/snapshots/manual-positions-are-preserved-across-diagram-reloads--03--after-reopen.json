@@ -48,7 +48,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": ""
+      "path": "M 144 0 L 168 0 L 264 0 L 264 48 L 336 48 L 360 48"
     }
   ]
 }
