@@ -1,0 +1,55 @@
+name: Dependabot Changeset Helper
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-changeset:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if changeset exists
+        id: check_changeset
+        run: |
+          if [ -d .changeset ] && [ "$(ls -A .changeset/*.md 2>/dev/null)" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Changeset
+        if: steps.check_changeset.outputs.exists != 'true'
+        run: |
+          mkdir -p .changeset
+          
+          # Format a safe filename from the PR title
+          CLEAN_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr -cd 'a-zA-Z0-9_-' | tr ' ' '_')
+          FILE=".changeset/dependabot-${CLEAN_TITLE}.md"
+          
+          echo "---" > $FILE
+          echo '"svsch": patch' >> $FILE
+          echo "---" >> $FILE
+          echo "" >> $FILE
+          echo "${{ github.event.pull_request.title }}" >> $FILE
+          
+          echo "Generated changeset at $FILE"
+
+      - name: Commit and Push Changeset
+        if: steps.check_changeset.outputs.exists != 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .changeset/
+          git commit -m "chore: add changeset for dependabot update"
+          git push
