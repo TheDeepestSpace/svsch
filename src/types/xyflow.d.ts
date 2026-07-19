@@ -67,4 +67,5 @@ declare module '@xyflow/react' {
     export function useEdgesState<T extends Edge = Edge>(initialEdges: T[]): [T[], (edges: T[] | ((eds: T[]) => T[])) => void, any];
     export function useNodesState<T extends Node = Node>(initialNodes: T[]): [T[], (nodes: T[] | ((nds: T[]) => T[])) => void, any];
     export function useNodes<T extends Node = Node>(): T[];
+    export function useEdges<T extends Edge = Edge>(): T[];
 }

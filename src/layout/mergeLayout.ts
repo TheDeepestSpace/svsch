@@ -2441,6 +2441,22 @@ export function mergeNetCut(
   return next;
 }
 
+// Cuts every one of the given edges' nets in one pass (used when the user
+// batch-cuts a multi-wire selection), sharing a single node-position freeze so
+// the rest of the diagram doesn't get re-frozen/re-read once per edge.
+export function mergeNetCuts(
+  layout: SavedLayout,
+  moduleName: string,
+  edges: DiagramEdge[],
+  designModule: DesignModule,
+  nodes: PositionedNode[]
+): SavedLayout {
+  return edges.reduce(
+    (acc, edge) => mergeNetCut(acc, moduleName, edge, designModule, nodes),
+    layout
+  );
+}
+
 export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: string, label: string): SavedLayout {
   const trimmed = label.trim();
   if (!trimmed) {
@@ -2610,19 +2626,94 @@ export function mergeRerouteLayout(layout: SavedLayout, moduleName: string, node
 }
 
 export function mergeRerouteSingleEdge(layout: SavedLayout, moduleName: string, edgeId: string, nodes: PositionedNode[]): SavedLayout {
+  return mergeRerouteEdges(layout, moduleName, [edgeId], nodes);
+}
+
+// Like mergeRerouteSingleEdge but clears the saved route of every given edge in
+// one pass (used when the user batch-reroutes a multi-wire selection).
+export function mergeRerouteEdges(layout: SavedLayout, moduleName: string, edgeIds: string[], nodes: PositionedNode[]): SavedLayout {
   const fixedNodes = nodes.map((node) => ({
     ...node,
     fixed: true
   }));
   const next = mergeNodePositions(layout, moduleName, fixedNodes);
   const existing = next.modules[moduleName] ?? { nodes: {} };
-  const { [edgeId]: _removed, ...remainingEdges } = existing.edges ?? {};
+  const removeIds = new Set(edgeIds);
+  const remainingEdges = Object.fromEntries(
+    Object.entries(existing.edges ?? {}).filter(([edgeId]) => !removeIds.has(edgeId))
+  );
 
   next.modules[moduleName] = {
     ...existing,
     edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined
   };
   return next;
+}
+
+// Releases just the given nodes back to ELK's auto-layout — their saved position
+// is kept as a placement hint (not "fixed"), so ELK's interactive layered mode
+// tends to settle them nearby unless the area is genuinely congested — while
+// every other node in `nodes` (the webview's current on-screen positions) is
+// (re-)frozen exactly where it is, the same way "Reroute All" freezes the whole
+// diagram. Any edge touching a released node has its saved route cleared too, so
+// it gets rerouted alongside the block(s) it connects to. This is the "Auto
+// Layout" / localized re-layout action.
+export function mergeRelayoutSelection(
+  layout: SavedLayout,
+  moduleName: string,
+  nodeIds: string[],
+  nodes: PositionedNode[],
+  designModule: DesignModule
+): SavedLayout {
+  const released = new Set(nodeIds);
+  const existing: SavedModuleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  const activeIds = new Set(nodes.map((node) => node.id));
+  const mergedNodes: SavedModuleLayout['nodes'] = {};
+
+  for (const [id, value] of Object.entries(existing.nodes)) {
+    if (released.has(id)) continue;
+    if (!activeIds.has(id) && value.fixed) {
+      mergedNodes[id] = { ...value, stale: true };
+    }
+  }
+
+  for (const node of nodes) {
+    if (released.has(node.id)) {
+      mergedNodes[node.id] = {
+        ...snapPosition(node.position, node.kind, structRole(node)),
+        fixed: false
+      };
+      continue;
+    }
+    const isFixed = node.fixed || existing.nodes[node.id]?.fixed;
+    if (isFixed) {
+      mergedNodes[node.id] = {
+        ...snapPosition(node.position, node.kind, structRole(node)),
+        fixed: true
+      };
+    }
+  }
+
+  const touchedEdgeIds = new Set(
+    designModule.edges
+      .filter((edge) => released.has(edge.source) || released.has(edge.target))
+      .map((edge) => edge.id)
+  );
+  const remainingEdges = Object.fromEntries(
+    Object.entries(existing.edges ?? {}).filter(([edgeId]) => !touchedEdgeIds.has(edgeId))
+  );
+
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        nodes: mergedNodes,
+        edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined
+      }
+    }
+  };
 }
 
 export function mergeEdgeWaypoint(

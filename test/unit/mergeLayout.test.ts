@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNodePositions, mergeRegionBounds, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -58,6 +58,29 @@ const fanoutGraph: DesignGraph = {
       edges: [
         { id: 'e-clk-u1', source: 'clk', sourcePort: 'p', target: 'u1', targetPort: 'in', signal: 'clk' },
         { id: 'e-clk-u2', source: 'clk', sourcePort: 'p', target: 'u2', targetPort: 'in', signal: 'clk' }
+      ]
+    }
+  }
+};
+
+const twoNetGraph: DesignGraph = {
+  rootModules: ['top'],
+  generatedAt: 'now',
+  diagnostics: [],
+  modules: {
+    top: {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'output' }] },
+        { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'output' }] },
+        { id: 'x', kind: 'port', label: 'x', ports: [{ id: 'p', name: 'x', direction: 'input' }] },
+        { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'input' }] }
+      ],
+      edges: [
+        { id: 'e-a-x', source: 'a', sourcePort: 'p', target: 'x', targetPort: 'p' },
+        { id: 'e-b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' }
       ]
     }
   }
@@ -529,6 +552,92 @@ describe('layout merge', () => {
     });
     expect(rerouted.modules.top.edges).toBeUndefined();
     expect(rerouted.modules.top.viewport).toEqual({ x: 4, y: 5, zoom: 1.25 });
+  });
+
+  it('clears manual routes for exactly the given edges when batch-rerouting a wire selection', () => {
+    const withFirstRoute = mergeEdgeRoutePoints({
+      version: 1,
+      modules: { top: { nodes: {} } }
+    }, 'top', 'e-clk-u1', [{ x: 10, y: 20 }]);
+    const layout = mergeEdgeRoutePoints(withFirstRoute, 'top', 'e-clk-u2', [{ x: 30, y: 40 }]);
+
+    const positioned: PositionedNode[] = [
+      { ...fanoutGraph.modules.top.nodes[0], position: { x: 0, y: 12 } },
+      { ...fanoutGraph.modules.top.nodes[1], position: { x: 240, y: 0 } },
+      { ...fanoutGraph.modules.top.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const rerouted = mergeRerouteEdges(layout, 'top', ['e-clk-u1'], positioned);
+
+    expect(rerouted.modules.top.edges?.['e-clk-u1']).toBeUndefined();
+    expect(rerouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 30, y: 40 }] });
+    expect(rerouted.modules.top.nodes).toEqual({
+      clk: { x: 0, y: 12, fixed: true },
+      u1: { x: 240, y: 0, fixed: true },
+      u2: { x: 240, y: 96, fixed: true }
+    });
+  });
+
+  it('cuts every edge in a multi-wire selection in one batch', () => {
+    const module = twoNetGraph.modules.top;
+    // All four nodes are port-kind, which snaps to the half-grid row (y ≡ 12 mod 24).
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 0, y: 60 } },
+      { ...module.nodes[2], position: { x: 240, y: 12 } },
+      { ...module.nodes[3], position: { x: 240, y: 60 } }
+    ];
+
+    const cut = mergeNetCuts({ version: 1, modules: {} }, 'top', module.edges, module, positioned);
+
+    expect(Object.keys(cut.modules.top.netCuts ?? {}).sort()).toEqual(['a:p', 'b:p']);
+    expect(cut.modules.top.nodes.a).toEqual({ x: 0, y: 12, fixed: true });
+    expect(cut.modules.top.nodes.b).toEqual({ x: 0, y: 60, fixed: true });
+
+    // Cutting the same batch again is a no-op — mergeNetCut's per-net guard
+    // still applies within the batch.
+    const duplicateCut = mergeNetCuts(cut, 'top', module.edges, module, positioned);
+    expect(duplicateCut.modules.top.netCuts).toEqual(cut.modules.top.netCuts);
+  });
+
+  it('releases only the selected nodes back to auto-layout, freezing everything else', () => {
+    const module = fanoutGraph.modules.top;
+    const seeded: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          edges: {
+            'e-clk-u1': { routePoints: [{ x: 10, y: 10 }] },
+            'e-clk-u2': { routePoints: [{ x: 20, y: 20 }] }
+          }
+        }
+      }
+    };
+
+    // The user dragged u1 to a new spot before clicking "Auto Layout" — its
+    // current on-screen position becomes ELK's placement hint once released.
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 288, y: 0 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
+
+    // u1 is released: its position is kept only as a placement hint (not fixed).
+    expect(relayouted.modules.top.nodes.u1).toEqual({ x: 288, y: 0, fixed: false });
+    // clk and u2 were not part of the selection — they stay exactly where they
+    // were and remain fixed, same as "Reroute All" freezes the whole diagram.
+    expect(relayouted.modules.top.nodes.clk).toEqual({ x: 0, y: 12, fixed: true });
+    expect(relayouted.modules.top.nodes.u2).toEqual({ x: 240, y: 96, fixed: true });
+    // Only the edge touching the released node is cleared for re-routing.
+    expect(relayouted.modules.top.edges?.['e-clk-u1']).toBeUndefined();
+    expect(relayouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 20, y: 20 }] });
   });
 
   it('uses shared net keys for ordinary, literal, and cut stub edges', () => {
