@@ -8,7 +8,8 @@ import {
   interfaceTopHatHeight,
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
-import { structRole } from '../../ir/nodeMetadata';
+import { structRole, nodeTypeName } from '../../ir/nodeMetadata';
+import { busTapPortCenterY } from '../../diagram/busGeometry';
 import type { HdlFlowNode } from './types';
 
 export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
@@ -26,6 +27,107 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
 
   // Blocks flagged with the shared error style render in the same red on the minimap.
   const color = node.invalid ? 'var(--svsch-error-highlight)' : 'var(--vscode-editor-foreground)';
+
+  const isBus = node.kind === 'bus';
+  const isStruct = node.kind === 'struct';
+  const isInterface = node.kind === 'interface';
+  const role = structRole(node);
+  const isInterfaceModport = isInterface && role === 'modport';
+
+  if (isBus || isStruct || isInterfaceModport) {
+    const g = diagramSizing.gridSize;
+    const aggregatePorts = isInterface
+      ? (node.ports ?? []).filter((p) => p.width !== 'interface' || p.preferredSide)
+      : (node.ports ?? []);
+
+    const sidePorts = aggregatePorts;
+    const aggregateInputs = sidePorts.filter(
+      (p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
+    );
+    const aggregateOutputs = sidePorts.filter(
+      (p) => p.direction === 'output'
+    );
+
+    const isComposition =
+      isStruct
+        ? role === 'composition'
+        : isInterface
+          ? false
+          : aggregateInputs.length > 1;
+
+    const isArrayAggregate = isBus && node.metadata?.aggregateKind === 'array';
+
+    const taps = isInterfaceModport
+      ? [...sidePorts]
+      : isInterface
+        ? [...aggregateInputs, ...aggregateOutputs]
+        : isComposition
+          ? aggregateInputs
+          : aggregateOutputs;
+
+    if (taps.length > 0) {
+      const { width: actualWidth, height: actualHeight } = diagramNodeDimensions(node);
+      const tapCenters = taps.map((_, i) =>
+        busTapPortCenterY(i, isInterfaceModport ? 2 : 1)
+      );
+
+      const isModuleInterfaceModport = isInterfaceModport && node.label !== nodeTypeName(node);
+      const pipeY = isModuleInterfaceModport ? 0 : tapCenters[0] - g / 2;
+      const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
+
+      const pipeX = isArrayAggregate
+        ? isComposition
+          ? actualWidth - g * 0.5 - 3
+          : g * 0.5 - 3
+        : isInterfaceModport
+        ? Math.round(actualWidth / 2) - 3
+        : isComposition ? actualWidth - (isStruct ? 8 : 6) : 0;
+
+      const pipeWidth = isStruct ? 8 : 6;
+
+      const scaleX = width / actualWidth;
+      const scaleY = height / actualHeight;
+
+      const pipeCapCenterX = pipeX + 2;
+      const pipeCapCenterY = pipeY + pipeH - 3;
+      const pipeCapWidth = 34;
+      const pipeCapHeight = 6;
+
+      return (
+        <g transform={`translate(${x}, ${y}) scale(${scaleX}, ${scaleY})`}>
+          <rect
+            x={pipeX}
+            y={pipeY}
+            width={pipeWidth}
+            height={pipeH}
+            rx={3}
+            className={className}
+            data-minimap-node-id={id}
+            data-minimap-node-kind={node.kind}
+            fill={color}
+            stroke={color}
+            strokeOpacity={0.4}
+          />
+          {isArrayAggregate && (
+            <rect
+              x={pipeCapCenterX}
+              y={pipeCapCenterY - pipeCapHeight / 2}
+              width={pipeCapWidth}
+              height={pipeCapHeight}
+              rx={pipeCapHeight / 2}
+              className={className}
+              data-minimap-node-id={id}
+              data-minimap-node-kind={node.kind}
+              fill={color}
+              stroke={color}
+              strokeOpacity={0.4}
+              transform={`rotate(45 ${pipeCapCenterX} ${pipeCapCenterY})`}
+            />
+          )}
+        </g>
+      );
+    }
+  }
 
   const noseLength = node.kind === 'port' ? (diagramSizing.portNoseLength / diagramSizing.portWidth) * width : 0;
   const midY = y + height / 2;
