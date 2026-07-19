@@ -46,18 +46,18 @@ interface Crossing {
 
 function getJumpSizeForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: PolylineEdgeGeometry): number {
   let requiredClearance = 7;
-  if (otherGeometry.isInterface) {
+  if (otherGeometry.isInterface || otherGeometry.isStruct) {
     requiredClearance = 12;
   } else if (otherGeometry.isStacked) {
     requiredClearance = 12;
-  } else if (otherGeometry.isStruct) {
+  } else if (otherGeometry.isThick) {
     requiredClearance = 9;
   }
 
   let minJump = 7;
-  if (geometry.isInterface) {
+  if (geometry.isInterface || geometry.isStruct) {
     minJump = 12;
-  } else if (geometry.isStruct) {
+  } else if (geometry.isThick) {
     minJump = 9;
   }
 
@@ -184,6 +184,12 @@ export function buildLineJumpRender(
   for (const ownSegment of ownSegments) {
     for (const otherGeometry of allGeometries) {
       if (otherGeometry.edgeId === geometry.edgeId || geometry.edgeId < otherGeometry.edgeId) {
+        continue;
+      }
+      // Branches of the same net meet at junctions (rendered as dots); they
+      // never jump over each other. Offset stack lanes of sibling branches
+      // would otherwise cross just outside the endpoint padding.
+      if (geometry.netKey && otherGeometry.netKey && geometry.netKey === otherGeometry.netKey) {
         continue;
       }
 

@@ -7,7 +7,10 @@
     <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
   </linearGradient>
   <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
   </pattern>
 </defs>
 <style>
@@ -1466,6 +1469,12 @@ text {
   overflow: visible;
 }
 
+/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
+   content shift toward the front card scales with it. */
+.hdl-node-array-wide {
+  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
+}
+
 .hdl-node-array-layer {
   border-radius: inherit;
   pointer-events: none;
@@ -1476,20 +1485,19 @@ text {
   box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
+/* Layer offsets come from the SVG transform attribute (see arrayStackGeometry);
+   CSS must not set transform here or it would override the per-node wide spread. */
 .hdl-node-array-back {
-  transform: translate(4px, 4px);
   z-index: 0;
   opacity: 0.5;
 }
 
 .hdl-node-array-middle {
-  transform: translate(0, 0);
   z-index: 1;
   opacity: 0.75;
 }
 
 .hdl-node-array-front {
-  transform: translate(-4px, -4px);
   z-index: 2;
 }
 
@@ -1595,6 +1603,12 @@ text {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Matches .svsch-edge-thick — the lead is a stub of the same wire, so it
+   must carry the same stroke weight where the wire itself renders thick. */
+.svsch-array-stack-lead-thick {
+  stroke-width: 4.5;
 }
 
 .svsch-array-stack-lead-back {
@@ -2223,8 +2237,8 @@ text {
   stroke-width: 1.5;
 }
 
+/* Offsets come from the SVG transform attribute — do not set transform here. */
 .port-skin-array-back {
-  transform: translate(4px, 4px);
   opacity: 0.5;
 }
 
@@ -2233,7 +2247,6 @@ text {
 }
 
 .port-skin-array-front {
-  transform: translate(-4px, -4px);
 }
 
 .port-skin-selection {
@@ -2434,6 +2447,7 @@ text {
   padding: 0 3px;
   position: absolute;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -2748,12 +2762,22 @@ text {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
 }
 
-.svsch-edge-struct {
+.svsch-edge-thick {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-struct {
+.svsch-edge-bridge-thick {
   stroke-width: 13.5;
+}
+
+.svsch-edge-struct {
+  stroke: url("#svsch-struct-stripes");
+  stroke-linecap: butt;
+  stroke-width: 8;
+}
+
+.svsch-edge-bridge-struct {
+  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2762,13 +2786,21 @@ text {
   stroke-width: 8;
 }
 
-.svsch-edge-interface-bg {
+.svsch-edge-interface-bg,
+.svsch-edge-struct-bg {
   stroke: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
+/* Stripe width stays aligned with .svsch-interface-stripe. */
+.svsch-struct-stripe {
+  stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
 }
 
@@ -2798,16 +2830,6 @@ text {
   stroke-width: 12;
 }
 
-.svsch-edge-group-selected {
-  fill: none;
-  pointer-events: none;
-  stroke: var(--vscode-focusBorder);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 8;
-  opacity: 0.4;
-}
-
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;
@@ -2826,6 +2848,11 @@ text {
 
 .svsch-edge-junction-interface {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 92%, var(--vscode-charts-blue));
+  stroke-width: 2.5;
+}
+
+.svsch-edge-junction-struct {
+  fill: var(--vscode-editor-foreground);
   stroke-width: 2.5;
 }
 
@@ -2878,6 +2905,40 @@ text {
 }
 
 .svsch-edge-connection-controls-inner button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.svsch-selection-toolbar-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 12;
+}
+
+.svsch-selection-toolbar {
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-100%, 8px);
+}
+
+.svsch-selection-relayout-control {
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-family: var(--vscode-font-family);
+  font-size: 10px;
+  height: 22px;
+  line-height: 1;
+  padding: 0 9px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.svsch-selection-relayout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3219,6 +3280,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3234,6 +3304,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3333,10 +3408,9 @@ text {
   fill: none;
 }
 
-/* Array stack leads */
-.svsch-array-stack-lead {
-  fill: none;
-  stroke-width: 1.5;
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
 }
 
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
@@ -3401,25 +3475,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
@@ -3559,33 +3616,33 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus_sel_1bit_8_:8__sel"><path class="svsch-edge" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus_sel_1bit_8_:8__sel" data-net-key="comb:var_bit_select_complex:bus[sel_1bit * 8+:8]_sel:expr:out:bus_sel_1bit_8_:8__sel" d="M 600 240 L 624 240 L 864 240 L 864 264 L 864 312" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus_sel_multi_8_:8__sel"><path class="svsch-edge" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus_sel_multi_8_:8__sel" data-net-key="comb:var_bit_select_complex:bus[sel_multi * 8+:8]_sel:expr:out:bus_sel_multi_8_:8__sel" d="M 600 408 L 624 408 L 864 408 L 864 456" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8"><path class="svsch-edge" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8" data-net-key="literal:var_bit_select_complex:8:8" d="M 600 312 L 624 312 L 648 312 L 648 240 L 912 240 L 912 264 L 912 312" />
+<g class="svsch-edge-group" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus_sel_multi_8_:8__sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus_sel_multi_8_:8__sel" data-net-key="comb:var_bit_select_complex:bus[sel_multi * 8+:8]_sel:expr:out:bus_sel_multi_8_:8__sel" d="M 600 408 L 624 408 L 864 408 L 864 456" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8" data-net-key="literal:var_bit_select_complex:8:8" d="M 600 312 L 624 312 L 648 312 L 648 240 L 912 240 L 912 264 L 912 312" />
 <path class="svsch-edge-overlap-hint" d="M 652 240 L 860 240" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8" data-overlap-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_1bit_8_:8_:8-overlap-3-edge:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus_sel_1bit_8_:8__sel-1" />
 <circle class="svsch-edge-junction" cx="648" cy="312" r="4.75" data-junction-id="literal:var_bit_select_complex:8:8:648:312" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_multi_8_:8_:8"><path class="svsch-edge" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_multi_8_:8_:8" data-net-key="literal:var_bit_select_complex:8:8" d="M 600 312 L 624 312 L 648 312 L 648 384 L 912 384 L 912 408 L 912 456" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_:bus"><path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 120 L 432 120 L 456 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus"><path class="svsch-edge-jump-halo" d="M 641 336 Q 648 329 655 336" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 641 336 Q 648 329 655 336 L 792 336 L 816 336" />
+<g class="svsch-edge-group" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_multi_8_:8_:8"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:var_bit_select_complex:8:8:select:var_bit_select_complex:bus_sel_multi_8_:8_:8" data-net-key="literal:var_bit_select_complex:8:8" d="M 600 312 L 624 312 L 648 312 L 648 384 L 912 384 L 912 408 L 912 456" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 120 L 432 120 L 456 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus"><path class="svsch-edge-jump-halo" d="M 639 336 Q 648 327 657 336" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_8_:8_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 639 336 Q 648 327 657 336 L 792 336 L 816 336" />
 <circle class="svsch-edge-junction" cx="240" cy="336" r="4.75" data-junction-id="port:var_bit_select_complex:bus:port:bus:240:336" />
 <circle class="svsch-edge-junction" cx="240" cy="432" r="4.75" data-junction-id="port:var_bit_select_complex:bus:port:bus:240:432" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_:bus"><path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 576 L 432 576 L 456 576" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus"><path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 432 L 648 432 L 648 480 L 792 480 L 816 480" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 576 L 432 576 L 456 576" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus" data-net-key="port:var_bit_select_complex:bus:port:bus" d="M 192 336 L 216 336 L 240 336 L 240 432 L 648 432 L 648 480 L 792 480 L 816 480" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_1bit:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:sel_1bit"><path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:sel_1bit:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:sel_1bit" data-net-key="port:var_bit_select_complex:sel_1bit:port:sel_1bit" d="M 192 48 L 216 48 L 240 48 L 240 240 L 384 240 L 408 240" />
 <path class="svsch-edge-overlap-hint" d="M 240 124 L 240 236" data-edge-id="edge:port:var_bit_select_complex:sel_1bit:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:sel_1bit" data-overlap-id="edge:port:var_bit_select_complex:sel_1bit:comb:var_bit_select_complex:bus_sel_1bit_8_:8__sel:expr:sel_1bit-overlap-2-edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_1bit_:bus-2" />
 <circle class="svsch-edge-junction" cx="240" cy="48" r="4.75" data-junction-id="port:var_bit_select_complex:sel_1bit:port:sel_1bit:240:48" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_1bit:select:var_bit_select_complex:bus_sel_1bit_:sel_1bit"><path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:sel_1bit:select:var_bit_select_complex:bus_sel_1bit_:sel_1bit" data-net-key="port:var_bit_select_complex:sel_1bit:port:sel_1bit" d="M 192 48 L 216 48 L 504 48 L 504 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi"><path class="svsch-edge-jump-halo" d="M 233 432 Q 240 425 247 432" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi" data-net-key="port:var_bit_select_complex:sel_multi:port:sel_multi" d="M 192 432 L 216 432 L 233 432 Q 240 425 247 432 L 264 432 L 264 408 L 384 408 L 408 408" />
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi"><path class="svsch-edge-jump-halo" d="M 231 432 Q 240 423 249 432" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi" data-net-key="port:var_bit_select_complex:sel_multi:port:sel_multi" d="M 192 432 L 216 432 L 231 432 Q 240 423 249 432 L 264 432 L 264 408 L 384 408 L 408 408" />
 <path class="svsch-edge-overlap-hint" d="M 244 432 L 260 432" data-edge-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi" data-overlap-id="edge:port:var_bit_select_complex:sel_multi:comb:var_bit_select_complex:bus_sel_multi_8_:8__sel:expr:sel_multi-overlap-1-edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus-3" />
 <circle class="svsch-edge-junction" cx="264" cy="432" r="4.75" data-junction-id="port:var_bit_select_complex:sel_multi:port:sel_multi:264:432" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi"><path class="svsch-edge-jump-halo" d="M 233 432 Q 240 425 247 432" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi" data-net-key="port:var_bit_select_complex:sel_multi:port:sel_multi" d="M 192 432 L 216 432 L 233 432 Q 240 425 247 432 L 504 432 L 504 504 L 504 552" />
+<g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi"><path class="svsch-edge-jump-halo" d="M 231 432 Q 240 423 249 432" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi" data-net-key="port:var_bit_select_complex:sel_multi:port:sel_multi" d="M 192 432 L 216 432 L 231 432 Q 240 423 249 432 L 504 432 L 504 504 L 504 552" />
 <path class="svsch-edge-overlap-hint" d="M 244 432 L 500 432" data-edge-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi" data-overlap-id="edge:port:var_bit_select_complex:sel_multi:select:var_bit_select_complex:bus_sel_multi_:sel_multi-overlap-1-edge:port:var_bit_select_complex:bus:select:var_bit_select_complex:bus_sel_multi_8_:8_:bus-3" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_:port:var_bit_select_complex:bit_out_1:bit_out_1"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_:port:var_bit_select_complex:bit_out_1:bit_out_1" data-net-key="select:var_bit_select_complex:bus[sel_1bit]:port:out" d="M 552 120 L 576 120 L 792 120 L 816 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_8_:8_:port:var_bit_select_complex:part_out_1:part_out_1"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_8_:8_:port:var_bit_select_complex:part_out_1:part_out_1" data-net-key="select:var_bit_select_complex:bus[sel_1bit * 8+:8]:port:out" d="M 960 336 L 984 336 L 1152 336 L 1176 336" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_8_:8_:port:var_bit_select_complex:part_out_1:part_out_1"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:var_bit_select_complex:bus_sel_1bit_8_:8_:port:var_bit_select_complex:part_out_1:part_out_1" data-net-key="select:var_bit_select_complex:bus[sel_1bit * 8+:8]:port:out" d="M 960 336 L 984 336 L 1152 336 L 1176 336" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_:port:var_bit_select_complex:bit_out_2:bit_out_2"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_:port:var_bit_select_complex:bit_out_2:bit_out_2" data-net-key="select:var_bit_select_complex:bus[sel_multi]:port:out" d="M 552 576 L 576 576 L 792 576 L 816 576" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_8_:8_:port:var_bit_select_complex:part_out_2:part_out_2"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_8_:8_:port:var_bit_select_complex:part_out_2:part_out_2" data-net-key="select:var_bit_select_complex:bus[sel_multi * 8+:8]:port:out" d="M 960 480 L 984 480 L 1152 480 L 1176 480" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_8_:8_:port:var_bit_select_complex:part_out_2:part_out_2"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:var_bit_select_complex:bus_sel_multi_8_:8_:port:var_bit_select_complex:part_out_2:part_out_2" data-net-key="select:var_bit_select_complex:bus[sel_multi * 8+:8]:port:out" d="M 960 480 L 984 480 L 1152 480 L 1176 480" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-select" data-node-id="select:var_bit_select_complex:bus[sel_1bit]" data-node-kind="select" transform="translate(456 72)">

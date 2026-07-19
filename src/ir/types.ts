@@ -92,6 +92,8 @@ export interface DiagramNodeMetadata {
   arrayDimension?: string;
   arraySize?: number;
   arrayIndexSignal?: string;
+  /** Stamped by annotateWireStyles: array node whose stack spreads with the wide offset. */
+  stackWide?: boolean;
   generateRegionId?: string;
   generateActiveState?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
@@ -104,6 +106,7 @@ export interface DiagramNodeMetadata {
     edgeStyle?: {
       aggregate?: 'struct' | 'interface' | string;
       isStacked?: boolean;
+      thick?: boolean;
     };
     isSourceStacked?: boolean;
   };
@@ -195,6 +198,8 @@ export type DiagramNode =
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
+  /** Stamped by annotateWireStyles: wire is (or can be) wider than one bit. */
+  thick?: boolean;
   generateRegionId?: string;
   generateActiveState?: string;
   forceStraight?: boolean;

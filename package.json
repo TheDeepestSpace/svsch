@@ -1,6 +1,6 @@
 {
   "name": "svsch",
-  "displayName": "SVSCH",
+  "displayName": "svsch",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
   "version": "0.1.0",
   "publisher": "thedeepestspace",
@@ -30,23 +30,23 @@
     "commands": [
       {
         "command": "svsch.openDiagram",
-        "title": "SVSCH: Open Diagram"
+        "title": "svsch: Open Diagram"
       },
       {
         "command": "svsch.setProjectFolder",
-        "title": "SVSCH: Set Project Folder"
+        "title": "svsch: Set Project Folder"
       },
       {
         "command": "svsch.rebuildDiagram",
-        "title": "SVSCH: Rebuild Diagram"
+        "title": "svsch: Rebuild Diagram"
       },
       {
         "command": "svsch.resetLayout",
-        "title": "SVSCH: Reset Layout For Current Module"
+        "title": "svsch: Reset Layout For Current Module"
       }
     ],
     "configuration": {
-      "title": "SVSCH",
+      "title": "svsch",
       "properties": {
         "svsch.projectFolder": {
           "type": "string",
@@ -98,6 +98,7 @@
     "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
+    "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish && npx vsce publish -p $VSCE_PAT && (npx ovsx publish -p $OVSX_PAT || echo 'Open VSX skipped')",
     "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
     "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
     "test": "node scripts/run-test.js unit",
@@ -115,18 +116,22 @@
     "test:system": "node scripts/run-test.js system",
     "test:system:update": "node scripts/run-test.js system --update-snapshots",
     "docs:generate": "tsx test/scripts/generate-docs.mts",
+    "docs:syntax": "GENERATE_SYNTAX_BOOK=1 npx playwright test --config test/syntax-book/playwright.config.ts",
+    "test:syntax": "npx playwright test --config test/syntax-book/playwright.config.ts",
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",
     "@xyflow/react": "^12.10.2",
-    "elkjs": "^0.11.1",
+    "elkjs": "^0.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@playwright/test": "1.61.1",
     "@types/diff": "^8.0.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.1.0",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
@@ -136,6 +141,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vscode/vsce": "^3.2.1",
     "diff": "^9.0.0",
+    "js-yaml": "^5.2.1",
     "jsdom": "^29.1.0",
     "multiple-cucumber-html-reporter": "^4.0.0",
     "patch-package": "^8.0.1",

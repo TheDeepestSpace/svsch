@@ -1,0 +1,108 @@
+group: Interfaces
+cases:
+  - id: interface-instantiation
+    title: Interface Instantiation
+    description: Instantiating an interface block and connecting it becomes an interface node.
+    tags: [interface, source-highlight]
+    files:
+      top.sv: |
+        interface simple_if(input logic clk);
+          logic data;
+          modport master(input clk, output data);
+          modport slave(input clk, input data);
+        endinterface
+
+        module producer(simple_if.master bus);
+          assign bus.data = 1'b1;
+        endmodule
+
+        module consumer(simple_if.slave bus, output logic observed);
+          assign observed = bus.data;
+        endmodule
+
+        module top(input logic clk, output logic observed);
+          simple_if link(clk);
+          producer u_producer(.bus(link));
+          consumer u_consumer(.bus(link), .observed(observed));
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: interface
+      nodeLabel: link
+      action: doubleClick
+    expect:
+      nodeKinds: [interface]
+      selectedText: "interface simple_if(input logic clk);"
+
+  - id: interface-modports-left
+    title: Interface Modports on One Side
+    description: An interface block with all modports explicitly laid out on the left side using position comments.
+    tags: [interface, modport, source-highlight]
+    files:
+      top.sv: |
+        interface stream_if(input logic clk);
+          logic data;
+          // svsch:modport:pos=left
+          modport producer(input clk, output data);
+          // svsch:modport:pos=left
+          modport consumer(input clk, input data);
+        endinterface
+
+        module producer_mod(stream_if.producer bus);
+          assign bus.data = 1'b1;
+        endmodule
+
+        module consumer_mod(stream_if.consumer bus);
+        endmodule
+
+        module top(input logic clk);
+          stream_if stream(clk);
+          producer_mod u_prod(.bus(stream));
+          consumer_mod u_cons(.bus(stream));
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: interface
+      nodeLabel: stream
+      action: doubleClick
+    expect:
+      nodeKinds: [interface]
+      selectedText: "interface stream_if(input logic clk);"
+
+  - id: interface-modports-both-sides
+    title: Interface Modports on Both Sides
+    description: An interface block with modports distributed on both sides.
+    tags: [interface, modport, source-highlight]
+    files:
+      top.sv: |
+        interface stream_if(input logic clk);
+          logic data;
+          // svsch:modport:pos=left
+          modport producer(input clk, output data);
+          // svsch:modport:pos=right
+          modport consumer(input clk, input data);
+        endinterface
+
+        module producer_mod(stream_if.producer bus);
+          assign bus.data = 1'b1;
+        endmodule
+
+        module consumer_mod(stream_if.consumer bus);
+        endmodule
+
+        module top(input logic clk);
+          stream_if stream(clk);
+          producer_mod u_prod(.bus(stream));
+          consumer_mod u_cons(.bus(stream));
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: interface
+      nodeLabel: stream
+      action: doubleClick
+    expect:
+      nodeKinds: [interface]
+      selectedText: "interface stream_if(input logic clk);"

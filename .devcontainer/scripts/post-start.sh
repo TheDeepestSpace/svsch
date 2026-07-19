@@ -22,6 +22,23 @@ else
   echo "⏩ Skipping SSH_AUTH_SOCK setup for Codespaces or GitHub Actions"
 fi
 
+cd "$WORKSPACE"
+
+# node_modules persists across container rebuilds (bind-mounted workspace),
+# but patched packages can end up in a stale state that no longer matches
+# the current patch file, making patch-package fail on the next `npm install`.
+# Force a clean reinstall of every patched package so patches always apply
+# cleanly against a fresh copy.
+for patch_file in patches/*.patch; do
+  [[ -e "$patch_file" ]] || continue
+  pkg=$(basename "$patch_file" .patch)
+  pkg="${pkg%+*}"
+  if [[ "$pkg" == @*+* ]]; then
+    pkg="${pkg/+//}"
+  fi
+  rm -rf "node_modules/$pkg"
+done
+
 npm install
 npx playwright install --with-deps chromium
 echo '✅ Initialized  development environment...'

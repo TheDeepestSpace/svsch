@@ -1,0 +1,69 @@
+group: Modules & Hierarchy
+cases:
+  - id: submodule-instance
+    title: Submodule Instance
+    description: Instantiating a submodule creates a hierarchical module instance block.
+    tags: [instance, hierarchy, source-highlight]
+    files:
+      child.sv: |
+        module child (
+          input logic a,
+          output logic b
+        );
+          assign b = a;
+        endmodule
+      top.sv: |
+        module top (
+          input logic a,
+          output logic b
+        );
+          child u_child (.a(a), .b(b));
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: instance
+      nodeLabel: u_child
+      action: doubleClick
+    expect:
+      nodeKinds: [port, instance]
+      selectedText: "child u_child (.a(a), .b(b));"
+
+  - id: submodule-parameterized
+    title: Parameterized Submodule Instance
+    description: Instantiating a submodule with both default parameters and overridden values.
+    tags: [instance, hierarchy, parameter, source-highlight]
+    files:
+      top.sv: |
+        module child #(
+          parameter WIDTH = 8,
+          parameter DEPTH = 4
+        ) (
+          input logic [WIDTH-1:0] a,
+          output logic [WIDTH-1:0] b
+        );
+          assign b = a;
+        endmodule
+
+        module top (
+          input logic [7:0] a,
+          output logic [7:0] b
+        );
+          child #(.WIDTH(8)) u_child (
+            .a(a),
+            .b(b)
+          );
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: instance
+      nodeLabel: u_child
+      action: doubleClick
+    expect:
+      nodeKinds: [port, instance]
+      selectedText: |
+        child #(.WIDTH(8)) u_child (
+            .a(a),
+            .b(b)
+          );

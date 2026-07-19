@@ -35,9 +35,10 @@ import type {
 import { edgeNetKey } from '../ir/edgeNet';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
+import { edgeIsThick } from '../ir/edgeStyle';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
-import { InteractionContext } from './nodes/shared/context';
+import { InteractionContext, type SelectionAction } from './nodes/shared/context';
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
 
@@ -167,6 +168,11 @@ function DiagramApp(): React.ReactElement {
   const userSelectionRect = useStore((state) => state.userSelectionRect);
   const [selectedRegionIds, setSelectedRegionIds] = useState<Set<string>>(new Set());
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
+  // Node ids to re-select in the very next view rebuild — set right before
+  // posting an "Auto Layout" request, consumed (and cleared) the next time
+  // the nodes array is rebuilt from an incoming view, so the just-relaid-out
+  // blocks stay selected instead of losing selection on the round-trip.
+  const pendingReselectIdsRef = useRef<Set<string> | null>(null);
 
   // Marquee (drag) selection also selects generate regions. A region is selected
   // when its bounds are fully inside the selection rectangle — full containment, so
@@ -238,6 +244,8 @@ function DiagramApp(): React.ReactElement {
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
+  const [selectionHoverActive, setSelectionHoverActive] = useState(false);
+  const [pendingSelectionAction, setPendingSelectionAction] = useState<SelectionAction | undefined>();
 
   const setHovered = useCallback((netKey?: string, immediate = false) => {
     if (hoverTimeoutRef.current) {
@@ -365,19 +373,27 @@ function DiagramApp(): React.ReactElement {
       const targetNode = nodeById.get(edge.target);
       const sourceIsArray = sourceNode ? nodeIsArrayNode(sourceNode) : false;
       const targetIsArray = targetNode ? nodeIsArrayNode(targetNode) : false;
+      // Ports synthesized from procedural code (register/mux ports built from
+      // always_ff/case blocks) don't always carry a reliable width of their
+      // own, so thickness is derived from the edge (both endpoints) rather
+      // than the local port alone.
+      const thick = edgeIsThick(edge, sourceNode, targetNode);
       if (sourceIsArray) {
-        addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source' });
-        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+        addArrayConnection(edge.source, { portId: edge.sourcePort, role: 'source', thick });
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
       if (targetIsArray) {
-        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target' });
+        addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
     });
 
+    const reselectIds = pendingReselectIdsRef.current;
+    pendingReselectIdsRef.current = null;
     setNodes(view.nodes.map((node) => ({
       id: node.id,
       type: 'hdl',
       position: node.position,
+      selected: reselectIds?.has(node.id) ?? undefined,
       className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
       zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
       data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
@@ -600,7 +616,14 @@ function DiagramApp(): React.ReactElement {
         )}
         <main className="canvas" key={view.moduleName}>
           <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
-          <InteractionContext.Provider value={{ hoveredNetKey, setHovered }}>
+          <InteractionContext.Provider value={{
+            hoveredNetKey,
+            setHovered,
+            selectionHoverActive,
+            setSelectionHoverActive,
+            pendingSelectionAction,
+            setPendingSelectionAction
+          }}>
             <LineJumpProvider>
               <ReactFlow<HdlFlowNode, Edge>
                 nodes={nodes}
@@ -665,6 +688,11 @@ function DiagramApp(): React.ReactElement {
                     onRouteChange={handleRouteChange}
                     selectedRegionIds={selectedRegionIds}
                     selectRegion={selectRegion}
+                  />
+                  <NodeSelectionToolbar
+                    moduleName={view.moduleName}
+                    nodes={nodes}
+                    pendingReselectIdsRef={pendingReselectIdsRef}
                   />
                 </ViewportPortal>
                 <MiniMap
@@ -867,15 +895,19 @@ function GenerateRegionOverlay({
             className="generate-region-title"
             onPointerDown={(event) => startDrag(event, region, 'move')}
             onClick={(event) => event.stopPropagation()}
-            onDoubleClick={() => vscode.postMessage({
-              type: 'navigateToRegion',
-              region: {
-                kind: region.kind,
-                isGenerateBlock: region.isGenerateBlock,
-                source: region.source,
-                bodySource: region.bodySource
-              }
-            })}
+            onDoubleClick={() => {
+              const msg = {
+                type: 'navigateToRegion',
+                region: {
+                  kind: region.kind,
+                  isGenerateBlock: region.isGenerateBlock,
+                  source: region.source,
+                  bodySource: region.bodySource
+                }
+              } as const;
+              console.log('NAVIGATE:', JSON.stringify(msg));
+              vscode.postMessage(msg);
+            }}
             title={region.label}
           >
             {region.label}
@@ -892,6 +924,77 @@ function GenerateRegionOverlay({
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+// Floating control shown above the bounding box of a multi-block selection.
+// Clicking it releases just those blocks (and the routes of any edge touching
+// one of them) back to ELK's auto-layout — using their current positions as
+// placement hints, so they tend to settle nearby unless the area is genuinely
+// congested — while every other block and edge in the diagram stays exactly
+// where it is (they're sent back fixed, the same freezing mergeRerouteLayout
+// already relies on for "Reroute All").
+function NodeSelectionToolbar({
+  moduleName,
+  nodes,
+  pendingReselectIdsRef
+}: {
+  moduleName: string;
+  nodes: HdlFlowNode[];
+  pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
+}): React.ReactElement | null {
+  const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes]);
+
+  if (selected.length < 2) return null;
+
+  const bounds = selected.reduce((acc, node) => {
+    const size = diagramNodeDimensions(node.data.node);
+    return {
+      x: Math.min(acc.x, node.position.x),
+      y: Math.min(acc.y, node.position.y),
+      right: Math.max(acc.right, node.position.x + size.width),
+      bottom: Math.max(acc.bottom, node.position.y + size.height)
+    };
+  }, { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity });
+
+  const handleClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const selectedIds = new Set(selected.map((node) => node.id));
+    const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
+      ...node,
+      fixed: !selectedIds.has(node.id)
+    }));
+    // Consumed (and cleared) the next time the nodes array is rebuilt from an
+    // incoming view, so these blocks stay selected across the round-trip
+    // instead of losing selection once ELK re-places them.
+    pendingReselectIdsRef.current = selectedIds;
+    vscode.postMessage({
+      type: 'relayoutSelection',
+      moduleName,
+      nodeIds: [...selectedIds],
+      nodes: positioned
+    });
+  };
+
+  return (
+    <div className="svsch-selection-toolbar-layer">
+      <div
+        className="svsch-selection-toolbar"
+        style={{ left: bounds.right, top: bounds.bottom }}
+      >
+        <button
+          type="button"
+          className="svsch-selection-relayout-control"
+          title="Re-place and route the selected blocks; everything else stays put"
+          onClick={handleClick}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          Auto Layout
+        </button>
+      </div>
     </div>
   );
 }

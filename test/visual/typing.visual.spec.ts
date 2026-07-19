@@ -57,8 +57,12 @@ test.describe('typing support visual rendering', () => {
     await expect(page.locator('[data-node-id="reg:struct_composition:pkt.opcode"]')).toContainText('[3:0]');
     await expect(page.locator('[data-node-id="port:struct_composition:flat"]')).toContainText('[4:0]');
     await expect(page.locator('.svsch-edge-label >> text=packet_t')).toHaveCount(0);
-    await expect(page.locator('path.svsch-edge-struct')).toHaveCount(1);
-    await expect(page.locator('path.svsch-edge-struct').first()).toHaveAttribute('d', /M \d+ \d+ L/);
+    // The composition output feeds a plain [4:0] vector — an implicit cast in
+    // SV terms — so it routes as a thick multi-bit wire, not a struct route.
+    await expect(page.locator('path.svsch-edge-struct')).toHaveCount(0);
+    const castEdge = page.locator('.react-flow__edge[data-id^="edge:struct_comp"][data-id*=":flat:"] path.svsch-edge-thick');
+    await expect(castEdge).toHaveCount(1);
+    await expect(castEdge.first()).toHaveAttribute('d', /M \d+ \d+ L/);
 
     await expectGraphAndScreenshot(page,'struct-wires-without-type-label.png', { clip: await paddedGraphClip(page) });
   });
