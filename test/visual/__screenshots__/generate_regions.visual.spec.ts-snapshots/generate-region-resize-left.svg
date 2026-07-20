@@ -2900,12 +2900,29 @@ text {
   border-right: none;
 }
 
+.svsch-edge-connection-controls-inner .svsch-edge-reroute-control-solo {
+  border-radius: 3px;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
 .svsch-edge-connection-controls-inner .svsch-edge-cut-control {
   border-radius: 0 3px 3px 0;
 }
 
 .svsch-edge-connection-controls-inner button:hover {
   background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* A cut net stub's Reroute-to-canonical control renders through a
+   ViewportPortal (see OrthogonalEdge) instead of the edge's own SVG layer —
+   same escape hatch the selection Auto Layout toolbar uses — since the app
+   pins .react-flow__edges below .react-flow__nodes and a stub is short
+   enough to routinely land right on/under a node's port handle. */
+.svsch-cut-stub-reset-layer {
+  overflow: visible;
+  pointer-events: auto;
+  position: absolute;
+  z-index: 12;
 }
 
 .svsch-selection-toolbar-layer {

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Position,
+  ViewportPortal,
   type EdgeProps,
   useEdges,
   useNodes,
@@ -142,7 +143,11 @@ function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
       return {
         ...diagramNode,
         position: node.position,
-        fixed: true
+        // Cutting/rerouting freezes the rest of the diagram in place — but a
+        // net-cut label that's still tracking its port dynamically must not
+        // be forced fixed just because it happened to be on screen; only
+        // honor an actual existing pin.
+        fixed: diagramNode.kind === 'netLabel' ? diagramNode.fixed : true
       };
     })
     .filter((node): node is PositionedNode => node !== undefined);
@@ -406,11 +411,33 @@ export function OrthogonalEdge({
   const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
+  // One end of a cut stub is always the synthetic `netLabel` node — whichever
+  // of source/target carries the `cut-label:` id — used by the stub's own
+  // solo "Reroute" control to reset just that dangling end's position.
+  const cutLabelNodeId = isCutStub
+    ? (diagramEdge?.source.startsWith('cut-label:') ? diagramEdge.source : diagramEdge?.target)
+    : undefined;
+  // The stub's own midpoint sits right next to the port it's attached to —
+  // routinely underneath the connected block's handle, which always wins
+  // pointer-event hit-testing over floating edge UI. Anchor the reset button
+  // just below the label itself instead: by construction it's offset clear
+  // of the block, so the control lands somewhere actually clickable.
+  const cutLabelFlowNode = cutLabelNodeId ? flowNodes.find((node) => node.id === cutLabelNodeId) : undefined;
+  const cutLabelButtonAnchor = cutLabelFlowNode
+    ? {
+      x: cutLabelFlowNode.position.x + diagramNodeDimensions(cutLabelFlowNode.data.node).width / 2,
+      y: cutLabelFlowNode.position.y + diagramNodeDimensions(cutLabelFlowNode.data.node).height
+    }
+    : cutButtonPoint;
   // A wire's own controls normally only appear while it's directly hovered. When
   // it's part of a multi-wire selection, hovering ANY selected wire reveals every
   // selected wire's controls, so the user can see (and act on) the whole batch.
+  // Cut stubs are excluded from multi-select batching (they can't be cut again),
+  // so they only ever show their own solo Reroute control on direct hover.
   const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub
     && (isEdgeHovered || (isMultiSelected && selectionHoverActive));
+  const showCutStubResetButton = isCutStub && diagramEdge !== undefined && edgeData?.moduleName !== undefined
+    && cutLabelNodeId !== undefined && isEdgeHovered;
   const netGeometries = context && edgeData?.netEdgeIds
     ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
     : [];
@@ -864,6 +891,46 @@ export function OrthogonalEdge({
             </button>
           </div>
         </foreignObject>
+      )}
+      {showCutStubResetButton && (
+        // A cut stub is always short and hugs the node it's attached to, so
+        // its own (deliberately low, non-covering) SVG edge layer sits behind
+        // node handles — a foreignObject control here would be unclickable
+        // wherever it lands near a port. Render it through the same
+        // ViewportPortal + elevated z-index mechanism the selection Auto
+        // Layout toolbar already uses to float above everything.
+        <ViewportPortal>
+          <div
+            className="svsch-cut-stub-reset-layer"
+            style={{ left: cutLabelButtonAnchor.x - 32, top: cutLabelButtonAnchor.y + 4 }}
+            onMouseEnter={keepEdgeHover}
+            onMouseLeave={releaseEdgeHover}
+          >
+            <div className="svsch-edge-connection-controls-inner">
+              <button
+                type="button"
+                className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
+                title="Reset this dangling end to its canonical position"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!edgeData?.moduleName || !cutLabelNodeId) {
+                    return;
+                  }
+                  vscode.postMessage({
+                    type: 'resetCutLabelPosition',
+                    moduleName: edgeData.moduleName,
+                    nodeId: cutLabelNodeId
+                  });
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                Reroute
+              </button>
+            </div>
+          </div>
+        </ViewportPortal>
       )}
       {label && (
         <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">

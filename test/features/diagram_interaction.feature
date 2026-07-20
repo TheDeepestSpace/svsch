@@ -477,7 +477,7 @@ Feature: Diagram Interaction
     When click and drag the mouse to select the blocks "u1" and "u2"
     Then the "Auto Layout" button should be visible
 
-  Scenario: Auto-laying out one connection's blocks anchors the result and leaves the other connection untouched
+  Scenario: Auto-laying out one connection's blocks anchors the result, leaves the other connection untouched, and carries cut net ends along
     Given I have a file "top.sv" in my workspace:
       """
       module leaf(input logic a, output logic y);
@@ -490,11 +490,21 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I hover the connection between "u1" and "x" and click its Cut control
+    And I hover the connection between "b" and "u2" and click its Cut control
     And I move the port node "a"
     And I move the block "u1" by (2, 0) grid cells
     And I note the position of the block "u1"
+    # u1's dangling end is not part of the upcoming selection at all — this is
+    # the baseline for proving it's left alone.
+    And I note the position of the cut net label attached to "u1"
     And I move the port node "b" by (0, 72)
     And I move the block "u2" by (3, 5) grid cells
+    # u2's dangling end also isn't marqueed directly, but its stub wire is
+    # selected along with u2 (React Flow selects every edge touching a
+    # selected node) — noted here, right before the selection, as the
+    # baseline for proving it does move.
+    And I note the position of the cut net label attached to "u2"
     And I move the port node "y" by (0, 72)
     And click and drag the mouse to select "b", "u2", and "y" together
     And I click the "Auto Layout" button
@@ -503,6 +513,25 @@ Feature: Diagram Interaction
     And the block "u2" should remain selected
     And the block "u1" should not have moved
     And the port node "a" should still be fixed in the saved layout
+    And the cut net label attached to "u2" should have moved
+    And the cut net label attached to "u2" should not overlap the block "u1"
+    And the cut net label attached to "u1" should not have moved
+
+  Scenario: Rerouting a cut net's dangling end resets it to its canonical position
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic x, output logic y);
+        assign y = x;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "y" by (0, 96)
+    And I hover the connection between "x" and "y" and click its Cut control
+    And I note the position of the cut net label attached to "x"
+    And I move the cut net label attached to "x" by (-3, -3) grid cells
+    And I hover the cut net label attached to "x"
+    And I click the Reroute control on the cut net label attached to "x"
+    Then the cut net label attached to "x" should be at its noted position
 
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip

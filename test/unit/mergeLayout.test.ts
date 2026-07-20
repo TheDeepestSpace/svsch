@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewModel, defaultNetCutLabel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
-import type { DesignGraph, PositionedNode } from '../../src/ir/types';
+import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+
+function boundsOf(node: PositionedNode): { x: number; y: number; width: number; height: number } {
+  const { width, height } = diagramNodeDimensions(node);
+  return { x: node.position.x, y: node.position.y, width, height };
+}
+
+function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number }
+): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
 
 const graph: DesignGraph = {
   rootModules: ['top'],
@@ -778,6 +790,171 @@ describe('layout merge', () => {
       'cut-label:clk:p:sink:e-clk-u1',
       'cut-label:clk:p:sink:e-clk-u2'
     ]);
+  });
+
+  it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {
+    const baseLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const baseline = await buildViewModel(fanoutGraph, 'top', baseLayout);
+    const baselineSource = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+
+    // Simulate a stale, non-fixed position hint left behind for the label —
+    // e.g. by an earlier selection Auto Layout pass that released it without
+    // ELK ever placing it. This must not stick: only a *pinned* (fixed) save
+    // should override the geometry-derived fallback.
+    const staleLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          ...baseLayout.modules.top,
+          nodes: {
+            ...baseLayout.modules.top.nodes,
+            'cut-label:clk:p:source': { x: 999, y: 999, fixed: false }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', staleLayout);
+    const source = view.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    expect(source.position).toEqual(baselineSource.position);
+
+    // A genuinely pinned (fixed: true) save — e.g. the user dragged the label
+    // by hand — is still honored verbatim.
+    const pinnedLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          ...baseLayout.modules.top,
+          nodes: {
+            ...baseLayout.modules.top.nodes,
+            'cut-label:clk:p:source': { x: 999, y: 999, fixed: true }
+          }
+        }
+      }
+    };
+    const pinnedView = await buildViewModel(fanoutGraph, 'top', pinnedLayout);
+    const pinnedSource = pinnedView.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    expect(pinnedSource.position).toEqual({ x: 999, y: 999 });
+  });
+
+  it('reserves ELK margin for a net-cut label on the lead side so it does not collide with a neighbor', () => {
+    const outputPort: DiagramNode = { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'output' }] };
+    const bare = elkNodeForDiagramNode(outputPort, true);
+    // An output port on a 'port' node is WEST-side — the label protrudes
+    // further left of the node and is vertically centered on the port, so a
+    // label that's both wider and taller than the base lead/box grows both
+    // the left margin (more room in the lead's own direction) and top/bottom
+    // margins (room for the part of the label that overshoots the box
+    // vertically), while leaving the right margin untouched.
+    const withLabel = elkNodeForDiagramNode(outputPort, true, new Map([['p', { width: 80, height: 96 }]]));
+    expect(withLabel.width).toBeGreaterThan(bare.width);
+    expect(withLabel.layoutOffset.x).toBeGreaterThan(bare.layoutOffset.x);
+    expect(withLabel.height).toBeGreaterThan(bare.height);
+    expect(withLabel.width - bare.width).toBeCloseTo(80, 0);
+
+    // No entry for this port at all: behaves exactly like the call with no
+    // extraPortMargins argument (the common case is unaffected).
+    const untouched = elkNodeForDiagramNode(outputPort, true, new Map());
+    expect(untouched).toEqual(bare);
+  });
+
+  it('lays out several stacked net-cut source ports without their dangling ends overlapping a neighbor', async () => {
+    // Cut both nets, but save no node positions at all — ELK must freely
+    // place "a" and "b" (naturally stacked in the same layer, since both are
+    // plain sources with no other constraint) and, with them, reserve room
+    // for their now-active cut labels.
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {},
+          netCuts: {
+            'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
+            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(twoNetGraph, 'top', layout);
+    const boxes = view.nodes.map((node) => ({ id: node.id, ...boundsOf(node) }));
+    expect(boxes.some((box) => box.id === 'cut-label:a:p:source')).toBe(true);
+    expect(boxes.some((box) => box.id === 'cut-label:b:p:source')).toBe(true);
+
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        expect(
+          boxesOverlap(boxes[i], boxes[j]),
+          `${boxes[i].id} overlaps ${boxes[j].id}`
+        ).toBe(false);
+      }
+    }
+  });
+
+  it('resets a cut label back to its canonical position by clearing its saved override', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            'cut-label:a:p:source': { x: 999, y: 999, fixed: true },
+            a: { x: 0, y: 12, fixed: true }
+          }
+        }
+      }
+    };
+
+    const reset = resetCutLabelPosition(layout, 'top', 'cut-label:a:p:source');
+    expect(reset.modules.top.nodes['cut-label:a:p:source']).toBeUndefined();
+    expect(reset.modules.top.nodes.a).toEqual({ x: 0, y: 12, fixed: true });
+
+    // No-op when there's nothing saved for that id.
+    const noop = resetCutLabelPosition(reset, 'top', 'cut-label:a:p:source');
+    expect(noop).toBe(reset);
+  });
+
+  it('cutting a second net does not pin the first net\'s still-dynamic dangling end', () => {
+    const module = twoNetGraph.modules.top;
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 0, y: 60 } },
+      { ...module.nodes[2], position: { x: 240, y: 12 } },
+      { ...module.nodes[3], position: { x: 240, y: 60 } }
+    ];
+
+    // Cut a->x first...
+    let layout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    // ...its dangling end is dynamic (never dragged), so it has no saved entry yet.
+    expect(layout.modules.top.nodes['cut-label:a:p:source']).toBeUndefined();
+
+    // Cutting a second, unrelated net (b->y) passes every currently-rendered
+    // node — including a->x's cut label — through mergeNetCut again.
+    const withBothCuts: PositionedNode[] = [
+      ...positioned,
+      { id: 'cut-label:a:p:source', kind: 'netLabel', label: 'a', ports: [], position: { x: -120, y: -12 } }
+    ];
+    layout = mergeNetCut(layout, 'top', module.edges[1], module, withBothCuts);
+
+    // The unrelated cut must not have implicitly pinned a->x's dangling end.
+    expect(layout.modules.top.nodes['cut-label:a:p:source']).toBeUndefined();
+    // The real blocks are still frozen, exactly as mergeNetCut intends.
+    expect(layout.modules.top.nodes.a).toEqual({ x: 0, y: 12, fixed: true });
+    expect(layout.modules.top.nodes.b).toEqual({ x: 0, y: 60, fixed: true });
   });
 
   it('uses ELK routes for ordinary feedback edges so wires wrap around default node boxes', async () => {

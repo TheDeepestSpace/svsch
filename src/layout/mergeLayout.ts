@@ -76,7 +76,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   // The generate-block wrappers are derived from their arms, so keep them out of the ELK /
   // packing layout (arms fall back to roots) and only add their bounds in positionGenerateRegions.
   const armRegions = generateRegions.filter((region) => !region.isGenerateBlock);
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, armRegions);
+  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, armRegions, netCutPortMargins(designModule, activeCuts));
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
@@ -689,6 +689,10 @@ function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string
     : `cut-label:${netKey}:sink:${edgeId ?? ''}`;
 }
 
+function isCutLabelNodeId(id: string): boolean {
+  return id.startsWith('cut-label:');
+}
+
 function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
   return role === 'source'
     ? `cut-stub:${netKey}:source`
@@ -718,7 +722,12 @@ function makeCutLabelNode(
   fallbackPosition: { x: number; y: number }
 ): PositionedNode {
   const saved = moduleLayout.nodes[id];
-  const position = saved
+  // Only a *pinned* (fixed) save wins over the geometry-derived fallback — a
+  // released/un-pinned save (e.g. an auto-layout hint) must keep tracking the
+  // owning block's current lead point, exactly like a real node whose `fixed`
+  // is false falls through to its freshly computed position instead of a
+  // stale saved one.
+  const position = saved?.fixed
     ? { x: saved.x, y: saved.y }
     : fallbackPosition;
 
@@ -824,11 +833,47 @@ function labelPositionForHandlePoint(
   return { x: point.x - dimensions.width / 2, y: point.y - dimensions.height };
 }
 
+// A cut net's dangling end (a `netLabel` node) is never a node ELK lays out —
+// its position is always re-derived from the owning port's rendered lead
+// point after layout finishes (see makeCutLabelNode). Left alone, ELK has no
+// idea that extra room needs to stay clear there, so a tightly packed row of
+// released nodes can place a neighbor right on top of a label sticking out of
+// the node behind it. Rather than making the label an independent ELK graph
+// node — which would let ELK's automatic layering push it into a different
+// layer than the port it belongs to — fold the label's own bounding box into
+// the *owning* node's ELK margin on the side the label protrudes from, the
+// same mechanism already used to reserve room for a port's wire lead. This
+// keeps the label pinned to its port (same layer, deterministic offset) while
+// still using its real footprint to keep ELK's spacing honest.
+function netCutPortMargins(
+  designModule: DesignModule,
+  activeCuts: Map<string, ActiveNetCut>
+): Map<string, Map<string, { width: number; height: number }>> {
+  const byNode = new Map<string, Map<string, { width: number; height: number }>>();
+  const reserve = (nodeId: string, portId: string | undefined, label: string) => {
+    if (!portId) return;
+    const dimensions = diagramNodeDimensions({ id: 'cut-label-margin', kind: 'netLabel', label, ports: [] });
+    const byPort = byNode.get(nodeId) ?? new Map<string, { width: number; height: number }>();
+    byPort.set(portId, dimensions);
+    byNode.set(nodeId, byPort);
+  };
+
+  for (const { cut, edges: cutEdges } of activeCuts.values()) {
+    reserve(cut.source.nodeId, cut.source.portId, cut.label);
+    for (const edge of cutEdges) {
+      reserve(edge.target, edge.targetPort, cut.label);
+    }
+  }
+
+  return byNode;
+}
+
 async function autoLayoutMissingNodes(
   nodes: DiagramNode[],
   edges: DiagramEdge[],
   moduleLayout: SavedModuleLayout,
-  generateRegions: GenerateRegion[] = []
+  generateRegions: GenerateRegion[] = [],
+  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map()
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
@@ -848,21 +893,26 @@ async function autoLayoutMissingNodes(
       id: 'root',
       layoutOptions: nodePlacementLayoutOptions(useCompoundGenerateLayout),
       children: useCompoundGenerateLayout
-        ? buildGenerateCompoundElkChildren(nodes, generateRegions, moduleLayout, { includeLeadMargins: true })
+        ? buildGenerateCompoundElkChildren(nodes, generateRegions, moduleLayout, { includeLeadMargins: true, netCutMargins })
         : nodes.map((node) => elkNodeForLayout(node, moduleLayout, {
           includeLeadMargins: true,
-          useSavedPosition: true
+          useSavedPosition: true,
+          extraPortMargins: netCutMargins.get(node.id)
         })),
       edges: buildNodePlacementElkEdges(edges, nodeIds)
     });
 
     if (useCompoundGenerateLayout) {
-      collectElkPositionsAndRegionBounds(graph, nodes, positions, regionBounds);
+      collectElkPositionsAndRegionBounds(graph, nodes, positions, regionBounds, netCutMargins);
     } else {
       for (const child of graph.children ?? []) {
         if (child.id && child.x !== undefined && child.y !== undefined) {
           const node = nodes.find((n) => n.id === child.id);
-          const offset = node ? elkNodeForDiagramNode(node, true).layoutOffset : { x: 0, y: 0 };
+          // Must mirror the extraPortMargins passed when this same node's ELK
+          // box was built above — otherwise a node with a net-cut-inflated
+          // left/top margin would have its ELK-relative x/y de-offset by the
+          // wrong (smaller) amount and visually drift.
+          const offset = node ? elkNodeForDiagramNode(node, true, netCutMargins.get(node.id)).layoutOffset : { x: 0, y: 0 };
           positions.set(child.id, snapPosition({ x: child.x + offset.x, y: child.y + offset.y }, node?.kind, node ? structRole(node) : undefined));
         }
       }
@@ -890,12 +940,14 @@ async function autoLayoutMissingNodes(
         includeLeadMargins: true,
         forceFixed: true,
         nodePositions: fixedRoutePositions,
-        regionBounds
+        regionBounds,
+        netCutMargins
       })
       : nodes.map((node) => elkNodeForLayout(node, moduleLayout, {
         includeLeadMargins: true,
         forceFixed: true,
-        nodePositions: fixedRoutePositions
+        nodePositions: fixedRoutePositions,
+        extraPortMargins: netCutMargins.get(node.id)
       }));
 
     let routeGraph;
@@ -1042,9 +1094,10 @@ function elkNodeForLayout(
     forceFixed?: boolean;
     nodePositions?: Map<string, { x: number; y: number }>;
     parentBounds?: RegionBounds;
+    extraPortMargins?: Map<string, { width: number; height: number }>;
   }
 ): ElkLayoutNode {
-  const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, options.includeLeadMargins);
+  const { layoutOffset, ...elkNode } = elkNodeForDiagramNode(node, options.includeLeadMargins, options.extraPortMargins);
   const saved = moduleLayout.nodes[node.id];
   const position = options.nodePositions?.get(node.id)
     ?? (options.useSavedPosition && saved ? { x: saved.x, y: saved.y } : undefined);
@@ -1089,6 +1142,7 @@ function buildGenerateCompoundElkChildren(
     forceFixed?: boolean;
     nodePositions?: Map<string, { x: number; y: number }>;
     regionBounds?: Map<string, RegionBounds>;
+    netCutMargins?: Map<string, Map<string, { width: number; height: number }>>;
   }
 ): ElkLayoutNode[] {
   const sortedRegions = [...regions].sort(compareGenerateRegions);
@@ -1129,7 +1183,8 @@ function buildGenerateCompoundElkChildren(
     includeLeadMargins: options.includeLeadMargins,
     forceFixed: options.forceFixed,
     nodePositions: options.nodePositions,
-    parentBounds
+    parentBounds,
+    extraPortMargins: options.netCutMargins?.get(node.id)
   });
 
   const buildRegion = (region: GenerateRegion, parentBounds?: RegionBounds): ElkLayoutNode => {
@@ -1203,7 +1258,8 @@ function collectElkPositionsAndRegionBounds(
   graph: ElkLayoutNode,
   nodes: DiagramNode[],
   positions: Map<string, { x: number; y: number }>,
-  regionBounds: Map<string, RegionBounds>
+  regionBounds: Map<string, RegionBounds>,
+  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map()
 ): void {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
@@ -1228,7 +1284,10 @@ function collectElkPositionsAndRegionBounds(
 
     const diagramNode = nodesById.get(node.id);
     if (diagramNode && node.x !== undefined && node.y !== undefined) {
-      const offset = elkNodeForDiagramNode(diagramNode, true).layoutOffset;
+      // Must mirror the extraPortMargins used to build this node's ELK box
+      // (see buildGenerateCompoundElkChildren/buildNode) or a net-cut-inflated
+      // left/top margin will de-offset by the wrong amount and drift visually.
+      const offset = elkNodeForDiagramNode(diagramNode, true, netCutMargins.get(diagramNode.id)).layoutOffset;
       positions.set(node.id, snapPosition({ x: x + offset.x, y: y + offset.y }, diagramNode.kind, structRole(diagramNode)));
     }
 
@@ -1242,7 +1301,11 @@ function collectElkPositionsAndRegionBounds(
   }
 }
 
-export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = false): ElkDiagramNode {
+export function elkNodeForDiagramNode(
+  node: DiagramNode,
+  includeLeadMargins = false,
+  extraPortMargins?: Map<string, { width: number; height: number }>
+): ElkDiagramNode {
   const { width, height } = diagramNodeDimensions(node);
   const grid = diagramSizing.gridSize;
   const role = structRole(node);
@@ -1444,7 +1507,11 @@ export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = fa
       leadLength: includeLeadMargins ? leadOverride ?? elkLeadLengthForPort(side, port.id) : 0,
       index,
       x: portX,
-      y: portY
+      y: portY,
+      // The footprint of a net-cut label reserved on this port, if any — see
+      // netCutPortMargins. Only ever set when includeLeadMargins is true;
+      // extraPortMargins itself is only ever passed for the layout passes.
+      cutLabelSize: includeLeadMargins ? extraPortMargins?.get(port.id) : undefined
     };
   });
 
@@ -1452,16 +1519,31 @@ export function elkNodeForDiagramNode(node: DiagramNode, includeLeadMargins = fa
   // Reserve only the part of each lead that extends past the node outline:
   // ports inset into the node (mux/select top selects, the inverter output
   // bubble) consume part of their lead inside the node, so the ELK box must
-  // not also pad for it.
+  // not also pad for it. A port with an active net-cut label additionally
+  // reserves the label's own footprint beyond the lead (in the lead's
+  // direction) and straddling the lead perpendicular to it (the label is
+  // centered on the lead point), so a tightly packed neighbor can't land on
+  // top of it. With no label, cutExtra/cutCross are both 0 and this reduces
+  // to exactly the original lead-only computation.
   const margins = portGeometry.reduce((current, port) => {
+    const cutExtra = port.side === 'WEST' || port.side === 'EAST' ? (port.cutLabelSize?.width ?? 0) : (port.cutLabelSize?.height ?? 0);
+    const cutCross = (port.side === 'WEST' || port.side === 'EAST' ? port.cutLabelSize?.height : port.cutLabelSize?.width) ?? 0;
     if (port.side === 'WEST') {
-      current.left = Math.max(current.left, port.leadLength - port.x);
+      current.left = Math.max(current.left, port.leadLength + cutExtra - port.x);
+      current.top = Math.max(current.top, cutCross / 2 - port.y);
+      current.bottom = Math.max(current.bottom, cutCross / 2 - (height - port.y));
     } else if (port.side === 'EAST') {
-      current.right = Math.max(current.right, port.leadLength - (width - port.x));
+      current.right = Math.max(current.right, port.leadLength + cutExtra - (width - port.x));
+      current.top = Math.max(current.top, cutCross / 2 - port.y);
+      current.bottom = Math.max(current.bottom, cutCross / 2 - (height - port.y));
     } else if (port.side === 'NORTH') {
-      current.top = Math.max(current.top, port.leadLength - port.y);
+      current.top = Math.max(current.top, port.leadLength + cutExtra - port.y);
+      current.left = Math.max(current.left, cutCross / 2 - port.x);
+      current.right = Math.max(current.right, cutCross / 2 - (width - port.x));
     } else if (port.side === 'SOUTH') {
-      current.bottom = Math.max(current.bottom, port.leadLength - (height - port.y));
+      current.bottom = Math.max(current.bottom, port.leadLength + cutExtra - (height - port.y));
+      current.left = Math.max(current.left, cutCross / 2 - port.x);
+      current.right = Math.max(current.right, cutCross / 2 - (width - port.x));
     }
     return current;
   }, { left: arrayLayerPad, right: arrayLayerPad, top: arrayLayerPad, bottom: arrayLayerPad });
@@ -2418,9 +2500,13 @@ export function mergeNetCut(
     return layout;
   }
 
+  // Freeze every *real* node currently on screen so cutting this net doesn't
+  // disturb the rest of the diagram — but leave any other net-cut label's own
+  // fixed state exactly as it was: it was never meant to be pinned just
+  // because an unrelated net got cut while it happened to be visible.
   const frozenNodes = nodes.map((node) => ({
     ...node,
-    fixed: true
+    fixed: node.kind === 'netLabel' ? node.fixed : true
   }));
   const next = mergeNodePositions(layout, moduleName, frozenNodes);
   const nextModule = next.modules[moduleName] ?? { nodes: {} };
@@ -2524,6 +2610,32 @@ export function removeNetCut(layout: SavedLayout, moduleName: string, netKey: st
   };
 }
 
+// The "Reroute" control on a cut net's stub wire — unlike a real edge, there's
+// no route to recompute (the stub is always a straight line), so this instead
+// un-pins the dangling end's saved position, snapping it back to the
+// geometry-derived spot right beside the port it's attached to (see
+// makeCutLabelNode). Everything else in the saved layout is untouched.
+export function resetCutLabelPosition(layout: SavedLayout, moduleName: string, labelNodeId: string): SavedLayout {
+  const existing = layout.modules[moduleName];
+  if (!existing?.nodes[labelNodeId]) {
+    return layout;
+  }
+
+  const nodes = { ...existing.nodes };
+  delete nodes[labelNodeId];
+
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        nodes
+      }
+    }
+  };
+}
+
 function sourcePortForEdge(node: DiagramNode, edge: DiagramEdge): DiagramNode['ports'][number] | undefined {
   return node.ports.find((port) => port.id === edge.sourcePort)
     ?? node.ports.find((port) => port.name === edge.sourcePort)
@@ -2556,7 +2668,12 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
   const mergedNodes: SavedModuleLayout['nodes'] = {};
 
   for (const [id, value] of Object.entries(existing.nodes)) {
-    if (!activeIds.has(id) && value.fixed) {
+    // A cut-net label's saved entry only exists because *it* was explicitly
+    // pinned (dragged); it must never be preserved (even as "stale") as a
+    // side effect of some unrelated node no longer being in this batch — that
+    // would silently convert a still-active, dynamically-tracked dangling
+    // end into a permanently stuck one the next time anything else moves.
+    if (!activeIds.has(id) && value.fixed && !isCutLabelNodeId(id)) {
       mergedNodes[id] = { ...value, stale: true };
     }
   }
@@ -2613,9 +2730,11 @@ export function mergeRegionBounds(layout: SavedLayout, moduleName: string, regio
 }
 
 export function mergeRerouteLayout(layout: SavedLayout, moduleName: string, nodes: PositionedNode[]): SavedLayout {
+  // See mergeNetCut: freezing "the rest of the diagram" while rerouting must
+  // not implicitly pin a net-cut label that was tracking its port dynamically.
   const fixedNodes = nodes.map((node) => ({
     ...node,
-    fixed: true
+    fixed: node.kind === 'netLabel' ? node.fixed : true
   }));
   const next = mergeNodePositions(layout, moduleName, fixedNodes);
   const existing = next.modules[moduleName] ?? { nodes: {} };
@@ -2632,9 +2751,11 @@ export function mergeRerouteSingleEdge(layout: SavedLayout, moduleName: string, 
 // Like mergeRerouteSingleEdge but clears the saved route of every given edge in
 // one pass (used when the user batch-reroutes a multi-wire selection).
 export function mergeRerouteEdges(layout: SavedLayout, moduleName: string, edgeIds: string[], nodes: PositionedNode[]): SavedLayout {
+  // See mergeNetCut: freezing "the rest of the diagram" while rerouting must
+  // not implicitly pin a net-cut label that was tracking its port dynamically.
   const fixedNodes = nodes.map((node) => ({
     ...node,
-    fixed: true
+    fixed: node.kind === 'netLabel' ? node.fixed : true
   }));
   const next = mergeNodePositions(layout, moduleName, fixedNodes);
   const existing = next.modules[moduleName] ?? { nodes: {} };
@@ -2672,7 +2793,9 @@ export function mergeRelayoutSelection(
 
   for (const [id, value] of Object.entries(existing.nodes)) {
     if (released.has(id)) continue;
-    if (!activeIds.has(id) && value.fixed) {
+    // See mergeNodePositions: a cut-net label's pin must never be preserved
+    // as a side effect of it not being part of this batch.
+    if (!activeIds.has(id) && value.fixed && !isCutLabelNodeId(id)) {
       mergedNodes[id] = { ...value, stale: true };
     }
   }

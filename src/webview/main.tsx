@@ -60,6 +60,11 @@ const vscode = getVscodeApi();
 const EDGE_Z_INDEX = 1;
 const ARRAY_NODE_Z_INDEX = 2;
 const BLOCK_NODE_Z_INDEX = 2;
+// A cut net's stub wire is always short and runs from a node straight out to
+// its own dangling end, so it never has a real edge's usual clearance from
+// node interiors — draw it (and its hover-only Reroute control) above nodes
+// so it stays visible, and clickable, when it lands close to one.
+const CUT_STUB_EDGE_Z_INDEX = 3;
 const GENERATE_REGION_MIN_CONTENT_PADDING = diagramSizing.gridSize * 2;
 
 function generateStateClass(state?: string, prefix = 'generate'): string | undefined {
@@ -429,7 +434,7 @@ function DiagramApp(): React.ReactElement {
         label: edge.label,
         type: 'svsch',
         className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
-        zIndex: EDGE_Z_INDEX,
+        zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
         data: {
           waypoint: edge.waypoint,
           routePoints: edge.routePoints,
@@ -557,7 +562,10 @@ function DiagramApp(): React.ReactElement {
     const positioned = nodes.map((node) => ({
       ...node.data.node,
       position: node.position,
-      fixed: true
+      // "Reroute All" freezes every real block in place — a net-cut label
+      // that's still tracking its port dynamically must not be forced fixed
+      // just because it happened to be on screen.
+      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
     }));
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
@@ -692,6 +700,7 @@ function DiagramApp(): React.ReactElement {
                   <NodeSelectionToolbar
                     moduleName={view.moduleName}
                     nodes={nodes}
+                    edges={edges}
                     pendingReselectIdsRef={pendingReselectIdsRef}
                   />
                 </ViewportPortal>
@@ -938,10 +947,12 @@ function GenerateRegionOverlay({
 function NodeSelectionToolbar({
   moduleName,
   nodes,
+  edges,
   pendingReselectIdsRef
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
+  edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
 }): React.ReactElement | null {
   const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes]);
@@ -961,9 +972,30 @@ function NodeSelectionToolbar({
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
     const selectedIds = new Set(selected.map((node) => node.id));
+    // A cut net's dangling end is a `netLabel` node that ELK never places
+    // directly — it's re-derived every render from the real block's current
+    // port position. Selecting the real block already selects its stub edge
+    // too (React Flow selects every edge touching a selected node), so pull
+    // that edge's netLabel endpoint into the release set even when the
+    // marquee never physically covered the label itself. A netLabel that's
+    // neither selected nor attached to a selected stub edge is left alone.
+    const nodesById = new Map(nodes.map((node) => [node.id, node]));
+    for (const edge of edges) {
+      if (edge.selected !== true) continue;
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      if (diagramEdge?.metadata?.cutStub === undefined) continue;
+      for (const endpointId of [edge.source, edge.target]) {
+        if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
+          selectedIds.add(endpointId);
+        }
+      }
+    }
     const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
       ...node,
-      fixed: !selectedIds.has(node.id)
+      // Released nodes go free; every other real block is frozen in place —
+      // but an unrelated net-cut label that's still tracking its port
+      // dynamically must not be forced fixed just because it's on screen.
+      fixed: selectedIds.has(node.id) ? false : (node.kind === 'netLabel' ? node.fixed : true)
     }));
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip
