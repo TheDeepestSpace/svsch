@@ -4,6 +4,7 @@ import path from 'node:path';
 import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
 import { elkNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
+import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { compareSvgSnapshot } from '../graphRegression';
@@ -115,7 +116,14 @@ const selections: FixtureSelection[] = [
     layoutMode: 'cutNet',
     picks: [
       { label: 'netLabel: cut source end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source' },
-      { label: 'netLabel: cut sink end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'sink' }
+      { label: 'netLabel: cut sink end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'sink' },
+      // Same fixture, but picking the *real* port each label hangs off of —
+      // the green dashed box is that port's ELK bounding box inflated by
+      // netCutPortMargins (see mergeLayout.ts): the label is never its own
+      // ELK graph node, but its footprint still has to keep the layered
+      // algorithm from packing a neighbor on top of it.
+      { label: 'port: source (+ cut margin)', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'input' },
+      { label: 'port: sink (+ cut margin)', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'output' }
     ]
   }
 ];
@@ -128,7 +136,29 @@ interface OverlayPort {
 interface OverlayEntry {
   label: string;
   rect: { x: number; y: number; width: number; height: number };
+  /** The same node's ELK box with its active net-cut margin(s) folded in —
+   * only present for a port picked from a `cutNet` fixture selection. */
+  marginRect?: { x: number; y: number; width: number; height: number };
   ports: OverlayPort[];
+}
+
+// Auto-detects, for a picked node, whichever of its own ports has a dangling
+// cut-net end attached in this same view (found by walking the synthetic
+// cut-stub edges), and the size that end's label would reserve. Mirrors
+// netCutPortMargins in mergeLayout.ts, but read back from a built view
+// instead of a SavedLayout, since these are hand-picked visual fixtures.
+function netCutMarginsForNode(view: DiagramViewModel, node: DiagramNode): Map<string, { width: number; height: number }> | undefined {
+  const margins = new Map<string, { width: number; height: number }>();
+  for (const edge of view.edges) {
+    if (!edge.metadata?.cutStub) continue;
+    if (edge.source !== node.id && edge.target !== node.id) continue;
+    const labelId = edge.source === node.id ? edge.target : edge.source;
+    const portId = edge.source === node.id ? edge.sourcePort : edge.targetPort;
+    const label = view.nodes.find((candidate) => candidate.id === labelId);
+    if (!label || label.kind !== 'netLabel' || !portId) continue;
+    margins.set(portId, diagramNodeDimensions(label));
+  }
+  return margins.size > 0 ? margins : undefined;
 }
 
 function snapFullGrid(value: number): number {
@@ -143,8 +173,14 @@ function snapForKind(value: number, node: DiagramNode): number {
   return snapFullGrid(value);
 }
 
-async function collectNodes(): Promise<Array<{ label: string; node: DiagramNode }>> {
-  const collected: Array<{ label: string; node: DiagramNode }> = [];
+interface CollectedNode {
+  label: string;
+  node: DiagramNode;
+  extraPortMargins?: Map<string, { width: number; height: number }>;
+}
+
+async function collectNodes(): Promise<CollectedNode[]> {
+  const collected: CollectedNode[] = [];
   for (const selection of selections) {
     const view = await buildFixtureView(selection.fixture, selection.layoutMode ?? 'auto', selection.module);
     for (const pick of selection.picks) {
@@ -152,7 +188,7 @@ async function collectNodes(): Promise<Array<{ label: string; node: DiagramNode 
       if (!node) {
         throw new Error(`No node matching "${pick.label}" in ${selection.fixture}${selection.module ? ` (module ${selection.module})` : ''}`);
       }
-      collected.push({ label: pick.label, node });
+      collected.push({ label: pick.label, node, extraPortMargins: netCutMarginsForNode(view, node) });
     }
   }
   const ids = new Set<string>();
@@ -165,7 +201,7 @@ async function collectNodes(): Promise<Array<{ label: string; node: DiagramNode 
   return collected;
 }
 
-function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): { view: DiagramViewModel; overlay: OverlayEntry[] } {
+function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; overlay: OverlayEntry[] } {
   const positioned: PositionedNode[] = [];
   const overlay: OverlayEntry[] = [];
 
@@ -175,14 +211,24 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
     const row = collected.slice(rowStart, rowStart + COLUMNS);
     let x = 0;
     let rowHeight = 0;
-    for (const { label, node } of row) {
+    for (const { label, node, extraPortMargins } of row) {
       const withLeads = elkNodeForDiagramNode(node, true);
       const bare = elkNodeForDiagramNode(node, false);
+      // The margin-inflated box is for the overlay comparison only — the
+      // node's own rendered position still comes from the plain lead offset,
+      // exactly like it does in the real diagram (see makeCutLabelNode).
+      const withMargins = extraPortMargins ? elkNodeForDiagramNode(node, true, extraPortMargins) : undefined;
       const offset = withLeads.layoutOffset;
+      // A cut-net margin on the west/north side grows the offset beyond the
+      // plain lead's — shift the node rightward/downward within its cell by
+      // exactly that much so the inflated box's leading edge lands on the
+      // cell's nominal start instead of bleeding into the previous cell/row.
+      const extraLeft = Math.max(0, (withMargins?.layoutOffset.x ?? 0) - offset.x);
+      const extraTop = Math.max(0, (withMargins?.layoutOffset.y ?? 0) - offset.y);
 
       const position = {
-        x: snapFullGrid(x + offset.x),
-        y: snapForKind(y + offset.y, node)
+        x: snapFullGrid(x + offset.x + extraLeft),
+        y: snapForKind(y + offset.y + extraTop, node)
       };
       positioned.push({ ...node, position, fixed: true });
 
@@ -192,6 +238,12 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
         width: withLeads.width,
         height: withLeads.height
       };
+      const marginRect = withMargins ? {
+        x: position.x - withMargins.layoutOffset.x,
+        y: position.y - withMargins.layoutOffset.y,
+        width: withMargins.width,
+        height: withMargins.height
+      } : undefined;
       const barePortsById = new Map(bare.ports.map((port) => [port.id, port]));
       const ports = withLeads.ports.map((port) => {
         const barePort = barePortsById.get(port.id);
@@ -216,10 +268,12 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
             }
         };
       });
-      overlay.push({ label, rect, ports });
+      overlay.push({ label, rect, marginRect, ports });
 
-      x += Math.ceil(withLeads.width / GRID) * GRID + COLUMN_GAP;
-      rowHeight = Math.max(rowHeight, withLeads.height);
+      const cellWidth = Math.max(extraLeft + withLeads.width, marginRect?.width ?? 0);
+      const cellHeight = Math.max(extraTop + withLeads.height, marginRect?.height ?? 0);
+      x += Math.ceil(cellWidth / GRID) * GRID + COLUMN_GAP;
+      rowHeight = Math.max(rowHeight, cellHeight);
     }
     y += Math.ceil(rowHeight / GRID) * GRID + ROW_GAP;
     rowStart += COLUMNS;
@@ -236,6 +290,7 @@ function buildGridView(collected: Array<{ label: string; node: DiagramNode }>): 
 
 const BOUNDS_COLOR = '#ff5f9e';
 const ANCHOR_COLOR = '#ffb020';
+const MARGIN_COLOR = '#3ddc97';
 
 function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -246,6 +301,12 @@ function escapeXml(value: string): string {
 function overlayMarkup(overlay: OverlayEntry[]): string {
   const parts: string[] = ['<g class="elk-geometry-overlay">'];
   for (const entry of overlay) {
+    if (entry.marginRect) {
+      parts.push(
+        `<rect x="${entry.marginRect.x}" y="${entry.marginRect.y}" width="${entry.marginRect.width}" height="${entry.marginRect.height}" fill="none" stroke="${MARGIN_COLOR}" stroke-width="1.5" stroke-dasharray="2 3" />`,
+        `<text x="${entry.marginRect.x}" y="${entry.marginRect.y + entry.marginRect.height + 16}" fill="${MARGIN_COLOR}" font-size="11" font-family="monospace">+ cut-net margin</text>`
+      );
+    }
     parts.push(
       `<rect x="${entry.rect.x}" y="${entry.rect.y}" width="${entry.rect.width}" height="${entry.rect.height}" fill="none" stroke="${BOUNDS_COLOR}" stroke-width="1.5" stroke-dasharray="6 4" />`,
       `<text x="${entry.rect.x}" y="${entry.rect.y - 8}" fill="${BOUNDS_COLOR}" font-size="13" font-family="monospace">${escapeXml(entry.label)}</text>`
@@ -300,7 +361,7 @@ function renderSvgWithOverlay(view: DiagramViewModel, overlay: OverlayEntry[]): 
 test.describe('elk geometry grid', () => {
   // The grid is taller than the default 1400x1000 viewport permits at React
   // Flow's minimum zoom, which would clip the bottom rows out of the PNG.
-  test.use({ viewport: { width: 1700, height: 2000 } });
+  test.use({ viewport: { width: 1700, height: 2200 } });
 
   test('shows elk bounds and port anchors for every node kind', async ({ page }) => {
     const collected = await collectNodes();
@@ -316,10 +377,10 @@ test.describe('elk geometry grid', () => {
     // fitView: the webview's own auto-fit races with it and can settle on a
     // clamped zoom that pushes the first grid row off screen.
     const margin = GRID * 2;
-    const minX = Math.min(...overlay.map((e) => e.rect.x)) - margin;
-    const minY = Math.min(...overlay.map((e) => e.rect.y)) - margin;
-    const maxX = Math.max(...overlay.map((e) => e.rect.x + e.rect.width)) + margin;
-    const maxY = Math.max(...overlay.map((e) => e.rect.y + e.rect.height)) + margin;
+    const minX = Math.min(...overlay.map((e) => Math.min(e.rect.x, e.marginRect?.x ?? Infinity))) - margin;
+    const minY = Math.min(...overlay.map((e) => Math.min(e.rect.y, e.marginRect?.y ?? Infinity))) - margin;
+    const maxX = Math.max(...overlay.map((e) => Math.max(e.rect.x + e.rect.width, e.marginRect ? e.marginRect.x + e.marginRect.width : -Infinity))) + margin;
+    const maxY = Math.max(...overlay.map((e) => Math.max(e.rect.y + e.rect.height, e.marginRect ? e.marginRect.y + e.marginRect.height : -Infinity))) + margin;
     await page.waitForFunction(() => Boolean((window as any).reactFlowInstance));
     await page.evaluate(async (bounds) => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };

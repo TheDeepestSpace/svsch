@@ -80,7 +80,8 @@ export function NetLabelWirePaths({
   align,
   isSourceStacked = false,
   width,
-  height
+  height,
+  isHighlighted = false
 }: {
   handleSide: 'left' | 'right' | 'top' | 'bottom';
   edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean; thick?: boolean };
@@ -88,6 +89,10 @@ export function NetLabelWirePaths({
   isSourceStacked?: boolean;
   width: number;
   height: number;
+  /** Hover/selection halo — the same svsch-edge-net-highlight style a real
+   * edge shows for its net, reused here so a dangling end's own stub reads
+   * as part of the same "this wire matters right now" state. */
+  isHighlighted?: boolean;
 }): React.ReactElement {
   const isInterface = edgeStyle?.aggregate === 'interface';
   const isStruct = edgeStyle?.aggregate === 'struct';
@@ -112,6 +117,11 @@ export function NetLabelWirePaths({
 
   return (
     <>
+      {isHighlighted && (
+        <g className="svsch-edge-net-highlight-group">
+          <path className="svsch-edge-net-highlight" d={horizontalPath + verticalPath} />
+        </g>
+      )}
       {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
       {isStruct && <path className="svsch-edge svsch-edge-struct-bg" d={horizontalPath + verticalPath} />}
       {isStacked ? (
@@ -132,13 +142,15 @@ export function NetLabelWire({
   handleSide,
   edgeStyle,
   align,
-  isSourceStacked = false
+  isSourceStacked = false,
+  isHighlighted = false
 }: {
   node: PositionedNode;
   handleSide: 'left' | 'right' | 'top' | 'bottom';
   edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean; thick?: boolean };
   align?: 'start' | 'end';
   isSourceStacked?: boolean;
+  isHighlighted?: boolean;
 }): React.ReactElement {
   const isInterface = edgeStyle?.aggregate === 'interface';
   const isStruct = edgeStyle?.aggregate === 'struct';
@@ -164,6 +176,7 @@ export function NetLabelWire({
         isSourceStacked={isSourceStacked}
         width={nodeWidth}
         height={nodeHeight}
+        isHighlighted={isHighlighted}
       />
     </svg>
   );

@@ -1366,6 +1366,68 @@ test.describe('edge route editing', () => {
     await expectGraphAndScreenshot(page, 'cut-net-label-styled-stubs-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
 
+  test('highlights a drag-selected dangling end with the same halo and name style as its hovered net', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const nodeId = 'cut-label:styled:plain:source';
+    const labelLocator = page.locator(`.react-flow__node[data-id="${nodeId}"]`);
+
+    // Before selection: no halo on the stub, no highlight on the name.
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
+
+    // A real click selects the node directly.
+    await page.click(`[data-node-id="${nodeId}"]`);
+    await expect(labelLocator).toHaveClass(/react-flow__node-hdl.*selected|selected.*react-flow__node-hdl/);
+
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(1);
+
+    await expectGraphAndScreenshot(page, 'cut-net-label-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${nodeId}"]`) });
+  });
+
+  test('highlights a dangling end whose real port was marquee-selected, even though the label itself sits outside the lasso', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    // A later row, well clear of the top-left "Module: ..." info panel that
+    // would otherwise swallow the marquee's mousedown.
+    const nodeId = 'cut-label:styled:struct:source';
+    const labelLocator = page.locator(`.react-flow__node[data-id="${nodeId}"]`);
+    const portLocator = page.locator('.react-flow__node[data-id="source:struct"]');
+
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
+
+    // Lasso just the port, deliberately stopping short of the label so the
+    // marquee rectangle never touches it directly — mirrors a real diagram,
+    // where a cut end can sit well outside the block/port it's attached to.
+    const portBox = await portLocator.boundingBox();
+    const labelBox = await labelLocator.boundingBox();
+    if (!portBox || !labelBox) throw new Error('Unable to locate port or label bounding boxes');
+    expect(portBox.x + portBox.width).toBeLessThan(labelBox.x);
+
+    const startX = portBox.x - 20;
+    const startY = portBox.y - 20;
+    const endX = portBox.x + portBox.width + 20;
+    const endY = portBox.y + portBox.height + 20;
+    expect(endX).toBeLessThan(labelBox.x);
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+    await page.mouse.move(endX, endY, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(portLocator).toHaveClass(/selected/);
+    await expect(labelLocator).not.toHaveClass(/selected/);
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(1);
+  });
+
   test('matches cut label segment paint to decorated wire styles', async ({ page }) => {
     await openView(page, createStyledCutNetView());
     await page.waitForSelector('[data-node-kind="netLabel"]');

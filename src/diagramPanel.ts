@@ -5,7 +5,7 @@ import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -27,6 +27,7 @@ type WebviewMessage =
   | { type: 'relayoutSelection'; moduleName: string; nodeIds: string[]; nodes: PositionedNode[] }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
+  | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
@@ -372,6 +373,10 @@ export class DiagramPanel {
     }
     if (message.type === 'tieNet') {
       await this.tieNet(message.moduleName, message.netKey);
+      return;
+    }
+    if (message.type === 'resetCutLabelPosition') {
+      await this.resetCutLabelPosition(message.moduleName, message.nodeId);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -744,6 +749,20 @@ export class DiagramPanel {
     }
     this.currentModule = moduleName;
     this.layout = removeNetCut(this.layout, moduleName, netKey);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async resetCutLabelPosition(moduleName: string, nodeId: string): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = resetCutLabelPosition(this.layout, moduleName, nodeId);
     await store.write(this.layout);
     await this.postView();
   }

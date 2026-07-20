@@ -60,6 +60,11 @@ const vscode = getVscodeApi();
 const EDGE_Z_INDEX = 1;
 const ARRAY_NODE_Z_INDEX = 2;
 const BLOCK_NODE_Z_INDEX = 2;
+// A cut net's stub wire is always short and runs from a node straight out to
+// its own dangling end, so it never has a real edge's usual clearance from
+// node interiors — draw it (and its hover-only Reroute control) above nodes
+// so it stays visible, and clickable, when it lands close to one.
+const CUT_STUB_EDGE_Z_INDEX = 3;
 const GENERATE_REGION_MIN_CONTENT_PADDING = diagramSizing.gridSize * 2;
 
 function generateStateClass(state?: string, prefix = 'generate'): string | undefined {
@@ -429,7 +434,7 @@ function DiagramApp(): React.ReactElement {
         label: edge.label,
         type: 'svsch',
         className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
-        zIndex: EDGE_Z_INDEX,
+        zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
         data: {
           waypoint: edge.waypoint,
           routePoints: edge.routePoints,
@@ -557,7 +562,10 @@ function DiagramApp(): React.ReactElement {
     const positioned = nodes.map((node) => ({
       ...node.data.node,
       position: node.position,
-      fixed: true
+      // "Reroute All" freezes every real block in place — a net-cut label
+      // that's still tracking its port dynamically must not be forced fixed
+      // just because it happened to be on screen.
+      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
     }));
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
@@ -984,7 +992,10 @@ function NodeSelectionToolbar({
     }
     const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
       ...node,
-      fixed: !selectedIds.has(node.id)
+      // Released nodes go free; every other real block is frozen in place —
+      // but an unrelated net-cut label that's still tracking its port
+      // dynamically must not be forced fixed just because it's on screen.
+      fixed: selectedIds.has(node.id) ? false : (node.kind === 'netLabel' ? node.fixed : true)
     }));
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip

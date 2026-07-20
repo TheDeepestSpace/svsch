@@ -783,7 +783,11 @@ Then('the block {string} should stay near its pre-auto-layout position', async f
   expect(
     distance,
     `expected ${name} to stay near (${before.x}, ${before.y}) but it moved to (${pos.x}, ${pos.y})`
-  ).toBeLessThan(diagramGrid.size * 6);
+  // A released block with an active net cut reserves extra ELK margin for its
+  // dangling end, which shifts where the layered algorithm settles it by a
+  // bit more than an uncut block — widen the (already approximate) tolerance
+  // to cover that.
+  ).toBeLessThan(diagramGrid.size * 8);
 });
 
 Then('the block {string} should remain selected', async function (this: BddWorld, name: string) {
@@ -837,6 +841,41 @@ async function cutLabelNodeIdAttachedTo(webviewPage: FrameLocator, blockLabel: s
   return labelId;
 }
 
+// Like cutLabelNodeIdAttachedTo, but resolves the connecting stub edge's own
+// id instead of the label node's — used to click that specific wire's
+// Reroute control.
+async function cutStubEdgeIdAttachedTo(webviewPage: FrameLocator, blockLabel: string): Promise<string> {
+  const blockId = await findNodeIdByLabel(webviewPage, blockLabel);
+  if (!blockId) throw new Error(`Could not find block "${blockLabel}"`);
+  const edgeId = await webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const stub = rf.getEdges().find((e: any) => (
+      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
+    ));
+    return stub?.id ?? null;
+  }, blockId);
+  if (!edgeId) throw new Error(`Could not find a cut net stub wire attached to "${blockLabel}"`);
+  return edgeId;
+}
+
+// A cut label's own position is server-derived and pushed to the webview over
+// an async postMessage round-trip — unlike a node the user just dragged
+// directly, its rendered DOM position can lag well behind an unrelated
+// node's move that already persisted to disk (the round-trip is not covered
+// by waitForLayoutChange's file-based wait, since the file already changed).
+// Ask the extension's own layout-merge logic directly instead of racing the
+// webview's render pipeline — this is exactly what the webview itself will
+// eventually converge on, without depending on how long that takes.
+async function authoritativeCutLabelPosition(world: BddWorld, blockLabel: string): Promise<{ x: number; y: number }> {
+  const id = await cutLabelNodeIdAttachedTo(world.webviewPage, blockLabel);
+  const layout = await readExtensionLayout(world);
+  const moduleName = world.lastViewModel.moduleName;
+  const view = await buildViewModel(world.lastGraph, moduleName, layout);
+  const node = view.nodes.find((candidate) => candidate.id === id);
+  if (!node) throw new Error(`Could not find the cut net label attached to ${blockLabel} (id ${id}) in the recomputed view`);
+  return node.position;
+}
+
 When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, blockLabel: string, cellsX: number, cellsY: number) {
   const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
   const before = JSON.stringify(await readExtensionLayout(this));
@@ -845,17 +884,14 @@ When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid c
 });
 
 When('I note the position of the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
-  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
-  const pos = await getInternalPosition(this.webviewPage, id);
-  if (!pos) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
   this.notedPositions.set(`cut-label:${blockLabel}`, pos);
 });
 
 Then('the cut net label attached to {string} should have moved', async function (this: BddWorld, blockLabel: string) {
-  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
-  const pos = await getInternalPosition(this.webviewPage, id);
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
   const before = this.notedPositions.get(`cut-label:${blockLabel}`);
-  if (!pos || !before) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
   const distance = Math.hypot(pos.x - before.x, pos.y - before.y);
   expect(
     distance,
@@ -864,12 +900,67 @@ Then('the cut net label attached to {string} should have moved', async function 
 });
 
 Then('the cut net label attached to {string} should not have moved', async function (this: BddWorld, blockLabel: string) {
-  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
-  const pos = await getInternalPosition(this.webviewPage, id);
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
   const before = this.notedPositions.get(`cut-label:${blockLabel}`);
-  if (!pos || !before) throw new Error(`Missing position data for the cut net label attached to ${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
   expect(pos.x, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.x, 0);
   expect(pos.y, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.y, 0);
+});
+
+// Same comparison as "should not have moved" — phrased separately for the
+// drag-then-Reroute flow, where the noted position is the *canonical* spot
+// (taken right after the cut, before the label was dragged away) rather than
+// a "don't touch it" baseline.
+Then('the cut net label attached to {string} should be at its noted position', async function (this: BddWorld, blockLabel: string) {
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
+  expect(pos.x, `the cut net label attached to ${blockLabel} should be back at its canonical position`).toBeCloseTo(before.x, 0);
+  expect(pos.y, `the cut net label attached to ${blockLabel} should be back at its canonical position`).toBeCloseTo(before.y, 0);
+});
+
+Then('the cut net label attached to {string} should not overlap the block {string}', async function (this: BddWorld, labelBlockLabel: string, otherBlockLabel: string) {
+  const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, labelBlockLabel);
+  const otherId = await findNodeIdByLabel(this.webviewPage, otherBlockLabel);
+  if (!otherId) throw new Error(`Could not find block "${otherBlockLabel}"`);
+  const labelBox = await this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`).boundingBox();
+  const otherBox = await this.webviewPage.locator(`.react-flow__node[data-id="${otherId}"]`).boundingBox();
+  if (!labelBox || !otherBox) throw new Error(`Missing bounding box for "${labelBlockLabel}" label or "${otherBlockLabel}"`);
+  const overlaps = labelBox.x < otherBox.x + otherBox.width
+    && otherBox.x < labelBox.x + labelBox.width
+    && labelBox.y < otherBox.y + otherBox.height
+    && otherBox.y < labelBox.y + labelBox.height;
+  expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
+});
+
+// Reveal a cut net stub's floating Reroute control without clicking it — the
+// same "hover to check the controls" beat as the plain-edge hover step above,
+// but for a dangling end's own stub wire (whose control renders through a
+// ViewportPortal rather than nested under its own .react-flow__edge, so it's
+// looked up globally rather than scoped to the edge).
+When('I hover the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const edgeId = await cutStubEdgeIdAttachedTo(this.webviewPage, blockLabel);
+  const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  const control = this.webviewPage.locator('.svsch-cut-stub-reset-layer .svsch-edge-reroute-control');
+  await expect(control).toBeVisible({ timeout: 5_000 });
+  await this.takeScreenshot(`Hovering the cut net label attached to ${blockLabel}`);
+});
+
+When('I click the Reroute control on the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const edgeId = await cutStubEdgeIdAttachedTo(this.webviewPage, blockLabel);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  // A cut stub's Reroute control renders through a ViewportPortal, not
+  // nested under its own .react-flow__edge element (see OrthogonalEdge) —
+  // hover the wire to reveal it, then look it up globally rather than
+  // scoped to the edge, unlike clickEdgeControl's normal-edge controls.
+  const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  const control = this.webviewPage.locator('.svsch-cut-stub-reset-layer .svsch-edge-reroute-control');
+  await expect(control).toBeVisible({ timeout: 5_000 });
+  await control.click();
+  await this.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
+  await waitForLayoutChange(this, before, `After resetting the cut net label attached to ${blockLabel}`);
 });
 
 Then('I should see a port node {string}', async function (this: BddWorld, name: string) {

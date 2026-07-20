@@ -47,7 +47,7 @@ import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
-export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
+export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
@@ -82,6 +82,7 @@ export function HdlNode({ data }: NodeProps<HdlFlowNode>): React.ReactElement {
       <NetLabelNode
         node={node}
         moduleName={data.moduleName ?? node.parentModule ?? ''}
+        selected={selected}
         style={{
           '--svsch-node-width': `${nodeWidth}px`,
           '--svsch-node-height': `${nodeHeight}px`,
