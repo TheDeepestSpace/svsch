@@ -1958,10 +1958,13 @@ async function runCliCommand(world: BddWorld, command: string) {
   try { fs.chmodSync(cliPath, 0o755); } catch { /* ignore */ }
   const binDir = path.join(worktreeRoot, 'node_modules', '.bin');
   const svschBin = path.join(binDir, 'svsch');
-  if (!fs.existsSync(svschBin)) {
-    fs.mkdirSync(binDir, { recursive: true });
-    fs.symlinkSync(cliPath, svschBin);
-  }
+  try {
+    if (fs.existsSync(svschBin) || fs.lstatSync(svschBin).isSymbolicLink()) {
+      fs.unlinkSync(svschBin);
+    }
+  } catch { /* ignore */ }
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.symlinkSync(cliPath, svschBin);
   let stdout = '';
   let stderr = '';
   try {
