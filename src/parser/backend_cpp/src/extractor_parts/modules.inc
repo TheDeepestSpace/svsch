@@ -80,6 +80,9 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             }
             mod.ports.push_back(p);
             mod.internalSignals.insert(p.name);
+            if (!mod.declarationOrder.count(p.name)) {
+                mod.declarationOrder[p.name] = static_cast<int>(mod.declarationOrder.size());
+            }
         }
     }
     // Build enum member → typedef name/source/width map for literal node enrichment.
@@ -116,6 +119,9 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                 std::string name = getSignalName(var_handle);
                 if (!name.empty()) {
                     mod.internalSignals.insert(name);
+                    if (!mod.declarationOrder.count(name)) {
+                        mod.declarationOrder[name] = static_cast<int>(mod.declarationOrder.size());
+                    }
                     collectStructSignal(var_handle, name, mod, getSourceInfo(var_handle));
                 }
             }

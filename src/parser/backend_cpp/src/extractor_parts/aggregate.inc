@@ -1,4 +1,5 @@
 #include <fstream>
+#include <limits>
 // Extracts the normalized bit-width from a signal name that embeds a slice at
 // its tail, e.g. "foo[3:0]", "foo[2]", "foo[1:0]_next".  Returns "" when no
 // such slice is present.
@@ -259,6 +260,32 @@ void DesignExtractor::repairAggregateAssignmentBuses(Module& mod) {
     }
 }
 
+// Given the set of declared wire/reg/port names collapsed into one net by a chain of
+// simple `assign` aliases, pick the one declared earliest in source as the primary
+// (user-facing) name; the rest are returned as secondary aliases, in declaration order.
+// Names with no known declaration (shouldn't normally happen — collapseAliasCombNodes
+// only ever aliases real net/reg/port signals) sort after all known ones.
+static std::string chooseAliasPrimary(const Module& mod, const std::set<std::string>& names, std::vector<std::string>& outAliases) {
+    outAliases.clear();
+    if (names.empty()) return "";
+
+    auto orderOf = [&](const std::string& name) {
+        auto it = mod.declarationOrder.find(name);
+        return it != mod.declarationOrder.end() ? it->second : std::numeric_limits<int>::max();
+    };
+
+    std::vector<std::string> sorted(names.begin(), names.end());
+    std::stable_sort(sorted.begin(), sorted.end(), [&](const std::string& a, const std::string& b) {
+        int oa = orderOf(a), ob = orderOf(b);
+        if (oa != ob) return oa < ob;
+        return a < b;
+    });
+
+    std::string primary = sorted.front();
+    for (size_t i = 1; i < sorted.size(); ++i) outAliases.push_back(sorted[i]);
+    return primary;
+}
+
 // Collapse non-procedural [alias] comb nodes: a node with one input and one output
 // that is only a wire rename. Replace every incoming×outgoing edge pair with a
 // direct edge, then remove the node and its original edges.
@@ -304,7 +331,17 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
                     ne.sourcePort = inc.sourcePort;
                     ne.target     = outg.target;
                     ne.targetPort = outg.targetPort;
-                    ne.signal    = outg.signal.empty() ? inc.signal : outg.signal;
+                    std::set<std::string> aliasCandidates;
+                    if (!inc.signal.empty()) aliasCandidates.insert(inc.signal);
+                    for (const auto& n : inc.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
+                    if (!outg.signal.empty()) aliasCandidates.insert(outg.signal);
+                    for (const auto& n : outg.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
+
+                    if (aliasCandidates.empty()) {
+                        ne.signal = outg.signal.empty() ? inc.signal : outg.signal;
+                    } else {
+                        ne.signal = chooseAliasPrimary(mod, aliasCandidates, ne.aliasNames);
+                    }
                     ne.width     = outg.width.empty()  ? inc.width  : outg.width;
                     auto source_region = endpoint_generate_region(inc.source);
                     auto target_region = endpoint_generate_region(outg.target);

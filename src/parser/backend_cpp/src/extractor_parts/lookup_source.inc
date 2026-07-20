@@ -161,6 +161,25 @@ void DesignExtractor::buildEdges(Module& mod) {
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
     unifyNetPropagation(mod);
+    markDeclaredNetEdges(mod);
+}
+
+// Marks each edge whose `signal` is a name genuinely declared in the SV source
+// (a port, or a wire/reg/variable), as opposed to a tool-synthesized name such as
+// a promoted expression temp ("foo_next", "foo_sel") or an aggregate/select label.
+void DesignExtractor::markDeclaredNetEdges(Module& mod) {
+    auto baseName = [](const std::string& signal) {
+        std::string base = signal;
+        size_t bracket = base.find('[');
+        if (bracket != std::string::npos) base = base.substr(0, bracket);
+        size_t dot = base.find('.');
+        if (dot != std::string::npos) base = base.substr(0, dot);
+        return base;
+    };
+    for (auto& e : mod.edges) {
+        if (e.signal.empty()) continue;
+        e.signalIsDeclared = mod.internalSignals.count(baseName(e.signal)) > 0;
+    }
 }
 
 void DesignExtractor::unifyNetPropagation(Module& mod) {
