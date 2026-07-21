@@ -1639,12 +1639,14 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       // convention (unrelated to declaration order) so edge identity/matching
       // elsewhere in the pipeline never shifts because of this feature.
       expect(edge.signal).toBe('o');
-      // 'i' is declared before 'o' and before the internal wires, so it wins
-      // as the primary *declared* name; everything else the chain passed
-      // through is still recorded for display (e.g. a hover popover on the
-      // cut label), independently of what `signal` itself says.
-      expect(edge.metadata?.declaredNetName).toBe('i');
-      expect(edge.metadata?.aliasNames).toEqual(['o', 'a', 'b', 'c', 'd', 'e', 'f']);
+      // An internal wire's own explicit declaration outranks a port name even
+      // though ports are always declared earlier in source (the header
+      // precedes the body) — a port names the boundary contract, not this
+      // net specifically. 'a' is the first internal wire declared, so it wins;
+      // everything else the chain passed through (including both ports) is
+      // still recorded for display (e.g. a hover popover on the cut label).
+      expect(edge.metadata?.declaredNetName).toBe('a');
+      expect(edge.metadata?.aliasNames).toEqual(['b', 'c', 'd', 'e', 'f', 'i', 'o']);
     });
 
     it('marks a net driven by a real expression (not a plain alias) with its declared output name, and no alias list', async () => {
@@ -1662,11 +1664,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       const outEdge = top.edges.find((e) => e.source === combNode?.id);
       expect(outEdge).toBeDefined();
       // `assign y = mid;` is a plain alias of the comb node's output, so it
-      // collapses into the edge leaving the comb node — 'y' (a port, declared
-      // before the internal 'mid' wire) wins as the primary name.
+      // collapses into the edge leaving the comb node — 'mid' is an explicit
+      // internal wire declaration, which outranks the 'y' port it aliases to.
       expect(outEdge?.signal).toBe('y');
-      expect(outEdge?.metadata?.declaredNetName).toBe('y');
-      expect(outEdge?.metadata?.aliasNames).toEqual(['mid']);
+      expect(outEdge?.metadata?.declaredNetName).toBe('mid');
+      expect(outEdge?.metadata?.aliasNames).toEqual(['y']);
     });
 
     it('does not mark a tool-synthesized signal name as a declared net name', async () => {

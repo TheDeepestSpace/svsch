@@ -3868,7 +3868,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 </g>
 <g class="svsch-node hdl-net-label svsch-node-invalid" data-node-id="err_net_label" data-node-kind="netLabel" transform="translate(620 920)"><path class="svsch-edge" d="M 0 24 H 96"></path>
-<text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">cut_net</text><rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="98.5" height="50.5" /><g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
+<text class="svsch-net-label hdl-net-label-text-synthetic" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">cut_net</text><rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="98.5" height="50.5" /><g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
 <text x="90" y="10" text-anchor="end">⚠</text>
 </g></g>

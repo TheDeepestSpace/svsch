@@ -3664,7 +3664,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:declared:source" data-node-kind="netLabel" transform="translate(144 40)"><path class="svsch-edge" d="M 0 24 H 120"></path>
 <text class="svsch-net-label" x="117" y="15.5" text-anchor="end" dominant-baseline="middle">chip_select</text></g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:synthetic:source" data-node-kind="netLabel" transform="translate(144 160)"><path class="svsch-edge" d="M 0 24 H 96"></path>
-<text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">NET_1</text></g>
+<text class="svsch-net-label hdl-net-label-text-synthetic" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">NET_1</text></g>
 </g>
 </g>
 </svg>

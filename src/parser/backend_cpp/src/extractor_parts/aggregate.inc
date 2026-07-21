@@ -273,6 +273,14 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
         auto it = mod.declarationOrder.find(name);
         return it != mod.declarationOrder.end() ? it->second : std::numeric_limits<int>::max();
     };
+    // A port names the module's boundary contract; an internal wire/reg is the
+    // name the designer explicitly gave *this net*. When both exist in the
+    // same collapsed chain, the internal declaration wins — a port is always
+    // declared earlier in source (the header precedes the body) but that
+    // doesn't make it a better name for what the net is actually called.
+    auto isPort = [&](const std::string& name) {
+        return std::any_of(mod.ports.begin(), mod.ports.end(), [&](const Port& p) { return p.name == name; });
+    };
 
     // If nothing in the candidate set is actually declared (e.g. two
     // tool-synthesized promotion temps got merged with no real signal name
@@ -285,6 +293,8 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
 
     std::vector<std::string> sorted(names.begin(), names.end());
     std::stable_sort(sorted.begin(), sorted.end(), [&](const std::string& a, const std::string& b) {
+        bool aPort = isPort(a), bPort = isPort(b);
+        if (aPort != bPort) return !aPort;
         int oa = orderOf(a), ob = orderOf(b);
         if (oa != ob) return oa < ob;
         return a < b;
