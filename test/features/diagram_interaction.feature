@@ -102,7 +102,7 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
-  Scenario: Cutting, renaming, and tying back a fanout net
+  Scenario: Cutting and tying back a fanout net whose source name is declared in the SV source
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
@@ -116,12 +116,16 @@ Feature: Diagram Interaction
     Then I should see 3 cut net labels named "a"
     And the original connection between "a" and "x" should be hidden
     And the original connection between "a" and "y" should be hidden
-    When I rename the cut net "a" to "data_a"
-    Then I should see 3 cut net labels named "data_a"
-    When I tie back the cut net "data_a"
+    # "a" is a real port name from the source, not a tool-invented guess, so
+    # it renders in regular type and can't be edited into a different name.
+    And the cut net "a" should be shown in regular type
+    When I double-click the cut net "a"
+    Then the cut net "a" should not become editable
+    And I should see 3 cut net labels named "a"
+    When I tie back the cut net "a"
     Then the original connection between "a" and "x" should be restored
     And the original connection between "a" and "y" should be restored
-    And I should not see cut net labels named "data_a"
+    And I should not see cut net labels named "a"
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
     Given I have a file "top.sv" in my workspace:

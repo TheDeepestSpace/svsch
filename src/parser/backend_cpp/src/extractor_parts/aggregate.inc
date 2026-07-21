@@ -274,6 +274,15 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
         return it != mod.declarationOrder.end() ? it->second : std::numeric_limits<int>::max();
     };
 
+    // If nothing in the candidate set is actually declared (e.g. two
+    // tool-synthesized promotion temps got merged with no real signal name
+    // between them), there is no genuine "declared name" to report — leave it
+    // to the caller to treat that as unknown rather than inventing one.
+    bool anyDeclared = std::any_of(names.begin(), names.end(), [&](const std::string& name) {
+        return mod.declarationOrder.count(name) > 0;
+    });
+    if (!anyDeclared) return "";
+
     std::vector<std::string> sorted(names.begin(), names.end());
     std::stable_sort(sorted.begin(), sorted.end(), [&](const std::string& a, const std::string& b) {
         int oa = orderOf(a), ob = orderOf(b);
@@ -331,16 +340,24 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
                     ne.sourcePort = inc.sourcePort;
                     ne.target     = outg.target;
                     ne.targetPort = outg.targetPort;
+                    // `signal` keeps its long-standing "closest to the sink" rule
+                    // unchanged, since it feeds edge identity/matching well beyond
+                    // cut-net labeling and must not shift for every ordinary 2-endpoint
+                    // alias. declaredNetName/aliasNames are separate, additive metadata:
+                    // the earliest-declared name among every alias this chain passed
+                    // through (which may differ from `signal`), for display purposes only.
+                    ne.signal = outg.signal.empty() ? inc.signal : outg.signal;
+
                     std::set<std::string> aliasCandidates;
                     if (!inc.signal.empty()) aliasCandidates.insert(inc.signal);
+                    if (!inc.declaredNetName.empty()) aliasCandidates.insert(inc.declaredNetName);
                     for (const auto& n : inc.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
                     if (!outg.signal.empty()) aliasCandidates.insert(outg.signal);
+                    if (!outg.declaredNetName.empty()) aliasCandidates.insert(outg.declaredNetName);
                     for (const auto& n : outg.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
 
-                    if (aliasCandidates.empty()) {
-                        ne.signal = outg.signal.empty() ? inc.signal : outg.signal;
-                    } else {
-                        ne.signal = chooseAliasPrimary(mod, aliasCandidates, ne.aliasNames);
+                    if (!aliasCandidates.empty()) {
+                        ne.declaredNetName = chooseAliasPrimary(mod, aliasCandidates, ne.aliasNames);
                     }
                     ne.width     = outg.width.empty()  ? inc.width  : outg.width;
                     auto source_region = endpoint_generate_region(inc.source);

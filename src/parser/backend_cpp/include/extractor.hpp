@@ -178,12 +178,18 @@ struct Edge {
     std::string generateRegionId;
     std::string generateActiveState;
     // Other declared wire names collapsed into this edge by collapseAliasCombNodes
-    // (e.g. a chain of `assign a = b; assign b = c; ...`). `signal` holds whichever
-    // name was declared first in source; the rest are listed here for display.
+    // (e.g. a chain of `assign a = b; assign b = c; ...`), in declaration order.
+    // Populated independently of `signal` (which keeps its own long-standing
+    // "closest to the sink" convention, unrelated to declaration order, so
+    // that changing this never disturbs edge identity/matching elsewhere).
     std::vector<std::string> aliasNames;
-    // True when `signal` is a name actually declared in the SV source (a port or a
-    // wire/reg/var), as opposed to a tool-synthesized name (e.g. "foo_next", "expr").
-    bool signalIsDeclared = false;
+    // The net's name as actually declared in the SV source (a port or a
+    // wire/reg/var) — as opposed to a tool-synthesized name (e.g. "foo_next",
+    // "expr") — when known. For an edge produced by collapseAliasCombNodes this
+    // is the earliest-declared name among every alias the chain passed through
+    // (which may differ from `signal`); otherwise it's `signal` itself, when
+    // `signal` is itself a declared name. Empty when no declared name is known.
+    std::string declaredNetName;
 };
 
 struct GenerateRegion {

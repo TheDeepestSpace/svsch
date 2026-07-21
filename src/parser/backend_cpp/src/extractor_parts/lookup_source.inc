@@ -164,9 +164,12 @@ void DesignExtractor::buildEdges(Module& mod) {
     markDeclaredNetEdges(mod);
 }
 
-// Marks each edge whose `signal` is a name genuinely declared in the SV source
-// (a port, or a wire/reg/variable), as opposed to a tool-synthesized name such as
-// a promoted expression temp ("foo_next", "foo_sel") or an aggregate/select label.
+// Fills in declaredNetName, for edges collapseAliasCombNodes didn't already
+// give one, whenever `signal` itself is a name genuinely declared in the SV
+// source (a port, or a wire/reg/variable) — as opposed to a tool-synthesized
+// name such as a promoted expression temp ("foo_next", "foo_sel") or an
+// aggregate/select label. Chain-collapsed edges keep the earliest-declared
+// name collapseAliasCombNodes already chose, which may differ from `signal`.
 void DesignExtractor::markDeclaredNetEdges(Module& mod) {
     auto baseName = [](const std::string& signal) {
         std::string base = signal;
@@ -177,8 +180,10 @@ void DesignExtractor::markDeclaredNetEdges(Module& mod) {
         return base;
     };
     for (auto& e : mod.edges) {
-        if (e.signal.empty()) continue;
-        e.signalIsDeclared = mod.internalSignals.count(baseName(e.signal)) > 0;
+        if (!e.declaredNetName.empty() || e.signal.empty()) continue;
+        if (mod.internalSignals.count(baseName(e.signal))) {
+            e.declaredNetName = e.signal;
+        }
     }
 }
 

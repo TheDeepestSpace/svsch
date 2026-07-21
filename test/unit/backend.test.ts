@@ -1635,10 +1635,14 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       const edge = top.edges[0];
       expect(edge.source).toBe('port:top:i');
       expect(edge.target).toBe('port:top:o');
+      // `edge.signal` keeps its own long-standing "closest to the sink"
+      // convention (unrelated to declaration order) so edge identity/matching
+      // elsewhere in the pipeline never shifts because of this feature.
+      expect(edge.signal).toBe('o');
       // 'i' is declared before 'o' and before the internal wires, so it wins
-      // as the primary name; everything else the chain passed through is
-      // still recorded for display (e.g. a hover popover on the cut label).
-      expect(edge.signal).toBe('i');
+      // as the primary *declared* name; everything else the chain passed
+      // through is still recorded for display (e.g. a hover popover on the
+      // cut label), independently of what `signal` itself says.
       expect(edge.metadata?.declaredNetName).toBe('i');
       expect(edge.metadata?.aliasNames).toEqual(['o', 'a', 'b', 'c', 'd', 'e', 'f']);
     });

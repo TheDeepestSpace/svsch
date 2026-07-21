@@ -3821,7 +3821,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:source" data-node-kind="netLabel" transform="translate(1224 1728)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">a</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:a" data-node-kind="netLabel" transform="translate(0 1944)"><path class="svsch-edge" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:x" data-node-kind="netLabel" transform="translate(0 1944)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">a</text></g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(192 1956)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
