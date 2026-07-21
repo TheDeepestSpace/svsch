@@ -1611,6 +1611,78 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(top.edges.some(e => e.source === r32?.id && e.target === 'port:bus_composition:r')).toBe(false);
   });
 
+  describe('assign-chain alias collapsing', () => {
+    it('collapses a long chain of wire-to-wire assigns into a single edge, naming it after the first-declared wire', async () => {
+      const graph = await runParser(backend, 'assign_chain.sv', `
+        module top(input i, output o);
+          wire a,b,c,d,e,f;
+          assign a = b;
+          assign b = c;
+          assign c = d;
+          assign d = e;
+          assign e = f;
+          assign f = i;
+          assign o = a;
+        endmodule
+      `);
+      const top = graph.modules.top;
+
+      // No intermediate buffer/alias nodes should remain — the whole chain
+      // is one net from the input port straight through to the output port.
+      expect(top.nodes.filter((n) => n.kind !== 'port')).toEqual([]);
+      expect(top.edges).toHaveLength(1);
+
+      const edge = top.edges[0];
+      expect(edge.source).toBe('port:top:i');
+      expect(edge.target).toBe('port:top:o');
+      // 'i' is declared before 'o' and before the internal wires, so it wins
+      // as the primary name; everything else the chain passed through is
+      // still recorded for display (e.g. a hover popover on the cut label).
+      expect(edge.signal).toBe('i');
+      expect(edge.metadata?.declaredNetName).toBe('i');
+      expect(edge.metadata?.aliasNames).toEqual(['o', 'a', 'b', 'c', 'd', 'e', 'f']);
+    });
+
+    it('marks a net driven by a real expression (not a plain alias) with its declared output name, and no alias list', async () => {
+      const graph = await runParser(backend, 'assign_chain_expr.sv', `
+        module top(input a, input b, output y);
+          wire mid;
+          assign mid = a & b;
+          assign y = mid;
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      expect(combNode).toBeDefined();
+
+      const outEdge = top.edges.find((e) => e.source === combNode?.id);
+      expect(outEdge).toBeDefined();
+      // `assign y = mid;` is a plain alias of the comb node's output, so it
+      // collapses into the edge leaving the comb node — 'y' (a port, declared
+      // before the internal 'mid' wire) wins as the primary name.
+      expect(outEdge?.signal).toBe('y');
+      expect(outEdge?.metadata?.declaredNetName).toBe('y');
+      expect(outEdge?.metadata?.aliasNames).toEqual(['mid']);
+    });
+
+    it('does not mark a tool-synthesized signal name as a declared net name', async () => {
+      const graph = await runParser(backend, 'assign_expr_only.sv', `
+        module top(input a, input b, output y);
+          assign y = a & b;
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      expect(combNode).toBeDefined();
+
+      const inEdges = top.edges.filter((e) => e.target === combNode?.id);
+      expect(inEdges).toHaveLength(2);
+      for (const e of inEdges) {
+        expect(e.metadata?.declaredNetName).toBe(e.signal);
+      }
+    });
+  });
+
   describe('procedural if lowering (UHDM)', () => {
     it('lowers a complete always_comb if/else into a mux', async () => {
       if (backend !== 'uhdm') return;

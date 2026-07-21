@@ -701,6 +701,98 @@ describe('layout merge', () => {
     })).toBe('NET_2');
   });
 
+  it('prefers a declared net name over structural heuristics, even for an instance-driven net', () => {
+    const instanceModule = {
+      ...fanoutGraph.modules.top,
+      nodes: [
+        {
+          id: 'u_alu',
+          kind: 'instance' as const,
+          label: 'u_alu',
+          ports: [{ id: 'result', name: 'result', direction: 'output' as const }]
+        }
+      ],
+      edges: [
+        {
+          id: 'result-y',
+          source: 'u_alu',
+          sourcePort: 'result',
+          target: 'y',
+          signal: 'chip_select',
+          metadata: { declaredNetName: 'chip_select' }
+        }
+      ]
+    };
+    // Without a declaredNetName this would fall back to 'u_alu.result' (see
+    // the test above) — a real declared name always wins over that guess.
+    expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe('chip_select');
+  });
+
+  it('marks a cut net origin as declared or synthetic based on whether the label came from a declared net name', () => {
+    const module = fanoutGraph.modules.top;
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 240, y: 0 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    // No declaredNetName on this fixture edge -> the label is tool-guessed.
+    const synthetic = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    expect(synthetic.modules.top.netCuts?.['clk:p'].origin).toBe('synthetic');
+
+    const declaredModule = {
+      ...module,
+      edges: [
+        { ...module.edges[0], metadata: { declaredNetName: 'clk' } },
+        module.edges[1]
+      ]
+    };
+    const declared = mergeNetCut({ version: 1, modules: {} }, 'top', declaredModule.edges[0], declaredModule, positioned);
+    expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
+      label: 'clk',
+      source: { nodeId: 'clk', portId: 'p' },
+      origin: 'declared'
+    });
+  });
+
+  it('refuses to rename a declared net but still allows renaming a synthetic one', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {},
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' }, origin: 'declared' },
+            'old:out': { label: 'NET_1', source: { nodeId: 'old', portId: 'out' }, origin: 'synthetic' }
+          }
+        }
+      }
+    };
+
+    const afterDeclaredRename = renameCutNet(layout, 'top', 'clk:p', 'renamed_clk');
+    expect(afterDeclaredRename).toBe(layout);
+    expect(afterDeclaredRename.modules.top.netCuts?.['clk:p'].label).toBe('clk');
+
+    const afterSyntheticRename = renameCutNet(layout, 'top', 'old:out', 'renamed_net');
+    expect(afterSyntheticRename.modules.top.netCuts?.['old:out'].label).toBe('renamed_net');
+
+    // A cut saved before this field existed (no `origin` at all) is treated
+    // as synthetic for backward compatibility, so it stays renameable.
+    const legacyLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {},
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+    const afterLegacyRename = renameCutNet(legacyLayout, 'top', 'clk:p', 'renamed_clk');
+    expect(afterLegacyRename.modules.top.netCuts?.['clk:p'].label).toBe('renamed_clk');
+  });
+
   it('adds, renames, removes, and reroutes net cuts without discarding the cut state', () => {
     const module = fanoutGraph.modules.top;
     const positioned: PositionedNode[] = [
@@ -791,6 +883,44 @@ describe('layout merge', () => {
       'cut-label:clk:p:sink:e-clk-u1',
       'cut-label:clk:p:sink:e-clk-u2'
     ]);
+  });
+
+  it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {
+    const declaredFanoutGraph: DesignGraph = {
+      ...fanoutGraph,
+      modules: {
+        top: {
+          ...fanoutGraph.modules.top,
+          edges: fanoutGraph.modules.top.edges.map((edge) => ({
+            ...edge,
+            metadata: { declaredNetName: 'clk', aliasNames: ['sys_clk', 'core_clk'] }
+          }))
+        }
+      }
+    };
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' }, origin: 'declared' }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(declaredFanoutGraph, 'top', layout);
+    const labelNodes = view.nodes.filter((node) => node.kind === 'netLabel');
+    expect(labelNodes).toHaveLength(3);
+    for (const node of labelNodes) {
+      expect(node.metadata?.cutNet?.origin).toBe('declared');
+      expect(node.metadata?.cutNet?.aliasNames).toEqual(['sys_clk', 'core_clk']);
+    }
   });
 
   it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {
