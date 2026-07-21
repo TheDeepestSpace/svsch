@@ -49,6 +49,7 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
 }
 
 import { getVscodeApi } from '../vscodeApi';
+import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
@@ -934,7 +935,23 @@ export function OrthogonalEdge({
       )}
       {label && (
         <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">
-          <div>{label}</div>
+          <div>
+            <span className="svsch-edge-label-text">{label}</span>
+            {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
+              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`}>
+                {(trigger) => (
+                  <sup
+                    {...trigger}
+                    className="hdl-net-label-alias-marker nodrag nopan"
+                    role="img"
+                    aria-label={`This net also has these declared aliases: ${diagramEdge.metadata!.aliasNames!.join(', ')}`}
+                  >
+                    *
+                  </sup>
+                )}
+              </Tooltip>
+            )}
+          </div>
         </foreignObject>
       )}
     </g>

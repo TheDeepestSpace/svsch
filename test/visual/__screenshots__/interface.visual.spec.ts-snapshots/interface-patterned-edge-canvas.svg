@@ -3649,9 +3649,13 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:instance:interface_modport:u_consumer:port:interface_modport:observed:observed"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:instance:interface_modport:u_consumer:port:interface_modport:observed:observed" data-net-key="instance:interface_modport:u_consumer:port:observed" d="M 1032 120 L 1056 120 L 1224 120 L 1248 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:interface_modport:u_producer:interface:interface_modport:link:link"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:instance:interface_modport:u_producer:interface:interface_modport:link:link" d="M 216 120 L 240 120 L 408 120 L 432 120" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:interface_modport:u_producer:interface:interface_modport:link:link" data-net-key="instance:interface_modport:u_producer:port:bus" d="M 216 120 L 240 120 L 408 120 L 432 120" /></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:interface_modport:u_producer:interface:interface_modport:link:link" data-net-key="instance:interface_modport:u_producer:port:bus" d="M 216 120 L 240 120 L 408 120 L 432 120" />
+<rect class="svsch-label-box" x="384" y="109" width="48" height="22" rx="3" />
+<text class="svsch-edge-label" x="408" y="120" text-anchor="middle">link</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:interface_modport:link:instance:interface_modport:u_consumer:link"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:interface_modport:link:instance:interface_modport:u_consumer:link" d="M 624 120 L 648 120 L 816 120 L 840 120" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_modport:link:instance:interface_modport:u_consumer:link" data-net-key="interface:interface_modport:link:out:slave" d="M 624 120 L 648 120 L 816 120 L 840 120" /></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_modport:link:instance:interface_modport:u_consumer:link" data-net-key="interface:interface_modport:link:out:slave" d="M 624 120 L 648 120 L 816 120 L 840 120" />
+<rect class="svsch-label-box" x="792" y="109" width="48" height="22" rx="3" />
+<text class="svsch-edge-label" x="816" y="120" text-anchor="middle">link</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_modport:clk:interface:interface_modport:link:clk"><path class="svsch-edge" data-edge-id="edge:port:interface_modport:clk:interface:interface_modport:link:clk" data-net-key="port:interface_modport:clk:port:clk" d="M 216 48 L 240 48 L 528 48 L 528 84" /></g>
 </g>
 <g class="svsch-nodes">

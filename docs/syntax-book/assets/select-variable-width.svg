@@ -3656,7 +3656,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:literal:top:8:8:select:top:bus_sel_8_:8_:8"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:top:8:8:select:top:bus_sel_8_:8_:8" data-net-key="literal:top:8:8" d="M 552 48 L 576 48 L 864 48 L 864 144 L 864 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus" data-net-key="port:top:bus:port:bus" d="M 552 216 L 576 216 L 744 216 L 768 216" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel" data-net-key="port:top:sel:port:sel" d="M 144 120 L 168 120 L 336 120 L 360 120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out" data-net-key="select:top:bus[sel * 8+:8]:port:out" d="M 912 216 L 936 216 L 1104 216 L 1128 216" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out" data-net-key="select:top:bus[sel * 8+:8]:port:out" d="M 912 216 L 936 216 L 1104 216 L 1128 216" />
+<rect class="svsch-label-box" x="1042" y="205" width="124" height="22" rx="3" />
+<text class="svsch-edge-label" x="1104" y="216" text-anchor="middle">bus[sel * 8+:8]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: byte_out</title></tspan></text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:top:bus[sel * 8+:8]_sel:expr" data-node-kind="comb" transform="translate(360 72)">

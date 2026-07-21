@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
+import { buildViewModel } from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -252,40 +252,34 @@ test.describe('Syntax Book Generation & Verification', () => {
               console.log(`CASE ${caseData.id}: REGION TARGET NOT FOUND. Label: ${caseData.target.regionLabel}. Regions:`, viewModel.generateRegions?.map(r => ({ id: r.id, label: r.label, kind: r.kind })));
             }
             expect(targetExists).toBe(true);
-          } else if (caseData.target.kind === 'cutNet') {
+          } else if (caseData.target.kind === 'netLabel') {
             const targetExists = viewModel.edges.some(e => e.signal === caseData.target.signal);
             if (!targetExists) {
-              console.log(`CASE ${caseData.id}: CUT-NET TARGET NOT FOUND. Signal: ${caseData.target.signal}. Edges:`, viewModel.edges.map(e => ({ id: e.id, signal: e.signal })));
+              console.log(`CASE ${caseData.id}: NET-LABEL TARGET NOT FOUND. Signal: ${caseData.target.signal}. Edges:`, viewModel.edges.map(e => ({ id: e.id, signal: e.signal })));
             }
             expect(targetExists).toBe(true);
           }
 
-          // A cut-net case has no click-to-navigate interaction: cutting a net is
-          // what makes its declared name visible in the first place (an uncut wire
-          // never shows a label), so it renders straight from a pre-cut layout
-          // instead of driving the webview.
-          if (caseData.target.kind === 'cutNet') {
+          // An automatic net label (unlike every other case here) has no
+          // click-to-navigate interaction to drive — it's either visible on
+          // the plain, uncut wire already or it isn't, so this asserts
+          // straight against the rendered view model instead of the webview.
+          if (caseData.target.kind === 'netLabel') {
             const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
-            const cutLayout = mergeNetCut({ version: 1, modules: {} }, caseData.module, targetEdge, graph.modules[caseData.module], viewModel.nodes);
-            const cutViewModel = await buildViewModel(graph, caseData.module, cutLayout);
+            expect(targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
 
-            const sourceLabel = cutViewModel.nodes.find(n => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source');
-            if (!sourceLabel) {
-              console.log(`CASE ${caseData.id}: NO SOURCE NET LABEL AFTER CUT. Nodes:`, cutViewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
-            }
-            expect(sourceLabel).toBeDefined();
-            expect(sourceLabel!.label).toBe(caseData.expect.labelText);
-
-            // The winning label may not be `targetEdge.signal` at all (e.g. an
-            // internal wire's name beats the sink port it aliases to), so resolve
-            // source from the label itself: a matching port's own declaration,
-            // else the wire/logic/reg line that declares it.
-            const declaredName = sourceLabel!.label;
+            // Highlight source for whichever name actually identifies this net
+            // (declaredNetName is still resolved even when it matches an
+            // endpoint closely enough that no separate label is shown): a
+            // matching port's own declaration, else the wire/logic/reg line
+            // that declares it.
+            const declaredName = targetEdge.metadata?.declaredNetName;
+            expect(declaredName).toBeDefined();
             const declaredPort = graph.modules[caseData.module].ports.find((p) => p.name === declaredName);
             let range: SourceRange | undefined = declaredPort?.source;
             if (!range) {
               for (const [filename, text] of Object.entries(caseData.files) as [string, string][]) {
-                const found = findDeclarationRange(text, declaredName);
+                const found = findDeclarationRange(text, declaredName!);
                 if (found) {
                   range = { ...found, file: filename };
                   break;
@@ -314,7 +308,7 @@ test.describe('Syntax Book Generation & Verification', () => {
               }
             }
             const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
-            const svgContent = renderSvg(cutViewModel, { reactFlowCss, extensionCss, theme: 'dark' });
+            const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
 
             generatedEntries.push({
               id: caseData.id,

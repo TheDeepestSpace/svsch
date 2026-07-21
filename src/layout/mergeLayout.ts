@@ -106,6 +106,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     : positioned;
 
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+  const nodesById = new Map<string, DiagramNode>(positioned.map((node) => [node.id, node]));
 
   return {
     moduleName: designModule.name,
@@ -114,6 +115,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     edges: [
       ...routedDesignEdges.map((edge) => ({
         ...edge,
+        label: edgeDeclaredNetLabel(edge, nodesById),
         waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
         routePoints: moduleLayout.edges?.[edge.id]?.routePoints
           ?? (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds) ? undefined : elkLayout.routes.get(edge.id))
@@ -123,6 +125,29 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     generateRegions: positionedRegions,
     diagnostics: graph.diagnostics
   };
+}
+
+// An ordinary (uncut) wire has no label by default — its identity is already
+// visible at both ends. But when the net's actual SV-declared name (e.g. an
+// explicit `wire x;` in an alias chain) differs from what's shown at *both*
+// its source and target endpoints, that name would otherwise be invisible
+// anywhere in the diagram, so it's worth surfacing directly on the wire.
+function edgeDeclaredNetLabel(edge: DiagramEdge, nodesById: Map<string, DiagramNode>): string | undefined {
+  const declaredNetName = edge.metadata?.declaredNetName;
+  if (!declaredNetName) {
+    return undefined;
+  }
+
+  const ownNameAt = (nodeId: string, portId?: string): string | undefined => {
+    if (!portId) return undefined;
+    return nodesById.get(nodeId)?.ports.find((port) => port.id === portId)?.name;
+  };
+
+  if (declaredNetName === ownNameAt(edge.source, edge.sourcePort) || declaredNetName === ownNameAt(edge.target, edge.targetPort)) {
+    return undefined;
+  }
+
+  return declaredNetName;
 }
 
 interface RegionBounds {

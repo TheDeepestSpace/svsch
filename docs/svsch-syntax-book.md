@@ -475,7 +475,7 @@ endmodule
 
 ### Unnamed Net
 
-A direct assignment between ports with no intermediate wire still gets a name when its net is cut — the earliest-declared identifier along the connection.
+A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire.
 
 <pre><code>module top (
   input logic <mark>a</mark>,
@@ -491,7 +491,7 @@ endmodule
 
 ### Named Net
 
-An explicitly declared internal wire keeps its own name on the net label — it takes priority over the port names on either side of it.
+An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
 
 <pre><code>module top (
   input logic a,
@@ -509,7 +509,7 @@ endmodule
 
 ### Multiple Aliases
 
-A chain of assigns through several named wires collapses into a single net. The first-declared wire wins as the label; every other name it passed through (including the later wire and both ports) shows up on hover.
+A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; every other name it passed through (including the later wire and both ports) shows up on hover over the asterisk.
 
 <pre><code>module top (
   input logic a,

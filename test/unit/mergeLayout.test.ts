@@ -923,6 +923,107 @@ describe('layout merge', () => {
     }
   });
 
+  it('shows no label on a plain net whose declared name matches an endpoint port', async () => {
+    // assign y = a; -- the net's own name ('a') is already visible on the
+    // port itself, so labeling the wire too would just repeat it.
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            {
+              id: 'e-a-y',
+              source: 'a',
+              sourcePort: 'p',
+              target: 'y',
+              targetPort: 'p',
+              signal: 'y',
+              metadata: { declaredNetName: 'a', aliasNames: ['y'] }
+            }
+          ]
+        }
+      }
+    } as DesignGraph, 'top', { version: 1, modules: {} });
+    expect(view.edges[0].label).toBeUndefined();
+  });
+
+  it('labels a plain wire whose declared name differs from both endpoint ports', async () => {
+    // wire x; assign x = a; assign y = x; -- 'x' isn't visible anywhere else
+    // in the diagram, so the uncut wire shows it directly.
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            {
+              id: 'e-a-y',
+              source: 'a',
+              sourcePort: 'p',
+              target: 'y',
+              targetPort: 'p',
+              signal: 'y',
+              metadata: { declaredNetName: 'x', aliasNames: ['a', 'y'] }
+            }
+          ]
+        }
+      }
+    } as DesignGraph, 'top', { version: 1, modules: {} });
+    expect(view.edges[0].label).toBe('x');
+  });
+
+  it('keeps the full alias list on a labeled edge for a multi-hop chain', async () => {
+    // wire x1, x2; assign x1 = a; assign x2 = x1; assign y = x2; -- 'x1' wins
+    // as the label (declared first); the rest stay on metadata for the
+    // hover popover, unaffected by whether a label is shown.
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            {
+              id: 'e-a-y',
+              source: 'a',
+              sourcePort: 'p',
+              target: 'y',
+              targetPort: 'p',
+              signal: 'y',
+              metadata: { declaredNetName: 'x1', aliasNames: ['x2', 'a', 'y'] }
+            }
+          ]
+        }
+      }
+    } as DesignGraph, 'top', { version: 1, modules: {} });
+    expect(view.edges[0].label).toBe('x1');
+    expect(view.edges[0].metadata?.aliasNames).toEqual(['x2', 'a', 'y']);
+  });
+
   it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {
     const baseLayout: SavedLayout = {
       version: 1,

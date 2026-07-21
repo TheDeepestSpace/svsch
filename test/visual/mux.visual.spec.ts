@@ -1373,6 +1373,23 @@ test.describe('edge route editing', () => {
     await expectGraphAndScreenshot(page, 'cut-net-label-declared-vs-synthetic-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
 
+  test('shows a declared net name directly on an uncut wire, with an alias popover for the rest of the chain', async ({ page }) => {
+    await openView(page, createEdgeNetLabelView());
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2, a, y' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'edge-declared-net-label-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
   test('renders cut labels above styled wire stubs of every kind', async ({ page }) => {
     // Six style rows need more height than the default viewport to keep the
     // fitted view (and the screenshot clip) clear of the app toolbar.
@@ -2570,6 +2587,29 @@ function createCutBranchedNetView(): DiagramViewModel {
         targetPort: 'p',
         signal: 'a',
         metadata: { forceStraight: true, cutStub: { netKey, role: 'sink', originalEdgeId: 'edge-a-to-y' } }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createEdgeNetLabelView(): DiagramViewModel {
+  return {
+    moduleName: 'edge_net_label',
+    nodes: [
+      visualPort('source:a', 'a', 'input', 0, 40),
+      visualPort('target:y', 'y', 'output', 360, 40)
+    ],
+    edges: [
+      {
+        id: 'edge-a-to-y',
+        source: 'source:a',
+        target: 'target:y',
+        sourcePort: 'p',
+        targetPort: 'p',
+        signal: 'y',
+        label: 'x1',
+        metadata: { declaredNetName: 'x1', aliasNames: ['x2', 'a', 'y'] }
       }
     ],
     diagnostics: []

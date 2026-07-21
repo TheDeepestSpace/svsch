@@ -2,8 +2,8 @@ group: Wiring
 cases:
   - id: wiring-unnamed-net
     title: Unnamed Net
-    description: A direct assignment between ports with no intermediate wire still gets a name when its net is cut — the earliest-declared identifier along the connection.
-    tags: [wiring, cut-net]
+    description: A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire.
+    tags: [wiring, net-label]
     files:
       top.sv: |
         module top (
@@ -14,17 +14,17 @@ cases:
         endmodule
     module: top
     target:
-      kind: cutNet
+      kind: netLabel
       signal: "y"
     expect:
       nodeKinds: [port]
-      labelText: "a"
+      labelText: null
       selectedText: "a"
 
   - id: wiring-named-net
     title: Named Net
-    description: An explicitly declared internal wire keeps its own name on the net label — it takes priority over the port names on either side of it.
-    tags: [wiring, cut-net]
+    description: An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
+    tags: [wiring, net-label]
     files:
       top.sv: |
         module top (
@@ -37,7 +37,7 @@ cases:
         endmodule
     module: top
     target:
-      kind: cutNet
+      kind: netLabel
       signal: "y"
     expect:
       nodeKinds: [port]
@@ -46,8 +46,8 @@ cases:
 
   - id: wiring-multiple-aliases
     title: Multiple Aliases
-    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire wins as the label; every other name it passed through (including the later wire and both ports) shows up on hover.
-    tags: [wiring, cut-net]
+    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; every other name it passed through (including the later wire and both ports) shows up on hover over the asterisk.
+    tags: [wiring, net-label]
     files:
       top.sv: |
         module top (
@@ -61,7 +61,7 @@ cases:
         endmodule
     module: top
     target:
-      kind: cutNet
+      kind: netLabel
       signal: "y"
     expect:
       nodeKinds: [port]

@@ -476,7 +476,7 @@ function renderEdge(rendered: RenderedEdge): string {
     ...renderEdgePaths(rendered),
     ...renderOverlapHints(rendered),
     ...renderNetJunctions(rendered),
-    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points) : ''
+    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points, rendered.edge.metadata?.aliasNames) : ''
   ].filter(Boolean);
   return `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">${content.join('\n')}</g>`;
 }
@@ -710,12 +710,16 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
   });
 }
 
-function renderEdgeLabel(label: string, points: OrthogonalPoint[]): string {
+function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[]): string {
   const point = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
-  const width = Math.max(48, label.length * 7 + 12);
+  const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
+  const width = Math.max(48, (label.length + (hasAliases ? 1 : 0)) * 7 + 12);
+  const aliasMarker = hasAliases
+    ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
+    : '';
   return [
     `<rect class="svsch-label-box" x="${formatNumber(point.x - width / 2)}" y="${formatNumber(point.y - 11)}" width="${formatNumber(width)}" height="22" rx="3" />`,
-    `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y)}" text-anchor="middle">${escapeXml(label)}</text>`
+    `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y)}" text-anchor="middle">${escapeXml(label)}${aliasMarker}</text>`
   ].join('\n');
 }
 

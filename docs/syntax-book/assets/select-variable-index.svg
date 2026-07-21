@@ -3654,7 +3654,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:port:top:bus:select:top:bus_sel_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus:select:top:bus_sel_:bus" data-net-key="port:top:bus:port:bus" d="M 144 120 L 168 120 L 336 120 L 360 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:sel:select:top:bus_sel_:sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:sel:select:top:bus_sel_:sel" data-net-key="port:top:sel:port:sel" d="M 144 48 L 168 48 L 408 48 L 408 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:top:bus_sel_:port:top:bit_out:bit_out"><path class="svsch-edge" data-edge-id="edge:select:top:bus_sel_:port:top:bit_out:bit_out" data-net-key="select:top:bus[sel]:port:out" d="M 456 120 L 480 120 L 648 120 L 672 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:top:bus_sel_:port:top:bit_out:bit_out"><path class="svsch-edge" data-edge-id="edge:select:top:bus_sel_:port:top:bit_out:bit_out" data-net-key="select:top:bus[sel]:port:out" d="M 456 120 L 480 120 L 648 120 L 672 120" />
+<rect class="svsch-label-box" x="610.5" y="109" width="75" height="22" rx="3" />
+<text class="svsch-edge-label" x="648" y="120" text-anchor="middle">bus[sel]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: bit_out</title></tspan></text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-select" data-node-id="select:top:bus[sel]" data-node-kind="select" transform="translate(360 72)">
