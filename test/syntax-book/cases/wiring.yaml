@@ -1,0 +1,69 @@
+group: Wiring
+cases:
+  - id: wiring-unnamed-net
+    title: Unnamed Net
+    description: A direct assignment between ports with no intermediate wire still gets a name when its net is cut — the earliest-declared identifier along the connection.
+    tags: [wiring, cut-net]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: cutNet
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: "a"
+      selectedText: "a"
+
+  - id: wiring-named-net
+    title: Named Net
+    description: An explicitly declared internal wire keeps its own name on the net label — it takes priority over the port names on either side of it.
+    tags: [wiring, cut-net]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          wire x;
+          assign x = a;
+          assign y = x;
+        endmodule
+    module: top
+    target:
+      kind: cutNet
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: "x"
+      selectedText: "x"
+
+  - id: wiring-multiple-aliases
+    title: Multiple Aliases
+    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire wins as the label; every other name it passed through (including the later wire and both ports) shows up on hover.
+    tags: [wiring, cut-net]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          wire x1, x2;
+          assign x1 = a;
+          assign x2 = x1;
+          assign y = x2;
+        endmodule
+    module: top
+    target:
+      kind: cutNet
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: "x1"
+      selectedText: "x1"

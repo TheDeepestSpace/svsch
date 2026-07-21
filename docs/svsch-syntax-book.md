@@ -471,6 +471,61 @@ endmodule
   <img src="syntax-book/assets/loop-for-loop.svg" alt="For Loop Block diagram" />
 </p>
 
+## Wiring
+
+### Unnamed Net
+
+A direct assignment between ports with no intermediate wire still gets a name when its net is cut — the earliest-declared identifier along the connection.
+
+<pre><code>module top (
+  input logic <mark>a</mark>,
+  output logic y
+);
+  assign y = a;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/wiring-unnamed-net.svg" alt="Unnamed Net diagram" />
+</p>
+
+### Named Net
+
+An explicitly declared internal wire keeps its own name on the net label — it takes priority over the port names on either side of it.
+
+<pre><code>module top (
+  input logic a,
+  output logic y
+);
+  wire <mark>x</mark>;
+  assign x = a;
+  assign y = x;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/wiring-named-net.svg" alt="Named Net diagram" />
+</p>
+
+### Multiple Aliases
+
+A chain of assigns through several named wires collapses into a single net. The first-declared wire wins as the label; every other name it passed through (including the later wire and both ports) shows up on hover.
+
+<pre><code>module top (
+  input logic a,
+  output logic y
+);
+  wire <mark>x1</mark>, x2;
+  assign x1 = a;
+  assign x2 = x1;
+  assign y = x2;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/wiring-multiple-aliases.svg" alt="Multiple Aliases diagram" />
+</p>
+
 ## Buses
 
 ### Bus Concatenation

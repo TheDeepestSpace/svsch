@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -57,6 +57,28 @@ function escapeAndHighlight(fileContent: string, range: SourceRange): string {
   return escaped.slice(0, startOffsetEscaped) + '<mark>' + escaped.slice(startOffsetEscaped, endOffsetEscaped) + '</mark>' + escaped.slice(endOffsetEscaped);
 }
 
+// Fallback for a declared name that resolveSignalSource can't find (e.g. a
+// bare `wire x;` that was never itself a node — only the assign that later
+// aliased it was tracked, and that assign gets collapsed away entirely once
+// it's just a rename). Finds the identifier on its own declaration line.
+function findDeclarationRange(fileContent: string, name: string): Omit<SourceRange, 'file'> | undefined {
+  const lines = fileContent.split('\n');
+  const wordRe = new RegExp(`\\b${name}\\b`);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!/\b(?:wire|logic|reg)\b/.test(line)) continue;
+    const match = wordRe.exec(line);
+    if (!match) continue;
+    return {
+      startLine: i + 1,
+      startColumn: match.index,
+      endLine: i + 1,
+      endColumn: match.index + name.length
+    };
+  }
+  return undefined;
+}
+
 function getRawSelectedText(fileContent: string, range: SourceRange): string {
   const lines = fileContent.split('\n');
   const startLine = range.startLine ?? 1;
@@ -77,6 +99,7 @@ const sectionFiles = [
   'registers.yaml',
   'muxes.yaml',
   'combinational_logic.yaml',
+  'wiring.yaml',
   'buses.yaml',
   'structs.yaml',
   'interfaces.yaml',
@@ -229,6 +252,79 @@ test.describe('Syntax Book Generation & Verification', () => {
               console.log(`CASE ${caseData.id}: REGION TARGET NOT FOUND. Label: ${caseData.target.regionLabel}. Regions:`, viewModel.generateRegions?.map(r => ({ id: r.id, label: r.label, kind: r.kind })));
             }
             expect(targetExists).toBe(true);
+          } else if (caseData.target.kind === 'cutNet') {
+            const targetExists = viewModel.edges.some(e => e.signal === caseData.target.signal);
+            if (!targetExists) {
+              console.log(`CASE ${caseData.id}: CUT-NET TARGET NOT FOUND. Signal: ${caseData.target.signal}. Edges:`, viewModel.edges.map(e => ({ id: e.id, signal: e.signal })));
+            }
+            expect(targetExists).toBe(true);
+          }
+
+          // A cut-net case has no click-to-navigate interaction: cutting a net is
+          // what makes its declared name visible in the first place (an uncut wire
+          // never shows a label), so it renders straight from a pre-cut layout
+          // instead of driving the webview.
+          if (caseData.target.kind === 'cutNet') {
+            const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
+            const cutLayout = mergeNetCut({ version: 1, modules: {} }, caseData.module, targetEdge, graph.modules[caseData.module], viewModel.nodes);
+            const cutViewModel = await buildViewModel(graph, caseData.module, cutLayout);
+
+            const sourceLabel = cutViewModel.nodes.find(n => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source');
+            if (!sourceLabel) {
+              console.log(`CASE ${caseData.id}: NO SOURCE NET LABEL AFTER CUT. Nodes:`, cutViewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
+            }
+            expect(sourceLabel).toBeDefined();
+            expect(sourceLabel!.label).toBe(caseData.expect.labelText);
+
+            // The winning label may not be `targetEdge.signal` at all (e.g. an
+            // internal wire's name beats the sink port it aliases to), so resolve
+            // source from the label itself: a matching port's own declaration,
+            // else the wire/logic/reg line that declares it.
+            const declaredName = sourceLabel!.label;
+            const declaredPort = graph.modules[caseData.module].ports.find((p) => p.name === declaredName);
+            let range: SourceRange | undefined = declaredPort?.source;
+            if (!range) {
+              for (const [filename, text] of Object.entries(caseData.files) as [string, string][]) {
+                const found = findDeclarationRange(text, declaredName);
+                if (found) {
+                  range = { ...found, file: filename };
+                  break;
+                }
+              }
+            }
+            expect(range).toBeDefined();
+            expect(range!.file).toBeDefined();
+
+            const fileContent = caseData.files[range!.file];
+            expect(fileContent).toBeDefined();
+
+            const highlightedHtml = escapeAndHighlight(fileContent, range!);
+            expect(highlightedHtml.match(/<mark>/g)?.length).toBe(1);
+            expect(highlightedHtml.match(/<\/mark>/g)?.length).toBe(1);
+
+            const nodeModulesPaths = [
+              path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
+              path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css'),
+            ];
+            let reactFlowCss = '';
+            for (const p of nodeModulesPaths) {
+              if (fs.existsSync(p)) {
+                reactFlowCss = fs.readFileSync(p, 'utf8');
+                break;
+              }
+            }
+            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+            const svgContent = renderSvg(cutViewModel, { reactFlowCss, extensionCss, theme: 'dark' });
+
+            generatedEntries.push({
+              id: caseData.id,
+              title: caseData.title,
+              description: caseData.description,
+              group: groupName,
+              highlightedHtml,
+              svgContent
+            });
+            return;
           }
 
           // Initialize webview
