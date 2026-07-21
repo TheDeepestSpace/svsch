@@ -619,7 +619,9 @@ function buildNetCutProjection(
         originalEdgeId: firstEdge.id,
         handleSide: sourceHandleSide,
         edgeStyle: cutLabelEdgeStyle(firstEdge, nodesById),
-        isSourceStacked
+        isSourceStacked,
+        origin: cut.origin,
+        aliasNames: firstEdge.metadata?.aliasNames
       },
       moduleLayout,
       labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
@@ -658,7 +660,9 @@ function buildNetCutProjection(
           originalEdgeId: edge.id,
           handleSide: sinkHandleSide,
           edgeStyle: cutLabelEdgeStyle(edge, nodesById),
-          isSourceStacked
+          isSourceStacked,
+          origin: cut.origin,
+          aliasNames: edge.metadata?.aliasNames
         },
         moduleLayout,
         labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
@@ -2455,6 +2459,13 @@ export function projectElkRoutes(
 }
 
 export function defaultNetCutLabel(edge: DiagramEdge, designModule: DesignModule, moduleLayout: SavedModuleLayout): string {
+  // A name genuinely declared in the SV source always wins: it is the net's
+  // real identity, and takes priority over any structural (port/instance/
+  // register/bus) heuristic below, which only ever guesses a description.
+  if (edge.metadata?.declaredNetName) {
+    return edge.metadata.declaredNetName;
+  }
+
   const sourceNode = designModule.nodes.find((node) => node.id === edge.source);
   const sourcePort = sourceNode ? sourcePortForEdge(sourceNode, edge) : undefined;
   const sourcePortLabel = cleanVisualLabel(sourcePort?.label ?? sourcePort?.name ?? edge.sourcePort);
@@ -2487,6 +2498,14 @@ export function defaultNetCutLabel(edge: DiagramEdge, designModule: DesignModule
   return allocateNetLabel(moduleLayout);
 }
 
+// A label is 'declared' provenance only when it actually came from the SV
+// source's own declared name for this net (see defaultNetCutLabel above) —
+// every other branch (port/instance/register/bus heuristics, NET_n fallback)
+// produces a tool-composed description that stays freely renameable.
+function netCutOrigin(edge: DiagramEdge, label: string): 'declared' | 'synthetic' {
+  return edge.metadata?.declaredNetName && edge.metadata.declaredNetName === label ? 'declared' : 'synthetic';
+}
+
 export function mergeNetCut(
   layout: SavedLayout,
   moduleName: string,
@@ -2510,16 +2529,18 @@ export function mergeNetCut(
   }));
   const next = mergeNodePositions(layout, moduleName, frozenNodes);
   const nextModule = next.modules[moduleName] ?? { nodes: {} };
+  const label = defaultNetCutLabel(edge, designModule, nextModule);
   next.modules[moduleName] = {
     ...nextModule,
     netCuts: {
       ...(nextModule.netCuts ?? {}),
       [netKey]: {
-        label: defaultNetCutLabel(edge, designModule, nextModule),
+        label,
         source: {
           nodeId: edge.source,
           ...(edge.sourcePort ? { portId: edge.sourcePort } : {})
-        }
+        },
+        origin: netCutOrigin(edge, label)
       }
     }
   };
@@ -2552,6 +2573,12 @@ export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: st
   const existing = layout.modules[moduleName];
   const cut = existing?.netCuts?.[netKey];
   if (!existing || !cut) {
+    return layout;
+  }
+
+  // Declared nets keep their exact SV source name — renaming would make the
+  // label lie about what the net is actually called in the design.
+  if (cut.origin === 'declared') {
     return layout;
   }
 

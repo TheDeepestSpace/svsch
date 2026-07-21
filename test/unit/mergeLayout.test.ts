@@ -714,7 +714,8 @@ describe('layout merge', () => {
     expect(cut.modules.top.nodes.clk).toEqual({ x: 0, y: 12, fixed: true });
     expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
-      source: { nodeId: 'clk', portId: 'p' }
+      source: { nodeId: 'clk', portId: 'p' },
+      origin: 'synthetic'
     });
 
     const duplicateCut = mergeNetCut(cut, 'top', module.edges[0], module, positioned);

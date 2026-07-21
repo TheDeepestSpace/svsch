@@ -109,6 +109,10 @@ export interface DiagramNodeMetadata {
       thick?: boolean;
     };
     isSourceStacked?: boolean;
+    /** 'declared' locks the label to the SV source name (non-renameable, regular font); 'synthetic' is tool-invented (renameable, italic). */
+    origin?: 'declared' | 'synthetic';
+    /** Other declared wire names this net's chain of `assign` aliases collapsed together, for the hover popover. */
+    aliasNames?: string[];
   };
 }
 
@@ -208,6 +212,18 @@ export interface DiagramEdgeMetadata {
     role: 'source' | 'sink';
     originalEdgeId?: string;
   };
+  /**
+   * `signal` is a name genuinely declared in the SV source (a port, or a
+   * wire/reg/var), not a tool-synthesized temp. Holds that declared name.
+   */
+  declaredNetName?: string;
+  /**
+   * Other declared wire names collapsed into this edge by a chain of simple
+   * `assign` aliases (e.g. `assign a = b; assign b = c; ...`). `signal` holds
+   * whichever name was declared first in source; these are the rest, in
+   * declaration order.
+   */
+  aliasNames?: string[];
 }
 
 export interface DiagramEdge {
