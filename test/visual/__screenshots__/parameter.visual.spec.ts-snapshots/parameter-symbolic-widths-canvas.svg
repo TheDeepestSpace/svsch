@@ -2460,6 +2460,21 @@ text {
   border-radius: 2px;
 }
 
+/* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
+   that matches the net's actual declared SV name stays regular/upright. */
+.hdl-net-label-text-synthetic {
+  font-style: italic;
+}
+
+.hdl-net-label-alias-marker {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+  cursor: default;
+  font-style: normal;
+  margin-left: 1px;
+  pointer-events: auto;
+  user-select: none;
+}
+
 .hdl-net-label-align-start .hdl-net-label-text {
   left: 0;
   text-align: left;
@@ -3632,7 +3647,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:port:param_child:data_i:port:param_child:data_o:data_o"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:param_child:data_i:port:param_child:data_o:data_o" data-net-key="port:param_child:data_i:port:data_i" d="M 216 48 L 240 48 L 408 48 L 432 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:param_child:data_i:port:param_child:data_o:data_i"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:param_child:data_i:port:param_child:data_o:data_i" data-net-key="port:param_child:data_i:port:data_i" d="M 216 48 L 240 48 L 408 48 L 432 48" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:param_child:data_i" data-node-kind="port" transform="translate(24 36)">

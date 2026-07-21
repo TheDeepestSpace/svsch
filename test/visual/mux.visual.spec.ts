@@ -1333,6 +1333,46 @@ test.describe('edge route editing', () => {
     }));
   });
 
+  test('shows declared net labels in regular type (locked) and synthetic ones in italic (renameable), with an alias popover', async ({ page }) => {
+    await installMessageCapture(page);
+    await openView(page, createDeclaredAndSyntheticCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const declaredLabel = page.locator('[data-node-id="cut-label:declared:source"]');
+    const syntheticLabel = page.locator('[data-node-id="cut-label:synthetic:source"]');
+
+    // The declared net's name came straight from the SV source: regular
+    // weight, and double-clicking it must not open the rename editor.
+    await expect(declaredLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await declaredLabel.dblclick({ force: true });
+    await expect(declaredLabel.locator('.hdl-net-label-input')).toBeHidden();
+
+    // The synthetic (tool-invented) label reads in italic and stays editable.
+    await expect(syntheticLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(1);
+    await syntheticLabel.dblclick({ force: true });
+    const input = syntheticLabel.locator('.hdl-net-label-input');
+    await expect(input).toBeVisible();
+    await input.fill('renamed_net');
+    await input.press('Enter');
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'renameCutNet',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'synthetic',
+      label: 'renamed_net'
+    }));
+
+    // The synthetic net's alias chain (from a collapsed assign chain) shows
+    // as a hoverable marker next to its label.
+    const aliasMarker = syntheticLabel.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: legacy_a, legacy_b' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'cut-net-label-declared-vs-synthetic-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
   test('renders cut labels above styled wire stubs of every kind', async ({ page }) => {
     // Six style rows need more height than the default viewport to keep the
     // fitted view (and the screenshot clip) clear of the app toolbar.
@@ -2530,6 +2570,74 @@ function createCutBranchedNetView(): DiagramViewModel {
         targetPort: 'p',
         signal: 'a',
         metadata: { forceStraight: true, cutStub: { netKey, role: 'sink', originalEdgeId: 'edge-a-to-y' } }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
+  return {
+    moduleName: 'declared_and_synthetic_cut_net',
+    nodes: [
+      visualPort('source:declared', 'chip_select', 'input', 0, 40),
+      visualPort('source:synthetic', 'b', 'input', 0, 160),
+      {
+        id: 'cut-label:declared:source',
+        kind: 'netLabel',
+        label: 'chip_select',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        position: { x: 144, y: 40 },
+        metadata: {
+          cutNet: {
+            netKey: 'declared',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-declared',
+            origin: 'declared'
+          }
+        }
+      },
+      {
+        id: 'cut-label:synthetic:source',
+        kind: 'netLabel',
+        label: 'NET_1',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        position: { x: 144, y: 160 },
+        metadata: {
+          cutNet: {
+            netKey: 'synthetic',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-synthetic',
+            origin: 'synthetic',
+            aliasNames: ['legacy_a', 'legacy_b']
+          }
+        }
+      }
+    ],
+    edges: [
+      {
+        id: 'cut-stub:declared:source',
+        source: 'source:declared',
+        sourcePort: 'p',
+        target: 'cut-label:declared:source',
+        targetPort: 'cut',
+        signal: 'chip_select',
+        metadata: { forceStraight: true, cutStub: { netKey: 'declared', role: 'source', originalEdgeId: 'edge-declared' } }
+      },
+      {
+        id: 'cut-stub:synthetic:source',
+        source: 'source:synthetic',
+        sourcePort: 'p',
+        target: 'cut-label:synthetic:source',
+        targetPort: 'cut',
+        signal: 'b',
+        metadata: { forceStraight: true, cutStub: { netKey: 'synthetic', role: 'source', originalEdgeId: 'edge-synthetic' } }
       }
     ],
     diagnostics: []

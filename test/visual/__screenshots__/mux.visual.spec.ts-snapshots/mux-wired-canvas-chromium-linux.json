@@ -126,7 +126,7 @@
       "path": "M 504 120 L 528 120 L 696 120 L 720 120"
     },
     {
-      "id": "edge:port:mux_wired:a:mux:mux_wired:y:sel:y:a_wire",
+      "id": "edge:port:mux_wired:a:mux:mux_wired:y:sel:y:a",
       "source": "port:mux_wired:a",
       "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:a",
@@ -134,7 +134,7 @@
       "path": "M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120"
     },
     {
-      "id": "edge:port:mux_wired:b:mux:mux_wired:y:sel:y:b_wire",
+      "id": "edge:port:mux_wired:b:mux:mux_wired:y:sel:y:b",
       "source": "port:mux_wired:b",
       "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:b",

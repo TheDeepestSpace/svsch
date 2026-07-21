@@ -43,7 +43,7 @@
   ],
   "edges": [
     {
-      "id": "edge:port:param_child:data_i:port:param_child:data_o:data_o",
+      "id": "edge:port:param_child:data_i:port:param_child:data_o:data_i",
       "source": "port:param_child:data_i",
       "target": "port:param_child:data_o",
       "sourceHandle": "port:data_i",

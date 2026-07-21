@@ -134,7 +134,7 @@ export function NetLabelNode({
         />
       ) : (
         <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isDeclaredName ? '' : ' hdl-net-label-text-synthetic'}`}>
-          {node.label}
+          <span className="hdl-net-label-text-value">{node.label}</span>
           {aliasNames && aliasNames.length > 0 && (
             <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`}>
               {(trigger) => (

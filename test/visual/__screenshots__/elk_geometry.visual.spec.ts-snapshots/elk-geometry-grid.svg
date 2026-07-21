@@ -2460,6 +2460,21 @@ text {
   border-radius: 2px;
 }
 
+/* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
+   that matches the net's actual declared SV name stays regular/upright. */
+.hdl-net-label-text-synthetic {
+  font-style: italic;
+}
+
+.hdl-net-label-alias-marker {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+  cursor: default;
+  font-style: normal;
+  margin-left: 1px;
+  pointer-events: auto;
+  user-select: none;
+}
+
 .hdl-net-label-align-start .hdl-net-label-text {
   left: 0;
   text-align: left;
@@ -3806,7 +3821,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:source" data-node-kind="netLabel" transform="translate(1224 1728)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">a</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:x" data-node-kind="netLabel" transform="translate(0 1944)"><path class="svsch-edge" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:a" data-node-kind="netLabel" transform="translate(0 1944)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">a</text></g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(192 1956)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">

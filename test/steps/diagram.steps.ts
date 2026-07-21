@@ -2757,7 +2757,7 @@ function handleMatches(actual: string | undefined, expectedLabel: string): boole
 
 function cutNetLabelNodes(webviewPage: FrameLocator, label: string) {
   return webviewPage.locator('[data-node-kind="netLabel"]').filter({
-    has: webviewPage.locator('.hdl-net-label-text').filter({ hasText: exactText(label) }),
+    has: webviewPage.locator('.hdl-net-label-text-value').filter({ hasText: exactText(label) }),
   });
 }
 
