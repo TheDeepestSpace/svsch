@@ -731,6 +731,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const isSourceStacked = cutNet?.isSourceStacked ?? false;
     const align = cutNet?.align as 'start' | 'end' | undefined;
     const role = cutNet?.role ?? 'sink';
+    const isDeclaredName = cutNet?.origin === 'declared';
     const midX = width / 2;
     const midY = height / 2;
 
@@ -752,7 +753,8 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textPad = 3; // matches CSS padding: 0 3px on .hdl-net-label-text
     const textX = align === 'end' ? width - textPad : textPad;
     const textAnchor = align === 'end' ? 'end' : 'start';
-    const textHtml = `<text class="svsch-net-label" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
+    const textClass = `svsch-net-label${isDeclaredName ? '' : ' hdl-net-label-text-synthetic'}`;
+    const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
     const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width);
     const classes = [
