@@ -1818,6 +1818,21 @@ text {
   border-radius: 2px;
 }
 
+/* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
+   that matches the net's actual declared SV name stays regular/upright. */
+.hdl-net-label-text-synthetic {
+  font-style: italic;
+}
+
+.hdl-net-label-alias-marker {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+  cursor: default;
+  font-style: normal;
+  margin-left: 1px;
+  pointer-events: auto;
+  user-select: none;
+}
+
 .hdl-net-label-align-start .hdl-net-label-text {
   left: 0;
   text-align: left;

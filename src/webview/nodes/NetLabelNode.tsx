@@ -21,6 +21,10 @@ export function NetLabelNode({
   style: React.CSSProperties;
 }): React.ReactElement {
   const cutNet = node.metadata?.cutNet;
+  // Absent origin (labels saved before this field existed) reads as
+  // synthetic: freely renameable, same as always.
+  const isDeclaredName = cutNet?.origin === 'declared';
+  const aliasNames = cutNet?.aliasNames;
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(node.label);
@@ -93,9 +97,10 @@ export function NetLabelNode({
       data-node-kind={node.kind}
       style={style}
       tabIndex={0}
-      title={node.label}
+      title={isDeclaredName ? `${node.label} (declared in source — cannot be renamed)` : node.label}
       onDoubleClick={(event) => {
         event.stopPropagation();
+        if (isDeclaredName) return;
         setEditing(true);
       }}
       onMouseEnter={() => { setHovered(cutNet?.netKey); setIsDirectlyHovered(true); }}
@@ -128,7 +133,23 @@ export function NetLabelNode({
           }}
         />
       ) : (
-        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}`}>{node.label}</span>
+        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isDeclaredName ? '' : ' hdl-net-label-text-synthetic'}`}>
+          {node.label}
+          {aliasNames && aliasNames.length > 0 && (
+            <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`}>
+              {(trigger) => (
+                <sup
+                  {...trigger}
+                  className="hdl-net-label-alias-marker nodrag nopan"
+                  role="img"
+                  aria-label={`This net also has these declared aliases: ${aliasNames.join(', ')}`}
+                >
+                  *
+                </sup>
+              )}
+            </Tooltip>
+          )}
+        </span>
       )}
       {cutNet && (
         <button
