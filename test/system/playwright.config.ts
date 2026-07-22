@@ -15,6 +15,8 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,

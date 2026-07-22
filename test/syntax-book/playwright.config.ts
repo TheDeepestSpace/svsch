@@ -22,6 +22,8 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig({
+  globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
   outputDir: path.resolve(__dirname, '../../test-results/syntax-book'),
   workers: 1,

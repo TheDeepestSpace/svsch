@@ -24,6 +24,8 @@ const visualPort = getWorktreePort();
 const visualBaseUrl = `http://127.0.0.1:${visualPort}`;
 
 export default defineConfig({
+  globalSetup: path.resolve(__dirname, 'test/visual/globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, 'test/globalTeardown.ts'),
   testDir: './test/visual',
   outputDir: './test-results/visual',
   snapshotDir: './test/visual/__screenshots__',
