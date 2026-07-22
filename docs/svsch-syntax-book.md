@@ -475,7 +475,7 @@ endmodule
 
 ### Unnamed Net
 
-A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire.
+A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire. Since there's no wire declared for it either, cutting this net still leaves it freely renameable.
 
 <pre><code>module top (
   input logic <mark>a</mark>,

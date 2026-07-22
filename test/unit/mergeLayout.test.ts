@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runParser } from '../helper';
 import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
@@ -791,6 +792,29 @@ describe('layout merge', () => {
     };
     const afterLegacyRename = renameCutNet(legacyLayout, 'top', 'clk:p', 'renamed_clk');
     expect(afterLegacyRename.modules.top.netCuts?.['clk:p'].label).toBe('renamed_clk');
+  });
+
+  it('cutting a plain `assign y = a;` net (no formal wire name) stays renameable', async () => {
+    // Real end-to-end check (not a hand-built fixture): a net whose only
+    // identity is borrowed from one of its own endpoint ports has nothing
+    // declared to protect, so it must come out 'synthetic' even though its
+    // default label ("a") looks just as legitimate as a real wire name.
+    const graph = await runParser('uhdm', 'top.sv', `
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+    `);
+    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+    const edge = view.edges[0];
+    expect(edge.label).toBeUndefined();
+
+    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', edge, graph.modules.top, view.nodes);
+    const cut = cutLayout.modules.top.netCuts?.[edgeNetKey(edge)];
+    expect(cut?.label).toBe('a');
+    expect(cut?.origin).toBe('synthetic');
+
+    const renamed = renameCutNet(cutLayout, 'top', edgeNetKey(edge), 'chip_select');
+    expect(renamed.modules.top.netCuts?.[edgeNetKey(edge)].label).toBe('chip_select');
   });
 
   it('adds, renames, removes, and reroutes net cuts without discarding the cut state', () => {

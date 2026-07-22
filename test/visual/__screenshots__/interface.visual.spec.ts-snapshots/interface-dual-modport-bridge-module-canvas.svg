@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3647,23 +3644,13 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface_modport:pair_bridge:upstream:downstream.ready"><path class="svsch-edge" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface_modport:pair_bridge:upstream:downstream.ready" data-net-key="interface_modport:pair_bridge:downstream:out:ready" d="M 1152 216 L 1176 216 L 1200 216 L 1200 384 L 360 384 L 360 360 L 528 360 L 552 360" />
-<rect class="svsch-label-box" x="298" y="373" width="124" height="22" rx="3" />
-<text class="svsch-edge-label" x="360" y="384" text-anchor="middle">downstream.ready</text></g>
+<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface_modport:pair_bridge:upstream:downstream.ready"><path class="svsch-edge" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface_modport:pair_bridge:upstream:downstream.ready" data-net-key="interface_modport:pair_bridge:downstream:out:ready" d="M 1152 216 L 1176 216 L 1200 216 L 1200 384 L 360 384 L 360 360 L 528 360 L 552 360" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream" d="M 1056 72 L 1056 48 L 1344 48 L 1368 48" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream" data-net-key="interface_modport:pair_bridge:downstream:out:slave" d="M 1056 72 L 1056 48 L 1344 48 L 1368 48" />
-<rect class="svsch-label-box" x="1303" y="37" width="82" height="22" rx="3" />
-<text class="svsch-edge-label" x="1344" y="48" text-anchor="middle">downstream</text></g>
-<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data" data-net-key="interface_modport:pair_bridge:upstream:out:data" d="M 744 264 L 768 264 L 936 264 L 960 264" />
-<rect class="svsch-label-box" x="884.5" y="253" width="103" height="22" rx="3" />
-<text class="svsch-edge-label" x="936" y="264" text-anchor="middle">upstream.data</text></g>
-<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid"><path class="svsch-edge" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid" data-net-key="interface_modport:pair_bridge:upstream:out:valid" d="M 744 312 L 768 312 L 936 312 L 960 312" />
-<rect class="svsch-label-box" x="881" y="301" width="110" height="22" rx="3" />
-<text class="svsch-edge-label" x="936" y="312" text-anchor="middle">upstream.valid</text></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface_modport:pair_bridge:downstream:interface:pair_bridge:downstream:downstream" data-net-key="interface_modport:pair_bridge:downstream:out:slave" d="M 1056 72 L 1056 48 L 1344 48 L 1368 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.data" data-net-key="interface_modport:pair_bridge:upstream:out:data" d="M 744 264 L 768 264 L 936 264 L 960 264" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid"><path class="svsch-edge" data-edge-id="edge:interface_modport:pair_bridge:upstream:interface_modport:pair_bridge:downstream:upstream.valid" data-net-key="interface_modport:pair_bridge:upstream:out:valid" d="M 744 312 L 768 312 L 936 312 L 960 312" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream" d="M 336 96 L 360 96 L 648 96 L 648 120" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream" data-net-key="interface:pair_bridge:upstream:out:master" d="M 336 96 L 360 96 L 648 96 L 648 120" />
-<rect class="svsch-label-box" x="614" y="85" width="68" height="22" rx="3" />
-<text class="svsch-edge-label" x="648" y="96" text-anchor="middle">upstream</text></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:pair_bridge:upstream:interface_modport:pair_bridge:upstream:upstream" data-net-key="interface:pair_bridge:upstream:out:master" d="M 336 96 L 360 96 L 648 96 L 648 120" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-interface-node hdl-port-input hdl-port-skinned hdl-port-interface" data-node-id="interface:pair_bridge:downstream" data-node-kind="interface" transform="translate(1368 36)">

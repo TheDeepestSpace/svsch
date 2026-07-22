@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3648,8 +3645,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge-a-to-y"><path class="svsch-edge" data-edge-id="edge-a-to-y" data-net-key="source:a:p" d="M 120 52 L 144 52 L 240 52 L 240 48 L 336 48 L 336 52 L 360 52" />
-<rect class="svsch-label-box" x="216" y="37" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="240" y="48" text-anchor="middle">x1<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: x2, a, y</title></tspan></text></g>
+<text class="svsch-edge-label" x="240" y="42" text-anchor="middle">x1<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: x2, a, y</title></tspan></text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="source:a" data-node-kind="port" transform="translate(0 40)">

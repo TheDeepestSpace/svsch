@@ -106,6 +106,34 @@ Feature: Diagram Interaction
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    When I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 3 cut net labels named "chip_select"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "a" and "y" should be hidden
+    # "chip_select" is an explicitly declared wire from the source, not a
+    # tool-invented guess, so it renders in regular type and can't be edited
+    # into a different name.
+    And the cut net "chip_select" should be shown in regular type
+    When I double-click the cut net "chip_select"
+    Then the cut net "chip_select" should not become editable
+    And I should see 3 cut net labels named "chip_select"
+    When I tie back the cut net "chip_select"
+    Then the original connection between "a" and "x" should be restored
+    And the original connection between "a" and "y" should be restored
+    And I should not see cut net labels named "chip_select"
+
+  Scenario: Renaming a cut net that has no declared name of its own (implicit wiring)
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output x, output y);
         assign x = a;
         assign y = a;
       endmodule
@@ -114,18 +142,12 @@ Feature: Diagram Interaction
     And I move the port node "a"
     When I hover the connection between "a" and "x" and click its Cut control
     Then I should see 3 cut net labels named "a"
-    And the original connection between "a" and "x" should be hidden
-    And the original connection between "a" and "y" should be hidden
-    # "a" is a real port name from the source, not a tool-invented guess, so
-    # it renders in regular type and can't be edited into a different name.
-    And the cut net "a" should be shown in regular type
-    When I double-click the cut net "a"
-    Then the cut net "a" should not become editable
-    And I should see 3 cut net labels named "a"
-    When I tie back the cut net "a"
-    Then the original connection between "a" and "x" should be restored
-    And the original connection between "a" and "y" should be restored
-    And I should not see cut net labels named "a"
+    # "a" is only ever the port's own name here — there is no wire declared
+    # for this net, so its cut label is a tool-invented guess (in italics)
+    # and stays freely renameable, unlike a net with a real wire declaration.
+    And the cut net "a" should be shown in italics
+    When I rename the cut net "a" to "chip_select"
+    Then I should see 3 cut net labels named "chip_select"
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
     Given I have a file "top.sv" in my workspace:

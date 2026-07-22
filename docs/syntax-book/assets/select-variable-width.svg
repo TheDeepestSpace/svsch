@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3583,11 +3585,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3657,8 +3654,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus:select:top:bus_sel_8_:8_:bus" data-net-key="port:top:bus:port:bus" d="M 552 216 L 576 216 L 744 216 L 768 216" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:sel:comb:top:bus_sel_8_:8__sel:expr:sel" data-net-key="port:top:sel:port:sel" d="M 144 120 L 168 120 L 336 120 L 360 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:top:bus_sel_8_:8_:port:top:byte_out:byte_out" data-net-key="select:top:bus[sel * 8+:8]:port:out" d="M 912 216 L 936 216 L 1104 216 L 1128 216" />
-<rect class="svsch-label-box" x="1042" y="205" width="124" height="22" rx="3" />
-<text class="svsch-edge-label" x="1104" y="216" text-anchor="middle">bus[sel * 8+:8]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: byte_out</title></tspan></text></g>
+<text class="svsch-edge-label" x="1104" y="210" text-anchor="middle">bus[sel * 8+:8]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: byte_out</title></tspan></text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:top:bus[sel * 8+:8]_sel:expr" data-node-kind="comb" transform="translate(360 72)">

@@ -934,7 +934,7 @@ export function OrthogonalEdge({
         </ViewportPortal>
       )}
       {label && (
-        <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">
+        <foreignObject width={120} height={14} x={labelPoint.x - 60} y={labelPoint.y - 17} className="svsch-edge-label">
           <div>
             <span className="svsch-edge-label-text">{label}</span>
             {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (

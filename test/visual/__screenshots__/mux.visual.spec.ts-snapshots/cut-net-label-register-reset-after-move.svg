@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3680,9 +3677,9 @@ path.port-skin-body.port-skin-harness {
 </svg>
 </g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:port:register_async_reset:rst:port:rst:source" data-node-kind="netLabel" transform="translate(168 144)"><path class="svsch-edge" d="M 0 24 H 96"></path>
-<text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">rst</text></g>
+<text class="svsch-net-label hdl-net-label-text-synthetic" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">rst</text></g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:port:register_async_reset:rst:port:rst:sink:edge:port:register_async_reset:rst:reg:register_async_reset:q:rst" data-node-kind="netLabel" transform="translate(384 168)"><path class="svsch-edge" d="M 0 24 H 48M 48 24 V 0"></path>
-<text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">rst</text></g>
+<text class="svsch-net-label hdl-net-label-text-synthetic" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">rst</text></g>
 </g>
 </g>
 </svg>

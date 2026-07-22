@@ -1671,7 +1671,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outEdge?.metadata?.aliasNames).toEqual(['y']);
     });
 
-    it('does not mark a tool-synthesized signal name as a declared net name', async () => {
+    it('does not mark a port name (or a tool-synthesized name) as a declared net name', async () => {
       const graph = await runParser(backend, 'assign_expr_only.sv', `
         module top(input a, input b, output y);
           assign y = a & b;
@@ -1681,10 +1681,14 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       const combNode = top.nodes.find((n) => n.kind === 'comb');
       expect(combNode).toBeDefined();
 
+      // 'a' and 'b' are ports — they name the module's boundary, not a net
+      // of their own, and neither has an internal wire declared for it. So
+      // this net has no formal declared name at all (same as a plain
+      // `assign y = a;` alias with no intermediate wire).
       const inEdges = top.edges.filter((e) => e.target === combNode?.id);
       expect(inEdges).toHaveLength(2);
       for (const e of inEdges) {
-        expect(e.metadata?.declaredNetName).toBe(e.signal);
+        expect(e.metadata?.declaredNetName).toBeUndefined();
       }
     });
   });

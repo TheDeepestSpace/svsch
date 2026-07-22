@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel } from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -273,7 +273,12 @@ test.describe('Syntax Book Generation & Verification', () => {
             // endpoint closely enough that no separate label is shown): a
             // matching port's own declaration, else the wire/logic/reg line
             // that declares it.
-            const declaredName = targetEdge.metadata?.declaredNetName;
+            // The net may have no formal declared name at all (e.g. a plain
+            // `assign y = a;` with no intermediate wire) — fall back to the
+            // exact same name defaultNetCutLabel would show if this net were
+            // cut, so the highlight always points at *something* meaningful.
+            const declaredName = targetEdge.metadata?.declaredNetName
+              ?? defaultNetCutLabel(targetEdge, graph.modules[caseData.module], { nodes: {} });
             expect(declaredName).toBeDefined();
             const declaredPort = graph.modules[caseData.module].ports.find((p) => p.name === declaredName);
             let range: SourceRange | undefined = declaredPort?.source;

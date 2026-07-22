@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3665,13 +3662,11 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:port:generate_case_regions:y:y" data-net-key="comb:generate_case_regions:generate-region:generate_case_regions:case-default:16:4:2:default:w:assign:out:w" d="M 600 672 L 624 672 L 696 672 L 696 432 L 864 432 L 888 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_case_regions:g_case_0.u_case_0:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_case_regions:g_case_0.u_case_0:port:generate_case_regions:y:y" data-net-key="instance:generate_case_regions:g_case_0.u_case_0:port:y" d="M 600 192 L 624 192 L 696 192 L 696 432 L 864 432 L 888 432" />
-<rect class="svsch-label-box" x="672" y="421" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="696" y="432" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
+<text class="svsch-edge-label" x="696" y="426" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:a:instance:generate_case_regions:g_case_0.u_case_0:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_case_regions:a:instance:generate_case_regions:g_case_0.u_case_0:a" data-net-key="port:generate_case_regions:a:port:a" d="M 144 192 L 168 192 L 384 192 L 408 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_case_regions:c:comb:generate_case_regions:generate_region:generate_case_regions:case_default:16:4:2:default:w:assign:c" data-net-key="port:generate_case_regions:c:port:c" d="M 144 672 L 168 672 L 384 672 L 408 672" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_case_regions:g_case_1.u_case_1:port:generate_case_regions:y:y"><path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_case_regions:g_case_1.u_case_1:port:generate_case_regions:y:y" data-net-key="instance:generate_case_regions:g_case_1.u_case_1:port:y" d="M 600 432 L 624 432 L 864 432 L 888 432" />
-<rect class="svsch-label-box" x="840" y="421" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="864" y="432" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
+<text class="svsch-edge-label" x="864" y="426" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_case_regions:b:instance:generate_case_regions:g_case_1.u_case_1:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_case_regions:b:instance:generate_case_regions:g_case_1.u_case_1:b" data-net-key="port:generate_case_regions:b:port:b" d="M 144 432 L 168 432 L 384 432 L 408 432" /></g>
 </g>
 <g class="svsch-nodes">

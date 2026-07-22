@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3665,13 +3662,11 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign:out:w" d="M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_zero.u_if_zero:port:y" d="M 624 120 L 648 120 L 720 120 L 720 432 L 888 432 L 912 432" />
-<rect class="svsch-label-box" x="696" y="421" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="720" y="432" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
+<text class="svsch-edge-label" x="720" y="426" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a" data-net-key="port:generate_if_else_regions:a:port:a" d="M 144 192 L 168 192 L 384 192 L 384 120 L 408 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 144 672 L 168 672 L 408 672 L 432 672" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_one.u_if_one:port:y" d="M 624 432 L 648 432 L 888 432 L 912 432" />
-<rect class="svsch-label-box" x="864" y="421" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="888" y="432" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
+<text class="svsch-edge-label" x="888" y="426" text-anchor="middle">w<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: y</title></tspan></text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b" data-net-key="port:generate_if_else_regions:b:port:b" d="M 144 432 L 168 432 L 408 432 L 432 432" /></g>
 </g>
 <g class="svsch-nodes">

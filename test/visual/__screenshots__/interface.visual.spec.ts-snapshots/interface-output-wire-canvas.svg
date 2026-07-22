@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3649,12 +3646,10 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:instance:interface_output_wire:u_source:interface:interface_output_wire:status:status"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:instance:interface_output_wire:u_source:interface:interface_output_wire:status:status" d="M 216 168 L 240 168 L 408 168 L 432 168" />
 <path class="svsch-edge svsch-edge-interface" data-edge-id="edge:instance:interface_output_wire:u_source:interface:interface_output_wire:status:status" data-net-key="instance:interface_output_wire:u_source:port:bus" d="M 216 168 L 240 168 L 408 168 L 432 168" />
-<rect class="svsch-label-box" x="381" y="157" width="54" height="22" rx="3" />
-<text class="svsch-edge-label" x="408" y="168" text-anchor="middle">status</text></g>
+<text class="svsch-edge-label" x="408" y="162" text-anchor="middle">status</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:interface_output_wire:status:instance:interface_output_wire:u_sink:status"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:interface_output_wire:status:instance:interface_output_wire:u_sink:status" d="M 672 168 L 696 168 L 864 168 L 888 168" />
 <path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_output_wire:status:instance:interface_output_wire:u_sink:status" data-net-key="interface:interface_output_wire:status:out:consumer" d="M 672 168 L 696 168 L 864 168 L 888 168" />
-<rect class="svsch-label-box" x="837" y="157" width="54" height="22" rx="3" />
-<text class="svsch-edge-label" x="864" y="168" text-anchor="middle">status</text></g>
+<text class="svsch-edge-label" x="864" y="162" text-anchor="middle">status</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:interface_output_wire:status:port:interface_output_wire:done:done"><path class="svsch-edge" data-edge-id="edge:interface:interface_output_wire:status:port:interface_output_wire:done:done" data-net-key="interface:interface_output_wire:status:out:done" d="M 552 204 L 552 264 L 864 264 L 888 264" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_output_wire:clk:interface:interface_output_wire:status:clk"><path class="svsch-edge" data-edge-id="edge:port:interface_output_wire:clk:interface:interface_output_wire:status:clk" data-net-key="port:interface_output_wire:clk:port:clk" d="M 216 96 L 240 96 L 528 96 L 528 132" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_output_wire:rst_n:interface:interface_output_wire:status:rst_n"><path class="svsch-edge" data-edge-id="edge:port:interface_output_wire:rst_n:interface:interface_output_wire:status:rst_n" data-net-key="port:interface_output_wire:rst_n:port:rst_n" d="M 216 48 L 240 48 L 576 48 L 576 96 L 576 132" /></g>

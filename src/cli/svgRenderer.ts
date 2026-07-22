@@ -179,11 +179,6 @@ export function svgBridgeCss(): string {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -713,14 +708,12 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
 function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[]): string {
   const point = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
   const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
-  const width = Math.max(48, (label.length + (hasAliases ? 1 : 0)) * 7 + 12);
   const aliasMarker = hasAliases
     ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
     : '';
-  return [
-    `<rect class="svsch-label-box" x="${formatNumber(point.x - width / 2)}" y="${formatNumber(point.y - 11)}" width="${formatNumber(width)}" height="22" rx="3" />`,
-    `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y)}" text-anchor="middle">${escapeXml(label)}${aliasMarker}</text>`
-  ].join('\n');
+  // Plain text sitting just above the wire, matching the cut-net label
+  // convention (.hdl-net-label-text) — no box/background of its own.
+  return `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y - 6)}" text-anchor="middle">${escapeXml(label)}${aliasMarker}</text>`;
 }
 
 function renderNode(node: PositionedNode): string;

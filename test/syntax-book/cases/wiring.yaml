@@ -2,7 +2,7 @@ group: Wiring
 cases:
   - id: wiring-unnamed-net
     title: Unnamed Net
-    description: A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire.
+    description: A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire. Since there's no wire declared for it either, cutting this net still leaves it freely renameable.
     tags: [wiring, net-label]
     files:
       top.sv: |

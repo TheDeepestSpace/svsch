@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3657,15 +3654,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk"><path class="svsch-edge-jump-halo" d="M 216 199 Q 223 192 216 185" style="stroke-width: 12" data-edge-id="edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk" data-jump-index="0" />
 <path class="svsch-edge" data-edge-id="edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk" data-net-key="port:bus_composition:clk:port:clk" d="M 144 216 L 168 216 L 216 216 L 216 199 Q 223 192 216 185 L 216 96 L 336 96 L 360 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:bus_composition:sub:reg:bus_composition:r_3:2_:sub"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:bus_composition:sub:reg:bus_composition:r_3:2_:sub" data-net-key="port:bus_composition:sub:port:sub" d="M 144 72 L 168 72 L 336 72 L 360 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_0_:bus_comp:bus_composition:r:r_0_"><path class="svsch-edge" data-edge-id="edge:reg:bus_composition:r_0_:bus_comp:bus_composition:r:r_0_" data-net-key="reg:bus_composition:r[0]:q" d="M 480 312 L 504 312 L 552 312 L 552 240 L 696 240 L 720 240" />
-<rect class="svsch-label-box" x="528" y="229" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="552" y="240" text-anchor="middle">r[0]</text></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_1_:bus_comp:bus_composition:r:r_1_"><path class="svsch-edge" data-edge-id="edge:reg:bus_composition:r_1_:bus_comp:bus_composition:r:r_1_" data-net-key="reg:bus_composition:r[1]:q" d="M 480 192 L 504 192 L 696 192 L 720 192" />
-<rect class="svsch-label-box" x="672" y="181" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="696" y="192" text-anchor="middle">r[1]</text></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_3:2_:bus_comp:bus_composition:r:r_3:2_"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:reg:bus_composition:r_3:2_:bus_comp:bus_composition:r:r_3:2_" data-net-key="reg:bus_composition:r[3:2]:q" d="M 504 72 L 528 72 L 552 72 L 552 144 L 696 144 L 720 144" />
-<rect class="svsch-label-box" x="525" y="133" width="54" height="22" rx="3" />
-<text class="svsch-edge-label" x="552" y="144" text-anchor="middle">r[3:2]</text></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_0_:bus_comp:bus_composition:r:r_0_"><path class="svsch-edge" data-edge-id="edge:reg:bus_composition:r_0_:bus_comp:bus_composition:r:r_0_" data-net-key="reg:bus_composition:r[0]:q" d="M 480 312 L 504 312 L 552 312 L 552 240 L 696 240 L 720 240" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_1_:bus_comp:bus_composition:r:r_1_"><path class="svsch-edge" data-edge-id="edge:reg:bus_composition:r_1_:bus_comp:bus_composition:r:r_1_" data-net-key="reg:bus_composition:r[1]:q" d="M 480 192 L 504 192 L 696 192 L 720 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:bus_composition:r_3:2_:bus_comp:bus_composition:r:r_3:2_"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:reg:bus_composition:r_3:2_:bus_comp:bus_composition:r:r_3:2_" data-net-key="reg:bus_composition:r[3:2]:q" d="M 504 72 L 528 72 L 552 72 L 552 144 L 696 144 L 720 144" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="reg:bus_composition:r[0]" data-node-kind="register" transform="translate(384 264)">

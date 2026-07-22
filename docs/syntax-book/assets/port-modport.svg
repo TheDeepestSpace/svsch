@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3583,11 +3585,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3652,13 +3649,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:interface_modport:top:bus:port:top:y:bus.data"><path class="svsch-edge" data-edge-id="edge:interface_modport:top:bus:port:top:y:bus.data" data-net-key="interface_modport:top:bus:out:data" d="M 624 120 L 648 120 L 816 120 L 840 120" />
-<rect class="svsch-label-box" x="782" y="109" width="68" height="22" rx="3" />
-<text class="svsch-edge-label" x="816" y="120" text-anchor="middle">bus.data</text></g>
+<g class="svsch-edge-group" data-edge-id="edge:interface_modport:top:bus:port:top:y:bus.data"><path class="svsch-edge" data-edge-id="edge:interface_modport:top:bus:port:top:y:bus.data" data-net-key="interface_modport:top:bus:out:data" d="M 624 120 L 648 120 L 816 120 L 840 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:top:bus:interface_modport:top:bus:bus"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:top:bus:interface_modport:top:bus:bus" d="M 240 48 L 264 48 L 528 48 L 528 72" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:top:bus:interface_modport:top:bus:bus" data-net-key="interface:top:bus:out:slave" d="M 240 48 L 264 48 L 528 48 L 528 72" />
-<rect class="svsch-label-box" x="504" y="37" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="528" y="48" text-anchor="middle">bus</text></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:top:bus:interface_modport:top:bus:bus" data-net-key="interface:top:bus:out:slave" d="M 240 48 L 264 48 L 528 48 L 528 72" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-interface-node hdl-port-output hdl-port-skinned hdl-port-interface" data-node-id="interface:top:bus" data-node-kind="interface" transform="translate(24 36)">

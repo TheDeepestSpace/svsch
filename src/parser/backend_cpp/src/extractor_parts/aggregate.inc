@@ -301,6 +301,11 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
     });
 
     std::string primary = sorted.front();
+    // No internal wire/reg ever appeared in this chain — every candidate is
+    // just a port (e.g. a plain `assign y = a;` with nothing declared between
+    // them). The net has no name of its own beyond the ports it connects, so
+    // there is nothing "declared" to report or protect from renaming.
+    if (isPort(primary)) return "";
     for (size_t i = 1; i < sorted.size(); ++i) outAliases.push_back(sorted[i]);
     return primary;
 }

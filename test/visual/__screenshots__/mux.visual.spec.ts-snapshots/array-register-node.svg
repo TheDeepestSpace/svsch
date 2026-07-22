@@ -2879,7 +2879,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2991,16 +2991,18 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
+  margin: 0 auto;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: center;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3578,11 +3580,6 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
-}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3668,8 +3665,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 883.5 366 L 1168.5 366" />
 <path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 873 360 L 1167 360" />
 <path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 862.5 354 L 1165.5 354" />
-<rect class="svsch-label-box" x="1093.5" y="349" width="117" height="22" rx="3" />
-<text class="svsch-edge-label" x="1152" y="360" text-anchor="middle">M[address]_next</text></g>
+<text class="svsch-edge-label" x="1152" y="354" text-anchor="middle">M[address]_next</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data" data-net-key="mux:array_register:M_read_address:out" d="M 936 120 L 960 120 L 1128 120 L 1152 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address"><defs>
 <linearGradient id="svsch-stack-fanout-gradient-3ep2y1" gradientUnits="userSpaceOnUse" x1="1602" y1="330" x2="1614" y2="342">
@@ -3746,13 +3742,11 @@ path.port-skin-body.port-skin-harness {
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="576" cy="384" r="2.15" style="opacity: 0.75" />
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="582" cy="390" r="2.15" style="opacity: 0.5" />
 </g>
-<rect class="svsch-label-box" x="552" y="421" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="576" y="432" text-anchor="middle">M</text></g>
+<text class="svsch-edge-label" x="576" y="426" text-anchor="middle">M</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 547.5 414 L 582 414 L 582 390 L 760.5 390" />
 <path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 537 408 L 576 408 L 576 384 L 759 384" />
 <path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M" data-net-key="reg:array_register:M:q" d="M 526.5 402 L 570 402 L 570 378 L 757.5 378" />
-<rect class="svsch-label-box" x="552" y="373" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="576" y="384" text-anchor="middle">M</text></g>
+<text class="svsch-edge-label" x="576" y="378" text-anchor="middle">M</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M"><path class="svsch-edge-jump-halo" d="M 576 273 Q 585 264 576 255" style="stroke-width: 12" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-jump-index="0" />
 <defs>
 <linearGradient id="svsch-stack-converge-gradient-back-5mree4" gradientUnits="userSpaceOnUse" x1="547.5" y1="414" x2="744" y2="126">
@@ -3775,8 +3769,7 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-middle-5mree4)" d="M 537 408 L 576 408 L 576 120 L 744 120" />
 <path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-net-key="reg:array_register:M:q" style="stroke: url(#svsch-stack-converge-gradient-front-5mree4)" d="M 526.5 402 L 570 402 L 570 114 L 744 114" />
 <path class="svsch-edge-overlap-hint" d="M 576 316 L 576 356" data-edge-id="edge:reg:array_register:M:mux:array_register:M_read_address:M" data-overlap-id="edge:reg:array_register:M:mux:array_register:M_read_address:M-overlap-2-edge:port:array_register:write_data:mux:array_register:M_address_:write_en:M_address__next:write_data-2" />
-<rect class="svsch-label-box" x="552" y="109" width="48" height="22" rx="3" />
-<text class="svsch-edge-label" x="576" y="120" text-anchor="middle">M</text></g>
+<text class="svsch-edge-label" x="576" y="114" text-anchor="middle">M</text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:array_register:M_read_address" data-node-kind="mux" transform="translate(744 72)">

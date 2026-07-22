@@ -179,9 +179,16 @@ void DesignExtractor::markDeclaredNetEdges(Module& mod) {
         if (dot != std::string::npos) base = base.substr(0, dot);
         return base;
     };
+    // A port only names the module's boundary, not this net specifically, so
+    // it doesn't count as a "declared name" here — matches the same rule
+    // collapseAliasCombNodes applies via chooseAliasPrimary.
+    auto isPort = [&](const std::string& name) {
+        return std::any_of(mod.ports.begin(), mod.ports.end(), [&](const Port& p) { return p.name == name; });
+    };
     for (auto& e : mod.edges) {
         if (!e.declaredNetName.empty() || e.signal.empty()) continue;
-        if (mod.internalSignals.count(baseName(e.signal))) {
+        std::string base = baseName(e.signal);
+        if (mod.internalSignals.count(base) && !isPort(base)) {
             e.declaredNetName = e.signal;
         }
     }
