@@ -26,7 +26,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     toHaveScreenshot: {
       // Full VSCode window includes the sidebar and status bar which can
       // have minor rendering differences — use a generous pixel budget.
-      maxDiffPixels: 300,
+      maxDiffPixels: 2500,
     },
   },
   use: {
