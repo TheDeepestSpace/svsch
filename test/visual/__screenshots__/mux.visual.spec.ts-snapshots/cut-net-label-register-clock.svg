@@ -2557,7 +2557,32 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+.hdl-net-label-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
+  transform: translateX(calc(100% + 4px));
+  transition: opacity 80ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.hdl-net-label-tie,
+.hdl-net-label-revert {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
@@ -2569,28 +2594,12 @@ text {
   height: 16px;
   justify-content: center;
   line-height: 1;
-  opacity: 0;
   padding: 0 4px;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
-  transform: translateX(calc(100% + 4px));
-  transition: opacity 80ms ease;
-  visibility: hidden;
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3670,9 +3679,9 @@ path.port-skin-body.port-skin-harness {
 </svg>
 </g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:clk_n" data-node-kind="netLabel" transform="translate(168 144)"><path class="svsch-edge" d="M 0 24 H 96"></path>
-<text class="svsch-net-label hdl-net-label-text-synthetic" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">clk</text></g>
+<text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">clk</text></g>
 <g class="svsch-node hdl-net-label" data-node-id="cut-label:clk_sink" data-node-kind="netLabel" transform="translate(432 144)"><path class="svsch-edge" d="M 0 24 H 96"></path>
-<text class="svsch-net-label hdl-net-label-text-synthetic" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">clk</text></g>
+<text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">clk</text></g>
 </g>
 </g>
 </svg>

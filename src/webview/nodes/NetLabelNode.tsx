@@ -24,6 +24,10 @@ export function NetLabelNode({
   // Absent origin (labels saved before this field existed) reads as
   // synthetic: freely renameable, same as always.
   const isDeclaredName = cutNet?.origin === 'declared';
+  // The label's current text is still the net's legal name right after a
+  // cut, even for a synthetic default — italics mark a name the user has
+  // actively chosen to diverge from that default, not the origin itself.
+  const isRenamed = cutNet?.isRenamed === true;
   const aliasNames = cutNet?.aliasNames;
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
   const [editing, setEditing] = React.useState(false);
@@ -133,7 +137,7 @@ export function NetLabelNode({
           }}
         />
       ) : (
-        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isDeclaredName ? '' : ' hdl-net-label-text-synthetic'}`}>
+        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`}>
           <span className="hdl-net-label-text-value">{node.label}</span>
           {aliasNames && aliasNames.length > 0 && (
             <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`}>
@@ -152,25 +156,48 @@ export function NetLabelNode({
         </span>
       )}
       {cutNet && (
-        <button
-          className="hdl-net-label-tie nodrag nopan"
-          type="button"
-          aria-label="Tie net back together"
-          title="Tie net back together"
-          onClick={(event) => {
-            event.stopPropagation();
-            vscode.postMessage({
-              type: 'tieNet',
-              moduleName,
-              netKey: cutNet.netKey
-            });
-          }}
-          onDoubleClick={stopDrag}
-          onMouseDown={stopDrag}
-          onPointerDown={stopDrag}
-        >
-          Tie
-        </button>
+        <span className="hdl-net-label-actions">
+          {isRenamed && (
+            <button
+              className="hdl-net-label-revert nodrag nopan"
+              type="button"
+              aria-label="Revert label to the net's default name"
+              title="Revert label to the net's default name"
+              onClick={(event) => {
+                event.stopPropagation();
+                vscode.postMessage({
+                  type: 'revertCutNetLabel',
+                  moduleName,
+                  netKey: cutNet.netKey
+                });
+              }}
+              onDoubleClick={stopDrag}
+              onMouseDown={stopDrag}
+              onPointerDown={stopDrag}
+            >
+              Revert label
+            </button>
+          )}
+          <button
+            className="hdl-net-label-tie nodrag nopan"
+            type="button"
+            aria-label="Tie net back together"
+            title="Tie net back together"
+            onClick={(event) => {
+              event.stopPropagation();
+              vscode.postMessage({
+                type: 'tieNet',
+                moduleName,
+                netKey: cutNet.netKey
+              });
+            }}
+            onDoubleClick={stopDrag}
+            onMouseDown={stopDrag}
+            onPointerDown={stopDrag}
+          >
+            Tie
+          </button>
+        </span>
       )}
       {node.warningNote && (
         <Tooltip content={node.warningNote}>

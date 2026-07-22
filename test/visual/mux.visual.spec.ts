@@ -1333,7 +1333,7 @@ test.describe('edge route editing', () => {
     }));
   });
 
-  test('shows declared net labels in regular type (locked) and synthetic ones in italic (renameable), with an alias popover', async ({ page }) => {
+  test('shows declared and freshly-cut labels in regular type (locked/unrenamed), and only a renamed one in italic with a Revert button', async ({ page }) => {
     await installMessageCapture(page);
     await openView(page, createDeclaredAndSyntheticCutNetView());
     await page.waitForSelector('[data-node-kind="netLabel"]');
@@ -1341,6 +1341,7 @@ test.describe('edge route editing', () => {
 
     const declaredLabel = page.locator('[data-node-id="cut-label:declared:source"]');
     const syntheticLabel = page.locator('[data-node-id="cut-label:synthetic:source"]');
+    const renamedLabel = page.locator('[data-node-id="cut-label:renamed:source"]');
 
     // The declared net's name came straight from the SV source: regular
     // weight, and double-clicking it must not open the rename editor.
@@ -1348,8 +1349,12 @@ test.describe('edge route editing', () => {
     await declaredLabel.dblclick({ force: true });
     await expect(declaredLabel.locator('.hdl-net-label-input')).toBeHidden();
 
-    // The synthetic (tool-invented) label reads in italic and stays editable.
-    await expect(syntheticLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(1);
+    // A freshly-cut net with no formal wire name still shows its default
+    // label in regular type — italics only kick in once it's been renamed —
+    // but it stays editable, and no "Revert label" button shows since the
+    // label hasn't diverged from its default yet.
+    await expect(syntheticLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await expect(syntheticLabel.locator('.hdl-net-label-revert')).toHaveCount(0);
     await syntheticLabel.dblclick({ force: true });
     const input = syntheticLabel.locator('.hdl-net-label-input');
     await expect(input).toBeVisible();
@@ -1368,6 +1373,21 @@ test.describe('edge route editing', () => {
     await expect(aliasMarker).toBeVisible();
     await aliasMarker.hover({ force: true });
     await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: legacy_a, legacy_b' })).toBeVisible();
+
+    // A net already diverged from its default label reads in italic and
+    // shows a "Revert label" button that resets it back to that default.
+    await expect(renamedLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(1);
+    await page.mouse.move(0, 0);
+    const revertButton = renamedLabel.locator('.hdl-net-label-revert');
+    await expect(revertButton).toBeHidden();
+    await renamedLabel.hover({ force: true });
+    await expect(revertButton).toBeVisible();
+    await revertButton.click();
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'revertCutNetLabel',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'renamed'
+    }));
 
     await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
     await expectGraphAndScreenshot(page, 'cut-net-label-declared-vs-synthetic-canvas.png', { clip: await paddedAllNodesClip(page) });
@@ -2622,6 +2642,7 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
     nodes: [
       visualPort('source:declared', 'chip_select', 'input', 0, 40),
       visualPort('source:synthetic', 'b', 'input', 0, 160),
+      visualPort('source:renamed', 'c', 'input', 0, 280),
       {
         id: 'cut-label:declared:source',
         kind: 'netLabel',
@@ -2641,6 +2662,9 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         }
       },
       {
+        // A net freshly cut with no formal declared name still carries a
+        // legitimate default label — it must render in regular type until
+        // the user actively renames it away from that default.
         id: 'cut-label:synthetic:source',
         kind: 'netLabel',
         label: 'NET_1',
@@ -2655,7 +2679,29 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
             handleSide: 'left',
             originalEdgeId: 'edge-synthetic',
             origin: 'synthetic',
+            isRenamed: false,
             aliasNames: ['legacy_a', 'legacy_b']
+          }
+        }
+      },
+      {
+        // Already diverged from its default label ("NET_2") — this is the
+        // italic, revertable state.
+        id: 'cut-label:renamed:source',
+        kind: 'netLabel',
+        label: 'my_custom_name',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        position: { x: 144, y: 280 },
+        metadata: {
+          cutNet: {
+            netKey: 'renamed',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-renamed',
+            origin: 'synthetic',
+            isRenamed: true
           }
         }
       }
@@ -2678,6 +2724,15 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         targetPort: 'cut',
         signal: 'b',
         metadata: { forceStraight: true, cutStub: { netKey: 'synthetic', role: 'source', originalEdgeId: 'edge-synthetic' } }
+      },
+      {
+        id: 'cut-stub:renamed:source',
+        source: 'source:renamed',
+        sourcePort: 'p',
+        target: 'cut-label:renamed:source',
+        targetPort: 'cut',
+        signal: 'c',
+        metadata: { forceStraight: true, cutStub: { netKey: 'renamed', role: 'source', originalEdgeId: 'edge-renamed' } }
       }
     ],
     diagnostics: []

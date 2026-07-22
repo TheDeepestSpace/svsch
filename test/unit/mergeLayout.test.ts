@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -752,7 +752,8 @@ describe('layout merge', () => {
     expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
-      origin: 'declared'
+      origin: 'declared',
+      defaultLabel: 'clk'
     });
   });
 
@@ -817,6 +818,39 @@ describe('layout merge', () => {
     expect(renamed.modules.top.netCuts?.[edgeNetKey(edge)].label).toBe('chip_select');
   });
 
+  it('a cut net stays regular type (not renamed) until the label actually diverges from its default, and reverting restores it', async () => {
+    const graph = await runParser('uhdm', 'top.sv', `
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+    `);
+    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+    const edge = view.edges[0];
+    const netKey = edgeNetKey(edge);
+
+    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', edge, graph.modules.top, view.nodes);
+    const freshCutView = await buildViewModel(graph, 'top', cutLayout);
+    const freshLabelNode = freshCutView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+    expect(freshLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+
+    const renamedLayout = renameCutNet(cutLayout, 'top', netKey, 'chip_select');
+    const renamedView = await buildViewModel(graph, 'top', renamedLayout);
+    const renamedLabelNode = renamedView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+    expect(renamedLabelNode?.metadata?.cutNet?.isRenamed).toBe(true);
+
+    // Typing the exact original name back also counts as "not renamed".
+    const revertedByTypingBack = renameCutNet(renamedLayout, 'top', netKey, 'a');
+    const typedBackView = await buildViewModel(graph, 'top', revertedByTypingBack);
+    const typedBackLabelNode = typedBackView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+    expect(typedBackLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+
+    const revertedLayout = revertCutNetLabel(renamedLayout, 'top', netKey);
+    expect(revertedLayout.modules.top.netCuts?.[netKey].label).toBe('a');
+    const revertedView = await buildViewModel(graph, 'top', revertedLayout);
+    const revertedLabelNode = revertedView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+    expect(revertedLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+  });
+
   it('adds, renames, removes, and reroutes net cuts without discarding the cut state', () => {
     const module = fanoutGraph.modules.top;
     const positioned: PositionedNode[] = [
@@ -831,7 +865,8 @@ describe('layout merge', () => {
     expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
-      origin: 'synthetic'
+      origin: 'synthetic',
+      defaultLabel: 'clk'
     });
 
     const duplicateCut = mergeNetCut(cut, 'top', module.edges[0], module, positioned);
@@ -1046,6 +1081,51 @@ describe('layout merge', () => {
     } as DesignGraph, 'top', { version: 1, modules: {} });
     expect(view.edges[0].label).toBe('x1');
     expect(view.edges[0].metadata?.aliasNames).toEqual(['x2', 'a', 'y']);
+  });
+
+  it('does not label a wire whose declared name only repeats the connected block\'s own title', async () => {
+    // An interface instance's block title *is* its instance name (e.g.
+    // `simple_if link(clk);` draws a block titled "link") — the connected
+    // port ("master"/"slave") differs from that name, but the block already
+    // says "link" regardless, so labeling the wire "link" too is redundant.
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'instance:top:u_producer',
+              kind: 'instance',
+              label: 'u_producer',
+              ports: [{ id: 'port:bus', name: 'bus', direction: 'output' }]
+            },
+            {
+              id: 'interface:top:link',
+              kind: 'interface',
+              label: 'link',
+              ports: [{ id: 'in:master', name: 'master', direction: 'input' }]
+            }
+          ],
+          edges: [
+            {
+              id: 'e-producer-link',
+              source: 'instance:top:u_producer',
+              sourcePort: 'port:bus',
+              target: 'interface:top:link',
+              targetPort: 'in:master',
+              signal: 'link',
+              metadata: { declaredNetName: 'link' }
+            }
+          ]
+        }
+      }
+    } as DesignGraph, 'top', { version: 1, modules: {} });
+    expect(view.edges[0].label).toBeUndefined();
   });
 
   it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {

@@ -442,6 +442,27 @@ export function midpoint(a: OrthogonalPoint, b: OrthogonalPoint): OrthogonalPoin
   };
 }
 
+// A point a short, fixed distance past the route's start, along its first
+// leg — not the exact source point (that would sit on top of the port), and
+// not the path's overall midpoint. Every branch of a fanout net starts at
+// the same point regardless of where it ends up, so anchoring here (rather
+// than at the middle of each branch's own route) keeps a shared net's label
+// landing in the same place no matter which single branch ends up carrying it.
+export function pointNearPathStart(points: OrthogonalPoint[]): OrthogonalPoint | undefined {
+  if (points.length === 0) return undefined;
+  if (points.length === 1) return points[0];
+  const [start, next] = points;
+  const dx = next.x - start.x;
+  const dy = next.y - start.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return start;
+  const offset = Math.min(24, distance / 2);
+  return {
+    x: start.x + (dx / distance) * offset,
+    y: start.y + (dy / distance) * offset
+  };
+}
+
 function horizontalOverlap(rect: NodeObstacle, minX: number, maxX: number): boolean {
   return rect.x < maxX && rect.x + rect.width > minX;
 }

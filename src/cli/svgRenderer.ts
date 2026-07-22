@@ -10,7 +10,7 @@ import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
-import { avoidFeedbackObstacles, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
+import { avoidFeedbackObstacles, normalizeRoutePoints, pointNearPathStart, type NodeObstacle } from '../webview/orthogonal/logic';
 import { findNetJunctions, type NetJunction } from '../webview/orthogonal/netGeometry';
 import { pathFromPoints, type OrthogonalPoint } from '../core/pathUtils';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
@@ -706,7 +706,7 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
 }
 
 function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[]): string {
-  const point = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
+  const point = pointNearPathStart(points) ?? { x: 0, y: 0 };
   const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
   const aliasMarker = hasAliases
     ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
@@ -728,7 +728,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const isSourceStacked = cutNet?.isSourceStacked ?? false;
     const align = cutNet?.align as 'start' | 'end' | undefined;
     const role = cutNet?.role ?? 'sink';
-    const isDeclaredName = cutNet?.origin === 'declared';
+    const isRenamed = cutNet?.isRenamed === true;
     const midX = width / 2;
     const midY = height / 2;
 
@@ -750,7 +750,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textPad = 3; // matches CSS padding: 0 3px on .hdl-net-label-text
     const textX = align === 'end' ? width - textPad : textPad;
     const textAnchor = align === 'end' ? 'end' : 'start';
-    const textClass = `svsch-net-label${isDeclaredName ? '' : ' hdl-net-label-text-synthetic'}`;
+    const textClass = `svsch-net-label${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`;
     const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
     const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width);

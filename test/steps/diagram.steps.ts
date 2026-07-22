@@ -294,6 +294,17 @@ When('I tie back the cut net {string}', async function (this: BddWorld, label: s
   await waitForLayoutChange(this, before, 'After tie net');
 });
 
+When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  const before = JSON.stringify(await readExtensionLayout(this));
+  // Hover the cut-net label to reveal its revert control, then click it.
+  await labelNode.hover({ force: true });
+  await expect(labelNode.locator('.hdl-net-label-revert')).toBeVisible();
+  await labelNode.locator('.hdl-net-label-revert').click();
+  await waitForLayoutChange(this, before, 'After revert cut net label');
+});
+
 // Unlike "I rename the cut net", this only attempts the double-click — it
 // does not wait for a layout change, since a declared net's label is
 // expected to refuse to enter edit mode at all.

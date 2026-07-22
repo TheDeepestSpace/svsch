@@ -143,11 +143,17 @@ Feature: Diagram Interaction
     When I hover the connection between "a" and "x" and click its Cut control
     Then I should see 3 cut net labels named "a"
     # "a" is only ever the port's own name here — there is no wire declared
-    # for this net, so its cut label is a tool-invented guess (in italics)
-    # and stays freely renameable, unlike a net with a real wire declaration.
-    And the cut net "a" should be shown in italics
+    # for this net, so its cut label is a tool-invented guess and stays
+    # freely renameable, unlike a net with a real wire declaration. Right
+    # after the cut it's still the net's legitimate current name, though, so
+    # it renders in regular type — only diverging from it earns italics.
+    And the cut net "a" should be shown in regular type
     When I rename the cut net "a" to "chip_select"
     Then I should see 3 cut net labels named "chip_select"
+    And the cut net "chip_select" should be shown in italics
+    When I click the Revert label control on the cut net "chip_select"
+    Then I should see 3 cut net labels named "a"
+    And the cut net "a" should be shown in regular type
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
     Given I have a file "top.sv" in my workspace:

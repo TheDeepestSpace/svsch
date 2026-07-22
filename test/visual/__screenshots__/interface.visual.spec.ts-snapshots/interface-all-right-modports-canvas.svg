@@ -2557,7 +2557,32 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+.hdl-net-label-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
+  transform: translateX(calc(100% + 4px));
+  transition: opacity 80ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.hdl-net-label-tie,
+.hdl-net-label-revert {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
@@ -2569,28 +2594,12 @@ text {
   height: 16px;
   justify-content: center;
   line-height: 1;
-  opacity: 0;
   padding: 0 4px;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
-  transform: translateX(calc(100% + 4px));
-  transition: opacity 80ms ease;
-  visibility: hidden;
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3645,11 +3654,9 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_observer:event_bus"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_observer:event_bus" d="M 624 216 L 648 216 L 672 216 L 672 288 L 816 288 L 840 288" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_observer:event_bus" data-net-key="interface:interface_all_right_modports:event_bus:out:observer" d="M 624 216 L 648 216 L 672 216 L 672 288 L 816 288 L 840 288" />
-<text class="svsch-edge-label" x="672" y="282" text-anchor="middle">event_bus</text></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_observer:event_bus" data-net-key="interface:interface_all_right_modports:event_bus:out:observer" d="M 624 216 L 648 216 L 672 216 L 672 288 L 816 288 L 840 288" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus"><path class="svsch-edge svsch-edge-interface-bg" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus" d="M 624 168 L 648 168 L 816 168 L 840 168" />
-<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus" data-net-key="interface:interface_all_right_modports:event_bus:out:sink" d="M 624 168 L 648 168 L 816 168 L 840 168" />
-<text class="svsch-edge-label" x="816" y="162" text-anchor="middle">event_bus</text></g>
+<path class="svsch-edge svsch-edge-interface" data-edge-id="edge:interface:interface_all_right_modports:event_bus:instance:interface_all_right_modports:u_sink:event_bus" data-net-key="interface:interface_all_right_modports:event_bus:out:sink" d="M 624 168 L 648 168 L 816 168 L 840 168" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_all_right_modports:clk:interface:interface_all_right_modports:event_bus:clk"><path class="svsch-edge" data-edge-id="edge:port:interface_all_right_modports:clk:interface:interface_all_right_modports:event_bus:clk" data-net-key="port:interface_all_right_modports:clk:port:clk" d="M 144 96 L 168 96 L 456 96 L 456 132" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:interface_all_right_modports:rst_n:interface:interface_all_right_modports:event_bus:rst_n"><path class="svsch-edge" data-edge-id="edge:port:interface_all_right_modports:rst_n:interface:interface_all_right_modports:event_bus:rst_n" data-net-key="port:interface_all_right_modports:rst_n:port:rst_n" d="M 144 48 L 168 48 L 504 48 L 504 96 L 504 132" /></g>
 </g>

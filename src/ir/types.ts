@@ -109,8 +109,10 @@ export interface DiagramNodeMetadata {
       thick?: boolean;
     };
     isSourceStacked?: boolean;
-    /** 'declared' locks the label to the SV source name (non-renameable, regular font); 'synthetic' is tool-invented (renameable, italic). */
+    /** 'declared' locks the label from renaming (it's the net's real SV source name); 'synthetic' is tool-invented and freely renameable. */
     origin?: 'declared' | 'synthetic';
+    /** True once the label has been edited away from its default (the text it had right when the net was cut) — drives italic styling, independent of `origin`. */
+    isRenamed?: boolean;
     /** Other declared wire names this net's chain of `assign` aliases collapsed together, for the hover popover. */
     aliasNames?: string[];
   };

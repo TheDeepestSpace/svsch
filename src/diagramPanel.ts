@@ -5,7 +5,7 @@ import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition } from './layout/mergeLayout';
+import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -26,6 +26,7 @@ type WebviewMessage =
   | { type: 'cutNets'; moduleName: string; edges: DiagramEdge[]; nodes: PositionedNode[] }
   | { type: 'relayoutSelection'; moduleName: string; nodeIds: string[]; nodes: PositionedNode[] }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
+  | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
   | { type: 'navigateToSource'; source: SourceRange }
@@ -369,6 +370,10 @@ export class DiagramPanel {
     }
     if (message.type === 'renameCutNet') {
       await this.renameNetCut(message.moduleName, message.netKey, message.label);
+      return;
+    }
+    if (message.type === 'revertCutNetLabel') {
+      await this.revertNetCutLabel(message.moduleName, message.netKey);
       return;
     }
     if (message.type === 'tieNet') {
@@ -735,6 +740,20 @@ export class DiagramPanel {
     }
     this.currentModule = moduleName;
     this.layout = renameCutNet(this.layout, moduleName, netKey, label);
+    await store.write(this.layout);
+    await this.postView();
+  }
+
+  private async revertNetCutLabel(moduleName: string, netKey: string): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    if (!this.layout) {
+      this.layout = await store.read();
+    }
+    this.currentModule = moduleName;
+    this.layout = revertCutNetLabel(this.layout, moduleName, netKey);
     await store.write(this.layout);
     await this.postView();
   }

@@ -2557,7 +2557,32 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+.hdl-net-label-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
+  transform: translateX(calc(100% + 4px));
+  transition: opacity 80ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.hdl-net-label-tie,
+.hdl-net-label-revert {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
@@ -2569,28 +2594,12 @@ text {
   height: 16px;
   justify-content: center;
   line-height: 1;
-  opacity: 0;
   padding: 0 4px;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
-  transform: translateX(calc(100% + 4px));
-  transition: opacity 80ms ease;
-  visibility: hidden;
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3691,8 +3700,7 @@ path.port-skin-body.port-skin-harness {
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="1002" cy="138" r="2.15" style="opacity: 1" />
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="1008" cy="144" r="2.15" style="opacity: 0.75" />
 <circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="1014" cy="150" r="2.15" style="opacity: 0.5" />
-</g>
-<text class="svsch-edge-label" x="216" y="210" text-anchor="middle">storage</text></g>
+</g></g>
 <g class="svsch-edge-group" data-edge-id="edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data" data-net-key="reg:array_address_write_register:storage:q" d="M 979.5 150 L 1168.5 150" />
 <path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data" data-net-key="reg:array_address_write_register:storage:q" d="M 969 144 L 1167 144" />
 <path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data" data-net-key="reg:array_address_write_register:storage:q" d="M 958.5 138 L 1165.5 138" /></g>

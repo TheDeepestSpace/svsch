@@ -2557,7 +2557,32 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+.hdl-net-label-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
+  transform: translateX(calc(100% + 4px));
+  transition: opacity 80ms ease;
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.hdl-net-label-tie,
+.hdl-net-label-revert {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
@@ -2569,28 +2594,12 @@ text {
   height: 16px;
   justify-content: center;
   line-height: 1;
-  opacity: 0;
   padding: 0 4px;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
-  transform: translateX(calc(100% + 4px));
-  transition: opacity 80ms ease;
-  visibility: hidden;
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3652,10 +3661,8 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select:sel_wide:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:sel_wide"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select:sel_wide:comb:var_bit_select:bus_sel_wide_8_:8__sel:expr:sel_wide" data-net-key="port:var_bit_select:sel_wide:port:sel_wide" d="M 192 120 L 216 120 L 384 120 L 408 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:var_bit_select:sel:select:var_bit_select:bus_sel_:sel"><path class="svsch-edge-jump-halo" d="M 639 264 Q 648 255 657 264" style="stroke-width: 12" data-edge-id="edge:port:var_bit_select:sel:select:var_bit_select:bus_sel_:sel" data-jump-index="0" />
 <path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:var_bit_select:sel:select:var_bit_select:bus_sel_:sel" data-net-key="port:var_bit_select:sel:port:sel" d="M 600 264 L 624 264 L 639 264 Q 648 255 657 264 L 888 264 L 888 312" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out" data-net-key="select:var_bit_select:bus[sel]:port:out" d="M 936 336 L 960 336 L 1152 336 L 1176 336" />
-<text class="svsch-edge-label" x="1152" y="330" text-anchor="middle">bus[sel]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: bit_out</title></tspan></text></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select:bus_sel_wide_8_:8_:port:var_bit_select:byte_out:byte_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:var_bit_select:bus_sel_wide_8_:8_:port:var_bit_select:byte_out:byte_out" data-net-key="select:var_bit_select:bus[sel_wide * 8+:8]:port:out" d="M 960 216 L 984 216 L 1152 216 L 1176 216" />
-<text class="svsch-edge-label" x="1152" y="210" text-anchor="middle">bus[sel_wide * 8+:8]<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: byte_out</title></tspan></text></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out"><path class="svsch-edge" data-edge-id="edge:select:var_bit_select:bus_sel_:port:var_bit_select:bit_out:bit_out" data-net-key="select:var_bit_select:bus[sel]:port:out" d="M 936 336 L 960 336 L 1152 336 L 1176 336" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:select:var_bit_select:bus_sel_wide_8_:8_:port:var_bit_select:byte_out:byte_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:var_bit_select:bus_sel_wide_8_:8_:port:var_bit_select:byte_out:byte_out" data-net-key="select:var_bit_select:bus[sel_wide * 8+:8]:port:out" d="M 960 216 L 984 216 L 1152 216 L 1176 216" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-select" data-node-id="select:var_bit_select:bus[sel]" data-node-kind="select" transform="translate(840 288)">

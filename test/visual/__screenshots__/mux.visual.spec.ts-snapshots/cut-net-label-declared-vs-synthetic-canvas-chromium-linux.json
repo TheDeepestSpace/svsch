@@ -21,6 +21,26 @@
       }
     },
     {
+      "id": "cut-label:renamed:source",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 280
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "cut-label:synthetic:source",
       "type": "hdl",
       "position": {
@@ -61,6 +81,26 @@
       }
     },
     {
+      "id": "source:renamed",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 280
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "source:synthetic",
       "type": "hdl",
       "position": {
@@ -89,6 +129,14 @@
       "sourceHandle": "p",
       "targetHandle": "cut",
       "path": "M 144 52 L 144 52 L 216 52 L 216 48 L 216 72 L 144 72 L 144 64 L 144 64"
+    },
+    {
+      "id": "cut-stub:renamed:source",
+      "source": "source:renamed",
+      "target": "cut-label:renamed:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 292 L 120 292 L 144 292 L 144 288 L 144 312 L 144 304 L 144 304"
     },
     {
       "id": "cut-stub:synthetic:source",

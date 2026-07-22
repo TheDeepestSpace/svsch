@@ -293,6 +293,15 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
 
     std::vector<std::string> sorted(names.begin(), names.end());
     std::stable_sort(sorted.begin(), sorted.end(), [&](const std::string& a, const std::string& b) {
+        // A name with no declaration order at all isn't a real identifier —
+        // it's a synthesized/composite expression string (e.g. the raw text
+        // "bus[sel]" a select block promotes as its output's signal name).
+        // That must never outrank an actually-recognized name (port or not)
+        // just because the tiebreak below treats "not a port" as a plus.
+        bool aKnown = mod.declarationOrder.count(a) > 0;
+        bool bKnown = mod.declarationOrder.count(b) > 0;
+        if (aKnown != bKnown) return aKnown;
+        if (!aKnown) return a < b;
         bool aPort = isPort(a), bPort = isPort(b);
         if (aPort != bPort) return !aPort;
         int oa = orderOf(a), ob = orderOf(b);
@@ -303,9 +312,10 @@ static std::string chooseAliasPrimary(const Module& mod, const std::set<std::str
     std::string primary = sorted.front();
     // No internal wire/reg ever appeared in this chain — every candidate is
     // just a port (e.g. a plain `assign y = a;` with nothing declared between
-    // them). The net has no name of its own beyond the ports it connects, so
-    // there is nothing "declared" to report or protect from renaming.
-    if (isPort(primary)) return "";
+    // them), or not even a real identifier at all. The net has no name of
+    // its own beyond the ports it connects, so there is nothing "declared"
+    // to report or protect from renaming.
+    if (!mod.declarationOrder.count(primary) || isPort(primary)) return "";
     for (size_t i = 1; i < sorted.size(); ++i) outAliases.push_back(sorted[i]);
     return primary;
 }

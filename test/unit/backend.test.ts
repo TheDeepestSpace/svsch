@@ -1691,6 +1691,27 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         expect(e.metadata?.declaredNetName).toBeUndefined();
       }
     });
+
+    it('does not mistake a select block\'s raw expression text ("bus[sel]") for a declared name', async () => {
+      const graph = await runParser(backend, 'select_alias.sv', `
+        module top(input logic [3:0] bus, input logic [1:0] sel, output logic bit_out);
+          assign bit_out = bus[sel];
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const selectNode = top.nodes.find((n) => n.kind === 'select');
+      expect(selectNode).toBeDefined();
+
+      // The select block's own signal text ("bus[sel]") isn't a real
+      // declared identifier — it has no source location of its own, unlike
+      // 'bit_out' (a real port). Neither should end up declaredNetName:
+      // 'bit_out' alone means nothing beyond the port itself, so this net
+      // has no formal name (matches a plain `assign y = a;` alias).
+      const outEdge = top.edges.find((e) => e.source === selectNode?.id);
+      expect(outEdge).toBeDefined();
+      expect(outEdge?.metadata?.declaredNetName).toBeUndefined();
+      expect(outEdge?.metadata?.aliasNames).toBeUndefined();
+    });
   });
 
   describe('procedural if lowering (UHDM)', () => {

@@ -19,6 +19,7 @@ import {
   segmentOrientation,
   dominantOrientation,
   midpoint,
+  pointNearPathStart,
   avoidFeedbackObstacles,
   type NodeObstacle
 } from './logic';
@@ -409,7 +410,7 @@ export function OrthogonalEdge({
     : [];
   const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
-  const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const labelPoint = pointNearPathStart(points) ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
   // One end of a cut stub is always the synthetic `netLabel` node — whichever

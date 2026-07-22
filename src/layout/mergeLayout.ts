@@ -107,6 +107,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
 
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
   const nodesById = new Map<string, DiagramNode>(positioned.map((node) => [node.id, node]));
+  const edgeLabels = assignEdgeNetLabels(routedDesignEdges, nodesById);
 
   return {
     moduleName: designModule.name,
@@ -115,7 +116,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     edges: [
       ...routedDesignEdges.map((edge) => ({
         ...edge,
-        label: edgeDeclaredNetLabel(edge, nodesById),
+        label: edgeLabels.get(edge.id),
         waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
         routePoints: moduleLayout.edges?.[edge.id]?.routePoints
           ?? (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds) ? undefined : elkLayout.routes.get(edge.id))
@@ -125,6 +126,26 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     generateRegions: positionedRegions,
     diagnostics: graph.diagnostics
   };
+}
+
+// A fanout net (one source, several sinks) shares the same declared name
+// across every branch — labeling every single branch would just repeat the
+// same text several times over. Only the first branch (by edge id, so the
+// choice is stable across rebuilds) carries the label; the rest carry none.
+function assignEdgeNetLabels(edges: DiagramEdge[], nodesById: Map<string, DiagramNode>): Map<string, string> {
+  const labelByEdgeId = new Map<string, string>();
+  const labeledNetKeys = new Set<string>();
+  const sorted = [...edges].sort((a, b) => a.id.localeCompare(b.id));
+  for (const edge of sorted) {
+    const netKey = edgeNetKey(edge);
+    if (labeledNetKeys.has(netKey)) continue;
+    labeledNetKeys.add(netKey);
+    const label = edgeDeclaredNetLabel(edge, nodesById);
+    if (label) {
+      labelByEdgeId.set(edge.id, label);
+    }
+  }
+  return labelByEdgeId;
 }
 
 // An ordinary (uncut) wire has no label by default — its identity is already
@@ -138,12 +159,19 @@ function edgeDeclaredNetLabel(edge: DiagramEdge, nodesById: Map<string, DiagramN
     return undefined;
   }
 
-  const ownNameAt = (nodeId: string, portId?: string): string | undefined => {
-    if (!portId) return undefined;
-    return nodesById.get(nodeId)?.ports.find((port) => port.id === portId)?.name;
+  // A node's own displayed title can already say everything the label
+  // would (e.g. an interface instance's block title is its instance name),
+  // independently of whatever the specific connected port happens to be
+  // called — so both are checked, not just whichever one exists.
+  const matchesOwnName = (nodeId: string, portId?: string): boolean => {
+    const node = nodesById.get(nodeId);
+    if (!node) return false;
+    if (node.label === declaredNetName) return true;
+    const portName = portId ? node.ports.find((port) => port.id === portId)?.name : undefined;
+    return portName === declaredNetName;
   };
 
-  if (declaredNetName === ownNameAt(edge.source, edge.sourcePort) || declaredNetName === ownNameAt(edge.target, edge.targetPort)) {
+  if (matchesOwnName(edge.source, edge.sourcePort) || matchesOwnName(edge.target, edge.targetPort)) {
     return undefined;
   }
 
@@ -622,6 +650,10 @@ function buildNetCutProjection(
     if (!firstEdge) {
       continue;
     }
+    // The default label (whatever it was right when the net was cut) is
+    // still the net's legitimate name — only a label the user has actively
+    // typed something else into renders differently.
+    const isRenamed = cut.defaultLabel !== undefined && cut.label !== cut.defaultLabel;
 
     const sourceLead = renderedLeadPoint(cut.source.nodeId, cut.source.portId, nodesById, nodePositions);
     if (!sourceLead) {
@@ -646,6 +678,7 @@ function buildNetCutProjection(
         edgeStyle: cutLabelEdgeStyle(firstEdge, nodesById),
         isSourceStacked,
         origin: cut.origin,
+        isRenamed,
         aliasNames: firstEdge.metadata?.aliasNames
       },
       moduleLayout,
@@ -687,6 +720,7 @@ function buildNetCutProjection(
           edgeStyle: cutLabelEdgeStyle(edge, nodesById),
           isSourceStacked,
           origin: cut.origin,
+          isRenamed,
           aliasNames: edge.metadata?.aliasNames
         },
         moduleLayout,
@@ -2565,7 +2599,8 @@ export function mergeNetCut(
           nodeId: edge.source,
           ...(edge.sourcePort ? { portId: edge.sourcePort } : {})
         },
-        origin: netCutOrigin(edge, label)
+        origin: netCutOrigin(edge, label),
+        defaultLabel: label
       }
     }
   };
@@ -2618,6 +2653,34 @@ export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: st
           [netKey]: {
             ...cut,
             label: trimmed
+          }
+        }
+      }
+    }
+  };
+}
+
+// Resets a cut net's label back to whatever it defaulted to right after the
+// cut — a no-op for a declared net (it was never allowed to diverge in the
+// first place) or one that's already at its default.
+export function revertCutNetLabel(layout: SavedLayout, moduleName: string, netKey: string): SavedLayout {
+  const existing = layout.modules[moduleName];
+  const cut = existing?.netCuts?.[netKey];
+  if (!existing || !cut || cut.defaultLabel === undefined || cut.label === cut.defaultLabel) {
+    return layout;
+  }
+
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        netCuts: {
+          ...(existing.netCuts ?? {}),
+          [netKey]: {
+            ...cut,
+            label: cut.defaultLabel
           }
         }
       }
