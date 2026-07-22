@@ -40,7 +40,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   testDir: outputDir,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
-  outputDir: '/tmp/bdd-playwright-results',
+  outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),
   workers: 1,
   timeout: 120_000,
   reporter: reporters,

@@ -44,52 +44,96 @@ function getLatestMtime(dir, excludePaths = [], filterRegex = null) {
   return latest;
 }
 
+// Compute per-worktree visual server port to prevent port collisions between worktrees
+if (!process.env.SVSCH_VISUAL_PORT) {
+  let hash = 0;
+  for (let i = 0; i < WORKSPACE_ROOT.length; i++) {
+    hash = (hash * 31 + WORKSPACE_ROOT.charCodeAt(i)) & 0x7fffffff;
+  }
+  process.env.SVSCH_VISUAL_PORT = String(5174 + (hash % 100));
+}
+
 // Check which components need build
 function getOutdatedComponents() {
   const outdated = [];
 
+  function isOutdated(targetFile, srcDir, excludes, filterRegex, configFiles) {
+    if (!fs.existsSync(targetFile)) return true;
+    const targetMtime = fs.statSync(targetFile).mtimeMs;
+    for (const cfg of configFiles) {
+      if (fs.existsSync(cfg) && fs.statSync(cfg).mtimeMs > targetMtime) return true;
+    }
+    const srcMtime = getLatestMtime(srcDir, excludes, filterRegex);
+    return srcMtime > targetMtime;
+  }
+
   // 1. Extension
-  const extensionSrcDir = path.join(WORKSPACE_ROOT, 'src');
-  const extensionExcludes = [
-    path.join(WORKSPACE_ROOT, 'src', 'webview'),
-    path.join(WORKSPACE_ROOT, 'src', 'cli'),
-    path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
-  ];
   const extensionOut = path.join(WORKSPACE_ROOT, 'dist', 'extension.js');
-  const extensionSrcMtime = getLatestMtime(extensionSrcDir, extensionExcludes, /\.ts$/);
-  const extensionOutMtime = fs.existsSync(extensionOut) ? fs.statSync(extensionOut).mtimeMs : 0;
-  if (extensionSrcMtime > extensionOutMtime || extensionOutMtime === 0) {
-    outdated.push({ name: 'extension', mtimeSrc: extensionSrcMtime, mtimeOut: extensionOutMtime });
+  if (isOutdated(
+    extensionOut,
+    path.join(WORKSPACE_ROOT, 'src'),
+    [
+      path.join(WORKSPACE_ROOT, 'src', 'webview'),
+      path.join(WORKSPACE_ROOT, 'src', 'cli'),
+      path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
+    ],
+    /\.ts$/,
+    [
+      path.join(WORKSPACE_ROOT, 'package.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.extension.json')
+    ]
+  )) {
+    outdated.push({ name: 'extension' });
   }
 
   // 2. Webview
-  const webviewSrcDir = path.join(WORKSPACE_ROOT, 'src', 'webview');
   const webviewOut = path.join(WORKSPACE_ROOT, 'media', 'webview.js');
-  const webviewSrcMtime = getLatestMtime(webviewSrcDir, [], /\.(ts|tsx|js|jsx|css|html)$/);
-  const webviewOutMtime = fs.existsSync(webviewOut) ? fs.statSync(webviewOut).mtimeMs : 0;
-  if (webviewSrcMtime > webviewOutMtime || webviewOutMtime === 0) {
-    outdated.push({ name: 'webview', mtimeSrc: webviewSrcMtime, mtimeOut: webviewOutMtime });
+  if (isOutdated(
+    webviewOut,
+    path.join(WORKSPACE_ROOT, 'src', 'webview'),
+    [],
+    /\.(ts|tsx|js|jsx|css|html)$/,
+    [
+      path.join(WORKSPACE_ROOT, 'package.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.webview.json'),
+      path.join(WORKSPACE_ROOT, 'vite.config.ts'),
+      path.join(WORKSPACE_ROOT, 'index.html')
+    ]
+  )) {
+    outdated.push({ name: 'webview' });
   }
 
   // 3. CLI
-  const cliSrcDir = path.join(WORKSPACE_ROOT, 'src', 'cli');
   const cliOut = path.join(WORKSPACE_ROOT, 'dist', 'cli.js');
-  const cliSrcMtime = getLatestMtime(cliSrcDir, [], /\.ts$/);
-  const cliOutMtime = fs.existsSync(cliOut) ? fs.statSync(cliOut).mtimeMs : 0;
-  if (cliSrcMtime > cliOutMtime || cliOutMtime === 0) {
-    outdated.push({ name: 'cli', mtimeSrc: cliSrcMtime, mtimeOut: cliOutMtime });
+  if (isOutdated(
+    cliOut,
+    path.join(WORKSPACE_ROOT, 'src', 'cli'),
+    [],
+    /\.ts$/,
+    [
+      path.join(WORKSPACE_ROOT, 'package.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.json'),
+      path.join(WORKSPACE_ROOT, 'tsconfig.cli.json'),
+      path.join(WORKSPACE_ROOT, 'vite.config.cli.ts')
+    ]
+  )) {
+    outdated.push({ name: 'cli' });
   }
 
   // 4. Backend
-  const backendSrcDir = path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp');
-  const backendExcludes = [
-    path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'build')
-  ];
   const backendOut = path.join(WORKSPACE_ROOT, 'dist', 'svsch_backend');
-  const backendSrcMtime = getLatestMtime(backendSrcDir, backendExcludes, /\.(cpp|h|hpp|txt)$/);
-  const backendOutMtime = fs.existsSync(backendOut) ? fs.statSync(backendOut).mtimeMs : 0;
-  if (backendSrcMtime > backendOutMtime || backendOutMtime === 0) {
-    outdated.push({ name: 'backend', mtimeSrc: backendSrcMtime, mtimeOut: backendOutMtime });
+  if (isOutdated(
+    backendOut,
+    path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
+    [path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'build')],
+    /\.(cpp|h|hpp|txt)$/,
+    [
+      path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'CMakeLists.txt')
+    ]
+  )) {
+    outdated.push({ name: 'backend' });
   }
 
   return outdated;
@@ -341,6 +385,11 @@ try {
     
     console.log(`[SVSCH Test Runner] Executing svsch_test...`);
     const res = spawnSync('./svsch_test', extraArgs, { cwd: buildDir, stdio: 'inherit', env: { ...process.env, PATH: envPath } });
+    exitCode = res.status !== null ? res.status : 1;
+  } else if (suite === 'syntax') {
+    console.log(`[SVSCH Test Runner] Running Playwright syntax-book tests...`);
+    const cmd = ['playwright', 'test', '--config', 'test/syntax-book/playwright.config.ts', ...extraArgs];
+    const res = spawnSync(cmd[0], cmd.slice(1), { cwd: WORKSPACE_ROOT, stdio: 'inherit', env: process.env });
     exitCode = res.status !== null ? res.status : 1;
   } else if (suite === 'unit') {
     console.log(`[SVSCH Test Runner] Running Vitest unit tests...`);

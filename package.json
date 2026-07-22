@@ -116,8 +116,8 @@
     "test:system": "node scripts/run-test.js system",
     "test:system:update": "node scripts/run-test.js system --update-snapshots",
     "docs:generate": "tsx test/scripts/generate-docs.mts",
-    "docs:syntax": "GENERATE_SYNTAX_BOOK=1 npx playwright test --config test/syntax-book/playwright.config.ts",
-    "test:syntax": "npx playwright test --config test/syntax-book/playwright.config.ts",
+    "docs:syntax": "GENERATE_SYNTAX_BOOK=1 node scripts/run-test.js syntax",
+    "test:syntax": "node scripts/run-test.js syntax",
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
   "dependencies": {
