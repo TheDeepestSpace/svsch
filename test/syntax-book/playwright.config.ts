@@ -39,7 +39,7 @@ export default defineConfig({
   webServer: {
     command: `npm run visual:serve -- --port ${visualPort}`,
     url: visualBaseUrl,
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000
   },
   projects: [
