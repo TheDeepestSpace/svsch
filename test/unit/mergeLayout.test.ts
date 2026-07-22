@@ -1048,10 +1048,12 @@ describe('layout merge', () => {
     expect(view.edges[0].label).toBe('x');
   });
 
-  it('keeps the full alias list on a labeled edge for a multi-hop chain', async () => {
+  it('keeps only the alias names that are not already visible at either endpoint, for a multi-hop chain', async () => {
     // wire x1, x2; assign x1 = a; assign x2 = x1; assign y = x2; -- 'x1' wins
-    // as the label (declared first); the rest stay on metadata for the
-    // hover popover, unaffected by whether a label is shown.
+    // as the label (declared first). 'a' and 'y' are already shown as the
+    // ports at either end of this exact wire, so repeating them in the
+    // popover would say nothing new — only 'x2' (the other internal wire
+    // this chain passed through) is worth surfacing there.
     const view = await buildViewModel({
       rootModules: ['top'],
       generatedAt: 'now',
@@ -1080,7 +1082,7 @@ describe('layout merge', () => {
       }
     } as DesignGraph, 'top', { version: 1, modules: {} });
     expect(view.edges[0].label).toBe('x1');
-    expect(view.edges[0].metadata?.aliasNames).toEqual(['x2', 'a', 'y']);
+    expect(view.edges[0].metadata?.aliasNames).toEqual(['x2']);
   });
 
   it('does not label a wire whose declared name only repeats the connected block\'s own title', async () => {

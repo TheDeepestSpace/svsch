@@ -116,6 +116,9 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     edges: [
       ...routedDesignEdges.map((edge) => ({
         ...edge,
+        metadata: edge.metadata
+          ? { ...edge.metadata, aliasNames: visibleAliasNames(edge.metadata.aliasNames, edge, nodesById) }
+          : edge.metadata,
         label: edgeLabels.get(edge.id),
         waypoint: moduleLayout.edges?.[edge.id]?.waypoint,
         routePoints: moduleLayout.edges?.[edge.id]?.routePoints
@@ -148,6 +151,20 @@ function assignEdgeNetLabels(edges: DiagramEdge[], nodesById: Map<string, Diagra
   return labelByEdgeId;
 }
 
+// A node's own displayed title can already say everything a name would
+// (e.g. an interface instance's block title is its instance name),
+// independently of whatever the specific connected port happens to be
+// called — so both are checked, not just whichever one exists.
+function nodeOwnNames(nodeId: string, portId: string | undefined, nodesById: Map<string, DiagramNode>): Set<string> {
+  const names = new Set<string>();
+  const node = nodesById.get(nodeId);
+  if (!node) return names;
+  if (node.label) names.add(node.label);
+  const portName = portId ? node.ports.find((port) => port.id === portId)?.name : undefined;
+  if (portName) names.add(portName);
+  return names;
+}
+
 // An ordinary (uncut) wire has no label by default — its identity is already
 // visible at both ends. But when the net's actual SV-declared name (e.g. an
 // explicit `wire x;` in an alias chain) differs from what's shown at *both*
@@ -159,23 +176,34 @@ function edgeDeclaredNetLabel(edge: DiagramEdge, nodesById: Map<string, DiagramN
     return undefined;
   }
 
-  // A node's own displayed title can already say everything the label
-  // would (e.g. an interface instance's block title is its instance name),
-  // independently of whatever the specific connected port happens to be
-  // called — so both are checked, not just whichever one exists.
-  const matchesOwnName = (nodeId: string, portId?: string): boolean => {
-    const node = nodesById.get(nodeId);
-    if (!node) return false;
-    if (node.label === declaredNetName) return true;
-    const portName = portId ? node.ports.find((port) => port.id === portId)?.name : undefined;
-    return portName === declaredNetName;
-  };
-
-  if (matchesOwnName(edge.source, edge.sourcePort) || matchesOwnName(edge.target, edge.targetPort)) {
+  const ownNames = new Set([
+    ...nodeOwnNames(edge.source, edge.sourcePort, nodesById),
+    ...nodeOwnNames(edge.target, edge.targetPort, nodesById)
+  ]);
+  if (ownNames.has(declaredNetName)) {
     return undefined;
   }
 
   return declaredNetName;
+}
+
+// The alias popover exists to surface identities a chain passed through that
+// aren't shown anywhere else in the diagram. A name that merely repeats one
+// of this exact edge's own two endpoints (already visible as the block/port
+// at that end) tells the viewer nothing new, so it's dropped from the list —
+// same reasoning as `edgeDeclaredNetLabel` applies to the primary label.
+function visibleAliasNames(
+  aliasNames: string[] | undefined,
+  edge: { source: string; sourcePort?: string; target: string; targetPort?: string },
+  nodesById: Map<string, DiagramNode>
+): string[] | undefined {
+  if (!aliasNames || aliasNames.length === 0) return aliasNames;
+  const ownNames = new Set([
+    ...nodeOwnNames(edge.source, edge.sourcePort, nodesById),
+    ...nodeOwnNames(edge.target, edge.targetPort, nodesById)
+  ]);
+  const filtered = aliasNames.filter((name) => !ownNames.has(name));
+  return filtered.length > 0 ? filtered : undefined;
 }
 
 interface RegionBounds {
@@ -679,7 +707,7 @@ function buildNetCutProjection(
         isSourceStacked,
         origin: cut.origin,
         isRenamed,
-        aliasNames: firstEdge.metadata?.aliasNames
+        aliasNames: visibleAliasNames(firstEdge.metadata?.aliasNames, firstEdge, nodesById)
       },
       moduleLayout,
       labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
@@ -721,7 +749,7 @@ function buildNetCutProjection(
           isSourceStacked,
           origin: cut.origin,
           isRenamed,
-          aliasNames: edge.metadata?.aliasNames
+          aliasNames: visibleAliasNames(edge.metadata?.aliasNames, edge, nodesById)
         },
         moduleLayout,
         labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)

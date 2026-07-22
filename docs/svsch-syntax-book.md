@@ -478,7 +478,7 @@ endmodule
 A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire. Since there's no wire declared for it either, cutting this net still leaves it freely renameable.
 
 <pre><code>module top (
-  input logic <mark>a</mark>,
+  input logic a,
   output logic y
 );
   assign y = a;
@@ -497,7 +497,7 @@ An explicitly declared internal wire's name doesn't match either port it connect
   input logic a,
   output logic y
 );
-  wire <mark>x</mark>;
+  wire x;
   assign x = a;
   assign y = x;
 endmodule
@@ -509,13 +509,13 @@ endmodule
 
 ### Multiple Aliases
 
-A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; every other name it passed through (including the later wire and both ports) shows up on hover over the asterisk.
+A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
 
 <pre><code>module top (
   input logic a,
   output logic y
 );
-  wire <mark>x1</mark>, x2;
+  wire x1, x2;
   assign x1 = a;
   assign x2 = x1;
   assign y = x2;

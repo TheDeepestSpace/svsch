@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, defaultNetCutLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel } from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -57,26 +57,19 @@ function escapeAndHighlight(fileContent: string, range: SourceRange): string {
   return escaped.slice(0, startOffsetEscaped) + '<mark>' + escaped.slice(startOffsetEscaped, endOffsetEscaped) + '</mark>' + escaped.slice(endOffsetEscaped);
 }
 
-// Fallback for a declared name that resolveSignalSource can't find (e.g. a
-// bare `wire x;` that was never itself a node — only the assign that later
-// aliased it was tracked, and that assign gets collapsed away entirely once
-// it's just a rename). Finds the identifier on its own declaration line.
-function findDeclarationRange(fileContent: string, name: string): Omit<SourceRange, 'file'> | undefined {
-  const lines = fileContent.split('\n');
-  const wordRe = new RegExp(`\\b${name}\\b`);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!/\b(?:wire|logic|reg)\b/.test(line)) continue;
-    const match = wordRe.exec(line);
-    if (!match) continue;
-    return {
-      startLine: i + 1,
-      startColumn: match.index,
-      endLine: i + 1,
-      endColumn: match.index + name.length
-    };
+// Plain HTML-escaped source with no <mark> at all — for the wiring section,
+// which shows a code block without pointing at any one declaration.
+function escapeCode(fileContent: string): string {
+  let escaped = '';
+  for (const char of fileContent) {
+    if (char === '&') escaped += '&amp;';
+    else if (char === '<') escaped += '&lt;';
+    else if (char === '>') escaped += '&gt;';
+    else if (char === '"') escaped += '&quot;';
+    else if (char === "'") escaped += '&#39;';
+    else escaped += char;
   }
-  return undefined;
+  return escaped;
 }
 
 function getRawSelectedText(fileContent: string, range: SourceRange): string {
@@ -264,42 +257,20 @@ test.describe('Syntax Book Generation & Verification', () => {
           // click-to-navigate interaction to drive — it's either visible on
           // the plain, uncut wire already or it isn't, so this asserts
           // straight against the rendered view model instead of the webview.
+          // The wiring section exists to show the diagram's overall shape
+          // (whether a label appears at all), not to point at one specific
+          // declaration, so unlike every other section, no source line is
+          // ever marked/selected here — the code block just shows the plain
+          // source as-is.
           if (caseData.target.kind === 'netLabel') {
             const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
             expect(targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
-
-            // Highlight source for whichever name actually identifies this net
-            // (declaredNetName is still resolved even when it matches an
-            // endpoint closely enough that no separate label is shown): a
-            // matching port's own declaration, else the wire/logic/reg line
-            // that declares it.
-            // The net may have no formal declared name at all (e.g. a plain
-            // `assign y = a;` with no intermediate wire) — fall back to the
-            // exact same name defaultNetCutLabel would show if this net were
-            // cut, so the highlight always points at *something* meaningful.
-            const declaredName = targetEdge.metadata?.declaredNetName
-              ?? defaultNetCutLabel(targetEdge, graph.modules[caseData.module], { nodes: {} });
-            expect(declaredName).toBeDefined();
-            const declaredPort = graph.modules[caseData.module].ports.find((p) => p.name === declaredName);
-            let range: SourceRange | undefined = declaredPort?.source;
-            if (!range) {
-              for (const [filename, text] of Object.entries(caseData.files) as [string, string][]) {
-                const found = findDeclarationRange(text, declaredName!);
-                if (found) {
-                  range = { ...found, file: filename };
-                  break;
-                }
-              }
+            if (caseData.expect.aliasNames) {
+              expect(targetEdge.metadata?.aliasNames).toEqual(caseData.expect.aliasNames);
             }
-            expect(range).toBeDefined();
-            expect(range!.file).toBeDefined();
 
-            const fileContent = caseData.files[range!.file];
-            expect(fileContent).toBeDefined();
-
-            const highlightedHtml = escapeAndHighlight(fileContent, range!);
-            expect(highlightedHtml.match(/<mark>/g)?.length).toBe(1);
-            expect(highlightedHtml.match(/<\/mark>/g)?.length).toBe(1);
+            const firstFileContent = Object.values(caseData.files)[0] as string;
+            const highlightedHtml = escapeCode(firstFileContent);
 
             const nodeModulesPaths = [
               path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),

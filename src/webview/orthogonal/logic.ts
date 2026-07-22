@@ -54,12 +54,25 @@ export function normalizeRoutePoints(
   const targetLead = forceStraight
     ? { x: targetX, y: targetY }
     : snapLeadPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen), targetX, targetY, targetPosition);
+  const hasPersistedRoute = Boolean(route?.routePoints?.length || route?.waypoint);
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
     : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
 
   if (saved.length < 2) {
     return defaultRoute(sourceLead, targetLead, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
+  }
+
+  // A freshly computed default route (no persisted routePoints/waypoint to
+  // reconcile) is already exact — its internal bends are derived directly
+  // from sourceLead/targetLead, which aren't guaranteed to fall on a full
+  // grid line (a port's connection point is node position + half its own
+  // height). Running it through the snap-to-grid pass below meant for
+  // cleaning up stale/dragged points would nudge just the internal bends
+  // and not the endpoints, opening a spurious few-pixel notch in what
+  // should be a flat, straight segment.
+  if (!hasPersistedRoute) {
+    return makeOrthogonal(saved, simplify);
   }
 
   const canClampInternalPoints = leadConstraintsAreCompatible(sourceLead, targetLead, sourcePosition, targetPosition);

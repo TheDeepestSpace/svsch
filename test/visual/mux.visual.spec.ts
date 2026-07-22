@@ -1404,7 +1404,7 @@ test.describe('edge route editing', () => {
     const aliasMarker = label.locator('.hdl-net-label-alias-marker');
     await expect(aliasMarker).toBeVisible();
     await aliasMarker.hover({ force: true });
-    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2, a, y' })).toBeVisible();
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
 
     await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
     await expectGraphAndScreenshot(page, 'edge-declared-net-label-canvas.png', { clip: await paddedAllNodesClip(page) });
@@ -2629,7 +2629,11 @@ function createEdgeNetLabelView(): DiagramViewModel {
         targetPort: 'p',
         signal: 'y',
         label: 'x1',
-        metadata: { declaredNetName: 'x1', aliasNames: ['x2', 'a', 'y'] }
+        // 'a' and 'y' are this exact edge's own two endpoints (already shown
+        // as the ports on either side), so the real pipeline filters them
+        // out of the popover — only 'x2' (the other wire the chain passed
+        // through) is worth surfacing there.
+        metadata: { declaredNetName: 'x1', aliasNames: ['x2'] }
       }
     ],
     diagnostics: []
@@ -2649,7 +2653,12 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         label: 'chip_select',
         parentModule: 'declared_and_synthetic_cut_net',
         ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
-        position: { x: 144, y: 40 },
+        // Wider than the other rows' x=144: "chip_select" is long enough to
+        // auto-widen its source port node past that x, so a label placed
+        // there would sit flush against (or behind) the port's own right
+        // edge — tripping the router's "backward connection" loop-back
+        // heuristic instead of a plain short stub.
+        position: { x: 192, y: 40 },
         metadata: {
           cutNet: {
             netKey: 'declared',

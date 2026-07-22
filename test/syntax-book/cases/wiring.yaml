@@ -19,7 +19,6 @@ cases:
     expect:
       nodeKinds: [port]
       labelText: null
-      selectedText: "a"
 
   - id: wiring-named-net
     title: Named Net
@@ -42,11 +41,10 @@ cases:
     expect:
       nodeKinds: [port]
       labelText: "x"
-      selectedText: "x"
 
   - id: wiring-multiple-aliases
     title: Multiple Aliases
-    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; every other name it passed through (including the later wire and both ports) shows up on hover over the asterisk.
+    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
     tags: [wiring, net-label]
     files:
       top.sv: |
@@ -66,4 +64,4 @@ cases:
     expect:
       nodeKinds: [port]
       labelText: "x1"
-      selectedText: "x1"
+      aliasNames: ["x2"]

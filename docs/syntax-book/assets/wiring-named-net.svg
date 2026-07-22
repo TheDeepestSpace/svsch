@@ -3654,7 +3654,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:port:top:a:port:top:y:y"><path class="svsch-edge" data-edge-id="edge:port:top:a:port:top:y:y" data-net-key="port:top:a:port:a" d="M 144 48 L 168 48 L 336 48 L 360 48" />
-<text class="svsch-edge-label" x="156" y="42" text-anchor="middle">x<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: a, y</title></tspan></text></g>
+<text class="svsch-edge-label" x="156" y="42" text-anchor="middle">x</text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 36)">

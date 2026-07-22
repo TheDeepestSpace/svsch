@@ -48,7 +48,7 @@
       "target": "target:y",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 120 52 L 144 52 L 240 52 L 240 48 L 336 48 L 336 52 L 360 52"
+      "path": "M 120 52 L 144 52 L 336 52 L 360 52"
     }
   ]
 }
