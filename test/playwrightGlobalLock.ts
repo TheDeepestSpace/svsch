@@ -176,15 +176,6 @@ function registerCleanExitHandlers() {
 }
 
 export function acquirePlaywrightLock(suiteName: string) {
-  // Compute visual server port deterministically per worktree if not set
-  if (!process.env.SVSCH_VISUAL_PORT) {
-    let hash = 0;
-    for (let i = 0; i < WORKSPACE_ROOT.length; i++) {
-      hash = (hash * 31 + WORKSPACE_ROOT.charCodeAt(i)) & 0x7fffffff;
-    }
-    process.env.SVSCH_VISUAL_PORT = String(5174 + (hash % 100));
-  }
-
   let waiting = false;
   let printLines = 0;
 
