@@ -935,7 +935,10 @@ export function OrthogonalEdge({
         </ViewportPortal>
       )}
       {label && (
-        <foreignObject width={120} height={14} x={labelPoint.x - 60} y={labelPoint.y - 17} className="svsch-edge-label">
+        // Left-anchored at the lead point instead of centered on it — a
+        // centered 120-wide box would extend 60px back toward the block the
+        // wire just left, overlapping it on anything but a long lead.
+        <foreignObject width={120} height={14} x={labelPoint.x} y={labelPoint.y - 17} className="svsch-edge-label">
           <div>
             <span className="svsch-edge-label-text">{label}</span>
             {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (

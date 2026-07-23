@@ -179,6 +179,15 @@ export function svgBridgeCss(): string {
   font-size: 11px;
   dominant-baseline: middle;
 }
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — SVG <text> ignores that for its own fill, so the
+   exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -471,7 +480,7 @@ function renderEdge(rendered: RenderedEdge): string {
     ...renderEdgePaths(rendered),
     ...renderOverlapHints(rendered),
     ...renderNetJunctions(rendered),
-    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points, rendered.edge.metadata?.aliasNames) : ''
+    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points, rendered.edge.metadata?.aliasNames, rendered.edge.metadata?.generateActiveState) : ''
   ].filter(Boolean);
   return `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">${content.join('\n')}</g>`;
 }
@@ -705,15 +714,23 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
   });
 }
 
-function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[]): string {
+function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[], generateActiveState?: string): string {
   const point = pointNearPathStart(points) ?? { x: 0, y: 0 };
   const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
   const aliasMarker = hasAliases
     ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
     : '';
+  // Unlike the edge path (dimmed per-<path> via edgePath()'s own class list),
+  // this text sits outside that per-path styling, so the same inactive-arm
+  // dimming needs to be applied here directly to stay visually consistent
+  // with the wire it labels.
+  const classes = ['svsch-edge-label', generateStateClass(generateActiveState, 'generate-edge')].filter(Boolean).join(' ');
   // Plain text sitting just above the wire, matching the cut-net label
   // convention (.hdl-net-label-text) — no box/background of its own.
-  return `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y - 6)}" text-anchor="middle">${escapeXml(label)}${aliasMarker}</text>`;
+  // Left-anchored at the lead point (matching the webview) rather than
+  // centered on it, so the text grows away from the block the wire just
+  // left instead of overlapping back into it.
+  return `<text class="${escapeAttr(classes)}" x="${formatNumber(point.x)}" y="${formatNumber(point.y - 6)}" text-anchor="start">${escapeXml(label)}${aliasMarker}</text>`;
 }
 
 function renderNode(node: PositionedNode): string;

@@ -1921,10 +1921,12 @@ text {
   left: 50%;
 }
 
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
   align-items: center;
   display: flex;
-  gap: 4px;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -1950,7 +1952,8 @@ text {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
+  border-right: none;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   display: inline-flex;
@@ -1960,6 +1963,15 @@ text {
   line-height: 1;
   padding: 0 4px;
   white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .hdl-net-label-tie:hover,
@@ -2102,6 +2114,14 @@ text {
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
+   static renderer puts both classes directly on the label's <text>. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
 }
 
@@ -2370,10 +2390,9 @@ text {
   display: block;
   line-height: 13px;
   max-width: 120px;
-  margin: 0 auto;
   overflow: hidden;
   padding: 0 3px;
-  text-align: center;
+  text-align: left;
   text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;

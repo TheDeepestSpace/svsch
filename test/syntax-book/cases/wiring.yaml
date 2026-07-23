@@ -1,3 +1,11 @@
+# Unlike every other section, `netLabel` cases here drive no click-to-navigate
+# webview interaction (there's nothing to click — a plain wire's label is
+# either shown or it isn't) and highlight no source line in the generated doc.
+# `target` still picks which edge to check (by its `signal`), and `expect`
+# is the actual regression assertion: labelText/aliasNames confirm the
+# net-labeling logic (declared-name resolution, alias filtering) produced the
+# right result for this snippet — without them these cases would just render
+# a picture with no verification behind it.
 group: Wiring
 cases:
   - id: wiring-unnamed-net

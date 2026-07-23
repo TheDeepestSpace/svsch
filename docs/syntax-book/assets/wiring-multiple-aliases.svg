@@ -2563,10 +2563,12 @@ text {
   left: 50%;
 }
 
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
   align-items: center;
   display: flex;
-  gap: 4px;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -2592,7 +2594,8 @@ text {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
+  border-right: none;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   display: inline-flex;
@@ -2602,6 +2605,15 @@ text {
   line-height: 1;
   padding: 0 4px;
   white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .hdl-net-label-tie:hover,
@@ -2744,6 +2756,14 @@ text {
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
+   static renderer puts both classes directly on the label's <text>. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
 }
 
@@ -3012,10 +3032,9 @@ text {
   display: block;
   line-height: 13px;
   max-width: 120px;
-  margin: 0 auto;
   overflow: hidden;
   padding: 0 3px;
-  text-align: center;
+  text-align: left;
   text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;
@@ -3595,6 +3614,15 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — SVG <text> ignores that for its own fill, so the
+   exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3660,7 +3688,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:port:top:a:port:top:y:y"><path class="svsch-edge" data-edge-id="edge:port:top:a:port:top:y:y" data-net-key="port:top:a:port:a" d="M 144 48 L 168 48 L 336 48 L 360 48" />
-<text class="svsch-edge-label" x="156" y="42" text-anchor="middle">x1<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: x2</title></tspan></text></g>
+<text class="svsch-edge-label" x="156" y="42" text-anchor="start">x1<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: x2</title></tspan></text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 36)">

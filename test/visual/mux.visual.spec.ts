@@ -2702,7 +2702,10 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         // there would sit flush against (or behind) the port's own right
         // edge — tripping the router's "backward connection" loop-back
         // heuristic instead of a plain short stub.
-        position: { x: 192, y: 40 },
+        // y matches labelPositionForHandlePoint's real formula (port lead's
+        // y minus half the label's own height) so the stub renders as a
+        // straight line, same as a real cut net — not an arbitrary bend.
+        position: { x: 192, y: 28 },
         metadata: {
           cutNet: {
             netKey: 'declared',
@@ -2723,7 +2726,9 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         label: 'NET_1',
         parentModule: 'declared_and_synthetic_cut_net',
         ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
-        position: { x: 144, y: 160 },
+        // y = port lead's y (160 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 148 },
         metadata: {
           cutNet: {
             netKey: 'synthetic',
@@ -2745,7 +2750,9 @@ function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
         label: 'my_custom_name',
         parentModule: 'declared_and_synthetic_cut_net',
         ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
-        position: { x: 144, y: 280 },
+        // y = port lead's y (280 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 268 },
         metadata: {
           cutNet: {
             netKey: 'renamed',

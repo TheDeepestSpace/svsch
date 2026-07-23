@@ -2563,10 +2563,12 @@ text {
   left: 50%;
 }
 
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
   align-items: center;
   display: flex;
-  gap: 4px;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -2592,7 +2594,8 @@ text {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
+  border-right: none;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   display: inline-flex;
@@ -2602,6 +2605,15 @@ text {
   line-height: 1;
   padding: 0 4px;
   white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .hdl-net-label-tie:hover,
@@ -2744,6 +2756,14 @@ text {
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
+   static renderer puts both classes directly on the label's <text>. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
 }
 
@@ -3012,10 +3032,9 @@ text {
   display: block;
   line-height: 13px;
   max-width: 120px;
-  margin: 0 auto;
   overflow: hidden;
   padding: 0 3px;
-  text-align: center;
+  text-align: left;
   text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;
@@ -3595,6 +3614,15 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — SVG <text> ignores that for its own fill, so the
+   exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3677,11 +3705,11 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:port:generate_if_else_regions:y:y" data-net-key="comb:generate_if_else_regions:generate-region:generate_if_else_regions:else:18:13:2:else:w:assign:out:w" d="M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:instance:generate_if_else_regions:g_if_zero.u_if_zero:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_zero.u_if_zero:port:y" d="M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432" />
-<text class="svsch-edge-label" x="636" y="186" text-anchor="middle">w</text></g>
+<text class="svsch-edge-label generate-edge-inactive" x="636" y="186" text-anchor="start">w</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:a:instance:generate_if_else_regions:g_if_zero.u_if_zero:a" data-net-key="port:generate_if_else_regions:a:port:a" d="M 144 192 L 168 192 L 384 192 L 408 192" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c"><path class="svsch-edge generate-edge-inactive" data-edge-id="edge:port:generate_if_else_regions:c:comb:generate_if_else_regions:generate_region:generate_if_else_regions:else:18:13:2:else:w:assign:c" data-net-key="port:generate_if_else_regions:c:port:c" d="M 144 672 L 168 672 L 408 672 L 432 672" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y"><path class="svsch-edge generate-edge-active" data-edge-id="edge:instance:generate_if_else_regions:g_if_one.u_if_one:port:generate_if_else_regions:y:y" data-net-key="instance:generate_if_else_regions:g_if_one.u_if_one:port:y" d="M 624 432 L 648 432 L 888 432 L 912 432" />
-<text class="svsch-edge-label" x="636" y="426" text-anchor="middle">w</text></g>
+<text class="svsch-edge-label generate-edge-active" x="636" y="426" text-anchor="start">w</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b"><path class="svsch-edge generate-edge-active" data-edge-id="edge:port:generate_if_else_regions:b:instance:generate_if_else_regions:g_if_one.u_if_one:b" data-net-key="port:generate_if_else_regions:b:port:b" d="M 144 432 L 168 432 L 408 432 L 432 432" /></g>
 </g>
 <g class="svsch-nodes">

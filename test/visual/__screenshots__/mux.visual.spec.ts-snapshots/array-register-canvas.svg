@@ -2563,10 +2563,12 @@ text {
   left: 50%;
 }
 
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
   align-items: center;
   display: flex;
-  gap: 4px;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -2592,7 +2594,8 @@ text {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
+  border-right: none;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   display: inline-flex;
@@ -2602,6 +2605,15 @@ text {
   line-height: 1;
   padding: 0 4px;
   white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .hdl-net-label-tie:hover,
@@ -2744,6 +2756,14 @@ text {
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
+   static renderer puts both classes directly on the label's <text>. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
 }
 
@@ -3012,10 +3032,9 @@ text {
   display: block;
   line-height: 13px;
   max-width: 120px;
-  margin: 0 auto;
   overflow: hidden;
   padding: 0 3px;
-  text-align: center;
+  text-align: left;
   text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;
@@ -3595,6 +3614,15 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — SVG <text> ignores that for its own fill, so the
+   exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+}
 .svsch-generate-region-box {
   fill: none;
   stroke: var(--vscode-charts-orange);
@@ -3680,7 +3708,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 883.5 366 L 1168.5 366" />
 <path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 873 360 L 1167 360" />
 <path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next" data-net-key="mux:array_register:M_address_:write_en:M_address__next:out" d="M 862.5 354 L 1165.5 354" />
-<text class="svsch-edge-label" x="876" y="354" text-anchor="middle">M[address]_next</text></g>
+<text class="svsch-edge-label" x="876" y="354" text-anchor="start">M[address]_next</text></g>
 <g class="svsch-edge-group" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:mux:array_register:M_read_address:port:array_register:read_data:read_data" data-net-key="mux:array_register:M_read_address:out" d="M 936 120 L 960 120 L 1128 120 L 1152 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:array_register:address:mux:array_register:M_addr:address"><defs>
 <linearGradient id="svsch-stack-fanout-gradient-3ep2y1" gradientUnits="userSpaceOnUse" x1="1602" y1="330" x2="1614" y2="342">

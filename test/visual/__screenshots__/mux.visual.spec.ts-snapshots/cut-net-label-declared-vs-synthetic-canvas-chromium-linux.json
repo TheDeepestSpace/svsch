@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 192,
-        "y": 40
+        "y": 28
       },
       "width": 120,
       "height": 48,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 144,
-        "y": 280
+        "y": 268
       },
       "width": 144,
       "height": 48,
@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 144,
-        "y": 160
+        "y": 148
       },
       "width": 96,
       "height": 48,
@@ -128,7 +128,7 @@
       "target": "cut-label:declared:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 144 52 L 144 52 L 168 52 L 168 64 L 192 64 L 192 64"
+      "path": "M 144 52 L 144 52 L 192 52 L 192 52"
     },
     {
       "id": "cut-stub:renamed:source",
@@ -136,7 +136,7 @@
       "target": "cut-label:renamed:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 292 L 120 292 L 144 292 L 144 304 L 144 304"
+      "path": "M 120 292 L 120 292 L 144 292 L 144 292"
     },
     {
       "id": "cut-stub:synthetic:source",
@@ -144,7 +144,7 @@
       "target": "cut-label:synthetic:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 172 L 120 172 L 144 172 L 144 184 L 144 184"
+      "path": "M 120 172 L 120 172 L 144 172 L 144 172"
     }
   ]
 }
