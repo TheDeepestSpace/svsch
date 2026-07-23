@@ -939,7 +939,7 @@ export function OrthogonalEdge({
           <div>
             <span className="svsch-edge-label-text">{label}</span>
             {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
-              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`}>
+              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`} tone="info">
                 {(trigger) => (
                   <sup
                     {...trigger}

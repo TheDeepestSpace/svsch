@@ -140,7 +140,7 @@ export function NetLabelNode({
         <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`}>
           <span className="hdl-net-label-text-value">{node.label}</span>
           {aliasNames && aliasNames.length > 0 && (
-            <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`}>
+            <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`} tone="info">
               {(trigger) => (
                 <sup
                   {...trigger}

@@ -1410,6 +1410,50 @@ test.describe('edge route editing', () => {
     await expectGraphAndScreenshot(page, 'edge-declared-net-label-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
 
+  // wire_alias_chains.sv has no mux — openFixture's default 'auto' selector
+  // waits on a mux node, so these open the fixture view directly and wait
+  // on the port nodes it actually has instead.
+  test('shows no label on a plain assign with no intermediate wire', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_no_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expect(page.locator('.svsch-edge-label')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-no-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows a single declared wire name with no alias marker', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_single_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x');
+    await expect(label.locator('.hdl-net-label-alias-marker')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-single-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows the first-declared wire name with an alias popover for a multi-hop chain', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_multiple_aliases'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-multiple-aliases-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
   test('renders cut labels above styled wire stubs of every kind', async ({ page }) => {
     // Six style rows need more height than the default viewport to keep the
     // fitted view (and the screenshot clip) clear of the app toolbar.

@@ -996,6 +996,12 @@ text {
   z-index: 1000;
 }
 
+/* Plain informational popovers (e.g. "Also declared as: ...") aren't warnings
+   or errors, so they don't borrow the error-highlight border. */
+.svsch-tooltip-info {
+  border-color: var(--vscode-panel-border);
+}
+
 .generate-region-resize {
   background: transparent;
   border: 0;

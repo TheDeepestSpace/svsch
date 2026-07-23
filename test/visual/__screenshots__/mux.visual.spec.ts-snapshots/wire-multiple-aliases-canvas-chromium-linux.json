@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "port:wire_multiple_aliases:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:wire_multiple_aliases:y",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:wire_multiple_aliases:a:port:wire_multiple_aliases:y:y",
+      "source": "port:wire_multiple_aliases:a",
+      "target": "port:wire_multiple_aliases:y",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:y",
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
+    }
+  ]
+}
