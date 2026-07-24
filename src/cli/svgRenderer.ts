@@ -126,10 +126,17 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="svsch-diagram" role="img" aria-label="${escapeXml(view.moduleName)} diagram">`,
     renderDefs(),
     '<style>',
+    // CDATA (commented so CSS parsers see harmless comments, not tokens) so
+    // a stray unescaped '<' or '>' in embedded CSS — e.g. in a comment, as
+    // has happened before — can never make this document invalid XML. A
+    // literal ']]>' inside the CSS would still break it, but that's far
+    // less likely to occur by accident than a bare angle bracket.
+    '/*<![CDATA[*/',
     options.reactFlowCss ?? '',
     options.extensionCss ?? '',
     themeCss(theme),
     svgBridgeCss(),
+    '/*]]>*/',
     '</style>',
     `<g transform="translate(${formatNumber(offsetX)} ${formatNumber(offsetY)})">`,
     '<g class="svsch-generate-regions">',
@@ -180,8 +187,8 @@ export function svgBridgeCss(): string {
   dominant-baseline: middle;
 }
 /* styles.css sets a text color on this class for the webview's HTML
-   foreignObject span — SVG <text> ignores that for its own fill, so the
-   exported SVG needs an explicit fill here or it defaults to black. */
+   foreignObject span — an SVG text element ignores that for its own fill,
+   so the exported SVG needs an explicit fill here or it defaults to black. */
 .svsch-edge-label {
   fill: var(--vscode-editor-foreground);
 }

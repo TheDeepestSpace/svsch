@@ -2118,8 +2118,9 @@ text {
 }
 
 /* Descendant form: the webview nests the label's foreignObject inside the
-   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
-   static renderer puts both classes directly on the label's <text>. */
+   edge's own generate-edge-inactive-classed group element. Same-element
+   form: the CLI static renderer puts both classes directly on the label's
+   own text element. */
 .generate-edge-inactive .svsch-edge-label,
 .generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;

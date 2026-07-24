@@ -14,6 +14,7 @@
   </pattern>
 </defs>
 <style>
+/*<![CDATA[*/
 /* this gets exported as style.css and can be used for the default theming */
 /* these are the necessary styles for React/Svelte Flow, they get used by base.css and style.css */
 .react-flow {
@@ -2760,8 +2761,9 @@ text {
 }
 
 /* Descendant form: the webview nests the label's foreignObject inside the
-   edge's own <g class="generate-edge-inactive">. Same-element form: the CLI
-   static renderer puts both classes directly on the label's <text>. */
+   edge's own generate-edge-inactive-classed group element. Same-element
+   form: the CLI static renderer puts both classes directly on the label's
+   own text element. */
 .generate-edge-inactive .svsch-edge-label,
 .generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
@@ -3615,8 +3617,8 @@ path.port-skin-body.port-skin-harness {
   dominant-baseline: middle;
 }
 /* styles.css sets a text color on this class for the webview's HTML
-   foreignObject span — SVG <text> ignores that for its own fill, so the
-   exported SVG needs an explicit fill here or it defaults to black. */
+   foreignObject span — an SVG text element ignores that for its own fill,
+   so the exported SVG needs an explicit fill here or it defaults to black. */
 .svsch-edge-label {
   fill: var(--vscode-editor-foreground);
 }
@@ -3682,6 +3684,7 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/*]]>*/
 </style>
 <g transform="translate(48 8)">
 <g class="svsch-generate-regions">
