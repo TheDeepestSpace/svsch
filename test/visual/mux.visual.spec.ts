@@ -700,7 +700,6 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 69,
     });
   });
 
@@ -935,7 +934,6 @@ test.describe('bus visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'bus-three-taps-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 169
     });
   });
 });
@@ -1633,7 +1631,7 @@ test.describe('edge route editing', () => {
     await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
-    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page), maxDiffPixels: 80 });
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
@@ -1746,7 +1744,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 100 });
+    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders every current node kind widened for long labels', async ({ page }) => {
@@ -1768,7 +1766,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 700 });
+    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 

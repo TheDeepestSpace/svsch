@@ -188,7 +188,14 @@ void DesignExtractor::markDeclaredNetEdges(Module& mod) {
     for (auto& e : mod.edges) {
         if (!e.declaredNetName.empty() || e.signal.empty()) continue;
         std::string base = baseName(e.signal);
-        if (mod.internalSignals.count(base) && !isPort(base)) {
+        // `signal` must be a bare declared identifier, not a compound
+        // expression that merely starts with one (a bit-select "M[3]", a
+        // field-select "pkt.valid", or a synthesized derived name like
+        // "M[address]_next" for an array's write-candidate wire). The base
+        // array/struct being declared doesn't mean this specific derived
+        // expression names the net — labeling it with the base name would
+        // misidentify a different net's value as this one's.
+        if (e.signal == base && mod.internalSignals.count(base) && !isPort(base)) {
             e.declaredNetName = e.signal;
         }
     }

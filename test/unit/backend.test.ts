@@ -1712,6 +1712,36 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outEdge?.metadata?.declaredNetName).toBeUndefined();
       expect(outEdge?.metadata?.aliasNames).toBeUndefined();
     });
+
+    it('does not mistake a variable-index array write\'s synthesized "_next" wire ("M[address]_next") for a declared name', async () => {
+      const graph = await runParser(backend, 'array_variable_write.sv', `
+        module top(
+          input logic clk,
+          input logic [2:0] address,
+          input logic [31:0] write_data,
+          input logic write_en
+        );
+          logic [31:0] M [0:7];
+          always_ff @(posedge clk) begin
+            if (write_en) M[address] <= write_data;
+          end
+        endmodule
+      `);
+      const top = graph.modules.top;
+
+      // "M" itself is a real declared array, so an edge whose signal is
+      // exactly "M" still gets declaredNetName: 'M' — but the mux feeding
+      // the register's D input carries a tool-synthesized helper name
+      // ("M[address]_next") that only *starts* with the declared array's
+      // name; it isn't the array itself, so it must stay undeclared (same
+      // reasoning as the "bus[sel]" select-expression case above).
+      const plainArrayEdge = top.edges.find((e) => e.signal === 'M');
+      expect(plainArrayEdge?.metadata?.declaredNetName).toBe('M');
+
+      const synthesizedNextEdge = top.edges.find((e) => e.signal === 'M[address]_next');
+      expect(synthesizedNextEdge).toBeDefined();
+      expect(synthesizedNextEdge?.metadata?.declaredNetName).toBeUndefined();
+    });
   });
 
   describe('procedural if lowering (UHDM)', () => {
