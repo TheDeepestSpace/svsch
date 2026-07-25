@@ -37,10 +37,12 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
-  outputDir: '/tmp/bdd-playwright-results',
+  outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),
   workers: 1,
   timeout: 120_000,
   reporter: reporters,

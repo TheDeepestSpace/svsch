@@ -10,10 +10,22 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
   reporters.push([path.resolve(__dirname, 'scripts/playwright-progress-reporter.js')]);
 }
 
-const visualPort = Number(process.env.SVSCH_VISUAL_PORT ?? 5174);
+function getWorktreePort(defaultPort = 5174): number {
+  if (process.env.SVSCH_VISUAL_PORT) return Number(process.env.SVSCH_VISUAL_PORT);
+  let hash = 0;
+  const dir = __dirname;
+  for (let i = 0; i < dir.length; i++) {
+    hash = (hash * 31 + dir.charCodeAt(i)) & 0x7fffffff;
+  }
+  return defaultPort + (hash % 100);
+}
+
+const visualPort = getWorktreePort();
 const visualBaseUrl = `http://127.0.0.1:${visualPort}`;
 
 export default defineConfig({
+  globalSetup: path.resolve(__dirname, 'test/visual/globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, 'test/globalTeardown.ts'),
   testDir: './test/visual',
   outputDir: './test-results/visual',
   snapshotDir: './test/visual/__screenshots__',

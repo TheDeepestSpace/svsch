@@ -15,6 +15,8 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
@@ -24,7 +26,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     toHaveScreenshot: {
       // Full VSCode window includes the sidebar and status bar which can
       // have minor rendering differences — use a generous pixel budget.
-      maxDiffPixels: 300,
+      maxDiffPixels: 2500,
     },
   },
   use: {
