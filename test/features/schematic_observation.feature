@@ -61,6 +61,8 @@ Feature: Schematic Observation
     And I should see a port node "o"
     And there should be a connection between "i" and "o"
     And I should not see a combinational block
+    When I hover over the alias marker on the connection between "i" and "o"
+    Then a tooltip should appear reading "Also declared as: b, c, d, e, f"
 
   Scenario: Observing ALU arithmetic
     Given I have a file "top.sv" in my workspace:

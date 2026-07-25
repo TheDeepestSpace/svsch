@@ -320,6 +320,15 @@ When('I hover over the alias marker on the cut net {string}', async function (th
   await labelNode.locator('.hdl-net-label-alias-marker').hover({ force: true });
 });
 
+// Same alias popover, but for an uncut wire's inline label — rendered directly
+// on the edge (.svsch-edge-label) rather than as its own cut-net label node.
+When('I hover over the alias marker on the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const label = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-label`);
+  await expect(label).toBeVisible();
+  await label.locator('.hdl-net-label-alias-marker').hover({ force: true });
+});
+
 When('I move the port node {string} by \\({int}, {int}\\)', async function (this: BddWorld, name: string, dx: number, dy: number) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
