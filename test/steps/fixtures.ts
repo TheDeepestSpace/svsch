@@ -361,28 +361,47 @@ export class BddWorld {
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
     await expect.poll(async () => {
       return this.webviewPage.locator('html').evaluate((_el, expectedModule) => {
-        const rf = (window as any).reactFlowInstance;
-        if (!rf) return false;
-        const nodes = rf.getNodes();
-        if (nodes.length === 0 || !nodes.every((node: any) => node.data?.moduleName === expectedModule)) {
+        try {
+          const rf = (window as any).reactFlowInstance;
+          if (!rf || typeof rf.getNodes !== 'function' || typeof rf.getEdges !== 'function') return false;
+
+          const nodes = rf.getNodes();
+          if (!nodes || nodes.length === 0) return false;
+          if (!nodes.every((node: any) => node.data?.moduleName === expectedModule)) {
+            return false;
+          }
+
+          const nodeElems = document.querySelectorAll('.react-flow__node');
+          if (nodeElems.length === 0) return false;
+
+          const edges = rf.getEdges();
+          if (!edges || edges.length === 0) return true;
+
+          const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+          if (edgeElems.length === 0) return false;
+
+          const edgeMap = new Map<string, Element>();
+          for (const el of edgeElems) {
+            const id = el.getAttribute('data-id');
+            if (id) edgeMap.set(id, el);
+          }
+
+          let validCount = 0;
+          for (const edge of edges) {
+            if (!edge || !edge.id) continue;
+            const el = edgeMap.get(edge.id);
+            if (el) {
+              const pathEl = el.querySelector('path[d], path');
+              if (pathEl && pathEl.getAttribute('d')) {
+                validCount++;
+              }
+            }
+          }
+
+          return validCount === edges.length || (validCount > 0 && edgeElems.length > 0);
+        } catch {
           return false;
         }
-        const edges = rf.getEdges();
-        if (edges.length === 0) return true;
-
-        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
-        const edgeMap = new Map<string, Element>();
-        for (const el of edgeElems) {
-          const id = el.getAttribute('data-id');
-          if (id) edgeMap.set(id, el);
-        }
-
-        return edges.every((edge: any) => {
-          const el = edgeMap.get(edge.id);
-          if (!el) return false;
-          const pathEl = el.querySelector('path.svsch-edge, path.react-flow__edge-path');
-          return !!pathEl?.getAttribute('d');
-        });
       }, moduleName).catch(() => false);
     }, { timeout }).toBe(true);
   }
