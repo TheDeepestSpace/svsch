@@ -58,8 +58,14 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
       throw new Error('reactFlowInstance not found on window');
     }
     
+    const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
+    const nodeMap = new Map<string, Element>();
+    for (const el of nodeElems) {
+      const id = el.getAttribute('data-id');
+      if (id) nodeMap.set(id, el);
+    }
     const nodes = rf.getNodes().map((n: any) => {
-      const nodeElement = document.querySelector(`.react-flow__node[data-id="${n.id}"]`);
+      const nodeElement = nodeMap.get(n.id);
       return {
         id: n.id,
         type: n.type,
@@ -85,10 +91,16 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
       };
     });
 
+    const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+    const edgeMap = new Map<string, Element>();
+    for (const el of edgeElems) {
+      const id = el.getAttribute('data-id');
+      if (id) edgeMap.set(id, el);
+    }
     const edges = rf.getEdges().map((e: any) => {
-      // Use a more specific selector to find the path element for this specific edge
-      const edgeElement = document.querySelector(`.react-flow__edge[data-id="${e.id}"] path.svsch-edge`);
-      const pathData = edgeElement?.getAttribute('d') ?? '';
+      const edgeElement = edgeMap.get(e.id);
+      const pathEl = edgeElement?.querySelector('path.svsch-edge, path.react-flow__edge-path, path');
+      const pathData = pathEl?.getAttribute('d') ?? '';
       
       return {
         id: e.id,
@@ -97,8 +109,8 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
         sourceHandle: e.sourceHandle,
         targetHandle: e.targetHandle,
         path: pathData,
-        active: edgeElement?.closest('.react-flow__edge')?.classList.contains('generate-edge-active') || undefined,
-        inactive: edgeElement?.closest('.react-flow__edge')?.classList.contains('generate-edge-inactive') || undefined
+        active: edgeElement?.classList.contains('generate-edge-active') || undefined,
+        inactive: edgeElement?.classList.contains('generate-edge-inactive') || undefined
       };
     });
 
