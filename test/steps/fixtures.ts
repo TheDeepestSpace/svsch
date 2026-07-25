@@ -141,7 +141,7 @@ export class BddWorld {
         }
         const edges = rf.getEdges().map((e: any) => {
           const edgeEl = edgeMap.get(e.id);
-          const el = edgeEl?.querySelector('path.svsch-edge, path.react-flow__edge-path, path');
+          const el = edgeEl?.querySelector('path.svsch-edge, path.react-flow__edge-path');
           return { id: e.id, source: e.source, target: e.target,
             sourceHandle: e.sourceHandle ?? null, targetHandle: e.targetHandle ?? null,
             path: el?.getAttribute('d') ?? '',
@@ -380,7 +380,7 @@ export class BddWorld {
         return edges.every((edge: any) => {
           const el = edgeMap.get(edge.id);
           if (!el) return false;
-          const pathEl = el.querySelector('path.svsch-edge, path.react-flow__edge-path, path');
+          const pathEl = el.querySelector('path.svsch-edge, path.react-flow__edge-path');
           return !!pathEl?.getAttribute('d');
         });
       }, moduleName).catch(() => false);
