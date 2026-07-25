@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="696" height="288" viewBox="0 0 696 288" class="svsch-diagram" role="img" aria-label="top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="300" viewBox="0 0 672 300" class="svsch-diagram" role="img" aria-label="top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3691,17 +3691,16 @@ path.port-skin-body.port-skin-harness {
 }
 /*]]>*/
 </style>
-<g transform="translate(48 12)">
+<g transform="translate(24 12)">
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:latch:top:q:mux:top:q:enable:q_latch_d:q"><path class="svsch-edge" data-edge-id="edge:latch:top:q:mux:top:q:enable:q_latch_d:q" data-net-key="latch:top:q:q" d="M 240 168 L 264 168 L 288 168 L 288 144 L 456 144 L 480 144" />
-<circle class="svsch-edge-junction" cx="288" cy="168" r="4.75" data-junction-id="latch:top:q:q:288:168" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:latch:top:q:port:top:q:q"><path class="svsch-edge" data-edge-id="edge:latch:top:q:port:top:q:q" data-net-key="latch:top:q:q" d="M 240 168 L 264 168 L 288 168 L 288 216 L 456 216 L 480 216" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d"><path class="svsch-edge" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d" data-net-key="mux:top:q:enable:q_latch_d:out" d="M 576 120 L 600 120 L 600 216 L 0 216 L 0 168 L 24 168 L 48 168" />
-<path class="svsch-edge-overlap-hint" d="M 292 216 L 452 216" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d" data-overlap-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d-overlap-2-edge:latch:top:q:port:top:q:q-3" />
-<path class="svsch-edge-overlap-hint" d="M 460 216 L 476 216" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d" data-overlap-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d-overlap-2-edge:latch:top:q:port:top:q:q-4" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:d:mux:top:q:enable:q_latch_d:d"><path class="svsch-edge" data-edge-id="edge:port:top:d:mux:top:q:enable:q_latch_d:d" data-net-key="port:top:d:port:d" d="M 240 96 L 264 96 L 288 96 L 288 120 L 456 120 L 480 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:latch:top:q:mux:top:q:enable:q_latch_d:q"><path class="svsch-edge" data-edge-id="edge:latch:top:q:mux:top:q:enable:q_latch_d:q" data-net-key="latch:top:q:q" d="M 240 168 L 264 168 L 456 168 L 456 144 L 480 144" />
+<circle class="svsch-edge-junction" cx="456" cy="168" r="4.75" data-junction-id="latch:top:q:q:456:168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:latch:top:q:port:top:q:q"><path class="svsch-edge" data-edge-id="edge:latch:top:q:port:top:q:q" data-net-key="latch:top:q:q" d="M 240 168 L 264 168 L 456 168 L 456 216 L 480 216" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d"><path class="svsch-edge-jump-halo" d="M 463 192 Q 456 185 449 192" style="stroke-width: 12" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d" data-jump-index="0" />
+<path class="svsch-edge" data-edge-id="edge:mux:top:q:enable:q_latch_d:latch:top:q:q_latch_d" data-net-key="mux:top:q:enable:q_latch_d:out" d="M 576 120 L 600 120 L 600 192 L 463 192 Q 456 185 449 192 L 288 192 L 288 240 L 24 240 L 24 168 L 48 168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:d:mux:top:q:enable:q_latch_d:d"><path class="svsch-edge" data-edge-id="edge:port:top:d:mux:top:q:enable:q_latch_d:d" data-net-key="port:top:d:port:d" d="M 240 96 L 264 96 L 360 96 L 360 120 L 456 120 L 480 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:enable:mux:top:q:enable:q_latch_d:enable"><path class="svsch-edge" data-edge-id="edge:port:top:enable:mux:top:q:enable:q_latch_d:enable" data-net-key="port:top:enable:port:enable" d="M 240 48 L 264 48 L 528 48 L 528 96" /></g>
 </g>
 <g class="svsch-nodes">

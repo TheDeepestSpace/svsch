@@ -3702,7 +3702,7 @@ path.port-skin-body.port-skin-harness {
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:top:clk:reg:top:q:clk" data-net-key="port:top:clk:port:clk" d="M 144 144 L 192 144 L 192 96 L 336 96" />
+<path class="svsch-edge" data-edge-id="edge:port:top:clk:reg:top:q:clk" data-net-key="port:top:clk:port:clk" d="M 144 144 L 264 144 L 264 96 L 336 96" />
 <path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:top:clk:reg:top:q:clk" style="stroke: url(#svsch-stack-fanout-gradient-16e2439)" d="M 330 90 L 342 102" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:top:clk:reg:top:q:clk" data-net-key="port:top:clk:port:clk" d="M 330 90 L 349.5 90" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:top:clk:reg:top:q:clk" data-net-key="port:top:clk:port:clk" d="M 336 96 L 351 96" />

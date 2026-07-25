@@ -3697,8 +3697,8 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:mux:top:y:sel:y:port:top:y:y"><path class="svsch-edge" data-edge-id="edge:mux:top:y:sel:y:port:top:y:y" data-net-key="mux:top:y:sel:y:out" d="M 504 144 L 528 144 L 696 144 L 720 144" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b00"><path class="svsch-edge" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b00" data-net-key="port:top:a:port:a" d="M 144 120 L 168 120 L 336 120 L 360 120" />
-<circle class="svsch-edge-junction" cx="216" cy="120" r="4.75" data-junction-id="port:top:a:port:a:216:120" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b01"><path class="svsch-edge" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b01" data-net-key="port:top:a:port:a" d="M 144 120 L 168 120 L 216 120 L 216 144 L 336 144 L 360 144" /></g>
+<circle class="svsch-edge-junction" cx="336" cy="120" r="4.75" data-junction-id="port:top:a:port:a:336:120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b01"><path class="svsch-edge" data-edge-id="edge:port:top:a:mux:top:y:sel:y:a:port:a:in:2_b01" data-net-key="port:top:a:port:a" d="M 144 120 L 168 120 L 336 120 L 336 144 L 360 144" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:b:mux:top:y:sel:y:b"><path class="svsch-edge" data-edge-id="edge:port:top:b:mux:top:y:sel:y:b" data-net-key="port:top:b:port:b" d="M 144 168 L 168 168 L 336 168 L 360 168" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:sel:mux:top:y:sel:y:sel"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:sel:mux:top:y:sel:y:sel" data-net-key="port:top:sel:port:sel" d="M 144 48 L 168 48 L 432 48 L 432 96" /></g>
 </g>
