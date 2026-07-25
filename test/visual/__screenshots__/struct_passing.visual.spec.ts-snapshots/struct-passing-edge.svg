@@ -14,6 +14,7 @@
   </pattern>
 </defs>
 <style>
+/*<![CDATA[*/
 /* this gets exported as style.css and can be used for the default theming */
 /* these are the necessary styles for React/Svelte Flow, they get used by base.css and style.css */
 .react-flow {
@@ -994,6 +995,12 @@ text {
   pointer-events: none;
   width: max-content;
   z-index: 1000;
+}
+
+/* Plain informational popovers (e.g. "Also declared as: ...") aren't warnings
+   or errors, so they don't borrow the error-highlight border. */
+.svsch-tooltip-info {
+  border-color: var(--vscode-panel-border);
 }
 
 .generate-region-resize {
@@ -2460,6 +2467,21 @@ text {
   border-radius: 2px;
 }
 
+/* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
+   that matches the net's actual declared SV name stays regular/upright. */
+.hdl-net-label-text-synthetic {
+  font-style: italic;
+}
+
+.hdl-net-label-alias-marker {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+  cursor: default;
+  font-style: normal;
+  margin-left: 1px;
+  pointer-events: auto;
+  user-select: none;
+}
+
 .hdl-net-label-align-start .hdl-net-label-text {
   left: 0;
   text-align: left;
@@ -2542,20 +2564,13 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
+.hdl-net-label-actions {
   align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 9px;
-  height: 16px;
-  justify-content: center;
-  line-height: 1;
+  display: flex;
   opacity: 0;
-  padding: 0 4px;
   pointer-events: none;
   position: absolute;
   right: 0;
@@ -2566,16 +2581,44 @@ text {
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
 }
 
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie,
+.hdl-net-label-revert {
+  align-items: center;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+  border-right: none;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 9px;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -2714,6 +2757,15 @@ text {
 }
 
 .generate-edge-inactive .svsch-edge-jump-halo {
+  opacity: 0.75;
+}
+
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own generate-edge-inactive-classed group element. Same-element
+   form: the CLI static renderer puts both classes directly on the label's
+   own text element. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
   opacity: 0.75;
 }
 
@@ -2864,7 +2916,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2976,16 +3028,17 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: left;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3563,10 +3616,14 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — an SVG text element ignores that for its own fill,
+   so the exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
 }
 .svsch-generate-region-box {
   fill: none;
@@ -3627,6 +3684,7 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/*]]>*/
 </style>
 <g transform="translate(24 24)">
 <g class="svsch-generate-regions">
@@ -3635,7 +3693,8 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:instance:top:c:port:top:a:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:instance:top:c:port:top:a:a" data-net-key="instance:top:c:port:a_out" d="M 648 72 L 672 72 L 840 72 L 864 72" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:top:c:port:top:b:b"><path class="svsch-edge" data-edge-id="edge:instance:top:c:port:top:b:b" data-net-key="instance:top:c:port:b_out" d="M 648 96 L 672 96 L 696 96 L 696 120 L 840 120 L 864 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:instance:top:p:instance:top:c:s"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="edge:instance:top:p:instance:top:c:s" d="M 216 72 L 240 72 L 408 72 L 432 72" />
-<path class="svsch-edge svsch-edge-struct" data-edge-id="edge:instance:top:p:instance:top:c:s" data-net-key="instance:top:p:port:out_struct" d="M 216 72 L 240 72 L 408 72 L 432 72" /></g>
+<path class="svsch-edge svsch-edge-struct" data-edge-id="edge:instance:top:p:instance:top:c:s" data-net-key="instance:top:p:port:out_struct" d="M 216 72 L 240 72 L 408 72 L 432 72" />
+<text class="svsch-edge-label" x="228" y="66" text-anchor="start">s</text></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:p" data-node-kind="instance" transform="translate(24 24)">

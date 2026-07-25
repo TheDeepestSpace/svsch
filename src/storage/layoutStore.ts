@@ -41,6 +41,25 @@ export interface SavedNetCut {
     nodeId: string;
     portId?: string;
   };
+  /**
+   * 'declared' means `label` is the net's actual SV-declared name (a port or
+   * wire/reg/var name known from the source) — it must not be silently
+   * regenerated and the UI should not allow renaming it. 'synthetic' means
+   * the label was invented by the tool (e.g. "NET_3", "u_alu.result") and is
+   * freely renameable. Absent on labels saved before this field existed —
+   * treated as 'synthetic' for backward compatibility.
+   */
+  origin?: 'declared' | 'synthetic';
+  /**
+   * `label`'s value at the moment this net was cut — whatever that default
+   * was (even a tool-invented guess), it's still the net's legitimate name
+   * right now, so it renders in regular type. Only once the user actively
+   * types something else does the label diverge from this and switch to
+   * italic; renaming back to this exact value (or using the "revert label"
+   * control) restores regular type. Never touched by renameCutNet. Absent
+   * on labels saved before this field existed — treated as never-renamed.
+   */
+  defaultLabel?: string;
 }
 
 export interface SavedModuleLayout {

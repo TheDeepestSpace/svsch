@@ -700,7 +700,6 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 69,
     });
   });
 
@@ -935,7 +934,6 @@ test.describe('bus visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'bus-three-taps-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 169
     });
   });
 });
@@ -1333,6 +1331,127 @@ test.describe('edge route editing', () => {
     }));
   });
 
+  test('shows declared and freshly-cut labels in regular type (locked/unrenamed), and only a renamed one in italic with a Revert button', async ({ page }) => {
+    await installMessageCapture(page);
+    await openView(page, createDeclaredAndSyntheticCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const declaredLabel = page.locator('[data-node-id="cut-label:declared:source"]');
+    const syntheticLabel = page.locator('[data-node-id="cut-label:synthetic:source"]');
+    const renamedLabel = page.locator('[data-node-id="cut-label:renamed:source"]');
+
+    // The declared net's name came straight from the SV source: regular
+    // weight, and double-clicking it must not open the rename editor.
+    await expect(declaredLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await declaredLabel.dblclick({ force: true });
+    await expect(declaredLabel.locator('.hdl-net-label-input')).toBeHidden();
+
+    // A freshly-cut net with no formal wire name still shows its default
+    // label in regular type — italics only kick in once it's been renamed —
+    // but it stays editable, and no "Revert label" button shows since the
+    // label hasn't diverged from its default yet.
+    await expect(syntheticLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await expect(syntheticLabel.locator('.hdl-net-label-revert')).toHaveCount(0);
+    await syntheticLabel.dblclick({ force: true });
+    const input = syntheticLabel.locator('.hdl-net-label-input');
+    await expect(input).toBeVisible();
+    await input.fill('renamed_net');
+    await input.press('Enter');
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'renameCutNet',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'synthetic',
+      label: 'renamed_net'
+    }));
+
+    // The synthetic net's alias chain (from a collapsed assign chain) shows
+    // as a hoverable marker next to its label.
+    const aliasMarker = syntheticLabel.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: legacy_a, legacy_b' })).toBeVisible();
+
+    // A net already diverged from its default label reads in italic and
+    // shows a "Revert label" button that resets it back to that default.
+    await expect(renamedLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(1);
+    await page.mouse.move(0, 0);
+    const revertButton = renamedLabel.locator('.hdl-net-label-revert');
+    await expect(revertButton).toBeHidden();
+    await renamedLabel.hover({ force: true });
+    await expect(revertButton).toBeVisible();
+    await revertButton.click();
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'revertCutNetLabel',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'renamed'
+    }));
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'cut-net-label-declared-vs-synthetic-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows a declared net name directly on an uncut wire, with an alias popover for the rest of the chain', async ({ page }) => {
+    await openView(page, createEdgeNetLabelView());
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'edge-declared-net-label-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  // wire_alias_chains.sv has no mux — openFixture's default 'auto' selector
+  // waits on a mux node, so these open the fixture view directly and wait
+  // on the port nodes it actually has instead.
+  test('shows no label on a plain assign with no intermediate wire', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_no_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expect(page.locator('.svsch-edge-label')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-no-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows a single declared wire name with no alias marker', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_single_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x');
+    await expect(label.locator('.hdl-net-label-alias-marker')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-single-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows the first-declared wire name with an alias popover for a multi-hop chain', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_multiple_aliases'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-multiple-aliases-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
   test('renders cut labels above styled wire stubs of every kind', async ({ page }) => {
     // Six style rows need more height than the default viewport to keep the
     // fitted view (and the screenshot clip) clear of the app toolbar.
@@ -1512,7 +1631,7 @@ test.describe('edge route editing', () => {
     await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
-    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page), maxDiffPixels: 80 });
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
@@ -1625,7 +1744,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 100 });
+    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders every current node kind widened for long labels', async ({ page }) => {
@@ -1647,7 +1766,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 700 });
+    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 
@@ -2530,6 +2649,148 @@ function createCutBranchedNetView(): DiagramViewModel {
         targetPort: 'p',
         signal: 'a',
         metadata: { forceStraight: true, cutStub: { netKey, role: 'sink', originalEdgeId: 'edge-a-to-y' } }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createEdgeNetLabelView(): DiagramViewModel {
+  return {
+    moduleName: 'edge_net_label',
+    nodes: [
+      visualPort('source:a', 'a', 'input', 0, 40),
+      visualPort('target:y', 'y', 'output', 360, 40)
+    ],
+    edges: [
+      {
+        id: 'edge-a-to-y',
+        source: 'source:a',
+        target: 'target:y',
+        sourcePort: 'p',
+        targetPort: 'p',
+        signal: 'y',
+        label: 'x1',
+        // 'a' and 'y' are this exact edge's own two endpoints (already shown
+        // as the ports on either side), so the real pipeline filters them
+        // out of the popover — only 'x2' (the other wire the chain passed
+        // through) is worth surfacing there.
+        metadata: { declaredNetName: 'x1', aliasNames: ['x2'] }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
+  return {
+    moduleName: 'declared_and_synthetic_cut_net',
+    nodes: [
+      visualPort('source:declared', 'chip_select', 'input', 0, 40),
+      visualPort('source:synthetic', 'b', 'input', 0, 160),
+      visualPort('source:renamed', 'c', 'input', 0, 280),
+      {
+        id: 'cut-label:declared:source',
+        kind: 'netLabel',
+        label: 'chip_select',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // Wider than the other rows' x=144: "chip_select" is long enough to
+        // auto-widen its source port node past that x, so a label placed
+        // there would sit flush against (or behind) the port's own right
+        // edge — tripping the router's "backward connection" loop-back
+        // heuristic instead of a plain short stub.
+        // y matches labelPositionForHandlePoint's real formula (port lead's
+        // y minus half the label's own height) so the stub renders as a
+        // straight line, same as a real cut net — not an arbitrary bend.
+        position: { x: 192, y: 28 },
+        metadata: {
+          cutNet: {
+            netKey: 'declared',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-declared',
+            origin: 'declared'
+          }
+        }
+      },
+      {
+        // A net freshly cut with no formal declared name still carries a
+        // legitimate default label — it must render in regular type until
+        // the user actively renames it away from that default.
+        id: 'cut-label:synthetic:source',
+        kind: 'netLabel',
+        label: 'NET_1',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // y = port lead's y (160 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 148 },
+        metadata: {
+          cutNet: {
+            netKey: 'synthetic',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-synthetic',
+            origin: 'synthetic',
+            isRenamed: false,
+            aliasNames: ['legacy_a', 'legacy_b']
+          }
+        }
+      },
+      {
+        // Already diverged from its default label ("NET_2") — this is the
+        // italic, revertable state.
+        id: 'cut-label:renamed:source',
+        kind: 'netLabel',
+        label: 'my_custom_name',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // y = port lead's y (280 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 268 },
+        metadata: {
+          cutNet: {
+            netKey: 'renamed',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-renamed',
+            origin: 'synthetic',
+            isRenamed: true
+          }
+        }
+      }
+    ],
+    edges: [
+      {
+        id: 'cut-stub:declared:source',
+        source: 'source:declared',
+        sourcePort: 'p',
+        target: 'cut-label:declared:source',
+        targetPort: 'cut',
+        signal: 'chip_select',
+        metadata: { forceStraight: true, cutStub: { netKey: 'declared', role: 'source', originalEdgeId: 'edge-declared' } }
+      },
+      {
+        id: 'cut-stub:synthetic:source',
+        source: 'source:synthetic',
+        sourcePort: 'p',
+        target: 'cut-label:synthetic:source',
+        targetPort: 'cut',
+        signal: 'b',
+        metadata: { forceStraight: true, cutStub: { netKey: 'synthetic', role: 'source', originalEdgeId: 'edge-synthetic' } }
+      },
+      {
+        id: 'cut-stub:renamed:source',
+        source: 'source:renamed',
+        sourcePort: 'p',
+        target: 'cut-label:renamed:source',
+        targetPort: 'cut',
+        signal: 'c',
+        metadata: { forceStraight: true, cutStub: { netKey: 'renamed', role: 'source', originalEdgeId: 'edge-renamed' } }
       }
     ],
     diagnostics: []

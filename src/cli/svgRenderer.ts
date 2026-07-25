@@ -10,7 +10,7 @@ import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
-import { avoidFeedbackObstacles, normalizeRoutePoints, type NodeObstacle } from '../webview/orthogonal/logic';
+import { avoidFeedbackObstacles, normalizeRoutePoints, pointNearPathStart, type NodeObstacle } from '../webview/orthogonal/logic';
 import { findNetJunctions, type NetJunction } from '../webview/orthogonal/netGeometry';
 import { pathFromPoints, type OrthogonalPoint } from '../core/pathUtils';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
@@ -126,10 +126,17 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="svsch-diagram" role="img" aria-label="${escapeXml(view.moduleName)} diagram">`,
     renderDefs(),
     '<style>',
+    // CDATA (commented so CSS parsers see harmless comments, not tokens) so
+    // a stray unescaped '<' or '>' in embedded CSS — e.g. in a comment, as
+    // has happened before — can never make this document invalid XML. A
+    // literal ']]>' inside the CSS would still break it, but that's far
+    // less likely to occur by accident than a bare angle bracket.
+    '/*<![CDATA[*/',
     options.reactFlowCss ?? '',
     options.extensionCss ?? '',
     themeCss(theme),
     svgBridgeCss(),
+    '/*]]>*/',
     '</style>',
     `<g transform="translate(${formatNumber(offsetX)} ${formatNumber(offsetY)})">`,
     '<g class="svsch-generate-regions">',
@@ -179,10 +186,14 @@ export function svgBridgeCss(): string {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — an SVG text element ignores that for its own fill,
+   so the exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
 }
 .svsch-generate-region-box {
   fill: none;
@@ -476,7 +487,7 @@ function renderEdge(rendered: RenderedEdge): string {
     ...renderEdgePaths(rendered),
     ...renderOverlapHints(rendered),
     ...renderNetJunctions(rendered),
-    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points) : ''
+    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points, rendered.edge.metadata?.aliasNames, rendered.edge.metadata?.generateActiveState) : ''
   ].filter(Boolean);
   return `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">${content.join('\n')}</g>`;
 }
@@ -710,13 +721,23 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
   });
 }
 
-function renderEdgeLabel(label: string, points: OrthogonalPoint[]): string {
-  const point = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
-  const width = Math.max(48, label.length * 7 + 12);
-  return [
-    `<rect class="svsch-label-box" x="${formatNumber(point.x - width / 2)}" y="${formatNumber(point.y - 11)}" width="${formatNumber(width)}" height="22" rx="3" />`,
-    `<text class="svsch-edge-label" x="${formatNumber(point.x)}" y="${formatNumber(point.y)}" text-anchor="middle">${escapeXml(label)}</text>`
-  ].join('\n');
+function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[], generateActiveState?: string): string {
+  const point = pointNearPathStart(points) ?? { x: 0, y: 0 };
+  const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
+  const aliasMarker = hasAliases
+    ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
+    : '';
+  // Unlike the edge path (dimmed per-<path> via edgePath()'s own class list),
+  // this text sits outside that per-path styling, so the same inactive-arm
+  // dimming needs to be applied here directly to stay visually consistent
+  // with the wire it labels.
+  const classes = ['svsch-edge-label', generateStateClass(generateActiveState, 'generate-edge')].filter(Boolean).join(' ');
+  // Plain text sitting just above the wire, matching the cut-net label
+  // convention (.hdl-net-label-text) — no box/background of its own.
+  // Left-anchored at the lead point (matching the webview) rather than
+  // centered on it, so the text grows away from the block the wire just
+  // left instead of overlapping back into it.
+  return `<text class="${escapeAttr(classes)}" x="${formatNumber(point.x)}" y="${formatNumber(point.y - 6)}" text-anchor="start">${escapeXml(label)}${aliasMarker}</text>`;
 }
 
 function renderNode(node: PositionedNode): string;
@@ -731,6 +752,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const isSourceStacked = cutNet?.isSourceStacked ?? false;
     const align = cutNet?.align as 'start' | 'end' | undefined;
     const role = cutNet?.role ?? 'sink';
+    const isRenamed = cutNet?.isRenamed === true;
     const midX = width / 2;
     const midY = height / 2;
 
@@ -752,7 +774,8 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textPad = 3; // matches CSS padding: 0 3px on .hdl-net-label-text
     const textX = align === 'end' ? width - textPad : textPad;
     const textAnchor = align === 'end' ? 'end' : 'start';
-    const textHtml = `<text class="svsch-net-label" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
+    const textClass = `svsch-net-label${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`;
+    const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
     const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width);
     const classes = [

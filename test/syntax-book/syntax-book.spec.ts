@@ -57,6 +57,21 @@ function escapeAndHighlight(fileContent: string, range: SourceRange): string {
   return escaped.slice(0, startOffsetEscaped) + '<mark>' + escaped.slice(startOffsetEscaped, endOffsetEscaped) + '</mark>' + escaped.slice(endOffsetEscaped);
 }
 
+// Plain HTML-escaped source with no <mark> at all — for the wiring section,
+// which shows a code block without pointing at any one declaration.
+function escapeCode(fileContent: string): string {
+  let escaped = '';
+  for (const char of fileContent) {
+    if (char === '&') escaped += '&amp;';
+    else if (char === '<') escaped += '&lt;';
+    else if (char === '>') escaped += '&gt;';
+    else if (char === '"') escaped += '&quot;';
+    else if (char === "'") escaped += '&#39;';
+    else escaped += char;
+  }
+  return escaped;
+}
+
 function getRawSelectedText(fileContent: string, range: SourceRange): string {
   const lines = fileContent.split('\n');
   const startLine = range.startLine ?? 1;
@@ -77,6 +92,7 @@ const sectionFiles = [
   'registers.yaml',
   'muxes.yaml',
   'combinational_logic.yaml',
+  'wiring.yaml',
   'buses.yaml',
   'structs.yaml',
   'interfaces.yaml',
@@ -229,6 +245,56 @@ test.describe('Syntax Book Generation & Verification', () => {
               console.log(`CASE ${caseData.id}: REGION TARGET NOT FOUND. Label: ${caseData.target.regionLabel}. Regions:`, viewModel.generateRegions?.map(r => ({ id: r.id, label: r.label, kind: r.kind })));
             }
             expect(targetExists).toBe(true);
+          } else if (caseData.target.kind === 'netLabel') {
+            const targetExists = viewModel.edges.some(e => e.signal === caseData.target.signal);
+            if (!targetExists) {
+              console.log(`CASE ${caseData.id}: NET-LABEL TARGET NOT FOUND. Signal: ${caseData.target.signal}. Edges:`, viewModel.edges.map(e => ({ id: e.id, signal: e.signal })));
+            }
+            expect(targetExists).toBe(true);
+          }
+
+          // An automatic net label (unlike every other case here) has no
+          // click-to-navigate interaction to drive — it's either visible on
+          // the plain, uncut wire already or it isn't, so this asserts
+          // straight against the rendered view model instead of the webview.
+          // The wiring section exists to show the diagram's overall shape
+          // (whether a label appears at all), not to point at one specific
+          // declaration, so unlike every other section, no source line is
+          // ever marked/selected here — the code block just shows the plain
+          // source as-is.
+          if (caseData.target.kind === 'netLabel') {
+            const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
+            expect(targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
+            if (caseData.expect.aliasNames) {
+              expect(targetEdge.metadata?.aliasNames).toEqual(caseData.expect.aliasNames);
+            }
+
+            const firstFileContent = Object.values(caseData.files)[0] as string;
+            const highlightedHtml = escapeCode(firstFileContent);
+
+            const nodeModulesPaths = [
+              path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
+              path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css'),
+            ];
+            let reactFlowCss = '';
+            for (const p of nodeModulesPaths) {
+              if (fs.existsSync(p)) {
+                reactFlowCss = fs.readFileSync(p, 'utf8');
+                break;
+              }
+            }
+            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+            const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
+
+            generatedEntries.push({
+              id: caseData.id,
+              title: caseData.title,
+              description: caseData.description,
+              group: groupName,
+              highlightedHtml,
+              svgContent
+            });
+            return;
           }
 
           // Initialize webview

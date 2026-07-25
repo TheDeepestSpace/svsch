@@ -1611,6 +1611,139 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(top.edges.some(e => e.source === r32?.id && e.target === 'port:bus_composition:r')).toBe(false);
   });
 
+  describe('assign-chain alias collapsing', () => {
+    it('collapses a long chain of wire-to-wire assigns into a single edge, naming it after the first-declared wire', async () => {
+      const graph = await runParser(backend, 'assign_chain.sv', `
+        module top(input i, output o);
+          wire a,b,c,d,e,f;
+          assign a = b;
+          assign b = c;
+          assign c = d;
+          assign d = e;
+          assign e = f;
+          assign f = i;
+          assign o = a;
+        endmodule
+      `);
+      const top = graph.modules.top;
+
+      // No intermediate buffer/alias nodes should remain — the whole chain
+      // is one net from the input port straight through to the output port.
+      expect(top.nodes.filter((n) => n.kind !== 'port')).toEqual([]);
+      expect(top.edges).toHaveLength(1);
+
+      const edge = top.edges[0];
+      expect(edge.source).toBe('port:top:i');
+      expect(edge.target).toBe('port:top:o');
+      // `edge.signal` keeps its own long-standing "closest to the sink"
+      // convention (unrelated to declaration order) so edge identity/matching
+      // elsewhere in the pipeline never shifts because of this feature.
+      expect(edge.signal).toBe('o');
+      // An internal wire's own explicit declaration outranks a port name even
+      // though ports are always declared earlier in source (the header
+      // precedes the body) — a port names the boundary contract, not this
+      // net specifically. 'a' is the first internal wire declared, so it wins;
+      // everything else the chain passed through (including both ports) is
+      // still recorded for display (e.g. a hover popover on the cut label).
+      expect(edge.metadata?.declaredNetName).toBe('a');
+      expect(edge.metadata?.aliasNames).toEqual(['b', 'c', 'd', 'e', 'f', 'i', 'o']);
+    });
+
+    it('marks a net driven by a real expression (not a plain alias) with its declared output name, and no alias list', async () => {
+      const graph = await runParser(backend, 'assign_chain_expr.sv', `
+        module top(input a, input b, output y);
+          wire mid;
+          assign mid = a & b;
+          assign y = mid;
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      expect(combNode).toBeDefined();
+
+      const outEdge = top.edges.find((e) => e.source === combNode?.id);
+      expect(outEdge).toBeDefined();
+      // `assign y = mid;` is a plain alias of the comb node's output, so it
+      // collapses into the edge leaving the comb node — 'mid' is an explicit
+      // internal wire declaration, which outranks the 'y' port it aliases to.
+      expect(outEdge?.signal).toBe('y');
+      expect(outEdge?.metadata?.declaredNetName).toBe('mid');
+      expect(outEdge?.metadata?.aliasNames).toEqual(['y']);
+    });
+
+    it('does not mark a port name (or a tool-synthesized name) as a declared net name', async () => {
+      const graph = await runParser(backend, 'assign_expr_only.sv', `
+        module top(input a, input b, output y);
+          assign y = a & b;
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      expect(combNode).toBeDefined();
+
+      // 'a' and 'b' are ports — they name the module's boundary, not a net
+      // of their own, and neither has an internal wire declared for it. So
+      // this net has no formal declared name at all (same as a plain
+      // `assign y = a;` alias with no intermediate wire).
+      const inEdges = top.edges.filter((e) => e.target === combNode?.id);
+      expect(inEdges).toHaveLength(2);
+      for (const e of inEdges) {
+        expect(e.metadata?.declaredNetName).toBeUndefined();
+      }
+    });
+
+    it('does not mistake a select block\'s raw expression text ("bus[sel]") for a declared name', async () => {
+      const graph = await runParser(backend, 'select_alias.sv', `
+        module top(input logic [3:0] bus, input logic [1:0] sel, output logic bit_out);
+          assign bit_out = bus[sel];
+        endmodule
+      `);
+      const top = graph.modules.top;
+      const selectNode = top.nodes.find((n) => n.kind === 'select');
+      expect(selectNode).toBeDefined();
+
+      // The select block's own signal text ("bus[sel]") isn't a real
+      // declared identifier — it has no source location of its own, unlike
+      // 'bit_out' (a real port). Neither should end up declaredNetName:
+      // 'bit_out' alone means nothing beyond the port itself, so this net
+      // has no formal name (matches a plain `assign y = a;` alias).
+      const outEdge = top.edges.find((e) => e.source === selectNode?.id);
+      expect(outEdge).toBeDefined();
+      expect(outEdge?.metadata?.declaredNetName).toBeUndefined();
+      expect(outEdge?.metadata?.aliasNames).toBeUndefined();
+    });
+
+    it('does not mistake a variable-index array write\'s synthesized "_next" wire ("M[address]_next") for a declared name', async () => {
+      const graph = await runParser(backend, 'array_variable_write.sv', `
+        module top(
+          input logic clk,
+          input logic [2:0] address,
+          input logic [31:0] write_data,
+          input logic write_en
+        );
+          logic [31:0] M [0:7];
+          always_ff @(posedge clk) begin
+            if (write_en) M[address] <= write_data;
+          end
+        endmodule
+      `);
+      const top = graph.modules.top;
+
+      // "M" itself is a real declared array, so an edge whose signal is
+      // exactly "M" still gets declaredNetName: 'M' — but the mux feeding
+      // the register's D input carries a tool-synthesized helper name
+      // ("M[address]_next") that only *starts* with the declared array's
+      // name; it isn't the array itself, so it must stay undeclared (same
+      // reasoning as the "bus[sel]" select-expression case above).
+      const plainArrayEdge = top.edges.find((e) => e.signal === 'M');
+      expect(plainArrayEdge?.metadata?.declaredNetName).toBe('M');
+
+      const synthesizedNextEdge = top.edges.find((e) => e.signal === 'M[address]_next');
+      expect(synthesizedNextEdge).toBeDefined();
+      expect(synthesizedNextEdge?.metadata?.declaredNetName).toBeUndefined();
+    });
+  });
+
   describe('procedural if lowering (UHDM)', () => {
     it('lowers a complete always_comb if/else into a mux', async () => {
       if (backend !== 'uhdm') return;

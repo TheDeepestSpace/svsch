@@ -1,0 +1,75 @@
+# Unlike every other section, `netLabel` cases here drive no click-to-navigate
+# webview interaction (there's nothing to click — a plain wire's label is
+# either shown or it isn't) and highlight no source line in the generated doc.
+# `target` still picks which edge to check (by its `signal`), and `expect`
+# is the actual regression assertion: labelText/aliasNames confirm the
+# net-labeling logic (declared-name resolution, alias filtering) produced the
+# right result for this snippet — without them these cases would just render
+# a picture with no verification behind it.
+group: Wiring
+cases:
+  - id: wiring-unnamed-net
+    title: Unnamed Net
+    description: A direct assignment between ports has nothing more to say about the net than the two ports already show, so no label appears on the wire. Since there's no wire declared for it either, cutting this net still leaves it freely renameable.
+    tags: [wiring, net-label]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: netLabel
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: null
+
+  - id: wiring-named-net
+    title: Named Net
+    description: An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
+    tags: [wiring, net-label]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          wire x;
+          assign x = a;
+          assign y = x;
+        endmodule
+    module: top
+    target:
+      kind: netLabel
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: "x"
+
+  - id: wiring-multiple-aliases
+    title: Multiple Aliases
+    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
+    tags: [wiring, net-label]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          output logic y
+        );
+          wire x1, x2;
+          assign x1 = a;
+          assign x2 = x1;
+          assign y = x2;
+        endmodule
+    module: top
+    target:
+      kind: netLabel
+      signal: "y"
+    expect:
+      nodeKinds: [port]
+      labelText: "x1"
+      aliasNames: ["x2"]

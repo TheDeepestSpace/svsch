@@ -496,6 +496,12 @@ json DesignExtractor::extract(const std::string& targetModule) {
             if (!e.generateActiveState.empty()) {
                 j_edge_meta["generateActiveState"] = e.generateActiveState;
             }
+            if (!e.declaredNetName.empty()) {
+                j_edge_meta["declaredNetName"] = e.declaredNetName;
+            }
+            if (!e.aliasNames.empty()) {
+                j_edge_meta["aliasNames"] = e.aliasNames;
+            }
             if (!j_edge_meta.empty()) {
                 j_edge["metadata"] = j_edge_meta;
             }

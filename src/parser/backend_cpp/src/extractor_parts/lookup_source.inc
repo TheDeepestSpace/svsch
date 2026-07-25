@@ -161,6 +161,44 @@ void DesignExtractor::buildEdges(Module& mod) {
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
     unifyNetPropagation(mod);
+    markDeclaredNetEdges(mod);
+}
+
+// Fills in declaredNetName, for edges collapseAliasCombNodes didn't already
+// give one, whenever `signal` itself is a name genuinely declared in the SV
+// source (a port, or a wire/reg/variable) — as opposed to a tool-synthesized
+// name such as a promoted expression temp ("foo_next", "foo_sel") or an
+// aggregate/select label. Chain-collapsed edges keep the earliest-declared
+// name collapseAliasCombNodes already chose, which may differ from `signal`.
+void DesignExtractor::markDeclaredNetEdges(Module& mod) {
+    auto baseName = [](const std::string& signal) {
+        std::string base = signal;
+        size_t bracket = base.find('[');
+        if (bracket != std::string::npos) base = base.substr(0, bracket);
+        size_t dot = base.find('.');
+        if (dot != std::string::npos) base = base.substr(0, dot);
+        return base;
+    };
+    // A port only names the module's boundary, not this net specifically, so
+    // it doesn't count as a "declared name" here — matches the same rule
+    // collapseAliasCombNodes applies via chooseAliasPrimary.
+    auto isPort = [&](const std::string& name) {
+        return std::any_of(mod.ports.begin(), mod.ports.end(), [&](const Port& p) { return p.name == name; });
+    };
+    for (auto& e : mod.edges) {
+        if (!e.declaredNetName.empty() || e.signal.empty()) continue;
+        std::string base = baseName(e.signal);
+        // `signal` must be a bare declared identifier, not a compound
+        // expression that merely starts with one (a bit-select "M[3]", a
+        // field-select "pkt.valid", or a synthesized derived name like
+        // "M[address]_next" for an array's write-candidate wire). The base
+        // array/struct being declared doesn't mean this specific derived
+        // expression names the net — labeling it with the base name would
+        // misidentify a different net's value as this one's.
+        if (e.signal == base && mod.internalSignals.count(base) && !isPort(base)) {
+            e.declaredNetName = e.signal;
+        }
+    }
 }
 
 void DesignExtractor::unifyNetPropagation(Module& mod) {

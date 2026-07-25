@@ -1,4 +1,5 @@
 #include <fstream>
+#include <limits>
 // Extracts the normalized bit-width from a signal name that embeds a slice at
 // its tail, e.g. "foo[3:0]", "foo[2]", "foo[1:0]_next".  Returns "" when no
 // such slice is present.
@@ -259,6 +260,66 @@ void DesignExtractor::repairAggregateAssignmentBuses(Module& mod) {
     }
 }
 
+// Given the set of declared wire/reg/port names collapsed into one net by a chain of
+// simple `assign` aliases, pick the one declared earliest in source as the primary
+// (user-facing) name; the rest are returned as secondary aliases, in declaration order.
+// Names with no known declaration (shouldn't normally happen — collapseAliasCombNodes
+// only ever aliases real net/reg/port signals) sort after all known ones.
+static std::string chooseAliasPrimary(const Module& mod, const std::set<std::string>& names, std::vector<std::string>& outAliases) {
+    outAliases.clear();
+    if (names.empty()) return "";
+
+    auto orderOf = [&](const std::string& name) {
+        auto it = mod.declarationOrder.find(name);
+        return it != mod.declarationOrder.end() ? it->second : std::numeric_limits<int>::max();
+    };
+    // A port names the module's boundary contract; an internal wire/reg is the
+    // name the designer explicitly gave *this net*. When both exist in the
+    // same collapsed chain, the internal declaration wins — a port is always
+    // declared earlier in source (the header precedes the body) but that
+    // doesn't make it a better name for what the net is actually called.
+    auto isPort = [&](const std::string& name) {
+        return std::any_of(mod.ports.begin(), mod.ports.end(), [&](const Port& p) { return p.name == name; });
+    };
+
+    // If nothing in the candidate set is actually declared (e.g. two
+    // tool-synthesized promotion temps got merged with no real signal name
+    // between them), there is no genuine "declared name" to report — leave it
+    // to the caller to treat that as unknown rather than inventing one.
+    bool anyDeclared = std::any_of(names.begin(), names.end(), [&](const std::string& name) {
+        return mod.declarationOrder.count(name) > 0;
+    });
+    if (!anyDeclared) return "";
+
+    std::vector<std::string> sorted(names.begin(), names.end());
+    std::stable_sort(sorted.begin(), sorted.end(), [&](const std::string& a, const std::string& b) {
+        // A name with no declaration order at all isn't a real identifier —
+        // it's a synthesized/composite expression string (e.g. the raw text
+        // "bus[sel]" a select block promotes as its output's signal name).
+        // That must never outrank an actually-recognized name (port or not)
+        // just because the tiebreak below treats "not a port" as a plus.
+        bool aKnown = mod.declarationOrder.count(a) > 0;
+        bool bKnown = mod.declarationOrder.count(b) > 0;
+        if (aKnown != bKnown) return aKnown;
+        if (!aKnown) return a < b;
+        bool aPort = isPort(a), bPort = isPort(b);
+        if (aPort != bPort) return !aPort;
+        int oa = orderOf(a), ob = orderOf(b);
+        if (oa != ob) return oa < ob;
+        return a < b;
+    });
+
+    std::string primary = sorted.front();
+    // No internal wire/reg ever appeared in this chain — every candidate is
+    // just a port (e.g. a plain `assign y = a;` with nothing declared between
+    // them), or not even a real identifier at all. The net has no name of
+    // its own beyond the ports it connects, so there is nothing "declared"
+    // to report or protect from renaming.
+    if (!mod.declarationOrder.count(primary) || isPort(primary)) return "";
+    for (size_t i = 1; i < sorted.size(); ++i) outAliases.push_back(sorted[i]);
+    return primary;
+}
+
 // Collapse non-procedural [alias] comb nodes: a node with one input and one output
 // that is only a wire rename. Replace every incoming×outgoing edge pair with a
 // direct edge, then remove the node and its original edges.
@@ -304,7 +365,25 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
                     ne.sourcePort = inc.sourcePort;
                     ne.target     = outg.target;
                     ne.targetPort = outg.targetPort;
-                    ne.signal    = outg.signal.empty() ? inc.signal : outg.signal;
+                    // `signal` keeps its long-standing "closest to the sink" rule
+                    // unchanged, since it feeds edge identity/matching well beyond
+                    // cut-net labeling and must not shift for every ordinary 2-endpoint
+                    // alias. declaredNetName/aliasNames are separate, additive metadata:
+                    // the earliest-declared name among every alias this chain passed
+                    // through (which may differ from `signal`), for display purposes only.
+                    ne.signal = outg.signal.empty() ? inc.signal : outg.signal;
+
+                    std::set<std::string> aliasCandidates;
+                    if (!inc.signal.empty()) aliasCandidates.insert(inc.signal);
+                    if (!inc.declaredNetName.empty()) aliasCandidates.insert(inc.declaredNetName);
+                    for (const auto& n : inc.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
+                    if (!outg.signal.empty()) aliasCandidates.insert(outg.signal);
+                    if (!outg.declaredNetName.empty()) aliasCandidates.insert(outg.declaredNetName);
+                    for (const auto& n : outg.aliasNames) if (!n.empty()) aliasCandidates.insert(n);
+
+                    if (!aliasCandidates.empty()) {
+                        ne.declaredNetName = chooseAliasPrimary(mod, aliasCandidates, ne.aliasNames);
+                    }
                     ne.width     = outg.width.empty()  ? inc.width  : outg.width;
                     auto source_region = endpoint_generate_region(inc.source);
                     auto target_region = endpoint_generate_region(outg.target);

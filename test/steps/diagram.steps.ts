@@ -294,6 +294,41 @@ When('I tie back the cut net {string}', async function (this: BddWorld, label: s
   await waitForLayoutChange(this, before, 'After tie net');
 });
 
+When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  const before = JSON.stringify(await readExtensionLayout(this));
+  // Hover the cut-net label to reveal its revert control, then click it.
+  await labelNode.hover({ force: true });
+  await expect(labelNode.locator('.hdl-net-label-revert')).toBeVisible();
+  await labelNode.locator('.hdl-net-label-revert').click();
+  await waitForLayoutChange(this, before, 'After revert cut net label');
+});
+
+// Unlike "I rename the cut net", this only attempts the double-click — it
+// does not wait for a layout change, since a declared net's label is
+// expected to refuse to enter edit mode at all.
+When('I double-click the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  await labelNode.dblclick({ force: true });
+});
+
+When('I hover over the alias marker on the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  await labelNode.locator('.hdl-net-label-alias-marker').hover({ force: true });
+});
+
+// Same alias popover, but for an uncut wire's inline label — rendered directly
+// on the edge (.svsch-edge-label) rather than as its own cut-net label node.
+When('I hover over the alias marker on the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const label = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-label`);
+  await expect(label).toBeVisible();
+  await label.locator('.hdl-net-label-alias-marker').hover({ force: true });
+});
+
 When('I move the port node {string} by \\({int}, {int}\\)', async function (this: BddWorld, name: string, dx: number, dy: number) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
@@ -706,6 +741,21 @@ Then('I should see {int} cut net labels named {string}', async function (this: B
 
 Then('I should not see cut net labels named {string}', async function (this: BddWorld, label: string) {
   await expect(cutNetLabelNodes(this.webviewPage, label)).toHaveCount(0);
+});
+
+Then('the cut net {string} should not become editable', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-input')).toBeHidden();
+});
+
+Then('the cut net {string} should be shown in italics', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-text')).toHaveClass(/hdl-net-label-text-synthetic/);
+});
+
+Then('the cut net {string} should be shown in regular type', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-text')).not.toHaveClass(/hdl-net-label-text-synthetic/);
 });
 
 Then('the original connection between {string} and {string} should be hidden', async function (this: BddWorld, source: string, target: string) {
@@ -2757,7 +2807,7 @@ function handleMatches(actual: string | undefined, expectedLabel: string): boole
 
 function cutNetLabelNodes(webviewPage: FrameLocator, label: string) {
   return webviewPage.locator('[data-node-kind="netLabel"]').filter({
-    has: webviewPage.locator('.hdl-net-label-text').filter({ hasText: exactText(label) }),
+    has: webviewPage.locator('.hdl-net-label-text-value').filter({ hasText: exactText(label) }),
   });
 }
 

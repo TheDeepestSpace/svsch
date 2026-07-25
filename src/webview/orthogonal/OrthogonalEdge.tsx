@@ -19,6 +19,7 @@ import {
   segmentOrientation,
   dominantOrientation,
   midpoint,
+  pointNearPathStart,
   avoidFeedbackObstacles,
   type NodeObstacle
 } from './logic';
@@ -49,6 +50,7 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
 }
 
 import { getVscodeApi } from '../vscodeApi';
+import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
@@ -408,7 +410,7 @@ export function OrthogonalEdge({
     : [];
   const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
-  const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const labelPoint = pointNearPathStart(points) ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
   // One end of a cut stub is always the synthetic `netLabel` node — whichever
@@ -933,8 +935,27 @@ export function OrthogonalEdge({
         </ViewportPortal>
       )}
       {label && (
-        <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">
-          <div>{label}</div>
+        // Left-anchored at the lead point instead of centered on it — a
+        // centered 120-wide box would extend 60px back toward the block the
+        // wire just left, overlapping it on anything but a long lead.
+        <foreignObject width={120} height={14} x={labelPoint.x} y={labelPoint.y - 17} className="svsch-edge-label">
+          <div>
+            <span className="svsch-edge-label-text">{label}</span>
+            {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
+              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`} tone="info">
+                {(trigger) => (
+                  <sup
+                    {...trigger}
+                    className="hdl-net-label-alias-marker nodrag nopan"
+                    role="img"
+                    aria-label={`This net also has these declared aliases: ${diagramEdge.metadata!.aliasNames!.join(', ')}`}
+                  >
+                    *
+                  </sup>
+                )}
+              </Tooltip>
+            )}
+          </div>
         </foreignObject>
       )}
     </g>

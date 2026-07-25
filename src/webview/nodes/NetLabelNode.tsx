@@ -21,6 +21,14 @@ export function NetLabelNode({
   style: React.CSSProperties;
 }): React.ReactElement {
   const cutNet = node.metadata?.cutNet;
+  // Absent origin (labels saved before this field existed) reads as
+  // synthetic: freely renameable, same as always.
+  const isDeclaredName = cutNet?.origin === 'declared';
+  // The label's current text is still the net's legal name right after a
+  // cut, even for a synthetic default — italics mark a name the user has
+  // actively chosen to diverge from that default, not the origin itself.
+  const isRenamed = cutNet?.isRenamed === true;
+  const aliasNames = cutNet?.aliasNames;
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(node.label);
@@ -93,9 +101,10 @@ export function NetLabelNode({
       data-node-kind={node.kind}
       style={style}
       tabIndex={0}
-      title={node.label}
+      title={isDeclaredName ? `${node.label} (declared in source — cannot be renamed)` : node.label}
       onDoubleClick={(event) => {
         event.stopPropagation();
+        if (isDeclaredName) return;
         setEditing(true);
       }}
       onMouseEnter={() => { setHovered(cutNet?.netKey); setIsDirectlyHovered(true); }}
@@ -128,28 +137,67 @@ export function NetLabelNode({
           }}
         />
       ) : (
-        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}`}>{node.label}</span>
+        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`}>
+          <span className="hdl-net-label-text-value">{node.label}</span>
+          {aliasNames && aliasNames.length > 0 && (
+            <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`} tone="info">
+              {(trigger) => (
+                <sup
+                  {...trigger}
+                  className="hdl-net-label-alias-marker nodrag nopan"
+                  role="img"
+                  aria-label={`This net also has these declared aliases: ${aliasNames.join(', ')}`}
+                >
+                  *
+                </sup>
+              )}
+            </Tooltip>
+          )}
+        </span>
       )}
       {cutNet && (
-        <button
-          className="hdl-net-label-tie nodrag nopan"
-          type="button"
-          aria-label="Tie net back together"
-          title="Tie net back together"
-          onClick={(event) => {
-            event.stopPropagation();
-            vscode.postMessage({
-              type: 'tieNet',
-              moduleName,
-              netKey: cutNet.netKey
-            });
-          }}
-          onDoubleClick={stopDrag}
-          onMouseDown={stopDrag}
-          onPointerDown={stopDrag}
-        >
-          Tie
-        </button>
+        <span className="hdl-net-label-actions">
+          {isRenamed && (
+            <button
+              className="hdl-net-label-revert nodrag nopan"
+              type="button"
+              aria-label="Revert label to the net's default name"
+              title="Revert label to the net's default name"
+              onClick={(event) => {
+                event.stopPropagation();
+                vscode.postMessage({
+                  type: 'revertCutNetLabel',
+                  moduleName,
+                  netKey: cutNet.netKey
+                });
+              }}
+              onDoubleClick={stopDrag}
+              onMouseDown={stopDrag}
+              onPointerDown={stopDrag}
+            >
+              Revert label
+            </button>
+          )}
+          <button
+            className="hdl-net-label-tie nodrag nopan"
+            type="button"
+            aria-label="Tie net back together"
+            title="Tie net back together"
+            onClick={(event) => {
+              event.stopPropagation();
+              vscode.postMessage({
+                type: 'tieNet',
+                moduleName,
+                netKey: cutNet.netKey
+              });
+            }}
+            onDoubleClick={stopDrag}
+            onMouseDown={stopDrag}
+            onPointerDown={stopDrag}
+          >
+            Tie
+          </button>
+        </span>
       )}
       {node.warningNote && (
         <Tooltip content={node.warningNote}>
