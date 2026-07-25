@@ -100,8 +100,14 @@ export class BddWorld {
       const graphState = await this.webviewPage.locator('html').evaluate(() => {
         const rf = (window as any).reactFlowInstance;
         if (!rf) return { nodes: [], edges: [] };
+        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
+        const nodeMap = new Map<string, Element>();
+        for (const el of nodeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) nodeMap.set(id, el);
+        }
         const nodes = rf.getNodes().map((n: any) => {
-          const nodeElement = document.querySelector(`.react-flow__node[data-id="${n.id}"]`);
+          const nodeElement = nodeMap.get(n.id);
           const warningNote = nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label')
             ?? n.data?.node?.warningNote
             ?? undefined;
@@ -127,13 +133,20 @@ export class BddWorld {
             warningNote,
           };
         });
+        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+        const edgeMap = new Map<string, Element>();
+        for (const el of edgeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) edgeMap.set(id, el);
+        }
         const edges = rf.getEdges().map((e: any) => {
-          const el = document.querySelector(`.react-flow__edge[data-id="${e.id}"] path.svsch-edge`);
+          const edgeEl = edgeMap.get(e.id);
+          const el = edgeEl?.querySelector('path.svsch-edge, path.react-flow__edge-path');
           return { id: e.id, source: e.source, target: e.target,
             sourceHandle: e.sourceHandle ?? null, targetHandle: e.targetHandle ?? null,
             path: el?.getAttribute('d') ?? '',
-            active: el?.closest('.react-flow__edge')?.classList.contains('generate-edge-active') || undefined,
-            inactive: el?.closest('.react-flow__edge')?.classList.contains('generate-edge-inactive') || undefined };
+            active: edgeEl?.classList.contains('generate-edge-active') || undefined,
+            inactive: edgeEl?.classList.contains('generate-edge-inactive') || undefined };
         });
         const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
           const element = region as HTMLElement;
@@ -355,9 +368,20 @@ export class BddWorld {
           return false;
         }
         const edges = rf.getEdges();
+        if (edges.length === 0) return true;
+
+        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+        const edgeMap = new Map<string, Element>();
+        for (const el of edgeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) edgeMap.set(id, el);
+        }
+
         return edges.every((edge: any) => {
-          const el = document.querySelector(`.react-flow__edge[data-id="${edge.id}"] path.svsch-edge`);
-          return !!el?.getAttribute('d');
+          const el = edgeMap.get(edge.id);
+          if (!el) return false;
+          const pathEl = el.querySelector('path.svsch-edge, path.react-flow__edge-path');
+          return !!pathEl?.getAttribute('d');
         });
       }, moduleName).catch(() => false);
     }, { timeout }).toBe(true);
