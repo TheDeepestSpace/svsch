@@ -99,7 +99,7 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
     }
     const edges = rf.getEdges().map((e: any) => {
       const edgeElement = edgeMap.get(e.id);
-      const pathEl = edgeElement?.querySelector('path.svsch-edge, path.react-flow__edge-path');
+      const pathEl = edgeElement?.querySelector('path[d], path');
       const pathData = pathEl?.getAttribute('d') ?? '';
       
       return {
