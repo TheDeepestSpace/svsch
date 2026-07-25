@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "id": "cut-label:port:top:x:port:x:sink:edge:port:top:x:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 240,
+        "y": 120
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:x:port:x:source",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": -48
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:x",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:x",
+            "name": "x",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:port:top:x:port:x:sink:edge:port:top:x:port:top:y:y",
+      "source": "cut-label:port:top:x:port:x:sink:edge:port:top:x:port:top:y:y",
+      "target": "port:top:y",
+      "sourceHandle": "cut",
+      "targetHandle": "port:y",
+      "path": "M 336 144 L 336 144 L 360 144 L 360 144"
+    },
+    {
+      "id": "cut-stub:port:top:x:port:x:source",
+      "source": "port:top:x",
+      "target": "cut-label:port:top:x:port:x:source",
+      "sourceHandle": "port:x",
+      "targetHandle": "cut",
+      "path": "M 144 48 L 144 48 L 216 48 L 216 -24 L 96 -24 L 96 -24"
+    }
+  ]
+}

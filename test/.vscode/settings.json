@@ -3,5 +3,8 @@
   "git.openRepositoryInParentFolders": "never",
   "extensions.ignoreRecommendations": true,
   "workbench.tips.enabled": false,
-  "workbench.startupEditor": "none"
+  "workbench.startupEditor": "none",
+  "files.exclude": {
+    "**/.svsch": true
+  }
 }

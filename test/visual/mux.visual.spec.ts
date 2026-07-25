@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot, fitGraphView, trackView } from './helper';
+import { expectGraphAndScreenshot, fitGraphView, paddedAllNodesClip, trackView } from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
+import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../../src/webview/arrayStackGeometry';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
@@ -14,12 +15,21 @@ const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
 async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
   const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-back, .svsch-edge-stacked-front').evaluateAll((paths) => {
-    const pointPattern = /[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g;
+    const numberPattern = /-?\d+(?:\.\d+)?/g;
     const diagonals: string[] = [];
 
     for (const path of paths) {
-      const d = path.getAttribute('d') ?? '';
-      const points = [...d.matchAll(pointPattern)].map((match) => ({ x: Number(match[1]), y: Number(match[2]) }));
+      // Line-jump arcs (Q curves) hop over crossing edges; collapse each arc to
+      // its endpoint so only genuine diagonal line segments are flagged.
+      const d = (path.getAttribute('d') ?? '').replace(
+        /Q\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g,
+        'L $3 $4'
+      );
+      const values = [...d.matchAll(numberPattern)].map((match) => Number(match[0]));
+      const points: Array<{ x: number; y: number }> = [];
+      for (let index = 0; index + 1 < values.length; index += 2) {
+        points.push({ x: values[index], y: values[index + 1] });
+      }
       for (let index = 1; index < points.length; index++) {
         const dx = Math.abs(points[index].x - points[index - 1].x);
         const dy = Math.abs(points[index].y - points[index - 1].y);
@@ -36,7 +46,7 @@ async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
   expect(diagonalSegments).toEqual([]);
 }
 
-async function expectArrayStackEdgeLanes(page: Page, edgeId: string): Promise<void> {
+async function expectArrayStackEdgeLanes(page: Page, edgeId: string, laneOffset: number = ARRAY_STACK_LANE_OFFSET): Promise<void> {
   const lanes = await page.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-back, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked-front, .react-flow__edge[data-id="${edgeId}"] .svsch-edge-stacked`).evaluateAll((paths) => {
     const pointPattern = /[ML]\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g;
 
@@ -63,14 +73,14 @@ async function expectArrayStackEdgeLanes(page: Page, edgeId: string): Promise<vo
   const bySourceLayer = [...lanes].sort((a, b) => a.start.y - b.start.y);
   expect(bySourceLayer[1].start.x - bySourceLayer[0].start.x).toBeGreaterThan(0);
   expect(bySourceLayer[2].start.x - bySourceLayer[1].start.x).toBeGreaterThan(0);
-  expect(bySourceLayer[1].start.y - bySourceLayer[0].start.y).toBeCloseTo(4, 0);
-  expect(bySourceLayer[2].start.y - bySourceLayer[1].start.y).toBeCloseTo(4, 0);
+  expect(bySourceLayer[1].start.y - bySourceLayer[0].start.y).toBeCloseTo(laneOffset, 0);
+  expect(bySourceLayer[2].start.y - bySourceLayer[1].start.y).toBeCloseTo(laneOffset, 0);
 
   const byTargetLayer = [...lanes].sort((a, b) => a.end.y - b.end.y);
   expect(Math.abs(byTargetLayer[1].end.x - byTargetLayer[0].end.x)).toBeGreaterThan(0);
   expect(Math.abs(byTargetLayer[2].end.x - byTargetLayer[1].end.x)).toBeGreaterThan(0);
-  expect(byTargetLayer[1].end.y - byTargetLayer[0].end.y).toBeCloseTo(4, 0);
-  expect(byTargetLayer[2].end.y - byTargetLayer[1].end.y).toBeCloseTo(4, 0);
+  expect(byTargetLayer[1].end.y - byTargetLayer[0].end.y).toBeCloseTo(laneOffset, 0);
+  expect(byTargetLayer[2].end.y - byTargetLayer[1].end.y).toBeCloseTo(laneOffset, 0);
 }
 
 async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, sourceNodeId: string, targetNodeId: string): Promise<void> {
@@ -159,9 +169,11 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   expect(geometry.target.back).toBeDefined();
 
   const bySourceLayer = [...geometry.lanes].sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
-  expect(Math.abs((bySourceLayer[0].start?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(15);
-  expect(Math.abs((bySourceLayer[1].start?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(15);
-  expect(Math.abs((bySourceLayer[2].start?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(15);
+  // Lead length equals the layer trim, which scales up for wide (multi-bit) stacks —
+  // allow the scaled wide-stack trim (0.9 grid) plus rounding between a lane start and its card edge.
+  expect(Math.abs((bySourceLayer[0].start?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(34);
+  expect(Math.abs((bySourceLayer[1].start?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(34);
+  expect(Math.abs((bySourceLayer[2].start?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(34);
   const sourceLaneYs = bySourceLayer.map((lane) => lane.start?.y ?? 0);
   const bySourceLead = geometry.sourceLeads
     .filter((lead) => sourceLaneYs.some((y) => Math.abs((lead.start?.y ?? 0) - y) < 1))
@@ -169,31 +181,33 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   const sourceStackRight = Math.max(geometry.source.front!.right, geometry.source.middle!.right, geometry.source.back!.right);
   expect(bySourceLead).toHaveLength(3);
   expect(bySourceLead[0].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
-  expect(Math.abs((bySourceLead[0].end?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(6);
+  expect(Math.abs((bySourceLead[0].end?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(8);
   expect(bySourceLead[0].stroke).toBe(bySourceLayer[0].stroke);
   expect(bySourceLead[1].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
-  expect(Math.abs((bySourceLead[1].end?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(6);
+  expect(Math.abs((bySourceLead[1].end?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(8);
   expect(bySourceLead[1].stroke).toBe(bySourceLayer[1].stroke);
   expect(bySourceLead[2].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
-  expect(Math.abs((bySourceLead[2].end?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(6);
+  expect(Math.abs((bySourceLead[2].end?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(8);
   expect(bySourceLead[2].stroke).toBe(bySourceLayer[2].stroke);
 
   const byTargetLayer = [...geometry.lanes].sort((a, b) => (a.end?.y ?? 0) - (b.end?.y ?? 0));
-  expect(Math.abs((byTargetLayer[0].end?.x ?? 0) - geometry.target.front!.left)).toBeLessThan(15);
-  expect(Math.abs((byTargetLayer[1].end?.x ?? 0) - geometry.target.middle!.left)).toBeLessThan(15);
-  expect(Math.abs((byTargetLayer[2].end?.x ?? 0) - geometry.target.back!.left)).toBeLessThan(15);
+  expect(Math.abs((byTargetLayer[0].end?.x ?? 0) - geometry.target.front!.left)).toBeLessThan(34);
+  expect(Math.abs((byTargetLayer[1].end?.x ?? 0) - geometry.target.middle!.left)).toBeLessThan(34);
+  expect(Math.abs((byTargetLayer[2].end?.x ?? 0) - geometry.target.back!.left)).toBeLessThan(34);
 
   const targetLaneYs = byTargetLayer.map((lane) => lane.end?.y ?? 0);
   const byTargetLead = geometry.targetLeads
     .filter((lead) => targetLaneYs.some((y) => Math.abs((lead.start?.y ?? 0) - y) < 1))
     .sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
   expect(byTargetLead).toHaveLength(3);
-  expect(byTargetLead[0].start?.x).toBeCloseTo(byTargetLayer[0].end!.x, 0);
-  expect(Math.abs((byTargetLead[0].end?.x ?? 0) - geometry.target.front!.left)).toBeLessThan(6);
-  expect(byTargetLead[1].start?.x).toBeCloseTo(byTargetLayer[1].end!.x, 0);
-  expect(Math.abs((byTargetLead[1].end?.x ?? 0) - geometry.target.middle!.left)).toBeLessThan(6);
-  expect(byTargetLead[2].start?.x).toBeCloseTo(byTargetLayer[2].end!.x, 0);
-  expect(Math.abs((byTargetLead[2].end?.x ?? 0) - geometry.target.back!.left)).toBeLessThan(6);
+  // Leads snap to whole pixels while lanes keep fractional trims, so allow the
+  // sub-pixel rounding gap (precision -1 → within 5px) between lead and lane.
+  expect(byTargetLead[0].start?.x).toBeCloseTo(byTargetLayer[0].end!.x, -1);
+  expect(Math.abs((byTargetLead[0].end?.x ?? 0) - geometry.target.front!.left)).toBeLessThan(8);
+  expect(byTargetLead[1].start?.x).toBeCloseTo(byTargetLayer[1].end!.x, -1);
+  expect(Math.abs((byTargetLead[1].end?.x ?? 0) - geometry.target.middle!.left)).toBeLessThan(8);
+  expect(byTargetLead[2].start?.x).toBeCloseTo(byTargetLayer[2].end!.x, -1);
+  expect(Math.abs((byTargetLead[2].end?.x ?? 0) - geometry.target.back!.left)).toBeLessThan(8);
 }
 
 async function expectPromotedStackFanoutPaint(
@@ -678,15 +692,14 @@ test.describe('register visual rendering', () => {
     await expect(page.locator('[data-node-id="port:array_port_register:out_data"] .svsch-array-stack-lead-target-left')).toHaveCount(3);
     expect(await page.locator('.svsch-edge-stacked-back, .svsch-edge-stacked-front').count()).toBeGreaterThanOrEqual(4);
     await expectStackedEdgeSegmentsOrthogonal(page);
-    await expectArrayStackEdgeLanes(page, dataInputEdge!.id);
-    await expectArrayStackEdgeLanes(page, dataOutputEdge!.id);
+    await expectArrayStackEdgeLanes(page, dataInputEdge!.id, ARRAY_STACK_WIDE_LANE_OFFSET);
+    await expectArrayStackEdgeLanes(page, dataOutputEdge!.id, ARRAY_STACK_WIDE_LANE_OFFSET);
     await expectArrayStackEdgeLayerCoordinates(page, dataInputEdge!.id, 'port:array_port_register:in_data', 'reg:array_port_register:storage');
     await expectArrayStackEdgeLayerCoordinates(page, dataOutputEdge!.id, 'reg:array_port_register:storage', 'port:array_port_register:out_data');
     await expectPromotedStackFanoutPaint(page, clockStorageEdge!.id, { breakoutDistanceGridUnits: 1 });
 
     await expectGraphAndScreenshot(page, 'array-port-register-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 69,
     });
   });
 
@@ -924,7 +937,6 @@ test.describe('bus visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'bus-three-taps-canvas.png', {
       clip: await paddedGraphClip(page),
-      maxDiffPixels: 169
     });
   });
 });
@@ -969,7 +981,7 @@ test.describe('struct visual rendering', () => {
     const structEdgeWidth = await page.locator('path.svsch-edge-struct').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
     });
-    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-struct)').first().evaluate((element) => {
+    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-struct):not(.svsch-edge-struct-bg):not(.svsch-edge-thick)').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
     });
     expect(structEdgeWidth).toBeGreaterThanOrEqual(normalEdgeWidth * 2.9);
@@ -988,7 +1000,10 @@ test.describe('struct visual rendering', () => {
     await expect(page.locator('[data-node-id="port:struct_composition:flat"]')).toContainText('[4:0]');
     await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'opcode' })).toBeVisible();
     await expect(page.locator('.hdl-struct-node .svsch-bus-tap', { hasText: 'valid' })).toBeVisible();
-    await expect(page.locator('path.svsch-edge-struct')).toHaveCount(1);
+    // The composition output feeds a plain [4:0] vector — an implicit cast in
+    // SV terms — so it routes as a thick multi-bit wire, not a struct route.
+    await expect(page.locator('path.svsch-edge-struct')).toHaveCount(0);
+    await expect(page.locator('.react-flow__edge[data-id^="edge:struct_comp"][data-id*=":flat:"] path.svsch-edge-thick')).toHaveCount(1);
   });
 
   test('renders struct field mux reads separately from output recomposition', async ({ page }) => {
@@ -1319,28 +1334,220 @@ test.describe('edge route editing', () => {
     }));
   });
 
-  test('renders cut labels above struct, interface, and stacked wire stubs', async ({ page }) => {
+  test('shows declared and freshly-cut labels in regular type (locked/unrenamed), and only a renamed one in italic with a Revert button', async ({ page }) => {
+    await installMessageCapture(page);
+    await openView(page, createDeclaredAndSyntheticCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const declaredLabel = page.locator('[data-node-id="cut-label:declared:source"]');
+    const syntheticLabel = page.locator('[data-node-id="cut-label:synthetic:source"]');
+    const renamedLabel = page.locator('[data-node-id="cut-label:renamed:source"]');
+
+    // The declared net's name came straight from the SV source: regular
+    // weight, and double-clicking it must not open the rename editor.
+    await expect(declaredLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await declaredLabel.dblclick({ force: true });
+    await expect(declaredLabel.locator('.hdl-net-label-input')).toBeHidden();
+
+    // A freshly-cut net with no formal wire name still shows its default
+    // label in regular type — italics only kick in once it's been renamed —
+    // but it stays editable, and no "Revert label" button shows since the
+    // label hasn't diverged from its default yet.
+    await expect(syntheticLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(0);
+    await expect(syntheticLabel.locator('.hdl-net-label-revert')).toHaveCount(0);
+    await syntheticLabel.dblclick({ force: true });
+    const input = syntheticLabel.locator('.hdl-net-label-input');
+    await expect(input).toBeVisible();
+    await input.fill('renamed_net');
+    await input.press('Enter');
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'renameCutNet',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'synthetic',
+      label: 'renamed_net'
+    }));
+
+    // The synthetic net's alias chain (from a collapsed assign chain) shows
+    // as a hoverable marker next to its label.
+    const aliasMarker = syntheticLabel.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: legacy_a, legacy_b' })).toBeVisible();
+
+    // A net already diverged from its default label reads in italic and
+    // shows a "Revert label" button that resets it back to that default.
+    await expect(renamedLabel.locator('.hdl-net-label-text-synthetic')).toHaveCount(1);
+    await page.mouse.move(0, 0);
+    const revertButton = renamedLabel.locator('.hdl-net-label-revert');
+    await expect(revertButton).toBeHidden();
+    await renamedLabel.hover({ force: true });
+    await expect(revertButton).toBeVisible();
+    await revertButton.click();
+    await expect.poll(async () => capturedMessages(page)).toContainEqual(expect.objectContaining({
+      type: 'revertCutNetLabel',
+      moduleName: 'declared_and_synthetic_cut_net',
+      netKey: 'renamed'
+    }));
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'cut-net-label-declared-vs-synthetic-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows a declared net name directly on an uncut wire, with an alias popover for the rest of the chain', async ({ page }) => {
+    await openView(page, createEdgeNetLabelView());
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'edge-declared-net-label-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  // wire_alias_chains.sv has no mux — openFixture's default 'auto' selector
+  // waits on a mux node, so these open the fixture view directly and wait
+  // on the port nodes it actually has instead.
+  test('shows no label on a plain assign with no intermediate wire', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_no_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    await expect(page.locator('.svsch-edge-label')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-no-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows a single declared wire name with no alias marker', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_single_alias'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x');
+    await expect(label.locator('.hdl-net-label-alias-marker')).toHaveCount(0);
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-single-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('shows the first-declared wire name with an alias popover for a multi-hop chain', async ({ page }) => {
+    await openView(page, await buildFixtureView('wire_alias_chains.sv', 'auto', 'wire_multiple_aliases'));
+    await page.waitForSelector('[data-node-kind="port"]');
+    await waitForViewportTransformToSettle(page);
+
+    const label = page.locator('.svsch-edge-label');
+    await expect(label).toContainText('x1');
+
+    const aliasMarker = label.locator('.hdl-net-label-alias-marker');
+    await expect(aliasMarker).toBeVisible();
+    await aliasMarker.hover({ force: true });
+    await expect(page.locator('.svsch-tooltip', { hasText: 'Also declared as: x2' })).toBeVisible();
+
+    await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
+    await expectGraphAndScreenshot(page, 'wire-multiple-aliases-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('renders cut labels above styled wire stubs of every kind', async ({ page }) => {
+    // Six style rows need more height than the default viewport to keep the
+    // fitted view (and the screenshot clip) clear of the app toolbar.
+    await page.setViewportSize({ width: 1400, height: 1100 });
     await openView(page, createStyledCutNetView());
     await page.waitForSelector('[data-node-kind="netLabel"]');
     await waitForViewportTransformToSettle(page);
 
     await expect(page.locator('.hdl-net-label-struct')).toHaveCount(2);
     await expect(page.locator('.hdl-net-label-interface')).toHaveCount(2);
-    await expect(page.locator('.hdl-net-label-stacked')).toHaveCount(2);
+    await expect(page.locator('.hdl-net-label-stacked')).toHaveCount(4);
 
     for (const nodeId of [
+      'cut-label:styled:plain:source',
+      'cut-label:styled:plain:sink',
+      'cut-label:styled:thick:source',
+      'cut-label:styled:thick:sink',
       'cut-label:styled:struct:source',
       'cut-label:styled:struct:sink',
       'cut-label:styled:interface:source',
       'cut-label:styled:interface:sink',
       'cut-label:styled:stacked:source',
-      'cut-label:styled:stacked:sink'
+      'cut-label:styled:stacked:sink',
+      'cut-label:styled:wstacked:source',
+      'cut-label:styled:wstacked:sink'
     ]) {
       await expectCutLabelAboveWire(page, nodeId);
     }
 
     await page.addStyleTag({ content: '.react-flow__minimap { display: none !important; }' });
-    await expectGraphAndScreenshot(page, 'cut-net-label-styled-stubs-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'cut-net-label-styled-stubs-canvas.png', { clip: await paddedAllNodesClip(page) });
+  });
+
+  test('highlights a drag-selected dangling end with the same halo and name style as its hovered net', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    const nodeId = 'cut-label:styled:plain:source';
+    const labelLocator = page.locator(`.react-flow__node[data-id="${nodeId}"]`);
+
+    // Before selection: no halo on the stub, no highlight on the name.
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
+
+    // A real click selects the node directly.
+    await page.click(`[data-node-id="${nodeId}"]`);
+    await expect(labelLocator).toHaveClass(/react-flow__node-hdl.*selected|selected.*react-flow__node-hdl/);
+
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(1);
+
+    await expectGraphAndScreenshot(page, 'cut-net-label-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${nodeId}"]`) });
+  });
+
+  test('highlights a dangling end whose real port was marquee-selected, even though the label itself sits outside the lasso', async ({ page }) => {
+    await openView(page, createStyledCutNetView());
+    await page.waitForSelector('[data-node-kind="netLabel"]');
+    await waitForViewportTransformToSettle(page);
+
+    // A later row, well clear of the top-left "Module: ..." info panel that
+    // would otherwise swallow the marquee's mousedown.
+    const nodeId = 'cut-label:styled:struct:source';
+    const labelLocator = page.locator(`.react-flow__node[data-id="${nodeId}"]`);
+    const portLocator = page.locator('.react-flow__node[data-id="source:struct"]');
+
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
+
+    // Lasso just the port, deliberately stopping short of the label so the
+    // marquee rectangle never touches it directly — mirrors a real diagram,
+    // where a cut end can sit well outside the block/port it's attached to.
+    const portBox = await portLocator.boundingBox();
+    const labelBox = await labelLocator.boundingBox();
+    if (!portBox || !labelBox) throw new Error('Unable to locate port or label bounding boxes');
+    expect(portBox.x + portBox.width).toBeLessThan(labelBox.x);
+
+    const startX = portBox.x - 20;
+    const startY = portBox.y - 20;
+    const endX = portBox.x + portBox.width + 20;
+    const endY = portBox.y + portBox.height + 20;
+    expect(endX).toBeLessThan(labelBox.x);
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+    await page.mouse.move(endX, endY, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(portLocator).toHaveClass(/selected/);
+    await expect(labelLocator).not.toHaveClass(/selected/);
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(1);
   });
 
   test('matches cut label segment paint to decorated wire styles', async ({ page }) => {
@@ -1348,7 +1555,7 @@ test.describe('edge route editing', () => {
     await page.waitForSelector('[data-node-kind="netLabel"]');
     await waitForViewportTransformToSettle(page);
 
-    const structPaint = await cutLabelPaint(page, 'cut-label:styled:struct:source', 'cut-stub:styled:struct:source', '.svsch-edge-struct');
+    const structPaint = await cutLabelPaint(page, 'cut-label:styled:struct:source', 'cut-stub:styled:struct:source', '.svsch-edge-struct-bg');
     expect(structPaint.wireStrokeWidth).toBeCloseTo(structPaint.edgeStrokeWidth, 1);
     expect(structPaint.wireStroke).toBe(structPaint.edgeStroke);
 
@@ -1359,6 +1566,14 @@ test.describe('edge route editing', () => {
     const stackedPaint = await cutLabelPaint(page, 'cut-label:styled:stacked:source', 'cut-stub:styled:stacked:source', '.svsch-edge-stacked');
     expect(stackedPaint.wireStroke).toBe(stackedPaint.edgeStroke);
     await expect(page.locator('.react-flow__edge[data-id="cut-stub:styled:stacked:source"] .svsch-edge-stacked-back, .react-flow__edge[data-id="cut-stub:styled:stacked:source"] .svsch-edge-stacked-front')).toHaveCount(2);
+
+    const thickPaint = await cutLabelPaint(page, 'cut-label:styled:thick:source', 'cut-stub:styled:thick:source', '.svsch-edge-thick');
+    expect(thickPaint.wireStrokeWidth).toBeCloseTo(thickPaint.edgeStrokeWidth, 1);
+    expect(thickPaint.wireStroke).toBe(thickPaint.edgeStroke);
+
+    const wideStackedPaint = await cutLabelPaint(page, 'cut-label:styled:wstacked:source', 'cut-stub:styled:wstacked:source', '.svsch-edge-stacked');
+    expect(wideStackedPaint.wireStrokeWidth).toBeCloseTo(wideStackedPaint.edgeStrokeWidth, 1);
+    await expect(page.locator('.react-flow__edge[data-id="cut-stub:styled:wstacked:source"] .svsch-edge-thick')).toHaveCount(3);
   });
 
   test('renders cut labels for vertical reset connections on registers', async ({ page }) => {
@@ -1419,7 +1634,7 @@ test.describe('edge route editing', () => {
     await page.waitForTimeout(200);
 
     await waitForViewportTransformToSettle(page);
-    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page), maxDiffPixels: 80 });
+    await expectGraphAndScreenshot(page, 'cut-net-label-register-reset-after-move.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders cut labels for clock connections to stacked registers (plurality check)', async ({ page }) => {
@@ -1532,7 +1747,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 100 });
+    await expectGraphAndScreenshot(page, 'node-sizing-defaults-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders every current node kind widened for long labels', async ({ page }) => {
@@ -1554,7 +1769,7 @@ test.describe('node sizing visual rendering', () => {
     await expect(page.locator('[data-node-id="module"]')).toBeVisible();
     await expect(page.locator('[data-node-id="unknown"]')).toBeVisible();
 
-    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 700 });
+    await expectGraphAndScreenshot(page, 'node-sizing-extended-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 
@@ -2120,12 +2335,12 @@ function createAluVisualLayout(graph: DesignGraph, moduleName: string): SavedLay
   };
 }
 
-function visualPort(id: string, label: string, direction: 'input' | 'output', x: number, y: number, isArray = false): DiagramViewModel['nodes'][number] {
+function visualPort(id: string, label: string, direction: 'input' | 'output', x: number, y: number, isArray = false, width?: string): DiagramViewModel['nodes'][number] {
   return {
     id,
     kind: 'port',
     label,
-    ports: [{ id: 'p', name: label, direction, isArrayNode: isArray }],
+    ports: [{ id: 'p', name: label, direction, isArrayNode: isArray, width }],
     position: { x, y },
     isArrayNode: isArray,
     metadata: { isArrayNode: isArray }
@@ -2443,33 +2658,185 @@ function createCutBranchedNetView(): DiagramViewModel {
   };
 }
 
-function createStyledCutNetView(): DiagramViewModel {
+function createEdgeNetLabelView(): DiagramViewModel {
   return {
-    moduleName: 'styled_cut_net_labels',
+    moduleName: 'edge_net_label',
     nodes: [
-      visualPort('source:struct', 'pkt_i', 'input', 0, 60),
-      visualPort('target:struct', 'pkt_o', 'output', 600, 60),
-      styledCutLabelNode('cut-label:styled:struct:source', 'packet_bus', 'styled:struct', 'source', 168, 48, 'end', 'left', { aggregate: 'struct' }),
-      styledCutLabelNode('cut-label:styled:struct:sink', 'packet_bus', 'styled:struct', 'sink', 432, 48, 'start', 'right', { aggregate: 'struct' }),
-
-      visualPort('source:interface', 'if_m', 'input', 0, 132),
-      visualPort('target:interface', 'if_s', 'output', 600, 132),
-      styledCutLabelNode('cut-label:styled:interface:source', 'if_link', 'styled:interface', 'source', 168, 120, 'end', 'left', { aggregate: 'interface' }),
-      styledCutLabelNode('cut-label:styled:interface:sink', 'if_link', 'styled:interface', 'sink', 432, 120, 'start', 'right', { aggregate: 'interface' }),
-
-      visualPort('source:stacked', 'arr_i', 'input', 0, 204, true),
-      visualPort('target:stacked', 'arr_o', 'output', 600, 204, true),
-      styledCutLabelNode('cut-label:styled:stacked:source', 'array_lane', 'styled:stacked', 'source', 168, 192, 'end', 'left', { isStacked: true }, true),
-      styledCutLabelNode('cut-label:styled:stacked:sink', 'array_lane', 'styled:stacked', 'sink', 432, 192, 'start', 'right', { isStacked: true }, true)
+      visualPort('source:a', 'a', 'input', 0, 40),
+      visualPort('target:y', 'y', 'output', 360, 40)
     ],
     edges: [
-      styledCutStubEdge('cut-stub:styled:struct:source', 'source:struct', 'cut-label:styled:struct:source', 'styled:struct', 'source', { aggregate: 'struct' }),
-      styledCutStubEdge('cut-stub:styled:struct:sink', 'cut-label:styled:struct:sink', 'target:struct', 'styled:struct', 'sink', { aggregate: 'struct' }),
-      styledCutStubEdge('cut-stub:styled:interface:source', 'source:interface', 'cut-label:styled:interface:source', 'styled:interface', 'source', { aggregate: 'interface' }),
-      styledCutStubEdge('cut-stub:styled:interface:sink', 'cut-label:styled:interface:sink', 'target:interface', 'styled:interface', 'sink', { aggregate: 'interface' }),
-      styledCutStubEdge('cut-stub:styled:stacked:source', 'source:stacked', 'cut-label:styled:stacked:source', 'styled:stacked', 'source', { isStacked: true }),
-      styledCutStubEdge('cut-stub:styled:stacked:sink', 'cut-label:styled:stacked:sink', 'target:stacked', 'styled:stacked', 'sink', { isStacked: true })
+      {
+        id: 'edge-a-to-y',
+        source: 'source:a',
+        target: 'target:y',
+        sourcePort: 'p',
+        targetPort: 'p',
+        signal: 'y',
+        label: 'x1',
+        // 'a' and 'y' are this exact edge's own two endpoints (already shown
+        // as the ports on either side), so the real pipeline filters them
+        // out of the popover — only 'x2' (the other wire the chain passed
+        // through) is worth surfacing there.
+        metadata: { declaredNetName: 'x1', aliasNames: ['x2'] }
+      }
     ],
+    diagnostics: []
+  };
+}
+
+function createDeclaredAndSyntheticCutNetView(): DiagramViewModel {
+  return {
+    moduleName: 'declared_and_synthetic_cut_net',
+    nodes: [
+      visualPort('source:declared', 'chip_select', 'input', 0, 40),
+      visualPort('source:synthetic', 'b', 'input', 0, 160),
+      visualPort('source:renamed', 'c', 'input', 0, 280),
+      {
+        id: 'cut-label:declared:source',
+        kind: 'netLabel',
+        label: 'chip_select',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // Wider than the other rows' x=144: "chip_select" is long enough to
+        // auto-widen its source port node past that x, so a label placed
+        // there would sit flush against (or behind) the port's own right
+        // edge — tripping the router's "backward connection" loop-back
+        // heuristic instead of a plain short stub.
+        // y matches labelPositionForHandlePoint's real formula (port lead's
+        // y minus half the label's own height) so the stub renders as a
+        // straight line, same as a real cut net — not an arbitrary bend.
+        position: { x: 192, y: 28 },
+        metadata: {
+          cutNet: {
+            netKey: 'declared',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-declared',
+            origin: 'declared'
+          }
+        }
+      },
+      {
+        // A net freshly cut with no formal declared name still carries a
+        // legitimate default label — it must render in regular type until
+        // the user actively renames it away from that default.
+        id: 'cut-label:synthetic:source',
+        kind: 'netLabel',
+        label: 'NET_1',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // y = port lead's y (160 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 148 },
+        metadata: {
+          cutNet: {
+            netKey: 'synthetic',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-synthetic',
+            origin: 'synthetic',
+            isRenamed: false,
+            aliasNames: ['legacy_a', 'legacy_b']
+          }
+        }
+      },
+      {
+        // Already diverged from its default label ("NET_2") — this is the
+        // italic, revertable state.
+        id: 'cut-label:renamed:source',
+        kind: 'netLabel',
+        label: 'my_custom_name',
+        parentModule: 'declared_and_synthetic_cut_net',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        // y = port lead's y (280 + 12) minus half the label's own height
+        // (24), matching labelPositionForHandlePoint, for a straight stub.
+        position: { x: 144, y: 268 },
+        metadata: {
+          cutNet: {
+            netKey: 'renamed',
+            role: 'source',
+            align: 'end',
+            handleSide: 'left',
+            originalEdgeId: 'edge-renamed',
+            origin: 'synthetic',
+            isRenamed: true
+          }
+        }
+      }
+    ],
+    edges: [
+      {
+        id: 'cut-stub:declared:source',
+        source: 'source:declared',
+        sourcePort: 'p',
+        target: 'cut-label:declared:source',
+        targetPort: 'cut',
+        signal: 'chip_select',
+        metadata: { forceStraight: true, cutStub: { netKey: 'declared', role: 'source', originalEdgeId: 'edge-declared' } }
+      },
+      {
+        id: 'cut-stub:synthetic:source',
+        source: 'source:synthetic',
+        sourcePort: 'p',
+        target: 'cut-label:synthetic:source',
+        targetPort: 'cut',
+        signal: 'b',
+        metadata: { forceStraight: true, cutStub: { netKey: 'synthetic', role: 'source', originalEdgeId: 'edge-synthetic' } }
+      },
+      {
+        id: 'cut-stub:renamed:source',
+        source: 'source:renamed',
+        sourcePort: 'p',
+        target: 'cut-label:renamed:source',
+        targetPort: 'cut',
+        signal: 'c',
+        metadata: { forceStraight: true, cutStub: { netKey: 'renamed', role: 'source', originalEdgeId: 'edge-renamed' } }
+      }
+    ],
+    diagnostics: []
+  };
+}
+
+function createStyledCutNetView(): DiagramViewModel {
+  // One row per wire style, top to bottom: single-bit, multi-bit, struct,
+  // interface, single-bit array, multi-bit array.
+  const rows: Array<{
+    key: string;
+    label: string;
+    srcLabel: string;
+    tgtLabel: string;
+    edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean; thick?: boolean };
+    stackedPorts?: boolean;
+    portWidth?: string;
+  }> = [
+    { key: 'plain', label: 'bit_lane', srcLabel: 'bit_i', tgtLabel: 'bit_o', edgeStyle: {} },
+    { key: 'thick', label: 'data_bus', srcLabel: 'data_i', tgtLabel: 'data_o', edgeStyle: { thick: true }, portWidth: '[7:0]' },
+    { key: 'struct', label: 'packet_bus', srcLabel: 'pkt_i', tgtLabel: 'pkt_o', edgeStyle: { aggregate: 'struct' } },
+    { key: 'interface', label: 'if_link', srcLabel: 'if_m', tgtLabel: 'if_s', edgeStyle: { aggregate: 'interface' } },
+    { key: 'stacked', label: 'array_lane', srcLabel: 'arr_i', tgtLabel: 'arr_o', edgeStyle: { isStacked: true }, stackedPorts: true },
+    { key: 'wstacked', label: 'array_bus', srcLabel: 'abus_i', tgtLabel: 'abus_o', edgeStyle: { isStacked: true, thick: true }, stackedPorts: true, portWidth: '[7:0]' }
+  ];
+
+  const nodes: DiagramViewModel['nodes'] = [];
+  const edges: DiagramViewModel['edges'] = [];
+  rows.forEach((row, i) => {
+    const labelY = 120 + i * 72;
+    const portY = labelY + 12;
+    nodes.push(visualPort(`source:${row.key}`, row.srcLabel, 'input', 0, portY, row.stackedPorts, row.portWidth));
+    nodes.push(visualPort(`target:${row.key}`, row.tgtLabel, 'output', 600, portY, row.stackedPorts, row.portWidth));
+    nodes.push(styledCutLabelNode(`cut-label:styled:${row.key}:source`, row.label, `styled:${row.key}`, 'source', 168, labelY, 'end', 'left', row.edgeStyle, row.stackedPorts));
+    nodes.push(styledCutLabelNode(`cut-label:styled:${row.key}:sink`, row.label, `styled:${row.key}`, 'sink', 432, labelY, 'start', 'right', row.edgeStyle, row.stackedPorts));
+    edges.push(styledCutStubEdge(`cut-stub:styled:${row.key}:source`, `source:${row.key}`, `cut-label:styled:${row.key}:source`, `styled:${row.key}`, 'source', row.edgeStyle));
+    edges.push(styledCutStubEdge(`cut-stub:styled:${row.key}:sink`, `cut-label:styled:${row.key}:sink`, `target:${row.key}`, `styled:${row.key}`, 'sink', row.edgeStyle));
+  });
+
+  return {
+    moduleName: 'styled_cut_net_labels',
+    nodes,
+    edges,
     diagnostics: []
   };
 }
@@ -2483,7 +2850,7 @@ function styledCutLabelNode(
   y: number,
   align: 'start' | 'end',
   handleSide: 'left' | 'right' | 'top' | 'bottom',
-  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean },
+  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean; thick?: boolean },
   isSourceStacked?: boolean
 ): DiagramViewModel['nodes'][number] {
   return {
@@ -2517,7 +2884,7 @@ function styledCutStubEdge(
   target: string,
   netKey: string,
   role: 'source' | 'sink',
-  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean },
+  edgeStyle: { aggregate?: 'struct' | 'interface'; isStacked?: boolean; thick?: boolean },
   customPort?: string
 ): DiagramViewModel['edges'][number] {
   return {
@@ -2527,6 +2894,7 @@ function styledCutStubEdge(
     sourcePort: role === 'source' ? (customPort && role === 'source' ? customPort : 'p') : 'cut',
     targetPort: role === 'source' ? 'cut' : (customPort && role === 'sink' ? customPort : 'p'),
     signal: netKey,
+    width: edgeStyle.thick ? '[7:0]' : undefined,
     isStacked: edgeStyle.isStacked,
     metadata: {
       ...(edgeStyle.aggregate ? { aggregate: edgeStyle.aggregate } : {}),

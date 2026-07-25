@@ -368,7 +368,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_BUSY",
       "targetHandle": "in:BUSY",
-      "path": "M 624 360 L 648 360 L 744 360 L 744 343 Q 751 336 744 329 L 744 319 Q 751 312 744 305 L 744 288 L 816 288 L 840 288"
+      "path": "M 624 360 L 648 360 L 744 360 L 744 345 Q 753 336 744 327 L 744 321 Q 753 312 744 303 L 744 288 L 816 288 L 840 288"
     },
     {
       "id": "edge:literal:top:next_r_IDLE:START:mux:top:next_r:r:next_r_if_true_n0:next_r_IDLE",
@@ -400,7 +400,7 @@
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
       "sourceHandle": "out",
       "targetHandle": "in:true",
-      "path": "M 1032 288 L 1056 288 L 1152 288 L 1152 151 Q 1159 144 1152 137 L 1152 120 L 1224 120 L 1248 120"
+      "path": "M 1032 288 L 1056 288 L 1152 288 L 1152 153 Q 1161 144 1152 135 L 1152 120 L 1224 120 L 1248 120"
     },
     {
       "id": "edge:port:top:clk:reg:top:r:clk",
@@ -424,7 +424,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 240 240 L 264 240 L 312 240 L 312 281 Q 319 288 312 295 L 312 336 L 384 336 L 384 312 L 449 312 Q 456 305 463 312 L 552 312 L 552 264"
+      "path": "M 240 240 L 264 240 L 312 240 L 312 281 Q 319 288 312 295 L 312 336 L 384 336 L 384 312 L 447 312 Q 456 303 465 312 L 552 312 L 552 264"
     },
     {
       "id": "edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
@@ -432,7 +432,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "q",
       "targetHandle": "sel",
-      "path": "M 624 192 L 648 192 L 713 192 Q 720 185 727 192 L 737 192 Q 744 185 751 192 L 816 192 L 816 168 L 936 168 L 936 216"
+      "path": "M 624 192 L 648 192 L 711 192 Q 720 183 729 192 L 735 192 Q 744 183 753 192 L 816 192 L 816 168 L 936 168 L 936 216"
     },
     {
       "id": "edge:reg:top:r:port:top:state:state",
@@ -440,7 +440,7 @@
       "target": "port:top:state",
       "sourceHandle": "q",
       "targetHandle": "port:state",
-      "path": "M 624 192 L 648 192 L 713 192 Q 720 185 727 192 L 737 192 Q 744 185 751 192 L 816 192 L 816 144 L 840 144"
+      "path": "M 624 192 L 648 192 L 711 192 Q 720 183 729 192 L 735 192 Q 744 183 753 192 L 816 192 L 816 144 L 840 144"
     }
   ]
 }

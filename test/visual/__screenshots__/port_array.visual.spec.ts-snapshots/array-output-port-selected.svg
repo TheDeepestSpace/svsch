@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="204" viewBox="0 0 1056 204" class="svsch-diagram" role="img" aria-label="array_port_register diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="1056" height="228" viewBox="0 0 1056 228" class="svsch-diagram" role="img" aria-label="array_port_register diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -7,10 +7,14 @@
     <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
   </linearGradient>
   <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-    <line class="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
   </pattern>
 </defs>
 <style>
+/*<![CDATA[*/
 /* this gets exported as style.css and can be used for the default theming */
 /* these are the necessary styles for React/Svelte Flow, they get used by base.css and style.css */
 .react-flow {
@@ -993,6 +997,12 @@ text {
   z-index: 1000;
 }
 
+/* Plain informational popovers (e.g. "Also declared as: ...") aren't warnings
+   or errors, so they don't borrow the error-highlight border. */
+.svsch-tooltip-info {
+  border-color: var(--vscode-panel-border);
+}
+
 .generate-region-resize {
   background: transparent;
   border: 0;
@@ -1466,6 +1476,12 @@ text {
   overflow: visible;
 }
 
+/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
+   content shift toward the front card scales with it. */
+.hdl-node-array-wide {
+  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
+}
+
 .hdl-node-array-layer {
   border-radius: inherit;
   pointer-events: none;
@@ -1476,20 +1492,19 @@ text {
   box-shadow: inset 0 0 0 1px var(--svsch-array-border-color, var(--vscode-panel-border));
 }
 
+/* Layer offsets come from the SVG transform attribute (see arrayStackGeometry);
+   CSS must not set transform here or it would override the per-node wide spread. */
 .hdl-node-array-back {
-  transform: translate(4px, 4px);
   z-index: 0;
   opacity: 0.5;
 }
 
 .hdl-node-array-middle {
-  transform: translate(0, 0);
   z-index: 1;
   opacity: 0.75;
 }
 
 .hdl-node-array-front {
-  transform: translate(-4px, -4px);
   z-index: 2;
 }
 
@@ -1595,6 +1610,12 @@ text {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 1.5;
+}
+
+/* Matches .svsch-edge-thick — the lead is a stub of the same wire, so it
+   must carry the same stroke weight where the wire itself renders thick. */
+.svsch-array-stack-lead-thick {
+  stroke-width: 4.5;
 }
 
 .svsch-array-stack-lead-back {
@@ -2223,8 +2244,8 @@ text {
   stroke-width: 1.5;
 }
 
+/* Offsets come from the SVG transform attribute — do not set transform here. */
 .port-skin-array-back {
-  transform: translate(4px, 4px);
   opacity: 0.5;
 }
 
@@ -2233,7 +2254,6 @@ text {
 }
 
 .port-skin-array-front {
-  transform: translate(-4px, -4px);
 }
 
 .port-skin-selection {
@@ -2434,6 +2454,7 @@ text {
   padding: 0 3px;
   position: absolute;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -2444,6 +2465,21 @@ text {
 .hdl-net-label-text-hovered {
   box-shadow: 0 0 0 1.5px var(--svsch-selection-color);
   border-radius: 2px;
+}
+
+/* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
+   that matches the net's actual declared SV name stays regular/upright. */
+.hdl-net-label-text-synthetic {
+  font-style: italic;
+}
+
+.hdl-net-label-alias-marker {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
+  cursor: default;
+  font-style: normal;
+  margin-left: 1px;
+  pointer-events: auto;
+  user-select: none;
 }
 
 .hdl-net-label-align-start .hdl-net-label-text {
@@ -2528,20 +2564,13 @@ text {
   left: 50%;
 }
 
-.hdl-net-label-tie {
+/* One seamless pill (matching the wire's Cut/Reroute control block), not
+   separate buttons with a gap between them — Revert (when shown) and Tie
+   sit flush against each other, sharing borders. */
+.hdl-net-label-actions {
   align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 9px;
-  height: 16px;
-  justify-content: center;
-  line-height: 1;
+  display: flex;
   opacity: 0;
-  padding: 0 4px;
   pointer-events: none;
   position: absolute;
   right: 0;
@@ -2552,16 +2581,44 @@ text {
   white-space: nowrap;
 }
 
-.hdl-net-label:hover .hdl-net-label-tie,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-tie,
-.hdl-net-label:focus-within .hdl-net-label-tie,
-.hdl-net-label:focus .hdl-net-label-tie {
+.hdl-net-label:hover .hdl-net-label-actions,
+.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
+.hdl-net-label:focus-within .hdl-net-label-actions,
+.hdl-net-label:focus .hdl-net-label-actions {
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
 }
 
-.hdl-net-label-tie:hover {
+.hdl-net-label-tie,
+.hdl-net-label-revert {
+  align-items: center;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+  border-right: none;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 9px;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.hdl-net-label-actions button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.hdl-net-label-actions button:last-child {
+  border-radius: 0 3px 3px 0;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.hdl-net-label-tie:hover,
+.hdl-net-label-revert:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -2703,6 +2760,15 @@ text {
   opacity: 0.75;
 }
 
+/* Descendant form: the webview nests the label's foreignObject inside the
+   edge's own generate-edge-inactive-classed group element. Same-element
+   form: the CLI static renderer puts both classes directly on the label's
+   own text element. */
+.generate-edge-inactive .svsch-edge-label,
+.generate-edge-inactive.svsch-edge-label {
+  opacity: 0.75;
+}
+
 .generate-edge-active .svsch-edge,
 .generate-edge-active.svsch-edge {
   opacity: 1;
@@ -2748,12 +2814,22 @@ text {
   stop-color: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
 }
 
-.svsch-edge-struct {
+.svsch-edge-thick {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-struct {
+.svsch-edge-bridge-thick {
   stroke-width: 13.5;
+}
+
+.svsch-edge-struct {
+  stroke: url("#svsch-struct-stripes");
+  stroke-linecap: butt;
+  stroke-width: 8;
+}
+
+.svsch-edge-bridge-struct {
+  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2762,13 +2838,21 @@ text {
   stroke-width: 8;
 }
 
-.svsch-edge-interface-bg {
+.svsch-edge-interface-bg,
+.svsch-edge-struct-bg {
   stroke: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
   stroke-width: 8;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
 .svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 70%, var(--vscode-charts-blue));
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
+/* Stripe width stays aligned with .svsch-interface-stripe. */
+.svsch-struct-stripe {
+  stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
 }
 
@@ -2798,16 +2882,6 @@ text {
   stroke-width: 12;
 }
 
-.svsch-edge-group-selected {
-  fill: none;
-  pointer-events: none;
-  stroke: var(--vscode-focusBorder);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 8;
-  opacity: 0.4;
-}
-
 .svsch-edge-overlap-hint {
   fill: none;
   pointer-events: none;
@@ -2829,6 +2903,11 @@ text {
   stroke-width: 2.5;
 }
 
+.svsch-edge-junction-struct {
+  fill: var(--vscode-editor-foreground);
+  stroke-width: 2.5;
+}
+
 .svsch-edge-junction-stacked-dot {
   fill: var(--vscode-editor-foreground);
   stroke-width: 0.5;
@@ -2837,7 +2916,7 @@ text {
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
+  font-size: 11px;
   overflow: visible;
   pointer-events: none;
 }
@@ -2873,11 +2952,62 @@ text {
   border-right: none;
 }
 
+.svsch-edge-connection-controls-inner .svsch-edge-reroute-control-solo {
+  border-radius: 3px;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
 .svsch-edge-connection-controls-inner .svsch-edge-cut-control {
   border-radius: 0 3px 3px 0;
 }
 
 .svsch-edge-connection-controls-inner button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* A cut net stub's Reroute-to-canonical control renders through a
+   ViewportPortal (see OrthogonalEdge) instead of the edge's own SVG layer —
+   same escape hatch the selection Auto Layout toolbar uses — since the app
+   pins .react-flow__edges below .react-flow__nodes and a stub is short
+   enough to routinely land right on/under a node's port handle. */
+.svsch-cut-stub-reset-layer {
+  overflow: visible;
+  pointer-events: auto;
+  position: absolute;
+  z-index: 12;
+}
+
+.svsch-selection-toolbar-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 12;
+}
+
+.svsch-selection-toolbar {
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-100%, 8px);
+}
+
+.svsch-selection-relayout-control {
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground);
+  cursor: pointer;
+  font-family: var(--vscode-font-family);
+  font-size: 10px;
+  height: 22px;
+  line-height: 1;
+  padding: 0 9px;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.svsch-selection-relayout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -2898,16 +3028,17 @@ text {
   cursor: ew-resize;
 }
 
+/* Plain text sitting just above the wire, matching the cut-net label
+   convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  display: inline-block;
-  line-height: 1.2;
-  max-width: 44px;
+  display: block;
+  line-height: 13px;
+  max-width: 120px;
   overflow: hidden;
-  padding: 2px 4px;
+  padding: 0 3px;
+  text-align: left;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -3219,6 +3350,15 @@ text {
   fill: color-mix(in srgb, var(--vscode-editor-foreground) 72%, var(--vscode-editor-background));
 }
 
+/* Struct trunk: same dimmed underlay + stripe pattern as struct wires. */
+.svsch-bus-pipe-struct-bg {
+  fill: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+}
+
+.svsch-bus-pipe-struct {
+  fill: url("#svsch-struct-stripes");
+}
+
 .svsch-bus-array-pipe-cap {
   pointer-events: none;
 }
@@ -3234,6 +3374,11 @@ text {
   stroke: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
   stroke-width: 2;
   fill: none;
+}
+
+/* Multi-bit (or typedef) tap connections match the thick wire weight. */
+.svsch-bus-tap-line-thick {
+  stroke-width: 4.5;
 }
 .svsch-bus-tap-label {
   fill: var(--vscode-editor-foreground);
@@ -3333,10 +3478,9 @@ text {
   fill: none;
 }
 
-/* Array stack leads */
-.svsch-array-stack-lead {
-  fill: none;
-  stroke-width: 1.5;
+/* Multi-bit select connections match the thick wire weight. */
+.svsch-mux-select-lead-thick {
+  stroke-width: 4.5;
 }
 
 /* Register clock glyph (already exists in CSS, adding SVG path rule) */
@@ -3401,25 +3545,8 @@ path.port-skin-body.port-skin-harness {
   transform: translateY(-50%);
 }
 
-/* SVG layers use CSS transforms so old HTML array-layer selectors do not flatten the stack. */
-.hdl-node-svg .hdl-node-array-back,
-.hdl-node-svg .hdl-node-array-middle,
-.hdl-node-svg .hdl-node-array-front {
-  transform-box: fill-box;
-  transform-origin: 0 0;
-}
-
-.hdl-node-svg .hdl-node-array-back {
-  transform: translate(4px, 4px);
-}
-
-.hdl-node-svg .hdl-node-array-middle {
-  transform: translate(0, 0);
-}
-
-.hdl-node-svg .hdl-node-array-front {
-  transform: translate(-4px, -4px);
-}
+/* Array layer offsets come from the SVG transform attribute (arrayStackGeometry),
+   which is conditional on element width — CSS must not override it. */
 
 /* ALU operation symbol: white fill for visibility inside the shaped body */
 .svsch-alu-operation {
@@ -3489,10 +3616,14 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-.svsch-label-box {
-  fill: var(--svsch-label-background);
-  stroke: var(--svsch-label-border);
-  stroke-width: 1;
+/* styles.css sets a text color on this class for the webview's HTML
+   foreignObject span — an SVG text element ignores that for its own fill,
+   so the exported SVG needs an explicit fill here or it defaults to black. */
+.svsch-edge-label {
+  fill: var(--vscode-editor-foreground);
+}
+.hdl-net-label-alias-marker {
+  fill: var(--vscode-descriptionForeground, var(--vscode-editor-foreground));
 }
 .svsch-generate-region-box {
   fill: none;
@@ -3553,49 +3684,50 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/*]]>*/
 </style>
 <g transform="translate(24 24)">
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk"><defs>
-<linearGradient id="svsch-stack-fanout-gradient-37337v" gradientUnits="userSpaceOnUse" x1="380" y1="92" x2="388" y2="100">
+<linearGradient id="svsch-stack-fanout-gradient-37337v" gradientUnits="userSpaceOnUse" x1="378" y1="90" x2="390" y2="102">
 <stop offset="0%" class="svsch-stack-gradient-front-stop" />
 <stop offset="50%" class="svsch-stack-gradient-middle-stop" />
 <stop offset="100%" class="svsch-stack-gradient-back-stop" />
 </linearGradient>
 </defs>
-<path class="svsch-edge" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 192 120 L 312 120 L 312 96 L 384 96" />
-<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" style="stroke: url(#svsch-stack-fanout-gradient-37337v)" d="M 380 92 L 388 100" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 380 92 L 401 92" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 384 96 L 402 96" />
-<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 388 100 L 403 100" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 205 76 L 403 76" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 198 72 L 402 72" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 191 68 L 401 68" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 613 76 L 811 76" />
-<path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 606 72 L 810 72" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 599 68 L 809 68" /></g>
+<path class="svsch-edge" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 192 144 L 312 144 L 312 96 L 384 96" />
+<path class="svsch-edge svsch-edge-stacked-breakout" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" style="stroke: url(#svsch-stack-fanout-gradient-37337v)" d="M 378 90 L 390 102" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 378 90 L 397.5 90" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 384 96 L 399 96" />
+<path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="edge:port:array_port_register:clk:reg:array_port_register:storage:clk" data-net-key="port:array_port_register:clk:port:clk" d="M 390 102 L 400.5 102" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 211.5 78 L 400.5 78" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 201 72 L 399 72" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:port:array_port_register:in_data:reg:array_port_register:storage:in_data" data-net-key="port:array_port_register:in_data:port:in_data" d="M 190.5 66 L 397.5 66" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data"><path class="svsch-edge svsch-edge-stacked-back svsch-edge-thick" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 619.5 78 L 808.5 78" />
+<path class="svsch-edge svsch-edge-stacked svsch-edge-thick" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 609 72 L 807 72" />
+<path class="svsch-edge svsch-edge-stacked-front svsch-edge-thick" data-edge-id="edge:reg:array_port_register:storage:port:array_port_register:out_data:out_data" data-net-key="reg:array_port_register:storage:q" d="M 598.5 66 L 805.5 66" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node hdl-node-array" data-node-id="reg:array_port_register:storage" data-node-kind="register" transform="translate(408 24)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 68 L -4 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 76 L 4 76"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="192" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="192" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="192" height="96"></rect><text class="svsch-node-kind" x="6" y="10" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="6" y="22" text-anchor="start" dominant-baseline="middle"><tspan>storage</tspan><tspan class="svsch-register-width-suffix" dx="4">[7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">D</text><text class="svsch-port-label" x="176" y="44" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-4" y="62" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="195" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 198 44 L 188 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 198 48 L 192 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 205 52 L 196 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 42 L -6 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 54 L 6 54"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -10 66 L -6 66"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -9 72 L 0 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -7 78 L 6 78"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(6, 6)" width="192" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="192" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-6, -6)" width="192" height="96"></rect><text class="svsch-node-kind" x="4" y="8" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="4" y="20" text-anchor="start" dominant-baseline="middle"><tspan>storage</tspan><tspan class="svsch-register-width-suffix" dx="4">[7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="6" y="42" dominant-baseline="middle">D</text><text class="svsch-port-label" x="174" y="42" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="-6" y="60" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g><text class="svsch-node-kind svsch-array-badge" x="195" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 200 42 L 186 42"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 201 48 L 192 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 212 54 L 198 54"></path></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:array_port_register:clk" data-node-kind="port" transform="translate(72 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:array_port_register:clk" data-node-kind="port" transform="translate(72 132)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">clk</tspan></text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned hdl-node-array" data-node-id="port:array_port_register:in_data" data-node-kind="port" transform="translate(24 60)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
-<g class="port-skin port-skin-input"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="80" y="8" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">in_data</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="171" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 174 8 L 164 8"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 174 12 L 168 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 181 16 L 172 16"></path></g></g>
+<g class="port-skin port-skin-input"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="78" y="6" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">in_data</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="171" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 176 6 L 162 6"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 177 12 L 168 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right svsch-array-stack-lead-thick" d="M 188 18 L 174 18"></path></g></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned hdl-node-array" data-node-id="port:array_port_register:out_data" data-node-kind="port" transform="translate(816 60)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
-<g class="port-skin port-skin-output"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 12 0 H 168 V 24 H 12 L 0 12 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="80" y="8" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">out_data</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="171" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 8 L -4 8"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 12 L 0 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 16 L 4 16"></path></g></g>
+<g class="port-skin port-skin-output"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(6, 6)" d="M 12 0 H 168 V 24 H 12 L 0 12 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-6, -6)" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="78" y="6" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">out_data</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="171" y="-4" text-anchor="start">[0:3]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -10 6 L -6 6"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -9 12 L 0 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left svsch-array-stack-lead-thick" d="M -7 18 L 6 18"></path></g></g>
 </svg>
 </g>
 </g>

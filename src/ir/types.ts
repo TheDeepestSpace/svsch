@@ -92,6 +92,8 @@ export interface DiagramNodeMetadata {
   arrayDimension?: string;
   arraySize?: number;
   arrayIndexSignal?: string;
+  /** Stamped by annotateWireStyles: array node whose stack spreads with the wide offset. */
+  stackWide?: boolean;
   generateRegionId?: string;
   generateActiveState?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
@@ -104,8 +106,15 @@ export interface DiagramNodeMetadata {
     edgeStyle?: {
       aggregate?: 'struct' | 'interface' | string;
       isStacked?: boolean;
+      thick?: boolean;
     };
     isSourceStacked?: boolean;
+    /** 'declared' locks the label from renaming (it's the net's real SV source name); 'synthetic' is tool-invented and freely renameable. */
+    origin?: 'declared' | 'synthetic';
+    /** True once the label has been edited away from its default (the text it had right when the net was cut) — drives italic styling, independent of `origin`. */
+    isRenamed?: boolean;
+    /** Other declared wire names this net's chain of `assign` aliases collapsed together, for the hover popover. */
+    aliasNames?: string[];
   };
 }
 
@@ -195,6 +204,8 @@ export type DiagramNode =
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
+  /** Stamped by annotateWireStyles: wire is (or can be) wider than one bit. */
+  thick?: boolean;
   generateRegionId?: string;
   generateActiveState?: string;
   forceStraight?: boolean;
@@ -203,6 +214,18 @@ export interface DiagramEdgeMetadata {
     role: 'source' | 'sink';
     originalEdgeId?: string;
   };
+  /**
+   * `signal` is a name genuinely declared in the SV source (a port, or a
+   * wire/reg/var), not a tool-synthesized temp. Holds that declared name.
+   */
+  declaredNetName?: string;
+  /**
+   * Other declared wire names collapsed into this edge by a chain of simple
+   * `assign` aliases (e.g. `assign a = b; assign b = c; ...`). `signal` holds
+   * whichever name was declared first in source; these are the rest, in
+   * declaration order.
+   */
+  aliasNames?: string[];
 }
 
 export interface DiagramEdge {

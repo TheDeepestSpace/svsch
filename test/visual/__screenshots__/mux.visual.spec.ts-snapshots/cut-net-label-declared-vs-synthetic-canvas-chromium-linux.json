@@ -1,0 +1,150 @@
+{
+  "nodes": [
+    {
+      "id": "cut-label:declared:source",
+      "type": "hdl",
+      "position": {
+        "x": 192,
+        "y": 28
+      },
+      "width": 120,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:renamed:source",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 268
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:synthetic:source",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 148
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:declared",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 40
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "chip_select",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:renamed",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 280
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source:synthetic",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 160
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:declared:source",
+      "source": "source:declared",
+      "target": "cut-label:declared:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 144 52 L 144 52 L 192 52 L 192 52"
+    },
+    {
+      "id": "cut-stub:renamed:source",
+      "source": "source:renamed",
+      "target": "cut-label:renamed:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 292 L 120 292 L 144 292 L 144 292"
+    },
+    {
+      "id": "cut-stub:synthetic:source",
+      "source": "source:synthetic",
+      "target": "cut-label:synthetic:source",
+      "sourceHandle": "p",
+      "targetHandle": "cut",
+      "path": "M 120 172 L 120 172 L 144 172 L 144 172"
+    }
+  ]
+}

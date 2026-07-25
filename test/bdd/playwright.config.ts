@@ -21,23 +21,31 @@ const outputDir = defineBddConfig({
   disableWarnings: { importTestFrom: true },
 });
 
+const reporters: any[] = [
+  ['list'],
+  ['./step-attachment-reporter.ts'],
+  ['json', { outputFile: path.join(root, 'test-results/bdd/playwright-report.json') }],
+  ['html', { open: 'never', outputFolder: reportDir }],
+  // Emit a cucumber-JSON report so `npm run docs:generate` can build the
+  // living BDD documentation (multiple-cucumber-html-reporter consumes this).
+  // Own subdir so the reporter doesn't pick up snapshot-diff JSON in bdd/.
+  cucumberReporter('json', { outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json') }),
+];
+
+if (process.env.SVSCH_TEST_STATUS_FILE) {
+  reporters.push([path.resolve(root, 'scripts/playwright-progress-reporter.js')]);
+}
+
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
+  globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
-  outputDir: '/tmp/bdd-playwright-results',
+  outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),
   workers: 1,
   timeout: 120_000,
-  reporter: [
-    ['list'],
-    ['./step-attachment-reporter.ts'],
-    ['json', { outputFile: path.join(root, 'test-results/bdd/playwright-report.json') }],
-    ['html', { open: 'never', outputFolder: reportDir }],
-    // Emit a cucumber-JSON report so `npm run docs:generate` can build the
-    // living BDD documentation (multiple-cucumber-html-reporter consumes this).
-    // Own subdir so the reporter doesn't pick up snapshot-diff JSON in bdd/.
-    cucumberReporter('json', { outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json') }),
-  ],
+  reporter: reporters,
   snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
   expect: {
     toHaveScreenshot: { maxDiffPixels: 300 },

@@ -177,6 +177,19 @@ struct Edge {
     bool isStacked = false;
     std::string generateRegionId;
     std::string generateActiveState;
+    // Other declared wire names collapsed into this edge by collapseAliasCombNodes
+    // (e.g. a chain of `assign a = b; assign b = c; ...`), in declaration order.
+    // Populated independently of `signal` (which keeps its own long-standing
+    // "closest to the sink" convention, unrelated to declaration order, so
+    // that changing this never disturbs edge identity/matching elsewhere).
+    std::vector<std::string> aliasNames;
+    // The net's name as actually declared in the SV source (a port or a
+    // wire/reg/var) — as opposed to a tool-synthesized name (e.g. "foo_next",
+    // "expr") — when known. For an edge produced by collapseAliasCombNodes this
+    // is the earliest-declared name among every alias the chain passed through
+    // (which may differ from `signal`); otherwise it's `signal` itself, when
+    // `signal` is itself a declared name. Empty when no declared name is known.
+    std::string declaredNetName;
 };
 
 struct GenerateRegion {
@@ -231,6 +244,10 @@ struct Module {
     std::map<std::string, StructSignal> structSignals;
     std::map<std::string, InterfaceSignal> interfaceSignals;
     std::set<std::string> internalSignals;
+    // Source declaration order of ports and internal signals (lower index = declared
+    // earlier). Used to pick a stable "first declared" primary name when multiple
+    // wires collapse into one net (see collapseAliasCombNodes).
+    std::map<std::string, int> declarationOrder;
     std::vector<PendingStructAssign> pendingStructAssigns;
     std::vector<PendingArrayAlias> pendingArrayAliases;
     std::map<std::string, std::string> arrayDimensions;
@@ -346,6 +363,7 @@ private:
     void repairInterfaceAssignmentsC(Module& mod);
     void synthesizeBusCompositionNodes(Module& mod);
     void unifyNetPropagation(Module& mod);
+    void markDeclaredNetEdges(Module& mod);
     std::string resolveSignalWidth(const Module& mod, const std::string& signal, const std::string& fallback_width);
 
     std::string getOrPromoteExpr(vpiHandle expr, Module& mod, const std::string& preferred_name = "", bool is_procedural = false, const std::map<std::string, LoweredValue>& current_drivers = {});

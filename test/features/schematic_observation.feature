@@ -42,6 +42,28 @@ Feature: Schematic Observation
     And there should be a connection between "b" and the combinational block
     And there should be a connection between the combinational block and "y"
 
+  Scenario: Observing a chain of wire-to-wire assigns as a single connection
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input i, output o);
+        wire a, b, c, d, e, f;
+        assign a = b;
+        assign b = c;
+        assign c = d;
+        assign d = e;
+        assign e = f;
+        assign f = i;
+        assign o = a;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see a port node "i"
+    And I should see a port node "o"
+    And there should be a connection between "i" and "o"
+    And I should not see a combinational block
+    When I hover over the alias marker on the connection between "i" and "o"
+    Then a tooltip should appear reading "Also declared as: b, c, d, e, f"
+
   Scenario: Observing ALU arithmetic
     Given I have a file "top.sv" in my workspace:
       """

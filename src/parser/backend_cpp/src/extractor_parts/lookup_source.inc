@@ -161,6 +161,44 @@ void DesignExtractor::buildEdges(Module& mod) {
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
     unifyNetPropagation(mod);
+    markDeclaredNetEdges(mod);
+}
+
+// Fills in declaredNetName, for edges collapseAliasCombNodes didn't already
+// give one, whenever `signal` itself is a name genuinely declared in the SV
+// source (a port, or a wire/reg/variable) — as opposed to a tool-synthesized
+// name such as a promoted expression temp ("foo_next", "foo_sel") or an
+// aggregate/select label. Chain-collapsed edges keep the earliest-declared
+// name collapseAliasCombNodes already chose, which may differ from `signal`.
+void DesignExtractor::markDeclaredNetEdges(Module& mod) {
+    auto baseName = [](const std::string& signal) {
+        std::string base = signal;
+        size_t bracket = base.find('[');
+        if (bracket != std::string::npos) base = base.substr(0, bracket);
+        size_t dot = base.find('.');
+        if (dot != std::string::npos) base = base.substr(0, dot);
+        return base;
+    };
+    // A port only names the module's boundary, not this net specifically, so
+    // it doesn't count as a "declared name" here — matches the same rule
+    // collapseAliasCombNodes applies via chooseAliasPrimary.
+    auto isPort = [&](const std::string& name) {
+        return std::any_of(mod.ports.begin(), mod.ports.end(), [&](const Port& p) { return p.name == name; });
+    };
+    for (auto& e : mod.edges) {
+        if (!e.declaredNetName.empty() || e.signal.empty()) continue;
+        std::string base = baseName(e.signal);
+        // `signal` must be a bare declared identifier, not a compound
+        // expression that merely starts with one (a bit-select "M[3]", a
+        // field-select "pkt.valid", or a synthesized derived name like
+        // "M[address]_next" for an array's write-candidate wire). The base
+        // array/struct being declared doesn't mean this specific derived
+        // expression names the net — labeling it with the base name would
+        // misidentify a different net's value as this one's.
+        if (e.signal == base && mod.internalSignals.count(base) && !isPort(base)) {
+            e.declaredNetName = e.signal;
+        }
+    }
 }
 
 void DesignExtractor::unifyNetPropagation(Module& mod) {
@@ -452,6 +490,72 @@ static std::string widthFromPortTypespec(vpiHandle handle) {
     return "";
 }
 
+// A net/reg reached through a ref-obj (e.g. an identifier used inside an
+// expression like `sel_wide * 8`) doesn't carry its own populated typespec —
+// only the module *port* declaration does (see widthFromPortTypespec above).
+// Walk up to the enclosing module and look up the sibling port by name.
+static std::string widthFromSiblingPort(vpiHandle net_handle) {
+    const char* raw_name = vpi_get_str(vpiName, net_handle);
+    if (!raw_name) return "";
+    std::string name = raw_name;
+    if (name.rfind("work@", 0) == 0) name = name.substr(5);
+
+    vpiHandle mod_h = net_handle;
+    while (mod_h && vpi_get(vpiType, mod_h) != vpiModule) {
+        vpiHandle parent = vpi_handle(vpiParent, mod_h);
+        if (!parent || parent == mod_h) { mod_h = nullptr; break; }
+        mod_h = parent;
+    }
+    if (!mod_h) return "";
+
+    vpiHandle port_itr = vpi_iterate(vpiPort, mod_h);
+    if (!port_itr) return "";
+    std::string result;
+    vpiHandle port;
+    while ((port = vpi_scan(port_itr)) != nullptr) {
+        const char* port_raw_name = vpi_get_str(vpiName, port);
+        std::string port_name = port_raw_name ? port_raw_name : "";
+        if (port_name.rfind("work@", 0) == 0) port_name = port_name.substr(5);
+        if (port_name == name) {
+            result = widthFromPortTypespec(port);
+            vpi_release_handle(port);
+            break;
+        }
+        vpi_release_handle(port);
+    }
+    vpi_release_handle(port_itr);
+    return result;
+}
+
+// Logical, comparison, and reduction operators always produce a single-bit
+// result regardless of their operand widths (e.g. `!bus4`, `a == b`,
+// `&vec`) — the operand's own width says nothing about the result's width,
+// so getWidth()'s generic "Try operands" fallback must not be used for them.
+static bool opTypeProducesSingleBitResult(int opType) {
+    switch (opType) {
+        case vpiNotOp:
+        case vpiUnaryAndOp:
+        case vpiUnaryNandOp:
+        case vpiUnaryOrOp:
+        case vpiUnaryNorOp:
+        case vpiUnaryXorOp:
+        case vpiUnaryXNorOp:
+        case vpiEqOp:
+        case vpiNeqOp:
+        case vpiCaseEqOp:
+        case vpiCaseNeqOp:
+        case vpiGtOp:
+        case vpiGeOp:
+        case vpiLtOp:
+        case vpiLeOp:
+        case vpiLogAndOp:
+        case vpiLogOrOp:
+            return true;
+        default:
+            return false;
+    }
+}
+
 std::string DesignExtractor::getWidth(vpiHandle handle) {
     if (!handle || width_depth_ > 10) return "";
     width_depth_++;
@@ -467,6 +571,22 @@ std::string DesignExtractor::getWidth(vpiHandle handle) {
     if (type == 608) { // vpiRefObj
         vpiHandle actual = vpi_handle(vpiActual, handle);
         if (actual && actual != handle) {
+            // Same quirk as the vpiPort case above: net/reg handles reached
+            // through a ref-obj report 0/0/0 for vpiLeftRange/vpiRightRange/
+            // vpiSize via the plain VPI layer, so try_extract_range (below,
+            // reached through the getWidth(actual) recursion) would return
+            // the literal, wrong "[0:0]" instead of falling through. These
+            // net/reg objects don't carry their own populated typespec
+            // either (only the module port declaration does), so resolve
+            // through the sibling port by name.
+            int actual_type = vpi_get(vpiType, actual);
+            if (actual_type == vpiNet || actual_type == vpiReg) {
+                std::string w = widthFromSiblingPort(actual);
+                if (!w.empty()) {
+                    width_depth_--;
+                    return w;
+                }
+            }
             std::string res = getWidth(actual);
             if (!res.empty()) {
                 width_depth_--;
@@ -495,6 +615,14 @@ std::string DesignExtractor::getWidth(vpiHandle handle) {
             if (left == 0 && right == 0) {
                 int s = vpi_get(vpiSize, h);
                 if (s > 1) return "[" + std::to_string(s - 1) + ":0]";
+                // A genuine scalar reports vpiSize == 1. Many non-range
+                // handles (operations, computed expressions, etc.) report
+                // 0/0/0 for all three of vpiLeftRange/vpiRightRange/vpiSize
+                // as an "inapplicable" default rather than vpiUndefined —
+                // that's not a real answer, so fall through to the other
+                // resolution strategies below instead of confidently
+                // returning the misleading "[0:0]".
+                if (s != 1) return "";
             }
             return "[" + std::to_string(left) + ":" + std::to_string(right) + "]";
         }
@@ -558,8 +686,19 @@ std::string DesignExtractor::getWidth(vpiHandle handle) {
         }
     }
 
-    // Try operands
-    vpiHandle op_itr = vpi_iterate(vpiOperand, handle);
+    // Try operands. Skip this for a replication (`{N{expr}}`): its first
+    // operand is the repeat *count* (e.g. the literal `2`), not a value
+    // whose own declared range says anything about the overall expression's
+    // width — recursing into it can pick up a constant's internal/default
+    // range (observed as a spurious 64-bit "[63:0]") that has nothing to do
+    // with the replicated result. The caller (promoteReplicationExpr)
+    // already computes the correct width from body size * repeat count.
+    // Also skip for logical/comparison/reduction operators, whose result is
+    // always 1 bit regardless of operand width (see opTypeProducesSingleBitResult).
+    int op_type_for_handle = (type == vpiOperation) ? vpi_get(vpiOpType, handle) : 0;
+    bool skip_operand_width = (type == vpiOperation)
+        && (op_type_for_handle == vpiMultiConcatOp || opTypeProducesSingleBitResult(op_type_for_handle));
+    vpiHandle op_itr = skip_operand_width ? nullptr : vpi_iterate(vpiOperand, handle);
     if (op_itr) {
         vpiHandle op = vpi_scan(op_itr);
         if (op) {
@@ -838,6 +977,22 @@ SourceInfo DesignExtractor::getSourceInfo(vpiHandle handle) {
     s.endLine = getEndLine(handle);
     s.endCol = getEndCol(handle);
     
+    // Fix off-by-one for "interface" keyword reporting in Surelog (0-indexed col)
+    if (!s.file.empty() && s.line > 0 && s.col >= 1) {
+        std::ifstream file = openSourceFile(s.file);
+        if (file.is_open()) {
+            std::string lineContent;
+            for (int i = 1; i <= s.line; ++i) {
+                if (!std::getline(file, lineContent)) break;
+            }
+            if (static_cast<int>(lineContent.size()) >= s.col - 1 + 9) {
+                if (lineContent.substr(s.col - 1, 9) == "interface") {
+                    s.col--;
+                }
+            }
+        }
+    }
+
     source_depth_--;
     return s;
 }

@@ -1,6 +1,6 @@
 {
   "name": "svsch",
-  "displayName": "SVSCH",
+  "displayName": "svsch",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
   "version": "0.1.0",
   "publisher": "thedeepestspace",
@@ -30,23 +30,23 @@
     "commands": [
       {
         "command": "svsch.openDiagram",
-        "title": "SVSCH: Open Diagram"
+        "title": "svsch: Open Diagram"
       },
       {
         "command": "svsch.setProjectFolder",
-        "title": "SVSCH: Set Project Folder"
+        "title": "svsch: Set Project Folder"
       },
       {
         "command": "svsch.rebuildDiagram",
-        "title": "SVSCH: Rebuild Diagram"
+        "title": "svsch: Rebuild Diagram"
       },
       {
         "command": "svsch.resetLayout",
-        "title": "SVSCH: Reset Layout For Current Module"
+        "title": "svsch: Reset Layout For Current Module"
       }
     ],
     "configuration": {
-      "title": "SVSCH",
+      "title": "svsch",
       "properties": {
         "svsch.projectFolder": {
           "type": "string",
@@ -98,37 +98,42 @@
     "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
+    "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish && npx vsce publish -p $VSCE_PAT && (npx ovsx publish -p $OVSX_PAT || echo 'Open VSX skipped')",
     "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
     "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
     "test": "vitest run",
-    "test:backend": "export PATH=$PATH:$(pwd)/dist/surelog/bin && mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && cmake --build . --target svsch_test && ./svsch_test",
+    "test:backend": "node scripts/run-backend-tests.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
     "prepare": "node scripts/install-surelog.js || true && patch-package",
-    "test:bdd": "npm run build:webview && npm run build:extension && npm run build:cli && npx bddgen --config test/bdd/playwright.config.ts && env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts",
-    "test:bdd:update": "npm run build:webview && npm run build:extension && npm run build:cli && npx bddgen --config test/bdd/playwright.config.ts && env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts --update-snapshots",
+    "test:bdd": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts",
+    "test:bdd:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts --update-snapshots",
     "test:bdd:headed": "scripts/start-vnc.sh",
     "test:system:single": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts",
     "test:system:single:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts --update-snapshots",
-    "test:system": "node -e \"JSON.parse(require('fs').readFileSync('vscode-versions.json', 'utf8')).forEach(v => { console.log('Testing VSCode ' + v); require('child_process').execSync('VSCODE_VERSION=' + v + ' npm run test:system:single', { stdio: 'inherit' }); })\"",
-    "test:system:update": "node -e \"JSON.parse(require('fs').readFileSync('vscode-versions.json', 'utf8')).forEach(v => { console.log('Updating VSCode ' + v); require('child_process').execSync('VSCODE_VERSION=' + v + ' npm run test:system:single:update', { stdio: 'inherit' }); })\"",
+    "test:system": "node scripts/run-system-tests.js",
+    "test:system:update": "node scripts/run-system-tests.js --update-snapshots",
     "docs:generate": "tsx test/scripts/generate-docs.mts",
+    "docs:syntax": "GENERATE_SYNTAX_BOOK=1 playwright test --config test/syntax-book/playwright.config.ts",
+    "test:syntax": "playwright test --config test/syntax-book/playwright.config.ts",
     "visual:serve": "vite --host 127.0.0.1 --port 5176"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",
     "@xyflow/react": "^12.10.2",
-    "elkjs": "^0.11.1",
+    "elkjs": "^0.12.0",
     "libavoid-js": "^0.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@playwright/test": "1.61.1",
     "@types/diff": "^8.0.0",
-    "@types/node": "^25.9.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^26.1.0",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.0.0",
@@ -137,6 +142,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vscode/vsce": "^3.2.1",
     "diff": "^9.0.0",
+    "js-yaml": "^5.2.1",
     "jsdom": "^29.1.0",
     "multiple-cucumber-html-reporter": "^4.0.0",
     "patch-package": "^8.0.1",
@@ -151,6 +157,8 @@
     "vscode-test-playwright": "^0.0.1-beta2"
   },
   "overrides": {
+    "fast-uri": "^3.1.4",
+    "linkify-it": "^5.0.2",
     "semver": "^7.5.2",
     "uuid": "^14.0.0"
   }

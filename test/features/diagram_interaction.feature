@@ -102,7 +102,35 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
-  Scenario: Cutting, renaming, and tying back a fanout net
+  Scenario: Cutting and tying back a fanout net whose source name is declared in the SV source
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output x, output y);
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    When I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 3 cut net labels named "chip_select"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "a" and "y" should be hidden
+    # "chip_select" is an explicitly declared wire from the source, not a
+    # tool-invented guess, so it renders in regular type and can't be edited
+    # into a different name.
+    And the cut net "chip_select" should be shown in regular type
+    When I double-click the cut net "chip_select"
+    Then the cut net "chip_select" should not become editable
+    And I should see 3 cut net labels named "chip_select"
+    When I tie back the cut net "chip_select"
+    Then the original connection between "a" and "x" should be restored
+    And the original connection between "a" and "y" should be restored
+    And I should not see cut net labels named "chip_select"
+
+  Scenario: Renaming a cut net that has no declared name of its own (implicit wiring)
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
@@ -114,14 +142,18 @@ Feature: Diagram Interaction
     And I move the port node "a"
     When I hover the connection between "a" and "x" and click its Cut control
     Then I should see 3 cut net labels named "a"
-    And the original connection between "a" and "x" should be hidden
-    And the original connection between "a" and "y" should be hidden
-    When I rename the cut net "a" to "data_a"
-    Then I should see 3 cut net labels named "data_a"
-    When I tie back the cut net "data_a"
-    Then the original connection between "a" and "x" should be restored
-    And the original connection between "a" and "y" should be restored
-    And I should not see cut net labels named "data_a"
+    # "a" is only ever the port's own name here — there is no wire declared
+    # for this net, so its cut label is a tool-invented guess and stays
+    # freely renameable, unlike a net with a real wire declaration. Right
+    # after the cut it's still the net's legitimate current name, though, so
+    # it renders in regular type — only diverging from it earns italics.
+    And the cut net "a" should be shown in regular type
+    When I rename the cut net "a" to "chip_select"
+    Then I should see 3 cut net labels named "chip_select"
+    And the cut net "chip_select" should be shown in italics
+    When I click the Revert label control on the cut net "chip_select"
+    Then I should see 3 cut net labels named "a"
+    And the cut net "a" should be shown in regular type
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
     Given I have a file "top.sv" in my workspace:
@@ -398,6 +430,140 @@ Feature: Diagram Interaction
     And the "generate if" generate block should be flagged as containing an unrelated block
     When I hover over the warning icon on the "generate if" generate region
     Then a tooltip should appear reading "block does not belong to this generate block"
+
+  Scenario: Drag-selecting a connection highlights the wire itself
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "y" together
+    Then the connection between "a" and "y" should be shown as selected
+
+  Scenario: Hovering one wire in a multi-wire selection reveals every selected wire's controls
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x"
+    Then the connection between "a" and "x" should show its controls
+    And the connection between "b" and "y" should show its controls
+
+  Scenario: Rerouting one wire in a multi-wire selection reroutes every selected wire
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    And I move the port node "b"
+    And I adjust the connection between "a" and "x" upward
+    And I adjust the connection between "b" and "y" downward
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x" and click its Reroute control
+    Then the route of the connection between "a" and "x" should have changed
+    And the route of the connection between "b" and "y" should have changed
+    And the port node "a" should not have moved
+    And the port node "b" should not have moved
+
+  Scenario: Cutting one wire in a multi-wire selection cuts every selected wire
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output x, output y);
+        assign x = a;
+        assign y = b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select "a" and "b" together
+    And I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 2 cut net labels named "a"
+    And I should see 2 cut net labels named "b"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "b" and "y" should be hidden
+
+  Scenario: The Auto Layout control only appears once multiple blocks are selected
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the "Auto Layout" button should not be visible
+    When click and drag the mouse to select the blocks "u1" and "u2"
+    Then the "Auto Layout" button should be visible
+
+  Scenario: Auto-laying out one connection's blocks anchors the result, leaves the other connection untouched, and carries cut net ends along
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I hover the connection between "u1" and "x" and click its Cut control
+    And I hover the connection between "b" and "u2" and click its Cut control
+    And I move the port node "a"
+    And I move the block "u1" by (2, 0) grid cells
+    And I note the position of the block "u1"
+    # u1's dangling end is not part of the upcoming selection at all — this is
+    # the baseline for proving it's left alone.
+    And I note the position of the cut net label attached to "u1"
+    And I move the port node "b" by (0, 72)
+    And I move the block "u2" by (3, 5) grid cells
+    # u2's dangling end also isn't marqueed directly, but its stub wire is
+    # selected along with u2 (React Flow selects every edge touching a
+    # selected node) — noted here, right before the selection, as the
+    # baseline for proving it does move.
+    And I note the position of the cut net label attached to "u2"
+    And I move the port node "y" by (0, 72)
+    And click and drag the mouse to select "b", "u2", and "y" together
+    And I click the "Auto Layout" button
+    Then the block "u2" should be re-placed and fixed in the saved layout
+    And the block "u2" should stay near its pre-auto-layout position
+    And the block "u2" should remain selected
+    And the block "u1" should not have moved
+    And the port node "a" should still be fixed in the saved layout
+    And the cut net label attached to "u2" should have moved
+    And the cut net label attached to "u2" should not overlap the block "u1"
+    And the cut net label attached to "u1" should not have moved
+
+  Scenario: Rerouting a cut net's dangling end resets it to its canonical position
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic x, output logic y);
+        assign y = x;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the port node "y" by (0, 96)
+    And I hover the connection between "x" and "y" and click its Cut control
+    And I note the position of the cut net label attached to "x"
+    And I move the cut net label attached to "x" by (-3, -3) grid cells
+    And I hover the cut net label attached to "x"
+    And I click the Reroute control on the cut net label attached to "x"
+    Then the cut net label attached to "x" should be at its noted position
 
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip

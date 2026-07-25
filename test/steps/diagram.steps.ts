@@ -244,6 +244,16 @@ When('I hover the connection between {string} and {string} and click its Cut con
   await cutNetByClickingControl(this, source, target);
 });
 
+// Reveal a connection's floating Cut/Reroute controls without clicking either —
+// used to check that hovering one wire of a multi-wire selection also reveals
+// every other selected wire's own controls.
+When('I hover the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  await this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge-bridge`).dispatchEvent('mouseover');
+  await expect(this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-connection-controls`)).toBeVisible({ timeout: 5_000 });
+  await this.takeScreenshot(`Hovering the connection between ${source} and ${target}`);
+});
+
 When('I hover the connection between {string} and {string} and click its Reroute control', async function (this: BddWorld, source: string, target: string) {
   // Snapshot positions right before rerouting so "should not have moved" checks
   // compare against the pre-reroute layout (no explicit note steps needed).
@@ -284,6 +294,41 @@ When('I tie back the cut net {string}', async function (this: BddWorld, label: s
   await waitForLayoutChange(this, before, 'After tie net');
 });
 
+When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  const before = JSON.stringify(await readExtensionLayout(this));
+  // Hover the cut-net label to reveal its revert control, then click it.
+  await labelNode.hover({ force: true });
+  await expect(labelNode.locator('.hdl-net-label-revert')).toBeVisible();
+  await labelNode.locator('.hdl-net-label-revert').click();
+  await waitForLayoutChange(this, before, 'After revert cut net label');
+});
+
+// Unlike "I rename the cut net", this only attempts the double-click — it
+// does not wait for a layout change, since a declared net's label is
+// expected to refuse to enter edit mode at all.
+When('I double-click the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  await labelNode.dblclick({ force: true });
+});
+
+When('I hover over the alias marker on the cut net {string}', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode).toBeVisible();
+  await labelNode.locator('.hdl-net-label-alias-marker').hover({ force: true });
+});
+
+// Same alias popover, but for an uncut wire's inline label — rendered directly
+// on the edge (.svsch-edge-label) rather than as its own cut-net label node.
+When('I hover over the alias marker on the connection between {string} and {string}', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const label = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-label`);
+  await expect(label).toBeVisible();
+  await label.locator('.hdl-net-label-alias-marker').hover({ force: true });
+});
+
 When('I move the port node {string} by \\({int}, {int}\\)', async function (this: BddWorld, name: string, dx: number, dy: number) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
   if (!id) throw new Error(`Node not found: ${name}`);
@@ -307,51 +352,92 @@ When('I move the port node {string}', async function (this: BddWorld, name: stri
 
 // Rubber-band selection: press on empty canvas and drag a rectangle around the
 // two nodes, exactly like a user lassoing blocks. React Flow has selectionOnDrag
-// enabled, so a left-button drag on the pane selects the enclosed nodes.
+// enabled, so a left-button drag on the pane selects the enclosed nodes (and, per
+// React Flow's own selection logic, every edge connected to any selected node).
 When('click and drag the mouse to select {string} and {string} together', async function (this: BddWorld, name1: string, name2: string) {
   const id1 = await findNodeIdByLabel(this.webviewPage, name1, 'port');
   const id2 = await findNodeIdByLabel(this.webviewPage, name2, 'port');
   if (!id1 || !id2) throw new Error(`Nodes not found: ${name1}=${id1}, ${name2}=${id2}`);
+  await marqueeSelectNodePair(this, id1, id2, name1, name2);
+});
 
-  // Remember where the two nodes started so a later "should have moved" check
-  // has a pre-move baseline to compare against.
-  for (const [name, id] of [[name1, id1], [name2, id2]] as Array<[string, string]>) {
-    const pos = await getInternalPosition(this.webviewPage, id);
-    if (!pos) throw new Error(`Missing position data for ${name}`);
-    this.notedPositions.set(name, pos);
+// Same lasso gesture, but resolves the two labels against any node kind — used
+// for selecting instance blocks (e.g. for the "Auto Layout" control) rather
+// than the port-only lookup above.
+When('click and drag the mouse to select the blocks {string} and {string}', async function (this: BddWorld, name1: string, name2: string) {
+  const id1 = await findNodeIdByLabel(this.webviewPage, name1);
+  const id2 = await findNodeIdByLabel(this.webviewPage, name2);
+  if (!id1 || !id2) throw new Error(`Blocks not found: ${name1}=${id1}, ${name2}=${id2}`);
+  await marqueeSelectNodePair(this, id1, id2, name1, name2);
+});
+
+// Three-node variant: the lasso spans the union of all three nodes' bounding
+// boxes, so it still works even when one of them has been deliberately moved
+// off the line between the other two (e.g. testing that Auto Layout has to
+// actually reposition it, not just confirm an already-straight line).
+When('click and drag the mouse to select {string}, {string}, and {string} together', async function (this: BddWorld, name1: string, name2: string, name3: string) {
+  const names = [name1, name2, name3];
+  const ids: string[] = [];
+  for (const name of names) {
+    // A leaf module's own port (e.g. "y") can share a name with the top-level
+    // module's port of the same name — prefer an exact top-level port match
+    // first, falling back to the unrestricted (any-kind) search for names
+    // that aren't ports, e.g. instance labels.
+    const id = (await findNodeIdByLabel(this.webviewPage, name, 'port')) ?? (await findNodeIdByLabel(this.webviewPage, name));
+    if (!id) throw new Error(`Could not find node "${name}"`);
+    ids.push(id);
+  }
+  await marqueeSelectNodes(this, ids, names);
+});
+
+async function marqueeSelectNodePair(world: BddWorld, id1: string, id2: string, name1: string, name2: string): Promise<void> {
+  await marqueeSelectNodes(world, [id1, id2], [name1, name2]);
+}
+
+// Draws the lasso around the union of every named node's bounding box, so it
+// works regardless of how far apart (or misaligned) the nodes are — unlike
+// sizing the rectangle from only two of the nodes, which can miss a third
+// one that's been deliberately offset from the other two.
+async function marqueeSelectNodes(world: BddWorld, ids: string[], names: string[]): Promise<void> {
+  // Remember where each node started so a later "should have moved" check has
+  // a pre-move baseline to compare against.
+  for (let i = 0; i < ids.length; i += 1) {
+    const pos = await getInternalPosition(world.webviewPage, ids[i]);
+    if (!pos) throw new Error(`Missing position data for ${names[i]}`);
+    world.notedPositions.set(names[i], pos);
   }
 
-  const box1 = await this.webviewPage.locator(`.react-flow__node[data-id="${id1}"]`).boundingBox();
-  const box2 = await this.webviewPage.locator(`.react-flow__node[data-id="${id2}"]`).boundingBox();
-  if (!box1 || !box2) throw new Error(`Could not get bounding boxes for ${name1}/${name2}`);
+  const boxes = await Promise.all(ids.map((id) => world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox()));
+  if (boxes.some((box) => !box)) throw new Error(`Could not get bounding boxes for ${names.join('/')}`);
+  const nonNullBoxes = boxes as NonNullable<(typeof boxes)[number]>[];
 
-  // Draw the lasso from above-left of both nodes to below-right of both nodes,
+  // Draw the lasso from above-left of every node to below-right of every node,
   // starting on empty canvas so we don't grab a node by mistake.
-  const left = Math.min(box1.x, box2.x);
-  const top = Math.min(box1.y, box2.y);
-  const right = Math.max(box1.x + box1.width, box2.x + box2.width);
-  const bottom = Math.max(box1.y + box1.height, box2.y + box2.height);
+  const left = Math.min(...nonNullBoxes.map((box) => box.x));
+  const top = Math.min(...nonNullBoxes.map((box) => box.y));
+  const right = Math.max(...nonNullBoxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...nonNullBoxes.map((box) => box.y + box.height));
   const startX = left - 24;
   const startY = top - 24;
   const endX = right + 24;
   const endY = bottom + 24;
 
-  await this.workbox.mouse.move(startX, startY);
-  await this.workbox.mouse.down();
-  await this.workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
-  await this.workbox.mouse.move(endX, endY, { steps: 8 });
-  await this.workbox.mouse.up();
+  await world.workbox.mouse.move(startX, startY);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+  await world.workbox.mouse.move(endX, endY, { steps: 8 });
+  await world.workbox.mouse.up();
 
   await expect.poll(async () => {
-    return this.webviewPage.locator('html').evaluate((_el, { a, b }) => {
+    return world.webviewPage.locator('html').evaluate((_el, targetIds) => {
       const rf = (window as any).reactFlowInstance;
       const selected = new Set(rf.getNodes().filter((n: any) => n.selected).map((n: any) => n.id));
-      return selected.has(a) && selected.has(b);
-    }, { a: id1, b: id2 });
+      return targetIds.every((id: string) => selected.has(id));
+    }, ids);
   }, { timeout: 5000 }).toBe(true);
 
-  await this.takeScreenshot(`Selected ${name1} and ${name2}`);
-});
+  await world.takeScreenshot(`Selected ${names.join(', ')}`);
+}
 
 // Drag the current multi-selection a couple of grid cells with the mouse. React
 // Flow moves every selected node together; the extension persists the result.
@@ -657,12 +743,274 @@ Then('I should not see cut net labels named {string}', async function (this: Bdd
   await expect(cutNetLabelNodes(this.webviewPage, label)).toHaveCount(0);
 });
 
+Then('the cut net {string} should not become editable', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-input')).toBeHidden();
+});
+
+Then('the cut net {string} should be shown in italics', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-text')).toHaveClass(/hdl-net-label-text-synthetic/);
+});
+
+Then('the cut net {string} should be shown in regular type', async function (this: BddWorld, label: string) {
+  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
+  await expect(labelNode.locator('.hdl-net-label-text')).not.toHaveClass(/hdl-net-label-text-synthetic/);
+});
+
 Then('the original connection between {string} and {string} should be hidden', async function (this: BddWorld, source: string, target: string) {
   expect(await hasOriginalEdgeBetween(this.webviewPage, source, target)).toBe(false);
 });
 
 Then('the original connection between {string} and {string} should be restored', async function (this: BddWorld, source: string, target: string) {
   expect(await hasOriginalEdgeBetween(this.webviewPage, source, target)).toBe(true);
+});
+
+Then('the connection between {string} and {string} should be shown as selected', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  // Selection reuses the same net-hover halo (svsch-edge-net-highlight), a
+  // stroke-only path (fill: none) that can have a zero-height geometric
+  // bounding box for a straight horizontal run, which Playwright's
+  // toBeVisible() treats as hidden — assert on presence instead, since the
+  // path only renders at all when the edge is selected (nothing is hovered
+  // in this scenario, so this can't be a false positive from net-hover).
+  await expect(this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge-net-highlight`)).toHaveCount(1);
+});
+
+Then('the connection between {string} and {string} should show its controls', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  await expect(this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] .svsch-edge-connection-controls`)).toBeVisible();
+});
+
+Then('the {string} button should be visible', async function (this: BddWorld, label: string) {
+  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toBeVisible();
+});
+
+Then('the {string} button should not be visible', async function (this: BddWorld, label: string) {
+  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toHaveCount(0);
+});
+
+When('I click the {string} button', async function (this: BddWorld, label: string) {
+  const before = JSON.stringify(await readExtensionLayout(this));
+  const button = this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label });
+  await expect(button).toBeVisible();
+  await button.click();
+  await waitForLayoutChange(this, before, `After clicking ${label}`);
+});
+
+When('I note the position of the block {string}', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  if (!pos) throw new Error(`Missing position data for ${label}`);
+  this.notedPositions.set(label, pos);
+});
+
+// Auto Layout releases the selected blocks for one ELK pass, then anchors and
+// commits the result — so the end state is "fixed at the new, re-placed
+// position", exactly like a manual drag would leave it (not left loose for
+// every future rebuild to potentially reshuffle again).
+Then('the block {string} should be re-placed and fixed in the saved layout', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const moduleName = this.lastViewModel.moduleName;
+  const layout = await readExtensionLayout(this);
+  const nodes = layout.modules?.[moduleName]?.nodes ?? {};
+  expect(nodes[id]?.fixed, `${name} should be fixed at its auto-laid-out position`).toBe(true);
+});
+
+// ELK's layered algorithm doesn't otherwise guarantee a released group stays
+// near where it started (a group only wired to itself can get packed as its
+// own connected component anywhere) — the host rigidly translates the result
+// back to the pre-Auto-Layout centroid, so this should hold on every run.
+Then('the block {string} should stay near its pre-auto-layout position', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(name);
+  if (!pos || !before) throw new Error(`Missing position data for ${name}`);
+  const distance = Math.hypot(pos.x - before.x, pos.y - before.y);
+  expect(
+    distance,
+    `expected ${name} to stay near (${before.x}, ${before.y}) but it moved to (${pos.x}, ${pos.y})`
+  // A released block with an active net cut reserves extra ELK margin for its
+  // dangling end, which shifts where the layered algorithm settles it by a
+  // bit more than an uncut block — widen the (already approximate) tolerance
+  // to cover that.
+  ).toBeLessThan(diagramGrid.size * 8);
+});
+
+Then('the block {string} should remain selected', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const isSelected = await this.webviewPage.locator('html').evaluate((_el, nodeId) => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getNodes().some((n: any) => n.id === nodeId && n.selected === true);
+  }, id);
+  expect(isSelected, `${name} should still be selected after Auto Layout`).toBe(true);
+});
+
+Then('the block {string} should not have moved', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(name);
+  if (!pos || !before) throw new Error(`Missing position data for ${name}`);
+  expect(pos.x, `${name} should not have moved`).toBeCloseTo(before.x, 0);
+  expect(pos.y, `${name} should not have moved`).toBeCloseTo(before.y, 0);
+});
+
+Then('the port node {string} should still be fixed in the saved layout', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
+  if (!id) throw new Error(`Node not found: ${name}`);
+  const moduleName = this.lastViewModel.moduleName;
+  const layout = await readExtensionLayout(this);
+  const saved = layout.modules?.[moduleName]?.nodes?.[id];
+  expect(saved?.fixed, `${name} should still be fixed in the saved layout`).toBe(true);
+});
+
+// Cut net labels are re-derived from geometry every render, so unlike a real
+// block they can't be resolved by their visible text alone (fanout cuts share
+// one label across several dangling ends). Resolve the one specific label
+// attached to a given block instead, by walking its stub edge.
+async function cutLabelNodeIdAttachedTo(webviewPage: FrameLocator, blockLabel: string): Promise<string> {
+  const blockId = await findNodeIdByLabel(webviewPage, blockLabel);
+  if (!blockId) throw new Error(`Could not find block "${blockLabel}"`);
+  const labelId = await webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const stub = rf.getEdges().find((e: any) => (
+      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
+    ));
+    if (!stub) return null;
+    const otherEndId = stub.source === id ? stub.target : stub.source;
+    const otherNode = nodesById.get(otherEndId) as any;
+    return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
+  }, blockId);
+  if (!labelId) throw new Error(`Could not find a cut net label attached to "${blockLabel}"`);
+  return labelId;
+}
+
+// Like cutLabelNodeIdAttachedTo, but resolves the connecting stub edge's own
+// id instead of the label node's — used to click that specific wire's
+// Reroute control.
+async function cutStubEdgeIdAttachedTo(webviewPage: FrameLocator, blockLabel: string): Promise<string> {
+  const blockId = await findNodeIdByLabel(webviewPage, blockLabel);
+  if (!blockId) throw new Error(`Could not find block "${blockLabel}"`);
+  const edgeId = await webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const stub = rf.getEdges().find((e: any) => (
+      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
+    ));
+    return stub?.id ?? null;
+  }, blockId);
+  if (!edgeId) throw new Error(`Could not find a cut net stub wire attached to "${blockLabel}"`);
+  return edgeId;
+}
+
+// A cut label's own position is server-derived and pushed to the webview over
+// an async postMessage round-trip — unlike a node the user just dragged
+// directly, its rendered DOM position can lag well behind an unrelated
+// node's move that already persisted to disk (the round-trip is not covered
+// by waitForLayoutChange's file-based wait, since the file already changed).
+// Ask the extension's own layout-merge logic directly instead of racing the
+// webview's render pipeline — this is exactly what the webview itself will
+// eventually converge on, without depending on how long that takes.
+async function authoritativeCutLabelPosition(world: BddWorld, blockLabel: string): Promise<{ x: number; y: number }> {
+  const id = await cutLabelNodeIdAttachedTo(world.webviewPage, blockLabel);
+  const layout = await readExtensionLayout(world);
+  const moduleName = world.lastViewModel.moduleName;
+  const view = await buildViewModel(world.lastGraph, moduleName, layout);
+  const node = view.nodes.find((candidate) => candidate.id === id);
+  if (!node) throw new Error(`Could not find the cut net label attached to ${blockLabel} (id ${id}) in the recomputed view`);
+  return node.position;
+}
+
+When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, blockLabel: string, cellsX: number, cellsY: number) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await dragNodeByGridCells(this, id, cellsX, cellsY);
+  await waitForLayoutChange(this, before, `After moving the cut net label attached to ${blockLabel}`);
+});
+
+When('I note the position of the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
+  this.notedPositions.set(`cut-label:${blockLabel}`, pos);
+});
+
+Then('the cut net label attached to {string} should have moved', async function (this: BddWorld, blockLabel: string) {
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
+  const distance = Math.hypot(pos.x - before.x, pos.y - before.y);
+  expect(
+    distance,
+    `expected the cut net label attached to ${blockLabel} to move from (${before.x}, ${before.y}), but it stayed there`
+  ).toBeGreaterThan(1);
+});
+
+Then('the cut net label attached to {string} should not have moved', async function (this: BddWorld, blockLabel: string) {
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
+  expect(pos.x, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.x, 0);
+  expect(pos.y, `the cut net label attached to ${blockLabel} should not have moved`).toBeCloseTo(before.y, 0);
+});
+
+// Same comparison as "should not have moved" — phrased separately for the
+// drag-then-Reroute flow, where the noted position is the *canonical* spot
+// (taken right after the cut, before the label was dragged away) rather than
+// a "don't touch it" baseline.
+Then('the cut net label attached to {string} should be at its noted position', async function (this: BddWorld, blockLabel: string) {
+  const pos = await authoritativeCutLabelPosition(this, blockLabel);
+  const before = this.notedPositions.get(`cut-label:${blockLabel}`);
+  if (!before) throw new Error(`Missing noted position data for the cut net label attached to ${blockLabel}`);
+  expect(pos.x, `the cut net label attached to ${blockLabel} should be back at its canonical position`).toBeCloseTo(before.x, 0);
+  expect(pos.y, `the cut net label attached to ${blockLabel} should be back at its canonical position`).toBeCloseTo(before.y, 0);
+});
+
+Then('the cut net label attached to {string} should not overlap the block {string}', async function (this: BddWorld, labelBlockLabel: string, otherBlockLabel: string) {
+  const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, labelBlockLabel);
+  const otherId = await findNodeIdByLabel(this.webviewPage, otherBlockLabel);
+  if (!otherId) throw new Error(`Could not find block "${otherBlockLabel}"`);
+  const labelBox = await this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`).boundingBox();
+  const otherBox = await this.webviewPage.locator(`.react-flow__node[data-id="${otherId}"]`).boundingBox();
+  if (!labelBox || !otherBox) throw new Error(`Missing bounding box for "${labelBlockLabel}" label or "${otherBlockLabel}"`);
+  const overlaps = labelBox.x < otherBox.x + otherBox.width
+    && otherBox.x < labelBox.x + labelBox.width
+    && labelBox.y < otherBox.y + otherBox.height
+    && otherBox.y < labelBox.y + labelBox.height;
+  expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
+});
+
+// Reveal a cut net stub's floating Reroute control without clicking it — the
+// same "hover to check the controls" beat as the plain-edge hover step above,
+// but for a dangling end's own stub wire (whose control renders through a
+// ViewportPortal rather than nested under its own .react-flow__edge, so it's
+// looked up globally rather than scoped to the edge).
+When('I hover the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const edgeId = await cutStubEdgeIdAttachedTo(this.webviewPage, blockLabel);
+  const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  const control = this.webviewPage.locator('.svsch-cut-stub-reset-layer .svsch-edge-reroute-control');
+  await expect(control).toBeVisible({ timeout: 5_000 });
+  await this.takeScreenshot(`Hovering the cut net label attached to ${blockLabel}`);
+});
+
+When('I click the Reroute control on the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const edgeId = await cutStubEdgeIdAttachedTo(this.webviewPage, blockLabel);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  // A cut stub's Reroute control renders through a ViewportPortal, not
+  // nested under its own .react-flow__edge element (see OrthogonalEdge) —
+  // hover the wire to reveal it, then look it up globally rather than
+  // scoped to the edge, unlike clickEdgeControl's normal-edge controls.
+  const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  const control = this.webviewPage.locator('.svsch-cut-stub-reset-layer .svsch-edge-reroute-control');
+  await expect(control).toBeVisible({ timeout: 5_000 });
+  await control.click();
+  await this.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
+  await waitForLayoutChange(this, before, `After resetting the cut net label attached to ${blockLabel}`);
 });
 
 Then('I should see a port node {string}', async function (this: BddWorld, name: string) {
@@ -1660,10 +2008,13 @@ async function runCliCommand(world: BddWorld, command: string) {
   try { fs.chmodSync(cliPath, 0o755); } catch { /* ignore */ }
   const binDir = path.join(worktreeRoot, 'node_modules', '.bin');
   const svschBin = path.join(binDir, 'svsch');
-  if (!fs.existsSync(svschBin)) {
-    fs.mkdirSync(binDir, { recursive: true });
-    fs.symlinkSync(cliPath, svschBin);
-  }
+  try {
+    if (fs.existsSync(svschBin) || fs.lstatSync(svschBin).isSymbolicLink()) {
+      fs.unlinkSync(svschBin);
+    }
+  } catch { /* ignore */ }
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.symlinkSync(cliPath, svschBin);
   let stdout = '';
   let stderr = '';
   try {
@@ -1813,6 +2164,15 @@ async function findEdgeIdBetween(webviewPage: FrameLocator, sourceId: string, ta
     });
     return found?.getAttribute('data-id') ?? null;
   }, { s: sourceId, t: targetId });
+}
+
+async function edgeIdBetweenLabels(webviewPage: FrameLocator, source: string, target: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(webviewPage, source);
+  const targetId = await findNodeIdByLabel(webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Could not find edge between ${sourceId} and ${targetId}`);
+  return edgeId;
 }
 
 async function connectionRoutePath(webviewPage: FrameLocator, source: string, target: string, fallback?: string): Promise<string> {
@@ -2447,7 +2807,7 @@ function handleMatches(actual: string | undefined, expectedLabel: string): boole
 
 function cutNetLabelNodes(webviewPage: FrameLocator, label: string) {
   return webviewPage.locator('[data-node-kind="netLabel"]').filter({
-    has: webviewPage.locator('.hdl-net-label-text').filter({ hasText: exactText(label) }),
+    has: webviewPage.locator('.hdl-net-label-text-value').filter({ hasText: exactText(label) }),
   });
 }
 

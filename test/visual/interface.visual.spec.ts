@@ -61,7 +61,7 @@ test.describe('interface visual rendering', () => {
         stroke: style.stroke
       };
     });
-    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-interface):not(.svsch-edge-interface-bg):not(.svsch-edge-struct)').first().evaluate((element) => {
+    const normalEdgeWidth = await page.locator('path.svsch-edge:not(.svsch-edge-interface):not(.svsch-edge-interface-bg):not(.svsch-edge-struct):not(.svsch-edge-struct-bg):not(.svsch-edge-thick)').first().evaluate((element) => {
       return Number.parseFloat(getComputedStyle(element).strokeWidth);
     });
     expect(edgeStyle.stroke).toContain('svsch-interface-stripes');
@@ -69,7 +69,7 @@ test.describe('interface visual rendering', () => {
     expect(interfaceBgStyle.stroke).not.toBe(edgeStyle.stroke);
     expect(edgeStyle.strokeWidth).toBeGreaterThan(normalEdgeWidth * 2);
 
-    await expectGraphAndScreenshot(page,'interface-patterned-edge-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-patterned-edge-canvas.png', { clip: await paddedGraphClip(page) });
 
     const masterLabelMessagePromise = page.waitForEvent('console', (message) => message.text().startsWith('NAVIGATE:'));
     await linkNode.locator('.svsch-interface-side-left.svsch-interface-side-modport-label', { hasText: 'master' }).click();
@@ -186,7 +186,7 @@ test.describe('interface visual rendering', () => {
     expect(monitor?.left).toBe(false);
     expect(new Set(tapBoxes.map((tap) => tap.top)).size).toBeGreaterThan(1);
 
-    await expectGraphAndScreenshot(page,'interface-multi-modport-instance-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-multi-modport-instance-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders alternate multi-modport interface arrangements', async ({ page }) => {
@@ -198,7 +198,7 @@ test.describe('interface visual rendering', () => {
     await expect(uneven.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveText(['consumer']);
     await expect(uneven.locator('.svsch-interface-top-label', { hasText: 'clk' })).toBeVisible();
     await expect(uneven.locator('.svsch-interface-top-label', { hasText: 'rst_n' })).toBeVisible();
-    await expectGraphAndScreenshot(page,'interface-uneven-modport-instance-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-uneven-modport-instance-canvas.png', { clip: await paddedGraphClip(page) });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_consumer_fanout');
 
@@ -211,7 +211,7 @@ test.describe('interface visual rendering', () => {
     await expect(page.locator('[data-node-id="instance:interface_consumer_fanout:u_sink2"]')).toBeVisible();
     expect(await page.locator('.svsch-edge-junction').count()).toBeGreaterThan(0);
     await expect(page.locator('.svsch-edge-junction-interface').first()).toHaveAttribute('r', '6.5');
-    await expectGraphAndScreenshot(page,'interface-consumer-fanout-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
+    await expectGraphAndScreenshot(page,'interface-consumer-fanout-canvas.png', { clip: await paddedGraphClip(page) });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_all_left_modports');
 
@@ -223,7 +223,7 @@ test.describe('interface visual rendering', () => {
     await expect(arbiter.locator('.svsch-port-label', { hasText: 'bus' }).locator('.svsch-port-type-suffix-blue')).toHaveText('{}');
     await expect(allLeft.locator('.svsch-interface-side-left.svsch-interface-side-modport-label')).toHaveText(['requester', 'arbiter']);
     await expect(allLeft.locator('.svsch-interface-side-right.svsch-interface-side-modport-label')).toHaveCount(0);
-    await expectGraphAndScreenshot(page,'interface-all-left-modports-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 600 });
+    await expectGraphAndScreenshot(page,'interface-all-left-modports-canvas.png', { clip: await paddedGraphClip(page) });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_all_right_modports');
 
@@ -268,7 +268,7 @@ test.describe('interface visual rendering', () => {
         target: 'interface:interface_dual_modport_bridge:downstream'
       })
     ]));
-    await expectGraphAndScreenshot(page,'interface-dual-modport-bridge-top-canvas.png', { clip: await canvasClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-dual-modport-bridge-top-canvas.png', { clip: await canvasClip(page) });
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'pair_bridge');
     await fitGraphView(page);
@@ -289,7 +289,7 @@ test.describe('interface visual rendering', () => {
     await expect(downstreamPort).toHaveClass(/hdl-port-skinned/);
     await expect(upstreamPort.locator('.svsch-port-modport-label', { hasText: 'master' }).first()).toBeVisible();
     await expect(downstreamPort.locator('.svsch-port-modport-label', { hasText: 'slave' }).first()).toBeVisible();
-    await expectGraphAndScreenshot(page,'interface-dual-modport-bridge-module-canvas.png', { clip: await canvasClip(page), maxDiffPixels: 600 });
+    await expectGraphAndScreenshot(page,'interface-dual-modport-bridge-module-canvas.png', { clip: await canvasClip(page) });
   });
 
   test('renders interface instance scalar outputs with a bottom cap', async ({ page }) => {
@@ -311,7 +311,7 @@ test.describe('interface visual rendering', () => {
       })
     ]));
 
-    await expectGraphAndScreenshot(page,'interface-output-wire-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-output-wire-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders interface scalar caps without side modports', async ({ page }) => {
@@ -325,6 +325,6 @@ test.describe('interface visual rendering', () => {
     await expect(status.locator('.svsch-interface-bottom-label', { hasText: 'done' })).toBeVisible();
     await expect(status.locator('.svsch-interface-side-label')).toHaveCount(0);
 
-    await expectGraphAndScreenshot(page,'interface-caps-only-canvas.png', { clip: await paddedGraphClip(page), maxDiffPixels: 400 });
+    await expectGraphAndScreenshot(page,'interface-caps-only-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });

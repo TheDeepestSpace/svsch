@@ -1,5 +1,5 @@
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useStore } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
@@ -12,13 +12,23 @@ const vscode = getVscodeApi();
 export function NetLabelNode({
   node,
   moduleName,
+  selected,
   style
 }: {
   node: PositionedNode;
   moduleName: string;
+  selected?: boolean;
   style: React.CSSProperties;
 }): React.ReactElement {
   const cutNet = node.metadata?.cutNet;
+  // Absent origin (labels saved before this field existed) reads as
+  // synthetic: freely renameable, same as always.
+  const isDeclaredName = cutNet?.origin === 'declared';
+  // The label's current text is still the net's legal name right after a
+  // cut, even for a synthetic default — italics mark a name the user has
+  // actively chosen to diverge from that default, not the origin itself.
+  const isRenamed = cutNet?.isRenamed === true;
+  const aliasNames = cutNet?.aliasNames;
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(node.label);
@@ -59,6 +69,23 @@ export function NetLabelNode({
   const handlePosition = handlePositionForSide(handleSide);
   const handleType = cutNet?.role === 'source' ? 'target' : 'source';
   const isHovered = hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
+  // A marquee drawn around the real block/port a cut end is attached to
+  // rarely also covers the label itself — it can sit well outside that
+  // node's own bounding box — so this node's own `selected` prop alone
+  // misses that case. React Flow does still mark the label's cut-stub edge
+  // selected whenever either endpoint is (same behavior the wire's own halo
+  // already relies on), so checking that edge catches the drag-select case
+  // without requiring the marquee to physically reach the label.
+  const isStubEdgeSelected = useStore((state) => {
+    for (const edge of state.edges) {
+      if ((edge.source === node.id || edge.target === node.id) && edge.selected) return true;
+    }
+    return false;
+  });
+  // Drag-selecting a dangling end reuses the exact same "this wire matters
+  // right now" treatment as hovering its net — the halo on its stub and the
+  // highlight on its own name — instead of introducing a separate style.
+  const isHighlighted = isHovered || selected === true || isStubEdgeSelected;
   const edgeStyleClasses = [
     cutNet?.edgeStyle?.aggregate === 'struct' ? 'hdl-net-label-struct' : '',
     cutNet?.edgeStyle?.aggregate === 'interface' ? 'hdl-net-label-interface' : '',
@@ -69,23 +96,24 @@ export function NetLabelNode({
 
   return (
     <div
-      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}`}
+      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}${selected ? ' hdl-net-label-selected' : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
       style={style}
       tabIndex={0}
-      title={node.label}
+      title={isDeclaredName ? `${node.label} (declared in source — cannot be renamed)` : node.label}
       onDoubleClick={(event) => {
         event.stopPropagation();
+        if (isDeclaredName) return;
         setEditing(true);
       }}
       onMouseEnter={() => { setHovered(cutNet?.netKey); setIsDirectlyHovered(true); }}
       onMouseLeave={() => { setHovered(undefined); setIsDirectlyHovered(false); }}
     >
       {cutNet && <Handle type={handleType} id="cut" position={handlePosition} />}
-      <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} />
+      <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} isHighlighted={isHighlighted} />
       {cutNet?.isSourceStacked && (
-        <ArrayStackLeads side={handleSide} width={nodeWidth} y={nodeHeight / 2} trimSink={cutNet?.role === 'source'} />
+        <ArrayStackLeads side={handleSide} width={nodeWidth} y={nodeHeight / 2} trimSink={cutNet?.role === 'source'} wide={cutNet?.edgeStyle?.thick === true} thick={cutNet?.edgeStyle?.thick === true} />
       )}
       {editing ? (
         <input
@@ -109,28 +137,67 @@ export function NetLabelNode({
           }}
         />
       ) : (
-        <span className={`hdl-net-label-text${isHovered ? ' hdl-net-label-text-hovered' : ''}`}>{node.label}</span>
+        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`}>
+          <span className="hdl-net-label-text-value">{node.label}</span>
+          {aliasNames && aliasNames.length > 0 && (
+            <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`} tone="info">
+              {(trigger) => (
+                <sup
+                  {...trigger}
+                  className="hdl-net-label-alias-marker nodrag nopan"
+                  role="img"
+                  aria-label={`This net also has these declared aliases: ${aliasNames.join(', ')}`}
+                >
+                  *
+                </sup>
+              )}
+            </Tooltip>
+          )}
+        </span>
       )}
       {cutNet && (
-        <button
-          className="hdl-net-label-tie nodrag nopan"
-          type="button"
-          aria-label="Tie net back together"
-          title="Tie net back together"
-          onClick={(event) => {
-            event.stopPropagation();
-            vscode.postMessage({
-              type: 'tieNet',
-              moduleName,
-              netKey: cutNet.netKey
-            });
-          }}
-          onDoubleClick={stopDrag}
-          onMouseDown={stopDrag}
-          onPointerDown={stopDrag}
-        >
-          Tie
-        </button>
+        <span className="hdl-net-label-actions">
+          {isRenamed && (
+            <button
+              className="hdl-net-label-revert nodrag nopan"
+              type="button"
+              aria-label="Revert label to the net's default name"
+              title="Revert label to the net's default name"
+              onClick={(event) => {
+                event.stopPropagation();
+                vscode.postMessage({
+                  type: 'revertCutNetLabel',
+                  moduleName,
+                  netKey: cutNet.netKey
+                });
+              }}
+              onDoubleClick={stopDrag}
+              onMouseDown={stopDrag}
+              onPointerDown={stopDrag}
+            >
+              Revert label
+            </button>
+          )}
+          <button
+            className="hdl-net-label-tie nodrag nopan"
+            type="button"
+            aria-label="Tie net back together"
+            title="Tie net back together"
+            onClick={(event) => {
+              event.stopPropagation();
+              vscode.postMessage({
+                type: 'tieNet',
+                moduleName,
+                netKey: cutNet.netKey
+              });
+            }}
+            onDoubleClick={stopDrag}
+            onMouseDown={stopDrag}
+            onPointerDown={stopDrag}
+          >
+            Tie
+          </button>
+        </span>
       )}
       {node.warningNote && (
         <Tooltip content={node.warningNote}>

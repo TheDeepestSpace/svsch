@@ -1,7 +1,9 @@
 import React from 'react';
 import {
   Position,
+  ViewportPortal,
   type EdgeProps,
+  useEdges,
   useNodes,
   useReactFlow
 } from '@xyflow/react';
@@ -17,6 +19,7 @@ import {
   segmentOrientation,
   dominantOrientation,
   midpoint,
+  pointNearPathStart,
   avoidFeedbackObstacles,
   type NodeObstacle
 } from './logic';
@@ -24,14 +27,13 @@ import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
 import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender, type LineJumpHalo } from '../react-flow-line-jumps';
 import { InteractionContext } from '../nodes/shared/context';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
-import { ARRAY_STACK_LAYERS, arrayStackLayerTrim, type ArrayStackLayerId } from '../arrayStackGeometry';
+import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
+import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import {
+  computeStackedEdgeLayerPoints,
   convergingStackPath,
-  offsetPointsForArrayStackLayer,
   promotedStackFanoutPath,
-  shortenStackSource,
-  shortenStackTarget,
   stableFragmentId,
   stackedLayerEdgeClass,
   stackedLayerGradientStopClass,
@@ -48,6 +50,7 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
 }
 
 import { getVscodeApi } from '../vscodeApi';
+import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
@@ -142,7 +145,11 @@ function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
       return {
         ...diagramNode,
         position: node.position,
-        fixed: true
+        // Cutting/rerouting freezes the rest of the diagram in place — but a
+        // net-cut label that's still tracking its port dynamically must not
+        // be forced fixed just because it happened to be on screen; only
+        // honor an actual existing pin.
+        fixed: diagramNode.kind === 'netLabel' ? diagramNode.fixed : true
       };
     })
     .filter((node): node is PositionedNode => node !== undefined);
@@ -161,12 +168,21 @@ export function OrthogonalEdge({
   sourceHandleId,
   targetHandleId,
   label,
+  selected,
   data
 }: EdgeProps): React.ReactElement {
   const reactFlow = useReactFlow();
   const flowNodes = useNodes();
+  const flowEdges = useEdges();
   const context = useOptionalLineJumpContext();
-  const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
+  const {
+    hoveredNetKey,
+    setHovered,
+    selectionHoverActive,
+    setSelectionHoverActive,
+    pendingSelectionAction,
+    setPendingSelectionAction
+  } = React.useContext(InteractionContext);
 
   const edgeData = data as OrthogonalEdgeData | undefined;
   const diagramEdge = edgeData?.edge;
@@ -194,11 +210,32 @@ export function OrthogonalEdge({
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
   const isMuxSelectorPromotion = targetNode?.kind === 'mux' && targetHandleId === 'sel';
+  const isThickWire = edgeIsThick(diagramEdge, sourceNode, targetNode);
+  // The fork/fanout geometry must spread at the array-stacked endpoint's own
+  // lane offset (matching its card layers), independent of whether this
+  // particular scalar control wire (e.g. clk/rst into a wide data register)
+  // is itself thick — see nodeStackIsWide's doc comment.
+  const promotedStackWide = targetNode ? nodeStackIsWide(targetNode) : false;
+  const convergingStackWide = sourceNode ? nodeStackIsWide(sourceNode) : false;
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
   const isGroupSelected = (sourceFlowNode?.selected === true) && (targetFlowNode?.selected === true);
-  
+
+  // Every other cuttable/reroutable wire that's part of the same multi-selection
+  // as this one, so hovering or acting on any one of them can target them all.
+  const selectedCuttableEdges = React.useMemo(
+    () => flowEdges.filter((edge) => (
+      edge.selected === true
+      && edge.data?.edge !== undefined
+      && edge.data.edge.metadata?.cutStub === undefined
+    )),
+    [flowEdges]
+  );
+  const isMultiSelected = selected === true && selectedCuttableEdges.length > 1;
+  const isPendingCutTarget = isMultiSelected && pendingSelectionAction === 'cut';
+  const isPendingRerouteTarget = isMultiSelected && pendingSelectionAction === 'reroute';
+
   const [hoveredSegmentIndex, setHoveredSegmentIndex] = React.useState<number | null>(null);
   const [isEdgeHovered, setIsEdgeHovered] = React.useState(false);
   // localPoints represents the "structured" path during a drag
@@ -260,33 +297,18 @@ export function OrthogonalEdge({
   const sourceHdlPosition = forceStraight && isVertical
     ? HdlPosition.Bottom
     : sourcePosition as unknown as HdlPosition;
-  const backStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'back')),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('back')) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('back')) : 0,
-    targetHdlPosition
-  );
-  const middleStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(points),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('middle')) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('middle')) : 0,
-    targetHdlPosition
-  );
-  const frontStackPoints = shortenStackTarget(
-    shortenStackSource(
-      makeOrthogonal(offsetPointsForArrayStackLayer(points, 'front')),
-      sourceIsArray ? (sourceIsArrayComposition ? -6 : arrayStackLayerTrim('front')) : 0,
-      sourceHdlPosition
-    ),
-    targetIsArray ? (targetIsArrayBreakout ? 6 : arrayStackLayerTrim('front')) : 0,
-    targetHdlPosition
-  );
+  const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
+    points,
+    sourceHdlPosition,
+    targetHdlPosition,
+    sourceIsArray,
+    sourceIsArrayComposition,
+    sourceNode,
+    targetIsArray,
+    targetIsArrayBreakout,
+    targetNode,
+    isThickWire
+  });
 
   const edgeGeometry = React.useMemo(() => ({
     edgeId: id,
@@ -298,10 +320,11 @@ export function OrthogonalEdge({
     targetHandlePoint: { x: targetX, y: targetY },
     isStruct: isStructAggregate,
     isInterface: isInterfaceAggregate,
+    isThick: isThickWire,
     isStacked: isStacked && !isPromotedStack && !isConvergingStack
   }), [
     id, points, source, target, targetHandleId, netKey, sourceX, sourceY, targetX, targetY,
-    isStructAggregate, isInterfaceAggregate, isStacked, isPromotedStack, isConvergingStack
+    isStructAggregate, isInterfaceAggregate, isThickWire, isStacked, isPromotedStack, isConvergingStack
   ]);
 
   const edgeRender = useLineJumpRender(edgeGeometry);
@@ -376,27 +399,54 @@ export function OrthogonalEdge({
   const promotedFanout = isPromotedStack ? promotedStackFanoutPath(
     points,
     targetPosition as unknown as HdlPosition,
-    diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1)
+    diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1),
+    promotedStackWide
   ) : undefined;
   const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
   const convergingStackPaths = isConvergingStack
     ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition))
+      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition, convergingStackWide))
       .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
     : [];
   const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
-  const labelPoint = points[Math.floor(points.length / 2)] ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const labelPoint = pointNearPathStart(points) ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
-  const showCutButton = isEdgeHovered && diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub;
+  // One end of a cut stub is always the synthetic `netLabel` node — whichever
+  // of source/target carries the `cut-label:` id — used by the stub's own
+  // solo "Reroute" control to reset just that dangling end's position.
+  const cutLabelNodeId = isCutStub
+    ? (diagramEdge?.source.startsWith('cut-label:') ? diagramEdge.source : diagramEdge?.target)
+    : undefined;
+  // The stub's own midpoint sits right next to the port it's attached to —
+  // routinely underneath the connected block's handle, which always wins
+  // pointer-event hit-testing over floating edge UI. Anchor the reset button
+  // just below the label itself instead: by construction it's offset clear
+  // of the block, so the control lands somewhere actually clickable.
+  const cutLabelFlowNode = cutLabelNodeId ? flowNodes.find((node) => node.id === cutLabelNodeId) : undefined;
+  const cutLabelButtonAnchor = cutLabelFlowNode
+    ? {
+      x: cutLabelFlowNode.position.x + diagramNodeDimensions(cutLabelFlowNode.data.node).width / 2,
+      y: cutLabelFlowNode.position.y + diagramNodeDimensions(cutLabelFlowNode.data.node).height
+    }
+    : cutButtonPoint;
+  // A wire's own controls normally only appear while it's directly hovered. When
+  // it's part of a multi-wire selection, hovering ANY selected wire reveals every
+  // selected wire's controls, so the user can see (and act on) the whole batch.
+  // Cut stubs are excluded from multi-select batching (they can't be cut again),
+  // so they only ever show their own solo Reroute control on direct hover.
+  const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub
+    && (isEdgeHovered || (isMultiSelected && selectionHoverActive));
+  const showCutStubResetButton = isCutStub && diagramEdge !== undefined && edgeData?.moduleName !== undefined
+    && cutLabelNodeId !== undefined && isEdgeHovered;
   const netGeometries = context && edgeData?.netEdgeIds
     ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
     : [];
-  const netJunctions = (isLeaderInNet || isInterfaceAggregate) && context
+  const netJunctions = (isLeaderInNet || isInterfaceAggregate || isStructAggregate) && context
     ? findNetJunctions(netGeometries)
     : [];
-  const useStackedJunctionDots = sourceIsArray && isLeaderInNet && !isInterfaceAggregate;
+  const useStackedJunctionDots = sourceIsArray && isLeaderInNet && !isInterfaceAggregate && !isStructAggregate;
 
   const keepEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -405,7 +455,10 @@ export function OrthogonalEdge({
     }
     setIsEdgeHovered(true);
     setHovered(netKey);
-  }, [netKey, setHovered]);
+    if (isMultiSelected) {
+      setSelectionHoverActive(true);
+    }
+  }, [netKey, setHovered, isMultiSelected, setSelectionHoverActive]);
 
   const releaseEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -414,9 +467,10 @@ export function OrthogonalEdge({
     setHovered(undefined);
     hoverClearTimeoutRef.current = setTimeout(() => {
       setIsEdgeHovered(false);
+      setSelectionHoverActive(false);
       hoverClearTimeoutRef.current = undefined;
     }, 500);
-  }, [setHovered]);
+  }, [setHovered, setSelectionHoverActive]);
 
   React.useEffect(() => () => {
     if (hoverClearTimeoutRef.current) {
@@ -501,7 +555,16 @@ export function OrthogonalEdge({
       {isInterfaceAggregate && (
         <defs>
           <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-            <line className="svsch-interface-stripe" x1="0" y1="0" x2="0" y2="10" />
+            {/* Centered in the tile: pattern content is clipped to the 10px tile, so a
+                line at x=0 would lose half its stroke width. */}
+            <line className="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+          </pattern>
+        </defs>
+      )}
+      {isStructAggregate && (
+        <defs>
+          <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+            <line className="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
           </pattern>
         </defs>
       )}
@@ -577,16 +640,29 @@ export function OrthogonalEdge({
           })()}
         </g>
       )}
-      {isGroupSelected && isLeaderInNet && (
-        <path className="svsch-edge-group-selected" d={edgeRender.path} />
+      {/* Selection and pending batch-action preview reuse the exact same halo
+          used when hovering a net (svsch-edge-net-highlight), so every "this
+          wire matters right now" state reads as one consistent style instead
+          of introducing new ones. Covers: React Flow flagging the edge itself
+          (selected — marquee, single click), both endpoint nodes selected
+          without the edge itself being flagged (isGroupSelected — e.g.
+          shift/ctrl-click on each node), and hovering the Cut/Reroute control
+          of a multi-wire selection. */}
+      {(selected || (isGroupSelected && isLeaderInNet) || isPendingCutTarget || isPendingRerouteTarget) && (
+        <g className="svsch-edge-net-highlight-group">
+          <path className="svsch-edge-net-highlight" d={edgeRender.path} />
+        </g>
       )}
       {isStacked && (sourceIsArray || targetIsArray) ? (
         <>
           {isInterfaceAggregate && (
             <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
           )}
+          {isStructAggregate && (
+            <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
+          )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className="svsch-edge svsch-edge-stacked-back" d={backStackPath} />
+            <path className={`svsch-edge svsch-edge-stacked-back${isThickWire ? ' svsch-edge-thick' : ''}`} d={backStackPath} />
           )}
           {promotedFanout ? (
             <>
@@ -604,12 +680,12 @@ export function OrthogonalEdge({
                   <stop offset="100%" className="svsch-stack-gradient-back-stop" />
                 </linearGradient>
               </defs>
-              <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={promotedFanout.trunk} />
+              <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={promotedFanout.trunk} />
               <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} style={{ stroke: `url(#${promotedFanoutGradientId})` }} />
               {promotedFanout.branches.map((branch, index) => (
                 <path
                   key={`${id}-stack-branch-${index}`}
-                  className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}`}
+                  className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${isThickWire ? ' svsch-edge-thick' : ''}`}
                   d={branch.path}
                 />
               ))}
@@ -636,17 +712,17 @@ export function OrthogonalEdge({
               {convergingStackPaths.map((stackPath) => (
                 <path
                   key={`${id}-stack-converge-${stackPath.layerId}`}
-                  className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`}
+                  className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
                   d={stackPath.path}
                   style={{ stroke: `url(#${convergingStackGradientId(stackPath.layerId)})` }}
                 />
               ))}
             </>
           ) : (
-            <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
+            <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
           )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className="svsch-edge svsch-edge-stacked-front" d={frontStackPath} />
+            <path className={`svsch-edge svsch-edge-stacked-front${isThickWire ? ' svsch-edge-thick' : ''}`} d={frontStackPath} />
           )}
         </>
       ) : (
@@ -654,11 +730,14 @@ export function OrthogonalEdge({
           {isInterfaceAggregate && (
             <path className="svsch-edge svsch-edge-interface-bg" d={edgeRender.path} />
           )}
-          <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}`} d={edgeRender.path} />
+          {isStructAggregate && (
+            <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
+          )}
+          <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={edgeRender.path} />
         </>
       )}
       <path
-        className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}`}
+        className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}${isThickWire ? ' svsch-edge-bridge-thick' : ''}`}
         d={rawEdgePath}
       />
       {overlapHints.map((hint) => (
@@ -667,11 +746,11 @@ export function OrthogonalEdge({
       {netJunctions.map((junction) => (
         useStackedJunctionDots ? (
           <g key={`${id}-junction-${junction.id}`} className="svsch-edge-junction-stacked">
-            {[
-              { layer: ARRAY_STACK_LAYERS.front, opacity: 1 },
-              { layer: ARRAY_STACK_LAYERS.middle, opacity: 0.75 },
-              { layer: ARRAY_STACK_LAYERS.back, opacity: 0.5 }
-            ].map(({ layer, opacity }, index) => (
+            {(() => { const junctionLayers = arrayStackLayersFor(isThickWire); return [
+              { layer: junctionLayers.front, opacity: 1 },
+              { layer: junctionLayers.middle, opacity: 0.75 },
+              { layer: junctionLayers.back, opacity: 0.5 }
+            ]; })().map(({ layer, opacity }, index) => (
               <circle
                 key={`${id}-junction-${junction.id}-${index}`}
                 className="svsch-edge-junction svsch-edge-junction-stacked-dot"
@@ -685,10 +764,10 @@ export function OrthogonalEdge({
         ) : (
           <circle
             key={`${id}-junction-${junction.id}`}
-            className={`svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}`}
+            className={`svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}${isStructAggregate ? ' svsch-edge-junction-struct' : ''}`}
             cx={junction.x}
             cy={junction.y}
-            r={isInterfaceAggregate ? 6.5 : 4.75}
+            r={isInterfaceAggregate || isStructAggregate ? 6.5 : 4.75}
           />
         )
       ))}
@@ -749,10 +828,19 @@ export function OrthogonalEdge({
             <button
               type="button"
               className="svsch-edge-reroute-control"
-              title="Reroute this connection"
+              title={isMultiSelected ? `Reroute ${selectedCuttableEdges.length} selected connections` : 'Reroute this connection'}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                if (isMultiSelected) {
+                  vscode.postMessage({
+                    type: 'rerouteEdges',
+                    moduleName: edgeData.moduleName,
+                    edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                  });
                   return;
                 }
                 vscode.postMessage({
@@ -765,16 +853,27 @@ export function OrthogonalEdge({
               onDoubleClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
+              onMouseEnter={() => setPendingSelectionAction('reroute')}
+              onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Reroute
             </button>
             <button
               type="button"
               className="svsch-edge-cut-control"
-              title="Cut net"
+              title={isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'}
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
+                  return;
+                }
+                if (isMultiSelected) {
+                  vscode.postMessage({
+                    type: 'cutNets',
+                    moduleName: edgeData.moduleName,
+                    edges: selectedCuttableEdges.map((edge) => edge.data?.edge).filter((edge): edge is DiagramEdge => edge !== undefined),
+                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                  });
                   return;
                 }
                 vscode.postMessage({
@@ -787,15 +886,76 @@ export function OrthogonalEdge({
               onDoubleClick={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
+              onMouseEnter={() => setPendingSelectionAction('cut')}
+              onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Cut
             </button>
           </div>
         </foreignObject>
       )}
+      {showCutStubResetButton && (
+        // A cut stub is always short and hugs the node it's attached to, so
+        // its own (deliberately low, non-covering) SVG edge layer sits behind
+        // node handles — a foreignObject control here would be unclickable
+        // wherever it lands near a port. Render it through the same
+        // ViewportPortal + elevated z-index mechanism the selection Auto
+        // Layout toolbar already uses to float above everything.
+        <ViewportPortal>
+          <div
+            className="svsch-cut-stub-reset-layer"
+            style={{ left: cutLabelButtonAnchor.x - 32, top: cutLabelButtonAnchor.y + 4 }}
+            onMouseEnter={keepEdgeHover}
+            onMouseLeave={releaseEdgeHover}
+          >
+            <div className="svsch-edge-connection-controls-inner">
+              <button
+                type="button"
+                className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
+                title="Reset this dangling end to its canonical position"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!edgeData?.moduleName || !cutLabelNodeId) {
+                    return;
+                  }
+                  vscode.postMessage({
+                    type: 'resetCutLabelPosition',
+                    moduleName: edgeData.moduleName,
+                    nodeId: cutLabelNodeId
+                  });
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                Reroute
+              </button>
+            </div>
+          </div>
+        </ViewportPortal>
+      )}
       {label && (
-        <foreignObject width={48} height={22} x={labelPoint.x - 24} y={labelPoint.y - 11} className="svsch-edge-label">
-          <div>{label}</div>
+        // Left-anchored at the lead point instead of centered on it — a
+        // centered 120-wide box would extend 60px back toward the block the
+        // wire just left, overlapping it on anything but a long lead.
+        <foreignObject width={120} height={14} x={labelPoint.x} y={labelPoint.y - 17} className="svsch-edge-label">
+          <div>
+            <span className="svsch-edge-label-text">{label}</span>
+            {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
+              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`} tone="info">
+                {(trigger) => (
+                  <sup
+                    {...trigger}
+                    className="hdl-net-label-alias-marker nodrag nopan"
+                    role="img"
+                    aria-label={`This net also has these declared aliases: ${diagramEdge.metadata!.aliasNames!.join(', ')}`}
+                  >
+                    *
+                  </sup>
+                )}
+              </Tooltip>
+            )}
+          </div>
         </foreignObject>
       )}
     </g>

@@ -34,6 +34,17 @@ describe('orthogonal edge routing', () => {
     expect(diagramSizing.edgeLeadLength % diagramSizing.gridSize).toBe(0);
   });
 
+  it('draws a flat, straight segment for two ports level with each other even when their shared Y is not itself grid-aligned', () => {
+    // A port's connection point is node-top + half its own height, which
+    // doesn't have to land on a full grid line (e.g. 52, not a multiple of
+    // the 24px grid). A fresh default route (no persisted routePoints or
+    // waypoint) must not re-snap its own internal bends independently of
+    // its endpoints — that previously opened a spurious few-pixel notch
+    // in what should render as one flat horizontal line.
+    const route = normalizeRoutePoints(undefined, 120, 52, 360, 52, HdlPosition.Right, HdlPosition.Left);
+    expect(route.every((point) => point.y === 52)).toBe(true);
+  });
+
   it('keeps horizontal leads on the route grid from one-grid-tall block handles', () => {
     const sourceY = diagramSizing.gridSize;
     const targetY = diagramSizing.gridSize * 5;

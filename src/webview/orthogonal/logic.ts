@@ -54,12 +54,25 @@ export function normalizeRoutePoints(
   const targetLead = forceStraight
     ? { x: targetX, y: targetY }
     : snapLeadPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen), targetX, targetY, targetPosition);
+  const hasPersistedRoute = Boolean(route?.routePoints?.length || route?.waypoint);
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
     : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
 
   if (saved.length < 2) {
     return defaultRoute(sourceLead, targetLead, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
+  }
+
+  // A freshly computed default route (no persisted routePoints/waypoint to
+  // reconcile) is already exact — its internal bends are derived directly
+  // from sourceLead/targetLead, which aren't guaranteed to fall on a full
+  // grid line (a port's connection point is node position + half its own
+  // height). Running it through the snap-to-grid pass below meant for
+  // cleaning up stale/dragged points would nudge just the internal bends
+  // and not the endpoints, opening a spurious few-pixel notch in what
+  // should be a flat, straight segment.
+  if (!hasPersistedRoute) {
+    return makeOrthogonal(saved, simplify);
   }
 
   const canClampInternalPoints = leadConstraintsAreCompatible(sourceLead, targetLead, sourcePosition, targetPosition);
@@ -465,6 +478,27 @@ export function midpoint(a: OrthogonalPoint, b: OrthogonalPoint): OrthogonalPoin
   return {
     x: (a.x + b.x) / 2,
     y: (a.y + b.y) / 2
+  };
+}
+
+// A point a short, fixed distance past the route's start, along its first
+// leg — not the exact source point (that would sit on top of the port), and
+// not the path's overall midpoint. Every branch of a fanout net starts at
+// the same point regardless of where it ends up, so anchoring here (rather
+// than at the middle of each branch's own route) keeps a shared net's label
+// landing in the same place no matter which single branch ends up carrying it.
+export function pointNearPathStart(points: OrthogonalPoint[]): OrthogonalPoint | undefined {
+  if (points.length === 0) return undefined;
+  if (points.length === 1) return points[0];
+  const [start, next] = points;
+  const dx = next.x - start.x;
+  const dy = next.y - start.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return start;
+  const offset = Math.min(24, distance / 2);
+  return {
+    x: start.x + (dx / distance) * offset,
+    y: start.y + (dy / distance) * offset
   };
 }
 
