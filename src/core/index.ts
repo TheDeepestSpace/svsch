@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
-import type { SavedLayout } from '../storage/layoutStore';
+import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
 
 export interface RenderDiagramOptions {
   layoutFile?: string;
@@ -70,7 +70,7 @@ export async function renderModuleFromGraph(
   }
 
   const layoutFile = opts.layoutFile;
-  const layout = opts.noLayout ? EMPTY_LAYOUT : readLayoutForFileSync(svFilePath, workspaceRoot, layoutFile);
+  const layout = opts.noLayout ? EMPTY_LAYOUT : readLayoutForFileSync(svFilePath, workspaceRoot, moduleName, layoutFile);
 
   return await buildViewModel(graph, moduleName, layout);
 }
@@ -110,10 +110,20 @@ async function assertReadableFile(filePath: string): Promise<void> {
 function readLayoutForFileSync(
   svFilePath: string,
   workspaceRoot: string,
+  moduleName: string,
   explicitLayoutFile?: string
 ): SavedLayout {
   if (explicitLayoutFile) {
     return readLayoutSync(path.resolve(explicitLayoutFile));
+  }
+
+  // The VS Code extension saves each module's live layout under
+  // .svsch/layouts/<module>.json (see LayoutStore) — check that ahead of the
+  // legacy sidecar/monolithic candidates so a plain `svsch render` picks up
+  // whatever the user last dragged in the diagram, same as before the split.
+  const splitLayoutPath = path.join(workspaceRoot, '.svsch', 'layouts', `${encodeURIComponent(moduleName)}.json`);
+  if (fsSync.existsSync(splitLayoutPath)) {
+    return readSplitModuleLayoutSync(splitLayoutPath, moduleName);
   }
 
   const ext = path.extname(svFilePath);
@@ -141,6 +151,22 @@ function readLayoutSync(layoutFile: string): SavedLayout {
     return {
       version: 1,
       modules: parsed.modules ?? {}
+    };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return EMPTY_LAYOUT;
+    }
+    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`);
+  }
+}
+
+function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): SavedLayout {
+  try {
+    const raw = fsSync.readFileSync(layoutFile, 'utf8');
+    const parsed = JSON.parse(raw) as Partial<SavedModuleLayout>;
+    return {
+      version: 1,
+      modules: { [moduleName]: { ...parsed, nodes: parsed.nodes ?? {} } }
     };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
