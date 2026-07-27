@@ -41,7 +41,7 @@ export class DiagramPanel {
   private rebuildTimer?: NodeJS.Timeout;
   private rebuildVersion = 0;
   private graph?: DesignGraph;
-  private layout?: SavedLayout;
+  private layout: SavedLayout = { version: 1, modules: {} };
   private currentModule?: string;
   private lastSurelogPath?: string;
   private lastBackendPath?: string;
@@ -64,6 +64,24 @@ export class DiagramPanel {
     return this.store;
   }
 
+  /** Loads a module's layout into the in-memory cache if it isn't already there. */
+  private async ensureModuleLayout(store: LayoutStore, moduleName: string): Promise<void> {
+    if (this.layout.modules[moduleName]) {
+      return;
+    }
+    const moduleLayout = await store.readModuleLayout(moduleName);
+    this.layout = {
+      version: 1,
+      modules: { ...this.layout.modules, [moduleName]: moduleLayout }
+    };
+  }
+
+  /** Persists only the given module's layout — every other module's file is untouched. */
+  private async persistModuleLayout(store: LayoutStore, moduleName: string): Promise<void> {
+    const moduleLayout = this.layout.modules[moduleName] ?? { nodes: {} };
+    await store.writeModuleLayout(moduleName, moduleLayout);
+  }
+
   async open(): Promise<void> {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
@@ -79,12 +97,6 @@ export class DiagramPanel {
     }
 
     this.ensureWatcher();
-    
-    // Initialize layout from store
-    const store = this.getStore();
-    if (store) {
-        this.layout = await store.read();
-    }
 
     await this.rebuild();
   }
@@ -172,11 +184,6 @@ export class DiagramPanel {
 
     this.lastSurelogPath = surelogPath;
     this.lastBackendPath = backendPath;
-
-    const store = this.getStore();
-    if (store) {
-      this.layout = await store.read();
-    }
 
     const commonOptions = {
       workspaceRoot,
@@ -283,10 +290,9 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    const layout = this.layout ?? await store.read();
-    delete layout.modules[this.currentModule];
-    await store.write(layout);
-    this.layout = layout;
+    await store.resetModuleLayout(this.currentModule);
+    const { [this.currentModule]: _removed, ...remainingModules } = this.layout.modules;
+    this.layout = { version: 1, modules: remainingModules };
     await this.postView();
   }
 
@@ -404,8 +410,12 @@ export class DiagramPanel {
 
   private async exportSvg(): Promise<void> {
     try {
-      if (!this.graph || this.currentModule === undefined || !this.layout) {
+      if (!this.graph || this.currentModule === undefined) {
         return;
+      }
+      const store = this.getStore();
+      if (store) {
+        await this.ensureModuleLayout(store, this.currentModule);
       }
 
       let reactFlowCss = '';
@@ -551,14 +561,12 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.layout = mergeNodePositions(this.layout, moduleName, nodes);
     if (regions) {
       this.layout = mergeRegionBounds(this.layout, moduleName, regions);
     }
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
   }
 
   private async saveRegionLayout(moduleName: string, regions: PositionedGenerateRegion[]): Promise<void> {
@@ -566,46 +574,41 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.layout = mergeRegionBounds(this.layout, moduleName, regions);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
   }
 
   private async rerouteCurrentModule(moduleName: string, nodes: PositionedNode[]): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeRerouteLayout(base, moduleName, nodes);
-    await store.write(this.layout);
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = mergeRerouteLayout(this.layout, moduleName, nodes);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
   private async rerouteSingleEdge(moduleName: string, edgeId: string, nodes: PositionedNode[]): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeRerouteSingleEdge(base, moduleName, edgeId, nodes);
-    await store.write(this.layout);
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = mergeRerouteSingleEdge(this.layout, moduleName, edgeId, nodes);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
   private async rerouteSelectedEdges(moduleName: string, edgeIds: string[], nodes: PositionedNode[]): Promise<void> {
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    const store = this.getStore();
+    if (!store) {
       return;
     }
-    const store = new LayoutStore(workspaceRoot);
-    const base = await store.read();
-    this.layout = mergeRerouteEdges(base, moduleName, edgeIds, nodes);
-    await store.write(this.layout);
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = mergeRerouteEdges(this.layout, moduleName, edgeIds, nodes);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -615,9 +618,7 @@ export class DiagramPanel {
     if (!store || !designModule || !this.graph) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
 
     const selected = new Set(nodeIds);
@@ -650,7 +651,7 @@ export class DiagramPanel {
       }
     }
 
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -659,11 +660,9 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.layout = mergeEdgeWaypoint(this.layout, moduleName, edgeId, waypoint);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
   }
 
   private async saveEdgeRoute(moduleName: string, edgeId: string, routePoints: Array<{ x: number; y: number }>): Promise<void> {
@@ -671,11 +670,9 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.layout = mergeEdgeRoutePoints(this.layout, moduleName, edgeId, routePoints);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView(); // Send updated view back to webview immediately
   }
 
@@ -688,15 +685,13 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     let layout = nodes ? mergeNodePositions(this.layout, moduleName, nodes) : this.layout;
     for (const change of changes) {
       layout = mergeEdgeRoutePoints(layout, moduleName, change.edgeId, change.routePoints);
     }
     this.layout = layout;
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -706,12 +701,10 @@ export class DiagramPanel {
     if (!store || !designModule) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = mergeNetCut(this.layout, moduleName, edge, designModule, nodes);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -721,12 +714,10 @@ export class DiagramPanel {
     if (!store || !designModule) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = mergeNetCuts(this.layout, moduleName, edges, designModule, nodes);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -735,12 +726,10 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = renameCutNet(this.layout, moduleName, netKey, label);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -749,12 +738,10 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = revertCutNetLabel(this.layout, moduleName, netKey);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -763,12 +750,10 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = removeNetCut(this.layout, moduleName, netKey);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
@@ -777,18 +762,20 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    if (!this.layout) {
-      this.layout = await store.read();
-    }
+    await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = resetCutLabelPosition(this.layout, moduleName, nodeId);
-    await store.write(this.layout);
+    await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
 
   private async postView(): Promise<void> {
-    if (!this.panel || !this.graph || !this.layout || this.currentModule === undefined) {
+    if (!this.panel || !this.graph || this.currentModule === undefined) {
       return;
+    }
+    const store = this.getStore();
+    if (store) {
+      await this.ensureModuleLayout(store, this.currentModule);
     }
     const view: DiagramViewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
     await this.panel.webview.postMessage({

@@ -20,7 +20,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
   evaluateInVSCode,
 }) => {
   // A previous suite invocation can leave a saved layout behind (the extension's
-  // debounced save may re-create layout.json after a test's cleanup) — start clean.
+  // debounced save may re-create a module's layout file after a test's cleanup) — start clean.
   await clearSystemLayout();
   try {
     // --- 1. Wait for the VSCode workbench to be interactive.
@@ -399,11 +399,11 @@ test('flags a module port dragged into a generate block', async ({
 });
 
 const SYSTEM_GRID_SIZE = 24;
-const SYSTEM_LAYOUT_PATH = path.resolve(__dirname, '../.svsch/layout.json');
+const SYSTEM_LAYOUTS_DIR = path.resolve(__dirname, '../.svsch/layouts');
 type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
 
 async function clearSystemLayout(): Promise<void> {
-  await fs.promises.rm(SYSTEM_LAYOUT_PATH, { force: true }).catch(() => {});
+  await fs.promises.rm(SYSTEM_LAYOUTS_DIR, { recursive: true, force: true }).catch(() => {});
 }
 
 async function openSystemDiagram(
@@ -697,12 +697,28 @@ async function dragSystemConnectionSegmentByGridCells(
   }, { timeout: 10_000 }).toBe(true);
 }
 
+// The extension persists each module's layout as its own file under
+// .svsch/layouts/<encoded-module-name>.json (see LayoutStore) instead of one
+// monolithic layout.json, so this reassembles the { version, modules } shape
+// these tests assert against from whichever per-module files exist.
 async function readSystemLayout(): Promise<any> {
+  const modules: Record<string, any> = {};
+  let entries: string[];
   try {
-    return JSON.parse(await fs.promises.readFile(SYSTEM_LAYOUT_PATH, 'utf8'));
+    entries = await fs.promises.readdir(SYSTEM_LAYOUTS_DIR);
   } catch {
-    return { version: 1, modules: {} };
+    return { version: 1, modules };
   }
+  for (const entry of entries) {
+    if (!entry.endsWith('.json')) continue;
+    const moduleName = decodeURIComponent(entry.slice(0, -'.json'.length));
+    try {
+      modules[moduleName] = JSON.parse(await fs.promises.readFile(path.join(SYSTEM_LAYOUTS_DIR, entry), 'utf8'));
+    } catch {
+      // Ignore a file that's mid-write; the poll loops calling this retry.
+    }
+  }
+  return { version: 1, modules };
 }
 
 async function waitForSystemNodePersisted(nodeId: string, position: { x: number; y: number }): Promise<void> {

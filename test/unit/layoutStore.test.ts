@@ -2,61 +2,87 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { LayoutStore, SavedLayout } from '../../src/storage/layoutStore';
+import { LayoutStore } from '../../src/storage/layoutStore';
 
-describe('LayoutStore Concurrency Fixed', () => {
+describe('LayoutStore', () => {
   let tmpDir: string;
   let store: LayoutStore;
-  let memoryLayout: SavedLayout;
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-test-'));
     store = new LayoutStore(tmpDir);
-    memoryLayout = { version: 1, modules: {} };
   });
 
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('verifies that in-memory state avoids race conditions', async () => {
-    // Initial state
-    await store.write(memoryLayout);
+  it('returns an empty layout for a module that was never saved', async () => {
+    const layout = await store.readModuleLayout('never_saved');
+    expect(layout).toEqual({ nodes: {} });
+  });
+
+  it('persists each module to its own file under .svsch/layouts/', async () => {
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 10, y: 0 } } });
     await store.flush();
 
-    const simulateSave = async (moduleName: string, x: number) => {
-      // Use in-memory state as source of truth, just like DiagramPanel now does
-      memoryLayout = {
-        ...memoryLayout,
-        modules: {
-          ...memoryLayout.modules,
-          [moduleName]: {
-            nodes: {
-              'node1': { x, y: 0 }
-            }
-          }
-        }
-      };
-      await store.write(memoryLayout);
-    };
+    const moduleAPath = path.join(tmpDir, '.svsch', 'layouts', 'moduleA.json');
+    const raw = await fs.readFile(moduleAPath, 'utf8');
+    expect(JSON.parse(raw)).toEqual({ nodes: { node1: { x: 10, y: 0 } } });
 
-    // Trigger two saves for DIFFERENT modules concurrently
+    // Only the written module's file exists — no monolithic layout.json.
+    const entries = await fs.readdir(path.join(tmpDir, '.svsch', 'layouts'));
+    expect(entries).toEqual(['moduleA.json']);
+    await expect(fs.access(path.join(tmpDir, '.svsch', 'layout.json'))).rejects.toThrow();
+  });
+
+  it('writes concurrent updates to different modules without clobbering each other', async () => {
     await Promise.all([
-      simulateSave('moduleA', 10),
-      simulateSave('moduleB', 20)
+      store.writeModuleLayout('moduleA', { nodes: { node1: { x: 10, y: 0 } } }),
+      store.writeModuleLayout('moduleB', { nodes: { node1: { x: 20, y: 0 } } })
     ]);
-
-    // Ensure it's written to disk
     await store.flush();
 
-    const onDisk = await store.read();
-    
-    console.log('Final modules on disk:', Object.keys(onDisk.modules));
-    
-    // BOTH should be there now
-    expect(onDisk.modules['moduleA']).toBeDefined();
-    expect(onDisk.modules['moduleB']).toBeDefined();
-    expect(onDisk.modules['moduleA'].nodes['node1'].x).toBe(10);
-    expect(onDisk.modules['moduleB'].nodes['node1'].x).toBe(20);
+    const moduleA = await store.readModuleLayout('moduleA');
+    const moduleB = await store.readModuleLayout('moduleB');
+    expect(moduleA.nodes.node1.x).toBe(10);
+    expect(moduleB.nodes.node1.x).toBe(20);
+  });
+
+  it('debounces rapid writes to the same module into a single file write', async () => {
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 0 } } });
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 2, y: 0 } } });
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 3, y: 0 } } });
+    await store.flush();
+
+    const layout = await store.readModuleLayout('moduleA');
+    expect(layout.nodes.node1.x).toBe(3);
+  });
+
+  it('sanitizes module names containing illegal filesystem characters', async () => {
+    const moduleName = 'pkg::sub/module a';
+    await store.writeModuleLayout(moduleName, { nodes: { node1: { x: 5, y: 5 } } });
+    await store.flush();
+
+    const files = await fs.readdir(path.join(tmpDir, '.svsch', 'layouts'));
+    expect(files).toEqual([`${encodeURIComponent(moduleName)}.json`]);
+
+    const roundTripped = await store.readModuleLayout(moduleName);
+    expect(roundTripped.nodes.node1).toEqual({ x: 5, y: 5 });
+  });
+
+  it('deletes only the target module file when reset', async () => {
+    await store.writeModuleLayout('moduleA', { nodes: { node1: { x: 1, y: 1 } } });
+    await store.writeModuleLayout('moduleB', { nodes: { node1: { x: 2, y: 2 } } });
+    await store.flush();
+
+    await store.resetModuleLayout('moduleA');
+
+    expect(await store.readModuleLayout('moduleA')).toEqual({ nodes: {} });
+    expect(await store.readModuleLayout('moduleB')).toEqual({ nodes: { node1: { x: 2, y: 2 } } });
+  });
+
+  it('resetModuleLayout on a module with no saved file is a no-op', async () => {
+    await expect(store.resetModuleLayout('never_saved')).resolves.toBeUndefined();
   });
 });

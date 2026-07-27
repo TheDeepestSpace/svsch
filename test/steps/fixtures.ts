@@ -601,10 +601,11 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   this.updateSnapshots = shouldUpdateSnapshots($testInfo);
 
   // Remove any on-disk layout that accumulated from the previous scenario
-  // (drag operations write to .svsch/layout.json; tests prepare per-scenario
-  //  layouts so stale positions must not leak across scenarios)
-  const layoutPath = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
-  await fs.promises.rm(layoutPath, { force: true });
+  // (drag operations write per-module files under .svsch/layouts/; tests
+  //  prepare per-scenario layouts so stale positions must not leak across
+  //  scenarios)
+  const layoutsDir = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layouts');
+  await fs.promises.rm(layoutsDir, { recursive: true, force: true });
   await cleanBddWorkspace();
 
   // Reset per-scenario state
@@ -666,8 +667,8 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
   this._bddWorkspaceFiles = [];
 
   // Remove on-disk layout so it doesn't persist into the next scenario
-  const layoutPath = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
-  await fs.promises.rm(layoutPath, { force: true });
+  const layoutsDir = path.join(BddWorld.BDD_WORKSPACE, '.svsch', 'layouts');
+  await fs.promises.rm(layoutsDir, { recursive: true, force: true });
 
   // Clean up workspace temp dir (used by CLI/openWorkspaceForEditing steps).
   // Never delete BDD_WORKSPACE — it's the VS Code workspace root and deleting
