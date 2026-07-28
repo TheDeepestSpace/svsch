@@ -6,9 +6,10 @@ on:
 
 jobs:
   validate:
-    # We skip this linter check for Dependabot PRs because our Dependabot Helper workflow
-    # automatically commits a changeset to them.
-    if: github.actor != 'dependabot[bot]'
+    # We skip this linter check for:
+    # 1. Dependabot PRs because our Dependabot Helper workflow automatically commits a changeset to them.
+    # 2. Changeset Release PRs because changesets are consumed when versioning packages.
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'changeset-release/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
