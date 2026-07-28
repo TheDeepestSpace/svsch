@@ -34,7 +34,7 @@ export default defineConfig({
   reporter: reporters,
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 50
+      maxDiffPixelRatio: 0.03
     }
   },
   use: {
