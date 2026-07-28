@@ -108,14 +108,21 @@ export class BddWorld {
         }
         const nodes = rf.getNodes().map((n: any) => {
           const nodeElement = nodeMap.get(n.id);
+          const innerElement = (nodeElement?.querySelector('.hdl-node, .hdl-bus-node, .hdl-net-label')
+            ?? nodeElement?.firstElementChild
+            ?? nodeElement) as HTMLElement;
           const warningNote = nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label')
             ?? n.data?.node?.warningNote
             ?? undefined;
+          const measuredW = n.measured?.width;
+          const measuredH = n.measured?.height;
+          const width = measuredW && measuredW < 800 ? measuredW : (n.width ?? innerElement?.offsetWidth ?? 0);
+          const height = measuredH && measuredH < 800 ? measuredH : (n.height ?? innerElement?.offsetHeight ?? 0);
           return {
             id: n.id, type: n.type,
             position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
-            width: Math.round(n.width ?? n.measured?.width ?? 0),
-            height: Math.round(n.height ?? n.measured?.height ?? 0),
+            width: Math.round(width),
+            height: Math.round(height),
             data: n.data ? {
               label: n.data.label,
               kind: n.data.node?.kind,
