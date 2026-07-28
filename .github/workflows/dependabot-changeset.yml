@@ -22,7 +22,9 @@ jobs:
       - name: Check if changeset exists
         id: check_changeset
         run: |
-          if [ -d .changeset ] && [ "$(ls -A .changeset/*.md 2>/dev/null)" ]; then
+          CLEAN_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr ' ' '_' | tr -cd 'a-zA-Z0-9_-')
+          FILE=".changeset/dependabot-${CLEAN_TITLE}.md"
+          if [ -f "$FILE" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -34,7 +36,7 @@ jobs:
           mkdir -p .changeset
           
           # Format a safe filename from the PR title
-          CLEAN_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr -cd 'a-zA-Z0-9_-' | tr ' ' '_')
+          CLEAN_TITLE=$(echo "${{ github.event.pull_request.title }}" | tr ' ' '_' | tr -cd 'a-zA-Z0-9_-')
           FILE=".changeset/dependabot-${CLEAN_TITLE}.md"
           
           echo "---" > $FILE
