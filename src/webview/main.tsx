@@ -394,15 +394,20 @@ function DiagramApp(): React.ReactElement {
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
-    setNodes(view.nodes.map((node) => ({
-      id: node.id,
-      type: 'hdl',
-      position: node.position,
-      selected: reselectIds?.has(node.id) ?? undefined,
-      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
-    })));
+    setNodes(view.nodes.map((node) => {
+      const dimensions = diagramNodeDimensions(node);
+      return {
+        id: node.id,
+        type: 'hdl',
+        position: node.position,
+        width: dimensions.width,
+        height: dimensions.height,
+        selected: reselectIds?.has(node.id) ?? undefined,
+        className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
+        zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+        data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
+      };
+    }));
     setRegions(view.generateRegions ?? []);
 
     const netToLeader = new Map<string, string>();

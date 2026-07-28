@@ -73,8 +73,8 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
           x: Math.round(n.position.x),
           y: Math.round(n.position.y)
         },
-        width: Math.round(n.measured?.width ?? n.width ?? 0),
-        height: Math.round(n.measured?.height ?? n.height ?? 0),
+        width: Math.round(n.width ?? n.measured?.width ?? 0),
+        height: Math.round(n.height ?? n.measured?.height ?? 0),
         data: n.data ? {
           label: n.data.label,
           kind: n.data.node?.kind,
