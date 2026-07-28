@@ -24,6 +24,7 @@ interface RenderOptions {
   theme: SvgThemeName;
   workspaceRoot?: string;
   projectFolder?: string;
+  svschDataDir?: string;
   surelogPath?: string;
   backendPath?: string;
   includePaths?: string[];
@@ -58,6 +59,7 @@ async function renderCommand(argv: string[]): Promise<void> {
       theme: { type: 'string', default: 'dark' },
       workspace: { type: 'string' },
       'project-folder': { type: 'string' },
+      'svsch-data-dir': { type: 'string' },
       watch: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false }
     }
@@ -95,7 +97,8 @@ async function renderCommand(argv: string[]): Promise<void> {
     noLayout: parsed.values['no-layout'] === true,
     theme,
     workspaceRoot: parsed.values.workspace,
-    projectFolder: parsed.values['project-folder']
+    projectFolder: parsed.values['project-folder'],
+    svschDataDir: parsed.values['svsch-data-dir']
   };
 
   if (options.workspaceRoot) {
@@ -103,6 +106,9 @@ async function renderCommand(argv: string[]): Promise<void> {
   }
   if (options.projectFolder) {
     process.stderr.write(`[svsch] Using custom Project folder: ${options.projectFolder}\n`);
+  }
+  if (options.svschDataDir) {
+    process.stderr.write(`[svsch] Using custom SVSCH data directory: ${options.svschDataDir}\n`);
   }
 
   // 1. Resolve project scope using the FIRST input file (standard CLI behavior)
@@ -145,24 +151,41 @@ async function renderCommand(argv: string[]): Promise<void> {
   }
 
   // 5. Pre-collect all views to ensure everything is valid before writing ANY files
-  const results: Array<{ output: string; view: any }> = [];
+  const results: Array<{ output: string; view: any; layoutSource?: string }> = [];
   for (const input of inputs) {
     const output = outputPathFor(input, options);
-    const view = await renderModuleFromGraph(graph, path.resolve(input), workspaceRoot, {
+    const { view, layoutSource } = await renderModuleFromGraph(graph, path.resolve(input), workspaceRoot, {
       ...options,
       layoutFile: options.layout,
       topModule: options.top
     });
-    results.push({ output, view });
+    results.push({ output, view, layoutSource });
   }
 
   // All valid? Write them out.
-  for (const { output, view } of results) {
+  for (const { output, view, layoutSource } of results) {
     await fs.mkdir(path.dirname(output), { recursive: true });
     const svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
+    const relativeOutput = relativeToCwd(output);
+    if (layoutSource) {
+      process.stderr.write(`[svsch] rendering ${relativeOutput} using layout file ${relativeToCwd(layoutSource)}\n`);
+    } else {
+      process.stderr.write(`[svsch] rendering ${relativeOutput} without a layout file\n`);
+    }
     await fs.writeFile(output, svg, 'utf8');
     process.stdout.write(`${output}\n`);
   }
+}
+
+// Displays paths relative to the current working directory rather than the
+// (possibly --workspace-overridden) internal workspaceRoot, so the output and
+// layout paths logged here read the same way a user typed them.
+function relativeToCwd(filePath: string): string {
+  const relative = path.relative(process.cwd(), filePath);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return filePath;
+  }
+  return normalizePath(relative);
 }
 
 function outputPathFor(input: string, options: RenderOptions): string {
@@ -306,6 +329,7 @@ Options:
       --theme <dark|light>  Fixed SVG color theme (default: dark)
       --workspace <dir>     Workspace root used for parser cache and relative paths
       --project-folder <d>  Project folder relative to workspace
+      --svsch-data-dir <d>  Directory containing layouts/<module>.json (default: <workspace>/.svsch)
 `);
 }
 

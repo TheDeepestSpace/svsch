@@ -23,6 +23,7 @@ Feature: Command Line Interface
             --theme <dark|light>  Fixed SVG color theme (default: dark)
             --workspace <dir>     Workspace root used for parser cache and relative paths
             --project-folder <d>  Project folder relative to workspace
+            --svsch-data-dir <d>  Directory containing layouts/<module>.json (default: <workspace>/.svsch)
       """
     And the CLI stderr should be empty
 
@@ -47,6 +48,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering top.svg without a layout file
       """
     And a file named "top.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
@@ -74,6 +76,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering top_with_layout.svg using layout file .svsch/layouts/top.json
       """
     And a file named "top_with_layout.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
@@ -101,6 +104,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering top_no_layout.svg without a layout file
       """
     And a file named "top_no_layout.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
@@ -125,6 +129,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering multi.svg without a layout file
       """
     And a file named "multi.svg" should exist in the workspace
     And the CLI SVG should contain "instance:top:u_sub"
@@ -151,6 +156,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering <expected_file> without a layout file
       """
     And a file named "<expected_file>" should exist in the workspace
 
@@ -181,6 +187,8 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering out/a.svg without a layout file
+      [svsch] rendering out/b.svg without a layout file
       """
     And a file named "a.svg" should exist in directory "out"
     And a file named "b.svg" should exist in directory "out"
@@ -206,6 +214,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering second.svg without a layout file
       """
     And a file named "second.svg" should exist in the workspace
     And the CLI SVG should contain "port:second:b"
@@ -234,6 +243,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering explicit.svg using layout file my_layout.json
       """
     And a file named "explicit.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
@@ -256,6 +266,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering theme.svg without a layout file
       """
     And a file named "theme.svg" should exist in the workspace
     And the CLI SVG should contain "<bg_color>"
@@ -283,6 +294,30 @@ Feature: Command Line Interface
       [svsch] Elaborating project...
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering out.svg using layout file src/.svsch/layout.json
+      """
+    And a file named "out.svg" should exist in the workspace
+    And the CLI SVG should have node "a" positioned as it is on the diagram
+
+  Scenario: Using --svsch-data-dir to find a module's layout independent of --workspace
+    Given I have the following files in my workspace:
+      | file       | content                                                 |
+      | src/top.sv | module top(input a, output y); assign y = a; endmodule |
+    When I open the "top" module in SVSCH
+    And I move the port node "a"
+    And I run the CLI command:
+      """
+      svsch render src/top.sv --workspace src --svsch-data-dir .svsch --output out.svg
+      """
+    Then the CLI stderr should be exactly:
+      """
+      [svsch] Using custom Workspace root: src
+      [svsch] Using custom SVSCH data directory: .svsch
+      [svsch] Elaborating project...
+      [svsch] Elaborating project...
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      [svsch] rendering out.svg using layout file .svsch/layouts/top.json
       """
     And a file named "out.svg" should exist in the workspace
     And the CLI SVG should have node "a" positioned as it is on the diagram
@@ -322,6 +357,7 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
+      [svsch] rendering single_b.svg without a layout file
       """
     And a file named "single_b.svg" should exist in the workspace
     And a file named "a.svg" should not exist in the workspace
