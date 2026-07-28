@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
-import type { SavedLayout } from '../storage/layoutStore';
+import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
 
 export interface RenderDiagramOptions {
   layoutFile?: string;
@@ -12,11 +12,24 @@ export interface RenderDiagramOptions {
   noLayout?: boolean;
   workspaceRoot?: string;
   projectFolder?: string;
+  /**
+   * Directory containing the `layouts/` subfolder written by the VS Code
+   * extension's LayoutStore (i.e. the `.svsch` directory itself). Defaults to
+   * `<workspaceRoot>/.svsch` so users don't need to spell out the full path
+   * to a specific module's layout file.
+   */
+  svschDataDir?: string;
   surelogPath?: string;
   backendPath?: string;
   includePaths?: string[];
   defines?: Record<string, string>;
   onProgress?: ParserOptions['onProgress'];
+}
+
+export interface RenderedModule {
+  view: DiagramViewModel;
+  /** Absolute path of the layout file that was used, if any was found. */
+  layoutSource?: string;
 }
 
 const EMPTY_LAYOUT: SavedLayout = { version: 1, modules: {} };
@@ -42,7 +55,8 @@ export async function renderDiagram(
     onProgress: opts.onProgress
   });
 
-  return await renderModuleFromGraph(graph, svFilePath, workspaceRoot, opts);
+  const rendered = await renderModuleFromGraph(graph, svFilePath, workspaceRoot, opts);
+  return rendered.view;
 }
 
 export async function renderModuleFromGraph(
@@ -50,7 +64,7 @@ export async function renderModuleFromGraph(
   svFilePath: string,
   workspaceRoot: string,
   opts: RenderDiagramOptions
-): Promise<DiagramViewModel> {
+): Promise<RenderedModule> {
   let moduleName = opts.topModule;
   if (moduleName) {
     if (!graph.modules[moduleName]) {
@@ -69,10 +83,12 @@ export async function renderModuleFromGraph(
     }
   }
 
-  const layoutFile = opts.layoutFile;
-  const layout = opts.noLayout ? EMPTY_LAYOUT : readLayoutForFileSync(svFilePath, workspaceRoot, layoutFile);
+  const { layout, source: layoutSource } = opts.noLayout
+    ? { layout: EMPTY_LAYOUT, source: undefined }
+    : readLayoutForFileSync(svFilePath, workspaceRoot, moduleName, opts.layoutFile, opts.svschDataDir);
 
-  return await buildViewModel(graph, moduleName, layout);
+  const view = await buildViewModel(graph, moduleName, layout);
+  return { view, layoutSource };
 }
 
 export function resolveProjectScope(
@@ -110,10 +126,24 @@ async function assertReadableFile(filePath: string): Promise<void> {
 function readLayoutForFileSync(
   svFilePath: string,
   workspaceRoot: string,
-  explicitLayoutFile?: string
-): SavedLayout {
+  moduleName: string,
+  explicitLayoutFile?: string,
+  svschDataDir?: string
+): { layout: SavedLayout; source?: string } {
   if (explicitLayoutFile) {
-    return readLayoutSync(path.resolve(explicitLayoutFile));
+    const resolved = path.resolve(explicitLayoutFile);
+    return { layout: readLayoutSync(resolved), source: resolved };
+  }
+
+  // The VS Code extension saves each module's live layout under
+  // <svschDataDir>/layouts/<module>.json (see LayoutStore, default
+  // svschDataDir is `<workspaceRoot>/.svsch`) — check that ahead of the
+  // legacy sidecar/monolithic candidates so a plain `svsch render` picks up
+  // whatever the user last dragged in the diagram, same as before the split.
+  const svschDir = svschDataDir ? path.resolve(svschDataDir) : path.join(workspaceRoot, '.svsch');
+  const splitLayoutPath = path.join(svschDir, 'layouts', `${encodeURIComponent(moduleName)}.json`);
+  if (fsSync.existsSync(splitLayoutPath)) {
+    return { layout: readSplitModuleLayoutSync(splitLayoutPath, moduleName), source: splitLayoutPath };
   }
 
   const ext = path.extname(svFilePath);
@@ -121,17 +151,17 @@ function readLayoutForFileSync(
   const candidates = uniquePaths([
     `${stem}.svsch-layout.json`,
     `${svFilePath}.svsch-layout.json`,
-    path.join(workspaceRoot, '.svsch', 'layout.json'),
+    path.join(svschDir, 'layout.json'),
     path.join(process.cwd(), '.svsch', 'layout.json')
   ]);
 
   for (const candidate of candidates) {
     if (fsSync.existsSync(candidate)) {
-      return readLayoutSync(candidate);
+      return { layout: readLayoutSync(candidate), source: candidate };
     }
   }
 
-  return EMPTY_LAYOUT;
+  return { layout: EMPTY_LAYOUT, source: undefined };
 }
 
 function readLayoutSync(layoutFile: string): SavedLayout {
@@ -141,6 +171,22 @@ function readLayoutSync(layoutFile: string): SavedLayout {
     return {
       version: 1,
       modules: parsed.modules ?? {}
+    };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return EMPTY_LAYOUT;
+    }
+    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`);
+  }
+}
+
+function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): SavedLayout {
+  try {
+    const raw = fsSync.readFileSync(layoutFile, 'utf8');
+    const parsed = JSON.parse(raw) as Partial<SavedModuleLayout>;
+    return {
+      version: 1,
+      modules: { [moduleName]: { ...parsed, nodes: parsed.nodes ?? {} } }
     };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

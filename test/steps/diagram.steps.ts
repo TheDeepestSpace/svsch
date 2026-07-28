@@ -2666,13 +2666,30 @@ async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, 
   await dragNodeToFlowPosition(world, id, start.x + cellsX * diagramGrid.size, start.y + cellsY * diagramGrid.size);
 }
 
+// The extension persists each module's layout as its own file under
+// .svsch/layouts/<encoded-module-name>.json (see LayoutStore) instead of one
+// monolithic layout.json. Test steps still reason about "the layout" as a
+// single { version, modules } object, so this reassembles that shape from
+// whichever per-module files currently exist on disk.
 async function readExtensionLayout(world: BddWorld): Promise<any> {
-  const layoutPath = path.join(world.workspaceDir || BddWorld.BDD_WORKSPACE, '.svsch', 'layout.json');
+  const layoutsDir = path.join(world.workspaceDir || BddWorld.BDD_WORKSPACE, '.svsch', 'layouts');
+  const modules: Record<string, any> = {};
+  let entries: string[];
   try {
-    return JSON.parse(await fs.promises.readFile(layoutPath, 'utf8'));
+    entries = await fs.promises.readdir(layoutsDir);
   } catch {
-    return { version: 1, modules: {} };
+    return { version: 1, modules };
   }
+  for (const entry of entries) {
+    if (!entry.endsWith('.json')) continue;
+    const moduleName = decodeURIComponent(entry.slice(0, -'.json'.length));
+    try {
+      modules[moduleName] = JSON.parse(await fs.promises.readFile(path.join(layoutsDir, entry), 'utf8'));
+    } catch {
+      // Ignore a file that's mid-write; the poll loops calling this retry.
+    }
+  }
+  return { version: 1, modules };
 }
 
 async function waitForNodePersisted(world: BddWorld, moduleName: string, nodeId: string, pos: { x: number; y: number }): Promise<void> {

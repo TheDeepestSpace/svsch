@@ -2,7 +2,7 @@
 
 svsch is a VS Code extension MVP for generating visual block diagrams from SystemVerilog/Verilog projects.
 
-The first implementation treats HDL as read-only, renders a diagram in a webview editor panel, and persists only layout state in `.svsch/layout.json`.
+The first implementation treats HDL as read-only, renders a diagram in a webview editor panel, and persists only layout state, one file per module under `.svsch/layouts/`.
 
 ## Development
 

@@ -71,58 +71,81 @@ export interface SavedModuleLayout {
   netCuts?: Record<string, SavedNetCut>;
 }
 
+/**
+ * In-memory convenience aggregate spanning every module a caller has loaded
+ * in a session. Nothing on disk is ever stored in this shape — each module
+ * is persisted independently under `.svsch/layouts/` (see LayoutStore) — but
+ * pure layout-merging code and tests find it easier to pass one bag of
+ * modules around than a lone SavedModuleLayout.
+ */
 export interface SavedLayout {
   version: 1;
   modules: Record<string, SavedModuleLayout>;
 }
 
+interface PendingModuleWrite {
+  layout: SavedModuleLayout | null;
+  syncTimer: NodeJS.Timeout | null;
+  resolves: Array<() => void>;
+  writeQueue: Promise<void>;
+}
+
+/**
+ * Persists each module's layout as its own file under `.svsch/layouts/`
+ * instead of one monolithic `.svsch/layout.json`. This keeps concurrent edits
+ * to different modules from colliding in Git, and keeps every read/write
+ * scoped to the single module that actually changed instead of the whole
+ * project's layout data.
+ */
 export class LayoutStore {
-  private writeQueue: Promise<void> = Promise.resolve();
-  private pendingLayout: SavedLayout | null = null;
-  private syncTimer: NodeJS.Timeout | null = null;
-  private pendingResolves: Array<() => void> = [];
+  private readonly pending = new Map<string, PendingModuleWrite>();
   private readonly SYNC_DEBOUNCE_MS = 100;
 
   constructor(private readonly workspaceRoot: string) {}
 
-  get layoutPath(): string {
-    return path.join(this.workspaceRoot, '.svsch', 'layout.json');
+  get layoutsDir(): string {
+    return path.join(this.workspaceRoot, '.svsch', 'layouts');
   }
 
-  async read(): Promise<SavedLayout> {
+  private modulePath(moduleName: string): string {
+    return path.join(this.layoutsDir, `${encodeURIComponent(moduleName)}.json`);
+  }
+
+  async readModuleLayout(moduleName: string): Promise<SavedModuleLayout> {
+    const filePath = this.modulePath(moduleName);
     try {
-      const raw = await fs.readFile(this.layoutPath, 'utf8');
-      const parsed = JSON.parse(raw) as SavedLayout;
-      return {
-        version: 1,
-        modules: parsed.modules ?? {}
-      };
+      const raw = await fs.readFile(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as Partial<SavedModuleLayout>;
+      return { ...parsed, nodes: parsed.nodes ?? {} };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to read SVSCH layout: ${(error as Error).message}`);
+        console.warn(`Unable to read SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
       }
-      return { version: 1, modules: {} };
+      return { nodes: {} };
     }
   }
 
   /**
-   * Schedules a layout write. This is debounced and serialized.
+   * Schedules a per-module layout write. Debounced and serialized per module
+   * so rapid edits to one module coalesce, while writes to different modules
+   * never block each other.
    */
-  async write(layout: SavedLayout): Promise<void> {
-    this.pendingLayout = layout;
-    
-    if (this.syncTimer) {
-      clearTimeout(this.syncTimer);
+  async writeModuleLayout(moduleName: string, layout: SavedModuleLayout): Promise<void> {
+    const entry = this.entryFor(moduleName);
+    entry.layout = layout;
+
+    if (entry.syncTimer) {
+      clearTimeout(entry.syncTimer);
     }
 
     return new Promise((resolve) => {
-      this.pendingResolves.push(resolve);
-      this.syncTimer = setTimeout(() => {
-        this.syncTimer = null;
-        const resolves = this.pendingResolves;
-        this.pendingResolves = [];
-        this.writeQueue = this.writeQueue
-          .then(() => this.performWrite())
+      entry.resolves.push(resolve);
+      entry.syncTimer = setTimeout(() => {
+        entry.syncTimer = null;
+        const resolves = entry.resolves;
+        entry.resolves = [];
+        entry.writeQueue = entry.writeQueue
+          .then(() => this.performWrite(moduleName, entry))
           .then(() => {
             for (const r of resolves) r();
           });
@@ -131,42 +154,82 @@ export class LayoutStore {
   }
 
   /**
-   * Immediately writes the layout to disk, bypassing debounce but still serialized.
+   * Deletes a module's saved layout (used by "reset layout"), cancelling any
+   * write still pending for it.
    */
-  async flush(): Promise<void> {
-    if (this.syncTimer) {
-      clearTimeout(this.syncTimer);
-      this.syncTimer = null;
-      const resolves = this.pendingResolves;
-      this.pendingResolves = [];
-      this.writeQueue = this.writeQueue
-        .then(() => this.performWrite())
-        .then(() => {
-          for (const r of resolves) r();
-        });
+  async resetModuleLayout(moduleName: string): Promise<void> {
+    const entry = this.entryFor(moduleName);
+    if (entry.syncTimer) {
+      clearTimeout(entry.syncTimer);
+      entry.syncTimer = null;
     }
-    return this.writeQueue;
+    entry.layout = null;
+    const resolves = entry.resolves;
+    entry.resolves = [];
+
+    entry.writeQueue = entry.writeQueue.then(async () => {
+      try {
+        await fs.unlink(this.modulePath(moduleName));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          console.error(`Failed to reset SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+        }
+      }
+    });
+    await entry.writeQueue;
+    for (const r of resolves) r();
   }
 
-  private async performWrite(): Promise<void> {
-    if (!this.pendingLayout) {
+  /**
+   * Immediately writes every module with a pending debounced write, bypassing
+   * their debounce timers but still serialized per module.
+   */
+  async flush(): Promise<void> {
+    const flushes: Promise<void>[] = [];
+    for (const [moduleName, entry] of this.pending) {
+      if (entry.syncTimer) {
+        clearTimeout(entry.syncTimer);
+        entry.syncTimer = null;
+        const resolves = entry.resolves;
+        entry.resolves = [];
+        entry.writeQueue = entry.writeQueue
+          .then(() => this.performWrite(moduleName, entry))
+          .then(() => {
+            for (const r of resolves) r();
+          });
+      }
+      flushes.push(entry.writeQueue);
+    }
+    await Promise.all(flushes);
+  }
+
+  private entryFor(moduleName: string): PendingModuleWrite {
+    let entry = this.pending.get(moduleName);
+    if (!entry) {
+      entry = { layout: null, syncTimer: null, resolves: [], writeQueue: Promise.resolve() };
+      this.pending.set(moduleName, entry);
+    }
+    return entry;
+  }
+
+  private async performWrite(moduleName: string, entry: PendingModuleWrite): Promise<void> {
+    if (!entry.layout) {
       return;
     }
 
-    const layout = this.pendingLayout;
-    this.pendingLayout = null;
+    const layout = entry.layout;
+    entry.layout = null;
 
-    const dir = path.dirname(this.layoutPath);
-    const tmpPath = `${this.layoutPath}.tmp`;
+    const filePath = this.modulePath(moduleName);
+    const tmpPath = `${filePath}.tmp`;
 
     try {
-      await fs.mkdir(dir, { recursive: true });
+      await fs.mkdir(this.layoutsDir, { recursive: true });
       const content = `${JSON.stringify(layout, null, 2)}\n`;
       await fs.writeFile(tmpPath, content, 'utf8');
-      await fs.rename(tmpPath, this.layoutPath);
+      await fs.rename(tmpPath, filePath);
     } catch (error) {
-      console.error(`Failed to write SVSCH layout: ${(error as Error).message}`);
-      // Try to clean up tmp file
+      console.error(`Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
       await fs.unlink(tmpPath).catch(() => {});
     }
   }
