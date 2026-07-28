@@ -98,7 +98,7 @@
       "target": "loop:top:4:n1",
       "sourceHandle": "port:out_branch_n0",
       "targetHandle": "port:out_in",
-      "path": "M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96"
+      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
     },
     {
       "id": "edge:loop:top:4:n1:port:top:out:out",

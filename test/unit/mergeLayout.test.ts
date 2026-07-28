@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -220,6 +220,97 @@ describe('layout merge', () => {
       } else {
         expect(node.position.y % diagramSizing.gridSize).toBe(0);
       }
+    }
+  });
+
+  it('preserves a full grid gap between literals after snapping', () => {
+    const literals: DiagramNode[] = [
+      { id: 'start', kind: 'literal', label: 'START', ports: [] },
+      { id: 'busy', kind: 'literal', label: 'BUSY', ports: [] }
+    ];
+    const positions = new Map([
+      ['start', { x: 504, y: 36 }],
+      ['busy', { x: 504, y: 60 }]
+    ]);
+
+    enforceMinimumBlockGaps(literals, positions, { nodes: {} });
+    const ordered = literals
+      .map((node) => ({ ...node, position: positions.get(node.id)! }))
+      .sort((a, b) => a.position.y - b.position.y);
+
+    expect(ordered[1].position.y - (ordered[0].position.y + diagramNodeDimensions(ordered[0]).height))
+      .toBeGreaterThanOrEqual(diagramSizing.gridSize);
+  });
+
+  it('preserves a full grid gap below a register reset lead after snapping', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'state',
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        { id: 'rv', name: 'RV', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' }
+    };
+    const done: DiagramNode = { id: 'done', kind: 'literal', label: 'DONE', ports: [] };
+    const positions = new Map([
+      [register.id, { x: 480, y: 144 }],
+      [done.id, { x: 504, y: 300 }]
+    ]);
+
+    const registerGeometry = elkNodeForDiagramNode(register, true);
+    const doneGeometry = elkNodeForDiagramNode(done, true);
+    const originalRegisterBottom = positions.get(register.id)!.y
+      - registerGeometry.layoutOffset.y
+      + registerGeometry.height;
+    const originalDoneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
+    expect(originalRegisterBottom).toBeGreaterThan(originalDoneTop);
+
+    enforceMinimumBlockGaps([register, done], positions, { nodes: {} });
+    const registerBottom = positions.get(register.id)!.y
+      - registerGeometry.layoutOffset.y
+      + registerGeometry.height;
+    const doneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
+
+    expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
+  });
+
+  it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'M',
+      isArrayNode: true,
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk' }
+    };
+    const placement = elkNodeForDiagramNode(register, true);
+    const routing = elkRoutingNodeForDiagramNode(register);
+
+    expect(routing.width).toBe(placement.width);
+    expect(routing.height).toBe(placement.height + diagramSizing.gridSize);
+    expect(routing.layoutOffset).toEqual({
+      x: placement.layoutOffset.x,
+      y: placement.layoutOffset.y + diagramSizing.gridSize / 2
+    });
+
+    for (const placementPort of placement.ports) {
+      const routingPort = routing.ports.find((port) => port.id === placementPort.id)!;
+      expect({
+        x: routingPort.x! - routing.layoutOffset.x,
+        y: routingPort.y! - routing.layoutOffset.y
+      }).toEqual({
+        x: placementPort.x! - placement.layoutOffset.x,
+        y: placementPort.y! - placement.layoutOffset.y
+      });
     }
   });
 

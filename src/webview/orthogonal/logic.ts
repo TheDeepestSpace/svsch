@@ -79,7 +79,17 @@ export function normalizeRoutePoints(
 
   // saved points start with the old sourceLead and end with the old targetLead.
   // We want to keep everything BETWEEN them.
-  const internal = saved.slice(1, -1).map(snapPoint).map((point) => {
+  const savedInternal = saved.slice(1, -1);
+  const internal = savedInternal.map((point, index) => {
+    const snapped = snapPoint(point);
+    if (index === 0) {
+      preserveEndpointSegmentAxis(point, snapped, sourceLead, sourcePosition);
+    }
+    if (index === savedInternal.length - 1) {
+      preserveEndpointSegmentAxis(point, snapped, targetLead, targetPosition);
+    }
+    return snapped;
+  }).map((point) => {
     if (!simplify || !canClampInternalPoints) {
       return point;
     }
@@ -91,6 +101,22 @@ export function normalizeRoutePoints(
 
   const combined = [sourceLead, ...internal, targetLead];
   return makeOrthogonal(combined, simplify);
+}
+
+function preserveEndpointSegmentAxis(
+  original: OrthogonalPoint,
+  snapped: OrthogonalPoint,
+  lead: OrthogonalPoint,
+  position: HdlPosition
+): void {
+  if (position === HdlPosition.Left || position === HdlPosition.Right) {
+    if (Math.abs(original.x - lead.x) < 0.5) snapped.x = lead.x;
+    else snapped.y = lead.y;
+  } else if (Math.abs(original.y - lead.y) < 0.5) {
+    snapped.y = lead.y;
+  } else {
+    snapped.x = lead.x;
+  }
 }
 
 export function clampToLead(point: OrthogonalPoint, nodeX: number, nodeY: number, position: HdlPosition, distance: number): OrthogonalPoint {

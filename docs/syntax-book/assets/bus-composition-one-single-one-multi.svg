@@ -3695,7 +3695,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:bus:top:b:bus:top:y:expr:b_1:0_"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:top:b:bus:top:y:expr:b_1:0_" data-net-key="bus:top:b:out:_1:0_" d="M 504 120 L 528 120 L 552 120 L 552 96 L 696 96 L 720 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus:top:b:bus:top:y:expr:b_1:0_"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:top:b:bus:top:y:expr:b_1:0_" data-net-key="bus:top:b:out:_1:0_" d="M 504 120 L 528 120 L 624 120 L 624 96 L 696 96 L 720 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:bus:top:y:expr:port:top:y:y"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:bus:top:y:expr:port:top:y:y" data-net-key="bus:top:y:expr:out:y" d="M 864 48 L 888 48 L 1056 48 L 1080 48" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:a:bus:top:y:expr:a"><path class="svsch-edge" data-edge-id="edge:port:top:a:bus:top:y:expr:a" data-net-key="port:top:a:port:a" d="M 504 48 L 528 48 L 696 48 L 720 48" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:top:b:bus:top:b:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:b:bus:top:b:b" data-net-key="port:top:b:port:b" d="M 144 120 L 168 120 L 336 120 L 360 120" /></g>

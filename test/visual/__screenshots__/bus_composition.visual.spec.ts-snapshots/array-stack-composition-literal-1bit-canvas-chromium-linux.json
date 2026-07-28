@@ -124,7 +124,7 @@
       "target": "bus_comp:array_stack_composition_literal_1bit:arr",
       "sourceHandle": "port:1_b0",
       "targetHandle": "in:_2_",
-      "path": "M 72 192 L 96 192 L 120 192 L 120 96 L 264 96 L 288 96"
+      "path": "M 72 192 L 96 192 L 264 192 L 264 96 L 288 96"
     },
     {
       "id": "edge:literal:array_stack_composition_literal_1bit:1_b1:1_b1:bus_comp:array_stack_composition_literal_1bit:arr:1_b1:port:1_b1:in:_1_",
@@ -132,7 +132,7 @@
       "target": "bus_comp:array_stack_composition_literal_1bit:arr",
       "sourceHandle": "port:1_b1",
       "targetHandle": "in:_1_",
-      "path": "M 72 144 L 96 144 L 113 144 Q 120 137 127 144 L 264 144 L 288 144"
+      "path": "M 72 144 L 96 144 L 264 144 L 288 144"
     },
     {
       "id": "edge:literal:array_stack_composition_literal_1bit:1_b1:1_b1:bus_comp:array_stack_composition_literal_1bit:arr:1_b1:port:1_b1:in:_3_",
@@ -140,7 +140,7 @@
       "target": "bus_comp:array_stack_composition_literal_1bit:arr",
       "sourceHandle": "port:1_b1",
       "targetHandle": "in:_3_",
-      "path": "M 72 144 L 96 144 L 113 144 Q 120 137 127 144 L 144 144 L 144 103 Q 151 96 144 89 L 144 48 L 264 48 L 288 48"
+      "path": "M 72 144 L 96 144 L 264 144 L 264 48 L 288 48"
     }
   ]
 }

@@ -176,7 +176,7 @@
       "target": "select:mixed_select_breakout:data_i[sel_i+:P_WIDTH]",
       "sourceHandle": "port:P_WIDTH",
       "targetHandle": "port:width",
-      "path": "M 192 48 L 216 48 L 504 48 L 504 96 L 504 141"
+      "path": "M 192 48 L 216 48 L 504 48 L 504 96 L 504 144"
     },
     {
       "id": "edge:port:mixed_select_breakout:data_i:bus:mixed_select_breakout:data_i:data_i",
@@ -184,7 +184,7 @@
       "target": "bus:mixed_select_breakout:data_i",
       "sourceHandle": "port:data_i",
       "targetHandle": "in:data_i",
-      "path": "M 192 168 L 216 168 L 264 168 L 264 264 L 384 264 L 408 264"
+      "path": "M 192 168 L 216 168 L 384 168 L 384 264 L 408 264"
     },
     {
       "id": "edge:port:mixed_select_breakout:data_i:select:mixed_select_breakout:data_i_sel_i_:P_WIDTH_:data_i",
@@ -200,7 +200,7 @@
       "target": "select:mixed_select_breakout:data_i[sel_i+:P_WIDTH]",
       "sourceHandle": "port:sel_i",
       "targetHandle": "port:sel",
-      "path": "M 192 96 L 216 96 L 456 96 L 456 141"
+      "path": "M 192 96 L 216 96 L 456 96 L 456 144"
     },
     {
       "id": "edge:select:mixed_select_breakout:data_i_sel_i_:P_WIDTH_:port:mixed_select_breakout:variable_out:variable_out",

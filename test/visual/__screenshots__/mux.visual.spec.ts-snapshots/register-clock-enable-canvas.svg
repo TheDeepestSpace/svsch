@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="888" height="372" viewBox="0 0 888 372" class="svsch-diagram" role="img" aria-label="register_clock_enable diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="864" height="372" viewBox="0 0 864 372" class="svsch-diagram" role="img" aria-label="register_clock_enable diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -3690,14 +3690,14 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:mux:register_clock_enable:q:en:q_next:reg:register_clock_enable:q:q_next"><path class="svsch-edge" data-edge-id="edge:mux:register_clock_enable:q:en:q_next:reg:register_clock_enable:q:q_next" data-net-key="mux:register_clock_enable:q:en:q_next:out" d="M 768 120 L 792 120 L 816 120 L 816 24 L 168 24 L 168 168 L 336 168 L 360 168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:register_clock_enable:q:en:q_next:reg:register_clock_enable:q:q_next"><path class="svsch-edge" data-edge-id="edge:mux:register_clock_enable:q:en:q_next:reg:register_clock_enable:q:q_next" data-net-key="mux:register_clock_enable:q:en:q_next:out" d="M 768 120 L 792 120 L 792 24 L 312 24 L 312 168 L 336 168 L 360 168" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:register_clock_enable:clk:reg:register_clock_enable:q:clk"><path class="svsch-edge" data-edge-id="edge:port:register_clock_enable:clk:reg:register_clock_enable:q:clk" data-net-key="port:register_clock_enable:clk:port:clk" d="M 144 192 L 168 192 L 336 192 L 360 192" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:q_next:d"><path class="svsch-edge" data-edge-id="edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:q_next:d" data-net-key="port:register_clock_enable:d:port:d" d="M 456 96 L 480 96 L 504 96 L 504 120 L 648 120 L 672 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:q_next:d"><path class="svsch-edge" data-edge-id="edge:port:register_clock_enable:d:mux:register_clock_enable:q:en:q_next:d" data-net-key="port:register_clock_enable:d:port:d" d="M 456 96 L 480 96 L 576 96 L 576 120 L 648 120 L 672 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:register_clock_enable:en:mux:register_clock_enable:q:en:q_next:en"><path class="svsch-edge" data-edge-id="edge:port:register_clock_enable:en:mux:register_clock_enable:q:en:q_next:en" data-net-key="port:register_clock_enable:en:port:en" d="M 456 48 L 480 48 L 720 48 L 720 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:register_clock_enable:rst:reg:register_clock_enable:q:rst"><path class="svsch-edge" data-edge-id="edge:port:register_clock_enable:rst:reg:register_clock_enable:q:rst" data-net-key="port:register_clock_enable:rst:port:rst" d="M 144 288 L 168 288 L 408 288 L 408 264 L 408 216" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q_next:q"><path class="svsch-edge" data-edge-id="edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q_next:q" data-net-key="reg:register_clock_enable:q:q" d="M 456 168 L 480 168 L 504 168 L 504 144 L 648 144 L 672 144" />
-<circle class="svsch-edge-junction" cx="504" cy="168" r="4.75" data-junction-id="reg:register_clock_enable:q:q:504:168" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:reg:register_clock_enable:q:port:register_clock_enable:q:q"><path class="svsch-edge" data-edge-id="edge:reg:register_clock_enable:q:port:register_clock_enable:q:q" data-net-key="reg:register_clock_enable:q:q" d="M 456 168 L 480 168 L 504 168 L 504 192 L 648 192 L 672 192" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q_next:q"><path class="svsch-edge" data-edge-id="edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q_next:q" data-net-key="reg:register_clock_enable:q:q" d="M 456 168 L 480 168 L 648 168 L 648 144 L 672 144" />
+<circle class="svsch-edge-junction" cx="648" cy="168" r="4.75" data-junction-id="reg:register_clock_enable:q:q:648:168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:reg:register_clock_enable:q:port:register_clock_enable:q:q"><path class="svsch-edge" data-edge-id="edge:reg:register_clock_enable:q:port:register_clock_enable:q:q" data-net-key="reg:register_clock_enable:q:q" d="M 456 168 L 480 168 L 648 168 L 648 192 L 672 192" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:register_clock_enable:q:en:q_next" data-node-kind="mux" transform="translate(672 72)">

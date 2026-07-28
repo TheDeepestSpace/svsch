@@ -3690,7 +3690,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:port:register_no_reset:c_main:reg:register_no_reset:q:c_main"><path class="svsch-edge" data-edge-id="edge:port:register_no_reset:c_main:reg:register_no_reset:q:c_main" data-net-key="port:register_no_reset:c_main:port:c_main" d="M 144 120 L 168 120 L 216 120 L 216 96 L 336 96 L 360 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:register_no_reset:c_main:reg:register_no_reset:q:c_main"><path class="svsch-edge" data-edge-id="edge:port:register_no_reset:c_main:reg:register_no_reset:q:c_main" data-net-key="port:register_no_reset:c_main:port:c_main" d="M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:register_no_reset:d:reg:register_no_reset:q:d"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:register_no_reset:d:reg:register_no_reset:q:d" data-net-key="port:register_no_reset:d:port:d" d="M 144 72 L 168 72 L 336 72 L 360 72" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:reg:register_no_reset:q:port:register_no_reset:q:q"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:reg:register_no_reset:q:port:register_no_reset:q:q" data-net-key="reg:register_no_reset:q:q" d="M 504 72 L 528 72 L 696 72 L 720 72" /></g>
 </g>

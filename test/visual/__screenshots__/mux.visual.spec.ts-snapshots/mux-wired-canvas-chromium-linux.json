@@ -131,7 +131,7 @@
       "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
-      "path": "M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120"
+      "path": "M 144 96 L 168 96 L 264 96 L 264 120 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:mux_wired:b:mux:mux_wired:y:sel:y:b_wire",
@@ -147,7 +147,7 @@
       "target": "mux:mux_wired:y:sel:y",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 96"
     }
   ]
 }

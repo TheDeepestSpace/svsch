@@ -422,7 +422,7 @@
       "target": "bus:replication_expr:concat_repeated:expr",
       "sourceHandle": "port:head",
       "targetHandle": "in:_23_",
-      "path": "M 456 192 L 480 192 L 504 192 L 504 312 L 648 312 L 672 312"
+      "path": "M 456 192 L 480 192 L 648 192 L 648 312 L 672 312"
     },
     {
       "id": "edge:port:replication_expr:head:bus:replication_expr:nested_concat_rep_concat0:concat:head",
@@ -438,7 +438,7 @@
       "target": "bus:replication_expr:nested_concat_rep_concat0:concat",
       "sourceHandle": "port:pair",
       "targetHandle": "in:_1:0_",
-      "path": "M 456 120 L 480 120 L 504 120 L 504 183 Q 513 192 504 201 L 504 240 L 648 240 L 672 240"
+      "path": "M 456 120 L 480 120 L 648 120 L 648 240 L 672 240"
     },
     {
       "id": "edge:port:replication_expr:pair:replicate:replication_expr:repeated_pair:x4:pair",
@@ -462,7 +462,7 @@
       "target": "replicate:replication_expr:repeated:x20",
       "sourceHandle": "port:some_wire",
       "targetHandle": "port:in",
-      "path": "M 144 360 L 168 360 L 216 360 L 216 480 L 360 480 L 384 480"
+      "path": "M 144 360 L 168 360 L 312 360 L 312 480 L 360 480 L 384 480"
     },
     {
       "id": "edge:port:replication_expr:tail:bus:replication_expr:concat_repeated:expr:tail",

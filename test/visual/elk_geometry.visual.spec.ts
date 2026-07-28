@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
-import { elkNodeForDiagramNode } from '../../src/layout/mergeLayout';
+import { elkNodeForDiagramNode, elkRoutingNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { nodeIsArrayNode, structRole } from '../../src/ir/nodeMetadata';
@@ -11,10 +11,10 @@ import { compareSvgSnapshot } from '../graphRegression';
 import type { DiagramNode, DiagramViewModel, PositionedNode } from '../../src/ir/types';
 
 // Renders one node of every diagram kind in a grid and overlays the geometry
-// ELK actually lays out: dashed rect = the ELK node bounds (base size plus
-// lead margins), filled dot = the ELK port anchor where routes plug in,
-// hollow dot = the port position on the rendered node surface, joined by the
-// lead segment between them.
+// routing sees: pink dashed rect = the placement box with lead margins,
+// purple dashed rect = the candidate route obstacle with safety margins,
+// filled dot = the route anchor, hollow dot = the rendered handle,
+// and the orange segment joins the two.
 
 const GRID = 24;
 const COLUMNS = 5;
@@ -135,7 +135,8 @@ interface OverlayPort {
 
 interface OverlayEntry {
   label: string;
-  rect: { x: number; y: number; width: number; height: number };
+  placementRect: { x: number; y: number; width: number; height: number };
+  routingRect: { x: number; y: number; width: number; height: number };
   /** The same node's ELK box with its active net-cut margin(s) folded in —
    * only present for a port picked from a `cutNet` fixture selection. */
   marginRect?: { x: number; y: number; width: number; height: number };
@@ -213,6 +214,7 @@ function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; ov
     let rowHeight = 0;
     for (const { label, node, extraPortMargins } of row) {
       const withLeads = elkNodeForDiagramNode(node, true);
+      const withRoutingMargins = elkRoutingNodeForDiagramNode(node, extraPortMargins);
       const bare = elkNodeForDiagramNode(node, false);
       // The margin-inflated box is for the overlay comparison only — the
       // node's own rendered position still comes from the plain lead offset,
@@ -232,11 +234,17 @@ function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; ov
       };
       positioned.push({ ...node, position, fixed: true });
 
-      const rect = {
+      const placementRect = {
         x: position.x - offset.x,
         y: position.y - offset.y,
         width: withLeads.width,
         height: withLeads.height
+      };
+      const routingRect = {
+        x: position.x - withRoutingMargins.layoutOffset.x,
+        y: position.y - withRoutingMargins.layoutOffset.y,
+        width: withRoutingMargins.width,
+        height: withRoutingMargins.height
       };
       const marginRect = withMargins ? {
         x: position.x - withMargins.layoutOffset.x,
@@ -259,19 +267,19 @@ function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; ov
         // stacked nodes), so strip its layoutOffset to get the raw on-node
         // port position before re-basing onto the rendered node origin.
         return {
-          anchor: { x: rect.x + port.x, y: rect.y + port.y },
+          anchor: { x: placementRect.x + port.x, y: placementRect.y + port.y },
           surface: visual
-            ? { x: rect.x + offset.x + visual.offset.x, y: rect.y + offset.y + visual.offset.y }
+            ? { x: placementRect.x + offset.x + visual.offset.x, y: placementRect.y + offset.y + visual.offset.y }
             : {
-              x: rect.x + offset.x + barePort.x - bare.layoutOffset.x,
-              y: rect.y + offset.y + barePort.y - bare.layoutOffset.y
+              x: placementRect.x + offset.x + barePort.x - bare.layoutOffset.x,
+              y: placementRect.y + offset.y + barePort.y - bare.layoutOffset.y
             }
         };
       });
-      overlay.push({ label, rect, marginRect, ports });
+      overlay.push({ label, placementRect, routingRect, marginRect, ports });
 
-      const cellWidth = Math.max(extraLeft + withLeads.width, marginRect?.width ?? 0);
-      const cellHeight = Math.max(extraTop + withLeads.height, marginRect?.height ?? 0);
+      const cellWidth = Math.max(extraLeft + withLeads.width, marginRect?.width ?? 0, withRoutingMargins.width);
+      const cellHeight = Math.max(extraTop + withLeads.height, marginRect?.height ?? 0, withRoutingMargins.height);
       x += Math.ceil(cellWidth / GRID) * GRID + COLUMN_GAP;
       rowHeight = Math.max(rowHeight, cellHeight);
     }
@@ -288,8 +296,9 @@ function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; ov
   return { view, overlay };
 }
 
-const BOUNDS_COLOR = '#ff5f9e';
-const ANCHOR_COLOR = '#ffb020';
+const PLACEMENT_BOUNDS_COLOR = '#ff5f9e';
+const ROUTING_BOUNDS_COLOR = '#a855f7';
+const LEAD_COLOR = '#fb7a1f';
 const MARGIN_COLOR = '#3ddc97';
 
 function escapeXml(value: string): string {
@@ -308,14 +317,15 @@ function overlayMarkup(overlay: OverlayEntry[]): string {
       );
     }
     parts.push(
-      `<rect x="${entry.rect.x}" y="${entry.rect.y}" width="${entry.rect.width}" height="${entry.rect.height}" fill="none" stroke="${BOUNDS_COLOR}" stroke-width="1.5" stroke-dasharray="6 4" />`,
-      `<text x="${entry.rect.x}" y="${entry.rect.y - 8}" fill="${BOUNDS_COLOR}" font-size="13" font-family="monospace">${escapeXml(entry.label)}</text>`
+      `<rect x="${entry.placementRect.x}" y="${entry.placementRect.y}" width="${entry.placementRect.width}" height="${entry.placementRect.height}" fill="none" stroke="${PLACEMENT_BOUNDS_COLOR}" stroke-width="1.5" stroke-dasharray="6 4" />`,
+      `<rect x="${entry.routingRect.x}" y="${entry.routingRect.y}" width="${entry.routingRect.width}" height="${entry.routingRect.height}" fill="none" stroke="${ROUTING_BOUNDS_COLOR}" stroke-width="1.75" stroke-dasharray="7 5" />`,
+      `<text x="${entry.routingRect.x}" y="${entry.routingRect.y - 8}" fill="${ROUTING_BOUNDS_COLOR}" font-size="13" font-family="monospace">${escapeXml(entry.label)}</text>`
     );
     for (const port of entry.ports) {
       parts.push(
-        `<line x1="${port.surface.x}" y1="${port.surface.y}" x2="${port.anchor.x}" y2="${port.anchor.y}" stroke="${ANCHOR_COLOR}" stroke-width="1.5" />`,
-        `<circle cx="${port.surface.x}" cy="${port.surface.y}" r="5" fill="none" stroke="${ANCHOR_COLOR}" stroke-width="2" />`,
-        `<circle cx="${port.anchor.x}" cy="${port.anchor.y}" r="7" fill="${ANCHOR_COLOR}" fill-opacity="0.85" />`
+        `<line x1="${port.surface.x}" y1="${port.surface.y}" x2="${port.anchor.x}" y2="${port.anchor.y}" stroke="${LEAD_COLOR}" stroke-width="1.75" />`,
+        `<circle cx="${port.surface.x}" cy="${port.surface.y}" r="5" fill="none" stroke="${LEAD_COLOR}" stroke-width="2" />`,
+        `<circle cx="${port.anchor.x}" cy="${port.anchor.y}" r="7" fill="${LEAD_COLOR}" fill-opacity="0.9" />`
       );
     }
   }
@@ -377,10 +387,18 @@ test.describe('elk geometry grid', () => {
     // fitView: the webview's own auto-fit races with it and can settle on a
     // clamped zoom that pushes the first grid row off screen.
     const margin = GRID * 2;
-    const minX = Math.min(...overlay.map((e) => Math.min(e.rect.x, e.marginRect?.x ?? Infinity))) - margin;
-    const minY = Math.min(...overlay.map((e) => Math.min(e.rect.y, e.marginRect?.y ?? Infinity))) - margin;
-    const maxX = Math.max(...overlay.map((e) => Math.max(e.rect.x + e.rect.width, e.marginRect ? e.marginRect.x + e.marginRect.width : -Infinity))) + margin;
-    const maxY = Math.max(...overlay.map((e) => Math.max(e.rect.y + e.rect.height, e.marginRect ? e.marginRect.y + e.marginRect.height : -Infinity))) + margin;
+    const minX = Math.min(...overlay.map((e) => Math.min(e.placementRect.x, e.routingRect.x, e.marginRect?.x ?? Infinity))) - margin;
+    const minY = Math.min(...overlay.map((e) => Math.min(e.placementRect.y, e.routingRect.y, e.marginRect?.y ?? Infinity))) - margin;
+    const maxX = Math.max(...overlay.map((e) => Math.max(
+      e.placementRect.x + e.placementRect.width,
+      e.routingRect.x + e.routingRect.width,
+      e.marginRect ? e.marginRect.x + e.marginRect.width : -Infinity
+    ))) + margin;
+    const maxY = Math.max(...overlay.map((e) => Math.max(
+      e.placementRect.y + e.placementRect.height,
+      e.routingRect.y + e.routingRect.height,
+      e.marginRect ? e.marginRect.y + e.marginRect.height : -Infinity
+    ))) + margin;
     await page.waitForFunction(() => Boolean((window as any).reactFlowInstance));
     await page.evaluate(async (bounds) => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };

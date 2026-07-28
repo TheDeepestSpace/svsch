@@ -166,7 +166,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 480 696 L 504 696 L 624 696 L 624 408 L 888 408 L 912 408",
+      "path": "M 480 696 L 504 696 L 696 696 L 696 408 L 888 408 L 912 408",
       "inactive": true
     },
     {
@@ -175,7 +175,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 480 456 L 504 456 L 617 456 Q 624 449 631 456 L 696 456 L 696 408 L 888 408 L 912 408",
+      "path": "M 480 456 L 504 456 L 696 456 L 696 408 L 888 408 L 912 408",
       "active": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 504 216 L 528 216 L 624 216 L 624 408 L 888 408 L 912 408",
+      "path": "M 504 216 L 528 216 L 720 216 L 720 408 L 888 408 L 912 408",
       "inactive": true
     },
     {

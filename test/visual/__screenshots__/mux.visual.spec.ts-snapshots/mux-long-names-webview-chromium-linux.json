@@ -164,7 +164,7 @@
       "target": "mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name",
       "sourceHandle": "port:fallback_path_with_extra_words",
       "targetHandle": "in:default",
-      "path": "M 312 192 L 336 192 L 384 192 L 384 168 L 504 168 L 528 168"
+      "path": "M 312 192 L 336 192 L 432 192 L 432 168 L 504 168 L 528 168"
     },
     {
       "id": "edge:port:mux_long_names:select_between_pipeline_values:mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name:select_between_pipeline_values",
@@ -172,7 +172,7 @@
       "target": "mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name",
       "sourceHandle": "port:select_between_pipeline_values",
       "targetHandle": "sel",
-      "path": "M 312 48 L 336 48 L 600 48 L 600 93"
+      "path": "M 312 48 L 336 48 L 600 48 L 600 96"
     },
     {
       "id": "edge:port:mux_long_names:somewhat_long_input_name_a:mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name:somewhat_long_input_name_a",
@@ -180,7 +180,7 @@
       "target": "mux:mux_long_names:output_value_with_long_name:select_between_pipeline_values:output_value_with_long_name",
       "sourceHandle": "port:somewhat_long_input_name_a",
       "targetHandle": "in:2_d0",
-      "path": "M 312 96 L 336 96 L 384 96 L 384 120 L 504 120 L 528 120"
+      "path": "M 312 96 L 336 96 L 432 96 L 432 120 L 504 120 L 528 120"
     }
   ]
 }

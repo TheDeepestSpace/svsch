@@ -161,7 +161,7 @@
       "target": "mux:array_address_write_register:storage_addr",
       "sourceHandle": "port:address",
       "targetHandle": "sel",
-      "path": "M 192 48 L 480 48 L 480 72 L 480 69"
+      "path": "M 192 48 L 312 48 L 312 72 L 480 72"
     },
     {
       "id": "edge:port:array_address_write_register:clk:reg:array_address_write_register:storage:clk",
@@ -169,7 +169,7 @@
       "target": "reg:array_address_write_register:storage",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 552 48 L 600 48 L 600 168 L 744 168"
+      "path": "M 552 48 L 672 48 L 672 168 L 744 168"
     },
     {
       "id": "edge:port:array_address_write_register:in_data:mux:array_address_write_register:storage_addr:in_data",
@@ -185,7 +185,7 @@
       "target": "mux:array_address_write_register:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 979.5 150 L 1014 150 L 1014 222 L 222 222 L 222 174 L 400.5 174"
+      "path": "M 979.5 150 L 990 150 L 990 222 L 390 222 L 390 174 L 400.5 174"
     },
     {
       "id": "edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data",

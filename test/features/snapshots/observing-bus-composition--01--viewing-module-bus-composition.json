@@ -249,7 +249,7 @@
       "target": "reg:bus_composition:r[1]",
       "sourceHandle": "port:b",
       "targetHandle": "d",
-      "path": "M 144 168 L 168 168 L 192 168 L 192 192 L 360 192 L 384 192"
+      "path": "M 144 168 L 168 168 L 264 168 L 264 192 L 360 192 L 384 192"
     },
     {
       "id": "edge:port:bus_composition:clk:reg:bus_composition:r_0_:clk",
@@ -257,7 +257,7 @@
       "target": "reg:bus_composition:r[0]",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144 216 L 168 216 L 216 216 L 216 305 Q 223 312 216 319 L 216 336 L 360 336 L 384 336"
+      "path": "M 144 216 L 168 216 L 336 216 L 336 305 Q 343 312 336 319 L 336 336 L 360 336 L 384 336"
     },
     {
       "id": "edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
@@ -273,7 +273,7 @@
       "target": "reg:bus_composition:r[3:2]",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 144 216 L 168 216 L 216 216 L 216 199 Q 223 192 216 185 L 216 96 L 336 96 L 360 96"
+      "path": "M 144 216 L 168 216 L 336 216 L 336 199 Q 343 192 336 185 L 336 96 L 360 96"
     },
     {
       "id": "edge:port:bus_composition:sub:reg:bus_composition:r_3:2_:sub",
@@ -289,7 +289,7 @@
       "target": "bus_comp:bus_composition:r",
       "sourceHandle": "q",
       "targetHandle": "in:_0_",
-      "path": "M 480 312 L 504 312 L 552 312 L 552 240 L 696 240 L 720 240"
+      "path": "M 480 312 L 504 312 L 600 312 L 600 240 L 696 240 L 720 240"
     },
     {
       "id": "edge:reg:bus_composition:r_1_:bus_comp:bus_composition:r:r_1_",
@@ -305,7 +305,7 @@
       "target": "bus_comp:bus_composition:r",
       "sourceHandle": "q",
       "targetHandle": "in:_3:2_",
-      "path": "M 504 72 L 528 72 L 552 72 L 552 144 L 696 144 L 720 144"
+      "path": "M 504 72 L 528 72 L 624 72 L 624 144 L 696 144 L 720 144"
     }
   ]
 }

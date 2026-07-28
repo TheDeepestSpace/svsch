@@ -178,7 +178,7 @@
       "target": "reg:top:pkt.opcode",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 144 L 216 144 L 264 144 L 264 96 L 384 96 L 408 96"
+      "path": "M 192 144 L 216 144 L 384 144 L 384 96 L 408 96"
     },
     {
       "id": "edge:port:top:clk:reg:top:pkt.valid:clk",
@@ -186,7 +186,7 @@
       "target": "reg:top:pkt.valid",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 144 L 216 144 L 264 144 L 264 216 L 408 216 L 432 216"
+      "path": "M 192 144 L 216 144 L 384 144 L 384 216 L 408 216 L 432 216"
     },
     {
       "id": "edge:port:top:opcode_i:reg:top:pkt.opcode:opcode_i",
@@ -202,7 +202,7 @@
       "target": "reg:top:pkt.valid",
       "sourceHandle": "port:valid_i",
       "targetHandle": "d",
-      "path": "M 192 192 L 216 192 L 257 192 Q 264 185 271 192 L 408 192 L 432 192"
+      "path": "M 192 192 L 216 192 L 377 192 Q 384 185 391 192 L 408 192 L 432 192"
     },
     {
       "id": "edge:reg:top:pkt.opcode:struct_comp:top:pkt:pkt.opcode",
@@ -218,7 +218,7 @@
       "target": "struct_comp:top:pkt",
       "sourceHandle": "q",
       "targetHandle": "in:pkt.valid",
-      "path": "M 576 192 L 600 192 L 648 192 L 648 120 L 792 120 L 816 120"
+      "path": "M 576 192 L 600 192 L 720 192 L 720 120 L 792 120 L 816 120"
     },
     {
       "id": "edge:struct_comp:top:pkt:port:top:flat:pkt",

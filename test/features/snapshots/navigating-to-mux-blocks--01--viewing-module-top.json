@@ -148,7 +148,7 @@
       "target": "mux:top:o:sel:o",
       "sourceHandle": "port:o_default",
       "targetHandle": "in:default",
-      "path": "M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168"
+      "path": "M 144 192 L 168 192 L 264 192 L 264 168 L 336 168 L 360 168"
     },
     {
       "id": "edge:mux:top:o:sel:o:port:top:o:o",
@@ -164,7 +164,7 @@
       "target": "mux:top:o:sel:o",
       "sourceHandle": "port:a",
       "targetHandle": "in:1_b0",
-      "path": "M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120"
+      "path": "M 144 96 L 168 96 L 264 96 L 264 120 L 336 120 L 360 120"
     },
     {
       "id": "edge:port:top:b:mux:top:o:sel:o:b",
@@ -180,7 +180,7 @@
       "target": "mux:top:o:sel:o",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 432 48 L 432 93"
+      "path": "M 144 48 L 168 48 L 432 48 L 432 96"
     }
   ]
 }

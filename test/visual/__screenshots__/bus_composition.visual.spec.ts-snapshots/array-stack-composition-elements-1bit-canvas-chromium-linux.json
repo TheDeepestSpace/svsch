@@ -70,7 +70,7 @@
       "type": "hdl",
       "position": {
         "x": 336,
-        "y": 180
+        "y": 204
       },
       "width": 48,
       "height": 24,
@@ -169,7 +169,7 @@
       "target": "bus_comp:array_stack_composition_elements_1bit:arr",
       "sourceHandle": "port:1_b0",
       "targetHandle": "in:_0_",
-      "path": "M 384 192 L 408 192 L 576 192 L 600 192"
+      "path": "M 384 216 L 408 216 L 504 216 L 504 192 L 576 192 L 600 192"
     },
     {
       "id": "edge:literal:array_stack_composition_elements_1bit:1_b1:1_b1:bus_comp:array_stack_composition_elements_1bit:arr:1_b1",
@@ -193,7 +193,7 @@
       "target": "inverter:array_stack_composition_elements_1bit:arr_elem_1:expr",
       "sourceHandle": "port:seed",
       "targetHandle": "in:seed",
-      "path": "M 144 96 L 168 96 L 216 96 L 216 144 L 336 144 L 360 144"
+      "path": "M 144 96 L 168 96 L 336 96 L 336 144 L 360 144"
     }
   ]
 }

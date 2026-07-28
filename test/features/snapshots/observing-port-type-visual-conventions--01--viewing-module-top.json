@@ -123,7 +123,7 @@
       "target": "instance:top:u_child",
       "sourceHandle": "out:master",
       "targetHandle": "port:d",
-      "path": "M 192 192 L 216 192 L 240 192 L 240 144 L 384 144 L 408 144"
+      "path": "M 192 192 L 216 192 L 312 192 L 312 144 L 384 144 L 408 144"
     },
     {
       "id": "edge:port:top:a:instance:top:u_child:a",
@@ -131,7 +131,7 @@
       "target": "instance:top:u_child",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 192 48 L 216 48 L 264 48 L 264 72 L 384 72 L 408 72"
+      "path": "M 192 48 L 216 48 L 312 48 L 312 72 L 384 72 L 408 72"
     },
     {
       "id": "edge:port:top:b:instance:top:u_child:b",
@@ -147,7 +147,7 @@
       "target": "instance:top:u_child",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 192 144 L 216 144 L 264 144 L 264 120 L 384 120 L 408 120"
+      "path": "M 192 144 L 216 144 L 288 144 L 288 120 L 384 120 L 408 120"
     }
   ]
 }

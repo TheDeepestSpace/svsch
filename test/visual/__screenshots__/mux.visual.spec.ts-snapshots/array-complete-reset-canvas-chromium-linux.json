@@ -123,7 +123,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 192 144 L 240 144 L 240 96 L 384 96"
+      "path": "M 192 144 L 312 144 L 312 96 L 384 96"
     },
     {
       "id": "edge:port:array_complete_reset:in_data:reg:array_complete_reset:arr:in_data",

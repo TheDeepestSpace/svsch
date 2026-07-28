@@ -3691,9 +3691,9 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:mux:mux_three_inputs:y:sel:y:port:mux_three_inputs:y:y"><path class="svsch-edge" data-edge-id="edge:mux:mux_three_inputs:y:sel:y:port:mux_three_inputs:y:y" data-net-key="mux:mux_three_inputs:y:sel:y:out" d="M 504 144 L 528 144 L 696 144 L 720 144" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a" data-net-key="port:mux_three_inputs:a:port:a" d="M 144 96 L 168 96 L 216 96 L 216 120 L 336 120 L 360 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:a:mux:mux_three_inputs:y:sel:y:a" data-net-key="port:mux_three_inputs:a:port:a" d="M 144 96 L 168 96 L 264 96 L 264 120 L 336 120 L 360 120" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:b:mux:mux_three_inputs:y:sel:y:b"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:b:mux:mux_three_inputs:y:sel:y:b" data-net-key="port:mux_three_inputs:b:port:b" d="M 144 144 L 168 144 L 336 144 L 360 144" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c" data-net-key="port:mux_three_inputs:c:port:c" d="M 144 192 L 168 192 L 216 192 L 216 168 L 336 168 L 360 168" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:c:mux:mux_three_inputs:y:sel:y:c" data-net-key="port:mux_three_inputs:c:port:c" d="M 144 192 L 168 192 L 264 192 L 264 168 L 336 168 L 360 168" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:mux_three_inputs:sel:mux:mux_three_inputs:y:sel:y:sel"><path class="svsch-edge" data-edge-id="edge:port:mux_three_inputs:sel:mux:mux_three_inputs:y:sel:y:sel" data-net-key="port:mux_three_inputs:sel:port:sel" d="M 144 48 L 168 48 L 432 48 L 432 96" /></g>
 </g>
 <g class="svsch-nodes">

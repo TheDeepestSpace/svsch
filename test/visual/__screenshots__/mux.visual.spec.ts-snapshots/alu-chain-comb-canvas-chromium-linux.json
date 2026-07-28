@@ -131,7 +131,7 @@
       "target": "comb:alu_chain:y:expr",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 48 L 168 48 L 216 48 L 216 72 L 336 72 L 360 72"
+      "path": "M 144 48 L 168 48 L 264 48 L 264 72 L 336 72 L 360 72"
     },
     {
       "id": "edge:port:alu_chain:b:comb:alu_chain:y:expr:b",
@@ -147,7 +147,7 @@
       "target": "comb:alu_chain:y:expr",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 144 144 L 168 144 L 216 144 L 216 120 L 336 120 L 360 120"
+      "path": "M 144 144 L 168 144 L 264 144 L 264 120 L 336 120 L 360 120"
     }
   ]
 }

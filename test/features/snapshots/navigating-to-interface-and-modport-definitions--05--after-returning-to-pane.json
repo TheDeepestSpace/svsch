@@ -129,7 +129,7 @@
       "target": "interface_modport:consumer:bus",
       "sourceHandle": "out:valid",
       "targetHandle": "in:ready",
-      "path": "M 672 216 L 696 216 L 696 288 L 432 288 L 432 264 L 456 264 L 480 264"
+      "path": "M 672 216 L 696 216 L 696 312 L 456 312 L 456 264 L 480 264"
     },
     {
       "id": "edge:interface:consumer:bus:interface_modport:consumer:bus:bus",

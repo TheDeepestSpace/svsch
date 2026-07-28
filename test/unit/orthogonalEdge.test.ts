@@ -64,6 +64,58 @@ describe('orthogonal edge routing', () => {
     expect(route[route.length - 1].y % diagramSizing.gridSize).toBe(0);
   });
 
+  it('preserves off-grid side-port approach axes while snapping bends', () => {
+    const route = normalizeRoutePoints(
+      {
+        routePoints: [
+          { x: 216, y: 204 },
+          { x: 333, y: 204 },
+          { x: 333, y: 60 },
+          { x: 456, y: 60 }
+        ]
+      },
+      192,
+      204,
+      480,
+      60,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(route).toEqual([
+      { x: 216, y: 204 },
+      { x: 336, y: 204 },
+      { x: 336, y: 60 },
+      { x: 456, y: 60 }
+    ]);
+  });
+
+  it('preserves feedback turns at side-port lead points', () => {
+    const route = normalizeRoutePoints(
+      {
+        routePoints: [
+          { x: 1416, y: 120 },
+          { x: 1416, y: 24 },
+          { x: 24, y: 24 },
+          { x: 24, y: 168 }
+        ]
+      },
+      1392,
+      120,
+      48,
+      168,
+      HdlPosition.Right,
+      HdlPosition.Left
+    );
+
+    expect(route).toEqual([
+      { x: 1416, y: 120 },
+      { x: 1416, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: 168 }
+    ]);
+  });
+
   it('keeps the regular one-grid source lead for top-hat feeds', () => {
     const route = normalizeRoutePoints(
       {

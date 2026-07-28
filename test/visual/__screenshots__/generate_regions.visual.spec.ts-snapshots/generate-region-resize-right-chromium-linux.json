@@ -166,7 +166,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 624 672 L 648 672 L 720 672 L 720 432 L 888 432 L 912 432",
+      "path": "M 624 672 L 648 672 L 768 672 L 768 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:generate_if_else_regions:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 192 L 648 192 L 720 192 L 720 432 L 888 432 L 912 432",
+      "path": "M 624 192 L 648 192 L 768 192 L 768 432 L 888 432 L 912 432",
       "inactive": true
     },
     {
