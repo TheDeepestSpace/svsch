@@ -359,51 +359,92 @@ export class BddWorld {
 
   async _waitForRenderedModule(moduleName: string, timeout = 60_000): Promise<void> {
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
-    await expect.poll(async () => {
-      return this.webviewPage.locator('html').evaluate((_el, expectedModule) => {
-        try {
-          const rf = (window as any).reactFlowInstance;
-          if (!rf || typeof rf.getNodes !== 'function' || typeof rf.getEdges !== 'function') return false;
+    try {
+      await expect.poll(
+        async () => (await this._renderedModuleState(moduleName)).ready,
+        { timeout }
+      ).toBe(true);
+    } catch (err) {
+      // The plain expect.poll failure only says "expected true, got false" — not
+      // useful for a predicate with several failure branches. Capture the last
+      // observed state so a future occurrence of this (historically flaky)
+      // check is diagnosable from CI logs instead of a bare timeout.
+      const state = await this._renderedModuleState(moduleName).catch((e) => ({ error: String(e) }));
+      throw new Error(
+        `Timed out waiting for module "${moduleName}" to finish rendering after ${timeout}ms. ` +
+        `Last observed state: ${JSON.stringify(state)}`,
+        { cause: err }
+      );
+    }
+  }
 
-          const nodes = rf.getNodes();
-          if (!nodes || nodes.length === 0) return false;
-          if (!nodes.every((node: any) => node.data?.moduleName === expectedModule)) {
-            return false;
-          }
+  private async _renderedModuleState(expectedModule: string): Promise<{
+    ready: boolean;
+    nodeCount?: number;
+    mismatchedModuleNodeIds?: string[];
+    edgeCount?: number;
+    edgeElemCount?: number;
+    validEdgeCount?: number;
+    reason?: string;
+  }> {
+    return this.webviewPage.locator('html').evaluate((_el, expectedModuleName) => {
+      try {
+        const rf = (window as any).reactFlowInstance;
+        if (!rf || typeof rf.getNodes !== 'function' || typeof rf.getEdges !== 'function') {
+          return { ready: false, reason: 'reactFlowInstance not available' };
+        }
 
-          const nodeElems = document.querySelectorAll('.react-flow__node');
-          if (nodeElems.length === 0) return false;
+        const nodes = rf.getNodes();
+        if (!nodes || nodes.length === 0) return { ready: false, reason: 'no nodes' };
+        const mismatchedModuleNodeIds = nodes
+          .filter((node: any) => node.data?.moduleName !== expectedModuleName)
+          .map((node: any) => node.id);
+        if (mismatchedModuleNodeIds.length > 0) {
+          return { ready: false, reason: 'moduleName mismatch', nodeCount: nodes.length, mismatchedModuleNodeIds };
+        }
 
-          const edges = rf.getEdges();
-          if (!edges || edges.length === 0) return true;
+        const nodeElems = document.querySelectorAll('.react-flow__node');
+        if (nodeElems.length === 0) return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
 
-          const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
-          if (edgeElems.length === 0) return false;
+        const edges = rf.getEdges();
+        if (!edges || edges.length === 0) return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
 
-          const edgeMap = new Map<string, Element>();
-          for (const el of edgeElems) {
-            const id = el.getAttribute('data-id');
-            if (id) edgeMap.set(id, el);
-          }
+        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+        if (edgeElems.length === 0) {
+          return { ready: false, reason: 'no rendered edge elements', nodeCount: nodes.length, edgeCount: edges.length };
+        }
 
-          let validCount = 0;
-          for (const edge of edges) {
-            if (!edge || !edge.id) continue;
-            const el = edgeMap.get(edge.id);
-            if (el) {
-              const pathEl = el.querySelector('path[d], path');
-              if (pathEl && pathEl.getAttribute('d')) {
-                validCount++;
-              }
+        const edgeMap = new Map<string, Element>();
+        for (const el of edgeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) edgeMap.set(id, el);
+        }
+
+        let validCount = 0;
+        for (const edge of edges) {
+          if (!edge || !edge.id) continue;
+          const el = edgeMap.get(edge.id);
+          if (el) {
+            const pathEl = el.querySelector('path[d], path');
+            if (pathEl && pathEl.getAttribute('d')) {
+              validCount++;
             }
           }
-
-          return validCount === edges.length || (validCount > 0 && edgeElems.length > 0);
-        } catch {
-          return false;
         }
-      }, moduleName).catch(() => false);
-    }, { timeout }).toBe(true);
+
+        const ready = validCount === edges.length || (validCount > 0 && edgeElems.length > 0);
+        return {
+          ready,
+          nodeCount: nodes.length,
+          edgeCount: edges.length,
+          edgeElemCount: edgeElems.length,
+          validEdgeCount: validCount,
+          reason: ready ? undefined : 'edges present but no valid rendered paths'
+        };
+      } catch (e) {
+        return { ready: false, reason: `evaluate threw: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    }, expectedModule).catch((e) => ({ ready: false, reason: `evaluate call failed: ${e instanceof Error ? e.message : String(e)}` }));
   }
 
   async _settleWorkbenchForScreenshot(): Promise<void> {
