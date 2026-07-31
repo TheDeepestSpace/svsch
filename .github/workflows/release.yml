@@ -33,11 +33,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Node for NPM
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+      # No separate "setup-node" step here on purpose: the CI container already
+      # ships Node 24 / npm 11.12.1 (needed for npm OIDC trusted publishing, which
+      # requires npm >= 11.5.1). actions/setup-node@v4 would both downgrade to an
+      # older npm and, via registry-url, write an empty _authToken line into
+      # .npmrc that makes npm skip the OIDC exchange entirely.
 
       - name: Create Release PR or Publish
         id: changesets
@@ -50,6 +50,5 @@ jobs:
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
