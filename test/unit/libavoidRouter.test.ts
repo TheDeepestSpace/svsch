@@ -7,6 +7,7 @@ import {
   setLibavoidRuntimeForTests,
   type RoutingLeadPoint
 } from '../../src/layout/libavoidRouter';
+import { simplifyOrthogonalRoute } from '../../src/layout/orthogonalRouteSimplifier';
 
 beforeAll(async () => {
   await AvoidLib.load();
@@ -86,6 +87,121 @@ describe('libavoid production router', () => {
   });
 });
 
+describe('single-connection dogleg simplification', () => {
+  it('removes the lower-lane dip before a bottom-facing target', () => {
+    const route = [
+      { x: 240, y: 240 },
+      { x: 264, y: 240 },
+      { x: 312, y: 240 },
+      { x: 312, y: 336 },
+      { x: 384, y: 336 },
+      { x: 384, y: 312 },
+      { x: 552, y: 312 },
+      { x: 552, y: 264 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [], [])).toEqual([
+      { x: 240, y: 240 },
+      { x: 312, y: 240 },
+      { x: 312, y: 312 },
+      { x: 552, y: 312 },
+      { x: 552, y: 264 }
+    ]);
+  });
+
+  it('removes the stacked feedback dip without changing the required wrap', () => {
+    const route = [
+      { x: 1281, y: 144 },
+      { x: 1296, y: 144 },
+      { x: 1296, y: 216 },
+      { x: 672, y: 216 },
+      { x: 672, y: 240 },
+      { x: 600, y: 240 },
+      { x: 600, y: 168 },
+      { x: 336, y: 168 },
+      { x: 336, y: 240 },
+      { x: 351, y: 240 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [], [])).toEqual([
+      { x: 1281, y: 144 },
+      { x: 1296, y: 144 },
+      { x: 1296, y: 216 },
+      { x: 600, y: 216 },
+      { x: 600, y: 168 },
+      { x: 336, y: 168 },
+      { x: 336, y: 240 },
+      { x: 351, y: 240 }
+    ]);
+  });
+
+  it.each([0, 1, 2, 3])('applies the same simplification after %s quarter turns', (turns) => {
+    const route = [
+      { x: 144, y: 0 },
+      { x: 72, y: 0 },
+      { x: 72, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: -48 },
+      { x: -48, y: -48 }
+    ].map((point) => rotatePoint(point, turns));
+
+    const simplified = simplifyOrthogonalRoute(route, [], []);
+
+    expect(simplified).toEqual([
+      { x: 144, y: 0 },
+      { x: 24, y: 0 },
+      { x: 24, y: -48 },
+      { x: -48, y: -48 }
+    ].map((point) => rotatePoint(point, turns)));
+  });
+
+  it('keeps a dogleg when the shorter replacement would hit an obstacle', () => {
+    const route = [
+      { x: 144, y: 0 },
+      { x: 72, y: 0 },
+      { x: 72, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: -48 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [
+      { x: 36, y: -12, width: 12, height: 24 }
+    ], [])).toEqual(route);
+  });
+
+  it('keeps a dogleg when the shorter replacement would add shared-path overlap', () => {
+    const route = [
+      { x: 144, y: 0 },
+      { x: 72, y: 0 },
+      { x: 72, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: -48 }
+    ];
+    const peer = [
+      { x: 36, y: 0 },
+      { x: 60, y: 0 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [], [peer])).toEqual(route);
+  });
+
+  it('keeps a dogleg when the shorter replacement would add a crossing', () => {
+    const route = [
+      { x: 144, y: 0 },
+      { x: 72, y: 0 },
+      { x: 72, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: -48 }
+    ];
+    const peer = [
+      { x: 48, y: -12 },
+      { x: 48, y: 12 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [], [peer])).toEqual(route);
+  });
+});
+
 function leadResolver(nodes: PositionedNode[]) {
   const byId = new Map(nodes.map((candidate) => [candidate.id, candidate]));
   return (nodeId: string, portId: string | undefined, includeLeadMargins: boolean): RoutingLeadPoint | undefined => {
@@ -109,4 +225,12 @@ function routeIsOrthogonal(points: Array<{ x: number; y: number }>): boolean {
   return points.slice(1).every((point, index) => (
     point.x === points[index].x || point.y === points[index].y
   ));
+}
+
+function rotatePoint(point: { x: number; y: number }, turns: number): { x: number; y: number } {
+  let rotated = point;
+  for (let index = 0; index < turns; index += 1) {
+    rotated = { x: -rotated.y, y: rotated.x };
+  }
+  return rotated;
 }
