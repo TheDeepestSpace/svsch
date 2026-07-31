@@ -33,12 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # No separate "setup-node" step here on purpose: the CI container already
-      # ships Node 24 / npm 11.12.1 (needed for npm OIDC trusted publishing, which
-      # requires npm >= 11.5.1). actions/setup-node@v4 would both downgrade to an
-      # older npm and, via registry-url, write an empty _authToken line into
-      # .npmrc that makes npm skip the OIDC exchange entirely.
-
       - name: Create Release PR or Publish
         id: changesets
         uses: changesets/action@v1
