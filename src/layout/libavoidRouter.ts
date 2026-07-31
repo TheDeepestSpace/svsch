@@ -2,8 +2,13 @@ import { diagramNodeDimensions } from '../diagram/nodeSizing';
 import { edgeNetKey } from '../ir/edgeNet';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import type { DiagramEdge, DiagramNode, PositionedNode } from '../ir/types';
+import { ARRAY_STACK_WIDE_LANE_OFFSET } from '../webview/arrayStackGeometry';
 import { normalizeRoutePoints } from '../webview/orthogonal/logic';
 import { HdlPosition } from '../webview/orthogonal/types';
+import {
+  simplifyOrthogonalRoute,
+  type OrthogonalRouteObstacle
+} from './orthogonalRouteSimplifier';
 import { ROUTING_OBSTACLE_MARGIN, routingObstacleMargins } from './routingObstacleGeometry';
 
 const SHAPE_BUFFER_DISTANCE = 4;
@@ -86,7 +91,7 @@ async function routeDiagramWithLibavoidExclusive(
       return sourcePort && targetPort ? [{ edge, sourcePort, targetPort }] : [];
     });
     const rawRoutes = routeRaw(Avoid, libavoidNodes, libavoidEdges);
-    return validateRoutes(nodes, libavoidEdges, rawRoutes, resolveLead);
+    return validateRoutes(nodes, libavoidNodes, libavoidEdges, rawRoutes, resolveLead);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     return {
@@ -289,6 +294,7 @@ function routeRaw(
 
 function validateRoutes(
   nodes: PositionedNode[],
+  libavoidNodes: LibavoidNode[],
   edges: LibavoidEdge[],
   rawRoutes: Map<string, Array<{ x: number; y: number }>>,
   resolveLead: RoutingLeadResolver
@@ -319,6 +325,34 @@ function validateRoutes(
     else candidates.set(item.edge.id, normalized);
   }
 
+  const edgeById = new Map(edges.map((item) => [item.edge.id, item]));
+  const netSizes = new Map<string, number>();
+  for (const item of edges) {
+    const netKey = edgeNetKey(item.edge);
+    netSizes.set(netKey, (netSizes.get(netKey) ?? 0) + 1);
+  }
+
+  for (const item of edges) {
+    const netKey = edgeNetKey(item.edge);
+    const route = candidates.get(item.edge.id);
+    if (!route || rejectedNets.has(netKey) || netSizes.get(netKey) !== 1) continue;
+
+    const peerRoutes = [...candidates.entries()].flatMap(([edgeId, candidate]) => {
+      const peer = edgeById.get(edgeId);
+      return edgeId !== item.edge.id
+        && peer
+        && !rejectedNets.has(edgeNetKey(peer.edge))
+        ? [candidate]
+        : [];
+    });
+    const laneClearance = item.edge.isStacked ? ARRAY_STACK_WIDE_LANE_OFFSET : 0;
+    const obstacles = simplificationObstacles(libavoidNodes, SHAPE_BUFFER_DISTANCE + laneClearance);
+    const simplified = simplifyOrthogonalRoute(route, obstacles, peerRoutes);
+    const rejection = validateNormalizedRoute(simplified, nodes);
+    if (rejection) rejectedNets.set(netKey, rejection);
+    else candidates.set(item.edge.id, simplified);
+  }
+
   const routes = new Map<string, Array<{ x: number; y: number }>>();
   for (const item of edges) {
     const netKey = edgeNetKey(item.edge);
@@ -326,6 +360,18 @@ function validateRoutes(
     if (route && !rejectedNets.has(netKey)) routes.set(item.edge.id, route);
   }
   return { routes, rejectedNets };
+}
+
+function simplificationObstacles(
+  nodes: LibavoidNode[],
+  clearance: number
+): OrthogonalRouteObstacle[] {
+  return nodes.map((node) => ({
+    x: node.x - clearance,
+    y: node.y - clearance,
+    width: node.width + clearance * 2,
+    height: node.height + clearance * 2
+  }));
 }
 
 function normalizeRenderedRoute(
