@@ -12,7 +12,7 @@ import {
   buildViewModel,
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
-import { compareGraphState } from '../graphRegression';
+import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 
 type ScreenshotCompareBox = {
   x: number;
@@ -235,7 +235,11 @@ export class BddWorld {
     );
 
     const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
-    if (!fs.existsSync(snapshotPath) || updateSnapshots) {
+    const snapshotMissing = !fs.existsSync(snapshotPath);
+    if (snapshotMissing) {
+      assertBaselineCreatable(snapshotPath, updateSnapshots);
+    }
+    if (snapshotMissing || updateSnapshots) {
       fs.writeFileSync(snapshotPath, actualBuffer);
       return;
     }

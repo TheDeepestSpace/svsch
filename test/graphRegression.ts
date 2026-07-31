@@ -147,6 +147,19 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
   });
 }
 
+// In CI, a missing baseline means nothing was committed for this snapshot —
+// silently creating one would make the test pass without checking anything.
+// Locally, auto-create so a dev adding a new scenario can generate the
+// initial baseline and commit it. UPDATE_SNAPSHOTS always wins, CI included.
+export function assertBaselineCreatable(snapshotPath: string, updateSnapshots: boolean): void {
+  if (!updateSnapshots && process.env.CI) {
+    throw new Error(
+      `No baseline snapshot committed for "${snapshotPath}".\n` +
+      `Run the test locally to generate it (or with UPDATE_SNAPSHOTS=true to regenerate), then commit the result.`
+    );
+  }
+}
+
 export function compareGraphState(
   actual: GraphState,
   snapshotName: string,
@@ -160,6 +173,9 @@ export function compareGraphState(
   const actualHasContent = actual.nodes.length > 0 || actual.edges.length > 0 || (actual.regions?.length ?? 0) > 0;
 
   const snapshotMissingOrEmpty = !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
+  if (snapshotMissingOrEmpty) {
+    assertBaselineCreatable(snapshotPath, updateSnapshots);
+  }
   if (snapshotMissingOrEmpty || updateSnapshots) {
     const parentDir = path.dirname(snapshotPath);
     if (!fs.existsSync(parentDir)) {
@@ -279,8 +295,12 @@ export function compareSvgSnapshot(
   updateSnapshots: boolean = false
 ) {
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
+  const snapshotMissing = !fs.existsSync(snapshotPath);
 
-  if (!fs.existsSync(snapshotPath) || updateSnapshots) {
+  if (snapshotMissing) {
+    assertBaselineCreatable(snapshotPath, updateSnapshots);
+  }
+  if (snapshotMissing || updateSnapshots) {
     fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
     fs.writeFileSync(snapshotPath, actualSvg);
     console.log(`Created or updated baseline SVG: ${snapshotPath}`);
