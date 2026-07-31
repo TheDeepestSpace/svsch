@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     # Reusing the existing CI container config from your project
     container:
-      image: ghcr.io/thedeepestspace/svsch-ci:ci-latest
+      image: ghcr.io/thedeepestspace/svsch-ci:latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
