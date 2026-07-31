@@ -44,14 +44,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   // vscode-test-playwright copies VS Code logs at teardown.
   outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),
   workers: 1,
-  // Module rendering (test/steps/fixtures.ts _waitForRenderedModule) alone waits up to
-  // 120s: React Flow only mounts edge DOM elements after an async, browser-scheduled
-  // handle-measurement pass that can lag well behind the underlying model update under
-  // CPU-starved CI, so this must stay comfortably above that single-step wait.
-  timeout: 180_000,
-  // A relaunched VS Code instance resolves nearly all occurrences of the above
-  // scheduling lag, so retry once in CI instead of failing the whole job on it.
-  retries: process.env.CI ? 1 : 0,
+  timeout: 120_000,
   reporter: reporters,
   snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
   expect: {

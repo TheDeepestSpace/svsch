@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Background,
@@ -447,6 +447,36 @@ function DiagramApp(): React.ReactElement {
       };
     }));
   }, [handleRouteChange, setEdges, view]);
+
+  const updateNodeInternals = useStore((s) => s.updateNodeInternals);
+
+  // React Flow only learns a node's handle positions (and therefore whether an edge
+  // can be drawn at all) from a ResizeObserver callback that fires on its own,
+  // browser-scheduled timing after the node's DOM mounts. Under a busy/CPU-starved
+  // renderer that callback can be delayed well beyond a single frame, during which
+  // no `.react-flow__edge` element exists even though our node/edge data is already
+  // complete. Since node/handle geometry is already valid the instant the DOM commits
+  // (layout doesn't require a paint), measure it ourselves synchronously in a layout
+  // effect — calling the same internal update the ResizeObserver would — instead of
+  // waiting for that observer to get a turn.
+  useLayoutEffect(() => {
+    if (nodes.length === 0) return;
+    const nodeElems = document.querySelectorAll('.react-flow__node');
+    if (nodeElems.length === 0) return;
+    const elementById = new Map<string, Element>();
+    nodeElems.forEach((el) => {
+      const id = el.getAttribute('data-id');
+      if (id) elementById.set(id, el);
+    });
+    const updates = new Map<string, { id: string; nodeElement: HTMLDivElement; force: boolean }>();
+    nodes.forEach((node) => {
+      const el = elementById.get(node.id);
+      if (el) updates.set(node.id, { id: node.id, nodeElement: el as HTMLDivElement, force: true });
+    });
+    if (updates.size > 0) {
+      updateNodeInternals(updates);
+    }
+  }, [nodes, updateNodeInternals]);
 
   useEffect(() => {
     if (!view || nodes.length === 0) {

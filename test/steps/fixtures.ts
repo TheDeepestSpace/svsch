@@ -318,7 +318,7 @@ export class BddWorld {
       await moduleSelect.selectOption(moduleName);
     }
     await expect(moduleSelect).toHaveValue(moduleName, { timeout: 15_000 });
-    await this._waitForRenderedModule(moduleName, 120_000);
+    await this._waitForRenderedModule(moduleName, 60_000);
     await this.workbox.waitForTimeout(500);
     if (screenshotLabel) await this.takeScreenshot(screenshotLabel);
   }
@@ -357,7 +357,7 @@ export class BddWorld {
     await this.workbox.waitForTimeout(500);
   }
 
-  async _waitForRenderedModule(moduleName: string, timeout = 120_000): Promise<void> {
+  async _waitForRenderedModule(moduleName: string, timeout = 60_000): Promise<void> {
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
     try {
       await expect.poll(
