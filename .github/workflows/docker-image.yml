@@ -67,7 +67,7 @@ jobs:
           tags: |
             type=ref,event=branch,prefix=${{ inputs.tag-prefix }}branch-
             type=ref,event=pr,prefix=${{ inputs.tag-prefix }}pr-
-            type=raw,value=latest,prefix=${{ inputs.tag-prefix }},enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         id: build
