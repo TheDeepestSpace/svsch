@@ -1510,7 +1510,7 @@ test.describe('edge route editing', () => {
     await expectGraphAndScreenshot(page, 'cut-net-label-selected.png', { clip: await paddedLocatorClip(page, `[data-node-id="${nodeId}"]`) });
   });
 
-  test('highlights a dangling end whose real port was marquee-selected, even though the label itself sits outside the lasso', async ({ page }) => {
+  test('does not highlight a dangling end merely because its real port was marquee-selected, since the label itself sits outside the lasso and is not itself selected', async ({ page }) => {
     await openView(page, createStyledCutNetView());
     await page.waitForSelector('[data-node-kind="netLabel"]');
     await waitForViewportTransformToSettle(page);
@@ -1546,8 +1546,8 @@ test.describe('edge route editing', () => {
 
     await expect(portLocator).toHaveClass(/selected/);
     await expect(labelLocator).not.toHaveClass(/selected/);
-    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);
-    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(1);
+    await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
+    await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
   });
 
   test('matches cut label segment paint to decorated wire styles', async ({ page }) => {
