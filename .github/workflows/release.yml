@@ -46,3 +46,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Package extension for release
+        if: steps.changesets.outputs.published == 'true'
+        # Build output from `npm run release` above is reused; vsce package just zips it.
+        run: npx vsce package
+
+      - name: Attach VSIX to GitHub release
+        if: steps.changesets.outputs.published == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          files: "*.vsix"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
