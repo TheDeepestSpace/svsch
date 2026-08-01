@@ -1,5 +1,13 @@
 # svsch
 
+## 0.2.1
+
+### Patch Changes
+
+- 35dfe69: Fail BDD snapshot/screenshot comparisons in CI when a baseline is missing instead of silently writing the actual output as the new baseline and passing. This previously let scenarios with no committed baseline pass vacuously. Local runs and `UPDATE_SNAPSHOTS=true` still auto-create baselines as before.
+- 486d4e3: Fix edges intermittently failing to render (no `.react-flow__edge` DOM elements, timing out in CI) right after opening a module. React Flow only learns a node's handle positions from a `ResizeObserver` callback that fires on its own, browser-scheduled timing after the node's DOM mounts — under a busy renderer that callback can be delayed arbitrarily, during which no edges can be drawn even though the node/edge data model is already complete. Since the node/handle geometry is already valid the instant the DOM commits (layout doesn't require a paint), the webview now measures it synchronously itself right after nodes mount, instead of waiting on that observer's own scheduling.
+- 64a4f1d: Simplify obstacle-safe Libavoid doglegs without adding crossings or shared-path overlap.
+
 ## 0.2.0
 
 ### Minor Changes
