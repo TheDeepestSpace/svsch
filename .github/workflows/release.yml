@@ -4,8 +4,11 @@ on:
   push:
     branches:
       - master
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to (re-)attach a .vsix to, e.g. v1.2.3"
+        required: true
 
 permissions:
   contents: write
@@ -20,9 +23,14 @@ jobs:
     # Reusing the existing CI container config from your project
     container:
       image: ghcr.io/thedeepestspace/svsch-ci:latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      tag_name: ${{ steps.resolve-tag.outputs.tag_name }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Mark workspace as safe directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -50,21 +58,48 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
+      - name: Resolve released tag
+        id: resolve-tag
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          echo "tag_name=v$(node -p 'JSON.parse(process.env.PUBLISHED_PACKAGES)[0].version')" >> "$GITHUB_OUTPUT"
+
   attach-vsix:
-    # Triggered by the `release` event (fired when changesets/action above creates
-    # a GitHub release), not chained onto the `release` job's outputs. This makes it
-    # independently retryable via "Re-run failed jobs" without depending on
-    # changesets re-detecting a publish, which it won't do on a rerun.
-    if: github.event_name == 'release'
+    # changesets/action creates the GitHub release using secrets.GITHUB_TOKEN, and
+    # GitHub Actions does not start new workflow runs for events caused by
+    # GITHUB_TOKEN (release: published included) — only workflow_dispatch and
+    # repository_dispatch are exempt. So this job can't be triggered by the
+    # `release` event; it instead chains onto `release` within the same push-
+    # triggered run, and exposes workflow_dispatch as an independent retry path
+    # (pass the tag manually) if packaging/upload fails after publish.
+    if: |
+      always() &&
+      ((github.event_name == 'push' && needs.release.result == 'success' && needs.release.outputs.published == 'true') ||
+       github.event_name == 'workflow_dispatch')
+    needs: release
     name: Attach VSIX to GitHub Release
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/thedeepestspace/svsch-ci:latest
     steps:
+      - name: Determine release tag
+        id: tag
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+          PUSH_TAG: ${{ needs.release.outputs.tag_name }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag_name=$DISPATCH_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_name=$PUSH_TAG" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ steps.tag.outputs.tag_name }}
           persist-credentials: false
 
       - name: Mark workspace as safe directory
@@ -85,7 +120,7 @@ jobs:
       - name: Attach VSIX to GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ steps.tag.outputs.tag_name }}
           files: "*.vsix"
           fail_on_unmatched_files: true
         env:
