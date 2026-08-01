@@ -1,5 +1,11 @@
 # svsch
 
+## 0.2.2
+
+### Patch Changes
+
+- 2a12b06: Removed VS Code Marketplace and Open VSX publishing from the release workflow. The extension is still packaged and attached to GitHub releases as a `.vsix` file.
+
 ## 0.2.1
 
 ### Patch Changes
