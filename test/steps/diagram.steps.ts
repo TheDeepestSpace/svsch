@@ -361,16 +361,6 @@ When('click and drag the mouse to select {string} and {string} together', async 
   await marqueeSelectNodePair(this, id1, id2, name1, name2);
 });
 
-// Single-node lasso: draws the rectangle tightly around just this one block,
-// exactly like the pair/triple variants above but for a marquee that's only
-// meant to reach one node (e.g. proving an unrelated cut net label attached
-// to it, sitting outside its bounding box, is left unselected).
-When('click and drag the mouse to select the block {string}', async function (this: BddWorld, name: string) {
-  const id = await findNodeIdByLabel(this.webviewPage, name);
-  if (!id) throw new Error(`Block not found: ${name}`);
-  await marqueeSelectNodes(this, [id], [name]);
-});
-
 // Same lasso gesture, but resolves the two labels against any node kind — used
 // for selecting instance blocks (e.g. for the "Auto Layout" control) rather
 // than the port-only lookup above.
