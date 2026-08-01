@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  release:
+    types: [published]
 
 permissions:
   contents: write
@@ -12,6 +14,7 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'push'
     name: Release & Publish
     runs-on: ubuntu-latest
     # Reusing the existing CI container config from your project
@@ -47,16 +50,42 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
-      - name: Package extension for release
-        if: steps.changesets.outputs.published == 'true'
-        # Build output from `npm run release` above is reused; vsce package just zips it.
-        run: npx vsce package
+  attach-vsix:
+    # Triggered by the `release` event (fired when changesets/action above creates
+    # a GitHub release), not chained onto the `release` job's outputs. This makes it
+    # independently retryable via "Re-run failed jobs" without depending on
+    # changesets re-detecting a publish, which it won't do on a rerun.
+    if: github.event_name == 'release'
+    name: Attach VSIX to GitHub Release
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/thedeepestspace/svsch-ci:latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Mark workspace as safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json', 'patches/*.patch') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package extension
+        run: npm run package
 
       - name: Attach VSIX to GitHub release
-        if: steps.changesets.outputs.published == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v${{ fromJson(steps.changesets.outputs.publishedPackages)[0].version }}
+          tag_name: ${{ github.event.release.tag_name }}
           files: "*.vsix"
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
