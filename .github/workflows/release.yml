@@ -50,13 +50,11 @@ jobs:
         with:
           # This updates package.json and CHANGELOG.md, and consumes changeset files
           version: npx changeset version
-          # This publishes the NPM package and the VS Code Marketplace extension
+          # This publishes the NPM package
           publish: npm run release
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Resolve released tag
         id: resolve-tag
