@@ -361,6 +361,16 @@ When('click and drag the mouse to select {string} and {string} together', async 
   await marqueeSelectNodePair(this, id1, id2, name1, name2);
 });
 
+// Single-node lasso: draws the rectangle tightly around just this one block,
+// exactly like the pair/triple variants above but for a marquee that's only
+// meant to reach one node (e.g. proving an unrelated cut net label attached
+// to it, sitting outside its bounding box, is left unselected).
+When('click and drag the mouse to select the block {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  await marqueeSelectNodes(this, [id], [name]);
+});
+
 // Same lasso gesture, but resolves the two labels against any node kind — used
 // for selecting instance blocks (e.g. for the "Auto Layout" control) rather
 // than the port-only lookup above.
@@ -981,6 +991,17 @@ Then('the cut net label attached to {string} should not overlap the block {strin
     && labelBox.y < otherBox.y + otherBox.height
     && otherBox.y < labelBox.y + labelBox.height;
   expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
+});
+
+// Guards against the label picking up the highlight halo/hovered-text style
+// merely because its stub edge got auto-selected along with the block it's
+// attached to (React Flow selects every edge touching a selected node) — the
+// label itself was never actually marqueed, so neither class should appear.
+Then('the cut net label attached to {string} should not be highlighted', async function (this: BddWorld, blockLabel: string) {
+  const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const labelNode = this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`);
+  await expect(labelNode.locator('path.svsch-edge-net-highlight')).toHaveCount(0);
+  await expect(labelNode.locator('.hdl-net-label-text')).not.toHaveClass(/hdl-net-label-text-hovered/);
 });
 
 // Reveal a cut net stub's floating Reroute control without clicking it — the

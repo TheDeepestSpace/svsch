@@ -442,6 +442,22 @@ Feature: Diagram Interaction
     And click and drag the mouse to select "a" and "y" together
     Then the connection between "a" and "y" should be shown as selected
 
+  Scenario: Marquee-selecting a block does not highlight its unselected cut net label
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic x);
+        leaf u1(.a(a), .y(x));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I hover the connection between "u1" and "x" and click its Cut control
+    And click and drag the mouse to select the block "u1"
+    Then the cut net label attached to "u1" should not be highlighted
+
   Scenario: Hovering one wire in a multi-wire selection reveals every selected wire's controls
     Given I have a file "top.sv" in my workspace:
       """
