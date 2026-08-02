@@ -2345,7 +2345,6 @@ text {
 
 .svsch-selection-toolbar {
   display: flex;
-  gap: 4px;
   pointer-events: none;
   position: absolute;
   transform: translate(-100%, 8px);
@@ -2365,6 +2364,23 @@ text {
   padding: 0 9px;
   pointer-events: auto;
   white-space: nowrap;
+}
+
+/* Merge into a single button group (matching the edge Reroute/Cut controls)
+   whenever both buttons are showing — Auto Layout only renders from 2+
+   selected blocks, so it's always the group's left half when present. Cut
+   out falls back to full rounding when it's alone (a single block selected). */
+.svsch-selection-relayout-control {
+  border-radius: 3px 0 0 3px;
+  border-right: none;
+}
+
+.svsch-selection-cutout-control {
+  border-radius: 0 3px 3px 0;
+}
+
+.svsch-selection-cutout-control:first-child {
+  border-radius: 3px;
 }
 
 .svsch-selection-relayout-control:hover,
