@@ -398,6 +398,45 @@ test('flags a module port dragged into a generate block', async ({
   }
 });
 
+test('hides the block-selection toolbar when only a cut net label is selected', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'generate_arm_intrusion');
+
+    const blockId = await findSystemNodeId(webview, 'u_free', 'instance');
+    if (!blockId) {
+      throw new Error('Could not find block "u_free"');
+    }
+    await clickSystemNode(workbox, webview, blockId);
+
+    const cutOutButton = webview.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' });
+    await expect(cutOutButton).toBeVisible();
+    await cutOutButton.click();
+
+    let labelId: string | null = null;
+    await expect.poll(async () => {
+      labelId = await findSystemCutLabelIdAttachedTo(webview, blockId);
+      return labelId !== null;
+    }, { timeout: 10_000 }).toBe(true);
+
+    await clickSystemNode(workbox, webview, labelId!);
+
+    await expect(webview.locator('.svsch-selection-toolbar button', { hasText: 'Auto Layout' })).toHaveCount(0);
+    await expect(webview.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' })).toHaveCount(0);
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
 const SYSTEM_GRID_SIZE = 24;
 const SYSTEM_LAYOUTS_DIR = path.resolve(__dirname, '../.svsch/layouts');
 type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
@@ -571,6 +610,33 @@ async function findSystemEdgeId(webview: FrameLocator, sourceId: string, targetI
     const edge = rf?.getEdges?.().find((candidate: any) => candidate.source === source && candidate.target === target);
     return edge?.id ?? null;
   }, { source: sourceId, target: targetId });
+}
+
+async function clickSystemNode(workbox: Page, webview: FrameLocator, nodeId: string): Promise<void> {
+  const box = await webview.locator(`.react-flow__node[data-id="${nodeId}"]`).boundingBox();
+  if (!box) {
+    throw new Error(`Could not get node box for ${nodeId}`);
+  }
+  await workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect.poll(async () => webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    return rf?.getNode?.(id)?.selected ?? false;
+  }, nodeId), { timeout: 5_000 }).toBe(true);
+}
+
+async function findSystemCutLabelIdAttachedTo(webview: FrameLocator, blockId: string): Promise<string | null> {
+  return webview.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const stub = rf.getEdges().find((e: any) => (
+      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
+    ));
+    if (!stub) return null;
+    const otherEndId = stub.source === id ? stub.target : stub.source;
+    const otherNode = nodesById.get(otherEndId) as any;
+    return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
+  }, blockId);
 }
 
 async function systemNodePosition(webview: FrameLocator, nodeId: string): Promise<{ x: number; y: number }> {
