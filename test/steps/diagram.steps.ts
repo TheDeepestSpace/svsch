@@ -379,6 +379,26 @@ When('click and drag the mouse to select the block {string}', async function (th
   await marqueeSelectNodes(this, [id], [name]);
 });
 
+// A plain click also selects a single block — used where the scenario only
+// needs one block selected, leaving the lasso drag to cover multi-block
+// selection elsewhere.
+When('I click to select the block {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${name}`);
+  await this.workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect.poll(async () => {
+    return this.webviewPage.locator('html').evaluate((_el, targetId) => {
+      const rf = (window as any).reactFlowInstance;
+      return rf.getNodes().find((n: any) => n.id === targetId)?.selected ?? false;
+    }, id);
+  }, { timeout: 5000 }).toBe(true);
+
+  await this.takeScreenshot(`Selected ${name}`);
+});
+
 // Three-node variant: the lasso spans the union of all three nodes' bounding
 // boxes, so it still works even when one of them has been deliberately moved
 // off the line between the other two (e.g. testing that Auto Layout has to

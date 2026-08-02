@@ -521,7 +521,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And click and drag the mouse to select the block "u1"
+    And I click to select the block "u1"
     And I click the "Cut out" button
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
