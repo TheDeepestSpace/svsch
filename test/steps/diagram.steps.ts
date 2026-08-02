@@ -955,25 +955,6 @@ async function authoritativeCutLabelPosition(world: BddWorld, blockLabel: string
   return node.position;
 }
 
-// A cut net's dangling end is selectable like any other node, but it isn't a
-// real block — used to prove the block-selection toolbar (Auto Layout / Cut
-// out) stays hidden when only a net label ends up selected.
-When('I click to select the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
-  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
-  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
-  if (!box) throw new Error(`Could not get bounding box for the cut net label attached to ${blockLabel}`);
-  await this.workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-
-  await expect.poll(async () => {
-    return this.webviewPage.locator('html').evaluate((_el, targetId) => {
-      const rf = (window as any).reactFlowInstance;
-      return rf.getNodes().find((n: any) => n.id === targetId)?.selected ?? false;
-    }, id);
-  }, { timeout: 5000 }).toBe(true);
-
-  await this.takeScreenshot(`Selected the cut net label attached to ${blockLabel}`);
-});
-
 When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, blockLabel: string, cellsX: number, cellsY: number) {
   const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
   const before = JSON.stringify(await readExtensionLayout(this));
