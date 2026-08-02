@@ -539,7 +539,8 @@ Feature: Diagram Interaction
     And I note the position of the cut net label attached to "u2"
     And I move the port node "y" by (0, 72)
     And click and drag the mouse to select "b", "u2", and "y" together
-    And I click the "Auto Layout" button
+    Then the cut net label attached to "u2" should not be highlighted
+    When I click the "Auto Layout" button
     Then the block "u2" should be re-placed and fixed in the saved layout
     And the block "u2" should stay near its pre-auto-layout position
     And the block "u2" should remain selected

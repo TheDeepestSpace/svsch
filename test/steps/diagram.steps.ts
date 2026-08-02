@@ -983,6 +983,17 @@ Then('the cut net label attached to {string} should not overlap the block {strin
   expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
 });
 
+// Guards against the label picking up the highlight halo/hovered-text style
+// merely because its stub edge got auto-selected along with the block it's
+// attached to (React Flow selects every edge touching a selected node) — the
+// label itself was never actually marqueed, so neither class should appear.
+Then('the cut net label attached to {string} should not be highlighted', async function (this: BddWorld, blockLabel: string) {
+  const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const labelNode = this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`);
+  await expect(labelNode.locator('path.svsch-edge-net-highlight')).toHaveCount(0);
+  await expect(labelNode.locator('.hdl-net-label-text')).not.toHaveClass(/hdl-net-label-text-hovered/);
+});
+
 // Reveal a cut net stub's floating Reroute control without clicking it — the
 // same "hover to check the controls" beat as the plain-edge hover step above,
 // but for a dangling end's own stub wire (whose control renders through a
