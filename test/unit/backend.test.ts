@@ -2199,7 +2199,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
-    it('creates one address mux for multiple index expressions into the same array', async () => {
+    it('merges multiple index expressions into a chained address mux for the same array', async () => {
       const graph = await runParser(backend, [{ file: 'array_multi_index_write.sv', text: `
         module array_multi_index_write
           ( input logic clk
@@ -2221,9 +2221,43 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         endmodule
       ` }]);
       const mod = graph.modules.array_multi_index_write ?? Object.values(graph.modules)[0];
-      const addressMuxes = mod.nodes.filter((n) => n.id === 'mux:array_multi_index_write:storage_addr');
 
-      expect(addressMuxes).toHaveLength(1);
+      // Exactly one array register — both writes fold into the same stacked storage node.
+      const arrayRegs = mod.nodes.filter((n) => n.kind === 'register' && n.label === 'storage');
+      expect(arrayRegs).toHaveLength(1);
+      const arrayReg = arrayRegs[0];
+
+      // Both index expressions are represented: the second write is demoted to an upstream
+      // chain stage instead of being dropped when the canonical mux id is already taken.
+      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write:storage_addr'));
+      expect(addressMuxes).toHaveLength(2);
+
+      // The mux that keeps the canonical id is the one wired to the register's D input.
+      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write:storage_addr');
+      expect(finalMux).toBeDefined();
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('i');
+      expect(mod.edges.some((e) => (
+        e.source === finalMux?.id && e.target === arrayReg.id && e.signal === 'storage_next'
+      ))).toBe(true);
+
+      const stageMux = addressMuxes.find((n) => n.id !== finalMux?.id);
+      expect(stageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(stageMux?.ports.find((p) => p.name === '5\'b0')?.connectedSignal).toBe('in_data');
+      expect(stageMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe('storage');
+
+      // The stage's output feeds the final mux's default — falls back to the address-write
+      // value when the reset loop's index doesn't (conceptually) match, instead of the raw
+      // array value being clobbered.
+      const stageOutSignal = stageMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
+      expect(stageOutSignal).toBeTruthy();
+      expect(finalMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe(stageOutSignal);
+      expect(mod.edges.some((e) => (
+        e.source === stageMux?.id && e.target === finalMux?.id && e.signal === stageOutSignal
+      ))).toBe(true);
+
+      // No dangling/empty inputs on either mux — both writes are fully connected.
+      expect(stageMux?.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal)).toBe(true);
+      expect(finalMux?.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal)).toBe(true);
     });
 
     it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {

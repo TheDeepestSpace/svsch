@@ -418,6 +418,11 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         vpiHandle data_rhs = nullptr;
         vpiHandle reset_rhs = nullptr;
         vpiHandle reset_assign_handle = nullptr;
+        // True when every assignment to this exact LHS text lives inside the reset branch —
+        // i.e. there is no separate non-reset write to protect via a downstream rst mux
+        // (e.g. a reset-only loop write `storage[i] <= 0`, as opposed to a genuine partial
+        // reset where the same indexed target `M[addr]` is written in both branches).
+        bool reset_is_sole_assign = false;
 
         if (is_reset_condition && reset_branch_stmt) {
             for (vpiHandle ra : reg_assigns_vec) {
@@ -427,11 +432,19 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                     break;
                 }
             }
+            if (reset_rhs) {
+                reset_is_sole_assign = std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),
+                    [&](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });
+            }
         }
 
         std::vector<std::string> literal_inputs;
         for (vpiHandle a : reg_assigns_vec) {
-            if (reset_assign_handle && isSameObject(a, reset_assign_handle)) continue;
+            // Normally the reset assign is handled separately (RV port / rst mux) and excluded
+            // here so it isn't double-counted as a data input. But when it's the *only*
+            // assignment to this LHS (reset_is_sole_assign), there is no other assign to supply
+            // data_rhs — the reset value IS the write's data, so let it flow through normally.
+            if (reset_assign_handle && isSameObject(a, reset_assign_handle) && !reset_is_sole_assign) continue;
             vpiHandle rhs = vpi_handle(vpiRhs, a);
             if (rhs && isLiteralExpr(rhs)) {
                 std::string literal_signal = getLiteralLabel(rhs);
@@ -578,7 +591,11 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.
             // Chain: write_en_mux → rst_mux → addr_mux → register D
-            if (is_reset_condition && !rst_signal.empty() && reset_rhs) {
+            // Skip when this LHS text is only ever assigned inside the reset branch — the
+            // write already IS the reset value, so gating it on rst again would just wire
+            // "true" and "false" to the same value (and "false" has no non-reset D signal
+            // to fall back to).
+            if (is_reset_condition && !rst_signal.empty() && reset_rhs && !reset_is_sole_assign) {
                 std::string reset_val_signal;
                 if (isLiteralExpr(reset_rhs)) {
                     reset_val_signal = getLiteralLabel(reset_rhs);
@@ -639,7 +656,34 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             addr_mux.ports.push_back({zero_match_label, "input", d_signal_for_addr, reg_width, zero_match_label});
             addr_mux.ports.push_back({"default", "input", reg_base, reg_width, "default"});
             addr_mux.ports.push_back({"out", "output", reg_base + "_next", reg_width});
-            if (!array_reg_exists) mod.nodes.push_back(addr_mux);
+
+            // Another distinct index expression may already write this same array (e.g. a
+            // reset loop `storage[i] <= 0` alongside `storage[address] <= in_data`). Rather
+            // than dropping this write when the canonical mux id is taken, demote the
+            // existing mux to an upstream chain stage and let this write take its place —
+            // its "default" falls back to the previous stage's output instead of the raw
+            // array value, so both writes stay represented and connected.
+            Node* existing_addr_mux = nullptr;
+            for (auto& existing : mod.nodes) {
+                if (existing.id == addr_mux.id) { existing_addr_mux = &existing; break; }
+            }
+            if (!existing_addr_mux) {
+                mod.nodes.push_back(addr_mux);
+            } else {
+                std::string prior_index;
+                for (const auto& p : existing_addr_mux->ports) {
+                    if (p.name == "sel") { prior_index = p.signal; break; }
+                }
+                std::string stage_signal = sanitizeId(reg_base + "_" + prior_index + "_stage");
+                existing_addr_mux->id = sanitizeId("mux:" + mod.name + ":" + reg_base + "_addr:" + prior_index);
+                for (auto& p : existing_addr_mux->ports) {
+                    if (p.direction == "output") p.signal = stage_signal;
+                }
+                for (auto& p : addr_mux.ports) {
+                    if (p.name == "default") { p.signal = stage_signal; break; }
+                }
+                mod.nodes.push_back(addr_mux);
+            }
             // Skip pushing the per-element register node — represented by the array register
             continue;
         }
