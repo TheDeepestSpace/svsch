@@ -5,7 +5,7 @@ import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -775,7 +775,23 @@ export class DiagramPanel {
     }
     const store = this.getStore();
     if (store) {
+      const isFirstOpen = !this.layout.modules[this.currentModule]
+        && !(await store.hasModuleLayout(this.currentModule));
       await this.ensureModuleLayout(store, this.currentModule);
+      if (isFirstOpen) {
+        const designModule = this.graph.modules[this.currentModule];
+        if (designModule) {
+          const initialView = await buildViewModel(this.graph, this.currentModule, this.layout);
+          const includeClockAndReset = vscode.workspace
+            .getConfiguration('svsch')
+            .get<boolean>('autocut-clk-reset', true);
+          const edges = firstOpenAutoCutEdges(designModule, includeClockAndReset);
+          if (edges.length > 0) {
+            this.layout = mergeNetCuts(this.layout, this.currentModule, edges, designModule, initialView.nodes);
+            await this.persistModuleLayout(store, this.currentModule);
+          }
+        }
+      }
     }
     const view: DiagramViewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
     await this.panel.webview.postMessage({

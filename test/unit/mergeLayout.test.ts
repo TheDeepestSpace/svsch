@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -98,6 +98,49 @@ const twoNetGraph: DesignGraph = {
     }
   }
 };
+
+describe('first-open auto-cuts', () => {
+  const module = {
+    name: 'top',
+    file: 'top.sv',
+    ports: [],
+    nodes: [
+      { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'out', name: 'src', direction: 'output' as const }] },
+      {
+        id: 'reg',
+        kind: 'register' as const,
+        label: 'q',
+        clockSignal: 'clk',
+        resetSignal: 'rst_n',
+        ports: [
+          { id: 'd', name: 'D', direction: 'input' as const },
+          { id: 'clock-pin', name: 'clk', direction: 'input' as const },
+          { id: 'reset-pin', name: 'rst_n', direction: 'input' as const }
+        ]
+      },
+      { id: 'sink', kind: 'instance' as const, label: 'sink', ports: [{ id: 'in', name: 'in', direction: 'input' as const }] }
+    ],
+    edges: [
+      { id: 'clock', source: 'clock-src', sourcePort: 'out', target: 'reg', targetPort: 'clock-pin' },
+      { id: 'reset', source: 'reset-src', sourcePort: 'out', target: 'reg', targetPort: 'reset-pin' },
+      { id: 'data', source: 'src', sourcePort: 'out', target: 'reg', targetPort: 'd' },
+      { id: 'declared', source: 'named-src', sourcePort: 'out', target: 'sink', targetPort: 'in', metadata: { declaredNetName: 'named_wire' } },
+      { id: 'inline', source: 'reg', sourcePort: 'd', target: 'sink', targetPort: 'in' }
+    ]
+  };
+
+  it('selects register control nets and declared-name nets', () => {
+    expect(firstOpenAutoCutEdges(module, true).map((edge) => edge.id)).toEqual([
+      'clock',
+      'reset',
+      'declared'
+    ]);
+  });
+
+  it('can disable register control cuts without disabling declared nets', () => {
+    expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
+  });
+});
 
 function renderedPortCenterY(node: PositionedNode): number {
   return node.position.y + diagramSizing.portHeight / 2;

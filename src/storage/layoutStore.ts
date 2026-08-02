@@ -111,6 +111,18 @@ export class LayoutStore {
     return path.join(this.layoutsDir, `${encodeURIComponent(moduleName)}.json`);
   }
 
+  async hasModuleLayout(moduleName: string): Promise<boolean> {
+    try {
+      await fs.access(this.modulePath(moduleName));
+      return true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.warn(`Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+      }
+      return false;
+    }
+  }
+
   async readModuleLayout(moduleName: string): Promise<SavedModuleLayout> {
     const filePath = this.modulePath(moduleName);
     try {

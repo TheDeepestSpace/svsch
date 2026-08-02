@@ -2721,6 +2721,46 @@ export function mergeNetCuts(
   );
 }
 
+/** Nets that form the computed default for a module with no saved layout. */
+export function firstOpenAutoCutEdges(
+  designModule: DesignModule,
+  includeClockAndReset: boolean
+): DiagramEdge[] {
+  const registerControlPorts = new Set<string>();
+  if (includeClockAndReset) {
+    for (const node of designModule.nodes) {
+      if (node.kind !== 'register') continue;
+      const signals = [registerClockSignal(node), registerResetSignal(node)].filter(
+        (signal): signal is string => Boolean(signal)
+      );
+      for (const port of node.ports) {
+        if (signals.some((signal) => (
+          port.name === signal
+          || port.id === signal
+          || port.connectedSignal === signal
+        ))) {
+          registerControlPorts.add(`${node.id}\0${port.id}`);
+          registerControlPorts.add(`${node.id}\0${port.name}`);
+        }
+      }
+    }
+  }
+
+  const selected: DiagramEdge[] = [];
+  const selectedNets = new Set<string>();
+  for (const edge of designModule.edges) {
+    const isRegisterControl = edge.targetPort !== undefined
+      && registerControlPorts.has(`${edge.target}\0${edge.targetPort}`);
+    const isDeclared = Boolean(edge.metadata?.declaredNetName);
+    const netKey = edgeNetKey(edge);
+    if ((isRegisterControl || isDeclared) && !selectedNets.has(netKey)) {
+      selected.push(edge);
+      selectedNets.add(netKey);
+    }
+  }
+  return selected;
+}
+
 export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: string, label: string): SavedLayout {
   const trimmed = label.trim();
   if (!trimmed) {
