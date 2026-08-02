@@ -392,7 +392,8 @@ When('I click to select the block {string}', async function (this: BddWorld, nam
   await expect.poll(async () => {
     return this.webviewPage.locator('html').evaluate((_el, targetId) => {
       const rf = (window as any).reactFlowInstance;
-      return rf.getNodes().find((n: any) => n.id === targetId)?.selected ?? false;
+      const selected = rf.getNodes().filter((n: any) => n.selected);
+      return selected.length === 1 && selected[0].id === targetId;
     }, id);
   }, { timeout: 5000 }).toBe(true);
 

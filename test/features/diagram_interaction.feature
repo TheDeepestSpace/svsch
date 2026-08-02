@@ -522,7 +522,8 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     And I click to select the block "u1"
-    And I click the "Cut out" button
+    Then the "Auto Layout" button should not be visible
+    When I click the "Cut out" button
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
     And I should see 2 cut net labels named "u1.y"
