@@ -818,6 +818,14 @@ Then('the {string} button should not be visible', async function (this: BddWorld
   await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toHaveCount(0);
 });
 
+// Unlike "Auto Layout" (which is absent entirely below 2 selected blocks),
+// "Cut out" always renders once a block is selected but disables itself when
+// every wire touching the selection is already a cut stub — e.g. re-selecting
+// a block right after cutting it out.
+Then('the {string} button should be disabled', async function (this: BddWorld, label: string) {
+  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toBeDisabled();
+});
+
 When('I click the {string} button', async function (this: BddWorld, label: string) {
   const before = JSON.stringify(await readExtensionLayout(this));
   const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label });
