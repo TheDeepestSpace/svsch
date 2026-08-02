@@ -2199,6 +2199,33 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
+    it('creates one address mux for multiple index expressions into the same array', async () => {
+      const graph = await runParser(backend, [{ file: 'array_multi_index_write.sv', text: `
+        module array_multi_index_write
+          ( input logic clk
+          , input logic reset
+          , input logic [4:0] address
+          , input logic [31:0] in_data
+          );
+
+          reg [31:0] storage [0:31];
+          integer i;
+
+          always @(posedge clk) begin
+            if (reset) begin
+              for (i = 0; i < 32; i = i + 1) storage[i] <= 32'b0;
+            end else begin
+              storage[address] <= in_data;
+            end
+          end
+        endmodule
+      ` }]);
+      const mod = graph.modules.array_multi_index_write ?? Object.values(graph.modules)[0];
+      const addressMuxes = mod.nodes.filter((n) => n.id === 'mux:array_multi_index_write:storage_addr');
+
+      expect(addressMuxes).toHaveLength(1);
+    });
+
     it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {
       const graph = await runParser(backend, 'array_address_write_enable_register.sv', fixture('array_address_write_enable_register.sv'));
       const mod = graph.modules.array_address_write_enable_register ?? Object.values(graph.modules)[0];

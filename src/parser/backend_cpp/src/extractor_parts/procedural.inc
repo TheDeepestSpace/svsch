@@ -639,7 +639,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             addr_mux.ports.push_back({zero_match_label, "input", d_signal_for_addr, reg_width, zero_match_label});
             addr_mux.ports.push_back({"default", "input", reg_base, reg_width, "default"});
             addr_mux.ports.push_back({"out", "output", reg_base + "_next", reg_width});
-            mod.nodes.push_back(addr_mux);
+            if (!array_reg_exists) mod.nodes.push_back(addr_mux);
             // Skip pushing the per-element register node — represented by the array register
             continue;
         }
