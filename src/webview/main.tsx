@@ -1065,7 +1065,14 @@ function NodeSelectionToolbar({
       .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
       .filter((edge): edge is DiagramEdge => edge !== undefined);
     if (diagramEdges.length === 0) return;
-    const positioned = flowNodesToPositioned(nodes, new Set());
+    // Matches the wire "Cut" control's positionedNodesFromFlowNodes: every real
+    // block is frozen in place, but a net-cut label keeps tracking its port
+    // dynamically even if the marquee happened to select it too.
+    const positioned = nodes.map((node) => ({
+      ...node.data.node,
+      position: node.position,
+      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
+    }));
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
       return;
