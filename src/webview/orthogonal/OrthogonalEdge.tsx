@@ -1,7 +1,7 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import {
   Position,
-  ViewportPortal,
   type EdgeProps,
   useEdges,
   useNodes,
@@ -181,7 +181,8 @@ export function OrthogonalEdge({
     selectionHoverActive,
     setSelectionHoverActive,
     pendingSelectionAction,
-    setPendingSelectionAction
+    setPendingSelectionAction,
+    overlayPortalNode
   } = React.useContext(InteractionContext);
 
   const edgeData = data as OrthogonalEdgeData | undefined;
@@ -894,14 +895,17 @@ export function OrthogonalEdge({
           </div>
         </foreignObject>
       )}
-      {showCutStubResetButton && (
+      {showCutStubResetButton && overlayPortalNode && (
         // A cut stub is always short and hugs the node it's attached to, so
         // its own (deliberately low, non-covering) SVG edge layer sits behind
         // node handles — a foreignObject control here would be unclickable
         // wherever it lands near a port. Render it through the same
-        // ViewportPortal + elevated z-index mechanism the selection Auto
-        // Layout toolbar already uses to float above everything.
-        <ViewportPortal>
+        // overlayPortalNode + elevated z-index mechanism the selection Auto
+        // Layout toolbar uses to float above everything — not react-flow's
+        // own ViewportPortal, which GenerateRegionOverlay needs to keep
+        // beneath node bodies (see NodeSelectionToolbar for the full
+        // rationale).
+        createPortal(
           <div
             className="svsch-cut-stub-reset-layer"
             style={{ left: cutLabelButtonAnchor.x - 32, top: cutLabelButtonAnchor.y + 4 }}
@@ -931,8 +935,9 @@ export function OrthogonalEdge({
                 Reroute
               </button>
             </div>
-          </div>
-        </ViewportPortal>
+          </div>,
+          overlayPortalNode
+        )
       )}
       {label && (
         // Left-anchored at the lead point instead of centered on it — a

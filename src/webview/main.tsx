@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import {
   Background,
@@ -129,6 +130,10 @@ function DiagramApp(): React.ReactElement {
   const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
   const regionsRef = useRef<PositionedGenerateRegion[]>([]);
   const [viewport, setViewport] = useState<FlowViewport>({ x: 0, y: 0, zoom: 1 });
+  // Portal target for floating controls that must paint above node bodies —
+  // see InteractionContext.overlayPortalNode for why this is kept separate
+  // from react-flow's own ViewportPortal.
+  const [overlayPortalNode, setOverlayPortalNode] = useState<HTMLDivElement | null>(null);
   const groupDragRef = useRef<{
     startPos: { x: number; y: number };
     originalRoutes: Map<string, Array<{ x: number; y: number }>>;
@@ -660,7 +665,8 @@ function DiagramApp(): React.ReactElement {
             selectionHoverActive,
             setSelectionHoverActive,
             pendingSelectionAction,
-            setPendingSelectionAction
+            setPendingSelectionAction,
+            overlayPortalNode
           }}>
             <LineJumpProvider>
               <ReactFlow<HdlFlowNode, Edge>
@@ -727,13 +733,24 @@ function DiagramApp(): React.ReactElement {
                     selectedRegionIds={selectedRegionIds}
                     selectRegion={selectRegion}
                   />
-                  <NodeSelectionToolbar
-                    moduleName={view.moduleName}
-                    nodes={nodes}
-                    edges={edges}
-                    pendingReselectIdsRef={pendingReselectIdsRef}
-                  />
                 </ViewportPortal>
+                {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
+                    through ViewportPortal — that portal is shared with GenerateRegionOverlay
+                    above, which must stay beneath node bodies, while floating controls like
+                    the selection toolbar need to paint above them. Its own inline transform
+                    (see the style prop) reproduces react-flow's pan/zoom so flow-space
+                    coordinates still work for anything portaled into it. */}
+                <div
+                  ref={setOverlayPortalNode}
+                  className="svsch-overlay-portal-root"
+                  style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
+                />
+                <NodeSelectionToolbar
+                  moduleName={view.moduleName}
+                  nodes={nodes}
+                  edges={edges}
+                  pendingReselectIdsRef={pendingReselectIdsRef}
+                />
                 <MiniMap
                   pannable
                   zoomable
@@ -978,6 +995,15 @@ function GenerateRegionOverlay({
 // is genuinely congested — while every other block and edge in the diagram
 // stays exactly where it is (they're sent back fixed, the same freezing
 // mergeRerouteLayout already relies on for "Reroute All").
+//
+// Portals into overlayPortalNode rather than rendering inline: it needs to
+// paint above node bodies, but it's positioned in flow-space (bounds.right/
+// bottom), so it still needs the pan/zoom transform a raw fixed-position
+// overlay wouldn't have. overlayPortalNode carries that transform itself
+// (see main.tsx's render) instead of react-flow's ViewportPortal, which is
+// reserved for GenerateRegionOverlay — that overlay's translucent region
+// fill must stay beneath nodes, so it can't share a stacking tier with a
+// control that needs the opposite.
 function NodeSelectionToolbar({
   moduleName,
   nodes,
@@ -989,6 +1015,8 @@ function NodeSelectionToolbar({
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
 }): React.ReactElement | null {
+  const { overlayPortalNode } = useContext(InteractionContext);
+
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
   // whose actions only make sense for actual block selections.
@@ -1011,7 +1039,9 @@ function NodeSelectionToolbar({
 
   // Nothing to offer: a lone block with every net already cut gets neither
   // control, so skip rendering the (now empty) toolbar entirely.
-  if (selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) return null;
+  if (!overlayPortalNode || selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) {
+    return null;
+  }
 
   const bounds = selected.reduce((acc, node) => {
     const size = diagramNodeDimensions(node.data.node);
@@ -1088,7 +1118,7 @@ function NodeSelectionToolbar({
     vscode.postMessage({ type: 'cutNets', moduleName, edges: diagramEdges, nodes: positioned });
   };
 
-  return (
+  return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div
         className="svsch-selection-toolbar"
@@ -1121,7 +1151,8 @@ function NodeSelectionToolbar({
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    overlayPortalNode
   );
 }
 

@@ -270,8 +270,12 @@ text {
   z-index: 2 !important;
 }
 
+/* Hosts only GenerateRegionOverlay now (see svsch-overlay-portal-root for the
+   floating controls that used to share this portal) — kept at the same tier
+   as edges so the region fill stays beneath node bodies instead of tinting
+   them. */
 .react-flow__viewport-portal {
-  z-index: 3;
+  z-index: 1;
 }
 
 .generate-region-layer {
@@ -2322,16 +2326,28 @@ text {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* A cut net stub's Reroute-to-canonical control renders through a
-   ViewportPortal (see OrthogonalEdge) instead of the edge's own SVG layer —
-   same escape hatch the selection Auto Layout toolbar uses — since the app
-   pins .react-flow__edges below .react-flow__nodes and a stub is short
-   enough to routinely land right on/under a node's port handle. */
+/* Portal root for floating controls that must paint above node bodies —
+   the selection Auto Layout/Cut out toolbar and a cut stub's
+   Reroute-to-canonical control (see NodeSelectionToolbar and OrthogonalEdge).
+   Deliberately NOT react-flow's own ViewportPortal/.react-flow__viewport-portal:
+   that one also hosts GenerateRegionOverlay, whose translucent region fill
+   must stay beneath node bodies, so it can't share a stacking tier with
+   controls that need the opposite. Its inline transform (set in main.tsx)
+   reproduces react-flow's pan/zoom so flow-space coordinates still work for
+   anything portaled in here. */
+.svsch-overlay-portal-root {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 0;
+  z-index: 12;
+}
+
 .svsch-cut-stub-reset-layer {
   overflow: visible;
   pointer-events: auto;
   position: absolute;
-  z-index: 12;
 }
 
 .svsch-selection-toolbar-layer {
@@ -2339,8 +2355,6 @@ text {
   overflow: visible;
   pointer-events: none;
   position: absolute;
-  transform-origin: 0 0;
-  z-index: 12;
 }
 
 .svsch-selection-toolbar {
