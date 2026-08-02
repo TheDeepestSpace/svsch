@@ -915,8 +915,8 @@ text {
 
 /* Hosts only GenerateRegionOverlay now (see svsch-overlay-portal-root for the
    floating controls that used to share this portal) — kept at the same tier
-   as edges/nodes.compat so the region fill stays beneath node bodies instead
-   of tinting them. */
+   as edges so the region fill stays beneath node bodies instead of tinting
+   them. */
 .react-flow__viewport-portal {
   z-index: 1;
 }
