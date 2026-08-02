@@ -970,7 +970,7 @@ function GenerateRegionOverlay({
 // Floating toolbar shown above the bounding box of a block selection. "Auto
 // Layout" only makes sense once there's more than one block to re-place, but
 // "Cut out" is useful for a lone block too, so it appears from a single
-// selected block onward.
+// selected block onward — as long as at least one connection remains to cut.
 //
 // Auto Layout: releases just the selected blocks (and the routes of any edge
 // touching one of them) back to ELK's auto-layout — using their current
@@ -989,7 +989,13 @@ function NodeSelectionToolbar({
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
 }): React.ReactElement | null {
-  const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes]);
+  // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
+  // selecting (or merely clicking through to) one shouldn't surface a toolbar
+  // whose actions only make sense for actual block selections.
+  const selected = useMemo(
+    () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel'),
+    [nodes]
+  );
 
   // Every non-cut-stub edge touching any selected block — same exclusion
   // `selectedCuttableEdges` in OrthogonalEdge applies for the wire "Cut"
@@ -1003,7 +1009,9 @@ function NodeSelectionToolbar({
     });
   }, [selected, edges]);
 
-  if (selected.length < 1) return null;
+  // Nothing to offer: a lone block with every net already cut gets neither
+  // control, so skip rendering the (now empty) toolbar entirely.
+  if (selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) return null;
 
   const bounds = selected.reduce((acc, node) => {
     const size = diagramNodeDimensions(node.data.node);
@@ -1099,18 +1107,19 @@ function NodeSelectionToolbar({
             Auto Layout
           </button>
         )}
-        <button
-          type="button"
-          className="svsch-selection-cutout-control"
-          title={cutOutEdges.length > 0 ? `Cut ${cutOutEdges.length} connection(s) on the selected block(s)` : 'No connections to cut'}
-          disabled={cutOutEdges.length === 0}
-          onClick={handleCutOut}
-          onDoubleClick={(event) => event.stopPropagation()}
-          onMouseDown={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          Cut out
-        </button>
+        {cutOutEdges.length > 0 && (
+          <button
+            type="button"
+            className="svsch-selection-cutout-control"
+            title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
+            onClick={handleCutOut}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Cut out
+          </button>
+        )}
       </div>
     </div>
   );

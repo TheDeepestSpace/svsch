@@ -557,7 +557,7 @@ Feature: Diagram Interaction
     And I should not see cut net labels named "c"
     And the original connection between "c" and "u3" should be restored
 
-  Scenario: The Cut out button is disabled for a block that's already fully cut out
+  Scenario: The Cut out button is hidden for a block that's already fully cut out
     Given I have a file "top.sv" in my workspace:
       """
       module leaf(input logic a, output logic y);
@@ -572,7 +572,25 @@ Feature: Diagram Interaction
     And I click to select the block "u1"
     And I click the "Cut out" button
     And I click to select the block "u1"
-    Then the "Cut out" button should be disabled
+    Then the "Cut out" button should not be visible
+
+  Scenario: Selecting a cut net's dangling end alone shows neither block-selection button
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Cut out" button
+    And I click to select the cut net label attached to "u1"
+    Then the "Auto Layout" button should not be visible
+    And the "Cut out" button should not be visible
 
   Scenario: Auto-laying out one connection's blocks anchors the result, leaves the other connection untouched, and carries cut net ends along
     Given I have a file "top.sv" in my workspace:

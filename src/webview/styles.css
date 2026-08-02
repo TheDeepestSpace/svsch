@@ -2369,10 +2369,16 @@ text {
 /* Merge into a single button group (matching the edge Reroute/Cut controls)
    whenever both buttons are showing — Auto Layout only renders from 2+
    selected blocks, so it's always the group's left half when present. Cut
-   out falls back to full rounding when it's alone (a single block selected). */
+   out is omitted entirely when there's nothing left to cut, and either
+   control falls back to full rounding when it ends up alone. */
 .svsch-selection-relayout-control {
   border-radius: 3px 0 0 3px;
   border-right: none;
+}
+
+.svsch-selection-relayout-control:last-child {
+  border-radius: 3px;
+  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .svsch-selection-cutout-control {
@@ -2386,11 +2392,6 @@ text {
 .svsch-selection-relayout-control:hover,
 .svsch-selection-cutout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.svsch-selection-cutout-control:disabled {
-  cursor: default;
-  opacity: 0.5;
 }
 
 .svsch-edge-segment-handle {

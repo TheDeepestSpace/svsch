@@ -818,14 +818,6 @@ Then('the {string} button should not be visible', async function (this: BddWorld
   await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toHaveCount(0);
 });
 
-// Unlike "Auto Layout" (which is absent entirely below 2 selected blocks),
-// "Cut out" always renders once a block is selected but disables itself when
-// every wire touching the selection is already a cut stub — e.g. re-selecting
-// a block right after cutting it out.
-Then('the {string} button should be disabled', async function (this: BddWorld, label: string) {
-  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toBeDisabled();
-});
-
 When('I click the {string} button', async function (this: BddWorld, label: string) {
   const before = JSON.stringify(await readExtensionLayout(this));
   const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label });
@@ -961,6 +953,25 @@ async function authoritativeCutLabelPosition(world: BddWorld, blockLabel: string
   if (!node) throw new Error(`Could not find the cut net label attached to ${blockLabel} (id ${id}) in the recomputed view`);
   return node.position;
 }
+
+// A cut net's dangling end is selectable like any other node, but it isn't a
+// real block — used to prove the block-selection toolbar (Auto Layout / Cut
+// out) stays hidden when only a net label ends up selected.
+When('I click to select the cut net label attached to {string}', async function (this: BddWorld, blockLabel: string) {
+  const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for the cut net label attached to ${blockLabel}`);
+  await this.workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect.poll(async () => {
+    return this.webviewPage.locator('html').evaluate((_el, targetId) => {
+      const rf = (window as any).reactFlowInstance;
+      return rf.getNodes().find((n: any) => n.id === targetId)?.selected ?? false;
+    }, id);
+  }, { timeout: 5000 }).toBe(true);
+
+  await this.takeScreenshot(`Selected the cut net label attached to ${blockLabel}`);
+});
 
 When('I move the cut net label attached to {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, blockLabel: string, cellsX: number, cellsY: number) {
   const id = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
