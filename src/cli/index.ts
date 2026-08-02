@@ -11,6 +11,7 @@ import {
   resolveBackendPath
 } from '../core';
 import { renderSvg } from './svgRenderer';
+import { minifySvg } from './svgMinify';
 import type { SvgThemeName } from './theme';
 import reactFlowCss from '@xyflow/react/dist/style.css?raw';
 import extensionCss from '../webview/styles.css?raw';
@@ -21,6 +22,7 @@ interface RenderOptions {
   top?: string;
   layout?: string;
   noLayout: boolean;
+  minifySvg: boolean;
   theme: SvgThemeName;
   workspaceRoot?: string;
   projectFolder?: string;
@@ -56,6 +58,7 @@ async function renderCommand(argv: string[]): Promise<void> {
       top: { type: 'string' },
       layout: { type: 'string' },
       'no-layout': { type: 'boolean', default: false },
+      'no-minify': { type: 'boolean', default: false },
       theme: { type: 'string', default: 'dark' },
       workspace: { type: 'string' },
       'project-folder': { type: 'string' },
@@ -95,6 +98,7 @@ async function renderCommand(argv: string[]): Promise<void> {
     top: parsed.values.top,
     layout: parsed.values.layout,
     noLayout: parsed.values['no-layout'] === true,
+    minifySvg: parsed.values['no-minify'] !== true,
     theme,
     workspaceRoot: parsed.values.workspace,
     projectFolder: parsed.values['project-folder'],
@@ -165,7 +169,10 @@ async function renderCommand(argv: string[]): Promise<void> {
   // All valid? Write them out.
   for (const { output, view, layoutSource } of results) {
     await fs.mkdir(path.dirname(output), { recursive: true });
-    const svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
+    let svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
+    if (options.minifySvg) {
+      svg = await minifySvg(svg);
+    }
     const relativeOutput = relativeToCwd(output);
     if (layoutSource) {
       process.stderr.write(`[svsch] rendering ${relativeOutput} using layout file ${relativeToCwd(layoutSource)}\n`);
@@ -326,6 +333,7 @@ Options:
       --top <module>        Render a specific module
       --layout <json>       Use an explicit saved layout file
       --no-layout           Ignore saved layout and run auto-layout
+      --no-minify           Skip SVGO minification of the exported SVG
       --theme <dark|light>  Fixed SVG color theme (default: dark)
       --workspace <dir>     Workspace root used for parser cache and relative paths
       --project-folder <d>  Project folder relative to workspace
