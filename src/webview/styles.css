@@ -2344,12 +2344,15 @@ text {
 }
 
 .svsch-selection-toolbar {
+  display: flex;
+  gap: 4px;
   pointer-events: none;
   position: absolute;
   transform: translate(-100%, 8px);
 }
 
-.svsch-selection-relayout-control {
+.svsch-selection-relayout-control,
+.svsch-selection-cutout-control {
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
   border-radius: 3px;
@@ -2364,8 +2367,14 @@ text {
   white-space: nowrap;
 }
 
-.svsch-selection-relayout-control:hover {
+.svsch-selection-relayout-control:hover,
+.svsch-selection-cutout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.svsch-selection-cutout-control:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .svsch-edge-segment-handle {

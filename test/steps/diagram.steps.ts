@@ -371,6 +371,14 @@ When('click and drag the mouse to select the blocks {string} and {string}', asyn
   await marqueeSelectNodePair(this, id1, id2, name1, name2);
 });
 
+// Single-block variant — used for the "Cut out" control, which (unlike
+// "Auto Layout") is available from a single selected block onward.
+When('click and drag the mouse to select the block {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  await marqueeSelectNodes(this, [id], [name]);
+});
+
 // Three-node variant: the lasso spans the union of all three nodes' bounding
 // boxes, so it still works even when one of them has been deliberately moved
 // off the line between the other two (e.g. testing that Auto Layout has to
@@ -783,16 +791,16 @@ Then('the connection between {string} and {string} should show its controls', as
 });
 
 Then('the {string} button should be visible', async function (this: BddWorld, label: string) {
-  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toBeVisible();
+  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toBeVisible();
 });
 
 Then('the {string} button should not be visible', async function (this: BddWorld, label: string) {
-  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toHaveCount(0);
+  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toHaveCount(0);
 });
 
 When('I click the {string} button', async function (this: BddWorld, label: string) {
   const before = JSON.stringify(await readExtensionLayout(this));
-  const button = this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label });
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label });
   await expect(button).toBeVisible();
   await button.click();
   await waitForLayoutChange(this, before, `After clicking ${label}`);

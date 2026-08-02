@@ -967,13 +967,17 @@ function GenerateRegionOverlay({
   );
 }
 
-// Floating control shown above the bounding box of a multi-block selection.
-// Clicking it releases just those blocks (and the routes of any edge touching
-// one of them) back to ELK's auto-layout — using their current positions as
-// placement hints, so they tend to settle nearby unless the area is genuinely
-// congested — while every other block and edge in the diagram stays exactly
-// where it is (they're sent back fixed, the same freezing mergeRerouteLayout
-// already relies on for "Reroute All").
+// Floating toolbar shown above the bounding box of a block selection. "Auto
+// Layout" only makes sense once there's more than one block to re-place, but
+// "Cut out" is useful for a lone block too, so it appears from a single
+// selected block onward.
+//
+// Auto Layout: releases just the selected blocks (and the routes of any edge
+// touching one of them) back to ELK's auto-layout — using their current
+// positions as placement hints, so they tend to settle nearby unless the area
+// is genuinely congested — while every other block and edge in the diagram
+// stays exactly where it is (they're sent back fixed, the same freezing
+// mergeRerouteLayout already relies on for "Reroute All").
 function NodeSelectionToolbar({
   moduleName,
   nodes,
@@ -987,7 +991,19 @@ function NodeSelectionToolbar({
 }): React.ReactElement | null {
   const selected = useMemo(() => nodes.filter((node) => node.selected), [nodes]);
 
-  if (selected.length < 2) return null;
+  // Every non-cut-stub edge touching any selected block — same exclusion
+  // `selectedCuttableEdges` in OrthogonalEdge applies for the wire "Cut"
+  // control, since a cut stub's dangling end can't be cut again.
+  const cutOutEdges = useMemo(() => {
+    const selectedIds = new Set(selected.map((node) => node.id));
+    return edges.filter((edge) => {
+      if (!selectedIds.has(edge.source) && !selectedIds.has(edge.target)) return false;
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+    });
+  }, [selected, edges]);
+
+  if (selected.length < 1) return null;
 
   const bounds = selected.reduce((acc, node) => {
     const size = diagramNodeDimensions(node.data.node);
@@ -1039,22 +1055,54 @@ function NodeSelectionToolbar({
     });
   };
 
+  // Cuts every wire touching any selected block in one action — the same
+  // cutNet/cutNets message the wire "Cut" control posts, just with the edge
+  // list assembled from the block selection instead of a wire selection.
+  const handleCutOut = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (cutOutEdges.length === 0) return;
+    const diagramEdges = cutOutEdges
+      .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
+      .filter((edge): edge is DiagramEdge => edge !== undefined);
+    if (diagramEdges.length === 0) return;
+    const positioned = flowNodesToPositioned(nodes, new Set());
+    if (diagramEdges.length === 1) {
+      vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
+      return;
+    }
+    vscode.postMessage({ type: 'cutNets', moduleName, edges: diagramEdges, nodes: positioned });
+  };
+
   return (
     <div className="svsch-selection-toolbar-layer">
       <div
         className="svsch-selection-toolbar"
         style={{ left: bounds.right, top: bounds.bottom }}
       >
+        {selected.length >= 2 && (
+          <button
+            type="button"
+            className="svsch-selection-relayout-control"
+            title="Re-place and route the selected blocks; everything else stays put"
+            onClick={handleClick}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Auto Layout
+          </button>
+        )}
         <button
           type="button"
-          className="svsch-selection-relayout-control"
-          title="Re-place and route the selected blocks; everything else stays put"
-          onClick={handleClick}
+          className="svsch-selection-cutout-control"
+          title={cutOutEdges.length > 0 ? `Cut ${cutOutEdges.length} connection(s) on the selected block(s)` : 'No connections to cut'}
+          disabled={cutOutEdges.length === 0}
+          onClick={handleCutOut}
           onDoubleClick={(event) => event.stopPropagation()}
           onMouseDown={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
         >
-          Auto Layout
+          Cut out
         </button>
       </div>
     </div>
