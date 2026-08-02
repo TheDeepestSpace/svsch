@@ -136,7 +136,7 @@
       "target": "target:y",
       "sourceHandle": "p",
       "targetHandle": "p",
-      "path": "M 240 24 L 264 24 L 264 113 Q 271 120 264 127 L 264 216 L 336 216 L 360 216"
+      "path": "M 264 113 Q 271 120 264 127"
     },
     {
       "id": "edge-c-to-z",
