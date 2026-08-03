@@ -526,6 +526,15 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       module ternary_in_alu(input logic sel, a, b, c, output logic y);
         assign y = a + (sel ? b : c);
       endmodule
+
+      module ternary_array(
+        input logic sel,
+        input logic [7:0] a [0:1],
+        input logic [7:0] b [0:1],
+        output logic [7:0] y [0:1]
+      );
+        assign y = sel ? a : b;
+      endmodule
     ` }]);
 
     const simple = graph.modules.ternary_simple;
@@ -556,6 +565,12 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(embedded.nodes.some((node) => node.kind === 'comb')).toBe(false);
     expectMuxSelector(embedded, embeddedMux, 'sel');
     expect(embedded.edges.some((edge) => edge.source === embeddedMux?.id && edge.target === alu?.id)).toBe(true);
+
+    const array = graph.modules.ternary_array;
+    const arrayMux = muxesSelectedBy(array, 'sel')[0];
+    expect(arrayMux?.isArrayNode ?? arrayMux?.metadata?.isArrayNode).toBe(true);
+    expect(arrayMux?.arrayDimension ?? arrayMux?.metadata?.arrayDimension).toBe('[0:1]');
+    expect(arrayMux?.arraySize ?? arrayMux?.metadata?.arraySize).toBe(2);
   });
 
   it('promotes unary bitwise inversions to inverter nodes for scalar and vector signals', async () => {

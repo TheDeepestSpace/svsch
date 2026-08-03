@@ -47,6 +47,8 @@ interface ConditionalExpression {
 interface PromotedTextExpression {
   signal: string;
   width?: string;
+  arrayDimension?: string;
+  arraySize?: number;
 }
 
 interface RegisterTimingInfo {
@@ -172,6 +174,9 @@ function extractModule(match: ModuleMatch): DesignModule {
       label: port.name,
       parentModule: match.name,
       ports: [port],
+      isArrayNode: port.isArrayNode,
+      arrayDimension: port.arrayDimension,
+      arraySize: port.arraySize,
       source: port.source ?? {
         file: match.file,
         startLine: match.startLine
@@ -205,7 +210,7 @@ function extractModule(match: ModuleMatch): DesignModule {
 function extractPorts(match: ModuleMatch): DiagramPort[] {
   const ports = new Map<string, DiagramPort>();
   const headerPortList = match.header.match(/\(([\s\S]*)\)/)?.[1] ?? '';
-  const declaredPortRegex = /\b(input|output|inout)\b\s*(?:(wire|logic|reg)\s*)?(\[[^\]]+\]\s*)?([A-Za-z_$][\w$]*)/g;
+  const declaredPortRegex = /\b(input|output|inout)\b\s*(?:(wire|logic|reg)\s*)?(\[[^\]]+\]\s*)?([A-Za-z_$][\w$]*)(?:\s*(\[[^\]]+\]))?/g;
   let declared: RegExpExecArray | null;
 
   let portIndex = 0;
@@ -218,11 +223,15 @@ function extractPorts(match: ModuleMatch): DiagramPort[] {
       const endLine = match.startLine + lineAt(combined, (offset as number) + declared.index + declared[0].length) - 1;
       const startColumn = columnAt(combined, (offset as number) + declared.index);
       const endColumn = columnAt(combined, (offset as number) + declared.index + declared[0].length);
+      const arrayDimension = declared[5]?.trim();
       ports.set(name, {
         id: stableId('port', name),
         name,
         direction: declared[1] as DiagramPort['direction'],
         width: declared[3]?.trim(),
+        isArrayNode: arrayDimension !== undefined ? true : undefined,
+        arrayDimension,
+        arraySize: arraySizeFromDimension(arrayDimension),
         position: portIndex++,
         source: {
           file: match.file,
@@ -295,6 +304,12 @@ function extractSignalWidths(header: string, body: string, ports: DiagramPort[])
   }
 
   return widths;
+}
+
+function arraySizeFromDimension(dimension: string | undefined): number | undefined {
+  const bounds = dimension?.match(/^\[\s*(-?\d+)\s*:\s*(-?\d+)\s*\]$/);
+  if (!bounds) return undefined;
+  return Math.abs(Number(bounds[1]) - Number(bounds[2])) + 1;
 }
 
 function extractInstances(match: ModuleMatch): DiagramNode[] {
@@ -1124,7 +1139,17 @@ function promoteTextExpression(
 
   const identifiers = expressionIdentifiers(unwrapped);
   if (identifiers.length === 1 && isSimpleIdentifierExpression(unwrapped, identifiers[0])) {
-    return { signal: identifiers[0], width: signalWidths.get(identifiers[0]) };
+    const signal = identifiers[0];
+    const arrayPort = modulePorts.find((port) => port.name === signal);
+    const arrayNode = [...existingNodes, ...mutableNodes].find((node) => (
+      node.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)
+    ));
+    return {
+      signal,
+      width: signalWidths.get(signal),
+      arrayDimension: arrayPort?.arrayDimension ?? arrayNode?.arrayDimension ?? arrayNode?.metadata?.arrayDimension,
+      arraySize: arrayPort?.arraySize ?? arrayNode?.arraySize ?? arrayNode?.metadata?.arraySize
+    };
   }
 
   if (isLiteralTextExpression(unwrapped)) {
@@ -1183,11 +1208,17 @@ function promoteTextConditional(
   if (!selector || !whenTrue || !whenFalse) return undefined;
 
   const width = outputWidth ?? whenTrue.width ?? whenFalse.width;
+  const outputArray = modulePorts.find((port) => port.name === outputSignal);
+  const arrayDimension = outputArray?.arrayDimension ?? whenTrue.arrayDimension ?? whenFalse.arrayDimension;
+  const arraySize = outputArray?.arraySize ?? whenTrue.arraySize ?? whenFalse.arraySize;
   const node: DiagramNode = {
     id: stableId('mux', match.name, outputSignal, 'ternary'),
     kind: 'mux',
     label: '',
     parentModule: match.name,
+    isArrayNode: arrayDimension !== undefined ? true : undefined,
+    arrayDimension,
+    arraySize,
     ports: [
       { id: 'sel', name: 'sel', label: 's', direction: 'input', connectedSignal: selector.signal, width: selector.width },
       { id: stableId('in', 'true'), name: 'true', label: "1'b1", direction: 'input', connectedSignal: whenTrue.signal, width: whenTrue.width },
@@ -1214,7 +1245,7 @@ function promoteTextConditional(
     });
   }
 
-  return { signal: outputSignal, width };
+  return { signal: outputSignal, width, arrayDimension, arraySize };
 }
 
 function isLiteralTextExpression(expression: string): boolean {

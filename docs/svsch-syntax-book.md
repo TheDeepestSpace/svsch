@@ -330,6 +330,24 @@ endmodule
   <img src="syntax-book/assets/mux-ternary-operator.svg" alt="Ternary Operator Mux diagram" />
 </p>
 
+### Array Ternary Mux
+
+A conditional expression selecting between arrays becomes a stacked multiplexer.
+
+<pre><code>module top (
+  input logic sel,
+  input logic [7:0] a [0:1],
+  input logic [7:0] b [0:1],
+  output logic [7:0] y [0:1]
+);
+  <mark>assign y = sel ? a : b;</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/mux-array-ternary.svg" alt="Array Ternary Mux diagram" />
+</p>
+
 ### Nested Ternary Muxes
 
 Nested conditional expressions become cascaded two-way multiplexers.

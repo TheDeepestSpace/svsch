@@ -90,6 +90,31 @@ cases:
       nodeKinds: [port, mux]
       selectedText: "assign y = sel ? a : b;"
 
+  - id: mux-array-ternary
+    title: Array Ternary Mux
+    description: A conditional expression selecting between arrays becomes a stacked multiplexer.
+    tags: [mux, array, combinational, ternary, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic sel,
+          input logic [7:0] a [0:1],
+          input logic [7:0] b [0:1],
+          output logic [7:0] y [0:1]
+        );
+          assign y = sel ? a : b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux]
+      targetIsArray: true
+      selectedText: "assign y = sel ? a : b;"
+
   - id: mux-nested-ternary
     title: Nested Ternary Muxes
     description: Nested conditional expressions become cascaded two-way multiplexers.

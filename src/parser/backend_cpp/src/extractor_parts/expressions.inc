@@ -663,6 +663,37 @@ std::string DesignExtractor::promoteMuxExpr(vpiHandle expr, Module& mod, const s
     n.metadata.expression = getExprText(expr);
     n.metadata.isProcedural = is_procedural;
     n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+
+    // A conditional over whole arrays represents one mux per unpacked array
+    // element. Prefer the result shape, then fall back to either data arm so
+    // nested ternaries keep the same stacked representation.
+    auto inherit_array_shape = [&](const std::string& signal) {
+        ensureDeclaredArray(mod, signal);
+        auto dimension = mod.arrayDimensions.find(signal);
+        if (dimension != mod.arrayDimensions.end()) {
+            n.metadata.isArrayNode = true;
+            n.metadata.arrayDimension = dimension->second;
+            auto size = mod.arraySizes.find(signal);
+            if (size != mod.arraySizes.end()) n.metadata.arraySize = size->second;
+            return true;
+        }
+
+        for (const auto& source_node : mod.nodes) {
+            if (!source_node.metadata.isArrayNode) continue;
+            for (const auto& port : source_node.ports) {
+                if (port.direction != "output" || port.signal != signal) continue;
+                n.metadata.isArrayNode = true;
+                n.metadata.arrayDimension = source_node.metadata.arrayDimension;
+                n.metadata.arraySize = source_node.metadata.arraySize;
+                return true;
+            }
+        }
+        return false;
+    };
+    if (!inherit_array_shape(out_signal) && !inherit_array_shape(true_signal)) {
+        inherit_array_shape(false_signal);
+    }
+
     n.ports.push_back({"sel", "input", sel_signal, sel_width, "s"});
     n.ports.push_back({"true", "input", true_signal, true_width, "1'b1"});
     n.ports.push_back({"false", "input", false_signal, false_width, "1'b0"});

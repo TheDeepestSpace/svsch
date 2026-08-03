@@ -72,6 +72,24 @@ describe('text fallback ternary extraction', () => {
     expect(module.edges.some((edge) => edge.source === inner?.id && edge.target === outer?.id)).toBe(true);
   });
 
+  it('marks a whole-array ternary as a stacked mux', () => {
+    const module = extract(`
+      module top(
+        input logic sel,
+        input logic [7:0] a [0:1],
+        input logic [7:0] b [0:1],
+        output logic [7:0] y [0:1]
+      );
+        assign y = sel ? a : b;
+      endmodule
+    `);
+    const mux = muxSelectedBy(module, 'sel');
+
+    expect(mux?.isArrayNode ?? mux?.metadata?.isArrayNode).toBe(true);
+    expect(mux?.arrayDimension ?? mux?.metadata?.arrayDimension).toBe('[0:1]');
+    expect(mux?.arraySize ?? mux?.metadata?.arraySize).toBe(2);
+  });
+
   it('extracts a parenthesized ternary from a larger expression', () => {
     const module = extract(`
       module top(
