@@ -392,6 +392,7 @@ private:
     void ensureDeclaredArray(Module& mod, const std::string& signal);
     std::string getDeclaredLiteralWidth(const Module& mod, const std::string& literal);
     bool isNonZeroResetValue(vpiHandle handle);
+    bool isCanonicalFullArrayResetLoop(vpiHandle assignment_handle, const Module& mod, const std::string& array_name, const std::string& index_expr);
     bool isAncestor(vpiHandle ancestor, vpiHandle descendant);
     bool isSameObject(vpiHandle h1, vpiHandle h2);
     SourceInfo getSourceInfo(vpiHandle handle);

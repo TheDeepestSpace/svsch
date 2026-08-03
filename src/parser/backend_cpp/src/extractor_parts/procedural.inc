@@ -152,6 +152,108 @@ bool DesignExtractor::isNonZeroResetValue(vpiHandle handle) {
     return false;
 }
 
+bool DesignExtractor::isCanonicalFullArrayResetLoop(
+    vpiHandle assignment_handle,
+    const Module& mod,
+    const std::string& array_name,
+    const std::string& index_expr
+) {
+    if (!assignment_handle || index_expr.empty()) return false;
+
+    auto dim_it = mod.arrayDimensions.find(array_name);
+    auto size_it = mod.arraySizes.find(array_name);
+    if (dim_it == mod.arrayDimensions.end() || size_it == mod.arraySizes.end() || size_it->second <= 0) return false;
+
+    // Only arrays whose declared addresses are exactly 0..N-1 can use this canonical form.
+    // Other ranges still need a representation that preserves the loop bounds explicitly.
+    std::smatch dim_match;
+    if (!std::regex_match(dim_it->second, dim_match, std::regex(R"(\[\s*(-?\d+)\s*:\s*(-?\d+)\s*\])"))) return false;
+    int dim_left = std::stoi(dim_match[1].str());
+    int dim_right = std::stoi(dim_match[2].str());
+    int array_size = size_it->second;
+    if (std::min(dim_left, dim_right) != 0 || std::max(dim_left, dim_right) != array_size - 1) return false;
+
+    vpiHandle loop = assignment_handle;
+    while (loop && vpi_get(vpiType, loop) != vpiFor) {
+        vpiHandle parent = vpi_handle(vpiParent, loop);
+        if (!parent || parent == loop) return false;
+        int parent_type = vpi_get(vpiType, parent);
+        if (parent_type == vpiIf || parent_type == vpiIfElse || parent_type == vpiCase
+            || parent_type == vpiWhile || parent_type == vpiRepeat || parent_type == vpiForever) return false;
+        loop = parent;
+    }
+    if (!loop) return false;
+
+    auto loop_control = [&](int relation) {
+        vpiHandle control = vpi_handle(relation, loop);
+        if (control) return control;
+        vpiHandle itr = vpi_iterate(relation, loop);
+        if (!itr) return static_cast<vpiHandle>(nullptr);
+        control = vpi_scan(itr);
+        vpi_release_handle(itr);
+        return control;
+    };
+
+    // The loop body must do exactly one thing: assign one uniform value to array[index].
+    std::vector<vpiHandle> loop_assignments;
+    findAssignments(loop, loop_assignments);
+    if (loop_assignments.size() != 1 || !isSameObject(loop_assignments.front(), assignment_handle)) return false;
+
+    vpiHandle init = loop_control(vpiForInitStmt);
+    vpiHandle init_lhs = init ? vpi_handle(vpiLhs, init) : nullptr;
+    vpiHandle init_rhs = init ? vpi_handle(vpiRhs, init) : nullptr;
+    std::string loop_var = getSignalName(init_lhs);
+    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs) || getConstantInt(init_rhs) != 0) return false;
+
+    // RV represents one value broadcast to the full stack, so reject per-address values.
+    std::vector<vpiHandle> reset_value_identifiers;
+    collectIdentifierHandlesRecursive(vpi_handle(vpiRhs, assignment_handle), reset_value_identifiers);
+    if (std::any_of(reset_value_identifiers.begin(), reset_value_identifiers.end(),
+        [&](vpiHandle identifier) { return getSignalName(identifier) == loop_var; })) return false;
+
+    vpiHandle condition = vpi_handle(vpiCondition, loop);
+    if (!condition || vpi_get(vpiType, condition) != vpiOperation) return false;
+    int condition_op = vpi_get(vpiOpType, condition);
+    if (condition_op != vpiLtOp && condition_op != vpiLeOp) return false;
+    vpiHandle condition_operands = vpi_iterate(vpiOperand, condition);
+    if (!condition_operands) return false;
+    vpiHandle condition_lhs = vpi_scan(condition_operands);
+    vpiHandle condition_rhs = vpi_scan(condition_operands);
+    bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
+    vpi_release_handle(condition_operands);
+    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var || !isLiteralExpr(condition_rhs)) return false;
+    int expected_bound = condition_op == vpiLtOp ? array_size : array_size - 1;
+    if (getConstantInt(condition_rhs) != expected_bound) return false;
+
+    vpiHandle increment = loop_control(vpiForIncStmt);
+    if (!increment) return false;
+    int increment_type = vpi_get(vpiType, increment);
+    if (increment_type == vpiOperation) {
+        int increment_op = vpi_get(vpiOpType, increment);
+        if (increment_op != 62 /* post-increment */ && increment_op != 63 /* pre-increment */) return false;
+        vpiHandle operands = vpi_iterate(vpiOperand, increment);
+        if (!operands) return false;
+        vpiHandle operand = vpi_scan(operands);
+        bool has_extra_operand = vpi_scan(operands) != nullptr;
+        vpi_release_handle(operands);
+        return operand && !has_extra_operand && getSignalName(operand) == loop_var;
+    }
+
+    vpiHandle increment_lhs = vpi_handle(vpiLhs, increment);
+    vpiHandle increment_rhs = vpi_handle(vpiRhs, increment);
+    if (!increment_lhs || getSignalName(increment_lhs) != loop_var || !increment_rhs || vpi_get(vpiType, increment_rhs) != vpiOperation || vpi_get(vpiOpType, increment_rhs) != vpiAddOp) return false;
+    vpiHandle increment_operands = vpi_iterate(vpiOperand, increment_rhs);
+    if (!increment_operands) return false;
+    vpiHandle add_lhs = vpi_scan(increment_operands);
+    vpiHandle add_rhs = vpi_scan(increment_operands);
+    bool increment_has_extra_operand = vpi_scan(increment_operands) != nullptr;
+    vpi_release_handle(increment_operands);
+    return add_lhs && add_rhs && !increment_has_extra_operand
+        && getSignalName(add_lhs) == loop_var
+        && isLiteralExpr(add_rhs)
+        && getConstantInt(add_rhs) == 1;
+}
+
 bool DesignExtractor::isSameObject(vpiHandle h1, vpiHandle h2) {
     if (h1 == h2) return true;
     if (!h1 || !h2) return false;
@@ -192,6 +294,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
 
     std::vector<vpiHandle> aggregate_assignments;
     std::map<std::string, std::vector<vpiHandle>> reg_assigns;
+    std::vector<std::string> reg_first_seen_order;
     for (vpiHandle a : assignments) {
         vpiHandle lhs = vpi_handle(vpiLhs, a);
         if (lhs) {
@@ -200,6 +303,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 continue;
             }
             std::string sig_name = getSignalName(lhs);
+            if (!reg_assigns.count(sig_name)) reg_first_seen_order.push_back(sig_name);
             reg_assigns[sig_name].push_back(a);
         }
     }
@@ -327,15 +431,14 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         }
     }
 
-    // Iterate reg_assigns in an explicit priority order rather than raw map (alphabetical)
-    // order: reset-only writes (reset_is_sole_assign) go last so they always land in the
-    // canonical address-mux chain position for their array, regardless of how their index
-    // expression's text happens to sort against a sibling indexed write's.
+    // Preserve procedural source order for normal writes, then put reset-only writes last so
+    // they retain reset priority if they cannot be folded into the canonical register reset.
     std::vector<std::string> reg_name_order;
     {
         std::vector<std::string> normal_first;
         std::vector<std::string> reset_sole_last;
-        for (auto const& [reg_name, reg_assigns_vec] : reg_assigns) {
+        for (const auto& reg_name : reg_first_seen_order) {
+            const auto& reg_assigns_vec = reg_assigns.at(reg_name);
             // Only indexed writes (bracketed LHS) go through the addr-mux collision/demotion
             // logic below, so only those need reordering. A bracket-less whole-array write
             // (e.g. `M <= '{default: ...}'`) must keep its original relative position — it
@@ -461,6 +564,68 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 reset_is_sole_assign = std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),
                     [&](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });
             }
+        }
+
+        bool canonical_full_array_reset = is_array_reg
+            && reset_is_sole_assign
+            && reset_assign_handle
+            && isCanonicalFullArrayResetLoop(reset_assign_handle, mod, reg_base, index_expr);
+        if (canonical_full_array_reset) {
+            std::string array_reg_id = "reg:" + mod.name + ":" + reg_base;
+            Node* array_reg = nullptr;
+            for (auto& existing : mod.nodes) {
+                if (existing.id == array_reg_id) {
+                    array_reg = &existing;
+                    break;
+                }
+            }
+            if (!array_reg) {
+                Node arr_reg;
+                arr_reg.id = array_reg_id;
+                arr_reg.kind = "register";
+                arr_reg.label = reg_base;
+                arr_reg.source = n.source;
+                arr_reg.metadata.clockSignal = clk_signal;
+                arr_reg.metadata.isProcedural = true;
+                arr_reg.metadata.isArrayNode = true;
+                arr_reg.metadata.arrayDimension = mod.arrayDimensions[reg_base];
+                arr_reg.metadata.arraySize = mod.arraySizes[reg_base];
+                arr_reg.ports.push_back({"D", "input", reg_base, reg_width});
+                arr_reg.ports.push_back({"Q", "output", reg_base, reg_width});
+                if (!clk_signal.empty()) arr_reg.ports.push_back({clk_signal, "input", clk_signal, ""});
+                mod.nodes.push_back(arr_reg);
+                array_reg = &mod.nodes.back();
+            }
+
+            array_reg->metadata.resetSignal = rst_signal;
+            array_reg->metadata.resetKind = reset_kind;
+            array_reg->metadata.resetActiveLow = reset_active_low;
+            if (!rst_signal.empty() && std::none_of(array_reg->ports.begin(), array_reg->ports.end(),
+                [&](const NodePort& port) { return port.name == rst_signal; })) {
+                array_reg->ports.push_back({rst_signal, "input", rst_signal, ""});
+            }
+
+            if (isNonZeroResetValue(reset_rhs)
+                && std::none_of(array_reg->ports.begin(), array_reg->ports.end(),
+                    [](const NodePort& port) { return port.name == "RV"; })) {
+                std::string rv_signal;
+                if (isLiteralExpr(reset_rhs)) {
+                    rv_signal = getLiteralLabel(reset_rhs);
+                    ensureLiteralNode(reset_rhs, mod, rv_signal, reg_width, reset_assign_handle, getAssignmentRhsText(reset_assign_handle));
+                } else {
+                    rv_signal = getOrPromoteExpr(reset_rhs, mod, reg_base + "_reset_val", true);
+                }
+                // Literal/expression promotion can grow mod.nodes and invalidate array_reg.
+                auto refreshed_array_reg = std::find_if(mod.nodes.begin(), mod.nodes.end(),
+                    [&](const Node& node) { return node.id == array_reg_id; });
+                if (refreshed_array_reg != mod.nodes.end()) {
+                    refreshed_array_reg->ports.push_back({"RV", "input", rv_signal, reg_width, "RV"});
+                }
+            }
+
+            // A proven full-range reset is represented by the stacked register's R/RV ports;
+            // it does not need a per-address reset mux stage.
+            continue;
         }
 
         std::vector<std::string> literal_inputs;

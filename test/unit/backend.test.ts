@@ -2199,24 +2199,20 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
-    it('merges multiple index expressions into a chained address mux for the same array', async () => {
+    it('merges multiple normal index expressions into a chained address mux for the same array', async () => {
       const graph = await runParser(backend, [{ file: 'array_multi_index_write.sv', text: `
         module array_multi_index_write
           ( input logic clk
-          , input logic reset
           , input logic [4:0] address
+          , input logic [4:0] i
           , input logic [31:0] in_data
           );
 
           reg [31:0] storage [0:31];
-          integer i;
 
           always @(posedge clk) begin
-            if (reset) begin
-              for (i = 0; i < 32; i = i + 1) storage[i] <= 32'b0;
-            end else begin
-              storage[address] <= in_data;
-            end
+            storage[i] <= 32'b0;
+            storage[address] <= in_data;
           end
         endmodule
       ` }]);
@@ -2227,27 +2223,25 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(arrayRegs).toHaveLength(1);
       const arrayReg = arrayRegs[0];
 
-      // Both index expressions are represented: the second write is demoted to an upstream
-      // chain stage instead of being dropped when the canonical mux id is already taken.
+      // Both index expressions are represented, and the later source assignment is the
+      // canonical final stage so procedural last-assignment priority is preserved.
       const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write:storage_addr'));
       expect(addressMuxes).toHaveLength(2);
 
       // The mux that keeps the canonical id is the one wired to the register's D input.
       const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write:storage_addr');
       expect(finalMux).toBeDefined();
-      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('i');
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
       expect(mod.edges.some((e) => (
         e.source === finalMux?.id && e.target === arrayReg.id && e.signal === 'storage_next'
       ))).toBe(true);
 
       const stageMux = addressMuxes.find((n) => n.id !== finalMux?.id);
-      expect(stageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
-      expect(stageMux?.ports.find((p) => p.name === '5\'b0')?.connectedSignal).toBe('in_data');
+      expect(stageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('i');
+      expect(stageMux?.ports.find((p) => p.name === '5\'b0')?.connectedSignal).toBe("32'b0");
       expect(stageMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe('storage');
 
-      // The stage's output feeds the final mux's default — falls back to the address-write
-      // value when the reset loop's index doesn't (conceptually) match, instead of the raw
-      // array value being clobbered.
+      // The earlier write stage feeds the later write's default path.
       const stageOutSignal = stageMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
       expect(stageOutSignal).toBeTruthy();
       expect(finalMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe(stageOutSignal);
@@ -2260,34 +2254,42 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(finalMux?.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal)).toBe(true);
     });
 
-    it('keeps the reset-loop write canonical and rst-gated regardless of index-name sort order', async () => {
-      // Loop variable 'a' sorts alphabetically *before* 'address' ("storage[a]" < "storage[address]"),
-      // the reverse of the previous test's 'i' vs 'address'. Chain-stage priority must not flip
-      // with it — the reset-only write should still end up canonical, and now explicitly gated
-      // on the reset signal rather than relying on chain position to imply reset-only applicability.
+    it('folds a full-range zero reset loop into the stacked array register reset', async () => {
       const graph = await runParser(backend, 'array_multi_index_write_reset_sorts_first.sv', fixture('array_multi_index_write_reset_sorts_first.sv'));
       const mod = graph.modules.array_multi_index_write_reset_sorts_first ?? Object.values(graph.modules)[0];
 
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
+      expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
       const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'));
-      expect(addressMuxes).toHaveLength(2);
-
-      // Canonical mux (feeds the register D) is still the reset-loop write, not the write whose
-      // index text happens to sort last.
+      expect(addressMuxes).toHaveLength(1);
       const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write_reset_sorts_first:storage_addr');
-      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('a');
-      const stageMux = addressMuxes.find((n) => n.id !== finalMux?.id);
-      expect(stageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+      expect(mod.edges.some((e) => e.signal === 'reset' && e.target === arrayReg?.id && e.isStacked)).toBe(true);
+    });
 
-      // The reset-loop write's value is explicitly gated on `reset` instead of being presented
-      // unconditionally whenever the index matches.
-      const rstMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'if reset');
-      expect(rstMux).toBeDefined();
-      expect(rstMux?.ports.find((p) => p.name === 'true')?.connectedSignal).toBeTruthy();
-      expect(rstMux?.ports.find((p) => p.name === 'false')?.connectedSignal).toBe('storage');
+    it('adds RV to the stacked array register for a non-zero full-range reset loop', async () => {
+      const graph = await runParser(backend, 'array_multi_index_write_reset_nonzero.sv', fixture('array_multi_index_write_reset_nonzero.sv'));
+      const mod = graph.modules.array_multi_index_write_reset_nonzero ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_nonzero:storage');
 
-      const rstMuxOut = rstMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
-      const finalMuxWriteInput = finalMux?.ports.find((p) => p.direction === 'input' && p.name !== 'sel' && p.name !== 'default');
-      expect(finalMuxWriteInput?.connectedSignal).toBe(rstMuxOut);
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
+      expect(arrayReg?.ports.find((p) => p.name === 'RV')?.connectedSignal).toBe("32'hDEADBEEF");
+      expect(mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_nonzero:storage_addr'))).toHaveLength(1);
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+    });
+
+    it('does not fold a partial-range reset loop into a whole-array reset', async () => {
+      const source = fixture('array_multi_index_write_reset_sorts_first.sv').replace('a < 32', 'a < 16');
+      const graph = await runParser(backend, 'array_multi_index_write_reset_sorts_first.sv', source);
+      const mod = graph.modules.array_multi_index_write_reset_sorts_first ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+
+      expect(arrayReg?.ports.some((p) => p.name === 'reset')).toBe(false);
+      expect(mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'))).toHaveLength(2);
     });
 
     it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {

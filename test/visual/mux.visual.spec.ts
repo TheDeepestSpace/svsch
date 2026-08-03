@@ -903,41 +903,48 @@ test.describe('register visual rendering', () => {
     await expectGraphAndScreenshot(page, 'array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
-  test('renders a reset-loop indexed write chained with a rst-gating mux ahead of a normal indexed write', async ({ page }) => {
+  test('renders a full-range zero reset loop on the stacked array register', async ({ page }) => {
     const view = await openFixture(page, 'array_multi_index_write_reset_sorts_first.sv', 'auto');
 
     const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
     const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'));
     const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_sorts_first:storage_addr');
-    const stageMux = addressMuxes.find((node) => node.id !== finalMux?.id);
-    const rstMux = view.nodes.find((node) => node.kind === 'mux' && node.label === 'if reset');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
 
     expect(arrayReg).toBeDefined();
     expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
-    expect(addressMuxes).toHaveLength(2);
-    expect(rstMux).toBeDefined();
-
-    // The reset-loop write (sel=a) stays canonical (feeds the register D input),
-    // while the plain indexed write (sel=address) is demoted to an upstream chain stage.
-    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('a');
-    expect(stageMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
-
-    // The reset-loop value is explicitly gated on `reset` rather than applied unconditionally.
-    expect(rstMux?.ports.some((port) => port.name === 'true' && port.connectedSignal === "32'b0")).toBe(true);
-    expect(rstMux?.ports.some((port) => port.name === 'false' && port.connectedSignal === 'storage')).toBe(true);
-    expect(view.edges.some((edge) => edge.source === rstMux?.id && edge.target === finalMux?.id && edge.isStacked)).toBe(true);
-    expect(view.edges.some((edge) => edge.source === stageMux?.id && edge.target === finalMux?.id && edge.isStacked)).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(1);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
+    expect(view.nodes.some((node) => node.kind === 'mux' && node.label === 'if reset')).toBe(false);
+    expect(resetEdge?.isStacked).toBe(true);
     expect(view.edges.some((edge) => edge.source === finalMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
 
     await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
-    await expect(page.locator(`[data-node-id="${rstMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
     await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
-    await expect(page.locator(`[data-node-id="${stageMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
     await expect(page.locator(`[data-node-id="${finalMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
-    await expect(page.locator(`[data-node-id="${stageMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
 
     await expectStackedEdgeSegmentsOrthogonal(page);
     await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-sorts-first-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders RV for a non-zero full-range reset loop', async ({ page }) => {
+    const view = await openFixture(page, 'array_multi_index_write_reset_nonzero.sv', 'auto');
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_nonzero:storage');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+    const resetValueEdge = view.edges.find((edge) => edge.signal === "32'hDEADBEEF" && edge.target === arrayReg?.id);
+
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.find((port) => port.name === 'RV')?.connectedSignal).toBe("32'hDEADBEEF");
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(resetValueEdge?.isStacked).toBe(true);
+    expect(view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_nonzero:storage_addr'))).toHaveLength(1);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] text`, { hasText: 'RV' })).toBeVisible();
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-nonzero-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
 
