@@ -226,7 +226,7 @@
       "target": "loop:loop_logic:11:n1",
       "sourceHandle": "port:shift_amt",
       "targetHandle": "port:shift_amt",
-      "path": "M 192 216 L 216 216 L 375 216 Q 384 207 393 216 L 408 216 L 432 216"
+      "path": "M 375 216 Q 384 207 393 216"
     }
   ]
 }
