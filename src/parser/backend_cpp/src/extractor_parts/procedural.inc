@@ -327,7 +327,32 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         }
     }
 
-    for (auto const& [reg_name, reg_assigns_vec] : reg_assigns) {
+    // Iterate reg_assigns in an explicit priority order rather than raw map (alphabetical)
+    // order: reset-only writes (reset_is_sole_assign) go last so they always land in the
+    // canonical address-mux chain position for their array, regardless of how their index
+    // expression's text happens to sort against a sibling indexed write's.
+    std::vector<std::string> reg_name_order;
+    {
+        std::vector<std::string> normal_first;
+        std::vector<std::string> reset_sole_last;
+        for (auto const& [reg_name, reg_assigns_vec] : reg_assigns) {
+            // Only indexed writes (bracketed LHS) go through the addr-mux collision/demotion
+            // logic below, so only those need reordering. A bracket-less whole-array write
+            // (e.g. `M <= '{default: ...}'`) must keep its original relative position — it
+            // seeds the canonical "reg:<mod>:<base>" node that a sibling indexed write's
+            // array_reg_exists check expects to already be there.
+            bool sole_reset_assign = is_reset_condition && reset_branch_stmt &&
+                reg_name.find('[') != std::string::npos &&
+                std::all_of(reg_assigns_vec.begin(), reg_assigns_vec.end(),
+                    [&](vpiHandle ra) { return isAncestor(reset_branch_stmt, ra); });
+            (sole_reset_assign ? reset_sole_last : normal_first).push_back(reg_name);
+        }
+        reg_name_order = std::move(normal_first);
+        reg_name_order.insert(reg_name_order.end(), reset_sole_last.begin(), reset_sole_last.end());
+    }
+
+    for (auto const& reg_name : reg_name_order) {
+        auto const& reg_assigns_vec = reg_assigns.at(reg_name);
         vpiHandle lhs_first = vpi_handle(vpiLhs, reg_assigns_vec[0]);
         std::string reg_base = getBaseSignalName(lhs_first);
         ensureDeclaredArray(mod, reg_base);
@@ -591,11 +616,14 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.
             // Chain: write_en_mux → rst_mux → addr_mux → register D
-            // Skip when this LHS text is only ever assigned inside the reset branch — the
-            // write already IS the reset value, so gating it on rst again would just wire
-            // "true" and "false" to the same value (and "false" has no non-reset D signal
-            // to fall back to).
-            if (is_reset_condition && !rst_signal.empty() && reset_rhs && !reset_is_sole_assign) {
+            //
+            // A reset-only indexed write (e.g. a reset-loop `storage[i] <= 0`, where
+            // reset_is_sole_assign is true) also needs this gate: without it, the addr-mux
+            // stage would present the reset value whenever the index matches, even while rst
+            // is inactive. Its "false" side has no non-reset D signal to fall back to, so it
+            // holds the current array value instead — independent of whether this write ends
+            // up the canonical chain stage or an upstream one.
+            if (is_reset_condition && !rst_signal.empty() && reset_rhs) {
                 std::string reset_val_signal;
                 if (isLiteralExpr(reset_rhs)) {
                     reset_val_signal = getLiteralLabel(reset_rhs);
@@ -603,6 +631,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 } else {
                     reset_val_signal = getOrPromoteExpr(reset_rhs, mod, reg_base + "_reset_val", true);
                 }
+                std::string rst_false_signal = reset_is_sole_assign ? reg_base : d_signal_for_addr;
                 std::string rst_candidate = reg_base + "_rst_candidate";
                 Node rst_mux;
                 rst_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + rst_signal + ":" + rst_candidate);
@@ -616,7 +645,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 std::string rst_sel_width = getDeclaredSignalWidth(mod, rst_signal);
                 rst_mux.ports.push_back({"sel", "input", rst_signal, rst_sel_width});
                 rst_mux.ports.push_back({"true", "input", reset_val_signal, reg_width, "true"});
-                rst_mux.ports.push_back({"false", "input", d_signal_for_addr, reg_width, "false"});
+                rst_mux.ports.push_back({"false", "input", rst_false_signal, reg_width, "false"});
                 rst_mux.ports.push_back({"out", "output", rst_candidate, reg_width});
                 mod.nodes.push_back(rst_mux);
                 d_signal_for_addr = rst_candidate;
