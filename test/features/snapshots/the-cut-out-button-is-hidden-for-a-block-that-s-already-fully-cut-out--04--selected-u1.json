@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 576,
-        "y": 48
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 48
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -161,7 +161,7 @@
       "target": "cut-label:instance:top:u1:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 552 72 L 552 72 L 576 72 L 576 72"
+      "path": "M 552 72 L 552 72 L 552 120 L 576 120 L 576 120"
     },
     {
       "id": "cut-stub:port:top:a:port:a:sink:edge:port:top:a:instance:top:u1:a",
@@ -177,7 +177,7 @@
       "target": "cut-label:port:top:a:port:a:source",
       "sourceHandle": "port:a",
       "targetHandle": "cut",
-      "path": "M 144 72 L 144 72 L 168 72 L 168 72"
+      "path": "M 144 72 L 144 72 L 144 120 L 168 120 L 168 120"
     }
   ]
 }

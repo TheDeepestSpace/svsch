@@ -38,16 +38,14 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "cut-label:instance:top:g_case_zero.u_case_zero:port:y:sink:edge:instance:top:g_case_zero.u_case_zero:port:top:y:y",
       "type": "hdl",
       "position": {
         "x": 840,
-        "y": 168
+        "y": 216
       },
       "width": 96,
       "height": 48,
@@ -80,9 +78,7 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "instance:top:g_case_def.u_case_def",
@@ -222,7 +218,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 936 192 L 936 192 L 960 192 L 960 192",
+      "path": "M 936 240 L 936 240 L 960 240 L 960 192 L 960 192",
       "inactive": true
     },
     {

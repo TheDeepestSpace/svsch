@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 192
+        "y": 216
       },
       "width": 96,
       "height": 48,
@@ -552,7 +552,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 456 216 L 456 216 L 480 216 L 480 216"
+      "path": "M 456 240 L 456 240 L 480 240 L 480 216 L 480 216"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",

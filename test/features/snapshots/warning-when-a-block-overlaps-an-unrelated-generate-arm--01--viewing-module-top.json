@@ -38,9 +38,7 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "instance:top:g_arm.u_arm",

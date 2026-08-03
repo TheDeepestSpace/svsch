@@ -91,7 +91,8 @@ Feature: Schematic Observation
     When I open the "top" module in SVSCH
     Then I should see a register node "q"
     And there should be a connection between "d" and the register node "q"
-    And there should be a connection between "clk" and the register node "q"
+    When I tie back the cut net "clk"
+    Then there should be a connection between "clk" and the register node "q"
 
   Scenario: Observing bus breakouts
     Given I have a file "top.sv" in my workspace:

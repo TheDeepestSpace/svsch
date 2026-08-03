@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 96
+        "y": 120
       },
       "width": 96,
       "height": 48,
@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 144
+        "y": 168
       },
       "width": 96,
       "height": 48,
@@ -211,7 +211,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 120 L 144 120 L 168 120 L 168 120"
+      "path": "M 144 120 L 144 120 L 168 120 L 168 144 L 168 144"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:q:rst_n",
@@ -227,7 +227,7 @@
       "target": "cut-label:port:top:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M 144 168 L 144 168 L 168 168 L 168 168"
+      "path": "M 144 168 L 144 168 L 168 168 L 168 192 L 168 192"
     },
     {
       "id": "edge:port:top:d:reg:top:q:d",

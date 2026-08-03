@@ -85,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 984,
-        "y": 48
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -310,7 +310,7 @@
       "target": "cut-label:struct_comp:top:pkt:out:pkt:source",
       "sourceHandle": "out:pkt",
       "targetHandle": "cut",
-      "path": "M 960 72 L 960 72 L 984 72 L 984 72"
+      "path": "M 960 72 L 960 72 L 984 72 L 984 120 L 984 120"
     },
     {
       "id": "edge:port:top:opcode_i:reg:top:pkt.opcode:opcode_i",

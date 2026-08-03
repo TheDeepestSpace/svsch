@@ -18,9 +18,7 @@
             "direction": "output"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "cut-label:instance:top:g_if_on.u_if:port:y:source",
@@ -40,9 +38,7 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "instance:top:g_case_def.u_case_def",

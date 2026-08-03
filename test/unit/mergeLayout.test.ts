@@ -1078,6 +1078,33 @@ describe('layout merge', () => {
     ]);
   });
 
+  it('separates automatic cut labels that share the same canonical position', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 0, fixed: true },
+            u1: { x: 144, y: 0, fixed: true },
+            u2: { x: 144, y: 0, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', layout);
+    const labels = view.nodes.filter((node) => node.kind === 'netLabel').map(boundsOf);
+    expect(labels).toHaveLength(3);
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        expect(boxesOverlap(labels[i], labels[j])).toBe(false);
+      }
+    }
+  });
+
   it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {
     const declaredFanoutGraph: DesignGraph = {
       ...fanoutGraph,

@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 24
+        "y": -24
       },
       "width": 120,
       "height": 48,
@@ -144,7 +144,7 @@
       "target": "cut-label:port:top:a:port:a:source",
       "sourceHandle": "port:a",
       "targetHandle": "cut",
-      "path": "M 144 48 L 144 48 L 168 48 L 168 48"
+      "path": "M 144 48 L 144 48 L 168 48 L 168 0 L 168 0"
     }
   ]
 }

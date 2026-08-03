@@ -64,16 +64,14 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "cut-label:instance:top:g_if_one.u_if_one:port:y:sink:edge:instance:top:g_if_one.u_if_one:port:top:y:y",
       "type": "hdl",
       "position": {
         "x": 792,
-        "y": 408
+        "y": 456
       },
       "width": 96,
       "height": 48,
@@ -106,16 +104,14 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:sink:edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
       "type": "hdl",
       "position": {
         "x": 792,
-        "y": 408
+        "y": 360
       },
       "width": 96,
       "height": 48,
@@ -148,9 +144,7 @@
             "direction": "input"
           }
         ]
-      },
-      "invalid": true,
-      "warningNote": "this block does not belong to a generate arm block"
+      }
     },
     {
       "id": "instance:top:g_if_one.u_if_one",
@@ -310,7 +304,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 888 432 L 888 432 L 912 432 L 912 432",
+      "path": "M 888 480 L 888 480 L 912 480 L 912 432 L 912 432",
       "active": true
     },
     {
@@ -328,7 +322,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 888 432 L 888 432 L 912 432 L 912 432",
+      "path": "M 888 384 L 888 384 L 912 384 L 912 432 L 912 432",
       "inactive": true
     },
     {

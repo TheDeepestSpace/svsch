@@ -773,31 +773,37 @@ export class DiagramPanel {
     if (!this.panel || !this.graph || this.currentModule === undefined) {
       return;
     }
+    const panel = this.panel;
+    const graph = this.graph;
+    const moduleName = this.currentModule;
     const store = this.getStore();
     if (store) {
-      const isFirstOpen = !this.layout.modules[this.currentModule]
-        && !(await store.hasModuleLayout(this.currentModule));
-      await this.ensureModuleLayout(store, this.currentModule);
+      const isFirstOpen = !this.layout.modules[moduleName]
+        && !(await store.hasModuleLayout(moduleName));
+      await this.ensureModuleLayout(store, moduleName);
       if (isFirstOpen) {
-        const designModule = this.graph.modules[this.currentModule];
+        const designModule = graph.modules[moduleName];
         if (designModule) {
-          const initialView = await buildViewModel(this.graph, this.currentModule, this.layout);
+          const initialView = await buildViewModel(graph, moduleName, this.layout);
           const includeClockAndReset = vscode.workspace
             .getConfiguration('svsch')
             .get<boolean>('autocut-clk-reset', true);
           const edges = firstOpenAutoCutEdges(designModule, includeClockAndReset);
           if (edges.length > 0) {
-            this.layout = mergeNetCuts(this.layout, this.currentModule, edges, designModule, initialView.nodes);
+            this.layout = mergeNetCuts(this.layout, moduleName, edges, designModule, initialView.nodes);
           }
-          await this.persistModuleLayout(store, this.currentModule);
+          await this.persistModuleLayout(store, moduleName);
         }
       }
     }
-    const view: DiagramViewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
-    await this.panel.webview.postMessage({
+    const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout);
+    if (this.panel !== panel || this.graph !== graph || this.currentModule !== moduleName) {
+      return;
+    }
+    await panel.webview.postMessage({
       type: 'graph',
       view,
-      modules: Object.keys(this.graph.modules)
+      modules: Object.keys(graph.modules)
     });
   }
 

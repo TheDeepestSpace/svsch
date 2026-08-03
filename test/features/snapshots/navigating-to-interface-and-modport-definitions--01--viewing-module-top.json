@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 576,
-        "y": 96
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -151,7 +151,7 @@
       "target": "cut-label:interface:top:link:out:slave:source",
       "sourceHandle": "out:slave",
       "targetHandle": "cut",
-      "path": "M 552 120 L 552 120 L 576 120 L 576 120"
+      "path": "M 552 120 L 552 120 L 576 120 L 576 168 L 576 168"
     },
     {
       "id": "edge:instance:top:u_consumer:port:top:observed:observed",

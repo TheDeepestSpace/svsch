@@ -787,7 +787,59 @@ function buildNetCutProjection(
     }
   }
 
-  return { nodes, edges };
+  return { nodes: resolveCutLabelCollisions(nodes), edges };
+}
+
+function resolveCutLabelCollisions(nodes: PositionedNode[]): PositionedNode[] {
+  // Preserve user-pinned labels, then move automatic labels along their
+  // handle's cross-axis until every label has a distinct footprint.
+  const resolved = new Map<string, PositionedNode>();
+  const occupied: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const ordered = [...nodes].sort((a, b) => {
+    if (Boolean(a.fixed) !== Boolean(b.fixed)) return a.fixed ? -1 : 1;
+    return a.id.localeCompare(b.id);
+  });
+
+  for (const node of ordered) {
+    const dimensions = diagramNodeDimensions(node);
+    const boundsAt = (position: { x: number; y: number }) => ({
+      ...position,
+      width: dimensions.width,
+      height: dimensions.height
+    });
+    const overlapsOccupied = (position: { x: number; y: number }) => {
+      const bounds = boundsAt(position);
+      return occupied.some((other) => (
+        bounds.x < other.x + other.width
+        && other.x < bounds.x + bounds.width
+        && bounds.y < other.y + other.height
+        && other.y < bounds.y + bounds.height
+      ));
+    };
+
+    let position = node.position;
+    if (!node.fixed && overlapsOccupied(position)) {
+      const side = node.metadata?.cutNet?.handleSide;
+      const moveVertically = side === 'left' || side === 'right';
+      search: for (let offset = diagramSizing.gridSize; ; offset += diagramSizing.gridSize) {
+        for (const direction of [1, -1]) {
+          const candidate = moveVertically
+            ? { x: node.position.x, y: node.position.y + offset * direction }
+            : { x: node.position.x + offset * direction, y: node.position.y };
+          if (!overlapsOccupied(candidate)) {
+            position = candidate;
+            break search;
+          }
+        }
+      }
+    }
+
+    const positioned = position === node.position ? node : { ...node, position };
+    resolved.set(node.id, positioned);
+    occupied.push(boundsAt(position));
+  }
+
+  return nodes.map((node) => resolved.get(node.id) ?? node);
 }
 
 function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
