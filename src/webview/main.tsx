@@ -625,29 +625,6 @@ function DiagramApp(): React.ReactElement {
 
   return (
     <div className="shell" style={diagramStyle}>
-        <div className="status-indicator">
-          {status === 'rebuilding' ? (
-            <div className="busy-indicator" role="status" aria-live="polite">
-              <span />
-              Updating
-            </div>
-          ) : view.diagnostics.length > 0 ? (
-            <Tooltip
-              content={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
-            >
-              {(trigger) => (
-                <div
-                  {...trigger}
-                  className="diagnostics-indicator"
-                  role="status"
-                  aria-label={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
-                >
-                  ⚠
-                </div>
-              )}
-            </Tooltip>
-          ) : null}
-        </div>
         <header className="toolbar">
           <select
             className="vscode-control vscode-select"
@@ -664,6 +641,30 @@ function DiagramApp(): React.ReactElement {
           <button className="vscode-control vscode-button vscode-button-secondary" onClick={() => vscode.postMessage({ type: 'exportSvg' })}>Export SVG</button>
           <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
           <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
+          <div className="status-indicator">
+            {status === 'rebuilding' ? (
+              <div className="busy-indicator" role="status" aria-live="polite">
+                <span />
+                Updating
+              </div>
+            ) : view.diagnostics.length > 0 ? (
+              <Tooltip
+                content={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
+              >
+                {(trigger) => (
+                  <div
+                    {...trigger}
+                    className="diagnostics-indicator"
+                    role="status"
+                    tabIndex={0}
+                    aria-label={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
+                  >
+                    ⚠
+                  </div>
+                )}
+              </Tooltip>
+            ) : null}
+          </div>
         </header>
         <main className="canvas" key={view.moduleName}>
           <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
