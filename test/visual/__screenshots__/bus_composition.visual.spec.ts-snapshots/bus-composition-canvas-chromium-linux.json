@@ -257,7 +257,7 @@
       "target": "reg:bus_composition:r[0]",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 336 305 Q 343 312 336 319"
+      "path": "M 144 216 L 168 216 L 336 216 L 336 305 Q 343 312 336 319 L 336 336 L 360 336 L 384 336"
     },
     {
       "id": "edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
@@ -273,7 +273,7 @@
       "target": "reg:bus_composition:r[3:2]",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 336 199 Q 343 192 336 185"
+      "path": "M 144 216 L 168 216 L 336 216 L 336 199 Q 343 192 336 185 L 336 96 L 360 96"
     },
     {
       "id": "edge:port:bus_composition:sub:reg:bus_composition:r_3:2_:sub",
