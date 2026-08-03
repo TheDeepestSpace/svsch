@@ -1202,10 +1202,20 @@ function promoteTextConditional(
   sourceRange: { file: string; startLine: number; endLine: number },
   outputWidth?: string
 ): PromotedTextExpression | undefined {
+  const nodeCount = mutableNodes.length;
+  const edgeCount = edges.length;
+  const rollback = (): undefined => {
+    mutableNodes.length = nodeCount;
+    edges.length = edgeCount;
+    return undefined;
+  };
+
   const selector = promoteTextExpression(match, conditional.condition, `${outputSignal}_sel`, `${discriminator}_sel`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange);
+  if (!selector) return rollback();
   const whenTrue = promoteTextExpression(match, conditional.whenTrue, `${outputSignal}_true`, `${discriminator}_true`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
+  if (!whenTrue) return rollback();
   const whenFalse = promoteTextExpression(match, conditional.whenFalse, `${outputSignal}_false`, `${discriminator}_false`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
-  if (!selector || !whenTrue || !whenFalse) return undefined;
+  if (!whenFalse) return rollback();
 
   const width = outputWidth ?? whenTrue.width ?? whenFalse.width;
   const outputArray = modulePorts.find((port) => port.name === outputSignal);

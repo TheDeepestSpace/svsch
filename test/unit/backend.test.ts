@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runParser } from '../helper';
+import { expectMuxSelector } from './helpers';
 import type { DesignModule, DiagramNode } from '../../src/ir/types';
 
 function fixture(name: string): string {
@@ -38,18 +39,6 @@ function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, sig
     && port.connectedSignal === signal
   ))).toBe(true);
   expect(module.edges.some((edge) => edge.source === mux?.id && edge.signal === signal)).toBe(true);
-}
-
-function expectMuxSelector(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
-  expect(mux).toBeDefined();
-  const selectorPort = mux?.ports.find((port) => port.name === 'sel');
-  expect(selectorPort).toBeDefined();
-  expect(module.edges.some((edge) => (
-    edge.source === `port:${module.name}:${signal}`
-    && edge.target === mux?.id
-    && edge.targetPort === selectorPort?.id
-    && edge.signal === signal
-  ))).toBe(true);
 }
 
 function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {

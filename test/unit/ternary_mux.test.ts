@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { extractDesignFromText } from '../../src/parser/textExtractor';
+import { expectMuxSelector } from './helpers';
 import type { DesignModule, DiagramNode } from '../../src/ir/types';
 
 function extract(text: string): DesignModule {
@@ -11,18 +12,6 @@ function muxSelectedBy(module: DesignModule, selector: string): DiagramNode | un
     node.kind === 'mux'
     && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === selector)
   ));
-}
-
-function expectMuxSelector(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
-  expect(mux).toBeDefined();
-  const selectorPort = mux?.ports.find((port) => port.name === 'sel');
-  expect(selectorPort).toBeDefined();
-  expect(module.edges.some((edge) => (
-    edge.source === `port:${module.name}:${signal}`
-    && edge.target === mux?.id
-    && edge.targetPort === selectorPort?.id
-    && edge.signal === signal
-  ))).toBe(true);
 }
 
 describe('text fallback ternary extraction', () => {
@@ -124,6 +113,23 @@ describe('text fallback ternary extraction', () => {
     expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
     expect(comb?.metadata?.expression).toBe('sel ? 1.5 : a');
     expect(module.edges.some((edge) => edge.source === comb?.id && edge.target === 'port:top:y')).toBe(true);
+  });
+
+  it('rolls back earlier promoted operands when a later operand cannot be promoted', () => {
+    const module = extract(`
+      module top(input logic sel, a, b, output logic y);
+        assign y = sel ? a + b : 1 + 2;
+      endmodule
+    `);
+    const combs = module.nodes.filter((node) => node.kind === 'comb');
+
+    expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
+    expect(combs).toHaveLength(1);
+    expect(combs[0].metadata?.expression).toBe('sel ? a + b : 1 + 2');
+    expect(module.edges.every((edge) => (
+      module.nodes.some((node) => node.id === edge.source)
+      && module.nodes.some((node) => node.id === edge.target)
+    ))).toBe(true);
   });
 
   it('ignores question-mark digits in sized literals when splitting a ternary', () => {
