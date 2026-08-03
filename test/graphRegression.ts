@@ -99,7 +99,12 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
     }
     const edges = rf.getEdges().map((e: any) => {
       const edgeElement = edgeMap.get(e.id);
-      const pathEl = edgeElement?.querySelector('path[d], path');
+      // OrthogonalEdge.tsx stacks several <path> elements per edge (jump-halo
+      // arcs, net-highlight overlays) before the real wire stroke. Those
+      // overlay paths don't carry the "svsch-edge" class token, so scoping to
+      // it grabs the actual route instead of whichever overlay happened to
+      // render first.
+      const pathEl = edgeElement?.querySelector('path.svsch-edge');
       const pathData = pathEl?.getAttribute('d') ?? '';
       
       return {
