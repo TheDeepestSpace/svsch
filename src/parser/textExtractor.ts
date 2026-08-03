@@ -915,23 +915,25 @@ function extractContinuousAssigns(
           sourceRange,
           signalWidths.get(targetSignal)
         );
-        const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
-        if (promoted && target) {
-          const source = signalSource(match.name, promoted.signal, modulePorts, [...nodes, ...combNodes]);
-          if (source) {
-            pushUniqueEdge(edges, {
-              id: edgeId(source.nodeId, target.nodeId, targetSignal),
-              source: source.nodeId,
-              target: target.nodeId,
-              sourcePort: source.portId,
-              targetPort: target.portId,
-              label: targetSignal,
-              signal: targetSignal,
-              width: promoted.width ?? signalWidths.get(targetSignal)
-            });
+        if (promoted) {
+          const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
+          if (target) {
+            const source = signalSource(match.name, promoted.signal, modulePorts, [...nodes, ...combNodes]);
+            if (source) {
+              pushUniqueEdge(edges, {
+                id: edgeId(source.nodeId, target.nodeId, targetSignal),
+                source: source.nodeId,
+                target: target.nodeId,
+                sourcePort: source.portId,
+                targetPort: target.portId,
+                label: targetSignal,
+                signal: targetSignal,
+                width: promoted.width ?? signalWidths.get(targetSignal)
+              });
+            }
           }
+          continue;
         }
-        continue;
       }
 
       const comb = createCombNode(match, targetSignal, expression, refs, assignRegex.lastIndex.toString(), signalWidths.get(targetSignal), sourceRange);
@@ -1005,6 +1007,8 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
     else if (char === '}') braceDepth--;
 
     if (parenDepth !== 0 || bracketDepth !== 0 || braceDepth !== 0) continue;
+    // A question mark can also be a don't-care digit in a based literal.
+    if (char === '?' && /'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]*$/.test(text.slice(0, index))) continue;
     if (char === '?' && question < 0) {
       question = index;
       continue;

@@ -13,6 +13,15 @@ function muxSelectedBy(module: DesignModule, selector: string): DiagramNode | un
   ));
 }
 
+function expectMuxSelector(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
+  expect(mux).toBeDefined();
+  expect(module.edges.some((edge) => (
+    edge.source === `port:${module.name}:${signal}`
+    && edge.target === mux?.id
+    && edge.signal === signal
+  ))).toBe(true);
+}
+
 describe('text fallback ternary extraction', () => {
   it('emits a mux with bit-literal arm labels', () => {
     const module = extract(`
@@ -32,6 +41,7 @@ describe('text fallback ternary extraction', () => {
     expect(mux?.ports.find((port) => port.label === "1'b1")?.connectedSignal).toBe('a');
     expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
     expect(mux?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
+    expectMuxSelector(module, mux, 'sel');
     expect(module.edges.some((edge) => edge.source === 'port:top:a' && edge.target === mux?.id)).toBe(true);
     expect(module.edges.some((edge) => edge.source === 'port:top:b' && edge.target === mux?.id)).toBe(true);
     expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === 'port:top:y')).toBe(true);
@@ -54,6 +64,8 @@ describe('text fallback ternary extraction', () => {
     const inner = muxSelectedBy(module, 'sel2');
 
     expect(module.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
+    expectMuxSelector(module, outer, 'sel1');
+    expectMuxSelector(module, inner, 'sel2');
     expect(module.edges.some((edge) => edge.source === inner?.id && edge.target === outer?.id)).toBe(true);
   });
 
@@ -76,7 +88,34 @@ describe('text fallback ternary extraction', () => {
     expect(comb).toBeDefined();
     expect(comb?.ports.some((port) => port.direction === 'input' && port.name === 'y_ternary_0')).toBe(true);
     expect(comb?.ports.some((port) => port.direction === 'input' && ['sel', 'b', 'c'].includes(port.name))).toBe(false);
+    expectMuxSelector(module, mux, 'sel');
     expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === comb?.id)).toBe(true);
+  });
+
+  it('falls back to a comb node when a ternary operand cannot be promoted', () => {
+    const module = extract(`
+      module top(input logic sel, a, output logic y);
+        assign y = sel ? 1.5 : a;
+      endmodule
+    `);
+    const comb = module.nodes.find((node) => node.kind === 'comb');
+
+    expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
+    expect(comb?.metadata?.expression).toBe('sel ? 1.5 : a');
+    expect(module.edges.some((edge) => edge.source === comb?.id && edge.target === 'port:top:y')).toBe(true);
+  });
+
+  it('ignores question-mark digits in sized literals when splitting a ternary', () => {
+    const module = extract(`
+      module top(input logic sel, a, b, output logic y);
+        assign y = sel == 4'b1?01 ? a : b;
+      endmodule
+    `);
+    const mux = module.nodes.find((node) => node.kind === 'mux');
+
+    expect(module.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expect(mux?.ports.find((port) => port.label === "1'b1")?.connectedSignal).toBe('a');
+    expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
   });
 
   it('does not mistake a part-select colon for a ternary', () => {

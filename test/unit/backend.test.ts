@@ -37,6 +37,16 @@ function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, sig
     && port.name === 'out'
     && port.connectedSignal === signal
   ))).toBe(true);
+  expect(module.edges.some((edge) => edge.source === mux?.id && edge.signal === signal)).toBe(true);
+}
+
+function expectMuxSelector(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
+  expect(mux).toBeDefined();
+  expect(module.edges.some((edge) => (
+    edge.source === `port:${module.name}:${signal}`
+    && edge.target === mux?.id
+    && edge.signal === signal
+  ))).toBe(true);
 }
 
 function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {
@@ -520,6 +530,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(simple.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
     expectMuxInput(simple, simpleMux, 'a', "1'b1");
     expectMuxInput(simple, simpleMux, 'b', "1'b0");
+    expectMuxSelector(simple, simpleMux, 'sel');
     expectMuxOutput(simple, simpleMux, 'y');
     expect(simple.nodes.some((node) => node.kind === 'comb')).toBe(false);
 
@@ -530,6 +541,8 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expectMuxInput(nested, innerMux, 'a', "1'b1");
     expectMuxInput(nested, innerMux, 'b', "1'b0");
     expectMuxInput(nested, outerMux, 'c', "1'b0");
+    expectMuxSelector(nested, outerMux, 'sel1');
+    expectMuxSelector(nested, innerMux, 'sel2');
     expect(nested.edges.some((edge) => edge.source === innerMux?.id && edge.target === outerMux?.id)).toBe(true);
 
     const embedded = graph.modules.ternary_in_alu;
@@ -538,6 +551,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(embedded.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
     expect(alu).toBeDefined();
     expect(embedded.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expectMuxSelector(embedded, embeddedMux, 'sel');
     expect(embedded.edges.some((edge) => edge.source === embeddedMux?.id && edge.target === alu?.id)).toBe(true);
   });
 
