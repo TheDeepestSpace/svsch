@@ -2283,7 +2283,9 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     });
 
     it('does not fold a partial-range reset loop into a whole-array reset', async () => {
-      const source = fixture('array_multi_index_write_reset_sorts_first.sv').replace('a < 32', 'a < 16');
+      const canonicalSource = fixture('array_multi_index_write_reset_sorts_first.sv');
+      const source = canonicalSource.replace('a < 32', 'a < 16');
+      expect(source).not.toBe(canonicalSource);
       const graph = await runParser(backend, 'array_multi_index_write_reset_sorts_first.sv', source);
       const mod = graph.modules.array_multi_index_write_reset_sorts_first ?? Object.values(graph.modules)[0];
       const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_sorts_first:storage');

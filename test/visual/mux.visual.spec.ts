@@ -944,6 +944,7 @@ test.describe('register visual rendering', () => {
 
     await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
     await expect(page.locator(`[data-node-id="${arrayReg!.id}"] text`, { hasText: 'RV' })).toBeVisible();
+    await expectStackedEdgeSegmentsOrthogonal(page);
     await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-nonzero-canvas.png', { clip: await paddedGraphClip(page) });
   });
 });
