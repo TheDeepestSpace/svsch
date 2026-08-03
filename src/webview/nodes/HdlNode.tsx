@@ -534,7 +534,6 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
         {warningIcon}
       </button>
     );
@@ -571,9 +570,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={{ top: nodeHeight / 2 }} />
         ))}
-        {isArray
-          ? <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {isArray && <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
         {warningIcon}
       </button>
     );
@@ -600,7 +597,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={{ top: nodeHeight / 2 }} />
         ))}
-        <div className="hdl-node-selection-rect" aria-hidden="true" />
+        {isArray && <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
       </button>
     );
