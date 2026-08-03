@@ -8,7 +8,8 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  # Benchmark jobs push default-branch results to gh-pages.
+  contents: write
   packages: write
 
 jobs:
