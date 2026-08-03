@@ -106,8 +106,87 @@ describe('ElaborationService', () => {
     freshBuild.resolve(fresh);
     await expect(stalePromise).resolves.toBe(stale);
     await expect(freshPromise).resolves.toBe(fresh);
-    await expect(service.getGraph()).resolves.toBe(fresh);
+    await expect(service.getGraph(true)).resolves.toBe(fresh);
     expect(createParserOptions).toHaveBeenLastCalledWith({ live: true });
+  });
+
+  it('keeps the fresh graph when a stale build settles last', async () => {
+    const staleBuild = deferred<DesignGraph>();
+    const freshBuild = deferred<DesignGraph>();
+    const build = vi.fn()
+      .mockReturnValueOnce(staleBuild.promise)
+      .mockReturnValueOnce(freshBuild.promise);
+    const { host, invalidate } = createHost(build);
+    const service = new ElaborationService(host);
+
+    const stalePromise = service.getGraph();
+    invalidate(true);
+    const freshPromise = service.getGraph(true);
+    const stale = graph(designModule('stale'));
+    const fresh = graph(designModule('fresh'));
+
+    freshBuild.resolve(fresh);
+    await expect(freshPromise).resolves.toBe(fresh);
+    staleBuild.resolve(stale);
+    await expect(stalePromise).resolves.toBe(stale);
+    await expect(service.getGraph(true)).resolves.toBe(fresh);
+    expect(build).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not share in-flight graphs across live modes', async () => {
+    const savedBuild = deferred<DesignGraph>();
+    const liveBuild = deferred<DesignGraph>();
+    const build = vi.fn()
+      .mockReturnValueOnce(savedBuild.promise)
+      .mockReturnValueOnce(liveBuild.promise);
+    const { host, createParserOptions } = createHost(build);
+    const service = new ElaborationService(host);
+
+    const savedPromise = service.getGraph(false);
+    const livePromise = service.getGraph(true);
+    expect(savedPromise).not.toBe(livePromise);
+    expect(build).toHaveBeenCalledTimes(2);
+
+    const saved = graph(designModule('saved'));
+    const live = graph(designModule('live'));
+    liveBuild.resolve(live);
+    await expect(livePromise).resolves.toBe(live);
+    savedBuild.resolve(saved);
+    await expect(savedPromise).resolves.toBe(saved);
+    await expect(service.getGraph(true)).resolves.toBe(live);
+    expect(createParserOptions.mock.calls).toEqual([
+      [{ live: false }],
+      [{ live: true }]
+    ]);
+  });
+
+  it('rebuilds a cached graph when the requested live mode changes', async () => {
+    const saved = graph(designModule('saved'));
+    const live = graph(designModule('live'));
+    const build = vi.fn()
+      .mockResolvedValueOnce(saved)
+      .mockResolvedValueOnce(live);
+    const { host } = createHost(build);
+    const service = new ElaborationService(host);
+
+    await expect(service.getGraph(false)).resolves.toBe(saved);
+    await expect(service.getGraph(true)).resolves.toBe(live);
+    await expect(service.getGraph(true)).resolves.toBe(live);
+    expect(build).toHaveBeenCalledTimes(2);
+  });
+
+  it('isolates invalidation listener errors', () => {
+    const { host, invalidate } = createHost(vi.fn());
+    const service = new ElaborationService(host);
+    const error = new Error('listener failed');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const secondListener = vi.fn();
+    service.onDidInvalidate(() => { throw error; });
+    service.onDidInvalidate(secondListener);
+
+    expect(() => invalidate(true)).not.toThrow();
+    expect(secondListener).toHaveBeenCalledWith(true);
+    consoleError.mockRestore();
   });
 
   it('shares and caches an on-demand module load', async () => {
@@ -171,5 +250,25 @@ describe('ElaborationService', () => {
 
     service.dispose();
     expect(disposeWatcher).toHaveBeenCalledOnce();
+  });
+
+  it('does not start more work when a module build settles after disposal', async () => {
+    const placeholder = graph(designModule('top', ''));
+    const loaded = graph(designModule('top'));
+    const moduleBuild = deferred<DesignGraph>();
+    const build = vi.fn()
+      .mockResolvedValueOnce(placeholder)
+      .mockReturnValueOnce(moduleBuild.promise);
+    const { host } = createHost(build);
+    const service = new ElaborationService(host);
+
+    const modulePromise = service.getModule('top');
+    await vi.waitFor(() => expect(build).toHaveBeenCalledTimes(2));
+    service.dispose();
+    moduleBuild.resolve(loaded);
+
+    await expect(modulePromise).rejects.toThrow('Elaboration service is disposed.');
+    expect(build).toHaveBeenCalledTimes(2);
+    await expect(service.getGraph()).rejects.toThrow('Elaboration service is disposed.');
   });
 });

@@ -49,7 +49,7 @@ export class DiagramPanel {
     private readonly onDispose: () => void
   ) {
     this.elaborationInvalidationDisposable = elaborationService.onDidInvalidate((live) => {
-      if (workspaceRootPath()) {
+      if (this.panel && workspaceRootPath()) {
         void this.consumeGraph(elaborationService.getGraph(live));
       }
     });
@@ -111,16 +111,31 @@ export class DiagramPanel {
       vscode.window.showWarningMessage('SVSCH requires an open workspace folder.');
       return;
     }
-    await this.consumeGraph(this.elaborationService.refresh(live));
+    if (!this.panel) {
+      return;
+    }
+    await this.elaborationService.refresh(live).catch(() => undefined);
   }
 
   private async consumeGraph(graphPromise: Promise<DesignGraph>): Promise<void> {
     const version = ++this.rebuildVersion;
     await this.postStatus('rebuilding');
 
-    let graph: DesignGraph;
     try {
-      graph = await graphPromise;
+      const graph = await graphPromise;
+      if (version !== this.rebuildVersion) {
+        return;
+      }
+      this.graph = graph;
+
+      this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
+        ? this.currentModule
+        : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
+
+      const currentModule = this.currentModule ? this.graph.modules[this.currentModule] : undefined;
+      if (this.currentModule && currentModule && isListOnlyPlaceholder(currentModule)) {
+        await this.loadModule(this.currentModule, version);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Rebuild failed: ${message}`, error);
@@ -128,19 +143,6 @@ export class DiagramPanel {
         await this.postStatus('idle');
       }
       return;
-    }
-
-    if (version !== this.rebuildVersion) {
-      return;
-    }
-    this.graph = graph;
-
-    this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
-      ? this.currentModule
-      : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
-
-    if (this.currentModule && isListOnlyPlaceholder(this.graph.modules[this.currentModule])) {
-      await this.loadModule(this.currentModule, version);
     }
 
     if (version !== this.rebuildVersion) {

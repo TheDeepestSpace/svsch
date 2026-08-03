@@ -31,9 +31,12 @@ export class ElaborationService implements Disposable {
   private readonly invalidationListeners = new Set<(live: boolean) => void>();
   private readonly watcher: InvalidationWatcher;
   private graph?: DesignGraph;
+  private graphMode?: boolean;
   private graphPromise?: Promise<DesignGraph>;
+  private graphPromiseMode?: boolean;
   private readonly modulePromises = new Map<string, Promise<DesignGraph>>();
   private generation = 0;
+  private disposed = false;
 
   constructor(private readonly host: ElaborationServiceHost) {
     this.watcher = host.watch((live) => this.invalidate(live));
@@ -48,31 +51,46 @@ export class ElaborationService implements Disposable {
 
   /** Returns the cached graph, sharing an in-flight build when necessary. */
   getGraph(live = false): Promise<DesignGraph> {
-    if (this.graph) {
+    if (this.disposed) {
+      return Promise.reject(new Error('Elaboration service is disposed.'));
+    }
+    if (this.graph && this.graphMode === live) {
       return Promise.resolve(this.graph);
     }
-    if (this.graphPromise) {
+    if (this.graphPromise && this.graphPromiseMode === live) {
       return this.graphPromise;
     }
 
-    const generation = this.generation;
+    const generation = ++this.generation;
+    this.graph = undefined;
+    this.graphMode = undefined;
+    this.modulePromises.clear();
     const buildPromise = this.buildFullGraph(live);
     const promise: Promise<DesignGraph> = buildPromise.then((graph) => {
+      if (this.disposed) {
+        throw new Error('Elaboration service is disposed.');
+      }
       if (generation === this.generation) {
         this.graph = graph;
+        this.graphMode = live;
       }
       return graph;
     }).finally(() => {
       if (this.graphPromise === promise) {
         this.graphPromise = undefined;
+        this.graphPromiseMode = undefined;
       }
     });
     this.graphPromise = promise;
+    this.graphPromiseMode = live;
     return promise;
   }
 
   /** Invalidates the current result and starts one shared replacement build. */
   refresh(live = false): Promise<DesignGraph> {
+    if (this.disposed) {
+      return Promise.reject(new Error('Elaboration service is disposed.'));
+    }
     this.watcher.cancelPending();
     this.invalidate(live);
     return this.getGraph(live);
@@ -83,7 +101,13 @@ export class ElaborationService implements Disposable {
    * Concurrent panels asking for the same module share the backend invocation.
    */
   async getModule(moduleName: string): Promise<DesignGraph> {
+    if (this.disposed) {
+      throw new Error('Elaboration service is disposed.');
+    }
     const graph = await this.getGraph();
+    if (this.disposed) {
+      throw new Error('Elaboration service is disposed.');
+    }
     const module = graph.modules[moduleName];
     if (!module || !isListOnlyPlaceholder(module)) {
       return graph;
@@ -96,6 +120,9 @@ export class ElaborationService implements Disposable {
 
     const generation = this.generation;
     const promise: Promise<DesignGraph> = this.host.build(this.host.createParserOptions({ moduleName })).then((moduleGraph) => {
+      if (this.disposed) {
+        throw new Error('Elaboration service is disposed.');
+      }
       if (generation !== this.generation) {
         return this.getGraph();
       }
@@ -112,6 +139,7 @@ export class ElaborationService implements Disposable {
         diagnostics: [...currentGraph.diagnostics, ...moduleGraph.diagnostics]
       };
       this.graph = mergedGraph;
+      this.graphMode = false;
       return mergedGraph;
     }).finally(() => {
       if (this.modulePromises.get(moduleName) === promise) {
@@ -124,21 +152,36 @@ export class ElaborationService implements Disposable {
   }
 
   invalidate(live = false): void {
+    if (this.disposed) {
+      return;
+    }
     this.generation += 1;
     this.graph = undefined;
+    this.graphMode = undefined;
     this.graphPromise = undefined;
+    this.graphPromiseMode = undefined;
     this.modulePromises.clear();
     for (const listener of this.invalidationListeners) {
-      listener(live);
+      try {
+        listener(live);
+      } catch (error) {
+        logger.error('Elaboration invalidation listener failed.', error);
+      }
     }
   }
 
   dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
     this.generation += 1;
     this.watcher.dispose();
     this.invalidationListeners.clear();
     this.graph = undefined;
+    this.graphMode = undefined;
     this.graphPromise = undefined;
+    this.graphPromiseMode = undefined;
     this.modulePromises.clear();
   }
 

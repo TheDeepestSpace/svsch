@@ -69,7 +69,7 @@ function resolveSurelogPath(
     }
   }
 
-  const projectPath = findUp(workspaceRoot, path.join('dist', 'surelog', 'bin', 'surelog'));
+  const projectPath = findUp(workspaceRoot, path.join('dist', 'surelog', 'bin', 'surelog'), workspaceRoot);
   if (projectPath) {
     logger.log(`Found packaged surelog at project root: ${projectPath}`);
     return projectPath;
@@ -87,7 +87,7 @@ function resolveBackendPath(context: vscode.ExtensionContext, workspaceRoot: str
     return packagedPath;
   }
 
-  const projectPath = findUp(workspaceRoot, path.join('dist', 'svsch_backend'));
+  const projectPath = findUp(workspaceRoot, path.join('dist', 'svsch_backend'), workspaceRoot);
   if (projectPath) {
     logger.log(`Found backend at project root: ${projectPath}`);
     return projectPath;
@@ -97,21 +97,33 @@ function resolveBackendPath(context: vscode.ExtensionContext, workspaceRoot: str
   return packagedPath;
 }
 
-function findUp(start: string, relativePath: string): string | undefined {
-  let current = start;
-  while (current !== path.dirname(current)) {
+function findUp(start: string, relativePath: string, boundary: string): string | undefined {
+  let current = path.resolve(start);
+  const root = path.resolve(boundary);
+  if (!isWithin(root, current)) {
+    return undefined;
+  }
+
+  while (true) {
     const candidate = path.join(current, relativePath);
     if (fs.existsSync(candidate)) {
       return candidate;
     }
-    current = path.dirname(current);
+    if (current === root) {
+      return undefined;
+    }
+    const parent = path.dirname(current);
+    if (!isWithin(root, parent)) {
+      return undefined;
+    }
+    current = parent;
   }
-  return undefined;
 }
 
 function createSharedWatcher(onDidInvalidate: (live: boolean) => void): InvalidationWatcher {
-  const pattern = new vscode.RelativePattern(workspaceRootPath() ?? '.', '**/*.{sv,v,svh,vh}');
-  const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+  let watcher: vscode.FileSystemWatcher | undefined;
+  let watcherSubscriptions: vscode.Disposable[] = [];
+  let watchedProjectRoot: string | undefined;
   let rebuildTimer: NodeJS.Timeout | undefined;
 
   const schedule = (live: boolean) => {
@@ -124,21 +136,59 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
     }, live ? 350 : 250);
   };
 
+  const disposeWatcher = () => {
+    for (const subscription of watcherSubscriptions) {
+      subscription.dispose();
+    }
+    watcherSubscriptions = [];
+    watcher?.dispose();
+    watcher = undefined;
+    watchedProjectRoot = undefined;
+  };
+
+  const recreateWatcher = () => {
+    disposeWatcher();
+    watchedProjectRoot = projectRootPath();
+    if (!watchedProjectRoot) {
+      return;
+    }
+
+    const pattern = new vscode.RelativePattern(watchedProjectRoot, '**/*.{sv,v,svh,vh}');
+    watcher = vscode.workspace.createFileSystemWatcher(pattern);
+    const onFileEvent = (uri: vscode.Uri) => {
+      if (watchedProjectRoot && isWithin(watchedProjectRoot, uri.fsPath)) {
+        schedule(false);
+      }
+    };
+    watcherSubscriptions = [
+      watcher.onDidCreate(onFileEvent),
+      watcher.onDidChange(onFileEvent),
+      watcher.onDidDelete(onFileEvent)
+    ];
+  };
+
   const subscriptions = [
-    watcher.onDidCreate(() => schedule(false)),
-    watcher.onDidChange(() => schedule(false)),
-    watcher.onDidDelete(() => schedule(false)),
     vscode.workspace.onDidChangeTextDocument((event) => {
-      if (isHdlUri(event.document.uri)) {
+      if (watchedProjectRoot
+        && isHdlUri(event.document.uri)
+        && isWithin(watchedProjectRoot, event.document.uri.fsPath)) {
         schedule(true);
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration('svsch')) {
+        if (event.affectsConfiguration('svsch.projectFolder')) {
+          recreateWatcher();
+        }
         schedule(false);
       }
+    }),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      recreateWatcher();
+      schedule(false);
     })
   ];
+  recreateWatcher();
 
   return {
     cancelPending: () => {
@@ -154,13 +204,22 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
       for (const subscription of subscriptions) {
         subscription.dispose();
       }
-      watcher.dispose();
+      disposeWatcher();
     }
   };
 }
 
 function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
+function projectRootPath(): string | undefined {
+  const workspaceRoot = workspaceRootPath();
+  if (!workspaceRoot) {
+    return undefined;
+  }
+  const projectFolder = vscode.workspace.getConfiguration('svsch').get<string>('projectFolder') || '.';
+  return path.resolve(workspaceRoot, projectFolder);
 }
 
 function isHdlUri(uri: vscode.Uri): boolean {

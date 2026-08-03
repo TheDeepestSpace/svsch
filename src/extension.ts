@@ -9,12 +9,19 @@ let panel: DiagramPanel | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   logger.init();
   logger.log('SVSCH extension activated');
-  const elaborationService = new ElaborationService(createVscodeElaborationHost(context));
-  context.subscriptions.push(elaborationService);
+  let elaborationService: ElaborationService | undefined;
+
+  const getElaborationService = () => {
+    if (!elaborationService) {
+      elaborationService = new ElaborationService(createVscodeElaborationHost(context));
+      context.subscriptions.push(elaborationService);
+    }
+    return elaborationService;
+  };
 
   const getPanel = () => {
     if (!panel) {
-      panel = new DiagramPanel(context, elaborationService, () => {
+      panel = new DiagramPanel(context, getElaborationService(), () => {
         panel = undefined;
       });
     }
