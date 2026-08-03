@@ -169,7 +169,7 @@
       "target": "reg:array_address_write_register:storage",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 672 132 Q 684 144 672 156"
+      "path": "M 552 48 L 672 48 L 672 168 L 744 168"
     },
     {
       "id": "edge:port:array_address_write_register:in_data:mux:array_address_write_register:storage_addr:in_data",
