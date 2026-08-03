@@ -395,6 +395,13 @@ export class BddWorld {
     ready: boolean;
     nodeCount?: number;
     mismatchedModuleNodeIds?: string[];
+    unsettledNodeMeasurements?: Array<{
+      id: string;
+      width?: number;
+      height?: number;
+      expectedWidth?: number;
+      expectedHeight?: number;
+    }>;
     edgeCount?: number;
     edgeElemCount?: number;
     validEdgeCount?: number;
@@ -416,8 +423,35 @@ export class BddWorld {
           return { ready: false, reason: 'moduleName mismatch', nodeCount: nodes.length, mismatchedModuleNodeIds };
         }
 
-        const nodeElems = document.querySelectorAll('.react-flow__node');
+        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
         if (nodeElems.length === 0) return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
+
+        const nodeMap = new Map<string, Element>();
+        for (const el of nodeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) nodeMap.set(id, el);
+        }
+        const unsettledNodeMeasurements = nodes.flatMap((node: any) => {
+          const content = nodeMap.get(node.id)?.querySelector<HTMLElement>('[data-node-id]');
+          const expectedWidth = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-width') ?? '');
+          const expectedHeight = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-height') ?? '');
+          const width = node.measured?.width ?? node.width;
+          const height = node.measured?.height ?? node.height;
+          const settled = content
+            && Number.isFinite(expectedWidth)
+            && Number.isFinite(expectedHeight)
+            && Math.abs(width - expectedWidth) < 0.5
+            && Math.abs(height - expectedHeight) < 0.5;
+          return settled ? [] : [{ id: node.id, width, height, expectedWidth, expectedHeight }];
+        });
+        if (unsettledNodeMeasurements.length > 0) {
+          return {
+            ready: false,
+            reason: 'node dimensions have not settled',
+            nodeCount: nodes.length,
+            unsettledNodeMeasurements,
+          };
+        }
 
         const edges = rf.getEdges();
         if (!edges || edges.length === 0) return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
