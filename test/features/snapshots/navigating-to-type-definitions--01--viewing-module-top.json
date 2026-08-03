@@ -4,7 +4,7 @@
       "id": "cut-label:reg:top:current_state:q:sink:edge:reg:top:current_state:port:top:out_state:out_state",
       "type": "hdl",
       "position": {
-        "x": 720,
+        "x": 1008,
         "y": 48
       },
       "width": 144,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 696,
-        "y": 96
+        "y": 48
       },
       "width": 144,
       "height": 48,
@@ -64,7 +64,7 @@
       "id": "port:top:out_state",
       "type": "hdl",
       "position": {
-        "x": 888,
+        "x": 1176,
         "y": 60
       },
       "width": 192,
@@ -118,7 +118,7 @@
       "target": "port:top:out_state",
       "sourceHandle": "cut",
       "targetHandle": "port:out_state",
-      "path": "M 864 72 L 864 72 L 888 72 L 888 72"
+      "path": "M 1152 72 L 1152 72 L 1176 72 L 1176 72"
     },
     {
       "id": "cut-stub:reg:top:current_state:q:source",
@@ -126,7 +126,7 @@
       "target": "cut-label:reg:top:current_state:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 672 72 L 672 72 L 696 72 L 696 120 L 696 120"
+      "path": "M 672 72 L 672 72 L 696 72 L 696 72"
     },
     {
       "id": "edge:port:top:in_state:reg:top:current_state:in_state",

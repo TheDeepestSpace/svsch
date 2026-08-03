@@ -5,7 +5,7 @@ import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -802,16 +802,12 @@ export class DiagramPanel {
       if (isFirstOpen) {
         const designModule = graph.modules[moduleName];
         if (designModule) {
-          const initialView = await buildViewModel(graph, moduleName, this.layout);
-          if (!isCurrentView()) {
-            return;
-          }
           const includeClockAndReset = vscode.workspace
             .getConfiguration('svsch')
             .get<boolean>('autocut-clk-reset', true);
           const edges = firstOpenAutoCutEdges(designModule, includeClockAndReset);
           if (edges.length > 0) {
-            this.layout = mergeNetCuts(this.layout, moduleName, edges, designModule, initialView.nodes);
+            this.layout = mergeFirstOpenNetCuts(this.layout, moduleName, edges, designModule);
           }
           await this.persistModuleLayout(store, moduleName);
         }

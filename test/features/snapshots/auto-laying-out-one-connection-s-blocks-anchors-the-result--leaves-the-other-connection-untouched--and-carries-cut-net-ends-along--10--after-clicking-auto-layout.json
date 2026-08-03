@@ -44,8 +44,8 @@
       "id": "cut-label:port:top:b:port:b:sink:edge:port:top:b:instance:top:u2:b",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 312
+        "x": 336,
+        "y": 240
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:port:top:b:port:b:source",
       "type": "hdl",
       "position": {
-        "x": 312,
-        "y": 96
+        "x": 72,
+        "y": 240
       },
       "width": 96,
       "height": 48,
@@ -109,8 +109,8 @@
       "id": "instance:top:u2",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 288
+        "x": 456,
+        "y": 216
       },
       "width": 192,
       "height": 96,
@@ -154,8 +154,8 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 108
+        "x": -72,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -194,8 +194,8 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 696,
-        "y": 324
+        "x": 864,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -234,7 +234,7 @@
       "target": "instance:top:u2",
       "sourceHandle": "cut",
       "targetHandle": "port:a",
-      "path": "M 264 336 L 264 336 L 288 336 L 288 336"
+      "path": "M 432 264 L 432 264 L 456 264 L 456 264"
     },
     {
       "id": "cut-stub:port:top:b:port:b:source",
@@ -242,7 +242,7 @@
       "target": "cut-label:port:top:b:port:b:source",
       "sourceHandle": "port:b",
       "targetHandle": "cut",
-      "path": "M 288 120 L 288 120 L 312 120 L 312 120"
+      "path": "M 48 264 L 48 264 L 72 264 L 72 264"
     },
     {
       "id": "edge:instance:top:u2:port:top:y:y",
@@ -250,7 +250,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 480 336 L 504 336 L 672 336 L 696 336"
+      "path": "M 648 264 L 672 264 L 840 264 L 864 264"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",

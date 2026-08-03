@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -139,6 +139,49 @@ describe('first-open auto-cuts', () => {
 
   it('can disable register control cuts without disabling declared nets', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
+  });
+
+  it('lays out a cut connection as an aligned semantic relationship without pinning pre-cut positions', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
+      ],
+      edges: [
+        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+    expect(cutLayout.modules.top.nodes).toEqual({});
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const source = byId.get('a')!;
+    const target = byId.get('u')!;
+    const sourceLabel = byId.get('cut-label:a:out:source')!;
+    const sinkLabel = byId.get('cut-label:a:out:sink:a-u')!;
+    const sourceBounds = boundsOf(source);
+    const targetBounds = boundsOf(target);
+    const sourceLabelBounds = boundsOf(sourceLabel);
+    const sinkLabelBounds = boundsOf(sinkLabel);
+
+    expect(sourceBounds.x + sourceBounds.width).toBeLessThan(sourceLabelBounds.x);
+    expect(sourceLabelBounds.x + sourceLabelBounds.width).toBeLessThan(sinkLabelBounds.x);
+    expect(sinkLabelBounds.x + sinkLabelBounds.width).toBeLessThan(targetBounds.x);
+    expect(sourceLabelBounds.y).toBe(sinkLabelBounds.y);
   });
 });
 

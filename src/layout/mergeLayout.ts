@@ -78,7 +78,14 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   // The generate-block wrappers are derived from their arms, so keep them out of the ELK /
   // packing layout (arms fall back to roots) and only add their bounds in positionGenerateRegions.
   const armRegions = generateRegions.filter((region) => !region.isGenerateBlock);
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, armRegions, netCutPortMargins(designModule, activeCuts));
+  const elkLayout = await autoLayoutMissingNodes(
+    designModule.nodes,
+    routedDesignEdges,
+    moduleLayout,
+    armRegions,
+    netCutPortMargins(designModule, activeCuts),
+    designModule.edges
+  );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
@@ -1064,7 +1071,8 @@ async function autoLayoutMissingNodes(
   edges: DiagramEdge[],
   moduleLayout: SavedModuleLayout,
   generateRegions: GenerateRegion[] = [],
-  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map()
+  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
+  placementEdges: DiagramEdge[] = edges
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
@@ -1090,7 +1098,11 @@ async function autoLayoutMissingNodes(
           useSavedPosition: true,
           extraPortMargins: netCutMargins.get(node.id)
         })),
-      edges: buildNodePlacementElkEdges(edges, nodeIds)
+      // A cut removes its rendered/routed wire, not the semantic relationship
+      // between the endpoints. Keep those original edges in this placement
+      // pass so ELK still layers the connected blocks together; the routing
+      // pass below continues to receive only the visible, uncut edges.
+      edges: buildNodePlacementElkEdges(placementEdges, nodeIds)
     });
 
     if (useCompoundGenerateLayout) {
@@ -1108,10 +1120,10 @@ async function autoLayoutMissingNodes(
         }
       }
     }
-    alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+    alignSimpleLeafNodes(nodes, placementEdges, positions, moduleLayout);
     if (!useCompoundGenerateLayout) {
       enforceMinimumBlockGaps(nodes, positions, moduleLayout);
-      alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
+      alignSimpleLeafNodes(nodes, placementEdges, positions, moduleLayout);
     }
 
     const fixedRoutePositions = new Map<string, { x: number; y: number }>();
@@ -2746,12 +2758,12 @@ function netCutOrigin(edge: DiagramEdge, label: string): 'declared' | 'synthetic
   return edge.metadata?.declaredNetName && edge.metadata.declaredNetName === label ? 'declared' : 'synthetic';
 }
 
-export function mergeNetCut(
+function mergeNetCutState(
   layout: SavedLayout,
   moduleName: string,
   edge: DiagramEdge,
   designModule: DesignModule,
-  nodes: PositionedNode[]
+  nodes?: PositionedNode[]
 ): SavedLayout {
   const netKey = edgeNetKey(edge);
   const existing = layout.modules[moduleName] ?? { nodes: {} };
@@ -2759,15 +2771,15 @@ export function mergeNetCut(
     return layout;
   }
 
-  // Freeze every *real* node currently on screen so cutting this net doesn't
-  // disturb the rest of the diagram — but leave any other net-cut label's own
-  // fixed state exactly as it was: it was never meant to be pinned just
-  // because an unrelated net got cut while it happened to be visible.
-  const frozenNodes = nodes.map((node) => ({
-    ...node,
-    fixed: node.kind === 'netLabel' ? node.fixed : true
-  }));
-  const next = mergeNodePositions(layout, moduleName, frozenNodes);
+  // A manual cut freezes every real node currently on screen so the operation
+  // does not disturb an established layout. First-open automatic cuts omit
+  // `nodes`, allowing ELK to compute the initial layout with the cuts active.
+  const next = nodes
+    ? mergeNodePositions(layout, moduleName, nodes.map((node) => ({
+      ...node,
+      fixed: node.kind === 'netLabel' ? node.fixed : true
+    })))
+    : { version: 1 as const, modules: { ...layout.modules } };
   const nextModule = next.modules[moduleName] ?? { nodes: {} };
   const label = defaultNetCutLabel(edge, designModule, nextModule);
   next.modules[moduleName] = {
@@ -2789,6 +2801,16 @@ export function mergeNetCut(
   return next;
 }
 
+export function mergeNetCut(
+  layout: SavedLayout,
+  moduleName: string,
+  edge: DiagramEdge,
+  designModule: DesignModule,
+  nodes: PositionedNode[]
+): SavedLayout {
+  return mergeNetCutState(layout, moduleName, edge, designModule, nodes);
+}
+
 // Cuts every one of the given edges' nets in one pass (used when the user
 // batch-cuts a multi-wire selection), sharing a single node-position freeze so
 // the rest of the diagram doesn't get re-frozen/re-read once per edge.
@@ -2801,6 +2823,19 @@ export function mergeNetCuts(
 ): SavedLayout {
   return edges.reduce(
     (acc, edge) => mergeNetCut(acc, moduleName, edge, designModule, nodes),
+    layout
+  );
+}
+
+/** Adds first-open cuts without pinning a pre-cut set of node positions. */
+export function mergeFirstOpenNetCuts(
+  layout: SavedLayout,
+  moduleName: string,
+  edges: DiagramEdge[],
+  designModule: DesignModule
+): SavedLayout {
+  return edges.reduce(
+    (acc, edge) => mergeNetCutState(acc, moduleName, edge, designModule),
     layout
   );
 }

@@ -30,7 +30,7 @@
       "id": "cut-label:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:sink:edge:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 960,
         "y": 408
       },
       "width": 96,
@@ -70,7 +70,7 @@
       "id": "cut-label:instance:top:g_case_0.u_case_0:port:y:sink:edge:instance:top:g_case_0.u_case_0:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 960,
         "y": 456
       },
       "width": 96,
@@ -110,7 +110,7 @@
       "id": "cut-label:instance:top:g_case_1.u_case_1:port:y:sink:edge:instance:top:g_case_1.u_case_1:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 960,
         "y": 360
       },
       "width": 96,
@@ -262,7 +262,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 888,
+        "x": 1080,
         "y": 420
       },
       "width": 120,
@@ -286,7 +286,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 864 432 L 864 432 L 888 432 L 888 432",
+      "path": "M 1056 432 L 1056 432 L 1080 432 L 1080 432",
       "inactive": true
     },
     {
@@ -304,7 +304,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 864 480 L 864 480 L 888 480 L 888 432 L 888 432",
+      "path": "M 1056 480 L 1056 480 L 1080 480 L 1080 432 L 1080 432",
       "inactive": true
     },
     {
@@ -322,7 +322,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 864 384 L 864 384 L 888 384 L 888 432 L 888 432",
+      "path": "M 1056 384 L 1056 384 L 1080 384 L 1080 432 L 1080 432",
       "active": true
     },
     {
