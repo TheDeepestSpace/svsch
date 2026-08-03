@@ -129,6 +129,7 @@ function DiagramApp(): React.ReactElement {
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
   const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
   const regionsRef = useRef<PositionedGenerateRegion[]>([]);
+  const dynamicCutLabelIdsByOwnerRef = useRef<Map<string, string[]>>(new Map());
   const [viewport, setViewport] = useState<FlowViewport>({ x: 0, y: 0, zoom: 1 });
   // Portal target for floating controls that must paint above node bodies —
   // see InteractionContext.overlayPortalNode for why this is kept separate
@@ -182,14 +183,8 @@ function DiagramApp(): React.ReactElement {
       const owner = nodes.find((node) => node.id === change.id);
       if (!owner || owner.data.node.kind === 'netLabel') continue;
 
-      for (const edge of view?.edges ?? []) {
-        const cutStub = edge.metadata?.cutStub;
-        const labelId = cutStub?.role === 'source' && edge.source === owner.id
-          ? edge.target
-          : cutStub?.role === 'sink' && edge.target === owner.id
-            ? edge.source
-            : undefined;
-        if (!labelId || changedIds.has(labelId) || followers.has(labelId)) continue;
+      for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
+        if (changedIds.has(labelId) || followers.has(labelId)) continue;
 
         const label = nodes.find((node) => node.id === labelId);
         if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
@@ -227,7 +222,7 @@ function DiagramApp(): React.ReactElement {
     }
 
     onNodesChangeRaw([...adjusted, ...followers.values()]);
-  }, [nodes, onNodesChangeRaw, view]);
+  }, [nodes, onNodesChangeRaw]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
@@ -420,10 +415,12 @@ function DiagramApp(): React.ReactElement {
 
   useEffect(() => {
     if (!view) {
+      dynamicCutLabelIdsByOwnerRef.current = new Map();
       return;
     }
     const nodeById = new Map(view.nodes.map((node) => [node.id, node]));
     const arrayConnectionsByNode = new Map<string, ArrayStackConnection[]>();
+    const dynamicCutLabelIdsByOwner = new Map<string, string[]>();
     const addArrayConnection = (nodeId: string, connection: ArrayStackConnection) => {
       const list = arrayConnectionsByNode.get(nodeId) ?? [];
       if (!list.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
@@ -431,8 +428,21 @@ function DiagramApp(): React.ReactElement {
       }
       arrayConnectionsByNode.set(nodeId, list);
     };
+    const addDynamicCutLabel = (ownerId: string, labelId: string) => {
+      const label = nodeById.get(labelId);
+      if (label?.kind !== 'netLabel' || label.fixed) return;
+      const labelIds = dynamicCutLabelIdsByOwner.get(ownerId) ?? [];
+      if (!labelIds.includes(labelId)) labelIds.push(labelId);
+      dynamicCutLabelIdsByOwner.set(ownerId, labelIds);
+    };
 
     view.edges.forEach((edge) => {
+      const cutStub = edge.metadata?.cutStub;
+      if (cutStub?.role === 'source') {
+        addDynamicCutLabel(edge.source, edge.target);
+      } else if (cutStub?.role === 'sink') {
+        addDynamicCutLabel(edge.target, edge.source);
+      }
       if (!edge.isStacked) {
         return;
       }
@@ -453,6 +463,7 @@ function DiagramApp(): React.ReactElement {
         addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
     });
+    dynamicCutLabelIdsByOwnerRef.current = dynamicCutLabelIdsByOwner;
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;

@@ -1155,6 +1155,71 @@ describe('layout merge', () => {
     expect(relocatedSource.position).not.toEqual(sourceLabel.position);
   });
 
+  it('falls back when the bounded cut-label collision search finds no clear spot', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+    const baseline = await buildViewModel(fanoutGraph, 'top', layout);
+    const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    const blocker: DiagramNode = {
+      id: 'blocker',
+      kind: 'instance',
+      label: 'blocker'.repeat(40),
+      ports: Array.from({ length: 80 }, (_, index) => ({
+        id: `in-${index}`,
+        name: `in-${index}`,
+        direction: 'input' as const
+      }))
+    };
+    const blockerSize = diagramNodeDimensions(blocker);
+    const sourceLabelSize = diagramNodeDimensions(sourceLabel);
+    const graphWithBlocker: DesignGraph = {
+      ...fanoutGraph,
+      modules: {
+        top: {
+          ...fanoutGraph.modules.top,
+          nodes: [...fanoutGraph.modules.top.nodes, blocker]
+        }
+      }
+    };
+    const blockedLayout: SavedLayout = {
+      ...layout,
+      modules: {
+        top: {
+          ...layout.modules.top,
+          nodes: {
+            ...layout.modules.top.nodes,
+            blocker: {
+              x: sourceLabel.position.x - (blockerSize.width - sourceLabelSize.width) / 2,
+              y: sourceLabel.position.y - (blockerSize.height - sourceLabelSize.height) / 2,
+              fixed: true
+            }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
+    const blockedSource = view.nodes.find((node) => node.id === sourceLabel.id)!;
+    const positionedBlocker = view.nodes.find((node) => node.id === blocker.id)!;
+    // The oversized blocker covers every candidate within the search bound.
+    // Remaining overlapped confirms that resolution fell back instead of
+    // continuing outward until it eventually escaped the blocker.
+    expect(boxesOverlap(boundsOf(blockedSource), boundsOf(positionedBlocker))).toBe(true);
+  });
+
   it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {
     const declaredFanoutGraph: DesignGraph = {
       ...fanoutGraph,

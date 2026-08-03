@@ -838,7 +838,12 @@ function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: Pos
       const side = node.metadata?.cutNet?.handleSide;
       const moveVertically = side === 'left' || side === 'right';
       const overlapsDesignNode = overlaps(position, designBounds);
-      search: for (let offset = diagramSizing.gridSize; ; offset += diagramSizing.gridSize) {
+      const maxOffset = diagramSizing.gridSize * (designBounds.length + occupiedLabels.length + 8);
+      search: for (
+        let offset = diagramSizing.gridSize;
+        offset <= maxOffset;
+        offset += diagramSizing.gridSize
+      ) {
         const crossAxisCandidates = [1, -1].map((direction) => (
           moveVertically
             ? { x: node.position.x, y: node.position.y + offset * direction }
