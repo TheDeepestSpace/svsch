@@ -1,0 +1,252 @@
+{
+  "nodes": [
+    {
+      "id": "mux:mux_nested_ternary:y_true:ternary",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y_true",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:mux_nested_ternary:y:ternary",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:c",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:sel1",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel1",
+            "name": "sel1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:sel2",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel2",
+            "name": "sel2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_nested_ternary:y",
+      "type": "hdl",
+      "position": {
+        "x": 1032,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:mux:mux_nested_ternary:y_true:ternary:mux:mux_nested_ternary:y:ternary:y_true",
+      "source": "mux:mux_nested_ternary:y_true:ternary",
+      "target": "mux:mux_nested_ternary:y:ternary",
+      "sourceHandle": "out",
+      "targetHandle": "in:true",
+      "path": "M 504 144 L 528 144 L 696 144 L 720 144"
+    },
+    {
+      "id": "edge:mux:mux_nested_ternary:y:ternary:port:mux_nested_ternary:y:y",
+      "source": "mux:mux_nested_ternary:y:ternary",
+      "target": "port:mux_nested_ternary:y",
+      "sourceHandle": "out",
+      "targetHandle": "port:y",
+      "path": "M 816 144 L 840 144 L 1008 144 L 1032 144"
+    },
+    {
+      "id": "edge:port:mux_nested_ternary:a:mux:mux_nested_ternary:y_true:ternary:a",
+      "source": "port:mux_nested_ternary:a",
+      "target": "mux:mux_nested_ternary:y_true:ternary",
+      "sourceHandle": "port:a",
+      "targetHandle": "in:true",
+      "path": "M 144 120 L 168 120 L 264 120 L 264 144 L 336 144 L 360 144"
+    },
+    {
+      "id": "edge:port:mux_nested_ternary:b:mux:mux_nested_ternary:y_true:ternary:b",
+      "source": "port:mux_nested_ternary:b",
+      "target": "mux:mux_nested_ternary:y_true:ternary",
+      "sourceHandle": "port:b",
+      "targetHandle": "in:false",
+      "path": "M 144 168 L 168 168 L 336 168 L 360 168"
+    },
+    {
+      "id": "edge:port:mux_nested_ternary:c:mux:mux_nested_ternary:y:ternary:c",
+      "source": "port:mux_nested_ternary:c",
+      "target": "mux:mux_nested_ternary:y:ternary",
+      "sourceHandle": "port:c",
+      "targetHandle": "in:false",
+      "path": "M 504 216 L 528 216 L 624 216 L 624 168 L 696 168 L 720 168"
+    },
+    {
+      "id": "edge:port:mux_nested_ternary:sel1:mux:mux_nested_ternary:y:ternary:sel1",
+      "source": "port:mux_nested_ternary:sel1",
+      "target": "mux:mux_nested_ternary:y:ternary",
+      "sourceHandle": "port:sel1",
+      "targetHandle": "sel",
+      "path": "M 504 48 L 528 48 L 768 48 L 768 72 L 768 120"
+    },
+    {
+      "id": "edge:port:mux_nested_ternary:sel2:mux:mux_nested_ternary:y_true:ternary:sel2",
+      "source": "port:mux_nested_ternary:sel2",
+      "target": "mux:mux_nested_ternary:y_true:ternary",
+      "sourceHandle": "port:sel2",
+      "targetHandle": "sel",
+      "path": "M 144 48 L 168 48 L 264 48 L 264 72 L 432 72 L 432 120"
+    }
+  ]
+}

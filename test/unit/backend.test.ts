@@ -222,7 +222,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const pathA = generatedInstance(module, 'g_if_one', 'u_path_a');
     const pathB = generatedInstance(module, 'g_if_one', 'u_path_b');
     const expr = regionNodes(module, 'g_if_one').find((node) => (
-      node.kind === 'comb'
+      node.kind === 'mux'
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'sel')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'left_tap')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'right_tap')
@@ -493,6 +493,47 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(midBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'b', 'mid']);
     expect(yBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'c', 'mid', 'y']);
     expect(assignCombChain.edges.some((edge) => edge.source === midBlock?.id && edge.target === yBlock?.id && edge.signal === 'mid')).toBe(true);
+  });
+
+  it('promotes ternary expressions to recursively connected muxes', async () => {
+    const graph = await runParser(backend, [{ file: 'ternary_muxes.sv', text: `
+      module ternary_simple(input logic sel, a, b, output logic y);
+        assign y = sel ? a : b;
+      endmodule
+
+      module ternary_nested(input logic sel1, sel2, a, b, c, output logic y);
+        assign y = sel1 ? (sel2 ? a : b) : c;
+      endmodule
+
+      module ternary_in_alu(input logic sel, a, b, c, output logic y);
+        assign y = a + (sel ? b : c);
+      endmodule
+    ` }]);
+
+    const simple = graph.modules.ternary_simple;
+    const simpleMux = muxesSelectedBy(simple, 'sel')[0];
+    expect(simple.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expectMuxInput(simple, simpleMux, 'a', "1'b1");
+    expectMuxInput(simple, simpleMux, 'b', "1'b0");
+    expectMuxOutput(simple, simpleMux, 'y');
+    expect(simple.nodes.some((node) => node.kind === 'comb')).toBe(false);
+
+    const nested = graph.modules.ternary_nested;
+    const outerMux = muxesSelectedBy(nested, 'sel1')[0];
+    const innerMux = muxesSelectedBy(nested, 'sel2')[0];
+    expect(nested.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
+    expectMuxInput(nested, innerMux, 'a', "1'b1");
+    expectMuxInput(nested, innerMux, 'b', "1'b0");
+    expectMuxInput(nested, outerMux, 'c', "1'b0");
+    expect(nested.edges.some((edge) => edge.source === innerMux?.id && edge.target === outerMux?.id)).toBe(true);
+
+    const embedded = graph.modules.ternary_in_alu;
+    const embeddedMux = muxesSelectedBy(embedded, 'sel')[0];
+    const alu = embedded.nodes.find((node) => node.kind === 'alu');
+    expect(embedded.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expect(alu).toBeDefined();
+    expect(embedded.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expect(embedded.edges.some((edge) => edge.source === embeddedMux?.id && edge.target === alu?.id)).toBe(true);
   });
 
   it('promotes unary bitwise inversions to inverter nodes for scalar and vector signals', async () => {

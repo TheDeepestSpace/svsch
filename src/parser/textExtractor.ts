@@ -38,6 +38,17 @@ interface SignalRef {
   width?: string;
 }
 
+interface ConditionalExpression {
+  condition: string;
+  whenTrue: string;
+  whenFalse: string;
+}
+
+interface PromotedTextExpression {
+  signal: string;
+  width?: string;
+}
+
 interface RegisterTimingInfo {
   clockSignal: string;
   resetSignal?: string;
@@ -889,6 +900,40 @@ function extractContinuousAssigns(
         endLine: match.startLine + lineAt(combined, match.header.length + 1 + assignment.index + assignment[0].length) - 1,
         endColumn: columnAt(combined, match.header.length + 1 + assignment.index + assignment[0].length)
       };
+
+      if (containsConditionalExpression(expression)) {
+        const promoted = promoteTextExpression(
+          match,
+          expression,
+          targetSignal,
+          assignRegex.lastIndex.toString(),
+          modulePorts,
+          combNodes,
+          nodes,
+          signalWidths,
+          edges,
+          sourceRange,
+          signalWidths.get(targetSignal)
+        );
+        const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
+        if (promoted && target) {
+          const source = signalSource(match.name, promoted.signal, modulePorts, [...nodes, ...combNodes]);
+          if (source) {
+            pushUniqueEdge(edges, {
+              id: edgeId(source.nodeId, target.nodeId, targetSignal),
+              source: source.nodeId,
+              target: target.nodeId,
+              sourcePort: source.portId,
+              targetPort: target.portId,
+              label: targetSignal,
+              signal: targetSignal,
+              width: promoted.width ?? signalWidths.get(targetSignal)
+            });
+          }
+        }
+        continue;
+      }
+
       const comb = createCombNode(match, targetSignal, expression, refs, assignRegex.lastIndex.toString(), signalWidths.get(targetSignal), sourceRange);
       combNodes.push(comb);
       connectSignalRefsToNode(edges, match.name, refs, modulePorts, combNodes, [...nodes, ...combNodes], signalWidths, comb.id);
@@ -928,6 +973,271 @@ function extractContinuousAssigns(
   }
 
   return { nodes: combNodes, edges };
+}
+
+function containsConditionalExpression(expression: string): boolean {
+  return parseConditionalExpression(expression) !== undefined
+    || findParenthesizedConditional(expression) !== undefined;
+}
+
+function parseConditionalExpression(expression: string): ConditionalExpression | undefined {
+  const text = stripOuterParentheses(expression);
+  let question = -1;
+  let nestedConditionals = 0;
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let braceDepth = 0;
+  let inString = false;
+
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (char === '"' && text[index - 1] !== '\\') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    if (char === '(') parenDepth++;
+    else if (char === ')') parenDepth--;
+    else if (char === '[') bracketDepth++;
+    else if (char === ']') bracketDepth--;
+    else if (char === '{') braceDepth++;
+    else if (char === '}') braceDepth--;
+
+    if (parenDepth !== 0 || bracketDepth !== 0 || braceDepth !== 0) continue;
+    if (char === '?' && question < 0) {
+      question = index;
+      continue;
+    }
+    if (question < 0) continue;
+    if (char === '?') {
+      nestedConditionals++;
+    } else if (char === ':' && nestedConditionals > 0) {
+      nestedConditionals--;
+    } else if (char === ':') {
+      const condition = text.slice(0, question).trim();
+      const whenTrue = text.slice(question + 1, index).trim();
+      const whenFalse = text.slice(index + 1).trim();
+      if (condition && whenTrue && whenFalse) {
+        return { condition, whenTrue, whenFalse };
+      }
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
+function stripOuterParentheses(expression: string): string {
+  let text = expression.trim();
+  while (text.startsWith('(') && matchingClosingParen(text, 0) === text.length - 1) {
+    text = text.slice(1, -1).trim();
+  }
+  return text;
+}
+
+function matchingClosingParen(expression: string, openingIndex: number): number {
+  let depth = 0;
+  let inString = false;
+  for (let index = openingIndex; index < expression.length; index++) {
+    const char = expression[index];
+    if (char === '"' && expression[index - 1] !== '\\') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === '(') depth++;
+    else if (char === ')' && --depth === 0) return index;
+  }
+  return -1;
+}
+
+function findParenthesizedConditional(expression: string): { start: number; end: number; expression: string } | undefined {
+  const stack: number[] = [];
+  let inString = false;
+  for (let index = 0; index < expression.length; index++) {
+    const char = expression[index];
+    if (char === '"' && expression[index - 1] !== '\\') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === '(') {
+      stack.push(index);
+    } else if (char === ')') {
+      const start = stack.pop();
+      if (start === undefined) continue;
+      const inner = expression.slice(start + 1, index);
+      if (parseConditionalExpression(inner)) {
+        return { start, end: index + 1, expression: inner };
+      }
+    }
+  }
+  return undefined;
+}
+
+function promoteTextExpression(
+  match: ModuleMatch,
+  expression: string,
+  preferredSignal: string,
+  discriminator: string,
+  modulePorts: DiagramPort[],
+  mutableNodes: DiagramNode[],
+  existingNodes: DiagramNode[],
+  signalWidths: Map<string, string>,
+  edges: DesignModule['edges'],
+  sourceRange: { file: string; startLine: number; endLine: number },
+  outputWidth?: string
+): PromotedTextExpression | undefined {
+  const conditional = parseConditionalExpression(expression);
+  if (conditional) {
+    return promoteTextConditional(
+      match,
+      conditional,
+      expression,
+      preferredSignal,
+      discriminator,
+      modulePorts,
+      mutableNodes,
+      existingNodes,
+      signalWidths,
+      edges,
+      sourceRange,
+      outputWidth
+    );
+  }
+
+  const unwrapped = stripOuterParentheses(expression);
+  const selected = parseSelectExpression(unwrapped);
+  if (selected) {
+    ensureBusTap(edges, match.name, modulePorts, mutableNodes, [...existingNodes, ...mutableNodes], signalWidths, selected.base, selected.select);
+    return { signal: selected.signal, width: selected.width };
+  }
+
+  const identifiers = expressionIdentifiers(unwrapped);
+  if (identifiers.length === 1 && isSimpleIdentifierExpression(unwrapped, identifiers[0])) {
+    return { signal: identifiers[0], width: signalWidths.get(identifiers[0]) };
+  }
+
+  if (isLiteralTextExpression(unwrapped)) {
+    const literal = ensureTextLiteralNode(match, unwrapped, mutableNodes, sourceRange);
+    return { signal: literal, width: literalTextWidth(unwrapped) };
+  }
+
+  let rewritten = expression;
+  let embeddedIndex = 0;
+  let embedded = findParenthesizedConditional(rewritten);
+  while (embedded) {
+    const embeddedSignal = `${preferredSignal}_ternary_${embeddedIndex}`;
+    const promoted = promoteTextExpression(
+      match,
+      embedded.expression,
+      embeddedSignal,
+      `${discriminator}_${embeddedIndex}`,
+      modulePorts,
+      mutableNodes,
+      existingNodes,
+      signalWidths,
+      edges,
+      sourceRange
+    );
+    if (!promoted) break;
+    rewritten = `${rewritten.slice(0, embedded.start)}${promoted.signal}${rewritten.slice(embedded.end)}`;
+    embeddedIndex++;
+    embedded = findParenthesizedConditional(rewritten);
+  }
+
+  const refs = expressionSignalRefs(rewritten);
+  if (refs.length === 0) return undefined;
+  const comb = createCombNode(match, preferredSignal, expression, refs, discriminator, outputWidth, sourceRange);
+  mutableNodes.push(comb);
+  connectSignalRefsToNode(edges, match.name, refs, modulePorts, mutableNodes, [...existingNodes, ...mutableNodes], signalWidths, comb.id);
+  return { signal: preferredSignal, width: outputWidth };
+}
+
+function promoteTextConditional(
+  match: ModuleMatch,
+  conditional: ConditionalExpression,
+  expression: string,
+  outputSignal: string,
+  discriminator: string,
+  modulePorts: DiagramPort[],
+  mutableNodes: DiagramNode[],
+  existingNodes: DiagramNode[],
+  signalWidths: Map<string, string>,
+  edges: DesignModule['edges'],
+  sourceRange: { file: string; startLine: number; endLine: number },
+  outputWidth?: string
+): PromotedTextExpression | undefined {
+  const selector = promoteTextExpression(match, conditional.condition, `${outputSignal}_sel`, `${discriminator}_sel`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange);
+  const whenTrue = promoteTextExpression(match, conditional.whenTrue, `${outputSignal}_true`, `${discriminator}_true`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
+  const whenFalse = promoteTextExpression(match, conditional.whenFalse, `${outputSignal}_false`, `${discriminator}_false`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
+  if (!selector || !whenTrue || !whenFalse) return undefined;
+
+  const width = outputWidth ?? whenTrue.width ?? whenFalse.width;
+  const node: DiagramNode = {
+    id: stableId('mux', match.name, outputSignal, 'ternary'),
+    kind: 'mux',
+    label: '',
+    parentModule: match.name,
+    ports: [
+      { id: 'sel', name: 'sel', label: 's', direction: 'input', connectedSignal: selector.signal, width: selector.width },
+      { id: stableId('in', 'true'), name: 'true', label: "1'b1", direction: 'input', connectedSignal: whenTrue.signal, width: whenTrue.width },
+      { id: stableId('in', 'false'), name: 'false', label: "1'b0", direction: 'input', connectedSignal: whenFalse.signal, width: whenFalse.width },
+      { id: stableId('out'), name: outputSignal, direction: 'output', connectedSignal: outputSignal, width }
+    ],
+    metadata: { expression },
+    source: sourceRange
+  };
+  mutableNodes.push(node);
+
+  for (const [value, targetPort] of [[selector, 'sel'], [whenTrue, stableId('in', 'true')], [whenFalse, stableId('in', 'false')]] as const) {
+    const source = signalSource(match.name, value.signal, modulePorts, [...existingNodes, ...mutableNodes]);
+    if (!source) continue;
+    pushUniqueEdge(edges, {
+      id: edgeId(source.nodeId, node.id, targetPort),
+      source: source.nodeId,
+      target: node.id,
+      sourcePort: source.portId,
+      targetPort,
+      label: value.signal,
+      signal: value.signal,
+      width: value.width
+    });
+  }
+
+  return { signal: outputSignal, width };
+}
+
+function isLiteralTextExpression(expression: string): boolean {
+  return /^(?:\d+)?'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]+$/.test(expression)
+    || /^'[01xXzZ]$/.test(expression)
+    || /^\d+$/.test(expression);
+}
+
+function literalTextWidth(expression: string): string | undefined {
+  const sized = expression.match(/^(\d+)'/);
+  if (!sized) return undefined;
+  const width = Number(sized[1]);
+  return width > 1 ? `[${width - 1}:0]` : '[0:0]';
+}
+
+function ensureTextLiteralNode(
+  match: ModuleMatch,
+  literal: string,
+  nodes: DiagramNode[],
+  sourceRange: { file: string; startLine: number; endLine: number }
+): string {
+  if (nodes.some((node) => node.kind === 'literal' && node.label === literal)) return literal;
+  nodes.push({
+    id: stableId('literal', match.name, literal),
+    kind: 'literal',
+    label: literal,
+    parentModule: match.name,
+    ports: [{ id: stableId('out', literal), name: literal, direction: 'output', connectedSignal: literal, width: literalTextWidth(literal) }],
+    source: sourceRange
+  });
+  return literal;
 }
 
 function createCombNode(
@@ -1093,11 +1403,12 @@ function signalSource(
   modulePorts: DiagramPort[],
   nodes: DiagramNode[]
 ): { nodeId: string; portId: string } | undefined {
-  const sourceMux = nodes.find((node) => node.kind === 'mux' && node.ports.some((port) => port.direction === 'output' && port.name === signal));
+  const sourceMux = nodes.find((node) => node.kind === 'mux' && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal));
   if (sourceMux) {
+    const port = sourceMux.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
     return {
       nodeId: sourceMux.id,
-      portId: stableId('out', signal)
+      portId: port.id
     };
   }
 
@@ -1109,11 +1420,12 @@ function signalSource(
     };
   }
 
-  const sourceComb = nodes.find((node) => node.kind === 'comb' && node.ports.some((port) => port.direction === 'output' && port.name === signal));
+  const sourceComb = nodes.find((node) => node.kind === 'comb' && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal));
   if (sourceComb) {
+    const port = sourceComb.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
     return {
       nodeId: sourceComb.id,
-      portId: stableId('out', signal)
+      portId: port.id
     };
   }
 
@@ -1131,6 +1443,18 @@ function signalSource(
     return {
       nodeId: sourceBus.id,
       portId: stableId('out', signal)
+    };
+  }
+
+  const sourceExpressionNode = nodes.find((node) => (
+    node.kind !== 'port'
+    && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal)
+  ));
+  if (sourceExpressionNode) {
+    const port = sourceExpressionNode.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
+    return {
+      nodeId: sourceExpressionNode.id,
+      portId: port.id
     };
   }
 

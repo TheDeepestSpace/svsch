@@ -66,6 +66,81 @@ cases:
               default: y = b;
             endcase
 
+  - id: mux-ternary-operator
+    title: Ternary Operator Mux
+    description: A conditional expression becomes a two-way multiplexer.
+    tags: [mux, combinational, ternary, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic sel,
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = sel ? a : b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux]
+      selectedText: "assign y = sel ? a : b;"
+
+  - id: mux-nested-ternary
+    title: Nested Ternary Muxes
+    description: Nested conditional expressions become cascaded two-way multiplexers.
+    tags: [mux, combinational, ternary, nested, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic sel1,
+          input logic sel2,
+          input logic a,
+          input logic b,
+          input logic c,
+          output logic y
+        );
+          assign y = sel1 ? (sel2 ? a : b) : c;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux]
+      selectedText: "assign y = sel1 ? (sel2 ? a : b) : c;"
+
+  - id: mux-ternary-in-expression
+    title: Ternary Inside an Arithmetic Expression
+    description: A conditional subexpression becomes a mux feeding its containing ALU.
+    tags: [mux, alu, combinational, ternary, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic sel,
+          input logic a,
+          input logic b,
+          input logic c,
+          output logic y
+        );
+          assign y = a + (sel ? b : c);
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: mux
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, mux, alu]
+      selectedText: "sel ? b : c"
+
   - id: select-variable-index
     title: Variable Index Selection
     description: Indexing a bus with a variable index signal becomes a select block.
