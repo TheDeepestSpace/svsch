@@ -1,6 +1,90 @@
 {
   "nodes": [
     {
+      "id": "cut-label:instance:top:g_other.u_other:port:y:sink:edge:instance:top:g_other.u_other:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_other.u_other:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
+      "id": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_zero.u_zero:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
       "id": "instance:top:g_other.u_other",
       "type": "hdl",
       "position": {
@@ -115,21 +199,39 @@
   ],
   "edges": [
     {
-      "id": "edge:instance:top:g_other.u_other:port:top:y:y",
-      "source": "instance:top:g_other.u_other",
+      "id": "cut-stub:instance:top:g_other.u_other:port:y:sink:edge:instance:top:g_other.u_other:port:top:y:y",
+      "source": "cut-label:instance:top:g_other.u_other:port:y:sink:edge:instance:top:g_other.u_other:port:top:y:y",
       "target": "port:top:y",
-      "sourceHandle": "port:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 600 432 L 624 432 L 744 432 L 744 192 L 864 192 L 888 192",
+      "path": "M 864 192 L 864 192 L 888 192 L 888 192",
       "active": true
     },
     {
-      "id": "edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "source": "instance:top:g_zero.u_zero",
-      "target": "port:top:y",
+      "id": "cut-stub:instance:top:g_other.u_other:port:y:source",
+      "source": "instance:top:g_other.u_other",
+      "target": "cut-label:instance:top:g_other.u_other:port:y:source",
       "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 600 432 L 600 432 L 624 432 L 624 432",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
+      "source": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
+      "target": "port:top:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 600 192 L 624 192 L 864 192 L 888 192",
+      "path": "M 864 192 L 864 192 L 888 192 L 888 192",
+      "inactive": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_zero.u_zero:port:y:source",
+      "source": "instance:top:g_zero.u_zero",
+      "target": "cut-label:instance:top:g_zero.u_zero:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 600 192 L 600 192 L 624 192 L 624 192",
       "inactive": true
     },
     {

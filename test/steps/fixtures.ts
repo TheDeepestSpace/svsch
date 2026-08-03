@@ -687,10 +687,18 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   // Reset svsch.projectFolder to a non-existent directory so the extension's
   // file watcher never triggers a successful rebuild during setup.
   // Tests opening the diagram will override this in their open steps.
-  await evaluateInVSCode(_vscode => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
+  await evaluateInVSCode(async _vscode => {
+    const configuration = (_vscode as any).workspace.getConfiguration('svsch');
+    await configuration.update(
+      'autocut-clk-reset',
+      undefined,
+      (_vscode as any).ConfigurationTarget.Workspace
+    );
+    await configuration.update(
+      'projectFolder',
+      './no-sv-files-here',
+      (_vscode as any).ConfigurationTarget.Workspace
+    );
   });
 
   await closeOpenSvschTabs(workbox, evaluateInVSCode);
@@ -699,10 +707,18 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
 });
 
 After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
-  await evaluateInVSCode((_vscode: any) => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
+  await evaluateInVSCode(async (_vscode: any) => {
+    const configuration = _vscode.workspace.getConfiguration('svsch');
+    await configuration.update(
+      'autocut-clk-reset',
+      undefined,
+      _vscode.ConfigurationTarget.Workspace
+    );
+    await configuration.update(
+      'projectFolder',
+      './no-sv-files-here',
+      _vscode.ConfigurationTarget.Workspace
+    );
   }).catch(() => {});
 
   // Clean up .sv files written to bdd-workspace during this scenario

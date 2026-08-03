@@ -1,6 +1,90 @@
 {
   "nodes": [
     {
+      "id": "cut-label:instance:top:g_case_def.u_case_def:port:y:sink:edge:instance:top:g_case_def.u_case_def:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_case_def.u_case_def:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
+      "id": "cut-label:instance:top:g_case_zero.u_case_zero:port:y:sink:edge:instance:top:g_case_zero.u_case_zero:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_case_zero.u_case_zero:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
       "id": "instance:top:g_case_def.u_case_def",
       "type": "hdl",
       "position": {
@@ -115,21 +199,39 @@
   ],
   "edges": [
     {
-      "id": "edge:instance:top:g_case_def.u_case_def:port:top:y:y",
-      "source": "instance:top:g_case_def.u_case_def",
+      "id": "cut-stub:instance:top:g_case_def.u_case_def:port:y:sink:edge:instance:top:g_case_def.u_case_def:port:top:y:y",
+      "source": "cut-label:instance:top:g_case_def.u_case_def:port:y:sink:edge:instance:top:g_case_def.u_case_def:port:top:y:y",
       "target": "port:top:y",
-      "sourceHandle": "port:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 672 432 L 696 432 L 816 432 L 816 192 L 936 192 L 960 192",
+      "path": "M 936 192 L 936 192 L 960 192 L 960 192",
       "active": true
     },
     {
-      "id": "edge:instance:top:g_case_zero.u_case_zero:port:top:y:y",
-      "source": "instance:top:g_case_zero.u_case_zero",
-      "target": "port:top:y",
+      "id": "cut-stub:instance:top:g_case_def.u_case_def:port:y:source",
+      "source": "instance:top:g_case_def.u_case_def",
+      "target": "cut-label:instance:top:g_case_def.u_case_def:port:y:source",
       "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 672 432 L 672 432 L 696 432 L 696 432",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_case_zero.u_case_zero:port:y:sink:edge:instance:top:g_case_zero.u_case_zero:port:top:y:y",
+      "source": "cut-label:instance:top:g_case_zero.u_case_zero:port:y:sink:edge:instance:top:g_case_zero.u_case_zero:port:top:y:y",
+      "target": "port:top:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 672 192 L 696 192 L 936 192 L 960 192",
+      "path": "M 936 192 L 936 192 L 960 192 L 960 192",
+      "inactive": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_case_zero.u_case_zero:port:y:source",
+      "source": "instance:top:g_case_zero.u_case_zero",
+      "target": "cut-label:instance:top:g_case_zero.u_case_zero:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 672 192 L 672 192 L 696 192 L 696 192",
       "inactive": true
     },
     {

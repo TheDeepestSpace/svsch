@@ -57,6 +57,7 @@ Feature: Schematic Observation
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     Then I should see a port node "i"
     And I should see a port node "o"
     And there should be a connection between "i" and "o"
@@ -170,6 +171,7 @@ Feature: Schematic Observation
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     Then I should see a struct node "pkt"
     And there should be a connection from "reg:top:pkt.opcode" port "Q" to "struct_comp:top:pkt" port "opcode"
     And there should be a connection from "struct_comp:top:pkt" port "pkt" to "port:top:flat" port "flat"

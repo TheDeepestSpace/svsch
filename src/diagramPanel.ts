@@ -788,8 +788,8 @@ export class DiagramPanel {
           const edges = firstOpenAutoCutEdges(designModule, includeClockAndReset);
           if (edges.length > 0) {
             this.layout = mergeNetCuts(this.layout, this.currentModule, edges, designModule, initialView.nodes);
-            await this.persistModuleLayout(store, this.currentModule);
           }
+          await this.persistModuleLayout(store, this.currentModule);
         }
       }
     }

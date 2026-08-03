@@ -27,6 +27,132 @@
       "inactive": true
     },
     {
+      "id": "cut-label:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:sink:edge:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:source",
+      "type": "hdl",
+      "position": {
+        "x": 648,
+        "y": 648
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
+      "id": "cut-label:instance:top:g_if_one.u_if_one:port:y:sink:edge:instance:top:g_if_one.u_if_one:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_if_one.u_if_one:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 648,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
+      "id": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:sink:edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 408
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 648,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
       "id": "instance:top:g_if_one.u_if_one",
       "type": "hdl",
       "position": {
@@ -161,30 +287,57 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:port:top:y:y",
-      "source": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
+      "id": "cut-stub:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:sink:edge:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:port:top:y:y",
+      "source": "cut-label:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:sink:edge:comb:top:generate_region:top:else:16:13:2:else__g_if_other_:w:assign:port:top:y:y",
       "target": "port:top:y",
-      "sourceHandle": "out:w",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 624 672 L 648 672 L 768 672 L 768 432 L 888 432 L 912 432",
+      "path": "M 888 432 L 888 432 L 912 432 L 912 432",
       "inactive": true
     },
     {
-      "id": "edge:instance:top:g_if_one.u_if_one:port:top:y:y",
-      "source": "instance:top:g_if_one.u_if_one",
+      "id": "cut-stub:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:source",
+      "source": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
+      "target": "cut-label:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:source",
+      "sourceHandle": "out:w",
+      "targetHandle": "cut",
+      "path": "M 624 672 L 624 672 L 648 672 L 648 672",
+      "inactive": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_if_one.u_if_one:port:y:sink:edge:instance:top:g_if_one.u_if_one:port:top:y:y",
+      "source": "cut-label:instance:top:g_if_one.u_if_one:port:y:sink:edge:instance:top:g_if_one.u_if_one:port:top:y:y",
       "target": "port:top:y",
-      "sourceHandle": "port:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 624 432 L 648 432 L 888 432 L 912 432",
+      "path": "M 888 432 L 888 432 L 912 432 L 912 432",
       "active": true
     },
     {
-      "id": "edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
-      "source": "instance:top:g_if_zero.u_if_zero",
-      "target": "port:top:y",
+      "id": "cut-stub:instance:top:g_if_one.u_if_one:port:y:source",
+      "source": "instance:top:g_if_one.u_if_one",
+      "target": "cut-label:instance:top:g_if_one.u_if_one:port:y:source",
       "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 624 432 L 624 432 L 648 432 L 648 432",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_if_zero.u_if_zero:port:y:sink:edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
+      "source": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:sink:edge:instance:top:g_if_zero.u_if_zero:port:top:y:y",
+      "target": "port:top:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 624 192 L 648 192 L 768 192 L 768 432 L 888 432 L 912 432",
+      "path": "M 888 432 L 888 432 L 912 432 L 912 432",
+      "inactive": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_if_zero.u_if_zero:port:y:source",
+      "source": "instance:top:g_if_zero.u_if_zero",
+      "target": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 624 192 L 624 192 L 648 192 L 648 192",
       "inactive": true
     },
     {

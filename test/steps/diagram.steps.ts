@@ -284,14 +284,53 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
 });
 
 When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
-  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
-  await expect(labelNode).toBeVisible();
+  const labelNodes = cutNetLabelNodes(this.webviewPage, label);
+  await expect(labelNodes.first()).toBeVisible();
   const before = JSON.stringify(await readExtensionLayout(this));
-  // Hover the cut-net label to reveal its tie control, then click it.
-  await labelNode.hover({ force: true });
-  await expect(labelNode.locator('.hdl-net-label-tie')).toBeVisible();
-  await labelNode.locator('.hdl-net-label-tie').click();
+  // Fanout labels can overlap after auto-layout, so use the first label whose
+  // hover action is reachable instead of assuming the first DOM node is clear.
+  let tied = false;
+  for (let index = 0; index < await labelNodes.count(); index += 1) {
+    const labelNode = labelNodes.nth(index);
+    await labelNode.hover({ force: true });
+    const tieButton = labelNode.locator('.hdl-net-label-tie');
+    if (await tieButton.isVisible()) {
+      await tieButton.focus();
+      await tieButton.press('Enter');
+      tied = true;
+      break;
+    }
+  }
+  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
   await waitForLayoutChange(this, before, 'After tie net');
+});
+
+When('I tie back every cut net', async function (this: BddWorld) {
+  const labels = this.webviewPage.locator('[data-node-kind="netLabel"]');
+  while (await labels.count() > 0) {
+    const beforeLayout = JSON.stringify(await readExtensionLayout(this));
+    const beforeCount = await labels.count();
+    let tied = false;
+    for (let index = 0; index < beforeCount; index += 1) {
+      const labelNode = labels.nth(index);
+      await labelNode.hover({ force: true });
+      const tieButton = labelNode.locator('.hdl-net-label-tie');
+      if (await tieButton.isVisible()) {
+        await tieButton.focus();
+        await tieButton.press('Enter');
+        tied = true;
+        break;
+      }
+    }
+    expect(tied, 'No reachable Tie control found for the remaining cut nets').toBe(true);
+    await expect.poll(async () => JSON.stringify(await readExtensionLayout(this)) !== beforeLayout, {
+      timeout: 10_000
+    }).toBe(true);
+    await expect.poll(async () => labels.count(), { timeout: 10_000 }).toBeLessThan(beforeCount);
+  }
+  this.layout = await readExtensionLayout(this);
+  await syncLastViewModel(this, this.lastViewModel?.moduleName);
+  await waitForViewportTransformToSettle(this.webviewPage);
 });
 
 When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {

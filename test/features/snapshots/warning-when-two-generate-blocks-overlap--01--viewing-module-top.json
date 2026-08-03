@@ -1,6 +1,50 @@
 {
   "nodes": [
     {
+      "id": "cut-label:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "type": "hdl",
+      "position": {
+        "x": 816,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
+      "id": "cut-label:instance:top:g_if_on.u_if:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      },
+      "invalid": true,
+      "warningNote": "this block does not belong to a generate arm block"
+    },
+    {
       "id": "instance:top:g_case_def.u_case_def",
       "type": "hdl",
       "position": {
@@ -94,21 +138,30 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "source": "cut-label:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "target": "instance:top:g_case_def.u_case_def",
+      "sourceHandle": "cut",
+      "targetHandle": "port:a",
+      "path": "M 912 192 L 912 192 L 936 192 L 936 192",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_if_on.u_if:port:y:source",
+      "source": "instance:top:g_if_on.u_if",
+      "target": "cut-label:instance:top:g_if_on.u_if:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 600 192 L 600 192 L 624 192 L 624 192",
+      "active": true
+    },
+    {
       "id": "edge:instance:top:g_case_def.u_case_def:port:top:z:z",
       "source": "instance:top:g_case_def.u_case_def",
       "target": "port:top:z",
       "sourceHandle": "port:y",
       "targetHandle": "port:z",
       "path": "M 1176 192 L 1200 192 L 1416 192 L 1440 192"
-    },
-    {
-      "id": "edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
-      "source": "instance:top:g_if_on.u_if",
-      "target": "instance:top:g_case_def.u_case_def",
-      "sourceHandle": "port:y",
-      "targetHandle": "port:a",
-      "path": "M 600 192 L 624 192 L 912 192 L 936 192",
-      "active": true
     },
     {
       "id": "edge:port:top:a:instance:top:g_if_on.u_if:a",

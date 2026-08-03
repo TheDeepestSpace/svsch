@@ -84,6 +84,9 @@ function classifyExternalBlocks(
     const owned = new Set(descendantNodeIds(region, regions));
     const ownedRegionIds = descendantRegionIdSet(region, regions);
     for (const node of nodes) {
+      // Cut-net labels are wire endpoints, not HDL blocks. They commonly sit
+      // across a generate boundary and must not trigger block-overlap warnings.
+      if (node.kind === 'netLabel') continue;
       // A block is "owned" if it's listed in a descendant region, or tagged as belonging
       // to one (generateRegionId) — the tag survives even when a block sits just outside
       // its arm's bounds, so it isn't mistaken for an intruder into its own generate block.

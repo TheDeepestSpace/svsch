@@ -36,6 +36,86 @@
       }
     },
     {
+      "id": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_0_:clk",
+      "type": "hdl",
+      "position": {
+        "x": 264,
+        "y": 312
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
+      "type": "hdl",
+      "position": {
+        "x": 264,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk",
+      "type": "hdl",
+      "position": {
+        "x": 240,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:bus_composition:clk:port:clk:source",
+      "type": "hdl",
+      "position": {
+        "x": 168,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "port:bus_composition:a",
       "type": "hdl",
       "position": {
@@ -228,6 +308,38 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_0_:clk",
+      "source": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_0_:clk",
+      "target": "reg:bus_composition:r[0]",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 360 336 L 360 336 L 384 336 L 384 336"
+    },
+    {
+      "id": "cut-stub:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
+      "source": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
+      "target": "reg:bus_composition:r[1]",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 360 216 L 360 216 L 384 216 L 384 216"
+    },
+    {
+      "id": "cut-stub:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk",
+      "source": "cut-label:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk",
+      "target": "reg:bus_composition:r[3:2]",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 336 96 L 336 96 L 360 96 L 360 96"
+    },
+    {
+      "id": "cut-stub:port:bus_composition:clk:port:clk:source",
+      "source": "port:bus_composition:clk",
+      "target": "cut-label:port:bus_composition:clk:port:clk:source",
+      "sourceHandle": "port:clk",
+      "targetHandle": "cut",
+      "path": "M 144 216 L 144 216 L 168 216 L 168 216"
+    },
+    {
       "id": "edge:bus_comp:bus_composition:r:port:bus_composition:r:r",
       "source": "bus_comp:bus_composition:r",
       "target": "port:bus_composition:r",
@@ -250,30 +362,6 @@
       "sourceHandle": "port:b",
       "targetHandle": "d",
       "path": "M 144 168 L 168 168 L 264 168 L 264 192 L 360 192 L 384 192"
-    },
-    {
-      "id": "edge:port:bus_composition:clk:reg:bus_composition:r_0_:clk",
-      "source": "port:bus_composition:clk",
-      "target": "reg:bus_composition:r[0]",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 144 216 L 168 216 L 336 216 L 336 305 Q 343 312 336 319 L 336 336 L 360 336 L 384 336"
-    },
-    {
-      "id": "edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
-      "source": "port:bus_composition:clk",
-      "target": "reg:bus_composition:r[1]",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 144 216 L 168 216 L 360 216 L 384 216"
-    },
-    {
-      "id": "edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk",
-      "source": "port:bus_composition:clk",
-      "target": "reg:bus_composition:r[3:2]",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 144 216 L 168 216 L 336 216 L 336 199 Q 343 192 336 185 L 336 96 L 360 96"
     },
     {
       "id": "edge:port:bus_composition:sub:reg:bus_composition:r_3:2_:sub",

@@ -102,6 +102,84 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
+  Scenario: Declared nets are automatically cut on first open
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output x, output y);
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see 3 cut net labels named "chip_select"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "a" and "y" should be hidden
+
+  Scenario: Register clock and reset nets are automatically cut on first open
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic rst_n, input logic d, output logic q);
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see 2 cut net labels named "clk"
+    And I should see 2 cut net labels named "rst_n"
+
+  Scenario: Register clock and reset automatic cuts can be disabled
+    Given automatic clock and reset cuts are disabled
+    And I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic rst_n, input logic d, output logic q);
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should not see cut net labels named "clk"
+    And I should not see cut net labels named "rst_n"
+
+  Scenario: Resetting the layout reapplies both automatic cut heuristics
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(
+        input logic clk,
+        input logic rst_n,
+        input logic d,
+        input logic a,
+        output logic q,
+        output logic x,
+        output logic y
+      );
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I tie back the cut net "chip_select"
+    And I tie back the cut net "clk"
+    And I tie back the cut net "rst_n"
+    Then I should not see cut net labels named "chip_select"
+    And I should not see cut net labels named "clk"
+    And I should not see cut net labels named "rst_n"
+    When I reset the layout
+    Then I should see 3 cut net labels named "chip_select"
+    And I should see 2 cut net labels named "clk"
+    And I should see 2 cut net labels named "rst_n"
+
   Scenario: Cutting and tying back a fanout net whose source name is declared in the SV source
     Given I have a file "top.sv" in my workspace:
       """
@@ -113,6 +191,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back the cut net "chip_select"
     And I move the port node "a"
     When I hover the connection between "a" and "x" and click its Cut control
     Then I should see 3 cut net labels named "chip_select"
@@ -199,6 +278,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     And I resize the "g_if_one" generate region on the right side by 3 grid cells
     Then the "g_if_one" generate region should have grown on the right side
     When I resize the "g_if_one" generate region on the right side by -30 grid cells
@@ -333,6 +413,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     Then the diagram should contain exactly 3 generate regions
     And no generate region should be flagged as overlapping
     When I move the "g_if_one" generate region by (0, -3) grid cells
@@ -374,6 +455,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     Then the diagram should contain a "generate if" generate block
     And the diagram should contain a "generate case (MODE)" generate block
     And no generate region should be flagged as overlapping
@@ -415,6 +497,7 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
     Then no generate region should be flagged as overlapping
     And no block should be flagged as overlapping an arm
     When I move the "g_arm" generate region by (0, -3) grid cells
