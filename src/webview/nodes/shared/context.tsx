@@ -14,9 +14,16 @@ export const InteractionContext = React.createContext<{
   // popup, so every selected wire can preview the pending batch action.
   pendingSelectionAction?: SelectionAction;
   setPendingSelectionAction: (action?: SelectionAction) => void;
+  // Portal target for floating controls (selection toolbar, cut-stub Reroute)
+  // that must paint above node bodies. Kept outside react-flow's own
+  // ViewportPortal so the generate-region overlay — which shares that portal
+  // and must stay beneath nodes — isn't forced into the same stacking tier.
+  // See NodeSelectionToolbar for the full rationale.
+  overlayPortalNode: HTMLDivElement | null;
 }>({
   setHovered: () => {},
   selectionHoverActive: false,
   setSelectionHoverActive: () => {},
-  setPendingSelectionAction: () => {}
+  setPendingSelectionAction: () => {},
+  overlayPortalNode: null
 });
