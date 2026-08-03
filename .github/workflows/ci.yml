@@ -18,12 +18,19 @@ jobs:
       ci_image_name: ${{ steps.names.outputs.ci_image_name }}
       dev_image_name: ${{ steps.names.outputs.dev_image_name }}
       vscode_versions: ${{ steps.versions.outputs.vscode_versions }}
+      vscode_versions_latest: ${{ steps.versions.outputs.vscode_versions_latest }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: versions
         run: |
           VERSIONS=$(cat vscode-versions.json | tr -d '\n ' )
           echo "vscode_versions=$VERSIONS" >> $GITHUB_OUTPUT
+          # test_system runs a matrix over every version above; only the
+          # newest (last entry, vscode-versions.json is kept ascending)
+          # reports a diagram-generation benchmark so the gh-pages history
+          # doesn't get 3x noisy/duplicate samples per CI run.
+          LATEST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('vscode-versions.json','utf8')).at(-1))")
+          echo "vscode_versions_latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
       - name: Set lower case image names
         id: names
         run: |
@@ -200,6 +207,8 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    permissions:
+      contents: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -228,6 +237,19 @@ jobs:
 
       - name: Run Visual Tests
         run: npm run test:visual
+
+      - name: Track diagram-generation benchmark (visual)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: visual-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/visual/artifacts/benchmark.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: true
+          fail-on-alert: false
 
       - name: Upload Playwright artifacts
         if: always()
@@ -270,6 +292,8 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    permissions:
+      contents: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -297,6 +321,19 @@ jobs:
       - name: Copy Playwright Results
         if: always()
         run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
+
+      - name: Track diagram-generation benchmark (bdd)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: bdd-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/bdd/artifacts/benchmark.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: true
+          fail-on-alert: false
 
       - name: Upload BDD Artifacts
         if: always()
@@ -335,6 +372,8 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    permissions:
+      contents: write
     strategy:
       matrix:
         vscode_version: ${{ fromJson(needs.prep.outputs.vscode_versions) }}
@@ -355,6 +394,21 @@ jobs:
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
+
+      - name: Track diagram-generation benchmark (system, ${{ matrix.vscode_version }})
+        if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: system-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/system/artifacts/benchmark.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: true
+          fail-on-alert: false
+
       - name: Upload System Test Artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

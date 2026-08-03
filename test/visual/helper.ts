@@ -9,6 +9,7 @@ import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
 import { renderSvg } from '../../src/cli/svgRenderer';
+import { recordBenchmarkSample } from '../benchmarkUtils';
 
 const reactFlowCss = fs.readFileSync(
   require.resolve('@xyflow/react/dist/style.css'),
@@ -27,12 +28,28 @@ export function trackView(page: Page, view: DiagramViewModel): void {
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
+// Timing: "post message -> DOM attached" duration, analogous to the system
+// suite's rebuild->firstGraph interval. Set when postView() posts the graph,
+// resolved once openFixture() sees the graph attach to the DOM, and flushed
+// to disk from expectGraphAndScreenshot() before its snapshot assertion.
+const postViewStartedAt = new WeakMap<Page, number>();
+const pendingDiagramDurationMs = new WeakMap<Page, number>();
+const visualArtifactsDir = path.resolve(__dirname, '../../test-results/visual/artifacts');
+const visualBenchmarkSamplesFile = path.join(visualArtifactsDir, 'diagram-render-samples.log');
+const visualBenchmarkFile = path.join(visualArtifactsDir, 'benchmark.json');
+
 export async function expectGraphAndScreenshot(
   page: Page,
   name: string,
   options?: any
 ) {
   const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
+
+  const pendingDurationMs = pendingDiagramDurationMs.get(page);
+  if (pendingDurationMs !== undefined) {
+    pendingDiagramDurationMs.delete(page);
+    recordBenchmarkSample(visualBenchmarkSamplesFile, visualBenchmarkFile, 'visual-diagram-generation-duration', pendingDurationMs);
+  }
 
   // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
   const jsonName = name.endsWith('.png') ? name.replace('.png', '.json') : `${name}.json`;
@@ -85,6 +102,10 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
                   ? '.generate-region'
                   : '.react-flow__node';
   await page.waitForSelector(readySelector, { state: 'attached' });
+  const postedAt = postViewStartedAt.get(page);
+  if (postedAt !== undefined) {
+    pendingDiagramDurationMs.set(page, Date.now() - postedAt);
+  }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -101,6 +122,7 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
+  postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',

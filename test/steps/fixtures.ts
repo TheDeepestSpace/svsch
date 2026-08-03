@@ -13,6 +13,7 @@ import {
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
+import { recordBenchmarkSample } from '../benchmarkUtils';
 
 type ScreenshotCompareBox = {
   x: number;
@@ -282,6 +283,7 @@ export class BddWorld {
 
   // Root of the VSCode workspace shown in the Explorer during BDD tests.
   static readonly BDD_WORKSPACE = path.resolve(__dirname, '../../test/bdd-workspace');
+  static readonly BDD_ARTIFACTS_DIR = path.resolve(__dirname, '../../test-results/bdd/artifacts');
 
   async _ensureGraphBuilt(): Promise<void> {
     if (this.lastGraph) return;
@@ -350,6 +352,7 @@ export class BddWorld {
     }).catch(() => {});
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
+    const rebuildStartedAt = Date.now();
     // Wait for the busy indicator to appear then disappear (extension is rebuilding).
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'visible', timeout: 10_000 })
@@ -358,6 +361,12 @@ export class BddWorld {
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
+    recordBenchmarkSample(
+      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
+      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'benchmark.json'),
+      'bdd-diagram-generation-duration',
+      Date.now() - rebuildStartedAt
+    );
     await this.workbox.waitForTimeout(500);
   }
 
