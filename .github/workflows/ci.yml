@@ -238,6 +238,13 @@ jobs:
       - name: Run Visual Tests
         run: npm run test:visual
 
+      - &mark_workspace_safe_step
+        name: Mark workspace as a safe git directory
+        # benchmark-action/github-action-benchmark runs git commands against
+        # the checked-out repo; the container user doesn't always own the
+        # workspace files, which trips git's dubious-ownership check.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Track diagram-generation benchmark (visual)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
@@ -322,6 +329,8 @@ jobs:
         if: always()
         run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
 
+      - *mark_workspace_safe_step
+
       - name: Track diagram-generation benchmark (bdd)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
@@ -394,6 +403,10 @@ jobs:
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
+
+      - name: Mark workspace as a safe git directory
+        if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Track diagram-generation benchmark (system, ${{ matrix.vscode_version }})
         if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
