@@ -462,6 +462,20 @@ export class BddWorld {
     }
 
     await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
+    await this.webviewPage.locator('body').evaluate(async () => {
+      const viewportTransform = () => (
+        (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? ''
+      );
+      let previous = viewportTransform();
+      let stableSamples = 0;
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const current = viewportTransform();
+        stableSamples = current !== '' && current === previous ? stableSamples + 1 : 0;
+        previous = current;
+        if (stableSamples >= 5) break;
+      }
+    }).catch(() => {});
   }
 
   async selectedEditorText(): Promise<string | null> {

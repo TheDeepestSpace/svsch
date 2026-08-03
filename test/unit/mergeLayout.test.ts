@@ -1105,6 +1105,56 @@ describe('layout merge', () => {
     }
   });
 
+  it('moves an automatic cut label away from an overlapping design node', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+    const baseline = await buildViewModel(fanoutGraph, 'top', layout);
+    const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    const graphWithBlocker: DesignGraph = {
+      ...fanoutGraph,
+      modules: {
+        top: {
+          ...fanoutGraph.modules.top,
+          nodes: [
+            ...fanoutGraph.modules.top.nodes,
+            { id: 'blocker', kind: 'instance', label: 'blocker', ports: [] }
+          ]
+        }
+      }
+    };
+    const blockedLayout: SavedLayout = {
+      ...layout,
+      modules: {
+        top: {
+          ...layout.modules.top,
+          nodes: {
+            ...layout.modules.top.nodes,
+            blocker: { ...sourceLabel.position, fixed: true }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
+    const blocker = view.nodes.find((node) => node.id === 'blocker')!;
+    const relocatedSource = view.nodes.find((node) => node.id === sourceLabel.id)!;
+    expect(boxesOverlap(boundsOf(relocatedSource), boundsOf(blocker))).toBe(false);
+    expect(relocatedSource.position).not.toEqual(sourceLabel.position);
+  });
+
   it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {
     const declaredFanoutGraph: DesignGraph = {
       ...fanoutGraph,

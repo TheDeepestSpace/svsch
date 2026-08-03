@@ -169,8 +169,65 @@ function DiagramApp(): React.ReactElement {
       }
       return change;
     });
-    onNodesChangeRaw(adjusted);
-  }, [nodes, onNodesChangeRaw]);
+
+    // Dynamic cut labels are derived from their owning port and are not
+    // persisted as fixed nodes. If a dragged owner would run into its stale
+    // local label position, carry the label by the same delta so the node and
+    // stub stay clear until the next extension-host rebuild. Labels that are
+    // already clear remain untouched (and outside unrelated selections).
+    const changedIds = new Set(adjusted.map((change) => change.id));
+    const followers = new Map<string, any>();
+    for (const change of adjusted) {
+      if (change.type !== 'position' || !change.position) continue;
+      const owner = nodes.find((node) => node.id === change.id);
+      if (!owner || owner.data.node.kind === 'netLabel') continue;
+
+      for (const edge of view?.edges ?? []) {
+        const cutStub = edge.metadata?.cutStub;
+        const labelId = cutStub?.role === 'source' && edge.source === owner.id
+          ? edge.target
+          : cutStub?.role === 'sink' && edge.target === owner.id
+            ? edge.source
+            : undefined;
+        if (!labelId || changedIds.has(labelId) || followers.has(labelId)) continue;
+
+        const label = nodes.find((node) => node.id === labelId);
+        if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
+        const ownerSize = diagramNodeDimensions(owner.data.node);
+        const labelSize = diagramNodeDimensions(label.data.node);
+        const ownerBounds = {
+          x: change.position.x - diagramSizing.gridSize,
+          y: change.position.y - diagramSizing.gridSize,
+          width: ownerSize.width + diagramSizing.gridSize * 2,
+          height: ownerSize.height + diagramSizing.gridSize * 2
+        };
+        const labelBounds = {
+          x: label.position.x,
+          y: label.position.y,
+          width: labelSize.width,
+          height: labelSize.height
+        };
+        const wouldOverlap = (
+          ownerBounds.x < labelBounds.x + labelBounds.width
+          && labelBounds.x < ownerBounds.x + ownerBounds.width
+          && ownerBounds.y < labelBounds.y + labelBounds.height
+          && labelBounds.y < ownerBounds.y + ownerBounds.height
+        );
+        if (!wouldOverlap) continue;
+        followers.set(labelId, {
+          type: 'position',
+          id: labelId,
+          position: {
+            x: label.position.x + change.position.x - owner.position.x,
+            y: label.position.y + change.position.y - owner.position.y
+          },
+          dragging: change.dragging
+        });
+      }
+    }
+
+    onNodesChangeRaw([...adjusted, ...followers.values()]);
+  }, [nodes, onNodesChangeRaw, view]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
@@ -1068,7 +1125,13 @@ function NodeSelectionToolbar({
       if (edge.selected !== true) continue;
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
-      for (const endpointId of [edge.source, edge.target]) {
+      const endpointIds = [edge.source, edge.target];
+      const touchesSelectedBlock = endpointIds.some((endpointId) => (
+        selectedIds.has(endpointId)
+        && nodesById.get(endpointId)?.data.node.kind !== 'netLabel'
+      ));
+      if (!touchesSelectedBlock) continue;
+      for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
           selectedIds.add(endpointId);
         }

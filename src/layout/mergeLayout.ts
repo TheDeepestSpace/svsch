@@ -787,46 +787,73 @@ function buildNetCutProjection(
     }
   }
 
-  return { nodes: resolveCutLabelCollisions(nodes), edges };
+  return { nodes: resolveCutLabelCollisions(nodes, positionedNodes), edges };
 }
 
-function resolveCutLabelCollisions(nodes: PositionedNode[]): PositionedNode[] {
+interface NodeBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function nodeBounds(node: PositionedNode, position = node.position): NodeBounds {
+  const dimensions = diagramNodeDimensions(node);
+  return { ...position, width: dimensions.width, height: dimensions.height };
+}
+
+function boundsOverlap(a: NodeBounds, b: NodeBounds): boolean {
+  return (
+    a.x < b.x + b.width
+    && b.x < a.x + a.width
+    && a.y < b.y + b.height
+    && b.y < a.y + a.height
+  );
+}
+
+function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: PositionedNode[]): PositionedNode[] {
   // Preserve user-pinned labels, then move automatic labels along their
-  // handle's cross-axis until every label has a distinct footprint.
+  // handle's cross-axis until every label has a distinct footprint. If a
+  // label's canonical position hits a design node, also search along the
+  // handle axis so the nearest clear grid position can be used.
   const resolved = new Map<string, PositionedNode>();
-  const occupied: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const designBounds = positionedNodes.map((node) => nodeBounds(node));
+  const occupiedLabels: NodeBounds[] = [];
   const ordered = [...nodes].sort((a, b) => {
     if (Boolean(a.fixed) !== Boolean(b.fixed)) return a.fixed ? -1 : 1;
     return a.id.localeCompare(b.id);
   });
 
   for (const node of ordered) {
-    const dimensions = diagramNodeDimensions(node);
-    const boundsAt = (position: { x: number; y: number }) => ({
-      ...position,
-      width: dimensions.width,
-      height: dimensions.height
-    });
-    const overlapsOccupied = (position: { x: number; y: number }) => {
-      const bounds = boundsAt(position);
-      return occupied.some((other) => (
-        bounds.x < other.x + other.width
-        && other.x < bounds.x + bounds.width
-        && bounds.y < other.y + other.height
-        && other.y < bounds.y + bounds.height
-      ));
+    const overlaps = (position: { x: number; y: number }, occupied: NodeBounds[]) => {
+      const bounds = nodeBounds(node, position);
+      return occupied.some((other) => boundsOverlap(bounds, other));
     };
+    const isBlocked = (position: { x: number; y: number }) => (
+      overlaps(position, designBounds) || overlaps(position, occupiedLabels)
+    );
 
     let position = node.position;
-    if (!node.fixed && overlapsOccupied(position)) {
+    if (!node.fixed && isBlocked(position)) {
       const side = node.metadata?.cutNet?.handleSide;
       const moveVertically = side === 'left' || side === 'right';
+      const overlapsDesignNode = overlaps(position, designBounds);
       search: for (let offset = diagramSizing.gridSize; ; offset += diagramSizing.gridSize) {
-        for (const direction of [1, -1]) {
-          const candidate = moveVertically
+        const crossAxisCandidates = [1, -1].map((direction) => (
+          moveVertically
             ? { x: node.position.x, y: node.position.y + offset * direction }
-            : { x: node.position.x + offset * direction, y: node.position.y };
-          if (!overlapsOccupied(candidate)) {
+            : { x: node.position.x + offset * direction, y: node.position.y }
+        ));
+        const handleAxisCandidates = [1, -1].map((direction) => (
+          moveVertically
+            ? { x: node.position.x + offset * direction, y: node.position.y }
+            : { x: node.position.x, y: node.position.y + offset * direction }
+        ));
+        const candidates = overlapsDesignNode
+          ? [...crossAxisCandidates, ...handleAxisCandidates]
+          : crossAxisCandidates;
+        for (const candidate of candidates) {
+          if (!isBlocked(candidate)) {
             position = candidate;
             break search;
           }
@@ -836,7 +863,7 @@ function resolveCutLabelCollisions(nodes: PositionedNode[]): PositionedNode[] {
 
     const positioned = position === node.position ? node : { ...node, position };
     resolved.set(node.id, positioned);
-    occupied.push(boundsAt(position));
+    occupiedLabels.push(nodeBounds(node, position));
   }
 
   return nodes.map((node) => resolved.get(node.id) ?? node);

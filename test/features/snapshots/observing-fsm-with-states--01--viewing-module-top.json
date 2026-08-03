@@ -105,7 +105,7 @@
       "type": "hdl",
       "position": {
         "x": 504,
-        "y": 312
+        "y": 288
       },
       "width": 96,
       "height": 48,
@@ -145,7 +145,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 120
+        "y": 72
       },
       "width": 96,
       "height": 48,
@@ -568,7 +568,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 552 312 L 552 312 L 552 264 L 552 264"
+      "path": "M 552 288 L 552 288 L 552 264 L 552 264"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",
@@ -584,7 +584,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 936 168 L 936 168 L 936 216 L 936 216"
+      "path": "M 936 120 L 936 120 L 936 216 L 936 216"
     },
     {
       "id": "cut-stub:reg:top:r:q:sink:edge:reg:top:r:port:top:state:state",

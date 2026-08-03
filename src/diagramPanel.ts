@@ -46,6 +46,7 @@ export class DiagramPanel {
   private lastSurelogPath?: string;
   private lastBackendPath?: string;
   private store?: LayoutStore;
+  private postViewQueue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -769,22 +770,42 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async postView(): Promise<void> {
+  private postView(): Promise<void> {
+    const pending = this.postViewQueue.then(() => this.postViewNow());
+    this.postViewQueue = pending.catch(() => {});
+    return pending;
+  }
+
+  private async postViewNow(): Promise<void> {
     if (!this.panel || !this.graph || this.currentModule === undefined) {
       return;
     }
     const panel = this.panel;
     const graph = this.graph;
     const moduleName = this.currentModule;
+    const isCurrentView = () => (
+      this.panel === panel
+      && this.graph === graph
+      && this.currentModule === moduleName
+    );
     const store = this.getStore();
     if (store) {
       const isFirstOpen = !this.layout.modules[moduleName]
         && !(await store.hasModuleLayout(moduleName));
+      if (!isCurrentView()) {
+        return;
+      }
       await this.ensureModuleLayout(store, moduleName);
+      if (!isCurrentView()) {
+        return;
+      }
       if (isFirstOpen) {
         const designModule = graph.modules[moduleName];
         if (designModule) {
           const initialView = await buildViewModel(graph, moduleName, this.layout);
+          if (!isCurrentView()) {
+            return;
+          }
           const includeClockAndReset = vscode.workspace
             .getConfiguration('svsch')
             .get<boolean>('autocut-clk-reset', true);
@@ -797,7 +818,7 @@ export class DiagramPanel {
       }
     }
     const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout);
-    if (this.panel !== panel || this.graph !== graph || this.currentModule !== moduleName) {
+    if (!isCurrentView()) {
       return;
     }
     await panel.webview.postMessage({
