@@ -15,9 +15,12 @@ function muxSelectedBy(module: DesignModule, selector: string): DiagramNode | un
 
 function expectMuxSelector(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
   expect(mux).toBeDefined();
+  const selectorPort = mux?.ports.find((port) => port.name === 'sel');
+  expect(selectorPort).toBeDefined();
   expect(module.edges.some((edge) => (
     edge.source === `port:${module.name}:${signal}`
     && edge.target === mux?.id
+    && edge.targetPort === selectorPort?.id
     && edge.signal === signal
   ))).toBe(true);
 }
@@ -129,5 +132,26 @@ describe('text fallback ternary extraction', () => {
     `);
 
     expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
+  });
+
+  it('does not mistake a scope-resolution operator for the ternary delimiter', () => {
+    const module = extract(`
+      module top(input logic sel, b, output logic y);
+        assign y = sel ? pkg::value : b;
+      endmodule
+    `);
+    const mux = muxSelectedBy(module, 'sel');
+    const scopedArm = module.nodes.find((node) => (
+      node.kind === 'comb' && node.metadata?.expression === 'pkg::value'
+    ));
+
+    expect(mux?.ports.find((port) => port.label === "1'b1")?.connectedSignal).toBe('y_true');
+    expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
+    expect(scopedArm).toBeDefined();
+    expect(module.edges.some((edge) => (
+      edge.source === scopedArm?.id
+      && edge.target === mux?.id
+      && edge.targetPort === 'in:true'
+    ))).toBe(true);
   });
 });

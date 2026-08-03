@@ -1014,6 +1014,10 @@ function parseConditionalExpression(expression: string): ConditionalExpression |
       continue;
     }
     if (question < 0) continue;
+    if (char === ':' && text[index + 1] === ':') {
+      index++;
+      continue;
+    }
     if (char === '?') {
       nestedConditionals++;
     } else if (char === ':' && nestedConditionals > 0) {
