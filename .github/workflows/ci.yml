@@ -8,8 +8,7 @@ on:
   pull_request:
 
 permissions:
-  # Benchmark jobs push default-branch results to gh-pages.
-  contents: write
+  contents: read
   packages: write
 
 jobs:
@@ -209,6 +208,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
+      # The benchmark action pushes default-branch results to gh-pages.
       contents: write
     steps:
       - *checkout_step
@@ -251,7 +251,7 @@ jobs:
         # (e.g. restoring missing port data) during a run, leaving tracked
         # files modified. benchmark-action then fails to switch to gh-pages
         # over a dirty tree, so drop those CI-only changes first.
-        run: git checkout -- .
+        run: git checkout -- test/visual/__screenshots__
 
       - name: Track diagram-generation benchmark (visual)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
@@ -308,6 +308,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
+      # The benchmark action pushes default-branch results to gh-pages.
       contents: write
     steps:
       - *checkout_step
@@ -390,6 +391,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
+      # The benchmark action pushes default-branch results to gh-pages.
       contents: write
     strategy:
       matrix:
