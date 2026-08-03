@@ -208,7 +208,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes results and comments on same-repository PR alerts.
+      # The benchmark action pushes results and comments on same-repository PRs.
       contents: write
       pull-requests: write
     steps:
@@ -264,10 +264,25 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
+          comment-always: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           comment-on-alert: >-
             ${{ github.event_name == 'pull_request' &&
                 github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
+
+      - name: Comment current visual benchmark when no baseline exists
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: >-
+          node scripts/comment-benchmark-fallback.mjs
+          visual-diagram-generation-duration
+          test-results/visual/artifacts/benchmark.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Upload Playwright artifacts
         if: always()
@@ -311,7 +326,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes results and comments on same-repository PR alerts.
+      # The benchmark action pushes results and comments on same-repository PRs.
       contents: write
       pull-requests: write
     steps:
@@ -354,10 +369,25 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
+          comment-always: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           comment-on-alert: >-
             ${{ github.event_name == 'pull_request' &&
                 github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
+
+      - name: Comment current BDD benchmark when no baseline exists
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: >-
+          node scripts/comment-benchmark-fallback.mjs
+          bdd-diagram-generation-duration
+          test-results/bdd/artifacts/benchmark.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Upload BDD Artifacts
         if: always()
@@ -397,7 +427,7 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes results and comments on same-repository PR alerts.
+      # The benchmark action pushes results and comments on same-repository PRs.
       contents: write
       pull-requests: write
     strategy:
@@ -436,10 +466,26 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
+          comment-always: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           comment-on-alert: >-
             ${{ github.event_name == 'pull_request' &&
                 github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
+
+      - name: Comment current system benchmark when no baseline exists
+        if: >-
+          matrix.vscode_version == needs.prep.outputs.vscode_versions_latest &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: >-
+          node scripts/comment-benchmark-fallback.mjs
+          system-diagram-generation-duration
+          test-results/system/artifacts/benchmark.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Upload System Test Artifacts
         if: always()
