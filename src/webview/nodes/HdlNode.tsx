@@ -597,7 +597,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={{ top: nodeHeight / 2 }} />
         ))}
-        {isArray && <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {isArray && <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
         {warningIcon}
       </button>
     );
