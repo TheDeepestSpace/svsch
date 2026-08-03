@@ -625,12 +625,29 @@ function DiagramApp(): React.ReactElement {
 
   return (
     <div className="shell" style={diagramStyle}>
-        {status === 'rebuilding' && (
-          <div className="busy-indicator" role="status" aria-live="polite">
-            <span />
-            Updating
-          </div>
-        )}
+        <div className="status-indicator">
+          {status === 'rebuilding' ? (
+            <div className="busy-indicator" role="status" aria-live="polite">
+              <span />
+              Updating
+            </div>
+          ) : view.diagnostics.length > 0 ? (
+            <Tooltip
+              content={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
+            >
+              {(trigger) => (
+                <div
+                  {...trigger}
+                  className="diagnostics-indicator"
+                  role="status"
+                  aria-label={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
+                >
+                  ⚠
+                </div>
+              )}
+            </Tooltip>
+          ) : null}
+        </div>
         <header className="toolbar">
           <select
             className="vscode-control vscode-select"
@@ -648,15 +665,6 @@ function DiagramApp(): React.ReactElement {
           <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
           <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
         </header>
-        {view.diagnostics.length > 0 && (
-          <aside className="diagnostics">
-            {view.diagnostics.slice(0, 3).map((diagnostic, index) => (
-              <div key={`${diagnostic.message}-${index}`} className={`diagnostic diagnostic-${diagnostic.severity}`}>
-                {diagnostic.message}
-              </div>
-            ))}
-          </aside>
-        )}
         <main className="canvas" key={view.moduleName}>
           <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
           <InteractionContext.Provider value={{
