@@ -208,8 +208,9 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes default-branch results to gh-pages.
+      # The benchmark action pushes results and comments on same-repository PR alerts.
       contents: write
+      pull-requests: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -263,7 +264,9 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
-          comment-on-alert: true
+          comment-on-alert: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
 
       - name: Upload Playwright artifacts
@@ -308,8 +311,9 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes default-branch results to gh-pages.
+      # The benchmark action pushes results and comments on same-repository PR alerts.
       contents: write
+      pull-requests: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -350,7 +354,9 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
-          comment-on-alert: true
+          comment-on-alert: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
 
       - name: Upload BDD Artifacts
@@ -391,8 +397,9 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # The benchmark action pushes default-branch results to gh-pages.
+      # The benchmark action pushes results and comments on same-repository PR alerts.
       contents: write
+      pull-requests: write
     strategy:
       matrix:
         vscode_version: ${{ fromJson(needs.prep.outputs.vscode_versions) }}
@@ -429,7 +436,9 @@ jobs:
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
-          comment-on-alert: true
+          comment-on-alert: >-
+            ${{ github.event_name == 'pull_request' &&
+                github.event.pull_request.head.repo.full_name == github.repository }}
           fail-on-alert: false
 
       - name: Upload System Test Artifacts
