@@ -32,7 +32,11 @@ function expectMuxInput(module: DesignModule, mux: DiagramNode | undefined, sign
 
 function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
   expect(mux).toBeDefined();
-  expect(mux?.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)).toBe(true);
+  expect(mux?.ports.some((port) => (
+    port.direction === 'output'
+    && port.name === 'out'
+    && port.connectedSignal === signal
+  ))).toBe(true);
 }
 
 function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {
@@ -232,6 +236,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(pathA, 'left generated leaf instance').toBeDefined();
     expect(pathB, 'right generated leaf instance').toBeDefined();
     expect(expr, 'generate ternary assignment expression').toBeDefined();
+    expect(expr?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
 
     expectEdge(module, 'port:generate_expression_assign:a', pathA!.id, 'a');
     expectEdge(module, 'port:generate_expression_assign:b', pathB!.id, 'b');

@@ -31,6 +31,7 @@ describe('text fallback ternary extraction', () => {
     expect(module.nodes.some((node) => node.kind === 'comb')).toBe(false);
     expect(mux?.ports.find((port) => port.label === "1'b1")?.connectedSignal).toBe('a');
     expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
+    expect(mux?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
     expect(module.edges.some((edge) => edge.source === 'port:top:a' && edge.target === mux?.id)).toBe(true);
     expect(module.edges.some((edge) => edge.source === 'port:top:b' && edge.target === mux?.id)).toBe(true);
     expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === 'port:top:y')).toBe(true);

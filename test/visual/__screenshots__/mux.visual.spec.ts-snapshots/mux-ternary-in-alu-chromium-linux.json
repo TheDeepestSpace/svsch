@@ -4,7 +4,7 @@
       "id": "alu:mux_ternary_in_alu:y:expr",
       "type": "hdl",
       "position": {
-        "x": 720,
+        "x": 672,
         "y": 24
       },
       "width": 96,
@@ -37,7 +37,7 @@
         "x": 360,
         "y": 96
       },
-      "width": 144,
+      "width": 96,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -59,7 +59,7 @@
           },
           {
             "id": "out",
-            "name": "y_rhs",
+            "name": "out",
             "direction": "output"
           }
         ]
@@ -69,7 +69,7 @@
       "id": "port:mux_ternary_in_alu:a",
       "type": "hdl",
       "position": {
-        "x": 384,
+        "x": 336,
         "y": 36
       },
       "width": 120,
@@ -149,7 +149,7 @@
       "id": "port:mux_ternary_in_alu:y",
       "type": "hdl",
       "position": {
-        "x": 1032,
+        "x": 984,
         "y": 60
       },
       "width": 120,
@@ -173,7 +173,7 @@
       "target": "port:mux_ternary_in_alu:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 816 72 L 840 72 L 1008 72 L 1032 72"
+      "path": "M 768 72 L 792 72 L 960 72 L 984 72"
     },
     {
       "id": "edge:mux:mux_ternary_in_alu:y_rhs:ternary:alu:mux_ternary_in_alu:y:expr:y_rhs",
@@ -181,7 +181,7 @@
       "target": "alu:mux_ternary_in_alu:y:expr",
       "sourceHandle": "out",
       "targetHandle": "rhs",
-      "path": "M 504 144 L 528 144 L 624 144 L 624 96 L 696 96 L 720 96"
+      "path": "M 456 144 L 480 144 L 576 144 L 576 96 L 648 96 L 672 96"
     },
     {
       "id": "edge:port:mux_ternary_in_alu:a:alu:mux_ternary_in_alu:y:expr:a",
@@ -189,7 +189,7 @@
       "target": "alu:mux_ternary_in_alu:y:expr",
       "sourceHandle": "port:a",
       "targetHandle": "lhs",
-      "path": "M 504 48 L 528 48 L 696 48 L 720 48"
+      "path": "M 456 48 L 480 48 L 648 48 L 672 48"
     },
     {
       "id": "edge:port:mux_ternary_in_alu:b:mux:mux_ternary_in_alu:y_rhs:ternary:b",
@@ -213,7 +213,7 @@
       "target": "mux:mux_ternary_in_alu:y_rhs:ternary",
       "sourceHandle": "port:sel",
       "targetHandle": "sel",
-      "path": "M 144 72 L 168 72 L 432 72 L 432 120"
+      "path": "M 144 72 L 168 72 L 408 72 L 408 120"
     }
   ]
 }

@@ -7,7 +7,7 @@
         "x": 360,
         "y": 96
       },
-      "width": 144,
+      "width": 96,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -29,7 +29,7 @@
           },
           {
             "id": "out",
-            "name": "y_true",
+            "name": "out",
             "direction": "output"
           }
         ]
@@ -39,7 +39,7 @@
       "id": "mux:mux_nested_ternary:y:ternary",
       "type": "hdl",
       "position": {
-        "x": 720,
+        "x": 672,
         "y": 96
       },
       "width": 96,
@@ -64,7 +64,7 @@
           },
           {
             "id": "out",
-            "name": "y",
+            "name": "out",
             "direction": "output"
           }
         ]
@@ -114,7 +114,7 @@
       "id": "port:mux_nested_ternary:c",
       "type": "hdl",
       "position": {
-        "x": 384,
+        "x": 336,
         "y": 204
       },
       "width": 120,
@@ -134,7 +134,7 @@
       "id": "port:mux_nested_ternary:sel1",
       "type": "hdl",
       "position": {
-        "x": 384,
+        "x": 336,
         "y": 36
       },
       "width": 120,
@@ -174,7 +174,7 @@
       "id": "port:mux_nested_ternary:y",
       "type": "hdl",
       "position": {
-        "x": 1032,
+        "x": 984,
         "y": 132
       },
       "width": 120,
@@ -198,7 +198,7 @@
       "target": "mux:mux_nested_ternary:y:ternary",
       "sourceHandle": "out",
       "targetHandle": "in:true",
-      "path": "M 504 144 L 528 144 L 696 144 L 720 144"
+      "path": "M 456 144 L 480 144 L 648 144 L 672 144"
     },
     {
       "id": "edge:mux:mux_nested_ternary:y:ternary:port:mux_nested_ternary:y:y",
@@ -206,7 +206,7 @@
       "target": "port:mux_nested_ternary:y",
       "sourceHandle": "out",
       "targetHandle": "port:y",
-      "path": "M 816 144 L 840 144 L 1008 144 L 1032 144"
+      "path": "M 768 144 L 792 144 L 960 144 L 984 144"
     },
     {
       "id": "edge:port:mux_nested_ternary:a:mux:mux_nested_ternary:y_true:ternary:a",
@@ -230,7 +230,7 @@
       "target": "mux:mux_nested_ternary:y:ternary",
       "sourceHandle": "port:c",
       "targetHandle": "in:false",
-      "path": "M 504 216 L 528 216 L 624 216 L 624 168 L 696 168 L 720 168"
+      "path": "M 456 216 L 480 216 L 576 216 L 576 168 L 648 168 L 672 168"
     },
     {
       "id": "edge:port:mux_nested_ternary:sel1:mux:mux_nested_ternary:y:ternary:sel1",
@@ -238,7 +238,7 @@
       "target": "mux:mux_nested_ternary:y:ternary",
       "sourceHandle": "port:sel1",
       "targetHandle": "sel",
-      "path": "M 504 48 L 528 48 L 768 48 L 768 72 L 768 120"
+      "path": "M 456 48 L 480 48 L 720 48 L 720 72 L 720 120"
     },
     {
       "id": "edge:port:mux_nested_ternary:sel2:mux:mux_nested_ternary:y_true:ternary:sel2",
@@ -246,7 +246,7 @@
       "target": "mux:mux_nested_ternary:y_true:ternary",
       "sourceHandle": "port:sel2",
       "targetHandle": "sel",
-      "path": "M 144 48 L 168 48 L 264 48 L 264 72 L 432 72 L 432 120"
+      "path": "M 144 48 L 168 48 L 240 48 L 240 72 L 408 72 L 408 120"
     }
   ]
 }

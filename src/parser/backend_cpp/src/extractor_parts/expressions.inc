@@ -667,11 +667,7 @@ std::string DesignExtractor::promoteMuxExpr(vpiHandle expr, Module& mod, const s
     n.ports.push_back({"true", "input", true_signal, true_width, "1'b1"});
     n.ports.push_back({"false", "input", false_signal, false_width, "1'b0"});
 
-    std::string display_label = out_signal;
-    if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
-        display_label = display_label.substr(0, display_label.size() - 5);
-    }
-    n.ports.push_back({out_signal, "output", out_signal, width, display_label});
+    n.ports.push_back({"out", "output", out_signal, width});
     mod.nodes.push_back(n);
     propagateStruct(mod, preferred_name, out_signal);
     return out_signal;

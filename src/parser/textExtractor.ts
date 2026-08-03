@@ -1184,7 +1184,7 @@ function promoteTextConditional(
       { id: 'sel', name: 'sel', label: 's', direction: 'input', connectedSignal: selector.signal, width: selector.width },
       { id: stableId('in', 'true'), name: 'true', label: "1'b1", direction: 'input', connectedSignal: whenTrue.signal, width: whenTrue.width },
       { id: stableId('in', 'false'), name: 'false', label: "1'b0", direction: 'input', connectedSignal: whenFalse.signal, width: whenFalse.width },
-      { id: stableId('out'), name: outputSignal, direction: 'output', connectedSignal: outputSignal, width }
+      { id: stableId('out'), name: 'out', direction: 'output', connectedSignal: outputSignal, width }
     ],
     metadata: { expression },
     source: sourceRange

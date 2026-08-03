@@ -29,7 +29,7 @@
           },
           {
             "id": "out",
-            "name": "y",
+            "name": "out",
             "direction": "output"
           }
         ]
