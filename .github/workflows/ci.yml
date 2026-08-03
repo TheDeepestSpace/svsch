@@ -245,6 +245,13 @@ jobs:
         # workspace files, which trips git's dubious-ownership check.
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: Discard test-generated snapshot changes
+        # The visual test suite can self-heal committed baseline snapshots
+        # (e.g. restoring missing port data) during a run, leaving tracked
+        # files modified. benchmark-action then fails to switch to gh-pages
+        # over a dirty tree, so drop those CI-only changes first.
+        run: git checkout -- .
+
       - name: Track diagram-generation benchmark (visual)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
