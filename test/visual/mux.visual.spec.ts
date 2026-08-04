@@ -486,6 +486,44 @@ async function expectMuxBodyMasksTopStackLead(page: Page, nodeId: string): Promi
 }
 
 test.describe('mux visual rendering', () => {
+  test('renders a ternary expression as a two-way mux', async ({ page }) => {
+    const view = await openFixture(page, 'mux_ternary.sv');
+
+    expect(view.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('.mux-skin')).toBeVisible();
+    await expect(page.locator('.svsch-mux-select-port >> text=s')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b1')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b0')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'mux-ternary-node.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders nested ternaries as cascaded muxes', async ({ page }) => {
+    const view = await openFixture(page, 'mux_nested_ternary.sv');
+    const muxes = view.nodes.filter((node) => node.kind === 'mux');
+
+    expect(muxes).toHaveLength(2);
+    expect(view.edges.some((edge) => muxes.some((source) => source.id === edge.source) && muxes.some((target) => target.id === edge.target))).toBe(true);
+    await expect(page.locator('[data-node-kind="mux"]')).toHaveCount(2);
+
+    await expectGraphAndScreenshot(page, 'mux-nested-ternary.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a ternary mux feeding its containing ALU', async ({ page }) => {
+    const view = await openFixture(page, 'mux_ternary_in_alu.sv');
+    const mux = view.nodes.find((node) => node.kind === 'mux');
+    const alu = view.nodes.find((node) => node.kind === 'alu');
+
+    expect(mux).toBeDefined();
+    expect(alu).toBeDefined();
+    expect(view.edges.some((edge) => edge.source === mux?.id && edge.target === alu?.id)).toBe(true);
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'mux-ternary-in-alu.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('renders a mux node interpreted from SystemVerilog', async ({ page }) => {
     await openFixture(page, 'mux_only.sv', 'manual');
 
