@@ -83,8 +83,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     routedDesignEdges,
     moduleLayout,
     armRegions,
-    netCutPortMargins(designModule, activeCuts),
-    designModule.edges
+    netCutPortMargins(designModule, activeCuts)
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
@@ -104,7 +103,15 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   const packedGenerateLayout = elkLayout.regionBounds.size > 0
     ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
     : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
-  const positioned = packedGenerateLayout.nodes;
+  // A pristine layout (nothing dragged, nothing released back to Auto Layout
+  // yet — see mergeRelayoutSelection/mergeNodePositions, both of which always
+  // write a `moduleLayout.nodes` entry) is the only state this "free preset"
+  // columnizing applies to; touching the diagram at all opts a module out
+  // until a full Reset clears moduleLayout.nodes and restores it.
+  const isPristineLayout = Object.keys(moduleLayout.nodes).length === 0;
+  const positioned = isPristineLayout
+    ? columnizeFullyCutBoundaryPorts(designModule, activeCutKeys, packedGenerateLayout.nodes)
+    : packedGenerateLayout.nodes;
   const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
   const externalBlockIds = findExternalBlockIds(positionedRegions, positioned);
@@ -615,6 +622,72 @@ function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undef
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+// A module's own top-level I/O ports that lost every edge to a first-open
+// cut (register clock/reset, or any other declared net) have nothing left to
+// place them relative to, so ELK just drops them wherever its isolated-node
+// heuristic lands — usually not near where they'd read best. As a one-time
+// default arrangement (see the `isPristineLayout` gate at the call site),
+// stack them into two columns flanking the rest of the design instead: every
+// disconnected source-direction port on the left, every disconnected
+// sink-direction port on the right. A port that still carries at least one
+// surviving edge is left exactly where ELK placed it.
+function columnizeFullyCutBoundaryPorts(
+  designModule: DesignModule,
+  activeCutKeys: Set<string>,
+  positioned: PositionedNode[]
+): PositionedNode[] {
+  const edgesByNodeId = new Map<string, DiagramEdge[]>();
+  for (const edge of designModule.edges) {
+    for (const nodeId of [edge.source, edge.target]) {
+      const touching = edgesByNodeId.get(nodeId) ?? [];
+      touching.push(edge);
+      edgesByNodeId.set(nodeId, touching);
+    }
+  }
+  const isFullyCut = (nodeId: string): boolean => {
+    const touching = edgesByNodeId.get(nodeId);
+    return Boolean(touching?.length) && touching!.every((edge) => activeCutKeys.has(edgeNetKey(edge)));
+  };
+
+  const detached = positioned.filter((node) => node.kind === 'port' && isFullyCut(node.id));
+  if (detached.length === 0) {
+    return positioned;
+  }
+
+  const detachedIds = new Set(detached.map((node) => node.id));
+  const bodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)));
+  if (!bodyBounds) {
+    return positioned;
+  }
+
+  const bySide = (side: 'input' | 'output') => detached
+    .filter((node) => (node.ports[0]?.direction === 'output') === (side === 'output'))
+    .sort((a, b) => a.position.y - b.position.y);
+
+  const rowGap = diagramSizing.sameLayerNodeSeparation;
+  const stack = (nodes: PositionedNode[], anchorX: (width: number) => number): Map<string, { x: number; y: number }> => {
+    const result = new Map<string, { x: number; y: number }>();
+    let y = bodyBounds.y;
+    for (const node of nodes) {
+      const size = diagramNodeDimensions(node);
+      result.set(node.id, snapPosition({ x: anchorX(size.width), y }, node.kind, structRole(node)));
+      y += size.height + rowGap;
+    }
+    return result;
+  };
+
+  const columnGap = diagramSizing.columnGap;
+  const overrides = new Map([
+    ...stack(bySide('input'), (width) => bodyBounds.x - columnGap - width),
+    ...stack(bySide('output'), () => bodyBounds.x + bodyBounds.width + columnGap)
+  ]);
+
+  return positioned.map((node) => {
+    const override = overrides.get(node.id);
+    return override ? { ...node, position: override } : node;
+  });
+}
+
 function unionBounds(boundsList: RegionBounds[]): RegionBounds {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -1071,8 +1144,7 @@ async function autoLayoutMissingNodes(
   edges: DiagramEdge[],
   moduleLayout: SavedModuleLayout,
   generateRegions: GenerateRegion[] = [],
-  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
-  placementEdges: DiagramEdge[] = edges
+  netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map()
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
@@ -1098,11 +1170,7 @@ async function autoLayoutMissingNodes(
           useSavedPosition: true,
           extraPortMargins: netCutMargins.get(node.id)
         })),
-      // A cut removes its rendered/routed wire, not the semantic relationship
-      // between the endpoints. Keep those original edges in this placement
-      // pass so ELK still layers the connected blocks together; the routing
-      // pass below continues to receive only the visible, uncut edges.
-      edges: buildNodePlacementElkEdges(placementEdges, nodeIds)
+      edges: buildNodePlacementElkEdges(edges, nodeIds)
     });
 
     if (useCompoundGenerateLayout) {
@@ -1120,10 +1188,10 @@ async function autoLayoutMissingNodes(
         }
       }
     }
-    alignSimpleLeafNodes(nodes, placementEdges, positions, moduleLayout);
+    alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
     if (!useCompoundGenerateLayout) {
       enforceMinimumBlockGaps(nodes, positions, moduleLayout);
-      alignSimpleLeafNodes(nodes, placementEdges, positions, moduleLayout);
+      alignSimpleLeafNodes(nodes, edges, positions, moduleLayout);
     }
 
     const fixedRoutePositions = new Map<string, { x: number; y: number }>();

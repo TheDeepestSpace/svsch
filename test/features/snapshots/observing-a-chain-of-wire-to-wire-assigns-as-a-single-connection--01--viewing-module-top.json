@@ -4,8 +4,8 @@
       "id": "cut-label:port:top:i:port:i:sink:edge:port:top:i:port:top:o:o",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 24
+        "x": 24,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "port:top:o",
       "type": "hdl",
       "position": {
-        "x": 552,
-        "y": 36
+        "x": 144,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -88,7 +88,7 @@
       "target": "port:top:o",
       "sourceHandle": "cut",
       "targetHandle": "port:o",
-      "path": "M 528 48 L 528 48 L 552 48 L 552 48"
+      "path": "M 120 120 L 120 120 L 144 120 L 144 120"
     },
     {
       "id": "cut-stub:port:top:i:port:i:source",

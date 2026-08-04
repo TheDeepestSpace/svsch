@@ -4,8 +4,8 @@
       "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:pkt.opcode:clk",
       "type": "hdl",
       "position": {
-        "x": 432,
-        "y": 72
+        "x": 384,
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:pkt.valid:clk",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 192
+        "x": 408,
+        "y": 264
       },
       "width": 96,
       "height": 48,
@@ -44,8 +44,8 @@
       "id": "cut-label:port:top:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 120
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:struct_comp:top:pkt:out:pkt:sink:edge:struct_comp:top:pkt:port:top:flat:pkt",
       "type": "hdl",
       "position": {
-        "x": 1392,
-        "y": 48
+        "x": 1200,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -84,8 +84,8 @@
       "id": "cut-label:struct_comp:top:pkt:out:pkt:source",
       "type": "hdl",
       "position": {
-        "x": 1128,
-        "y": 48
+        "x": 1080,
+        "y": 120
       },
       "width": 96,
       "height": 48,
@@ -104,8 +104,8 @@
       "id": "port:top:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 132
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -124,8 +124,8 @@
       "id": "port:top:flat",
       "type": "hdl",
       "position": {
-        "x": 1512,
-        "y": 60
+        "x": 1320,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -144,8 +144,8 @@
       "id": "port:top:opcode_i",
       "type": "hdl",
       "position": {
-        "x": 72,
-        "y": 60
+        "x": 24,
+        "y": 132
       },
       "width": 168,
       "height": 24,
@@ -164,8 +164,8 @@
       "id": "port:top:valid_i",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 180
+        "x": 72,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -184,8 +184,8 @@
       "id": "reg:top:pkt.opcode",
       "type": "hdl",
       "position": {
-        "x": 552,
-        "y": 24
+        "x": 504,
+        "y": 96
       },
       "width": 192,
       "height": 96,
@@ -214,8 +214,8 @@
       "id": "reg:top:pkt.valid",
       "type": "hdl",
       "position": {
-        "x": 576,
-        "y": 144
+        "x": 528,
+        "y": 216
       },
       "width": 144,
       "height": 96,
@@ -244,8 +244,8 @@
       "id": "struct_comp:top:pkt",
       "type": "hdl",
       "position": {
-        "x": 960,
-        "y": 48
+        "x": 912,
+        "y": 120
       },
       "width": 144,
       "height": 96,
@@ -278,7 +278,7 @@
       "target": "reg:top:pkt.opcode",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 528 96 L 528 96 L 552 96 L 552 96"
+      "path": "M 480 168 L 480 168 L 504 168 L 504 168"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:pkt.valid:clk",
@@ -286,7 +286,7 @@
       "target": "reg:top:pkt.valid",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 552 216 L 552 216 L 576 216 L 576 216"
+      "path": "M 504 288 L 504 288 L 528 288 L 528 288"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -294,7 +294,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 144 L 144 144 L 168 144 L 168 144"
+      "path": "M -240 120 L -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:struct_comp:top:pkt:out:pkt:sink:edge:struct_comp:top:pkt:port:top:flat:pkt",
@@ -302,7 +302,7 @@
       "target": "port:top:flat",
       "sourceHandle": "cut",
       "targetHandle": "port:flat",
-      "path": "M 1488 72 L 1488 72 L 1512 72 L 1512 72"
+      "path": "M 1296 120 L 1296 120 L 1320 120 L 1320 120"
     },
     {
       "id": "cut-stub:struct_comp:top:pkt:out:pkt:source",
@@ -310,7 +310,7 @@
       "target": "cut-label:struct_comp:top:pkt:out:pkt:source",
       "sourceHandle": "out:pkt",
       "targetHandle": "cut",
-      "path": "M 1104 72 L 1104 72 L 1128 72 L 1128 72"
+      "path": "M 1056 144 L 1056 144 L 1080 144 L 1080 144"
     },
     {
       "id": "edge:port:top:opcode_i:reg:top:pkt.opcode:opcode_i",
@@ -318,7 +318,7 @@
       "target": "reg:top:pkt.opcode",
       "sourceHandle": "port:opcode_i",
       "targetHandle": "d",
-      "path": "M 240 72 L 264 72 L 528 72 L 552 72"
+      "path": "M 192 144 L 216 144 L 480 144 L 504 144"
     },
     {
       "id": "edge:port:top:valid_i:reg:top:pkt.valid:valid_i",
@@ -326,7 +326,7 @@
       "target": "reg:top:pkt.valid",
       "sourceHandle": "port:valid_i",
       "targetHandle": "d",
-      "path": "M 240 192 L 264 192 L 552 192 L 576 192"
+      "path": "M 192 264 L 216 264 L 504 264 L 528 264"
     },
     {
       "id": "edge:reg:top:pkt.opcode:struct_comp:top:pkt:pkt.opcode",
@@ -334,7 +334,7 @@
       "target": "struct_comp:top:pkt",
       "sourceHandle": "q",
       "targetHandle": "in:pkt.opcode",
-      "path": "M 744 72 L 768 72 L 936 72 L 960 72"
+      "path": "M 696 144 L 720 144 L 888 144 L 912 144"
     },
     {
       "id": "edge:reg:top:pkt.valid:struct_comp:top:pkt:pkt.valid",
@@ -342,7 +342,7 @@
       "target": "struct_comp:top:pkt",
       "sourceHandle": "q",
       "targetHandle": "in:pkt.valid",
-      "path": "M 720 192 L 744 192 L 864 192 L 864 120 L 936 120 L 960 120"
+      "path": "M 672 264 L 696 264 L 816 264 L 816 192 L 888 192 L 912 192"
     }
   ]
 }

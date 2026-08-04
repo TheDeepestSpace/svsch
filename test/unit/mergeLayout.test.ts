@@ -141,7 +141,7 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
-  it('lays out a cut connection as an aligned semantic relationship without pinning pre-cut positions', async () => {
+  it('columnizes a top-level port that lost every edge to a first-open cut, flanking the rest of the design', async () => {
     const designModule = {
       name: 'top',
       file: 'top.sv',
@@ -178,10 +178,109 @@ describe('first-open auto-cuts', () => {
     const sourceLabelBounds = boundsOf(sourceLabel);
     const sinkLabelBounds = boundsOf(sinkLabel);
 
+    // 'a' is the only node in the design apart from 'u', so 'u' alone forms
+    // the "body" the disconnected input port is columnized against. Port
+    // nodes snap to the half-grid row (y ≡ gridSize/2 mod gridSize).
+    expect(sourceBounds.y % diagramSizing.gridSize).toBe(diagramSizing.gridSize / 2);
+    expect(sourceBounds.x + sourceBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
     expect(sourceBounds.x + sourceBounds.width).toBeLessThan(sourceLabelBounds.x);
     expect(sourceLabelBounds.x + sourceLabelBounds.width).toBeLessThan(sinkLabelBounds.x);
     expect(sinkLabelBounds.x + sinkLabelBounds.width).toBeLessThan(targetBounds.x);
-    expect(sourceLabelBounds.y).toBe(sinkLabelBounds.y);
+  });
+
+  it('stacks multiple disconnected ports on the same side top-to-bottom and sorts input/output into opposite columns', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
+        { id: 'rst_n', kind: 'port' as const, label: 'rst_n', ports: [{ id: 'rst_n', name: 'rst_n', direction: 'input' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'y', name: 'y', direction: 'output' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [
+          { id: 'clk', name: 'clk', direction: 'input' as const },
+          { id: 'rst_n', name: 'rst_n', direction: 'input' as const },
+          { id: 'y', name: 'y', direction: 'output' as const }
+        ] }
+      ],
+      edges: [
+        { id: 'clk-u', source: 'clk', sourcePort: 'clk', target: 'u', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
+        { id: 'rst-u', source: 'rst_n', sourcePort: 'rst_n', target: 'u', targetPort: 'rst_n', metadata: { declaredNetName: 'rst_n' } },
+        { id: 'u-y', source: 'u', sourcePort: 'y', target: 'y', targetPort: 'y', metadata: { declaredNetName: 'y' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const clkBounds = boundsOf(byId.get('clk')!);
+    const rstBounds = boundsOf(byId.get('rst_n')!);
+    const yBounds = boundsOf(byId.get('y')!);
+    const targetBounds = boundsOf(byId.get('u')!);
+
+    // Both cut inputs land left of the body, stacked with no vertical overlap.
+    expect(clkBounds.x + clkBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+    expect(rstBounds.x + rstBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+    expect(boxesOverlap(clkBounds, rstBounds)).toBe(false);
+
+    // The cut output lands right of the body, on the opposite side from the inputs.
+    expect(yBounds.x).toBe(targetBounds.x + targetBounds.width + diagramSizing.columnGap);
+  });
+
+  it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
+        { id: 'other', kind: 'port' as const, label: 'other', ports: [{ id: 'out', name: 'other', direction: 'input' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
+      ],
+      edges: [
+        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+    // Simulate the module already having a customized layout (e.g. the user
+    // dragged an unrelated node) — moduleLayout.nodes is no longer empty.
+    const customizedLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        ...cutLayout.modules,
+        top: {
+          ...cutLayout.modules.top,
+          nodes: { other: { x: 999, y: 999, fixed: true } }
+        }
+      }
+    };
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', customizedLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const source = boundsOf(byId.get('a')!);
+    const target = boundsOf(byId.get('u')!);
+
+    expect(source.x + source.width).not.toBe(target.x - diagramSizing.columnGap);
   });
 });
 

@@ -4,8 +4,8 @@
       "id": "cut-label:interface:top:link:out:slave:sink:edge:interface:top:link:instance:top:u_consumer:link",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": 96
+        "x": 24,
+        "y": 48
       },
       "width": 96,
       "height": 48,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 576,
-        "y": 96
+        "y": 216
       },
       "width": 96,
       "height": 48,
@@ -44,8 +44,8 @@
       "id": "instance:top:u_consumer",
       "type": "hdl",
       "position": {
-        "x": 960,
-        "y": 72
+        "x": 144,
+        "y": 24
       },
       "width": 192,
       "height": 96,
@@ -70,7 +70,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 48
+        "y": 168
       },
       "width": 192,
       "height": 84,
@@ -100,7 +100,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 36
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -119,8 +119,8 @@
       "id": "port:top:observed",
       "type": "hdl",
       "position": {
-        "x": 1368,
-        "y": 108
+        "x": 552,
+        "y": 60
       },
       "width": 120,
       "height": 24,
@@ -143,7 +143,7 @@
       "target": "instance:top:u_consumer",
       "sourceHandle": "cut",
       "targetHandle": "port:bus",
-      "path": "M 936 120 L 936 120 L 960 120 L 960 120"
+      "path": "M 120 72 L 120 72 L 144 72 L 144 72"
     },
     {
       "id": "cut-stub:interface:top:link:out:slave:source",
@@ -151,7 +151,7 @@
       "target": "cut-label:interface:top:link:out:slave:source",
       "sourceHandle": "out:slave",
       "targetHandle": "cut",
-      "path": "M 552 120 L 552 120 L 576 120 L 576 120"
+      "path": "M 552 240 L 552 240 L 576 240 L 576 240"
     },
     {
       "id": "edge:instance:top:u_consumer:port:top:observed:observed",
@@ -159,7 +159,7 @@
       "target": "port:top:observed",
       "sourceHandle": "port:observed",
       "targetHandle": "port:observed",
-      "path": "M 1152 120 L 1176 120 L 1344 120 L 1368 120"
+      "path": "M 336 72 L 360 72 L 528 72 L 552 72"
     },
     {
       "id": "edge:port:top:clk:interface:top:link:clk",
@@ -167,7 +167,7 @@
       "target": "interface:top:link",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 48 L 168 48 L 456 48 L 456 84"
+      "path": "M 144 168 L 168 168 L 456 168 L 456 204"
     }
   ]
 }

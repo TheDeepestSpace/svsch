@@ -4,8 +4,8 @@
       "id": "cut-label:instance:top:g_arm.u_arm:port:y:sink:edge:instance:top:g_arm.u_arm:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 960,
-        "y": 336
+        "x": 1320,
+        "y": 72
       },
       "width": 96,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:instance:top:g_arm.u_arm:port:y:source",
       "type": "hdl",
       "position": {
-        "x": 624,
-        "y": 336
+        "x": 720,
+        "y": 288
       },
       "width": 96,
       "height": 48,
@@ -44,8 +44,8 @@
       "id": "instance:top:g_arm.u_arm",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 312
+        "x": 504,
+        "y": 264
       },
       "width": 192,
       "height": 96,
@@ -70,8 +70,8 @@
       "id": "instance:top:u_free",
       "type": "hdl",
       "position": {
-        "x": 456,
-        "y": 120
+        "x": 552,
+        "y": 72
       },
       "width": 192,
       "height": 96,
@@ -95,8 +95,8 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 156
+        "x": 120,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -115,8 +115,8 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 348
+        "x": 120,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -135,8 +135,8 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 1080,
-        "y": 348
+        "x": 1440,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -155,8 +155,8 @@
       "id": "port:top:z",
       "type": "hdl",
       "position": {
-        "x": 984,
-        "y": 156
+        "x": 1056,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -179,7 +179,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 1056 360 L 1056 360 L 1080 360 L 1080 360",
+      "path": "M 1416 96 L 1416 96 L 1440 96 L 1440 96",
       "active": true
     },
     {
@@ -188,7 +188,7 @@
       "target": "cut-label:instance:top:g_arm.u_arm:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 600 360 L 600 360 L 624 360 L 624 360",
+      "path": "M 696 312 L 696 312 L 720 312 L 720 312",
       "active": true
     },
     {
@@ -197,7 +197,7 @@
       "target": "port:top:z",
       "sourceHandle": "port:y",
       "targetHandle": "port:z",
-      "path": "M 648 168 L 672 168 L 960 168 L 984 168"
+      "path": "M 744 120 L 768 120 L 1032 120 L 1056 120"
     },
     {
       "id": "edge:port:top:a:instance:top:u_free:a",
@@ -205,7 +205,7 @@
       "target": "instance:top:u_free",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 168 L 168 168 L 432 168 L 456 168"
+      "path": "M 240 120 L 264 120 L 528 120 L 552 120"
     },
     {
       "id": "edge:port:top:b:instance:top:g_arm.u_arm:b",
@@ -213,7 +213,7 @@
       "target": "instance:top:g_arm.u_arm",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 144 360 L 168 360 L 384 360 L 408 360",
+      "path": "M 240 312 L 264 312 L 480 312 L 504 312",
       "active": true
     }
   ],
@@ -223,8 +223,8 @@
       "kind": "generate-if",
       "label": "generate if",
       "bounds": {
-        "x": 312,
-        "y": 216,
+        "x": 408,
+        "y": 168,
         "width": 384,
         "height": 288
       },
@@ -235,8 +235,8 @@
       "kind": "if",
       "label": "g_arm /* MODE == 1 */",
       "bounds": {
-        "x": 360,
-        "y": 264,
+        "x": 456,
+        "y": 216,
         "width": 288,
         "height": 192
       },
