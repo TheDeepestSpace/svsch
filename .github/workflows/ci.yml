@@ -96,7 +96,7 @@ jobs:
         run: npm run compile:backend
 
       - name: Upload Backend Binary
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: backend-binary
           path: dist/svsch_backend
@@ -120,7 +120,7 @@ jobs:
           SURELOG_AUTO_INSTALL=1 npm run install-surelog
 
       - name: Upload Dist
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-dist
           path: |
@@ -141,7 +141,7 @@ jobs:
         run: npm run build:cli
 
       - name: Upload CLI Dist
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cli-dist
           path: dist/
@@ -231,7 +231,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-artifacts
           path: |
@@ -259,7 +259,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: syntax-playwright-artifacts
           path: |
@@ -300,7 +300,7 @@ jobs:
 
       - name: Upload BDD Artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts
           path: |
@@ -325,7 +325,7 @@ jobs:
         run: npm run docs:generate
 
       - name: Upload BDD HTML Documentation
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-html-docs
           path: |
@@ -357,7 +357,7 @@ jobs:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
       - name: Upload System Test Artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: system-test-results-${{ matrix.vscode_version }}
           path: |
@@ -393,7 +393,7 @@ jobs:
           SURELOG_AUTO_INSTALL: 1
 
       - name: Upload VSIX
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-vsix
           path: "*.vsix"
@@ -414,7 +414,7 @@ jobs:
         run: npm pack
 
       - name: Upload Tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: npm-tarball
           path: "*.tgz"
