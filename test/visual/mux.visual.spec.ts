@@ -947,6 +947,36 @@ test.describe('register visual rendering', () => {
     await expectStackedEdgeSegmentsOrthogonal(page);
     await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-nonzero-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders a non-canonical (decrementing) reset loop without folding it into the register reset', async ({ page }) => {
+    // storage[a] <= 0 for a counting down from 31 to 0 still covers the full array, but this
+    // loop shape isn't the recognized canonical form, so it isn't officially supported. It must
+    // still render correctly instead of breaking the extension — falling back to the same
+    // chained addr-mux + rst-gating mux structure used for any two distinct indexed writes.
+    const view = await openFixture(page, 'array_multi_index_write_reset_non_canonical.sv', 'auto');
+
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_non_canonical:storage');
+    const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_non_canonical:storage_addr'));
+    const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_non_canonical:storage_addr');
+    const rstMux = view.nodes.find((node) => node.kind === 'mux' && node.label === 'if reset');
+
+    expect(arrayReg).toBeDefined();
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(false);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(2);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('a');
+    expect(rstMux).toBeDefined();
+    expect(rstMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('reset');
+    expect(view.edges.some((edge) => edge.source === rstMux?.id && edge.target === finalMux?.id)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${rstMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`)).toHaveCount(0);
+
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-non-canonical-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {
