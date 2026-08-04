@@ -111,7 +111,13 @@ const exclusiveQueues = new Map<string, Promise<void>>();
 function runExclusive<T>(key: string, fn: () => Promise<T>): Promise<T> {
   const previous = exclusiveQueues.get(key) ?? Promise.resolve();
   const result = previous.then(fn, fn);
-  exclusiveQueues.set(key, result.then(() => undefined, () => undefined));
+  const tail = result.then(() => undefined, () => undefined);
+  exclusiveQueues.set(key, tail);
+  void tail.finally(() => {
+    if (exclusiveQueues.get(key) === tail) {
+      exclusiveQueues.delete(key);
+    }
+  });
   return result;
 }
 
@@ -140,7 +146,11 @@ export async function extractDesignWithUhdm(
   // cacheDir; a waiting caller re-checks the cache once it's their turn, so if the run that
   // just finished already produced a matching fingerprint, they skip Surelog entirely instead
   // of spawning a redundant/racy one.
-  await runExclusive(cacheDir, async () => {
+  // The backend also reads the shared .uhdm file, so it must stay inside the same
+  // exclusive section: releasing the lock before the backend has read the file would let a
+  // waiting caller with a different fingerprint start a new Surelog run against cacheDir
+  // and overwrite/corrupt the file while this caller's backend is still reading it.
+  const raw = await runExclusive(cacheDir, async () => {
     // --- Cache check ---
     let cacheHit = false;
     try {
@@ -193,29 +203,30 @@ export async function extractDesignWithUhdm(
     } else {
       onProgress?.('Using cached design data', 80);
     }
-  });
 
-  const uhdmFile = await findSurelogUhdmFile(cacheDir);
-  if (!(await fileExists(uhdmFile))) {
-    throw new Error(`Surelog failed to generate UHDM file under ${cacheDir}`);
-  }
+    const uhdmFile = await findSurelogUhdmFile(cacheDir);
+    if (!(await fileExists(uhdmFile))) {
+      throw new Error(`Surelog failed to generate UHDM file under ${cacheDir}`);
+    }
 
-  onProgress?.('Extracting design graph...', 10);
+    onProgress?.('Extracting design graph...', 10);
 
-  const backendArgs = [uhdmFile];
-  if (moduleName) {
-      backendArgs.push(moduleName);
-  } else {
-      backendArgs.push(""); // empty targetModule means extract all
-  }
-  backendArgs.push(workspaceRoot);
+    const backendArgs = [uhdmFile];
+    if (moduleName) {
+        backendArgs.push(moduleName);
+    } else {
+        backendArgs.push(""); // empty targetModule means extract all
+    }
+    backendArgs.push(workspaceRoot);
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
         logger.error(`Backend Stderr: ${stderr}`);
     }
 
-    const raw: RawUhdmIr = JSON.parse(stdout);
+    return JSON.parse(stdout) as RawUhdmIr;
+  });
+
     const graph = transformToDesignGraph(raw, workspaceRoot);
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);

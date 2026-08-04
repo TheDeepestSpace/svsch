@@ -79,4 +79,60 @@ process.stdout.write(JSON.stringify({ modules: [], rootModules: [] }));
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });
+
+  // Regression test: the lock used to be released as soon as Surelog finished, before the
+  // backend had read the shared .uhdm file. A second caller with a *different* fingerprint
+  // (so it can't cache-hit) would then be free to start a new Surelog run against the same
+  // cacheDir and overwrite/truncate the file while the first caller's backend was still
+  // reading it. The fake backend below reads the file twice with a delay in between and
+  // fails if the content changed out from under it, which is what a still-running Surelog
+  // overwrite would look like.
+  it('keeps the shared .uhdm file stable while the backend reads it, even with a queued caller of a different fingerprint', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-race-backend-'));
+
+    try {
+      const srcFileA = path.join(tmpDir, 'a.sv');
+      const srcFileB = path.join(tmpDir, 'b.sv');
+      await fs.writeFile(srcFileA, 'module a(); endmodule\n');
+      await fs.writeFile(srcFileB, 'module b(); endmodule\n');
+
+      const fakeSurelog = path.join(tmpDir, 'fake-surelog.js');
+      await writeExecutable(fakeSurelog, `#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const args = process.argv.slice(2);
+const outDir = args[args.indexOf('-o') + 1];
+const srcFile = args[args.length - 1];
+fs.mkdirSync(path.join(outDir, 'slpp_unit'), { recursive: true });
+fs.writeFileSync(path.join(outDir, 'slpp_unit', 'surelog.uhdm'), 'uhdm-for-' + path.basename(srcFile));
+`);
+
+      const fakeBackend = path.join(tmpDir, 'fake-backend.js');
+      await writeExecutable(fakeBackend, `#!/usr/bin/env node
+const fs = require('fs');
+const uhdmFile = process.argv[2];
+const first = fs.readFileSync(uhdmFile, 'utf-8');
+// Simulate a slow backend parse, giving a queued caller with a different
+// fingerprint a window to (incorrectly) start overwriting the shared file
+// if it were not still held by the lock.
+const until = Date.now() + 300;
+while (Date.now() < until) { /* busy wait */ }
+const second = fs.readFileSync(uhdmFile, 'utf-8');
+if (first !== second) {
+  process.stderr.write('RACE DETECTED: uhdm file changed during backend read\\n');
+  process.exit(1);
+}
+process.stdout.write(JSON.stringify({ modules: [], rootModules: [] }));
+`);
+
+      // Different files (and thus different fingerprints) so the second call can't cache-hit
+      // and must queue behind the first's full cache-check + Surelog + backend section.
+      await expect(Promise.all([
+        extractDesignWithUhdm([srcFileA], tmpDir, fakeSurelog, fakeBackend),
+        extractDesignWithUhdm([srcFileB], tmpDir, fakeSurelog, fakeBackend)
+      ])).resolves.toHaveLength(2);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
