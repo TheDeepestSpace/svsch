@@ -83,7 +83,12 @@ const request = async (method, path, requestBody) => {
   return response.json();
 };
 
-const reviews = await request('GET', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews?per_page=100`);
+const reviews = [];
+for (let page = 1; ; page++) {
+  const batch = await request('GET', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews?per_page=100&page=${page}`);
+  reviews.push(...batch);
+  if (batch.length < 100) break;
+}
 const existing = reviews.find((review) => review.body?.startsWith(startTag));
 if (existing) {
   await request('PUT', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews/${existing.id}`, { body });
