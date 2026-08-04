@@ -141,7 +141,7 @@ describe('compound generate routing trace', () => {
 
     const cToOther = 'edge:port:generate_arm_multi_block_top:c:instance:generate_arm_multi_block_top:g_if_other.u_other:c';
     const otherToY = 'edge:instance:generate_arm_multi_block_top:g_if_other.u_other:port:generate_arm_multi_block_top:y:y';
-    const selToComb = 'edge:port:generate_arm_multi_block_top:sel:comb:generate_arm_multi_block_top:g_if_one_y_src:expr:sel';
+    const selToMux = 'edge:port:generate_arm_multi_block_top:sel:mux:generate_arm_multi_block_top:g_if_one_y_src:ternary:sel';
     const rawEdges = allEdges(routing.output);
     const finalRoutes = new Map(view.edges.map((edge) => [edge.id, edge.routePoints]));
 
@@ -152,32 +152,32 @@ describe('compound generate routing trace', () => {
     expect(absoluteNodeGeometry(routing.output, 'port:generate_arm_multi_block_top:c')).toMatchObject({ x: 24, y: 388 });
     expect(absoluteNodeGeometry(routing.input, 'port:generate_arm_multi_block_top:sel')).toMatchObject({ x: 0, y: 384 });
     expect(absoluteNodeGeometry(routing.output, 'port:generate_arm_multi_block_top:sel')).toMatchObject({ x: 24, y: 456 });
-    expect(absoluteNodeGeometry(routing.input, otherId)).toMatchObject({ x: 504, y: 492 });
-    expect(absoluteNodeGeometry(routing.output, otherId)).toMatchObject({ x: 539, y: 555 });
+    expect(absoluteNodeGeometry(routing.input, otherId)).toMatchObject({ x: 456, y: 492 });
+    expect(absoluteNodeGeometry(routing.output, otherId)).toMatchObject({ x: 491, y: 555 });
 
     const rawCPoints = rawEdges.find((edge) => edge.id === cToOther)?.sections?.flatMap(sectionPoints) ?? [];
     expect(rawCPoints).toEqual([
       { x: 193, y: 413 },
       { x: 203, y: 413 },
       { x: 203, y: 616 },
-      { x: 485, y: 615.5 },
-      { x: 538, y: 615.5 }
+      { x: 437, y: 615.5 },
+      { x: 490, y: 615.5 }
     ]);
     expect(finalRoutes.get(cToOther)).toEqual([
       { x: 168, y: 552 },
-      { x: 504, y: 552 }
+      { x: 456, y: 552 }
     ]);
     expect(finalRoutes.get(otherToY)).toEqual([
-      { x: 768, y: 552 },
-      { x: 1032, y: 552 },
-      { x: 1032, y: 264 },
-      { x: 1128, y: 264 }
+      { x: 720, y: 552 },
+      { x: 936, y: 552 },
+      { x: 936, y: 288 },
+      { x: 1032, y: 288 }
     ]);
-    expect(finalRoutes.get(selToComb)).toEqual([
+    expect(finalRoutes.get(selToMux)).toEqual([
       { x: 168, y: 408 },
       { x: 648, y: 408 },
-      { x: 648, y: 264 },
-      { x: 672, y: 264 }
+      { x: 648, y: 216 },
+      { x: 744, y: 216 }
     ]);
 
     const nodesById = new Map(view.nodes.map((node) => [node.id, node]));
@@ -197,9 +197,9 @@ describe('compound generate routing trace', () => {
     expect(routingTrace.avoidCalls).toBe(2);
     expect(avoidResult.routes.get(cToOther)).toEqual([
       { x: 168, y: 552 },
-      { x: 504, y: 552 }
+      { x: 456, y: 552 }
     ]);
-    expect(avoidResult.routes.get(selToComb)).toEqual(finalRoutes.get(selToComb));
+    expect(avoidResult.routes.get(selToMux)).toEqual(finalRoutes.get(selToMux));
     expect(avoidResult.routes.get(otherToY)).toEqual(finalRoutes.get(otherToY));
     expect(avoidResult.rejectedNets.size).toBe(0);
   });

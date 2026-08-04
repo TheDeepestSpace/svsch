@@ -1,0 +1,219 @@
+{
+  "nodes": [
+    {
+      "id": "alu:mux_ternary_in_alu:y:expr",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "alu",
+        "ports": [
+          {
+            "id": "lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "out:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:mux_ternary_in_alu:y_rhs:ternary",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 96
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_ternary_in_alu:a",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_ternary_in_alu:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_ternary_in_alu:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_ternary_in_alu:sel",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:mux_ternary_in_alu:y",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:alu:mux_ternary_in_alu:y:expr:port:mux_ternary_in_alu:y:y",
+      "source": "alu:mux_ternary_in_alu:y:expr",
+      "target": "port:mux_ternary_in_alu:y",
+      "sourceHandle": "out:y",
+      "targetHandle": "port:y",
+      "path": "M 768 72 L 792 72 L 960 72 L 984 72"
+    },
+    {
+      "id": "edge:mux:mux_ternary_in_alu:y_rhs:ternary:alu:mux_ternary_in_alu:y:expr:y_rhs",
+      "source": "mux:mux_ternary_in_alu:y_rhs:ternary",
+      "target": "alu:mux_ternary_in_alu:y:expr",
+      "sourceHandle": "out",
+      "targetHandle": "rhs",
+      "path": "M 456 144 L 480 144 L 576 144 L 576 96 L 648 96 L 672 96"
+    },
+    {
+      "id": "edge:port:mux_ternary_in_alu:a:alu:mux_ternary_in_alu:y:expr:a",
+      "source": "port:mux_ternary_in_alu:a",
+      "target": "alu:mux_ternary_in_alu:y:expr",
+      "sourceHandle": "port:a",
+      "targetHandle": "lhs",
+      "path": "M 456 48 L 480 48 L 648 48 L 672 48"
+    },
+    {
+      "id": "edge:port:mux_ternary_in_alu:b:mux:mux_ternary_in_alu:y_rhs:ternary:b",
+      "source": "port:mux_ternary_in_alu:b",
+      "target": "mux:mux_ternary_in_alu:y_rhs:ternary",
+      "sourceHandle": "port:b",
+      "targetHandle": "in:true",
+      "path": "M 144 120 L 168 120 L 264 120 L 264 144 L 336 144 L 360 144"
+    },
+    {
+      "id": "edge:port:mux_ternary_in_alu:c:mux:mux_ternary_in_alu:y_rhs:ternary:c",
+      "source": "port:mux_ternary_in_alu:c",
+      "target": "mux:mux_ternary_in_alu:y_rhs:ternary",
+      "sourceHandle": "port:c",
+      "targetHandle": "in:false",
+      "path": "M 144 168 L 168 168 L 336 168 L 360 168"
+    },
+    {
+      "id": "edge:port:mux_ternary_in_alu:sel:mux:mux_ternary_in_alu:y_rhs:ternary:sel",
+      "source": "port:mux_ternary_in_alu:sel",
+      "target": "mux:mux_ternary_in_alu:y_rhs:ternary",
+      "sourceHandle": "port:sel",
+      "targetHandle": "sel",
+      "path": "M 144 72 L 168 72 L 408 72 L 408 120"
+    }
+  ]
+}

@@ -1568,6 +1568,20 @@ Then('there should be a connection between the combinational block in the {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a connection between {string} and the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, mux in ${region}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the mux block in the {string} generate region and {string}', async function (this: BddWorld, region: string, target: string) {
+  const sourceId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: mux in ${region}=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
 Then('there should be a connection between {string} and the inverter node', async function (this: BddWorld, source: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await this.webviewPage.locator('html').evaluate(() =>
@@ -1679,6 +1693,21 @@ Then('the route from {string} to the combinational block should have shifted by 
   const before = this.notedRoutes.get(routeKey(source, 'comb'));
   if (!before) throw new Error(`Missing noted route for ${source} -> comb`);
   const after = await combRoutePath(this.webviewPage, source);
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+When('I note the route from {string} to the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  this.notedRoutes.set(routeKey(source, `mux:${region}`), await generateRegionNodeRoutePath(this, source, region, 'mux'));
+});
+
+Then('the route from {string} to the mux block in the {string} generate region should have shifted by \\({int}, {int}\\) grid cells', async function (this: BddWorld, source: string, region: string, cellsX: number, cellsY: number) {
+  const before = this.notedRoutes.get(routeKey(source, `mux:${region}`));
+  if (!before) throw new Error(`Missing noted route for ${source} -> mux in ${region}`);
+  const after = await generateRegionNodeRoutePath(this, source, region, 'mux');
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+function expectRouteToHaveShifted(before: string, after: string, cellsX: number, cellsY: number): void {
   const beforeNums = (before.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   const afterNums = (after.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   expect(afterNums.length, 'route point count changed').toBe(beforeNums.length);
@@ -1691,7 +1720,7 @@ Then('the route from {string} to the combinational block should have shifted by 
     const expectedDelta = i % 2 === 0 ? dx : dy;
     expect(afterNums[i] - beforeNums[i], `coordinate ${i} of the route`).toBeCloseTo(expectedDelta, 0);
   }
-});
+}
 
 Then('the port node {string} should have moved', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
@@ -2251,6 +2280,17 @@ async function combRoutePath(webviewPage: FrameLocator, source: string): Promise
   const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
   if (!edgeId) throw new Error(`Edge not found between ${sourceId} and comb`);
   const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
+}
+
+async function generateRegionNodeRoutePath(world: BddWorld, source: string, region: string, kind: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(world.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(world, region, kind);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${kind} in ${region}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(world.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${kind} in ${region}`);
+  const route = await world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
   if (!route) throw new Error(`Route path not found for ${edgeId}`);
   return route;
 }
