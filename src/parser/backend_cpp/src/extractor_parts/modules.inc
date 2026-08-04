@@ -257,6 +257,20 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         }
                         np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
                         fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
+                        if (high && (np.direction == "input" || np.direction == "inout")) {
+                            // A bit-select/literal used directly in the port list (e.g. `.opcode(instr[7:4])`,
+                            // `.b(8'd1)`) has no other driver in the design producing that exact signal string,
+                            // so buildEdges would never find a source for it. Synthesize the same breakout/literal
+                            // node processAssign already synthesizes for the equivalent `assign` RHS.
+                            if (isLiteralExpr(high)) {
+                                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
+                            } else {
+                                int high_type = vpi_get(vpiType, high);
+                                if (high_type == vpiBitSelect || high_type == vpiPartSelect || high_type == 606 || high_type == 607 || high_type == 130) {
+                                    processBusSelect(high, mod);
+                                }
+                            }
+                        }
                         if (auto field = getStructFieldRef(high, mod)) {
                             const std::string field_signal = field->first + "." + field->second;
                             if (np.direction == "input") {
