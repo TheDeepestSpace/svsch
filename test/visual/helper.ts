@@ -90,6 +90,33 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
   return view;
 }
 
+const exampleDesignRoot = path.resolve(__dirname, '../../fixtures/example_design');
+
+export async function buildExampleDesignView(moduleName: string): Promise<DiagramViewModel> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
+  try {
+    for (const file of fs.readdirSync(exampleDesignRoot)) {
+      if (!file.endsWith('.sv')) continue;
+      fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
+    }
+
+    const graph = await buildGraphFromWorkspace(tmpDir);
+    return buildViewModel(graph, moduleName, { version: 1, modules: {} });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+export async function openExampleDesignModule(page: Page, moduleName: string): Promise<DiagramViewModel> {
+  const view = await buildExampleDesignView(moduleName);
+
+  await openView(page, view);
+  await page.waitForSelector('.react-flow__node', { state: 'attached' });
+  await waitForViewportTransformToSettle(page);
+  await page.waitForTimeout(100);
+  return view;
+}
+
 export async function openView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
   await page.goto('/');
@@ -241,6 +268,21 @@ export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
   await page.waitForTimeout(100);
 }
 
+async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGraph> {
+  const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+  const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
+
+  return buildDesignGraph({
+    workspaceRoot,
+    projectFolder: '.',
+    backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
+    veriblePath: 'verible-verilog-syntax',
+    surelogPath,
+    backendPath,
+    includeExternalDiagnostics: false
+  });
+}
+
 export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
   const fixturePath = path.join(fixtureRoot, fixtureName);
   const text = fs.readFileSync(fixturePath, 'utf8');
@@ -250,18 +292,7 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     const tmpFile = path.join(tmpDir, path.basename(fixtureName));
     fs.writeFileSync(tmpFile, text);
 
-    const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
-    const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
-
-    const graph = await buildDesignGraph({
-      workspaceRoot: tmpDir,
-      projectFolder: '.',
-      backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
-      veriblePath: 'verible-verilog-syntax',
-      surelogPath,
-      backendPath,
-      includeExternalDiagnostics: false
-    });
+    const graph = await buildGraphFromWorkspace(tmpDir);
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout = layoutMode === 'manual'
