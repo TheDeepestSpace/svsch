@@ -1,3 +1,9 @@
+namespace {
+bool isBusSelectExprType(int vpi_type) {
+    return vpi_type == vpiBitSelect || vpi_type == vpiPartSelect || vpi_type == 606 || vpi_type == 607 || vpi_type == 130;
+}
+}  // namespace
+
 void DesignExtractor::processModule(vpiHandle mod_handle) {
     const char* def_name = vpi_get_str(vpiDefName, mod_handle);
     const char* full_name = vpi_get_str(vpiFullName, mod_handle);
@@ -266,7 +272,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                                 ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
                             } else {
                                 int high_type = vpi_get(vpiType, high);
-                                if (high_type == vpiBitSelect || high_type == vpiPartSelect || high_type == 606 || high_type == 607 || high_type == 130) {
+                                if (isBusSelectExprType(high_type)) {
                                     processBusSelect(high, mod);
                                 }
                             }
@@ -958,7 +964,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     }
 
     int rhs_type = vpi_get(vpiType, rhs);
-    bool is_select_rhs = (rhs_type == vpiBitSelect || rhs_type == vpiPartSelect || rhs_type == 606 || rhs_type == 607 || rhs_type == 130);
+    bool is_select_rhs = isBusSelectExprType(rhs_type);
     if (is_select_rhs && !out_signal.empty() && out_signal == out_base && !rhs_base.empty() && mod.arrayDimensions.count(rhs_base)) {
         vpiHandle index_h = vpi_handle(vpiIndex, rhs);
         if (!index_h && (rhs_type == 606 || rhs_type == 607 || rhs_type == 130)) {
