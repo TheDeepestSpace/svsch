@@ -561,6 +561,9 @@ async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
       last = current;
       if (stable >= 5) break;
     }
+    if (stable < 5) {
+      throw new Error('React Flow viewport did not settle within 5 seconds');
+    }
   });
   await webview.locator('body').evaluate(() => document.fonts.ready);
 }
