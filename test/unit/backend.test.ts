@@ -748,6 +748,44 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(mod.edges.some((edge) => edge.source === version?.id && edge.target === 'port:literal_assigns:version_y')).toBe(true);
   });
 
+  it('connects instance ports whose expression is an inline bit-select or literal', async () => {
+    const graph = await runParser(backend, [{ file: 'inline_port_exprs.sv', text: `
+      module sub (input logic [3:0] a, input logic [3:0] b, input logic c, inout wire [3:0] io, output logic [3:0] y);
+        assign y = a + b;
+      endmodule
+
+      module top (input logic [7:0] data, inout wire [7:0] ext_bus, output logic [3:0] result);
+        sub u_sub (
+          .a (data[7:4]),
+          .b (4'd1),
+          .c (data[0]),
+          .io (ext_bus[3:0]),
+          .y (result)
+        );
+      endmodule
+    ` }]);
+    const mod = graph.modules.top;
+    const instance = mod.nodes.find((node) => node.kind === 'instance' && node.label === 'u_sub');
+    expect(instance).toBeDefined();
+
+    const busNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'data');
+    expect(busNode).toBeDefined();
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[7:4]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:a' && edge.signal === 'data[7:4]')).toBe(true);
+
+    const literal = mod.nodes.find((node) => node.kind === 'literal' && node.label === "4'd1");
+    expect(literal).toBeDefined();
+    expect(mod.edges.some((edge) => edge.source === literal?.id && edge.target === instance?.id && edge.targetPort === 'port:b' && edge.signal === "4'd1")).toBe(true);
+
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:c' && edge.signal === 'data[0]')).toBe(true);
+
+    const extBusNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'ext_bus');
+    expect(extBusNode).toBeDefined();
+    expect(extBusNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'ext_bus[3:0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === extBusNode?.id && edge.target === instance?.id && edge.targetPort === 'port:io' && edge.signal === 'ext_bus[3:0]')).toBe(true);
+  });
+
   it('represents enum state literals in simple FSM reset and transition logic', async () => {
     const graph = await runParser(backend, 'fsm_literal.sv', fixture('fsm_literal.sv'));
     const mod = graph.modules.fsm_literal;

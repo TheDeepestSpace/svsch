@@ -1,3 +1,9 @@
+namespace {
+bool isBusSelectExprType(int vpi_type) {
+    return vpi_type == vpiBitSelect || vpi_type == vpiPartSelect || vpi_type == 606 || vpi_type == 607 || vpi_type == 130;
+}
+}  // namespace
+
 void DesignExtractor::processModule(vpiHandle mod_handle) {
     const char* def_name = vpi_get_str(vpiDefName, mod_handle);
     const char* full_name = vpi_get_str(vpiFullName, mod_handle);
@@ -257,6 +263,20 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         }
                         np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
                         fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
+                        if (high && (np.direction == "input" || np.direction == "inout")) {
+                            // A bit-select/literal used directly in the port list (e.g. `.opcode(instr[7:4])`,
+                            // `.b(8'd1)`) has no other driver in the design producing that exact signal string,
+                            // so buildEdges would never find a source for it. Synthesize the same breakout/literal
+                            // node processAssign already synthesizes for the equivalent `assign` RHS.
+                            if (isLiteralExpr(high)) {
+                                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
+                            } else {
+                                int high_type = vpi_get(vpiType, high);
+                                if (isBusSelectExprType(high_type)) {
+                                    processBusSelect(high, mod);
+                                }
+                            }
+                        }
                         if (auto field = getStructFieldRef(high, mod)) {
                             const std::string field_signal = field->first + "." + field->second;
                             if (np.direction == "input") {
@@ -944,7 +964,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     }
 
     int rhs_type = vpi_get(vpiType, rhs);
-    bool is_select_rhs = (rhs_type == vpiBitSelect || rhs_type == vpiPartSelect || rhs_type == 606 || rhs_type == 607 || rhs_type == 130);
+    bool is_select_rhs = isBusSelectExprType(rhs_type);
     if (is_select_rhs && !out_signal.empty() && out_signal == out_base && !rhs_base.empty() && mod.arrayDimensions.count(rhs_base)) {
         vpiHandle index_h = vpi_handle(vpiIndex, rhs);
         if (!index_h && (rhs_type == 606 || rhs_type == 607 || rhs_type == 130)) {
