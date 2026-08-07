@@ -312,6 +312,81 @@ endmodule
   <img src="syntax-book/assets/mux-complex-case-arm.svg" alt="Mux with Complex Case Arm diagram" />
 </p>
 
+### Ternary Operator Mux
+
+A conditional expression becomes a two-way multiplexer.
+
+<pre><code>module top (
+  input logic sel,
+  input logic a,
+  input logic b,
+  output logic y
+);
+  <mark>assign y = sel ? a : b;</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/mux-ternary-operator.svg" alt="Ternary Operator Mux diagram" />
+</p>
+
+### Array Ternary Mux
+
+A conditional expression selecting between arrays becomes a stacked multiplexer.
+
+<pre><code>module top (
+  input logic sel,
+  input logic [7:0] a [0:1],
+  input logic [7:0] b [0:1],
+  output logic [7:0] y [0:1]
+);
+  <mark>assign y = sel ? a : b;</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/mux-array-ternary.svg" alt="Array Ternary Mux diagram" />
+</p>
+
+### Nested Ternary Muxes
+
+Nested conditional expressions become cascaded two-way multiplexers.
+
+<pre><code>module top (
+  input logic sel1,
+  input logic sel2,
+  input logic a,
+  input logic b,
+  input logic c,
+  output logic y
+);
+  <mark>assign y = sel1 ? (sel2 ? a : b) : c;</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/mux-nested-ternary.svg" alt="Nested Ternary Muxes diagram" />
+</p>
+
+### Ternary Inside an Arithmetic Expression
+
+A conditional subexpression becomes a mux feeding its containing ALU.
+
+<pre><code>module top (
+  input logic sel,
+  input logic a,
+  input logic b,
+  input logic c,
+  output logic y
+);
+  assign y = a + (<mark>sel ? b : c</mark>);
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/mux-ternary-in-expression.svg" alt="Ternary Inside an Arithmetic Expression diagram" />
+</p>
+
 ### Variable Index Selection
 
 Indexing a bus with a variable index signal becomes a select block.
