@@ -132,7 +132,10 @@ Feature: Diagram Interaction
     And I should see 2 cut net labels named "rst_n"
 
   Scenario: Register clock and reset automatic cuts can be disabled
-    Given automatic clock and reset cuts are disabled
+    Given I disable clock and reset cuts using this setting:
+      """
+      "svsch.autocut-clk-reset": false
+      """
     And I have a file "top.sv" in my workspace:
       """
       module top(input logic clk, input logic rst_n, input logic d, output logic q);
@@ -191,6 +194,8 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    # "chip_select" has a declared name, so it's auto-cut on first open; tie it
+    # back first so the connection is actually there to manually cut below.
     And I tie back the cut net "chip_select"
     And I move the port node "a"
     When I hover the connection between "a" and "x" and click its Cut control

@@ -51,12 +51,14 @@ Then('the {string} module is selected in the module dropdown', async function (t
 // Composite step: write files + open diagram via command palette in one shot.
 // ---------------------------------------------------------------------------
 
-Given('automatic clock and reset cuts are disabled', async function (this: BddWorld) {
-  await this.evaluateInVSCode((_vscode) => {
+Given('I disable clock and reset cuts using this setting:', async function (this: BddWorld, docString: string) {
+  const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];
+  const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
+  await this.evaluateInVSCode((_vscode, arg) => {
     return (_vscode as any).workspace
       .getConfiguration('svsch')
-      .update('autocut-clk-reset', false, (_vscode as any).ConfigurationTarget.Workspace);
-  });
+      .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
+  }, { key: configKey, value });
 });
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
