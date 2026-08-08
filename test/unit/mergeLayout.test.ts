@@ -237,6 +237,49 @@ describe('first-open auto-cuts', () => {
     expect(yBounds.x).toBe(targetBounds.x + targetBounds.width + diagramSizing.columnGap);
   });
 
+  it('columnizes fully-cut ports even when nothing else survives to anchor a body against', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' as const }] },
+        { id: 'x', kind: 'port' as const, label: 'x', ports: [{ id: 'p', name: 'x', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        { id: 'a-x', source: 'a', sourcePort: 'p', target: 'x', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } },
+        { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const aBounds = boundsOf(byId.get('a')!);
+    const xBounds = boundsOf(byId.get('x')!);
+    const yBounds = boundsOf(byId.get('y')!);
+
+    // 'a' (the only source-direction port) is alone in the left column; 'x'
+    // and 'y' stack in the right column, sorted top-to-bottom, with an empty
+    // gap between the two columns instead of a body.
+    expect(aBounds.x).toBeLessThan(xBounds.x);
+    expect(aBounds.x).toBeLessThan(yBounds.x);
+    expect(xBounds.x).toBe(yBounds.x);
+    expect(xBounds.y).toBeLessThan(yBounds.y);
+    expect(boxesOverlap(xBounds, yBounds)).toBe(false);
+  });
+
   it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {
     const designModule = {
       name: 'top',

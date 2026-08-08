@@ -655,7 +655,13 @@ function columnizeFullyCutBoundaryPorts(
   }
 
   const detachedIds = new Set(detached.map((node) => node.id));
-  const bodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)));
+  // When every node in the module is a fully-cut boundary port (a pure
+  // pass-through with nothing left uncut to anchor against), there's no
+  // surviving body to flank — fall back to the detached ports' own ELK
+  // extent so the two columns still land either side of where the design
+  // used to be, with an empty gap in between instead of no columns at all.
+  const bodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)))
+    ?? boundsForPositionedNodes(positioned);
   if (!bodyBounds) {
     return positioned;
   }
@@ -2933,9 +2939,17 @@ export function firstOpenAutoCutEdges(
     }
   }
 
+  const nodesById = new Map(designModule.nodes.map((node) => [node.id, node]));
+
   const selected: DiagramEdge[] = [];
   const selectedNets = new Set<string>();
   for (const edge of designModule.edges) {
+    // Interface links (modport connections, member taps) stay whole on first
+    // open — cutting them hides the interface's own port/modport grouping,
+    // which is the whole point of looking at an interface node.
+    const touchesInterface = nodesById.get(edge.source)?.kind === 'interface'
+      || nodesById.get(edge.target)?.kind === 'interface';
+    if (touchesInterface) continue;
     const isRegisterControl = edge.targetPort !== undefined
       && registerControlPorts.has(`${edge.target}\0${edge.targetPort}`);
     const isDeclared = Boolean(edge.metadata?.declaredNetName);
