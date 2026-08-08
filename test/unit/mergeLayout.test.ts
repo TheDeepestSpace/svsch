@@ -271,13 +271,15 @@ describe('first-open auto-cuts', () => {
     const yBounds = boundsOf(byId.get('y')!);
 
     // 'a' (the only source-direction port) is alone in the left column; 'x'
-    // and 'y' stack in the right column, sorted top-to-bottom, with an empty
-    // gap between the two columns instead of a body.
+    // and 'y' stack in the right column, sorted top-to-bottom. There's no
+    // surviving body here, so the columns sit right next to each other
+    // rather than flanking body-sized empty space.
     expect(aBounds.x).toBeLessThan(xBounds.x);
     expect(aBounds.x).toBeLessThan(yBounds.x);
     expect(xBounds.x).toBe(yBounds.x);
     expect(xBounds.y).toBeLessThan(yBounds.y);
     expect(boxesOverlap(xBounds, yBounds)).toBe(false);
+    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(2 * diagramSizing.columnGap);
   });
 
   it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {

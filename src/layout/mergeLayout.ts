@@ -655,13 +655,16 @@ function columnizeFullyCutBoundaryPorts(
   }
 
   const detachedIds = new Set(detached.map((node) => node.id));
+  const survivingBodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)));
   // When every node in the module is a fully-cut boundary port (a pure
   // pass-through with nothing left uncut to anchor against), there's no
-  // surviving body to flank — fall back to the detached ports' own ELK
-  // extent so the two columns still land either side of where the design
-  // used to be, with an empty gap in between instead of no columns at all.
-  const bodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)))
-    ?? boundsForPositionedNodes(positioned);
+  // surviving body to flank. Collapse the anchor to a zero-width point at
+  // the detached ports' own ELK center instead of reserving body-sized
+  // space that's no longer occupied by anything.
+  const bodyBounds = survivingBodyBounds ?? (() => {
+    const allBounds = boundsForPositionedNodes(positioned);
+    return allBounds && { ...allBounds, x: allBounds.x + allBounds.width / 2, width: 0 };
+  })();
   if (!bodyBounds) {
     return positioned;
   }
