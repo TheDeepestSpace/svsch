@@ -4,8 +4,8 @@
       "id": "cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:x",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 96
+        "x": 408,
+        "y": 24
       },
       "width": 120,
       "height": 48,
@@ -24,8 +24,8 @@
       "id": "cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 168
+        "x": 408,
+        "y": 72
       },
       "width": 120,
       "height": 48,
@@ -44,7 +44,7 @@
       "id": "cut-label:port:top:a:port:a:source",
       "type": "hdl",
       "position": {
-        "x": 168,
+        "x": -216,
         "y": 24
       },
       "width": 120,
@@ -64,7 +64,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": -360,
         "y": 36
       },
       "width": 120,
@@ -84,8 +84,8 @@
       "id": "port:top:x",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 108
+        "x": 552,
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -104,8 +104,8 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 180
+        "x": 552,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -128,7 +128,7 @@
       "target": "port:top:x",
       "sourceHandle": "cut",
       "targetHandle": "port:x",
-      "path": "M 144 120 L 144 120 L 168 120 L 168 120"
+      "path": "M 528 48 L 528 48 L 552 48 L 552 48"
     },
     {
       "id": "cut-stub:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
@@ -136,7 +136,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 144 192 L 144 192 L 168 192 L 168 192"
+      "path": "M 528 96 L 528 96 L 552 96 L 552 96"
     },
     {
       "id": "cut-stub:port:top:a:port:a:source",
@@ -144,7 +144,7 @@
       "target": "cut-label:port:top:a:port:a:source",
       "sourceHandle": "port:a",
       "targetHandle": "cut",
-      "path": "M 144 48 L 144 48 L 168 48 L 168 48"
+      "path": "M -240 48 L -240 48 L -216 48 L -216 48"
     }
   ]
 }
