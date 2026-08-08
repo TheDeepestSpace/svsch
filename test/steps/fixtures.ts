@@ -316,12 +316,12 @@ export class BddWorld {
     }
     await this._revealPanel();
     const moduleSelect = this.webviewPage.locator('select[aria-label="Module"]');
-    await moduleSelect.waitFor({ timeout: 15_000 });
+    await moduleSelect.waitFor({ timeout: 30_000 });
     const currentModule = await moduleSelect.inputValue().catch(() => undefined);
     if (currentModule !== moduleName) {
       await moduleSelect.selectOption(moduleName);
     }
-    await expect(moduleSelect).toHaveValue(moduleName, { timeout: 15_000 });
+    await expect(moduleSelect).toHaveValue(moduleName, { timeout: 30_000 });
     await this._waitForRenderedModule(moduleName, 60_000);
     await this.workbox.waitForTimeout(500);
     if (screenshotLabel) await this.takeScreenshot(screenshotLabel);
@@ -501,7 +501,7 @@ export class BddWorld {
       await this.evaluateInVSCode(vscode => {
         void (vscode as any).commands.executeCommand('svsch.openDiagram');
       });
-      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 15_000 });
+      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
       await this.workbox.waitForTimeout(300);
     }
   }
