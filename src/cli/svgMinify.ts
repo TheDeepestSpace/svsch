@@ -5,11 +5,16 @@
 // mergePaths, removeUnknownsAndDefaults — "Pseudo-elements are not supported
 // by css-select"). `inlineStyles`/`minifyStyles` also mangle the `var(--vscode-...)`
 // custom properties the embedded stylesheet depends on for theme adaptivity.
+// `moveElemsAttrsToGroup`/`moveGroupAttrsToElems` are also excluded: each
+// `[data-node-id]` group's own `transform="translate(...)"` is read directly
+// (by the CLI feature tests, and potentially other tooling) as that node's
+// layout position, and those plugins fold ancestor group transforms into it,
+// changing the value even though the rendered result is visually identical.
 // This list keeps only plugins verified (against the visual-test goldens) to
 // leave url() references (gradients/patterns via `style="...url(#id)"`),
-// `viewBox`, and `var(--vscode-...)` untouched. `removeViewBox` is excluded
-// outright since width/height equal viewBox here, so it would strip viewBox
-// entirely and hurt responsive embedding.
+// `viewBox`, `var(--vscode-...)`, and per-node `transform` values untouched.
+// `removeViewBox` is excluded outright since width/height equal viewBox here,
+// so it would strip viewBox entirely and hurt responsive embedding.
 const SAFE_MINIFY_PLUGINS = [
   'removeDoctype',
   'removeXMLProcInst',
@@ -29,9 +34,6 @@ const SAFE_MINIFY_PLUGINS = [
   'removeEmptyText',
   'convertShapeToPath',
   'convertEllipseToCircle',
-  'moveElemsAttrsToGroup',
-  'moveGroupAttrsToElems',
-  'convertTransform',
   'removeEmptyAttrs',
   'removeUnusedNS',
   'sortAttrs',

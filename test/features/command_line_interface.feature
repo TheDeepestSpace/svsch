@@ -20,6 +20,7 @@ Feature: Command Line Interface
             --top <module>        Render a specific module
             --layout <json>       Use an explicit saved layout file
             --no-layout           Ignore saved layout and run auto-layout
+            --no-minify           Skip SVGO minification of the exported SVG
             --theme <dark|light>  Fixed SVG color theme (default: dark)
             --workspace <dir>     Workspace root used for parser cache and relative paths
             --project-folder <d>  Project folder relative to workspace
