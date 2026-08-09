@@ -648,21 +648,13 @@ function DiagramApp(): React.ReactElement {
                 Updating
               </div>
             ) : view.diagnostics.length > 0 ? (
-              <Tooltip
-                content={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
+              <div
+                className="diagnostics-indicator"
+                role="status"
               >
-                {(trigger) => (
-                  <div
-                    {...trigger}
-                    className="diagnostics-indicator"
-                    role="status"
-                    tabIndex={0}
-                    aria-label={`${view.diagnostics.length} warning${view.diagnostics.length === 1 ? '' : 's'}`}
-                  >
-                    ⚠
-                  </div>
-                )}
-              </Tooltip>
+                <span aria-hidden="true">⚠</span>
+                {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
+              </div>
             ) : null}
           </div>
         </header>
