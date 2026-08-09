@@ -3468,6 +3468,7 @@ text {
 
 .hdl-interface-instance .svsch-interface-type-label {
   fill: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
   font-size: 9px;
   font-weight: 400;
 }
