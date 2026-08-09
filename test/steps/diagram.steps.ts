@@ -371,6 +371,35 @@ When('click and drag the mouse to select the blocks {string} and {string}', asyn
   await marqueeSelectNodePair(this, id1, id2, name1, name2);
 });
 
+// Single-block variant — used for the "Cut out" control, which (unlike
+// "Auto Layout") is available from a single selected block onward.
+When('click and drag the mouse to select the block {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  await marqueeSelectNodes(this, [id], [name]);
+});
+
+// A plain click also selects a single block — used where the scenario only
+// needs one block selected, leaving the lasso drag to cover multi-block
+// selection elsewhere.
+When('I click to select the block {string}', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Block not found: ${name}`);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${name}`);
+  await this.workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  await expect.poll(async () => {
+    return this.webviewPage.locator('html').evaluate((_el, targetId) => {
+      const rf = (window as any).reactFlowInstance;
+      const selected = rf.getNodes().filter((n: any) => n.selected);
+      return selected.length === 1 && selected[0].id === targetId;
+    }, id);
+  }, { timeout: 5000 }).toBe(true);
+
+  await this.takeScreenshot(`Selected ${name}`);
+});
+
 // Three-node variant: the lasso spans the union of all three nodes' bounding
 // boxes, so it still works even when one of them has been deliberately moved
 // off the line between the other two (e.g. testing that Auto Layout has to
@@ -783,16 +812,16 @@ Then('the connection between {string} and {string} should show its controls', as
 });
 
 Then('the {string} button should be visible', async function (this: BddWorld, label: string) {
-  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toBeVisible();
+  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toBeVisible();
 });
 
 Then('the {string} button should not be visible', async function (this: BddWorld, label: string) {
-  await expect(this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label })).toHaveCount(0);
+  await expect(this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label })).toHaveCount(0);
 });
 
 When('I click the {string} button', async function (this: BddWorld, label: string) {
   const before = JSON.stringify(await readExtensionLayout(this));
-  const button = this.webviewPage.locator('.svsch-selection-relayout-control', { hasText: label });
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label });
   await expect(button).toBeVisible();
   await button.click();
   await waitForLayoutChange(this, before, `After clicking ${label}`);
@@ -1539,6 +1568,20 @@ Then('there should be a connection between the combinational block in the {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a connection between {string} and the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, mux in ${region}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the mux block in the {string} generate region and {string}', async function (this: BddWorld, region: string, target: string) {
+  const sourceId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: mux in ${region}=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
 Then('there should be a connection between {string} and the inverter node', async function (this: BddWorld, source: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await this.webviewPage.locator('html').evaluate(() =>
@@ -1650,6 +1693,21 @@ Then('the route from {string} to the combinational block should have shifted by 
   const before = this.notedRoutes.get(routeKey(source, 'comb'));
   if (!before) throw new Error(`Missing noted route for ${source} -> comb`);
   const after = await combRoutePath(this.webviewPage, source);
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+When('I note the route from {string} to the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  this.notedRoutes.set(routeKey(source, `mux:${region}`), await generateRegionNodeRoutePath(this, source, region, 'mux'));
+});
+
+Then('the route from {string} to the mux block in the {string} generate region should have shifted by \\({int}, {int}\\) grid cells', async function (this: BddWorld, source: string, region: string, cellsX: number, cellsY: number) {
+  const before = this.notedRoutes.get(routeKey(source, `mux:${region}`));
+  if (!before) throw new Error(`Missing noted route for ${source} -> mux in ${region}`);
+  const after = await generateRegionNodeRoutePath(this, source, region, 'mux');
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+function expectRouteToHaveShifted(before: string, after: string, cellsX: number, cellsY: number): void {
   const beforeNums = (before.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   const afterNums = (after.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   expect(afterNums.length, 'route point count changed').toBe(beforeNums.length);
@@ -1662,7 +1720,7 @@ Then('the route from {string} to the combinational block should have shifted by 
     const expectedDelta = i % 2 === 0 ? dx : dy;
     expect(afterNums[i] - beforeNums[i], `coordinate ${i} of the route`).toBeCloseTo(expectedDelta, 0);
   }
-});
+}
 
 Then('the port node {string} should have moved', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
@@ -2222,6 +2280,17 @@ async function combRoutePath(webviewPage: FrameLocator, source: string): Promise
   const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
   if (!edgeId) throw new Error(`Edge not found between ${sourceId} and comb`);
   const route = await webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
+}
+
+async function generateRegionNodeRoutePath(world: BddWorld, source: string, region: string, kind: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(world.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(world, region, kind);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${kind} in ${region}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(world.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${kind} in ${region}`);
+  const route = await world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
   if (!route) throw new Error(`Route path not found for ${edgeId}`);
   return route;
 }

@@ -913,6 +913,10 @@ text {
   z-index: 2 !important;
 }
 
+/* Hosts only GenerateRegionOverlay now (see svsch-overlay-portal-root for the
+   floating controls that used to share this portal) — kept at the same tier
+   as edges so the region fill stays beneath node bodies instead of tinting
+   them. */
 .react-flow__viewport-portal {
   z-index: 1;
 }
@@ -2965,19 +2969,16 @@ text {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* A cut net stub's Reroute-to-canonical control renders through a
-   ViewportPortal (see OrthogonalEdge) instead of the edge's own SVG layer —
-   same escape hatch the selection Auto Layout toolbar uses — since the app
-   pins .react-flow__edges below .react-flow__nodes and a stub is short
-   enough to routinely land right on/under a node's port handle. */
-.svsch-cut-stub-reset-layer {
-  overflow: visible;
-  pointer-events: auto;
-  position: absolute;
-  z-index: 12;
-}
-
-.svsch-selection-toolbar-layer {
+/* Portal root for floating controls that must paint above node bodies —
+   the selection Auto Layout/Cut out toolbar and a cut stub's
+   Reroute-to-canonical control (see NodeSelectionToolbar and OrthogonalEdge).
+   Deliberately NOT react-flow's own ViewportPortal/.react-flow__viewport-portal:
+   that one also hosts GenerateRegionOverlay, whose translucent region fill
+   must stay beneath node bodies, so it can't share a stacking tier with
+   controls that need the opposite. Its inline transform (set in main.tsx)
+   reproduces react-flow's pan/zoom so flow-space coordinates still work for
+   anything portaled in here. */
+.svsch-overlay-portal-root {
   inset: 0;
   overflow: visible;
   pointer-events: none;
@@ -2986,13 +2987,28 @@ text {
   z-index: 12;
 }
 
+.svsch-cut-stub-reset-layer {
+  overflow: visible;
+  pointer-events: auto;
+  position: absolute;
+}
+
+.svsch-selection-toolbar-layer {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+}
+
 .svsch-selection-toolbar {
+  display: flex;
   pointer-events: none;
   position: absolute;
   transform: translate(-100%, 8px);
 }
 
-.svsch-selection-relayout-control {
+.svsch-selection-relayout-control,
+.svsch-selection-cutout-control {
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
   border-radius: 3px;
@@ -3007,7 +3023,31 @@ text {
   white-space: nowrap;
 }
 
-.svsch-selection-relayout-control:hover {
+/* Merge into a single button group (matching the edge Reroute/Cut controls)
+   whenever both buttons are showing — Auto Layout only renders from 2+
+   selected blocks, so it's always the group's left half when present. Cut
+   out is omitted entirely when there's nothing left to cut, and either
+   control falls back to full rounding when it ends up alone. */
+.svsch-selection-relayout-control {
+  border-radius: 3px 0 0 3px;
+  border-right: none;
+}
+
+.svsch-selection-relayout-control:last-child {
+  border-radius: 3px;
+  border-right: 1px solid var(--vscode-panel-border);
+}
+
+.svsch-selection-cutout-control {
+  border-radius: 0 3px 3px 0;
+}
+
+.svsch-selection-cutout-control:first-child {
+  border-radius: 3px;
+}
+
+.svsch-selection-relayout-control:hover,
+.svsch-selection-cutout-control:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -3428,6 +3468,7 @@ text {
 
 .hdl-interface-instance .svsch-interface-type-label {
   fill: var(--vscode-descriptionForeground);
+  font-family: var(--vscode-editor-font-family, monospace);
   font-size: 9px;
   font-weight: 400;
 }

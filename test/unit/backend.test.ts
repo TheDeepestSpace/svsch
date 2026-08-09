@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runParser } from '../helper';
+import { expectMuxSelector } from './helpers';
 import type { DesignModule, DiagramNode } from '../../src/ir/types';
 
 function fixture(name: string): string {
@@ -32,7 +33,12 @@ function expectMuxInput(module: DesignModule, mux: DiagramNode | undefined, sign
 
 function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
   expect(mux).toBeDefined();
-  expect(mux?.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)).toBe(true);
+  expect(mux?.ports.some((port) => (
+    port.direction === 'output'
+    && port.name === 'out'
+    && port.connectedSignal === signal
+  ))).toBe(true);
+  expect(module.edges.some((edge) => edge.source === mux?.id && edge.signal === signal)).toBe(true);
 }
 
 function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {
@@ -222,7 +228,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const pathA = generatedInstance(module, 'g_if_one', 'u_path_a');
     const pathB = generatedInstance(module, 'g_if_one', 'u_path_b');
     const expr = regionNodes(module, 'g_if_one').find((node) => (
-      node.kind === 'comb'
+      node.kind === 'mux'
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'sel')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'left_tap')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'right_tap')
@@ -232,6 +238,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(pathA, 'left generated leaf instance').toBeDefined();
     expect(pathB, 'right generated leaf instance').toBeDefined();
     expect(expr, 'generate ternary assignment expression').toBeDefined();
+    expect(expr?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
 
     expectEdge(module, 'port:generate_expression_assign:a', pathA!.id, 'a');
     expectEdge(module, 'port:generate_expression_assign:b', pathB!.id, 'b');
@@ -495,6 +502,66 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(assignCombChain.edges.some((edge) => edge.source === midBlock?.id && edge.target === yBlock?.id && edge.signal === 'mid')).toBe(true);
   });
 
+  it('promotes ternary expressions to recursively connected muxes', async () => {
+    const graph = await runParser(backend, [{ file: 'ternary_muxes.sv', text: `
+      module ternary_simple(input logic sel, a, b, output logic y);
+        assign y = sel ? a : b;
+      endmodule
+
+      module ternary_nested(input logic sel1, sel2, a, b, c, output logic y);
+        assign y = sel1 ? (sel2 ? a : b) : c;
+      endmodule
+
+      module ternary_in_alu(input logic sel, a, b, c, output logic y);
+        assign y = a + (sel ? b : c);
+      endmodule
+
+      module ternary_array(
+        input logic sel,
+        input logic [7:0] a [0:1],
+        input logic [7:0] b [0:1],
+        output logic [7:0] y [0:1]
+      );
+        assign y = sel ? a : b;
+      endmodule
+    ` }]);
+
+    const simple = graph.modules.ternary_simple;
+    const simpleMux = muxesSelectedBy(simple, 'sel')[0];
+    expect(simple.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expectMuxInput(simple, simpleMux, 'a', "1'b1");
+    expectMuxInput(simple, simpleMux, 'b', "1'b0");
+    expectMuxSelector(simple, simpleMux, 'sel');
+    expectMuxOutput(simple, simpleMux, 'y');
+    expect(simple.nodes.some((node) => node.kind === 'comb')).toBe(false);
+
+    const nested = graph.modules.ternary_nested;
+    const outerMux = muxesSelectedBy(nested, 'sel1')[0];
+    const innerMux = muxesSelectedBy(nested, 'sel2')[0];
+    expect(nested.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
+    expectMuxInput(nested, innerMux, 'a', "1'b1");
+    expectMuxInput(nested, innerMux, 'b', "1'b0");
+    expectMuxInput(nested, outerMux, 'c', "1'b0");
+    expectMuxSelector(nested, outerMux, 'sel1');
+    expectMuxSelector(nested, innerMux, 'sel2');
+    expect(nested.edges.some((edge) => edge.source === innerMux?.id && edge.target === outerMux?.id)).toBe(true);
+
+    const embedded = graph.modules.ternary_in_alu;
+    const embeddedMux = muxesSelectedBy(embedded, 'sel')[0];
+    const alu = embedded.nodes.find((node) => node.kind === 'alu');
+    expect(embedded.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expect(alu).toBeDefined();
+    expect(embedded.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expectMuxSelector(embedded, embeddedMux, 'sel');
+    expect(embedded.edges.some((edge) => edge.source === embeddedMux?.id && edge.target === alu?.id)).toBe(true);
+
+    const array = graph.modules.ternary_array;
+    const arrayMux = muxesSelectedBy(array, 'sel')[0];
+    expect(arrayMux?.isArrayNode ?? arrayMux?.metadata?.isArrayNode).toBe(true);
+    expect(arrayMux?.arrayDimension ?? arrayMux?.metadata?.arrayDimension).toBe('[0:1]');
+    expect(arrayMux?.arraySize ?? arrayMux?.metadata?.arraySize).toBe(2);
+  });
+
   it('promotes unary bitwise inversions to inverter nodes for scalar and vector signals', async () => {
     const graph = await runParser(backend, [{ file: 'inverters.sv', text: `
       module inv_scalar(input logic a, output logic y);
@@ -679,6 +746,44 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(mod.nodes.some((node) => node.kind === 'comb')).toBe(false);
     expect(mod.edges.some((edge) => edge.source === literal?.id && edge.target === 'port:literal_assigns:literal_y')).toBe(true);
     expect(mod.edges.some((edge) => edge.source === version?.id && edge.target === 'port:literal_assigns:version_y')).toBe(true);
+  });
+
+  it('connects instance ports whose expression is an inline bit-select or literal', async () => {
+    const graph = await runParser(backend, [{ file: 'inline_port_exprs.sv', text: `
+      module sub (input logic [3:0] a, input logic [3:0] b, input logic c, inout wire [3:0] io, output logic [3:0] y);
+        assign y = a + b;
+      endmodule
+
+      module top (input logic [7:0] data, inout wire [7:0] ext_bus, output logic [3:0] result);
+        sub u_sub (
+          .a (data[7:4]),
+          .b (4'd1),
+          .c (data[0]),
+          .io (ext_bus[3:0]),
+          .y (result)
+        );
+      endmodule
+    ` }]);
+    const mod = graph.modules.top;
+    const instance = mod.nodes.find((node) => node.kind === 'instance' && node.label === 'u_sub');
+    expect(instance).toBeDefined();
+
+    const busNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'data');
+    expect(busNode).toBeDefined();
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[7:4]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:a' && edge.signal === 'data[7:4]')).toBe(true);
+
+    const literal = mod.nodes.find((node) => node.kind === 'literal' && node.label === "4'd1");
+    expect(literal).toBeDefined();
+    expect(mod.edges.some((edge) => edge.source === literal?.id && edge.target === instance?.id && edge.targetPort === 'port:b' && edge.signal === "4'd1")).toBe(true);
+
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:c' && edge.signal === 'data[0]')).toBe(true);
+
+    const extBusNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'ext_bus');
+    expect(extBusNode).toBeDefined();
+    expect(extBusNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'ext_bus[3:0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === extBusNode?.id && edge.target === instance?.id && edge.targetPort === 'port:io' && edge.signal === 'ext_bus[3:0]')).toBe(true);
   });
 
   it('represents enum state literals in simple FSM reset and transition logic', async () => {

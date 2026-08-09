@@ -103,6 +103,24 @@ async function runSurelog(
   });
 }
 
+// Serializes work keyed by an arbitrary string (here, cacheDir) so that concurrent callers
+// never run their `fn` at the same time. A later caller's `fn` starts only after the earlier
+// one's has settled (resolved or rejected), and each caller still gets its own result/error.
+const exclusiveQueues = new Map<string, Promise<void>>();
+
+function runExclusive<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const previous = exclusiveQueues.get(key) ?? Promise.resolve();
+  const result = previous.then(fn, fn);
+  const tail = result.then(() => undefined, () => undefined);
+  exclusiveQueues.set(key, tail);
+  void tail.finally(() => {
+    if (exclusiveQueues.get(key) === tail) {
+      exclusiveQueues.delete(key);
+    }
+  });
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 
 export async function extractDesignWithUhdm(
@@ -119,81 +137,96 @@ export async function extractDesignWithUhdm(
   const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
   await fs.mkdir(cacheDir, { recursive: true });
 
-  // --- Cache check ---
-  let cacheHit = false;
   const fingerprint = await computeFingerprint(surelogPath, files, includePaths ?? [], defines ?? {});
-  try {
-    const saved = JSON.parse(await fs.readFile(fingerprintFile, 'utf-8')) as CacheFingerprint;
+
+  // Concurrent calls for the same cacheDir (e.g. a spurious watcher-triggered rebuild racing
+  // the initial one) must never spawn two Surelog processes against it at once — Surelog isn't
+  // safe for concurrent invocations against the same output dir and will corrupt/crash reading
+  // each other's partial .uhdm output. Run the cache-check + Surelog spawn exclusively per
+  // cacheDir; a waiting caller re-checks the cache once it's their turn, so if the run that
+  // just finished already produced a matching fingerprint, they skip Surelog entirely instead
+  // of spawning a redundant/racy one.
+  // The backend also reads the shared .uhdm file, so it must stay inside the same
+  // exclusive section: releasing the lock before the backend has read the file would let a
+  // waiting caller with a different fingerprint start a new Surelog run against cacheDir
+  // and overwrite/corrupt the file while this caller's backend is still reading it.
+  const raw = await runExclusive(cacheDir, async () => {
+    // --- Cache check ---
+    let cacheHit = false;
+    try {
+      const saved = JSON.parse(await fs.readFile(fingerprintFile, 'utf-8')) as CacheFingerprint;
+      const uhdmFile = await findSurelogUhdmFile(cacheDir);
+      if (fingerprintsMatch(fingerprint, saved) && await fileExists(uhdmFile)) {
+        cacheHit = true;
+      }
+    } catch { /* no cache */ }
+
+    // --- Surelog (skipped on cache hit) ---
+    let surelogReportedPct = 0;
+    if (!cacheHit) {
+      const surelogArgs = [
+        '-parse',
+        '-sverilog',
+        '-fileunit',
+        '-nopython',
+        '-o', cacheDir
+      ];
+
+      if (includePaths) {
+        for (const inc of includePaths) {
+          const absPath = path.isAbsolute(inc) ? inc : path.resolve(workspaceRoot, inc);
+          surelogArgs.push('-I' + absPath);
+        }
+      }
+
+      if (defines) {
+        for (const [key, val] of Object.entries(defines)) {
+          surelogArgs.push(`+define+${key}=${val}`);
+        }
+      }
+
+      surelogArgs.push(...files);
+
+      onProgress?.('Elaborating project...', 0);
+
+      await runSurelog(surelogPath, surelogArgs, files, (msg, inc) => {
+        surelogReportedPct += inc;
+        onProgress?.(msg, inc);
+      });
+
+      // Ensure we've consumed Surelog's 80% budget before moving on
+      const surelogRemainder = 80 - surelogReportedPct;
+      if (surelogRemainder > 0) onProgress?.('Elaborating project...', surelogRemainder);
+
+      // Persist fingerprint only after successful Surelog run
+      await fs.writeFile(fingerprintFile, JSON.stringify(fingerprint), 'utf-8');
+    } else {
+      onProgress?.('Using cached design data', 80);
+    }
+
     const uhdmFile = await findSurelogUhdmFile(cacheDir);
-    if (fingerprintsMatch(fingerprint, saved) && await fileExists(uhdmFile)) {
-      cacheHit = true;
-    }
-  } catch { /* no cache */ }
-
-  // --- Surelog (skipped on cache hit) ---
-  let surelogReportedPct = 0;
-  if (!cacheHit) {
-    const surelogArgs = [
-      '-parse',
-      '-sverilog',
-      '-fileunit',
-      '-nopython',
-      '-o', cacheDir
-    ];
-
-    if (includePaths) {
-      for (const inc of includePaths) {
-        const absPath = path.isAbsolute(inc) ? inc : path.resolve(workspaceRoot, inc);
-        surelogArgs.push('-I' + absPath);
-      }
+    if (!(await fileExists(uhdmFile))) {
+      throw new Error(`Surelog failed to generate UHDM file under ${cacheDir}`);
     }
 
-    if (defines) {
-      for (const [key, val] of Object.entries(defines)) {
-        surelogArgs.push(`+define+${key}=${val}`);
-      }
+    onProgress?.('Extracting design graph...', 10);
+
+    const backendArgs = [uhdmFile];
+    if (moduleName) {
+        backendArgs.push(moduleName);
+    } else {
+        backendArgs.push(""); // empty targetModule means extract all
     }
-
-    surelogArgs.push(...files);
-
-    onProgress?.('Elaborating project...', 0);
-
-    await runSurelog(surelogPath, surelogArgs, files, (msg, inc) => {
-      surelogReportedPct += inc;
-      onProgress?.(msg, inc);
-    });
-
-    // Ensure we've consumed Surelog's 80% budget before moving on
-    const surelogRemainder = 80 - surelogReportedPct;
-    if (surelogRemainder > 0) onProgress?.('Elaborating project...', surelogRemainder);
-
-    // Persist fingerprint only after successful Surelog run
-    await fs.writeFile(fingerprintFile, JSON.stringify(fingerprint), 'utf-8');
-  } else {
-    onProgress?.('Using cached design data', 80);
-  }
-
-  const uhdmFile = await findSurelogUhdmFile(cacheDir);
-  if (!(await fileExists(uhdmFile))) {
-    throw new Error(`Surelog failed to generate UHDM file under ${cacheDir}`);
-  }
-
-  onProgress?.('Extracting design graph...', 10);
-
-  const backendArgs = [uhdmFile];
-  if (moduleName) {
-      backendArgs.push(moduleName);
-  } else {
-      backendArgs.push(""); // empty targetModule means extract all
-  }
-  backendArgs.push(workspaceRoot);
+    backendArgs.push(workspaceRoot);
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
         logger.error(`Backend Stderr: ${stderr}`);
     }
 
-    const raw: RawUhdmIr = JSON.parse(stdout);
+    return JSON.parse(stdout) as RawUhdmIr;
+  });
+
     const graph = transformToDesignGraph(raw, workspaceRoot);
 
     const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);

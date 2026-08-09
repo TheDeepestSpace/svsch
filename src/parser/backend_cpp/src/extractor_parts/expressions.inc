@@ -600,6 +600,110 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
     return out_signal;
 }
 
+bool DesignExtractor::isConditionalOperation(vpiHandle expr) {
+    return expr
+        && vpi_get(vpiType, expr) == vpiOperation
+        && vpi_get(vpiOpType, expr) == vpiConditionOp;
+}
+
+std::string DesignExtractor::promoteMuxExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
+    if (!isConditionalOperation(expr)) return "";
+
+    std::vector<vpiHandle> operands;
+    vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+    if (op_itr) {
+        while (vpiHandle operand = vpi_scan(op_itr)) {
+            operands.push_back(operand);
+        }
+        vpi_release_handle(op_itr);
+    }
+    if (operands.size() != 3) return "";
+
+    std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
+    std::string node_id = sanitizeId("mux:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":ternary");
+    if (!is_procedural) {
+        for (const auto& n : mod.nodes) {
+            if (n.id == node_id) return out_signal;
+        }
+    }
+
+    auto promote_operand = [&](vpiHandle operand, const std::string& suffix) {
+        if (!isLiteralExpr(operand)) {
+            return getOrPromoteExpr(operand, mod, out_signal + suffix, is_procedural, current_drivers);
+        }
+
+        std::string literal_signal = getLiteralLabel(operand);
+        ensureLiteralNode(operand, mod, literal_signal, getWidth(operand), expr, literal_signal);
+        return literal_signal;
+    };
+
+    std::string sel_signal = promote_operand(operands[0], "_sel");
+    std::string true_signal = promote_operand(operands[1], "_true");
+    std::string false_signal = promote_operand(operands[2], "_false");
+
+    std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
+    if (sel_width.empty()) sel_width = getWidth(operands[0]);
+
+    std::string true_width = getDeclaredSignalWidth(mod, true_signal);
+    if (true_width.empty()) true_width = getWidth(operands[1]);
+
+    std::string false_width = getDeclaredSignalWidth(mod, false_signal);
+    if (false_width.empty()) false_width = getWidth(operands[2]);
+
+    std::string width = getDeclaredSignalWidth(mod, out_signal);
+    if (width.empty()) width = getWidth(expr);
+    if (width.empty()) width = !true_width.empty() ? true_width : false_width;
+
+    Node n;
+    n.id = node_id;
+    n.kind = "mux";
+    n.label = "";
+    n.source = getSourceInfo(expr);
+    refineSourceInfo(n.source, expr);
+    n.metadata.expression = getExprText(expr);
+    n.metadata.isProcedural = is_procedural;
+    n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+
+    // A conditional over whole arrays represents one mux per unpacked array
+    // element. Prefer the result shape, then fall back to either data arm so
+    // nested ternaries keep the same stacked representation.
+    auto inherit_array_shape = [&](const std::string& signal) {
+        ensureDeclaredArray(mod, signal);
+        auto dimension = mod.arrayDimensions.find(signal);
+        if (dimension != mod.arrayDimensions.end()) {
+            n.metadata.isArrayNode = true;
+            n.metadata.arrayDimension = dimension->second;
+            auto size = mod.arraySizes.find(signal);
+            if (size != mod.arraySizes.end()) n.metadata.arraySize = size->second;
+            return true;
+        }
+
+        for (const auto& source_node : mod.nodes) {
+            if (!source_node.metadata.isArrayNode) continue;
+            for (const auto& port : source_node.ports) {
+                if (port.direction != "output" || port.signal != signal) continue;
+                n.metadata.isArrayNode = true;
+                n.metadata.arrayDimension = source_node.metadata.arrayDimension;
+                n.metadata.arraySize = source_node.metadata.arraySize;
+                return true;
+            }
+        }
+        return false;
+    };
+    if (!inherit_array_shape(out_signal) && !inherit_array_shape(true_signal)) {
+        inherit_array_shape(false_signal);
+    }
+
+    n.ports.push_back({"sel", "input", sel_signal, sel_width, "s"});
+    n.ports.push_back({"true", "input", true_signal, true_width, "1'b1"});
+    n.ports.push_back({"false", "input", false_signal, false_width, "1'b0"});
+
+    n.ports.push_back({"out", "output", out_signal, width});
+    mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
+    return out_signal;
+}
+
 bool DesignExtractor::isInverterOperation(vpiHandle expr) {
     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
     int op = vpi_get(vpiOpType, expr);
@@ -736,6 +840,11 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
     if (isInverterOperation(expr)) {
         std::string inverted_signal = promoteInverterExpr(expr, mod, preferred_name, is_procedural, current_drivers);
         if (!inverted_signal.empty()) return inverted_signal;
+    }
+
+    if (isConditionalOperation(expr)) {
+        std::string mux_signal = promoteMuxExpr(expr, mod, preferred_name, is_procedural, current_drivers);
+        if (!mux_signal.empty()) return mux_signal;
     }
 
     // Simple types that don't need promotion

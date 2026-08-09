@@ -261,15 +261,15 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     Then the "g_if_one" generate region should contain at least 3 blocks
-    And there should be a connection between "g_if_one.u_path_a" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between "g_if_one.u_path_b" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between "sel" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between the combinational block in the "g_if_one" generate region and "y"
-    And I note the route from "g_if_one.u_path_a" to the combinational block
+    And there should be a connection between "g_if_one.u_path_a" and the mux block in the "g_if_one" generate region
+    And there should be a connection between "g_if_one.u_path_b" and the mux block in the "g_if_one" generate region
+    And there should be a connection between "sel" and the mux block in the "g_if_one" generate region
+    And there should be a connection between the mux block in the "g_if_one" generate region and "y"
+    And I note the route from "g_if_one.u_path_a" to the mux block in the "g_if_one" generate region
     When I move the "g_if_one" generate region by (2, -1) grid cells
     Then all blocks in the "g_if_one" generate region should have moved by (2, -1) grid cells
     And blocks outside the "g_if_one" generate region should not have moved
-    And the route from "g_if_one.u_path_a" to the combinational block should have shifted by (2, -1) grid cells
+    And the route from "g_if_one.u_path_a" to the mux block in the "g_if_one" generate region should have shifted by (2, -1) grid cells
 
   Scenario: Moving a generate block moves every arm and block inside it
     Given I have a file "top.sv" in my workspace:
@@ -508,6 +508,72 @@ Feature: Diagram Interaction
     Then the "Auto Layout" button should not be visible
     When click and drag the mouse to select the blocks "u1" and "u2"
     Then the "Auto Layout" button should be visible
+
+  Scenario: Cutting out a single selected block cuts every wire connected to it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, input logic b, output logic y);
+        assign y = a & b;
+      endmodule
+
+      module top(input logic a, input logic b, output logic y);
+        leaf u1(.a(a), .b(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    Then the "Auto Layout" button should not be visible
+    When I click the "Cut out" button
+    Then I should see 2 cut net labels named "a"
+    And I should see 2 cut net labels named "b"
+    And I should see 2 cut net labels named "u1.y"
+    And the original connection between "a" and "u1" should be hidden
+    And the original connection between "b" and "u1" should be hidden
+    And the original connection between "u1" and "y" should be hidden
+
+  Scenario: Cutting out one block in a multi-block selection cuts every selected block's wires
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, input logic c, output logic x, output logic y, output logic z);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+        leaf u3(.a(c), .y(z));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select the blocks "u1" and "u2"
+    And I click the "Cut out" button
+    Then I should see 2 cut net labels named "a"
+    And I should see 2 cut net labels named "u1.y"
+    And I should see 2 cut net labels named "b"
+    And I should see 2 cut net labels named "u2.y"
+    And the original connection between "a" and "u1" should be hidden
+    And the original connection between "u1" and "x" should be hidden
+    And the original connection between "b" and "u2" should be hidden
+    And the original connection between "u2" and "y" should be hidden
+    And I should not see cut net labels named "c"
+    And the original connection between "c" and "u3" should be restored
+
+  Scenario: The Cut out button is hidden for a block that's already fully cut out
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Cut out" button
+    And I click to select the block "u1"
+    Then the "Cut out" button should not be visible
 
   Scenario: Auto-laying out one connection's blocks anchors the result, leaves the other connection untouched, and carries cut net ends along
     Given I have a file "top.sv" in my workspace:

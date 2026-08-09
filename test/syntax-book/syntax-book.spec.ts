@@ -234,11 +234,14 @@ test.describe('Syntax Book Generation & Verification', () => {
           }
 
           if (caseData.target.kind === 'node') {
-            const targetExists = viewModel.nodes.some(n => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel);
-            if (!targetExists) {
+            const targetNode = viewModel.nodes.find(n => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel);
+            if (!targetNode) {
               console.log(`CASE ${caseData.id}: TARGET NOT FOUND. Kind: ${caseData.target.nodeKind}, Label: ${caseData.target.nodeLabel}. Nodes:`, viewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
             }
-            expect(targetExists).toBe(true);
+            expect(targetNode).toBeDefined();
+            if (caseData.expect.targetIsArray !== undefined) {
+              expect(targetNode?.isArrayNode ?? targetNode?.metadata?.isArrayNode).toBe(caseData.expect.targetIsArray);
+            }
           } else if (caseData.target.kind === 'region') {
             const targetExists = viewModel.generateRegions?.some(r => r.label === caseData.target.regionLabel);
             if (!targetExists) {

@@ -380,6 +380,8 @@ private:
     bool isAluOperation(vpiHandle expr);
     std::string aluOperationSymbol(vpiHandle expr);
     std::string promoteAluExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    bool isConditionalOperation(vpiHandle expr);
+    std::string promoteMuxExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     bool isInverterOperation(vpiHandle expr);
     std::string promoteInverterExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     vpiHandle unwrapRef(vpiHandle handle);
