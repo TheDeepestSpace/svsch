@@ -21,6 +21,11 @@ test.describe('inverter visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'inverter-node-canvas.png', { clip: await paddedGraphClip(page) });
 
+    const inverter = page.locator('[data-node-kind="inverter"]').first();
+    await inverter.click();
+    await expect(inverter.locator('.node-skin-selection').first()).toHaveCSS('opacity', '1');
+    await expect(inverter.locator('.hdl-node-selection-rect')).toHaveCount(0);
+
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
     }
