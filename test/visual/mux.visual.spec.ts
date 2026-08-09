@@ -539,6 +539,11 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="mux"]') });
+
+    const mux = page.locator('[data-node-kind="mux"]');
+    await mux.click();
+    await expect(mux.locator('.node-skin-selection')).toHaveCSS('opacity', '1');
+    await expect(mux.locator('.hdl-node-selection-rect')).toHaveCount(0);
   });
 
   test('renders a connected mux canvas interpreted from SystemVerilog', async ({ page }) => {
@@ -1087,6 +1092,11 @@ test.describe('ALU visual rendering', () => {
     await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
     await expect(page.locator('.svsch-alu-operation')).toHaveText('+');
     await expectGraphAndScreenshot(page, 'alu-connected-canvas.png', { clip: await paddedGraphClip(page) });
+
+    const alu = page.locator('[data-node-kind="alu"]');
+    await alu.click();
+    await expect(alu.locator('.node-skin-selection')).toHaveCSS('opacity', '1');
+    await expect(alu.locator('.hdl-node-selection-rect')).toHaveCount(0);
 
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
