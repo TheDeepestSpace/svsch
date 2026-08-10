@@ -270,6 +270,14 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
+      - name: Reset local gh-pages ref before second benchmark track
+        # The elaboration step above left a local `gh-pages` branch ref behind
+        # (from its own internal fetch); a second benchmark-action invocation
+        # in the same job fetches into that same ref name, and since it's not
+        # an ancestor of the freshly fetched remote tip, git rejects it as a
+        # non-fast-forward update. Drop it so the rendering step starts clean.
+        run: git branch -D gh-pages || true
+
       - name: Track diagram-generation benchmark (visual rendering)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
