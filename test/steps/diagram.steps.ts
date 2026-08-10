@@ -1950,7 +1950,17 @@ Then('there should be a connection from {string} port {string} to {string} port 
     return instance?.getEdges() ?? [];
   });
   const edge = edges.find((e: any) => handleMatches(e.sourceHandle, srcPort) && handleMatches(e.targetHandle, dstPort));
-  expect(edge).toBeDefined();
+  const sourceCutNetKeys = new Set(edges.flatMap((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'source' && handleMatches(e.sourceHandle, srcPort) ? [cutStub.netKey] : [];
+  }));
+  const cutEdge = edges.find((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'sink'
+      && sourceCutNetKeys.has(cutStub.netKey)
+      && handleMatches(e.targetHandle, dstPort);
+  });
+  expect(edge ?? cutEdge).toBeDefined();
 });
 
 Then('I should see a {string} block for {string}', async function (this: BddWorld, kind: string, label: string) {
