@@ -1672,6 +1672,36 @@ Then('there should be a connection between {string} and the register node {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a cut connection between {string} and the register node {string}', async function (this: BddWorld, source: string, reg: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findNodeIdByLabel(this.webviewPage, reg, 'register');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, reg ${reg}=${targetId}`);
+
+  const result = await this.webviewPage.locator('html').evaluate((_, { sourceId, targetId }) => {
+    const instance = (window as any).getReactFlowInstance?.() ?? (window as any).reactFlowInstance;
+    const edges = instance?.getEdges() ?? [];
+    const sourceStubs = edges.filter((edge: any) => (
+      edge.source === sourceId && edge.data?.edge?.metadata?.cutStub?.role === 'source'
+    ));
+    const sinkStubs = edges.filter((edge: any) => (
+      edge.target === targetId && edge.data?.edge?.metadata?.cutStub?.role === 'sink'
+    ));
+    return {
+      hasMatchingStubs: sourceStubs.some((sourceStub: any) => sinkStubs.some((sinkStub: any) => (
+        sourceStub.data.edge.metadata.cutStub.netKey === sinkStub.data.edge.metadata.cutStub.netKey
+      ))),
+      hasOriginalEdge: edges.some((edge: any) => (
+        edge.source === sourceId
+        && edge.target === targetId
+        && edge.data?.edge?.metadata?.cutStub === undefined
+      ))
+    };
+  }, { sourceId, targetId });
+
+  expect(result.hasMatchingStubs, `Cut connection not found between ${sourceId} and ${targetId}`).toBe(true);
+  expect(result.hasOriginalEdge, `Original connection still shown between ${sourceId} and ${targetId}`).toBe(false);
+});
+
 Then('there should be a connection between {string} and the latch node {string}', async function (this: BddWorld, source: string, latch: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await findNodeIdByLabel(this.webviewPage, latch, 'latch');
