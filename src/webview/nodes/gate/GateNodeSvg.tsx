@@ -9,14 +9,14 @@ import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
 
 /** Body path for an AND gate: flat left edge, right side bulges into a D-shaped dome. */
-function andBodyPath(left: number, right: number, height: number): string {
+export function andBodyPath(left: number, right: number, height: number): string {
   const domeRadius = height / 2;
   const flatRight = right - domeRadius;
   return `M ${left} 0 L ${flatRight} 0 A ${domeRadius} ${domeRadius} 0 0 1 ${flatRight} ${height} L ${left} ${height} Z`;
 }
 
 /** Body path for an OR/XOR gate: concave left edge, curved back tapering to a point on the right. */
-function orBodyPath(left: number, right: number, height: number): string {
+export function orBodyPath(left: number, right: number, height: number): string {
   const midY = height / 2;
   const span = right - left;
   const leftBow = left + span * 0.18;
@@ -31,7 +31,7 @@ function orBodyPath(left: number, right: number, height: number): string {
 }
 
 /** The extra back-curve XOR/XNOR draw just left of the OR body, echoing its concave edge. */
-function xorBackCurvePath(height: number): string {
+export function xorBackCurvePath(height: number): string {
   const midY = height / 2;
   const leftBow = gateXorGap * 0.7;
   return `M 0 0 Q ${leftBow} ${midY} 0 ${height}`;
