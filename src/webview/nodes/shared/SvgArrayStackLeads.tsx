@@ -30,7 +30,7 @@ export function SvgArrayStackLeads({
       className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
       aria-hidden="true"
     >
-      {arrayStackLeadSegments({ side, width, y, x, trimSink, wide }).map((segment) => (
+      {arrayStackLeadSegments({ side, width, y, x, wide }).map((segment) => (
         <path
           key={segment.id}
           className={`svsch-array-stack-lead svsch-array-stack-lead-${segment.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}

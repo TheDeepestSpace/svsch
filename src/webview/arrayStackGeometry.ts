@@ -3,7 +3,6 @@ import { diagramSizing } from '../diagram/constants';
 export const ARRAY_STACK_LANE_OFFSET = 4;
 /** Multi-bit array stacks spread wider (0.25 grid) so the thicker lines keep clear gaps. */
 export const ARRAY_STACK_WIDE_LANE_OFFSET = diagramSizing.gridSize * 0.25;
-export const ARRAY_STACK_LEAD_EDGE_GAP = 1.5;
 
 export interface ArrayStackLayer {
   id: ArrayStackLayerId;
@@ -96,14 +95,12 @@ export function arrayStackLeadSegments({
   width,
   y,
   x,
-  trimSink = false,
   wide = false
 }: {
   side: ArrayStackLeadSide;
   width: number;
   y: number;
   x?: number;
-  trimSink?: boolean;
   wide?: boolean;
 }): ArrayStackLeadSegment[] {
   return arrayStackLeadLayersFor(wide).map((layer) => {
@@ -113,10 +110,12 @@ export function arrayStackLeadSegments({
       : side === 'left'
         ? Math.round(layer.dx)
         : Math.round(width + layer.dx);
-    const shapeY = Math.round(y + layer.dy);
-    const endY = Math.round(side === 'top' && trimSink
-      ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
-      : shapeY);
+    // Touch the skin edge exactly (no gap) — the node's own body paints over
+    // this endpoint, so any gap here leaves a sliver of lead poking past the
+    // boundary wherever the fill doesn't start until further in (e.g. the
+    // mux/select top edge slopes away from the port), which reads as a stray
+    // floating stub instead of one hidden under the node.
+    const endY = Math.round(y + layer.dy);
     const leadX = Math.round((side === 'top' || side === 'bottom')
       ? shapeX
       : side === 'left'
@@ -126,7 +125,7 @@ export function arrayStackLeadSegments({
       ? endY - trim
       : side === 'bottom'
         ? endY + trim
-        : shapeY);
+        : endY);
     return { id: layer.id, d: `M ${leadX} ${leadY} L ${shapeX} ${endY}` };
   });
 }
