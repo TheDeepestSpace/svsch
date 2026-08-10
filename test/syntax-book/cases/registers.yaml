@@ -23,6 +23,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register]
+      cutSignals: [clk]
       selectedText: |
         always_ff @(posedge clk) begin
             q <= d;
@@ -56,6 +57,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register]
+      cutSignals: [clk, rst]
       selectedText: |
         always_ff @(posedge clk or posedge rst) begin
             if (rst) begin
@@ -93,6 +95,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register]
+      cutSignals: [clk, rst_n]
       selectedText: |
         always_ff @(posedge clk or negedge rst_n) begin
             if (!rst_n) begin
@@ -130,6 +133,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register, literal]
+      cutSignals: [clk, rst_n]
       selectedText: |
         always_ff @(posedge clk or negedge rst_n) begin
             if (!rst_n) begin
@@ -162,6 +166,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register]
+      cutSignals: [clk]
       selectedText: |
         always_ff @(posedge clk) begin
             q <= d;
@@ -190,6 +195,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, register]
+      cutSignals: [clk]
       selectedText: |
         always_ff @(posedge clk) begin
             q <= d;

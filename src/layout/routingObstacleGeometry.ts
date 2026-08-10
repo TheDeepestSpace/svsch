@@ -27,6 +27,28 @@ export function routingObstacleMargins(
     };
   }
 
+  // The label's lead already reserves its connected side, just like a module
+  // port lead does. Keep a full grid on the other three sides so snapped
+  // routes cannot run directly along the label's outline.
+  if (node.kind === 'netLabel') {
+    const handleSide = node.metadata?.cutNet?.handleSide
+      ?? (portSides.includes('WEST')
+        ? 'left'
+        : portSides.includes('EAST')
+          ? 'right'
+          : portSides.includes('NORTH')
+            ? 'top'
+            : portSides.includes('SOUTH')
+              ? 'bottom'
+              : undefined);
+    return {
+      left: handleSide === 'left' ? 0 : diagramSizing.gridSize,
+      right: handleSide === 'right' ? 0 : diagramSizing.gridSize,
+      top: handleSide === 'top' ? 0 : diagramSizing.gridSize,
+      bottom: handleSide === 'bottom' ? 0 : diagramSizing.gridSize
+    };
+  }
+
   if (node.kind !== 'port') {
     return { left: 0, right: 0, ...vertical };
   }

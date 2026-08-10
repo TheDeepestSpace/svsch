@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -42,6 +42,7 @@ export class DiagramPanel {
   private layout: SavedLayout = { version: 1, modules: {} };
   private currentModule?: string;
   private store?: LayoutStore;
+  private postViewQueue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -626,12 +627,21 @@ export class DiagramPanel {
 
   private async tieNet(moduleName: string, netKey: string): Promise<void> {
     const store = this.getStore();
-    if (!store) {
+    const graph = this.graph;
+    if (!store || !graph?.modules[moduleName]) {
       return;
     }
     await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = removeNetCut(this.layout, moduleName, netKey);
+    // Let the just-restored connection find its natural arrangement once,
+    // then anchor that result. Later ties must not re-run ELK over unrelated
+    // components and make already-settled portions of the diagram jump.
+    const tiedView = await buildViewModel(graph, moduleName, this.layout);
+    this.layout = mergeNodePositions(this.layout, moduleName, tiedView.nodes.map((node) => ({
+      ...node,
+      fixed: node.kind === 'netLabel' ? node.fixed : true
+    })));
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
@@ -648,19 +658,57 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async postView(): Promise<void> {
+  private postView(): Promise<void> {
+    const pending = this.postViewQueue.then(() => this.postViewNow());
+    this.postViewQueue = pending.catch(() => {});
+    return pending;
+  }
+
+  private async postViewNow(): Promise<void> {
     if (!this.panel || !this.graph || this.currentModule === undefined) {
       return;
     }
+    const panel = this.panel;
+    const graph = this.graph;
+    const moduleName = this.currentModule;
+    const isCurrentView = () => (
+      this.panel === panel
+      && this.graph === graph
+      && this.currentModule === moduleName
+    );
     const store = this.getStore();
     if (store) {
-      await this.ensureModuleLayout(store, this.currentModule);
+      const isFirstOpen = !this.layout.modules[moduleName]
+        && !(await store.hasModuleLayout(moduleName));
+      if (!isCurrentView()) {
+        return;
+      }
+      await this.ensureModuleLayout(store, moduleName);
+      if (!isCurrentView()) {
+        return;
+      }
+      if (isFirstOpen) {
+        const designModule = graph.modules[moduleName];
+        if (designModule) {
+          const includeClockAndReset = vscode.workspace
+            .getConfiguration('svsch')
+            .get<boolean>('autocut-clk-reset', true);
+          const edges = firstOpenAutoCutEdges(designModule, includeClockAndReset);
+          if (edges.length > 0) {
+            this.layout = mergeFirstOpenNetCuts(this.layout, moduleName, edges, designModule);
+          }
+          await this.persistModuleLayout(store, moduleName);
+        }
+      }
     }
-    const view: DiagramViewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
-    await this.panel.webview.postMessage({
+    const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout);
+    if (!isCurrentView()) {
+      return;
+    }
+    await panel.webview.postMessage({
       type: 'graph',
       view,
-      modules: Object.keys(this.graph.modules)
+      modules: Object.keys(graph.modules)
     });
   }
 
