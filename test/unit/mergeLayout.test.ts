@@ -291,6 +291,8 @@ describe('first-open auto-cuts', () => {
     const aBounds = boundsOf(byId.get('a')!);
     const xBounds = boundsOf(byId.get('x')!);
     const yBounds = boundsOf(byId.get('y')!);
+    const sourceLabelBounds = boundsOf(byId.get('cut-label:a:p:source')!);
+    const xLabelBounds = boundsOf(byId.get('cut-label:a:p:sink:a-x')!);
 
     // 'a' (the only source-direction port) is alone in the left column; 'x'
     // and 'y' stack in the right column, sorted top-to-bottom. There's no
@@ -301,7 +303,21 @@ describe('first-open auto-cuts', () => {
     expect(xBounds.x).toBe(yBounds.x);
     expect(xBounds.y).toBeLessThan(yBounds.y);
     expect(boxesOverlap(xBounds, yBounds)).toBe(false);
-    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(diagramSizing.columnGap);
+    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(
+      diagramSizing.edgeLeadLength * 2
+      + sourceLabelBounds.width * 2
+      + diagramSizing.gridSize
+    );
+    expect(sourceLabelBounds.x).toBe(
+      aBounds.x + aBounds.width + diagramSizing.edgeLeadLength
+    );
+    expect(sourceLabelBounds.y + sourceLabelBounds.height / 2).toBe(
+      aBounds.y + aBounds.height / 2
+    );
+    expect(sourceLabelBounds.x + sourceLabelBounds.width + diagramSizing.gridSize).toBe(
+      xLabelBounds.x
+    );
+    expect(xLabelBounds.x + xLabelBounds.width + diagramSizing.edgeLeadLength).toBe(xBounds.x);
   });
 
   it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {

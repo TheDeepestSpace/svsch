@@ -110,7 +110,7 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   // until a full Reset clears moduleLayout.nodes and restores it.
   const isPristineLayout = Object.keys(moduleLayout.nodes).length === 0;
   const positioned = isPristineLayout
-    ? columnizeFullyCutBoundaryPorts(designModule, activeCutKeys, packedGenerateLayout.nodes)
+    ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
     : packedGenerateLayout.nodes;
   const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
@@ -636,9 +636,10 @@ function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undef
 // surviving edge is left exactly where ELK placed it.
 function columnizeFullyCutBoundaryPorts(
   designModule: DesignModule,
-  activeCutKeys: Set<string>,
+  activeCuts: Map<string, ActiveNetCut>,
   positioned: PositionedNode[]
 ): PositionedNode[] {
+  const activeCutKeys = new Set(activeCuts.keys());
   const edgesByNodeId = new Map<string, DiagramEdge[]>();
   for (const edge of designModule.edges) {
     for (const nodeId of [edge.source, edge.target]) {
@@ -672,8 +673,12 @@ function columnizeFullyCutBoundaryPorts(
     return positioned;
   }
 
+  const sideFor = (node: DiagramNode): 'input' | 'output' => (
+    node.ports[0]?.direction === 'output' ? 'output' : 'input'
+  );
+  const detachedSideById = new Map(detached.map((node) => [node.id, sideFor(node)]));
   const bySide = (side: 'input' | 'output') => detached
-    .filter((node) => (node.ports[0]?.direction === 'output') === (side === 'output'))
+    .filter((node) => sideFor(node) === side)
     .sort((a, b) => a.position.y - b.position.y);
 
   const rowGap = diagramSizing.sameLayerNodeSeparation;
@@ -688,14 +693,42 @@ function columnizeFullyCutBoundaryPorts(
     return result;
   };
 
-  const columnGap = diagramSizing.columnGap;
+  const pairGapFor = (cut: SavedNetCut): number => {
+    const labelWidth = diagramNodeDimensions({
+      id: 'cut-label-column-gap',
+      kind: 'netLabel',
+      label: cut.label,
+      ports: []
+    }).width;
+    return diagramSizing.edgeLeadLength * 2 + labelWidth * 2 + diagramSizing.gridSize;
+  };
+
+  let inputGap = survivingBodyBounds ? diagramSizing.columnGap : 0;
+  let outputGap = diagramSizing.columnGap;
+  for (const { cut, edges } of activeCuts.values()) {
+    const sourceSide = detachedSideById.get(cut.source.nodeId);
+    for (const edge of edges) {
+      const targetSide = detachedSideById.get(edge.target);
+      const pairGap = pairGapFor(cut);
+      if (!survivingBodyBounds && sourceSide && targetSide && sourceSide !== targetSide) {
+        // With no body, the two boundary-port columns face each other
+        // directly. Reserve both labels, both leads, and one clear grid
+        // between the dangling ends as part of the column gap itself.
+        outputGap = Math.max(outputGap, pairGap);
+      } else if (survivingBodyBounds && sourceSide === 'input' && !targetSide) {
+        inputGap = Math.max(inputGap, pairGap);
+      } else if (survivingBodyBounds && !sourceSide && targetSide === 'output') {
+        outputGap = Math.max(outputGap, pairGap);
+      }
+    }
+  }
+
   // A real body needs clearance on both sides. With no body, there is only
   // one relationship left — input column to output column — so reserve one
   // column gap total instead of two gaps around an empty point.
-  const inputGap = survivingBodyBounds ? columnGap : 0;
   const overrides = new Map([
     ...stack(bySide('input'), (width) => bodyBounds.x - inputGap - width),
-    ...stack(bySide('output'), () => bodyBounds.x + bodyBounds.width + columnGap)
+    ...stack(bySide('output'), () => bodyBounds.x + bodyBounds.width + outputGap)
   ]);
 
   return positioned.map((node) => {
