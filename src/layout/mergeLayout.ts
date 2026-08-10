@@ -926,10 +926,10 @@ function boundsOverlap(a: NodeBounds, b: NodeBounds): boolean {
 }
 
 function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: PositionedNode[]): PositionedNode[] {
-  // Preserve user-pinned labels, then move automatic labels along their
-  // handle's cross-axis until every label has a distinct footprint. If a
-  // label's canonical position hits a design node, also search along the
-  // handle axis so the nearest clear grid position can be used.
+  // Preserve user-pinned labels. For label/label collisions, move automatic
+  // labels along the handle axis first so they remain level with their port;
+  // if a canonical position hits a design node, search both axes for the
+  // nearest clear grid position.
   const resolved = new Map<string, PositionedNode>();
   const designBounds = positionedNodes.map((node) => nodeBounds(node));
   const occupiedLabels: NodeBounds[] = [];
@@ -950,31 +950,47 @@ function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: Pos
     let position = node.position;
     if (!node.fixed && isBlocked(position)) {
       const side = node.metadata?.cutNet?.handleSide;
-      const moveVertically = side === 'left' || side === 'right';
+      const crossAxisIsVertical = side === 'left' || side === 'right';
       const overlapsDesignNode = overlaps(position, designBounds);
       const maxOffset = diagramSizing.gridSize * (designBounds.length + occupiedLabels.length + 8);
-      search: for (
-        let offset = diagramSizing.gridSize;
-        offset <= maxOffset;
-        offset += diagramSizing.gridSize
-      ) {
-        const crossAxisCandidates = [1, -1].map((direction) => (
+      const axisCandidates = (offset: number, alongHandle: boolean) => {
+        const moveVertically = alongHandle ? !crossAxisIsVertical : crossAxisIsVertical;
+        return [1, -1].map((direction) => (
           moveVertically
             ? { x: node.position.x, y: node.position.y + offset * direction }
             : { x: node.position.x + offset * direction, y: node.position.y }
         ));
-        const handleAxisCandidates = [1, -1].map((direction) => (
-          moveVertically
-            ? { x: node.position.x + offset * direction, y: node.position.y }
-            : { x: node.position.x, y: node.position.y + offset * direction }
-        ));
-        const candidates = overlapsDesignNode
-          ? [...crossAxisCandidates, ...handleAxisCandidates]
-          : crossAxisCandidates;
-        for (const candidate of candidates) {
-          if (!isBlocked(candidate)) {
-            position = candidate;
-            break search;
+      };
+      const firstClearAlongAxis = (alongHandle: boolean) => {
+        for (
+          let offset = diagramSizing.gridSize;
+          offset <= maxOffset;
+          offset += diagramSizing.gridSize
+        ) {
+          const candidate = axisCandidates(offset, alongHandle).find((position) => !isBlocked(position));
+          if (candidate) return candidate;
+        }
+        return undefined;
+      };
+
+      if (!overlapsDesignNode) {
+        // Labels on adjacent port rows commonly overlap even though there is
+        // ample room farther out from the owning node. Keep each label on its
+        // port's axis before considering a cross-axis dogleg.
+        position = firstClearAlongAxis(true) ?? firstClearAlongAxis(false) ?? position;
+      } else {
+        search: for (
+          let offset = diagramSizing.gridSize;
+          offset <= maxOffset;
+          offset += diagramSizing.gridSize
+        ) {
+          const crossAxisCandidates = axisCandidates(offset, false);
+          const handleAxisCandidates = axisCandidates(offset, true);
+          for (const candidate of [...crossAxisCandidates, ...handleAxisCandidates]) {
+            if (!isBlocked(candidate)) {
+              position = candidate;
+              break search;
+            }
           }
         }
       }

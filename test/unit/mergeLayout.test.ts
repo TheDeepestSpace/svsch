@@ -1316,6 +1316,72 @@ describe('layout merge', () => {
     }
   });
 
+  it('keeps adjacent register cut labels level with their input ports', async () => {
+    const registerCutGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'data', kind: 'port', label: 'data', ports: [{ id: 'p', name: 'data', direction: 'input' }] },
+            { id: 'clk', kind: 'port', label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' }] },
+            {
+              id: 'r',
+              kind: 'register',
+              label: 'r',
+              clockSignal: 'clk',
+              ports: [
+                { id: 'd', name: 'D', direction: 'input' },
+                { id: 'clk', name: 'clk', direction: 'input' },
+                { id: 'q', name: 'Q', direction: 'output' }
+              ]
+            }
+          ],
+          edges: [
+            { id: 'data-r', source: 'data', sourcePort: 'p', target: 'r', targetPort: 'd' },
+            { id: 'clk-r', source: 'clk', sourcePort: 'p', target: 'r', targetPort: 'clk' }
+          ]
+        }
+      }
+    };
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            data: { x: 0, y: 12, fixed: true },
+            clk: { x: 0, y: 108, fixed: true },
+            r: { x: 456, y: 432, fixed: true }
+          },
+          netCuts: {
+            'data:p': { label: 'data', source: { nodeId: 'data', portId: 'p' } },
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(registerCutGraph, 'top', layout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const register = byId.get('r')!;
+    const dataLabel = byId.get('cut-label:data:p:sink:data-r')!;
+    const clockLabel = byId.get('cut-label:clk:p:sink:clk-r')!;
+    const dataBounds = boundsOf(dataLabel);
+    const clockBounds = boundsOf(clockLabel);
+
+    expect(dataBounds.y + dataBounds.height / 2).toBe(
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2
+    );
+    expect(clockBounds.y + clockBounds.height / 2).toBe(
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5
+    );
+    expect(boxesOverlap(dataBounds, clockBounds)).toBe(false);
+  });
+
   it('lets a manual cut overlap until an endpoint participates in Auto Layout', async () => {
     const manualCutGraph: DesignGraph = {
       ...twoNetGraph,

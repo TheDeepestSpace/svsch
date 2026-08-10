@@ -64,8 +64,8 @@
       "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
       "type": "hdl",
       "position": {
-        "x": 336,
-        "y": 504
+        "x": 240,
+        "y": 480
       },
       "width": 96,
       "height": 48,
@@ -552,7 +552,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 528 L 432 528 L 432 504 L 456 504"
+      "path": "M 336 504 L 336 504 L 432 504 L 456 504"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -616,7 +616,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_DONE",
       "targetHandle": "in:DONE",
-      "path": "M 144 360 L 168 360 L 192 360 L 192 336 L 360 336 L 384 336"
+      "path": "M 144 360 L 168 360 L 240 360 L 240 336 L 360 336 L 384 336"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:reg:top:r:IDLE",
@@ -624,7 +624,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 144 360 L 168 360 L 216 360 L 216 528 L 432 528 L 456 528"
+      "path": "M 144 360 L 168 360 L 240 360 L 240 552 L 384 552 L 384 528 L 432 528 L 456 528"
     },
     {
       "id": "edge:literal:top:next_r_BUSY:DONE:mux:top:next_r:r:next_r_if_true_n0:next_r_BUSY",
