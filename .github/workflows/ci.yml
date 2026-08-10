@@ -543,7 +543,21 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Fetch gh-pages baseline
-        run: git fetch origin gh-pages:refs/remotes/origin/gh-pages || true
+        # Tolerate the branch not existing yet (first run, before any benchmark
+        # has ever published), but let real fetch failures (auth, network) fail
+        # the job instead of silently proceeding without a baseline.
+        run: |
+          set +e
+          git ls-remote --exit-code origin gh-pages >/dev/null 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          elif [ "$status" -eq 2 ]; then
+            echo "gh-pages branch not found on remote; continuing without a baseline"
+          else
+            exit "$status"
+          fi
 
       - name: Download benchmark results
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
