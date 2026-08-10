@@ -336,15 +336,15 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     Then the "g_if_one" generate region should contain at least 3 blocks
-    And there should be a connection between "g_if_one.u_path_a" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between "g_if_one.u_path_b" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between "sel" and the combinational block in the "g_if_one" generate region
-    And there should be a connection between the combinational block in the "g_if_one" generate region and "y"
-    And I note the route from "g_if_one.u_path_a" to the combinational block
+    And there should be a connection between "g_if_one.u_path_a" and the mux block in the "g_if_one" generate region
+    And there should be a connection between "g_if_one.u_path_b" and the mux block in the "g_if_one" generate region
+    And there should be a connection between "sel" and the mux block in the "g_if_one" generate region
+    And there should be a connection between the mux block in the "g_if_one" generate region and "y"
+    And I note the route from "g_if_one.u_path_a" to the mux block in the "g_if_one" generate region
     When I move the "g_if_one" generate region by (2, -1) grid cells
     Then all blocks in the "g_if_one" generate region should have moved by (2, -1) grid cells
     And blocks outside the "g_if_one" generate region should not have moved
-    And the route from "g_if_one.u_path_a" to the combinational block should have shifted by (2, -1) grid cells
+    And the route from "g_if_one.u_path_a" to the mux block in the "g_if_one" generate region should have shifted by (2, -1) grid cells
 
   Scenario: Moving a generate block moves every arm and block inside it
     Given I have a file "top.sv" in my workspace:

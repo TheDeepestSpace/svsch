@@ -424,8 +424,7 @@ test.describe('elk geometry grid', () => {
     const updateMode = test.info().config.updateSnapshots;
     const updateSnapshots = !!process.env.UPDATE_SNAPSHOTS
       || updateMode === 'all'
-      || updateMode === 'changed'
-      || updateMode === 'missing';
+      || updateMode === 'changed';
     compareSvgSnapshot(renderSvgWithOverlay(view, overlay), 'elk-geometry-grid', snapshotsDir, resultsDir, updateSnapshots);
   });
 });

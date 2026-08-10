@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { DiagramPanel } from './diagramPanel';
+import { ElaborationService } from './elaborationService';
+import { createVscodeElaborationHost } from './vscodeElaborationHost';
 import { logger } from './logger';
 
 let panel: DiagramPanel | undefined;
@@ -7,10 +9,19 @@ let panel: DiagramPanel | undefined;
 export function activate(context: vscode.ExtensionContext): void {
   logger.init();
   logger.log('SVSCH extension activated');
+  let elaborationService: ElaborationService | undefined;
+
+  const getElaborationService = () => {
+    if (!elaborationService) {
+      elaborationService = new ElaborationService(createVscodeElaborationHost(context));
+      context.subscriptions.push(elaborationService);
+    }
+    return elaborationService;
+  };
 
   const getPanel = () => {
     if (!panel) {
-      panel = new DiagramPanel(context, () => {
+      panel = new DiagramPanel(context, getElaborationService(), () => {
         panel = undefined;
       });
     }

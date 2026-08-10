@@ -894,8 +894,13 @@ void DesignExtractor::processGenerateRegionAssign(vpiHandle assign_handle, Modul
             for (auto& port : mod.nodes[i].ports) {
                 if (port.direction == "output" && port.signal == inSignal) {
                     port.signal = outSignal;
-                    port.name = outSignal;
-                    port.label = outSignal;
+                    if (mod.nodes[i].kind == "mux") {
+                        port.name = "out";
+                        port.label = "";
+                    } else {
+                        port.name = outSignal;
+                        port.label = outSignal;
+                    }
                     if (bitSizeFromWidth(outWidth) > bitSizeFromWidth(port.width)) {
                         port.width = outWidth;
                     }

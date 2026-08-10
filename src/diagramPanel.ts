@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { buildDesignGraph } from './parser/backend';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
@@ -9,6 +8,7 @@ import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeW
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
+import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -36,22 +36,25 @@ type WebviewMessage =
 
 export class DiagramPanel {
   private panel?: vscode.WebviewPanel;
-  private watcher?: vscode.FileSystemWatcher;
-  private documentChangeDisposable?: vscode.Disposable;
-  private rebuildTimer?: NodeJS.Timeout;
+  private readonly elaborationInvalidationDisposable: Disposable;
   private rebuildVersion = 0;
   private graph?: DesignGraph;
   private layout: SavedLayout = { version: 1, modules: {} };
   private currentModule?: string;
-  private lastSurelogPath?: string;
-  private lastBackendPath?: string;
   private store?: LayoutStore;
   private postViewQueue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly elaborationService: ElaborationService,
     private readonly onDispose: () => void
-  ) { }
+  ) {
+    this.elaborationInvalidationDisposable = elaborationService.onDidInvalidate((live) => {
+      if (this.panel && workspaceRootPath()) {
+        void this.consumeGraph(elaborationService.getGraph(live));
+      }
+    });
+  }
 
   private getStore(): LayoutStore | undefined {
     if (this.store) {
@@ -97,189 +100,68 @@ export class DiagramPanel {
       this.panel.onDidDispose(() => this.dispose(), undefined, this.context.subscriptions);
     }
 
-    this.ensureWatcher();
-
-    await this.rebuild();
-  }
-
-  async rebuild(live = false): Promise<void> {
-    const version = ++this.rebuildVersion;
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) {
+    if (!workspaceRootPath()) {
       vscode.window.showWarningMessage('SVSCH requires an open workspace folder.');
       return;
     }
+    await this.consumeGraph(this.elaborationService.getGraph());
+  }
+
+  async rebuild(live = false): Promise<void> {
+    if (!workspaceRootPath()) {
+      vscode.window.showWarningMessage('SVSCH requires an open workspace folder.');
+      return;
+    }
+    if (!this.panel) {
+      return;
+    }
+    await this.elaborationService.refresh(live).catch(() => undefined);
+  }
+
+  private async consumeGraph(graphPromise: Promise<DesignGraph>): Promise<void> {
+    const version = ++this.rebuildVersion;
     await this.postStatus('rebuilding');
 
-    const config = vscode.workspace.getConfiguration('svsch');
-    const projectFolder = config.get<string>('projectFolder') || '.';
-    const veriblePath = config.get<string>('veriblePath') || 'verible-verilog-syntax';
-    const includePaths = config.get<string[]>('includePaths') || [];
-    const defines = config.get<Record<string, string>>('defines') || {};
-    // Prefer a user-configured surelog path, otherwise prefer a packaged copy inside the
-    // extension at `dist/surelog/bin/surelog` if present, otherwise fall back to `surelog`.
-    const configSurelog = config.get<string>('surelogPath');
-    const packagedSurelog = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'surelog', 'bin', 'surelog').fsPath;
-
-    logger.log(`Checking for packaged surelog at: ${packagedSurelog}`);
-    const existsPackaged = fs.existsSync(packagedSurelog);
-    logger.log(`Packaged surelog exists check: ${existsPackaged}`);
-
-    let surelogPath = 'surelog';
-    if (configSurelog && configSurelog !== 'surelog') {
-      surelogPath = configSurelog;
-      logger.log(`Using user-configured surelogPath: ${surelogPath}`);
-    } else if (existsPackaged) {
-      if (process.platform === 'linux' && process.arch !== 'x64') {
-        logger.warn(`Packaged surelog is x64, but system is ${process.arch}. Falling back to system 'surelog'.`);
-      } else {
-        surelogPath = packagedSurelog;
-        logger.log(`Using packaged surelog (absolute): ${surelogPath}`);
+    try {
+      const graph = await graphPromise;
+      if (version !== this.rebuildVersion) {
+        return;
       }
-    }
- else {
-      // Search up from workspaceRoot to find the project root (where dist/ is likely to be)
-      let currentDir = workspaceRoot;
-      let found = false;
-      while (currentDir !== path.dirname(currentDir)) {
-        const candidate = path.join(currentDir, 'dist', 'surelog', 'bin', 'surelog');
-        if (fs.existsSync(candidate)) {
-          surelogPath = candidate;
-          logger.log(`Found packaged surelog at project root: ${surelogPath}`);
-          found = true;
-          break;
-        }
-        currentDir = path.dirname(currentDir);
+      this.graph = graph;
+
+      this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
+        ? this.currentModule
+        : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
+
+      const currentModule = this.currentModule ? this.graph.modules[this.currentModule] : undefined;
+      if (this.currentModule && currentModule && isListOnlyPlaceholder(currentModule)) {
+        await this.loadModule(this.currentModule, version);
       }
-
-      if (!found) {
-        logger.log(`Falling back to system 'surelog' (not found in extension dist or project dist)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`Rebuild failed: ${message}`, error);
+      if (version === this.rebuildVersion) {
+        await this.postStatus('idle');
       }
-    }
-
-    // Resolve backend binary path
-    const packagedBackend = vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'svsch_backend').fsPath;
-    let backendPath = packagedBackend;
-
-    logger.log(`Checking for backend at: ${backendPath}`);
-    if (!fs.existsSync(backendPath)) {
-      logger.log(`Backend not found at extensionUri, searching in project root...`);
-      let currentDir = workspaceRoot;
-      let found = false;
-      while (currentDir !== path.dirname(currentDir)) {
-        const candidate = path.join(currentDir, 'dist', 'svsch_backend');
-        if (fs.existsSync(candidate)) {
-          backendPath = candidate;
-          logger.log(`Found backend at project root: ${backendPath}`);
-          found = true;
-          break;
-        }
-        currentDir = path.dirname(currentDir);
-      }
-      if (!found) {
-        logger.error(`Backend binary NOT FOUND! Tried ${packagedBackend} and project roots.`);
-      }
-    } else {
-      logger.log(`Using backend (absolute): ${backendPath}`);
-    }
-
-    this.lastSurelogPath = surelogPath;
-    this.lastBackendPath = backendPath;
-
-    const commonOptions = {
-      workspaceRoot,
-      projectFolder,
-      backend: 'uhdm' as const,
-      veriblePath,
-      surelogPath,
-      backendPath,
-      includePaths,
-      defines,
-      overlays: live ? openHdlDocumentOverlays(workspaceRoot, projectFolder) : undefined,
-      includeExternalDiagnostics: !live
-    };
-
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'SVSCH',
-      cancellable: false,
-    }, async (progress) => {
-      const onProgress = (message: string, increment: number) => {
-        logger.log(`Progress: ${message} (${increment}%)`);
-        progress.report({ message, increment });
-      };
-
-      try {
-        this.graph = await buildDesignGraph({ ...commonOptions, onProgress });
-      } catch (e: any) {
-        if (e.message.includes('maxBuffer length exceeded')) {
-          logger.warn('Full design too large for buffer, falling back to on-demand module loading.');
-          this.graph = await buildDesignGraph({ ...commonOptions, listOnly: true, onProgress });
-        } else {
-          logger.error(`Rebuild failed: ${e.message}`);
-          if (e.stack) {
-            logger.error(e.stack);
-          }
-          throw e;
-        }
-      }
-    });
-
-    if (version !== this.rebuildVersion || !this.graph) {
       return;
     }
 
-    this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
-      ? this.currentModule
-      : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
-
-    if (this.currentModule && (!this.graph.modules[this.currentModule] || !this.graph.modules[this.currentModule].nodes || this.graph.modules[this.currentModule].nodes.length <= (this.graph.modules[this.currentModule].ports.length || 0))) {
-        // If the module has only port nodes (which are synthesized by transformToDesignGraph for empty modules)
-        // or no nodes at all, it might be a list-only placeholder.
-        // Actually, even a real empty module will have port nodes.
-        // A better check: did we use list-only?
-        if (this.graph.modules[this.currentModule] && !this.graph.modules[this.currentModule].file && !this.graph.modules[this.currentModule].nodes?.some(n => n.kind !== 'port')) {
-            await this.loadModule(this.currentModule);
-        }
+    if (version !== this.rebuildVersion) {
+      return;
     }
-
     await this.postView();
     await this.postStatus('idle');
   }
 
-  async loadModule(moduleName: string): Promise<void> {
+  async loadModule(moduleName: string, version = this.rebuildVersion): Promise<void> {
     if (!this.graph) return;
-    const workspaceRoot = workspaceRootPath();
-    if (!workspaceRoot) return;
 
     await this.postStatus('rebuilding');
-    const config = vscode.workspace.getConfiguration('svsch');
-    const projectFolder = config.get<string>('projectFolder') || '.';
-    const veriblePath = config.get<string>('veriblePath') || 'verible-verilog-syntax';
-    const includePaths = config.get<string[]>('includePaths') || [];
-    const defines = config.get<Record<string, string>>('defines') || {};
-    
-    const surelogPath = this.lastSurelogPath || config.get<string>('surelogPath') || 'surelog';
-    const backendPath = this.lastBackendPath || vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'svsch_backend').fsPath;
-
-    const moduleGraph = await buildDesignGraph({
-        workspaceRoot,
-        projectFolder,
-        backend: 'uhdm',
-        veriblePath,
-        surelogPath,
-        backendPath,
-        includePaths,
-        defines,
-        moduleName: moduleName,
-        includeExternalDiagnostics: false
-    });
-
-    if (moduleGraph.modules[moduleName]) {
-        this.graph.modules[moduleName] = moduleGraph.modules[moduleName];
-        // Merge diagnostics
-        this.graph.diagnostics.push(...moduleGraph.diagnostics);
+    const graph = await this.elaborationService.getModule(moduleName);
+    if (version !== this.rebuildVersion) {
+      return;
     }
+    this.graph = graph;
     await this.postStatus('idle');
   }
 
@@ -298,10 +180,7 @@ export class DiagramPanel {
   }
 
   dispose(): void {
-    this.watcher?.dispose();
-    this.documentChangeDisposable?.dispose();
-    this.watcher = undefined;
-    this.documentChangeDisposable = undefined;
+    this.elaborationInvalidationDisposable.dispose();
     this.panel = undefined;
     this.onDispose();
   }
@@ -315,8 +194,8 @@ export class DiagramPanel {
       if (this.graph?.modules[message.moduleName]) {
         this.currentModule = message.moduleName;
         const module = this.graph.modules[message.moduleName];
-        if (!module.file && !module.nodes?.some(n => n.kind !== 'port')) {
-            await this.loadModule(message.moduleName);
+        if (isListOnlyPlaceholder(module)) {
+          await this.loadModule(message.moduleName);
         }
         await this.postView();
       }
@@ -833,30 +712,6 @@ export class DiagramPanel {
     });
   }
 
-  private ensureWatcher(): void {
-    if (this.watcher) {
-      return;
-    }
-    const pattern = new vscode.RelativePattern(workspaceRootPath() ?? '.', '**/*.{sv,v,svh,vh}');
-    this.watcher = vscode.workspace.createFileSystemWatcher(pattern);
-    const schedule = (live = false) => {
-      if (this.rebuildTimer) {
-        clearTimeout(this.rebuildTimer);
-      }
-      this.rebuildTimer = setTimeout(() => {
-        void this.rebuild(live);
-      }, live ? 350 : 250);
-    };
-    this.watcher.onDidCreate(() => schedule(false));
-    this.watcher.onDidChange(() => schedule(false));
-    this.watcher.onDidDelete(() => schedule(false));
-    this.documentChangeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
-      if (isHdlUri(event.document.uri)) {
-        schedule(true);
-      }
-    });
-  }
-
   private async postStatus(status: 'idle' | 'rebuilding'): Promise<void> {
     await this.panel?.webview.postMessage({
       type: 'status',
@@ -919,18 +774,4 @@ function generateArmHighlightRange(
   const span = generateArmSpan(document.getText(), kind, source, bodySource);
   if (!span) return undefined;
   return new vscode.Range(document.positionAt(span.start), document.positionAt(span.end));
-}
-
-function isHdlUri(uri: vscode.Uri): boolean {
-  return /\.(sv|v|svh|vh)$/i.test(uri.fsPath);
-}
-
-function openHdlDocumentOverlays(workspaceRoot: string, projectFolder: string): Array<{ file: string; text: string }> {
-  const projectRoot = vscode.Uri.file(`${workspaceRoot}/${projectFolder || '.'}`).fsPath;
-  return vscode.workspace.textDocuments
-    .filter((document) => isHdlUri(document.uri) && document.uri.fsPath.startsWith(projectRoot))
-    .map((document) => ({
-      file: vscode.workspace.asRelativePath(document.uri, false),
-      text: document.getText()
-    }));
 }
