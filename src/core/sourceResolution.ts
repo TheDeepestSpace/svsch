@@ -35,7 +35,8 @@ export function resolveSignalSource(
       (n.kind === 'register' ||
         n.kind === 'comb' ||
         n.kind === 'alu' ||
-        n.kind === 'inverter')
+        n.kind === 'inverter' ||
+        n.kind === 'gate')
   );
   if (sourceNode?.source) {
     return sourceNode.source;

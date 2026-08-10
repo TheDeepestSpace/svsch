@@ -2,8 +2,31 @@ group: Combinational Logic
 cases:
   - id: comb-expression
     title: Combinational Expression
-    description: A combinational logic assignment expression.
+    description: A combinational logic assignment expression that isn't a specialized shape becomes a generic combinational block.
     tags: [comb, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic decoded
+        );
+          assign decoded = (a == b);
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comb
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comb]
+      selectedText: "assign decoded = (a == b);"
+
+  - id: gate-and
+    title: Boolean AND Gate
+    description: A bitwise AND operator becomes an AND gate.
+    tags: [gate, logical, source-highlight]
     files:
       top.sv: |
         module top (
@@ -16,12 +39,36 @@ cases:
     module: top
     target:
       kind: node
-      nodeKind: comb
+      nodeKind: gate
       nodeLabel: ""
       action: doubleClick
     expect:
-      nodeKinds: [port, comb]
-      selectedText: "assign decoded = a & b;"
+      nodeKinds: [port, gate]
+      selectedText: "a & b"
+
+  - id: gate-nand-nary
+    title: N-ary NAND Gate
+    description: Negating an AND chain of the same operator fuses into one n-input NAND gate with a negated-output bubble, instead of a separate inverter feeding a chain of 2-input ANDs.
+    tags: [gate, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          input logic c,
+          output logic y
+        );
+          assign y = ~(a & b & c);
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a & b & c"
 
   - id: alu-addition
     title: Arithmetic Addition

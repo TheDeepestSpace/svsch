@@ -33,7 +33,7 @@ Feature: Schematic Observation
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output y);
-        assign y = a & b;
+        assign y = (a == b);
       endmodule
       """
     When I open the "top" module in SVSCH
@@ -41,6 +41,30 @@ Feature: Schematic Observation
     And there should be a connection between "a" and the combinational block
     And there should be a connection between "b" and the combinational block
     And there should be a connection between the combinational block and "y"
+
+  Scenario: Observing a boolean AND gate
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, output y);
+        assign y = a & b;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 1 node of type "gate"
+    And I should see a gate block
+    And there should be a connection between "a" and the gate block
+    And there should be a connection between "b" and the gate block
+    And there should be a connection between the gate block and "y"
+
+  Scenario: Flattening a chain of the same operator into one n-ary gate
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, input b, input c, input d, output y);
+        assign y = a & b & c & d;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then the diagram should contain exactly 1 node of type "gate"
 
   Scenario: Observing a chain of wire-to-wire assigns as a single connection
     Given I have a file "top.sv" in my workspace:

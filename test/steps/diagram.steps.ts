@@ -608,6 +608,13 @@ When('I double-click on the combinational block for {string}', async function (t
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
 });
 
+When('I double-click on the gate block for {string}', async function (this: BddWorld, name: string) {
+  const module = this.lastGraph.modules[this.lastViewModel.moduleName];
+  const node = module.nodes.find((n: any) => n.kind === 'gate' && n.id.includes(`:${name}:`));
+  if (!node?.id) throw new Error(`Could not find gate block for "${name}"`);
+  await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
+});
+
 When('I double-click on the inverter node for {string}', async function (this: BddWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => n.kind === 'inverter' && n.id.includes(`:${name}:`));
@@ -1308,6 +1315,10 @@ Then('I should see an ALU block', async function (this: BddWorld) {
   await expect(this.webviewPage.locator('[data-node-kind="alu"]')).toBeVisible();
 });
 
+Then('I should see a gate block', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('[data-node-kind="gate"]')).toBeVisible();
+});
+
 Then('I should see a register node {string}', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'register');
   if (!id) throw new Error(`Could not find register node "${name}"`);
@@ -1615,6 +1626,24 @@ Then('there should be a connection between the ALU block and {string}', async fu
   );
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: alu=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between {string} and the gate block', async function (this: BddWorld, source: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await this.webviewPage.locator('html').evaluate(() =>
+    document.querySelector('[data-node-kind="gate"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, gate=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the gate block and {string}', async function (this: BddWorld, target: string) {
+  const sourceId = await this.webviewPage.locator('html').evaluate(() =>
+    document.querySelector('[data-node-kind="gate"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: gate=${sourceId}, ${target}=${targetId}`);
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 

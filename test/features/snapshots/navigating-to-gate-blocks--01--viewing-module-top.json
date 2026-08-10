@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "gate:top:b:and",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:b",
+            "name": "b",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:gate:top:b:and:port:top:b:b",
+      "source": "gate:top:b:and",
+      "target": "port:top:b",
+      "sourceHandle": "out:b",
+      "targetHandle": "port:b",
+      "path": "M 456 72 L 480 72 L 648 72 L 672 72"
+    },
+    {
+      "id": "edge:port:top:a:gate:top:b:and:a",
+      "source": "port:top:a",
+      "target": "gate:top:b:and",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:in0",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+    },
+    {
+      "id": "edge:port:top:c:gate:top:b:and:c",
+      "source": "port:top:c",
+      "target": "gate:top:b:and",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:in1",
+      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
+    }
+  ]
+}

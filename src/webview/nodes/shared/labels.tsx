@@ -555,6 +555,7 @@ export function structFieldAnnotation(node: DiagramNode, port: DiagramPort): Rea
 export function formatNodeKind(node: DiagramNode): string {
   if (node.kind === 'alu') return 'ALU';
   if (node.kind === 'inverter') return 'INVERTER';
+  if (node.kind === 'gate') return 'GATE';
   if (node.kind === 'comb') return 'COMBINATIONAL';
   if (node.kind === 'replicate') return node.label;
   if (node.kind === 'bus') return 'BUS';

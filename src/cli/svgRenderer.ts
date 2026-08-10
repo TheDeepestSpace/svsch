@@ -38,6 +38,7 @@ import { LatchNodeSvg } from '../webview/nodes/latch/LatchNodeSvg';
 import { LiteralNodeSvg } from '../webview/nodes/literal/LiteralNodeSvg';
 import { ReplicateNodeSvg } from '../webview/nodes/replicate/ReplicateNodeSvg';
 import { InverterNodeSvg } from '../webview/nodes/inverter/InverterNodeSvg';
+import { GateNodeSvg } from '../webview/nodes/gate/GateNodeSvg';
 import { PortNodeSvg } from '../webview/nodes/port/PortNodeSvg';
 import { CombNodeSvg } from '../webview/nodes/comb/CombNodeSvg';
 import { LoopNodeSvg } from '../webview/nodes/loop/LoopNodeSvg';
@@ -788,7 +789,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
   }
 
   const classes = nodeWrapperClasses(node);
-  const svgClasses = ['hdl-node-svg', node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '', node.kind === 'inverter' ? 'inverter-skin' : '']
+  const svgClasses = ['hdl-node-svg', node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '', node.kind === 'inverter' ? 'inverter-skin' : '', node.kind === 'gate' ? 'gate-skin' : '']
     .filter(Boolean)
     .join(' ');
   const content = renderNodeComponent(node, width, height, arrayConnections);
@@ -825,7 +826,7 @@ function nodeWarningIcon(node: PositionedNode, width: number): string {
 function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
   if (nodeIsArrayNode(node)) return false;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return true;
-  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter') return true;
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter' || node.kind === 'gate') return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
 }
 
@@ -942,6 +943,7 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'literal') return LiteralNodeSvg;
   if (node.kind === 'replicate') return ReplicateNodeSvg;
   if (node.kind === 'inverter') return InverterNodeSvg;
+  if (node.kind === 'gate') return GateNodeSvg;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return PortNodeSvg;
   if (node.kind === 'comb') return CombNodeSvg;
   if (node.kind === 'loop') return LoopNodeSvg;

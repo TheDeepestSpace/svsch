@@ -6,6 +6,10 @@ module assign_and(input logic a, input logic b, output logic y);
   assign y = a & b;
 endmodule
 
+module assign_eq(input logic a, input logic b, output logic y);
+  assign y = (a == b);
+endmodule
+
 module assign_const_expr(input logic a, output logic y);
   assign y = a | '0;
 endmodule
