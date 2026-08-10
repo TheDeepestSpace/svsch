@@ -1027,7 +1027,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const graph = await runParser(backend, 'mux_selector_expr.sv', fixture('mux_selector_expr.sv'));
     const muxSelectorExpr = graph.modules.mux_selector_expr;
     const mux = muxSelectorExpr.nodes.find((node) => node.kind === 'mux');
-    const selectorComb = muxSelectorExpr.nodes.find((node) => node.kind === 'gate');
+    const selectorComb = muxSelectorExpr.nodes.find((node) => (
+      node.kind === 'gate'
+      && ['sel', 'sidekick'].every((signal) => node.ports.some((port) => port.direction === 'input' && port.connectedSignal === signal))
+    ));
 
     expect(mux).toBeDefined();
     if (backend === 'uhdm') {

@@ -850,11 +850,21 @@ std::string DesignExtractor::gateOperationName(int opType, bool negateOutput) {
 // OR as one opaque leaf feeding the AND) or across a width boundary — a nested
 // operand whose self-determined width differs from the parent's marks an implicit
 // truncation/extension the flattened gate can't represent losslessly, so it stays
-// a separate leaf/sub-gate instead of being folded in.
+// a separate leaf/sub-gate instead of being folded in. XNOR is excluded entirely:
+// unlike AND/OR/XOR it isn't associative under this fusion — `(a ^~ b) ^~ c`
+// computes `a ^ b ^ c`, not the 3-input XNOR `~(a ^ b ^ c)` a naive flatten would
+// produce — so callers never recurse into it (see promoteGateExpr).
 void DesignExtractor::collectGateOperands(vpiHandle expr, int opType, const std::string& outputWidth, std::vector<vpiHandle>& leaves) {
     if (expr && vpi_get(vpiType, expr) == vpiOperation && vpi_get(vpiOpType, expr) == opType) {
-        std::string childWidth = getWidth(expr);
-        if (childWidth.empty() || outputWidth.empty() || bitSizeFromWidth(childWidth) == bitSizeFromWidth(outputWidth)) {
+        // Compare self-determined bit sizes rather than raw width strings: an
+        // empty/scalar width must default to 1 bit on both sides so ordinary
+        // 1-bit chains (the common case) still flatten, while a genuinely
+        // resolved-but-different width (e.g. a 1-bit child folding into a
+        // 4-bit parent) is never silently treated as a match.
+        int childSize = expressionBitSize(expr);
+        int outputSize = bitSizeFromWidth(outputWidth);
+        if (outputSize <= 0) outputSize = 1;
+        if (childSize == outputSize) {
             std::vector<vpiHandle> operands;
             vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
             if (op_itr) {
@@ -887,7 +897,20 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
     std::string width = getWidth(expr);
 
     std::vector<vpiHandle> leaf_operands;
-    collectGateOperands(expr, opType, width, leaf_operands);
+    if (opType == vpiBitXNorOp) {
+        // XNOR isn't associative under this fusion (see collectGateOperands) —
+        // only take this gate's own direct operands; a nested XNOR operand
+        // stays its own separate 2-input gate instead of being folded in.
+        vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+        if (op_itr) {
+            while (vpiHandle operand = vpi_scan(op_itr)) {
+                leaf_operands.push_back(operand);
+            }
+            vpi_release_handle(op_itr);
+        }
+    } else {
+        collectGateOperands(expr, opType, width, leaf_operands);
+    }
     if (leaf_operands.size() < 2) return "";
 
     std::string node_id = "gate:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":" + opName;

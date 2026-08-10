@@ -1,6 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { gateBubbleGap, gateBubbleRadius, gateXorGap } from '../../../diagram/nodeSizing';
+import { muxInputPortCenterY } from '../../../diagram/muxGeometry';
 import { nodeIsArrayNode, gateBodyOperation, gateIsNegated } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
@@ -77,9 +78,19 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {negated && <circle className="svsch-node-shape hdl-node-gate node-skin-body gate-bubble" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
 
       {/* Array stack leads */}
-      {isArray && inputs[0] && hasArrayConnection(inputs[0].id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(inputs[0].id, 'target')} side="left" width={width} y={height / 2} trimSink />
-      )}
+      {isArray && inputs.map((input, index) => (
+        hasArrayConnection(input.id, 'target') && (
+          <SvgArrayStackLeads
+            key={input.id}
+            wide={stackWide}
+            thick={arrayConnectionThick(input.id, 'target')}
+            side="left"
+            width={width}
+            y={muxInputPortCenterY(index, inputs.length, height)}
+            trimSink
+          />
+        )
+      ))}
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
       )}

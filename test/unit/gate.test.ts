@@ -50,10 +50,13 @@ describe('gate node extraction (uhdm)', () => {
     expect(gateNodes[0].ports.filter((p) => p.direction === 'input').map((p) => p.connectedSignal)).toEqual(['a', 'b']);
   });
 
-  it('promotes a source-level XNOR (^~) directly, same as the negation-fused form', async () => {
+  it.each([
+    ['^~', 'a ^~ b'],
+    ['~^', 'a ~^ b']
+  ] as const)('promotes a source-level XNOR (%s) directly, same as the negation-fused form', async (_op, expr) => {
     const module = await extract(`
       module top(input logic a, input logic b, output logic y);
-        assign y = a ^~ b;
+        assign y = ${expr};
       endmodule
     `);
     const gateNodes = gates(module);
@@ -82,6 +85,18 @@ describe('gate node extraction (uhdm)', () => {
     const gateNodes = gates(module);
     expect(gateNodes).toHaveLength(1);
     expect(gateNodes[0].metadata?.operation).toBe('or');
+    expect(gateNodes[0].ports.filter((p) => p.direction === 'input').map((p) => p.connectedSignal)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('flattens a chain of the same operator into one n-ary gate (a ^ b ^ c -> one 3-input XOR)', async () => {
+    const module = await extract(`
+      module top(input logic a, input logic b, input logic c, output logic y);
+        assign y = a ^ b ^ c;
+      endmodule
+    `);
+    const gateNodes = gates(module);
+    expect(gateNodes).toHaveLength(1);
+    expect(gateNodes[0].metadata?.operation).toBe('xor');
     expect(gateNodes[0].ports.filter((p) => p.direction === 'input').map((p) => p.connectedSignal)).toEqual(['a', 'b', 'c']);
   });
 

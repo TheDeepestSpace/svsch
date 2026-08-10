@@ -288,8 +288,8 @@ describe('diagram node sizing', () => {
 
   test('keeps a 2-input gate the same footprint as an ALU, and widens for more inputs', () => {
     const twoInput = diagramNodeDimensions(nodeOfKind('gate'));
-    expect(twoInput.width).toBe(diagramSizing.muxWidth);
-    expect(twoInput.height).toBe(diagramSizing.gridSize * 4);
+    const alu = diagramNodeDimensions(nodeOfKind('alu'));
+    expect(twoInput).toEqual(alu);
 
     const fourInput: DiagramNode = {
       id: 'node:gate4',
