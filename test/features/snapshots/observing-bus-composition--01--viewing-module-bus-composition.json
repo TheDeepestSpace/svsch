@@ -313,7 +313,7 @@
       "target": "reg:bus_composition:r[0]",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 456 408 L 456 408 L 480 408 L 480 408"
+      "path": "M 456 408 L 456 408 L 480 408"
     },
     {
       "id": "cut-stub:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_1_:clk",
@@ -321,7 +321,7 @@
       "target": "reg:bus_composition:r[1]",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 456 288 L 456 288 L 480 288 L 480 288"
+      "path": "M 456 288 L 456 288 L 480 288"
     },
     {
       "id": "cut-stub:port:bus_composition:clk:port:clk:sink:edge:port:bus_composition:clk:reg:bus_composition:r_3:2_:clk",
@@ -329,7 +329,7 @@
       "target": "reg:bus_composition:r[3:2]",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 168 L 432 168 L 456 168 L 456 168"
+      "path": "M 432 168 L 432 168 L 456 168"
     },
     {
       "id": "cut-stub:port:bus_composition:clk:port:clk:source",
@@ -337,7 +337,7 @@
       "target": "cut-label:port:bus_composition:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 120 L -240 120 L -216 120 L -216 120"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "edge:bus_comp:bus_composition:r:port:bus_composition:r:r",

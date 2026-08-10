@@ -286,7 +286,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 960 168 L 960 168 L 984 168 L 984 168",
+      "path": "M 960 168 L 960 168 L 984 168",
       "inactive": true
     },
     {
@@ -295,7 +295,7 @@
       "target": "cut-label:comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign:out:w:source",
       "sourceHandle": "out:w",
       "targetHandle": "cut",
-      "path": "M 696 672 L 696 672 L 720 672 L 720 672",
+      "path": "M 696 672 L 720 672 L 720 672",
       "inactive": true
     },
     {
@@ -304,7 +304,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 960 216 L 960 216 L 984 216 L 984 168 L 984 168",
+      "path": "M 960 216 L 960 216 L 960 168 L 984 168",
       "active": true
     },
     {
@@ -313,7 +313,7 @@
       "target": "cut-label:instance:top:g_if_one.u_if_one:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 696 432 L 696 432 L 720 432 L 720 432",
+      "path": "M 696 432 L 720 432 L 720 432",
       "active": true
     },
     {
@@ -322,7 +322,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 960 120 L 960 120 L 984 120 L 984 168 L 984 168",
+      "path": "M 960 120 L 960 120 L 960 168 L 984 168",
       "inactive": true
     },
     {
@@ -331,7 +331,7 @@
       "target": "cut-label:instance:top:g_if_zero.u_if_zero:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 720 192 L 720 192 L 744 192 L 744 192",
+      "path": "M 720 192 L 744 192 L 744 192",
       "inactive": true
     },
     {

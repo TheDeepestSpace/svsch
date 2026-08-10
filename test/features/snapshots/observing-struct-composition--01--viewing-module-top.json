@@ -278,7 +278,7 @@
       "target": "reg:top:pkt.opcode",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 480 168 L 480 168 L 504 168 L 504 168"
+      "path": "M 480 168 L 480 168 L 504 168"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:pkt.valid:clk",
@@ -286,7 +286,7 @@
       "target": "reg:top:pkt.valid",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 504 288 L 504 288 L 528 288 L 528 288"
+      "path": "M 504 288 L 504 288 L 528 288"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -294,7 +294,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 120 L -240 120 L -216 120 L -216 120"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:struct_comp:top:pkt:out:pkt:sink:edge:struct_comp:top:pkt:port:top:flat:pkt",
@@ -302,7 +302,7 @@
       "target": "port:top:flat",
       "sourceHandle": "cut",
       "targetHandle": "port:flat",
-      "path": "M 1296 120 L 1296 120 L 1320 120 L 1320 120"
+      "path": "M 1296 120 L 1296 120 L 1320 120"
     },
     {
       "id": "cut-stub:struct_comp:top:pkt:out:pkt:source",
@@ -310,7 +310,7 @@
       "target": "cut-label:struct_comp:top:pkt:out:pkt:source",
       "sourceHandle": "out:pkt",
       "targetHandle": "cut",
-      "path": "M 1056 144 L 1056 144 L 1080 144 L 1080 144"
+      "path": "M 1056 144 L 1080 144 L 1080 144"
     },
     {
       "id": "edge:port:top:opcode_i:reg:top:pkt.opcode:opcode_i",

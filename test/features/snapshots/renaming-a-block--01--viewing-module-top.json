@@ -138,7 +138,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 168 L 432 168 L 456 168 L 456 168"
+      "path": "M 432 168 L 432 168 L 456 168"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -146,7 +146,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 120 L -240 120 L -216 120 L -216 120"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "edge:port:top:d:reg:top:q:d",

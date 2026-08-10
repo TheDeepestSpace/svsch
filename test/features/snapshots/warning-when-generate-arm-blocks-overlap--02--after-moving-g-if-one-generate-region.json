@@ -4,7 +4,7 @@
       "id": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 408,
         "y": 624
       },
       "width": 192,
@@ -30,7 +30,7 @@
       "id": "instance:top:g_if_one.u_if_one",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 408,
         "y": 312
       },
       "width": 192,
@@ -56,7 +56,7 @@
       "id": "instance:top:g_if_zero.u_if_zero",
       "type": "hdl",
       "position": {
-        "x": 408,
+        "x": 456,
         "y": 144
       },
       "width": 216,
@@ -142,8 +142,8 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 912,
-        "y": 420
+        "x": 1056,
+        "y": 180
       },
       "width": 120,
       "height": 24,
@@ -166,7 +166,7 @@
       "target": "port:top:y",
       "sourceHandle": "out:w",
       "targetHandle": "port:y",
-      "path": "M 624 672 L 648 672 L 768 672 L 768 432 L 888 432 L 912 432",
+      "path": "M 600 672 L 624 672 L 864 672 L 864 192 L 1032 192 L 1056 192",
       "inactive": true
     },
     {
@@ -175,7 +175,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 360 L 648 360 L 888 360 L 888 432 L 912 432",
+      "path": "M 600 360 L 624 360 L 864 360 L 864 192 L 1032 192 L 1056 192",
       "active": true
     },
     {
@@ -184,7 +184,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 624 192 L 648 192 L 768 192 L 768 353 Q 775 360 768 367 L 768 432 L 888 432 L 912 432",
+      "path": "M 672 192 L 696 192 L 1032 192 L 1056 192",
       "inactive": true
     },
     {
@@ -193,7 +193,7 @@
       "target": "instance:top:g_if_zero.u_if_zero",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
+      "path": "M 144 192 L 168 192 L 432 192 L 456 192",
       "inactive": true
     },
     {
@@ -202,7 +202,7 @@
       "target": "instance:top:g_if_one.u_if_one",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 144 432 L 168 432 L 408 432 L 408 360 L 432 360",
+      "path": "M 144 432 L 168 432 L 384 432 L 384 360 L 408 360",
       "active": true
     },
     {
@@ -211,7 +211,7 @@
       "target": "comb:top:generate-region:top:else:16:13:2:else__g_if_other_:w:assign",
       "sourceHandle": "port:c",
       "targetHandle": "port:c",
-      "path": "M 144 672 L 168 672 L 408 672 L 432 672",
+      "path": "M 144 672 L 168 672 L 384 672 L 408 672",
       "inactive": true
     }
   ],
@@ -223,7 +223,7 @@
       "bounds": {
         "x": 312,
         "y": 48,
-        "width": 408,
+        "width": 456,
         "height": 744
       },
       "active": true
@@ -233,7 +233,7 @@
       "kind": "else-if",
       "label": "g_if_one /* MODE == 1 */",
       "bounds": {
-        "x": 384,
+        "x": 360,
         "y": 264,
         "width": 288,
         "height": 192
@@ -247,7 +247,7 @@
       "kind": "else",
       "label": "g_if_other /* else */",
       "bounds": {
-        "x": 384,
+        "x": 360,
         "y": 576,
         "width": 288,
         "height": 168
@@ -259,7 +259,7 @@
       "kind": "if",
       "label": "g_if_zero /* MODE == 0 */",
       "bounds": {
-        "x": 360,
+        "x": 408,
         "y": 96,
         "width": 312,
         "height": 192

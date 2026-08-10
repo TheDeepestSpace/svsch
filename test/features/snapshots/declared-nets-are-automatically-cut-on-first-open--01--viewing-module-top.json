@@ -128,7 +128,7 @@
       "target": "port:top:x",
       "sourceHandle": "cut",
       "targetHandle": "port:x",
-      "path": "M 408 48 L 408 48 L 480 48 L 480 120 L 408 120 L 408 48 L 432 48"
+      "path": "M 408 48 L 408 48 L 432 48"
     },
     {
       "id": "cut-stub:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
@@ -136,7 +136,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 408 96 L 408 96 L 480 96 L 480 168 L 408 168 L 408 96 L 432 96"
+      "path": "M 408 96 L 408 96 L 432 96"
     },
     {
       "id": "cut-stub:port:top:a:port:a:source",

@@ -139,7 +139,7 @@
       "target": "instance:top:g_case_def.u_case_def",
       "sourceHandle": "cut",
       "targetHandle": "port:a",
-      "path": "M 168 360 L 168 360 L 192 360 L 192 360",
+      "path": "M 168 360 L 168 360 L 192 360",
       "active": true
     },
     {
@@ -148,7 +148,7 @@
       "target": "cut-label:instance:top:g_if_on.u_if:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 960 192 L 960 192 L 984 192 L 984 192",
+      "path": "M 960 192 L 984 192 L 984 192",
       "active": true
     },
     {

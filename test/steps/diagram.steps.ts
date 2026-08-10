@@ -2422,13 +2422,22 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
   const startX = box.x + box.width / 2;
   const startY = box.y + box.height / 2;
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  // Keep extreme clamp-testing drags inside the nested webview. Pointer events
+  // do not cross back from VS Code's outer document, so releasing outside the
+  // canvas would leave the resize preview uncommitted.
+  const targetX = canvas
+    ? Math.max(canvas.x + 8, Math.min(startX + dx, canvas.x + canvas.width - 8))
+    : startX + dx;
+  const targetY = canvas
+    ? Math.max(canvas.y + 8, Math.min(startY + dy, canvas.y + canvas.height - 8))
+    : startY + dy;
 
   await world.workbox.mouse.move(startX, startY);
   await world.workbox.mouse.down();
   await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
-  await world.workbox.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  await world.workbox.mouse.move(targetX, targetY, { steps: 12 });
   await world.workbox.mouse.up();
-  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
   if (canvas) {
     await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
   }
