@@ -27,16 +27,25 @@ export function routingObstacleMargins(
     };
   }
 
-  // Cut-net ends are visual nodes but are not endpoints of the ordinary
-  // edges routed here. Reserve a full grid around the label so snapping a
-  // route to the grid cannot leave it running directly along the label's
-  // outline.
+  // The label's lead already reserves its connected side, just like a module
+  // port lead does. Keep a full grid on the other three sides so snapped
+  // routes cannot run directly along the label's outline.
   if (node.kind === 'netLabel') {
+    const handleSide = node.metadata?.cutNet?.handleSide
+      ?? (portSides.includes('WEST')
+        ? 'left'
+        : portSides.includes('EAST')
+          ? 'right'
+          : portSides.includes('NORTH')
+            ? 'top'
+            : portSides.includes('SOUTH')
+              ? 'bottom'
+              : undefined);
     return {
-      left: diagramSizing.gridSize,
-      right: diagramSizing.gridSize,
-      top: diagramSizing.gridSize,
-      bottom: diagramSizing.gridSize
+      left: handleSide === 'left' ? 0 : diagramSizing.gridSize,
+      right: handleSide === 'right' ? 0 : diagramSizing.gridSize,
+      top: handleSide === 'top' ? 0 : diagramSizing.gridSize,
+      bottom: handleSide === 'bottom' ? 0 : diagramSizing.gridSize
     };
   }
 

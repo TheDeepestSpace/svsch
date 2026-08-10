@@ -122,8 +122,13 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     : positioned;
 
   const nodesById = new Map<string, DiagramNode>(positionedWithWarnings.map((node) => [node.id, node]));
-  const nodePositions = new Map(positionedWithWarnings.map((node) => [node.id, node.position]));
   const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+  const routingNodesById = new Map<string, DiagramNode>(
+    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node])
+  );
+  const routingNodePositions = new Map(
+    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node.position])
+  );
   const candidates = routedDesignEdges.filter((edge) => !moduleLayout.edges?.[edge.id]?.routePoints);
   const result = await routeDiagramWithLibavoid(
     // Dangling ends are real visual obstacles too. Build them before routing
@@ -134,8 +139,8 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     (nodeId, portId, includeLeadMargins) => renderedLeadPoint(
       nodeId,
       portId,
-      nodesById,
-      nodePositions,
+      routingNodesById,
+      routingNodePositions,
       includeLeadMargins
     )
   );
@@ -1705,7 +1710,27 @@ export function elkNodeForDiagramNode(
     let portY = height / 2;
     let leadOverride: number | undefined;
 
-    if (node.kind === 'register') {
+    if (node.kind === 'netLabel') {
+      const handleSide = node.metadata?.cutNet?.handleSide;
+      if (handleSide === 'right') {
+        side = 'EAST';
+        portX = width;
+      } else if (handleSide === 'top') {
+        side = 'NORTH';
+        portX = width / 2;
+        portY = 0;
+      } else if (handleSide === 'bottom') {
+        side = 'SOUTH';
+        portX = width / 2;
+        portY = height;
+      } else {
+        side = 'WEST';
+        portX = 0;
+      }
+      // A cut stub reserves one grid immediately outside the label handle,
+      // independent of whether that handle is horizontal or vertical.
+      leadOverride = grid;
+    } else if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
       const resetSignal = registerResetSignal(node);
       const inputs = node.ports.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');

@@ -582,6 +582,32 @@ describe('layout merge', () => {
     }
   });
 
+  it('centers cut-label ELK leads on the rendered wire', () => {
+    const cutEnds: DiagramNode[] = [
+      {
+        id: 'cut-label:clk:source',
+        kind: 'netLabel',
+        label: 'clk',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } }
+      },
+      {
+        id: 'cut-label:clk:sink',
+        kind: 'netLabel',
+        label: 'clk',
+        ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
+        metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } }
+      }
+    ];
+
+    for (const cutEnd of cutEnds) {
+      const geometry = elkNodeForDiagramNode(cutEnd, true);
+      expect(geometry.ports[0].y! - geometry.layoutOffset.y).toBe(
+        diagramNodeDimensions(cutEnd).height / 2
+      );
+    }
+  });
+
   it('marks removed fixed layout entries stale and writes active fixed positions', () => {
     const layout: SavedLayout = {
       version: 1,
