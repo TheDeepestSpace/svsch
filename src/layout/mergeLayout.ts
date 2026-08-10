@@ -815,6 +815,7 @@ function buildNetCutProjection(
   const nodes: PositionedNode[] = [];
   const edges: DiagramEdge[] = [];
   const deferredNodeIds = new Set<string>();
+  const endpointByLabelId = new Map<string, string>();
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
@@ -862,6 +863,7 @@ function buildNetCutProjection(
       labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
     );
     nodes.push(sourceLabelNode);
+    endpointByLabelId.set(sourceLabelId, endpointKey(cut.source.nodeId, cut.source.portId));
 
     edges.push(makeCutStubEdge({
       id: cutStubEdgeId(netKey, 'source'),
@@ -907,6 +909,7 @@ function buildNetCutProjection(
         labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
       );
       nodes.push(sinkLabelNode);
+      endpointByLabelId.set(sinkLabelId, endpointKey(edge.target, edge.targetPort));
 
       edges.push(makeCutStubEdge({
         id: cutStubEdgeId(netKey, 'sink', edge.id),
@@ -925,7 +928,8 @@ function buildNetCutProjection(
 
   const resolvedNodes = resolveCutLabelCollisions(
     nodes.filter((node) => !deferredNodeIds.has(node.id)),
-    positionedNodes
+    positionedNodes,
+    endpointByLabelId
   );
   const resolvedById = new Map(resolvedNodes.map((node) => [node.id, node]));
   return {
@@ -958,14 +962,18 @@ function boundsOverlap(a: NodeBounds, b: NodeBounds): boolean {
   );
 }
 
-function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: PositionedNode[]): PositionedNode[] {
-  // Preserve user-pinned labels. For label/label collisions, move automatic
-  // labels along the handle axis first so they remain level with their port;
-  // if a canonical position hits a design node, search both axes for the
-  // nearest clear grid position.
+function resolveCutLabelCollisions(
+  nodes: PositionedNode[],
+  positionedNodes: PositionedNode[],
+  endpointByLabelId: Map<string, string>
+): PositionedNode[] {
+  // Preserve user-pinned labels. For label/label collisions, keep distinct
+  // endpoints level with their ports while staggering labels that share one
+  // endpoint across its axis. If a canonical position hits a design node,
+  // search both axes for the nearest clear grid position.
   const resolved = new Map<string, PositionedNode>();
   const designBounds = positionedNodes.map((node) => nodeBounds(node));
-  const occupiedLabels: NodeBounds[] = [];
+  const occupiedLabels: Array<NodeBounds & { id: string }> = [];
   const ordered = [...nodes].sort((a, b) => {
     if (Boolean(a.fixed) !== Boolean(b.fixed)) return a.fixed ? -1 : 1;
     return a.id.localeCompare(b.id);
@@ -1007,10 +1015,20 @@ function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: Pos
       };
 
       if (!overlapsDesignNode) {
+        const endpoint = endpointByLabelId.get(node.id);
+        const sharesEndpoint = endpoint !== undefined && occupiedLabels.some((bounds) => (
+          boundsOverlap(nodeBounds(node, node.position), bounds)
+          && endpointByLabelId.get(bounds.id) === endpoint
+        ));
         // Labels on adjacent port rows commonly overlap even though there is
         // ample room farther out from the owning node. Keep each label on its
-        // port's axis before considering a cross-axis dogleg.
-        position = firstClearAlongAxis(true) ?? firstClearAlongAxis(false) ?? position;
+        // port's axis before considering a cross-axis dogleg. Multiple labels
+        // attached to the exact same endpoint have no distinct axes to
+        // preserve, so stagger those across the endpoint instead.
+        const preferHandleAxis = !sharesEndpoint;
+        position = firstClearAlongAxis(preferHandleAxis)
+          ?? firstClearAlongAxis(!preferHandleAxis)
+          ?? position;
       } else {
         search: for (
           let offset = diagramSizing.gridSize;
@@ -1031,7 +1049,7 @@ function resolveCutLabelCollisions(nodes: PositionedNode[], positionedNodes: Pos
 
     const positioned = position === node.position ? node : { ...node, position };
     resolved.set(node.id, positioned);
-    occupiedLabels.push(nodeBounds(node, position));
+    occupiedLabels.push({ ...nodeBounds(node, position), id: node.id });
   }
 
   return nodes.map((node) => resolved.get(node.id) ?? node);

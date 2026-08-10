@@ -1332,6 +1332,56 @@ describe('layout merge', () => {
     }
   });
 
+  it('stacks cut labels that share one endpoint across that endpoint axis', async () => {
+    const sharedSinkGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'input' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p' },
+            { id: 'b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' }
+          ]
+        }
+      }
+    };
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            a: { x: 0, y: 0, fixed: true },
+            b: { x: 0, y: 96, fixed: true },
+            y: { x: 240, y: 0, fixed: true }
+          },
+          netCuts: {
+            'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
+            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(sharedSinkGraph, 'top', layout);
+    const sinks = view.nodes
+      .filter((node) => node.metadata?.cutNet?.role === 'sink')
+      .map(boundsOf);
+
+    expect(sinks).toHaveLength(2);
+    expect(sinks[0].x).toBe(sinks[1].x);
+    expect(sinks[0].y).not.toBe(sinks[1].y);
+    expect(boxesOverlap(sinks[0], sinks[1])).toBe(false);
+  });
+
   it('keeps adjacent register cut labels level with their input ports', async () => {
     const registerCutGraph: DesignGraph = {
       rootModules: ['top'],
