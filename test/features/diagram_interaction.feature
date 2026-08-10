@@ -274,7 +274,6 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I tie back every cut net
     And I resize the "g_if_one" generate region on the right side by 3 grid cells
     Then the "g_if_one" generate region should have grown on the right side
     When I resize the "g_if_one" generate region on the right side by -30 grid cells
@@ -409,7 +408,6 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I tie back every cut net
     Then the diagram should contain exactly 3 generate regions
     And no generate region should be flagged as overlapping
     When I move the "g_if_one" generate region by (0, -3) grid cells
@@ -451,18 +449,17 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I tie back every cut net
     Then the diagram should contain a "generate if" generate block
     And the diagram should contain a "generate case (MODE)" generate block
     And no generate region should be flagged as overlapping
-    When I move the "generate if" generate region by (8, 0) grid cells
+    When I move the "generate if" generate region by (-8, 0) grid cells
     Then the "generate if" generate region should be flagged as overlapping
     And the "generate case (MODE)" generate region should be flagged as overlapping
     And I should see a warning icon on the "generate if" generate region
     And I should see a warning icon on the "generate case (MODE)" generate region
     When I hover over the warning icon on the "generate if" generate region
     Then a tooltip should appear reading "generate blocks overlapping"
-    When I move the "generate if" generate region by (-8, 0) grid cells
+    When I move the "generate if" generate region by (8, 0) grid cells
     Then no generate region should be flagged as overlapping
     And I should not see any generate region warning icons
 
@@ -493,7 +490,6 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I tie back every cut net
     Then no generate region should be flagged as overlapping
     And no block should be flagged as overlapping an arm
     When I move the "g_arm" generate region by (0, -3) grid cells

@@ -2430,8 +2430,11 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
   const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
   const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
-  const startX = box.x + box.width / 2;
-  const startY = box.y + box.height / 2;
+  // Avoid the midpoint: a dangling cut label can sit directly over a region's
+  // resize handle there. The first quarter stays on the same handle while
+  // leaving the common port/label row clear.
+  const startX = box.x + (side === 'top' || side === 'bottom' ? box.width / 4 : box.width / 2);
+  const startY = box.y + (side === 'left' || side === 'right' ? box.height / 4 : box.height / 2);
   const canvas = await world.webviewPage.locator('.canvas').boundingBox();
   // Keep extreme clamp-testing drags inside the nested webview. Pointer events
   // do not cross back from VS Code's outer document, so releasing outside the

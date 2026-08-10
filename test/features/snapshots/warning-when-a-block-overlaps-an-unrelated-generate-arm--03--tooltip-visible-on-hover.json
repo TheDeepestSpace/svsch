@@ -1,11 +1,51 @@
 {
   "nodes": [
     {
+      "id": "cut-label:instance:top:g_arm.u_arm:port:y:sink:edge:instance:top:g_arm.u_arm:port:top:y:y",
+      "type": "hdl",
+      "position": {
+        "x": 1320,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_arm.u_arm:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 288
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "instance:top:g_arm.u_arm",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 216
+        "x": 504,
+        "y": 192
       },
       "width": 192,
       "height": 96,
@@ -30,8 +70,8 @@
       "id": "instance:top:u_free",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 96
+        "x": 552,
+        "y": 72
       },
       "width": 192,
       "height": 96,
@@ -57,8 +97,8 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 132
+        "x": 120,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -77,8 +117,8 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 324
+        "x": 120,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -97,8 +137,8 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 888,
-        "y": 324
+        "x": 1440,
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -117,8 +157,8 @@
       "id": "port:top:z",
       "type": "hdl",
       "position": {
-        "x": 888,
-        "y": 132
+        "x": 1056,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -136,12 +176,21 @@
   ],
   "edges": [
     {
-      "id": "edge:instance:top:g_arm.u_arm:port:top:y:y",
-      "source": "instance:top:g_arm.u_arm",
+      "id": "cut-stub:instance:top:g_arm.u_arm:port:y:sink:edge:instance:top:g_arm.u_arm:port:top:y:y",
+      "source": "cut-label:instance:top:g_arm.u_arm:port:y:sink:edge:instance:top:g_arm.u_arm:port:top:y:y",
       "target": "port:top:y",
-      "sourceHandle": "port:y",
+      "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 600 264 L 624 264 L 864 264 L 864 336 L 888 336",
+      "path": "M 1416 96 L 1416 96 L 1440 96",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_arm.u_arm:port:y:source",
+      "source": "instance:top:g_arm.u_arm",
+      "target": "cut-label:instance:top:g_arm.u_arm:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 696 240 L 720 240 L 720 312 L 720 312",
       "active": true
     },
     {
@@ -150,7 +199,7 @@
       "target": "port:top:z",
       "sourceHandle": "port:y",
       "targetHandle": "port:z",
-      "path": "M 600 144 L 624 144 L 864 144 L 888 144"
+      "path": "M 744 120 L 768 120 L 1032 120 L 1056 120"
     },
     {
       "id": "edge:port:top:a:instance:top:u_free:a",
@@ -158,7 +207,7 @@
       "target": "instance:top:u_free",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 144 L 168 144 L 384 144 L 408 144"
+      "path": "M 240 120 L 264 120 L 528 120 L 552 120"
     },
     {
       "id": "edge:port:top:b:instance:top:g_arm.u_arm:b",
@@ -166,7 +215,7 @@
       "target": "instance:top:g_arm.u_arm",
       "sourceHandle": "port:b",
       "targetHandle": "port:a",
-      "path": "M 144 336 L 168 336 L 384 336 L 384 264 L 408 264",
+      "path": "M 240 312 L 264 312 L 480 312 L 480 240 L 504 240",
       "active": true
     }
   ],
@@ -176,8 +225,8 @@
       "kind": "generate-if",
       "label": "generate if",
       "bounds": {
-        "x": 312,
-        "y": 120,
+        "x": 408,
+        "y": 96,
         "width": 384,
         "height": 360
       },
@@ -190,8 +239,8 @@
       "kind": "if",
       "label": "g_arm /* MODE == 1 */",
       "bounds": {
-        "x": 360,
-        "y": 168,
+        "x": 456,
+        "y": 144,
         "width": 288,
         "height": 192
       },
