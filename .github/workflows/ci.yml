@@ -474,7 +474,12 @@ jobs:
     # vscode version gets a real baseline to compare against on later runs (instead of only
     # the latest version ever getting history), and only one job ever pushes to gh-pages
     # (avoiding a race between concurrent matrix jobs).
+    #
+    # Push-only: this is the only place gh-pages actually gets written (auto-push below is
+    # false on pull_request anyway), so PR runs — which execute PR-controlled test code —
+    # never hold this job's contents: write token.
     needs: [prep, build_ci_image, test_system]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
@@ -514,7 +519,12 @@ jobs:
   report_benchmarks:
     # Posts one PR comment covering all three diagram-generation benchmark
     # suites, instead of test_visual/test_bdd/test_system each posting their own.
-    needs: [prep, build_ci_image, test_visual, test_bdd, test_system, publish_system_benchmark]
+    #
+    # publish_system_benchmark is deliberately not a dependency: it only runs on
+    # push (see above) while this job only runs on pull_request, and it doesn't
+    # produce any artifact this job consumes (the system benchmark is re-merged
+    # from test_system's raw per-version artifacts below).
+    needs: [prep, build_ci_image, test_visual, test_bdd, test_system]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
