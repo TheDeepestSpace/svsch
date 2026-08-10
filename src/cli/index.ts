@@ -154,8 +154,8 @@ async function renderCommand(argv: string[]): Promise<void> {
     throw new Error('--output can only be used with a single input. Use --output-dir for multiple files.');
   }
 
-  // 5. Pre-collect all views to ensure everything is valid before writing ANY files
-  const results: Array<{ output: string; view: any; layoutSource?: string }> = [];
+  // 5. Pre-render all SVGs to ensure everything is valid before writing ANY files
+  const results: Array<{ output: string; svg: string; layoutSource?: string }> = [];
   for (const input of inputs) {
     const output = outputPathFor(input, options);
     const { view, layoutSource } = await renderModuleFromGraph(graph, path.resolve(input), workspaceRoot, {
@@ -163,16 +163,16 @@ async function renderCommand(argv: string[]): Promise<void> {
       layoutFile: options.layout,
       topModule: options.top
     });
-    results.push({ output, view, layoutSource });
-  }
-
-  // All valid? Write them out.
-  for (const { output, view, layoutSource } of results) {
-    await fs.mkdir(path.dirname(output), { recursive: true });
     let svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
     if (options.minifySvg) {
       svg = await minifySvg(svg);
     }
+    results.push({ output, svg, layoutSource });
+  }
+
+  // All valid? Write them out.
+  for (const { output, svg, layoutSource } of results) {
+    await fs.mkdir(path.dirname(output), { recursive: true });
     const relativeOutput = relativeToCwd(output);
     if (layoutSource) {
       process.stderr.write(`[svsch] rendering ${relativeOutput} using layout file ${relativeToCwd(layoutSource)}\n`);
