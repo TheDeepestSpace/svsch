@@ -55,6 +55,32 @@ Feature: Command Line Interface
     And the CLI SVG should contain "port:top:a"
     And the CLI SVG should contain "port:top:y"
 
+  Scenario: Skipping SVGO minification (--no-minify)
+    Given I have a file "top.sv" in my workspace:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
+      """
+      svsch render top.sv --output top.svg --no-layout --no-minify
+      """
+    Then the CLI stdout should be exactly (workspace-relative):
+      """
+      top.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      [svsch] rendering top.svg without a layout file
+      """
+    And a file named "top.svg" should exist in the workspace
+    And the CLI SVG should contain "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+
   Scenario: Render with manual layout
     Given I have a file "top.sv" in my workspace:
       """sv
