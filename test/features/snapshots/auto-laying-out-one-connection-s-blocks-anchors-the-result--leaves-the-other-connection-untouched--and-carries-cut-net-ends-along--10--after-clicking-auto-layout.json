@@ -258,7 +258,7 @@
       "target": "instance:top:u1",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 24 L 168 24 L 288 24 L 288 72 L 384 72 L 408 72"
+      "path": "M 144 24 L 168 24 L 240 24 L 240 72 L 384 72 L 408 72"
     }
   ]
 }

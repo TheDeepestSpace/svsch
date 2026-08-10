@@ -27,6 +27,19 @@ export function routingObstacleMargins(
     };
   }
 
+  // Cut-net ends are visual nodes but are not endpoints of the ordinary
+  // edges routed here. Reserve a full grid around the label so snapping a
+  // route to the grid cannot leave it running directly along the label's
+  // outline.
+  if (node.kind === 'netLabel') {
+    return {
+      left: diagramSizing.gridSize,
+      right: diagramSizing.gridSize,
+      top: diagramSizing.gridSize,
+      bottom: diagramSizing.gridSize
+    };
+  }
+
   if (node.kind !== 'port') {
     return { left: 0, right: 0, ...vertical };
   }

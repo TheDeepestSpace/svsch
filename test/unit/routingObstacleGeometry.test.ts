@@ -46,4 +46,20 @@ describe('routing obstacle geometry', () => {
       bottom: diagramSizing.gridSize / 2
     });
   });
+
+  it('keeps one grid of routing clearance around cut-net ends', () => {
+    const cutEnd: DiagramNode = {
+      id: 'cut-label:clk:sink',
+      kind: 'netLabel',
+      label: 'clk',
+      ports: [{ id: 'cut', name: 'cut', direction: 'output' }]
+    };
+
+    expect(routingObstacleMargins(cutEnd, ['EAST'])).toEqual({
+      left: diagramSizing.gridSize,
+      right: diagramSizing.gridSize,
+      top: diagramSizing.gridSize,
+      bottom: diagramSizing.gridSize
+    });
+  });
 });
