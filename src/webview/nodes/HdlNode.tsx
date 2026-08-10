@@ -10,7 +10,7 @@ import {
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
 import { registerPortTop, registerExtraInputPortTop } from '../../diagram/registerGeometry';
-import { muxInputPortCenterY } from '../../diagram/muxGeometry';
+import { gateInputPortCenterY, muxInputPortCenterY } from '../../diagram/muxGeometry';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { interfaceInstanceTopHatY, visualHandleGeometry } from '../../diagram/visualHandleGeometry';
 import {
@@ -555,7 +555,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
         </svg>
         {sideInputs.map((port: DiagramPort, index: number) => (
           <Handle key={port.id} type="target" id={port.id} position={Position.Left}
-            style={{ top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
+            style={{ top: gateInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
         ))}
         {outputs.slice(0, 1).map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}

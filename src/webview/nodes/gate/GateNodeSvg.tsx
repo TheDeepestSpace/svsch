@@ -1,7 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { gateBubbleGap, gateBubbleRadius, gateXorGap } from '../../../diagram/nodeSizing';
-import { muxInputPortCenterY } from '../../../diagram/muxGeometry';
+import { gateInputPortCenterY } from '../../../diagram/muxGeometry';
 import { nodeIsArrayNode, gateBodyOperation, gateIsNegated } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
@@ -86,7 +86,7 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
             thick={arrayConnectionThick(input.id, 'target')}
             side="left"
             width={width}
-            y={muxInputPortCenterY(index, inputs.length, height)}
+            y={gateInputPortCenterY(index, inputs.length, height)}
             trimSink
           />
         )

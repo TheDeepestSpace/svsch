@@ -70,6 +70,98 @@ cases:
       nodeKinds: [port, gate]
       selectedText: "a & b & c"
 
+  - id: gate-or
+    title: Boolean OR Gate
+    description: A bitwise OR operator becomes an OR gate.
+    tags: [gate, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic decoded
+        );
+          assign decoded = a | b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a | b"
+
+  - id: gate-xor
+    title: Boolean XOR Gate
+    description: A bitwise XOR operator becomes an XOR gate.
+    tags: [gate, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic decoded
+        );
+          assign decoded = a ^ b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a ^ b"
+
+  - id: gate-nor
+    title: Boolean NOR Gate
+    description: Negating an OR expression fuses into a single NOR gate with a negated-output bubble, instead of a separate inverter feeding an OR gate.
+    tags: [gate, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = ~(a | b);
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a | b"
+
+  - id: gate-xnor
+    title: Boolean XNOR Gate
+    description: A bitwise XNOR operator becomes an XNOR gate with a negated-output bubble.
+    tags: [gate, logical, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a ^~ b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a ^~ b"
+
   - id: alu-addition
     title: Arithmetic Addition
     description: An arithmetic addition operator becomes an ALU block.
