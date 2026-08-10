@@ -68,12 +68,12 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
            className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
            transform={`translate(${layer.dx}, ${layer.dy})`}
            opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}>
-          {isXor && <path className="svsch-node-shape" d={xorBackCurvePath(height)} fill="none" />}
+          {isXor && <path className="svsch-node-shape gate-back-curve" d={xorBackCurvePath(height)} fill="none" />}
           <path className="svsch-node-shape" d={path} />
           {negated && <circle className="svsch-node-shape" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
         </g>
       ))}
-      {isXor && <path className="svsch-node-shape hdl-node-gate node-skin-body" d={xorBackCurvePath(height)} fill="none" />}
+      {isXor && <path className="svsch-node-shape hdl-node-gate node-skin-body gate-back-curve" d={xorBackCurvePath(height)} fill="none" />}
       <path className="svsch-node-shape hdl-node-gate node-skin-body" d={path} />
       {negated && <circle className="svsch-node-shape hdl-node-gate node-skin-body gate-bubble" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
 
