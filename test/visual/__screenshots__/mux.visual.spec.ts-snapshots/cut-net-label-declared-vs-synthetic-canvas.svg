@@ -3730,9 +3730,9 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="cut-stub:declared:source"><path class="svsch-edge" data-edge-id="cut-stub:declared:source" data-net-key="declared" d="M 144 52 L 144 52 L 192 52 L 192 52" /></g>
-<g class="svsch-edge-group" data-edge-id="cut-stub:renamed:source"><path class="svsch-edge" data-edge-id="cut-stub:renamed:source" data-net-key="renamed" d="M 120 292 L 120 292 L 144 292 L 144 292" /></g>
-<g class="svsch-edge-group" data-edge-id="cut-stub:synthetic:source"><path class="svsch-edge" data-edge-id="cut-stub:synthetic:source" data-net-key="synthetic" d="M 120 172 L 120 172 L 144 172 L 144 172" /></g>
+<g class="svsch-edge-group" data-edge-id="cut-stub:declared:source"><path class="svsch-edge" data-edge-id="cut-stub:declared:source" data-net-key="declared" d="M 144 52 L 168 52 L 192 52 L 192 52" /></g>
+<g class="svsch-edge-group" data-edge-id="cut-stub:renamed:source"><path class="svsch-edge" data-edge-id="cut-stub:renamed:source" data-net-key="renamed" d="M 120 292 L 144 292 L 144 292" /></g>
+<g class="svsch-edge-group" data-edge-id="cut-stub:synthetic:source"><path class="svsch-edge" data-edge-id="cut-stub:synthetic:source" data-net-key="synthetic" d="M 120 172 L 144 172 L 144 172" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="source:declared" data-node-kind="port" transform="translate(0 40)">

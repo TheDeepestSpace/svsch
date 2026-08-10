@@ -118,7 +118,7 @@
       "target": "port:top:out_state",
       "sourceHandle": "cut",
       "targetHandle": "port:out_state",
-      "path": "M 912 120 L 912 120 L 936 120 L 936 120"
+      "path": "M 912 120 L 912 120 L 984 120 L 984 192 L 912 192 L 912 120 L 936 120"
     },
     {
       "id": "cut-stub:reg:top:current_state:q:source",
@@ -126,7 +126,7 @@
       "target": "cut-label:reg:top:current_state:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 672 144 L 672 144 L 696 144 L 696 168 L 696 168"
+      "path": "M 672 144 L 696 144 L 696 168 L 696 168"
     },
     {
       "id": "edge:port:top:in_state:reg:top:current_state:in_state",

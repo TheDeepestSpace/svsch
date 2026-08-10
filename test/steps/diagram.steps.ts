@@ -333,6 +333,11 @@ When('I tie back every cut net', async function (this: BddWorld) {
   await waitForViewportTransformToSettle(this.webviewPage);
 });
 
+When('I fit the diagram in view', async function (this: BddWorld) {
+  await this.webviewPage.locator('.react-flow__controls-fitview').click();
+  await waitForViewportTransformToSettle(this.webviewPage);
+});
+
 When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
   const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
   await expect(labelNode).toBeVisible();
@@ -1051,10 +1056,9 @@ Then('the cut net label attached to {string} should not overlap the block {strin
   expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
 });
 
-// Guards against the label picking up the highlight halo/hovered-text style
-// merely because its stub edge got auto-selected along with the block it's
-// attached to (React Flow selects every edge touching a selected node) — the
-// label itself was never actually marqueed, so neither class should appear.
+// Guards against a label picking up the highlight halo/hovered-text style
+// merely because its stub edge got selected along with the attached block.
+// A label physically outside the lasso is not itself selected.
 Then('the cut net label attached to {string} should not be highlighted', async function (this: BddWorld, blockLabel: string) {
   const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
   const labelNode = this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`);

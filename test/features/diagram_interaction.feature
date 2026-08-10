@@ -573,12 +573,18 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I note the position of port node "x"
+    And I note the position of port node "y"
     And click and drag the mouse to select "a" and "b" together
     And I hover the connection between "a" and "x" and click its Cut control
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
     And the original connection between "a" and "x" should be hidden
     And the original connection between "b" and "y" should be hidden
+    And the port node "a" should not have moved
+    And the port node "b" should not have moved
+    And the port node "x" should not have moved
+    And the port node "y" should not have moved
 
   Scenario: The Auto Layout control only appears once multiple blocks are selected
     Given I have a file "top.sv" in my workspace:
@@ -686,10 +692,9 @@ Feature: Diagram Interaction
     And I note the position of the cut net label attached to "u1"
     And I move the port node "b" by (0, 72)
     And I move the block "u2" by (3, 5) grid cells
-    # u2's dangling end also isn't marqueed directly, but its stub wire is
-    # selected along with u2 (React Flow selects every edge touching a
-    # selected node) — noted here, right before the selection, as the
-    # baseline for proving it does move.
+    # Note u2's dangling end before the upcoming lasso. It sits above the
+    # rectangle spanning b/u2/y, so it remains unselected but follows u2 when
+    # the selected nodes are laid out.
     And I note the position of the cut net label attached to "u2"
     And I move the port node "y" by (0, 72)
     And click and drag the mouse to select "b", "u2", and "y" together

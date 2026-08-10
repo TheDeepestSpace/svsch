@@ -263,7 +263,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 264 L 432 264 L 456 264 L 456 264"
+      "path": "M 432 264 L 432 264 L 456 264"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -271,7 +271,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 120 L -240 120 L -216 120 L -216 120"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:q:rst_n",
@@ -279,7 +279,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 504 336 L 504 336 L 504 288 L 504 288"
+      "path": "M 504 336 L 504 336 L 504 288"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",
@@ -287,7 +287,7 @@
       "target": "cut-label:port:top:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M -240 168 L -240 168 L -216 168 L -216 168"
+      "path": "M -240 168 L -216 168 L -216 168"
     },
     {
       "id": "edge:port:top:a:port:top:x:x",

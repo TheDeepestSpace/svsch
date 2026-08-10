@@ -3742,7 +3742,7 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-front svsch-edge-stacked-front" data-edge-id="cut-stub:clk:sink" data-net-key="clock_net" d="M 164 116 L 185 116" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-middle svsch-edge-stacked" data-edge-id="cut-stub:clk:sink" data-net-key="clock_net" d="M 168 120 L 186 120" />
 <path class="svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-back svsch-edge-stacked-back" data-edge-id="cut-stub:clk:sink" data-net-key="clock_net" d="M 172 124 L 187 124" /></g>
-<g class="svsch-edge-group" data-edge-id="cut-stub:clk:source"><path class="svsch-edge" data-edge-id="cut-stub:clk:source" data-net-key="clock_net" d="M 120 168 L 120 168 L 168 168 L 168 168" /></g>
+<g class="svsch-edge-group" data-edge-id="cut-stub:clk:source"><path class="svsch-edge" data-edge-id="cut-stub:clk:source" data-net-key="clock_net" d="M 120 168 L 144 168 L 168 168 L 168 168" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-register hdl-register-node hdl-node-array" data-node-id="reg:target" data-node-kind="register" transform="translate(192 48)">

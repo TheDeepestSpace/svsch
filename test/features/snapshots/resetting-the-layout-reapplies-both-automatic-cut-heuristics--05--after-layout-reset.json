@@ -323,7 +323,7 @@
       "target": "port:top:x",
       "sourceHandle": "cut",
       "targetHandle": "port:x",
-      "path": "M 1128 192 L 1128 192 L 1152 192 L 1152 192"
+      "path": "M 1128 192 L 1128 192 L 1152 192"
     },
     {
       "id": "cut-stub:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
@@ -331,7 +331,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 1128 240 L 1128 240 L 1152 240 L 1152 240"
+      "path": "M 1128 240 L 1128 240 L 1152 240"
     },
     {
       "id": "cut-stub:port:top:a:port:a:source",
@@ -339,7 +339,7 @@
       "target": "cut-label:port:top:a:port:a:source",
       "sourceHandle": "port:a",
       "targetHandle": "cut",
-      "path": "M -240 288 L -240 288 L -216 288 L -216 288"
+      "path": "M -240 288 L -216 288 L -216 288"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:q:clk",
@@ -347,7 +347,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 240 L 432 240 L 456 240 L 456 240"
+      "path": "M 432 240 L 432 240 L 456 240"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -355,7 +355,7 @@
       "target": "cut-label:port:top:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 192 L -240 192 L -216 192 L -216 192"
+      "path": "M -240 192 L -216 192 L -216 192"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:q:rst_n",
@@ -363,7 +363,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 504 312 L 504 312 L 504 264 L 504 264"
+      "path": "M 504 312 L 504 312 L 504 264"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",
@@ -371,7 +371,7 @@
       "target": "cut-label:port:top:rst_n:port:rst_n:source",
       "sourceHandle": "port:rst_n",
       "targetHandle": "cut",
-      "path": "M -240 240 L -240 240 L -216 240 L -216 240"
+      "path": "M -240 240 L -216 240 L -216 240"
     },
     {
       "id": "edge:port:top:d:reg:top:q:d",

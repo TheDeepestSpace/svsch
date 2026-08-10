@@ -58,6 +58,7 @@ Feature: Schematic Observation
       """
     When I open the "top" module in SVSCH
     And I tie back every cut net
+    And I fit the diagram in view
     Then I should see a port node "i"
     And I should see a port node "o"
     And there should be a connection between "i" and "o"

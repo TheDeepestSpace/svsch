@@ -748,12 +748,21 @@ export class DiagramPanel {
 
   private async tieNet(moduleName: string, netKey: string): Promise<void> {
     const store = this.getStore();
-    if (!store) {
+    const graph = this.graph;
+    if (!store || !graph?.modules[moduleName]) {
       return;
     }
     await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = removeNetCut(this.layout, moduleName, netKey);
+    // Let the just-restored connection find its natural arrangement once,
+    // then anchor that result. Later ties must not re-run ELK over unrelated
+    // components and make already-settled portions of the diagram jump.
+    const tiedView = await buildViewModel(graph, moduleName, this.layout);
+    this.layout = mergeNodePositions(this.layout, moduleName, tiedView.nodes.map((node) => ({
+      ...node,
+      fixed: node.kind === 'netLabel' ? node.fixed : true
+    })));
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }

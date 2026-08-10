@@ -163,7 +163,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "cut",
       "targetHandle": "rst",
-      "path": "M 432 168 L 432 168 L 432 120 L 432 120"
+      "path": "M 432 168 L 432 168 L 432 120"
     },
     {
       "id": "cut-stub:port:register_async_reset:rst:port:rst:source",
@@ -171,7 +171,7 @@
       "target": "cut-label:port:register_async_reset:rst:port:rst:source",
       "sourceHandle": "port:rst",
       "targetHandle": "cut",
-      "path": "M 144 168 L 144 168 L 168 168 L 168 168"
+      "path": "M 144 168 L 168 168 L 168 168"
     },
     {
       "id": "edge:port:register_async_reset:c_main:reg:register_async_reset:q:c_main",

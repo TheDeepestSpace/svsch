@@ -42,19 +42,46 @@ export function normalizeRoutePoints(
   targetNode?: DiagramNode
 ): OrthogonalPoint[] {
   const forceStraight = (route as any)?.edge?.metadata?.forceStraight === true;
-  const sourceLeadLen = forceStraight ? 0 : leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode);
-  const targetLeadLen = forceStraight ? 0 : leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode);
-  // For forceStraight stubs the handle may land on a half-grid coordinate (e.g. the
-  // centre of a port node). Snapping to the nearest full grid would shift the lead 12 px
-  // in both axes, producing a visible 45-degree entry segment. Use the exact handle
-  // coordinates so the stub wire departs orthogonally from the actual handle.
-  const sourceLead = forceStraight
+  const isCutStub = forceStraight && (
+    (route as any)?.edge?.metadata?.cutStub !== undefined
+    || sourceNode?.kind === 'netLabel'
+    || targetNode?.kind === 'netLabel'
+  );
+  // A cut label's handle already sits at the owning port's lead point. Keep
+  // the ordinary lead on the real-node end of the stub, but add no second
+  // lead at the synthetic label end. This makes a displaced label bend only
+  // after the wire has cleared the real port.
+  const sourceLeadLen = forceStraight
+    ? (isCutStub && sourceNode?.kind !== 'netLabel'
+      ? leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode)
+      : 0)
+    : leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode);
+  const targetLeadLen = forceStraight
+    ? (isCutStub && targetNode?.kind !== 'netLabel'
+      ? leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode)
+      : 0)
+    : leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode);
+  // A zero-lead endpoint may land on a half-grid coordinate (e.g. the centre
+  // of a port node). Preserve it exactly; only snap an endpoint for which an
+  // actual lead was added.
+  const sourceLead = forceStraight && sourceLeadLen === 0
     ? { x: sourceX, y: sourceY }
     : snapLeadPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen), sourceX, sourceY, sourcePosition);
-  const targetLead = forceStraight
+  const targetLead = forceStraight && targetLeadLen === 0
     ? { x: targetX, y: targetY }
     : snapLeadPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen), targetX, targetY, targetPosition);
   const hasPersistedRoute = Boolean(route?.routePoints?.length || route?.waypoint);
+  const alignedOpposingCutStub = !hasPersistedRoute && isCutStub && (
+    ((sourcePosition === HdlPosition.Right && targetPosition === HdlPosition.Left)
+      || (sourcePosition === HdlPosition.Left && targetPosition === HdlPosition.Right))
+      ? Math.abs(sourceLead.x - targetLead.x) < 0.5
+      : ((sourcePosition === HdlPosition.Bottom && targetPosition === HdlPosition.Top)
+        || (sourcePosition === HdlPosition.Top && targetPosition === HdlPosition.Bottom))
+        && Math.abs(sourceLead.y - targetLead.y) < 0.5
+  );
+  if (alignedOpposingCutStub) {
+    return makeOrthogonal([sourceLead, targetLead], simplify);
+  }
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
     : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);

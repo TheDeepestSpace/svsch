@@ -123,9 +123,13 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
 
   const nodesById = new Map<string, DiagramNode>(positionedWithWarnings.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedWithWarnings.map((node) => [node.id, node.position]));
+  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
   const candidates = routedDesignEdges.filter((edge) => !moduleLayout.edges?.[edge.id]?.routePoints);
   const result = await routeDiagramWithLibavoid(
-    positionedWithWarnings,
+    // Dangling ends are real visual obstacles too. Build them before routing
+    // so ordinary nets cannot pass through a cut label that happens to land
+    // in their otherwise-clear corridor.
+    [...positionedWithWarnings, ...cutProjection.nodes],
     candidates,
     (nodeId, portId, includeLeadMargins) => renderedLeadPoint(
       nodeId,
@@ -135,7 +139,6 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
       includeLeadMargins
     )
   );
-  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
   const edgeLabels = assignEdgeNetLabels(routedDesignEdges, nodesById);
 
   return {
@@ -686,8 +689,12 @@ function columnizeFullyCutBoundaryPorts(
   };
 
   const columnGap = diagramSizing.columnGap;
+  // A real body needs clearance on both sides. With no body, there is only
+  // one relationship left — input column to output column — so reserve one
+  // column gap total instead of two gaps around an empty point.
+  const inputGap = survivingBodyBounds ? columnGap : 0;
   const overrides = new Map([
-    ...stack(bySide('input'), (width) => bodyBounds.x - columnGap - width),
+    ...stack(bySide('input'), (width) => bodyBounds.x - inputGap - width),
     ...stack(bySide('output'), () => bodyBounds.x + bodyBounds.width + columnGap)
   ]);
 

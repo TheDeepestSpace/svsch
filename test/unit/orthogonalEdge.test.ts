@@ -45,6 +45,97 @@ describe('orthogonal edge routing', () => {
     expect(route.every((point) => point.y === 52)).toBe(true);
   });
 
+  it('keeps the real port lead before a displaced cut-stub bend', () => {
+    const sourceNode = {
+      id: 'u1',
+      kind: 'instance' as const,
+      label: 'u1',
+      ports: [{ id: 'y', name: 'y', direction: 'output' as const }]
+    };
+    const targetNode = {
+      id: 'cut-label:u1:y:source',
+      kind: 'netLabel' as const,
+      label: 'u1.y',
+      ports: [{ id: 'cut', name: 'cut', direction: 'input' as const }]
+    };
+    const route = normalizeRoutePoints(
+      {
+        edge: {
+          id: 'cut-stub:u1:y:source',
+          source: sourceNode.id,
+          sourcePort: 'y',
+          target: targetNode.id,
+          targetPort: 'cut',
+          metadata: {
+            forceStraight: true,
+            cutStub: { netKey: 'u1:y', role: 'source' as const }
+          }
+        }
+      },
+      552,
+      72,
+      576,
+      120,
+      HdlPosition.Right,
+      HdlPosition.Left,
+      'y',
+      'cut',
+      true,
+      sourceNode,
+      targetNode
+    );
+
+    expect(route).toEqual([
+      { x: 576, y: 72 },
+      { x: 576, y: 120 }
+    ]);
+  });
+
+  it('does not loop an aligned cut stub between a label and a real input port', () => {
+    const sourceNode = {
+      id: 'cut-label:o:sink',
+      kind: 'netLabel' as const,
+      label: 'o',
+      ports: [{ id: 'cut', name: 'cut', direction: 'output' as const }]
+    };
+    const targetNode = {
+      id: 'o',
+      kind: 'port' as const,
+      label: 'o',
+      ports: [{ id: 'port:o', name: 'o', direction: 'output' as const }]
+    };
+    const route = normalizeRoutePoints(
+      {
+        edge: {
+          id: 'cut-stub:o:sink',
+          source: sourceNode.id,
+          sourcePort: 'cut',
+          target: targetNode.id,
+          targetPort: 'port:o',
+          metadata: {
+            forceStraight: true,
+            cutStub: { netKey: 'o', role: 'sink' as const }
+          }
+        }
+      },
+      384,
+      48,
+      408,
+      48,
+      HdlPosition.Right,
+      HdlPosition.Left,
+      'cut',
+      'port:o',
+      true,
+      sourceNode,
+      targetNode
+    );
+
+    expect(route).toEqual([
+      { x: 384, y: 48 }
+    ]);
+  });
+
   it('keeps horizontal leads on the route grid from one-grid-tall block handles', () => {
     const sourceY = diagramSizing.gridSize;
     const targetY = diagramSizing.gridSize * 5;

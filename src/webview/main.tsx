@@ -229,6 +229,7 @@ function DiagramApp(): React.ReactElement {
   const maxZoom = useStore((state) => state.maxZoom);
   const userSelectionRect = useStore((state) => state.userSelectionRect);
   const [selectedRegionIds, setSelectedRegionIds] = useState<Set<string>>(new Set());
+  const selectionStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
   // Node ids to re-select in the very next view rebuild — set right before
   // posting an "Auto Layout" request, consumed (and cleared) the next time
@@ -262,6 +263,47 @@ function DiagramApp(): React.ReactElement {
       return inside;
     });
   }, [userSelectionRect, regions, viewport]);
+
+  const handleSelectionStart = useCallback((event: React.MouseEvent) => {
+    selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
+  }, []);
+
+  const handleSelectionEnd = useCallback((event: React.MouseEvent) => {
+    const start = selectionStartPointRef.current;
+    selectionStartPointRef.current = null;
+    if (!start) return;
+
+    const startFlow = reactFlow.screenToFlowPosition(start);
+    const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const rect = {
+      x: Math.min(startFlow.x, endFlow.x),
+      y: Math.min(startFlow.y, endFlow.y),
+      width: Math.abs(endFlow.x - startFlow.x),
+      height: Math.abs(endFlow.y - startFlow.y)
+    };
+
+    // React Flow's lasso can omit synthetic cut-label nodes even when their
+    // measured boxes are visibly inside the rectangle. Apply the same partial
+    // intersection rule explicitly so the rendered selection matches the box
+    // the user drew. Labels outside the lasso remain unselected.
+    setNodes((current) => {
+      let changed = false;
+      const next = current.map((node) => {
+        if (node.data.node.kind !== 'netLabel') return node;
+        const size = diagramNodeDimensions(node.data.node);
+        const selected = (
+          node.position.x < rect.x + rect.width
+          && rect.x < node.position.x + size.width
+          && node.position.y < rect.y + rect.height
+          && rect.y < node.position.y + size.height
+        );
+        if (Boolean(node.selected) === selected) return node;
+        changed = true;
+        return { ...node, selected };
+      });
+      return changed ? next : current;
+    });
+  }, [reactFlow, setNodes]);
 
   const clearRegionSelection = useCallback(() => {
     setSelectedRegionIds((current) => (current.size === 0 ? current : new Set()));
@@ -756,6 +798,8 @@ function DiagramApp(): React.ReactElement {
                 onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
                   if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
                 }}
+                onSelectionStart={handleSelectionStart}
+                onSelectionEnd={handleSelectionEnd}
                 onEdgeMouseEnter={onEdgeMouseEnter}
                 onEdgeMouseLeave={onEdgeMouseLeave}
                 onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {

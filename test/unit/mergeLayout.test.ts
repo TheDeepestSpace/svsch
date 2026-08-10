@@ -141,6 +141,28 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
+  it('keeps links touching interface nodes whole on first open', () => {
+    const interfaceModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' as const }] },
+        { id: 'link', kind: 'interface' as const, label: 'link', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
+        { id: 'consumer', kind: 'instance' as const, label: 'consumer', ports: [{ id: 'bus', name: 'bus', direction: 'input' as const }] },
+        { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'p', name: 'src', direction: 'input' as const }] },
+        { id: 'sink', kind: 'port' as const, label: 'sink', ports: [{ id: 'p', name: 'sink', direction: 'output' as const }] }
+      ],
+      edges: [
+        { id: 'clk-link', source: 'clk', sourcePort: 'p', target: 'link', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
+        { id: 'link-consumer', source: 'link', sourcePort: 'clk', target: 'consumer', targetPort: 'bus', metadata: { declaredNetName: 'link' } },
+        { id: 'ordinary', source: 'src', sourcePort: 'p', target: 'sink', targetPort: 'p', metadata: { declaredNetName: 'ordinary' } }
+      ]
+    };
+
+    expect(firstOpenAutoCutEdges(interfaceModule, true).map((edge) => edge.id)).toEqual(['ordinary']);
+  });
+
   it('columnizes a top-level port that lost every edge to a first-open cut, flanking the rest of the design', async () => {
     const designModule = {
       name: 'top',
@@ -279,7 +301,7 @@ describe('first-open auto-cuts', () => {
     expect(xBounds.x).toBe(yBounds.x);
     expect(xBounds.y).toBeLessThan(yBounds.y);
     expect(boxesOverlap(xBounds, yBounds)).toBe(false);
-    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(2 * diagramSizing.columnGap);
+    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(diagramSizing.columnGap);
   });
 
   it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {
