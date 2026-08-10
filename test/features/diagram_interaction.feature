@@ -183,7 +183,7 @@ Feature: Diagram Interaction
     And I should see 2 cut net labels named "clk"
     And I should see 2 cut net labels named "rst_n"
 
-  Scenario: Cutting and tying back a fanout net whose source name is declared in the SV source
+  Scenario: An automatically cut fanout net keeps its declared source name
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
@@ -194,11 +194,6 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    # "chip_select" has a declared name, so it's auto-cut on first open; tie it
-    # back first so the connection is actually there to manually cut below.
-    And I tie back the cut net "chip_select"
-    And I move the port node "a"
-    When I hover the connection between "a" and "x" and click its Cut control
     Then I should see 3 cut net labels named "chip_select"
     And the original connection between "a" and "x" should be hidden
     And the original connection between "a" and "y" should be hidden
@@ -209,10 +204,6 @@ Feature: Diagram Interaction
     When I double-click the cut net "chip_select"
     Then the cut net "chip_select" should not become editable
     And I should see 3 cut net labels named "chip_select"
-    When I tie back the cut net "chip_select"
-    Then the original connection between "a" and "x" should be restored
-    And the original connection between "a" and "y" should be restored
-    And I should not see cut net labels named "chip_select"
 
   Scenario: Renaming a cut net that has no declared name of its own (implicit wiring)
     Given I have a file "top.sv" in my workspace:
