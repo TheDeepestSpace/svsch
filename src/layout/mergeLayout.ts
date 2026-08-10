@@ -781,6 +781,7 @@ function buildNetCutProjection(
 ): { nodes: PositionedNode[]; edges: DiagramEdge[] } {
   const nodes: PositionedNode[] = [];
   const edges: DiagramEdge[] = [];
+  const deferredNodeIds = new Set<string>();
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
@@ -804,6 +805,9 @@ function buildNetCutProjection(
     const isSourceStacked = sourceNode ? nodeIsArrayNode(sourceNode) : false;
 
     const sourceLabelId = cutLabelNodeId(netKey, 'source');
+    if (cut.deferLabelPlacement) {
+      deferredNodeIds.add(sourceLabelId);
+    }
     const sourceHandleSide = oppositeHandleSide(elkSideToHandleSide(sourceLead.side));
     const sourceLabelNode = makeCutLabelNode(
       sourceLabelId,
@@ -846,6 +850,9 @@ function buildNetCutProjection(
       }
 
       const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
+      if (cut.deferLabelPlacement) {
+        deferredNodeIds.add(sinkLabelId);
+      }
       const sinkHandleSide = oppositeHandleSide(elkSideToHandleSide(targetLead.side));
       const sinkLabelNode = makeCutLabelNode(
         sinkLabelId,
@@ -883,7 +890,18 @@ function buildNetCutProjection(
     }
   }
 
-  return { nodes: resolveCutLabelCollisions(nodes, positionedNodes), edges };
+  const resolvedNodes = resolveCutLabelCollisions(
+    nodes.filter((node) => !deferredNodeIds.has(node.id)),
+    positionedNodes
+  );
+  const resolvedById = new Map(resolvedNodes.map((node) => [node.id, node]));
+  return {
+    // A manual cut should look exactly like a wire split in place. Its ends
+    // therefore stay at their canonical port-lead positions and do not act as
+    // blockers for already-placed labels until Auto Layout activates them.
+    nodes: nodes.map((node) => resolvedById.get(node.id) ?? node),
+    edges
+  };
 }
 
 interface NodeBounds {
@@ -2876,6 +2894,7 @@ function mergeNetCutState(
           nodeId: edge.source,
           ...(edge.sourcePort ? { portId: edge.sourcePort } : {})
         },
+        ...(nodes ? { deferLabelPlacement: true } : {}),
         origin: netCutOrigin(edge, label),
         defaultLabel: label
       }
@@ -3289,6 +3308,35 @@ export function mergeRelayoutSelection(
     Object.entries(existing.edges ?? {}).filter(([edgeId]) => !touchedEdgeIds.has(edgeId))
   );
 
+  // A manual cut deliberately leaves its ends where the wire was split, even
+  // if the labels overlap. Auto Layout is the explicit point at which those
+  // ends may start participating in placement. Activate a cut when the
+  // selection contains one of its synthetic labels or either real endpoint.
+  const placedCutKeys = new Set<string>();
+  for (const node of nodes) {
+    if (!released.has(node.id)) continue;
+    const netKey = node.metadata?.cutNet?.netKey;
+    if (netKey) placedCutKeys.add(netKey);
+  }
+  for (const [netKey, cut] of Object.entries(existing.netCuts ?? {})) {
+    if (!cut.deferLabelPlacement) continue;
+    if (released.has(cut.source.nodeId) || designModule.edges.some((edge) => (
+      edgeNetKey(edge) === netKey
+      && edge.source === cut.source.nodeId
+      && edge.sourcePort === cut.source.portId
+      && released.has(edge.target)
+    ))) {
+      placedCutKeys.add(netKey);
+    }
+  }
+  const netCuts = existing.netCuts && Object.fromEntries(
+    Object.entries(existing.netCuts).map(([netKey, cut]) => {
+      if (!placedCutKeys.has(netKey)) return [netKey, cut];
+      const { deferLabelPlacement: _deferred, ...placed } = cut;
+      return [netKey, placed];
+    })
+  );
+
   return {
     version: 1,
     modules: {
@@ -3296,7 +3344,8 @@ export function mergeRelayoutSelection(
       [moduleName]: {
         ...existing,
         nodes: mergedNodes,
-        edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined
+        edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined,
+        netCuts
       }
     }
   };

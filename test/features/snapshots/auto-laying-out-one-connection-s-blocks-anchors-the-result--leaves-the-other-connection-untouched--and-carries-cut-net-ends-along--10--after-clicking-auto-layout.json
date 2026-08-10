@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": 624,
-        "y": 96
+        "y": 48
       },
       "width": 96,
       "height": 48,
@@ -226,7 +226,7 @@
       "target": "cut-label:instance:top:u1:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 600 72 L 624 72 L 624 120 L 624 120"
+      "path": "M 600 72 L 624 72 L 624 72"
     },
     {
       "id": "cut-stub:port:top:b:port:b:sink:edge:port:top:b:instance:top:u2:b",

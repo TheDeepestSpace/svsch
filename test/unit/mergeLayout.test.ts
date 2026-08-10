@@ -1095,6 +1095,7 @@ describe('layout merge', () => {
     expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
+      deferLabelPlacement: true,
       origin: 'declared',
       defaultLabel: 'clk'
     });
@@ -1208,6 +1209,7 @@ describe('layout merge', () => {
     expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
+      deferLabelPlacement: true,
       origin: 'synthetic',
       defaultLabel: 'clk'
     });
@@ -1312,6 +1314,53 @@ describe('layout merge', () => {
         expect(boxesOverlap(labels[i], labels[j])).toBe(false);
       }
     }
+  });
+
+  it('lets a manual cut overlap until an endpoint participates in Auto Layout', async () => {
+    const manualCutGraph: DesignGraph = {
+      ...twoNetGraph,
+      modules: {
+        top: {
+          ...twoNetGraph.modules.top,
+          nodes: twoNetGraph.modules.top.nodes.map((node) => ({
+            ...node,
+            ports: node.ports.map((port) => ({
+              ...port,
+              direction: node.id === 'a' ? 'input' : node.id === 'x' ? 'output' : port.direction
+            }))
+          }))
+        }
+      }
+    };
+    const module = manualCutGraph.modules.top;
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 0, y: 60 } },
+      { ...module.nodes[2], position: { x: 240, y: 12 } },
+      { ...module.nodes[3], position: { x: 240, y: 60 } }
+    ];
+    const netKey = edgeNetKey(module.edges[0]);
+    const cut = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+
+    expect(cut.modules.top.netCuts?.[netKey].deferLabelPlacement).toBe(true);
+    const cutView = await buildViewModel(manualCutGraph, 'top', cut);
+    const cutLabels = cutView.nodes.filter((node) => node.metadata?.cutNet?.netKey === netKey);
+    expect(cutLabels).toHaveLength(2);
+    expect(boxesOverlap(boundsOf(cutLabels[0]), boundsOf(cutLabels[1]))).toBe(true);
+
+    const relayouted = mergeRelayoutSelection(
+      cut,
+      'top',
+      ['a', 'x'],
+      cutView.nodes,
+      module
+    );
+    expect(relayouted.modules.top.netCuts?.[netKey].deferLabelPlacement).toBeUndefined();
+
+    const relaidView = await buildViewModel(manualCutGraph, 'top', relayouted);
+    const relaidLabels = relaidView.nodes.filter((node) => node.metadata?.cutNet?.netKey === netKey);
+    expect(relaidLabels).toHaveLength(2);
+    expect(boxesOverlap(boundsOf(relaidLabels[0]), boundsOf(relaidLabels[1]))).toBe(false);
   });
 
   it('moves an automatic cut label away from an overlapping design node', async () => {

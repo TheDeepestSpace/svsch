@@ -42,6 +42,13 @@ export interface SavedNetCut {
     portId?: string;
   };
   /**
+   * Manual cuts initially keep both dangling ends at the exact point where
+   * the wire was split, even if their labels overlap. The first Auto Layout
+   * involving either endpoint removes this marker and enables normal label
+   * placement. Automatic first-open cuts never set it.
+   */
+  deferLabelPlacement?: boolean;
+  /**
    * 'declared' means `label` is the net's actual SV-declared name (a port or
    * wire/reg/var name known from the source) — it must not be silently
    * regenerated and the UI should not allow renaming it. 'synthetic' means
