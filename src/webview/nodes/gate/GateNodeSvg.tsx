@@ -94,6 +94,7 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
       )}
+      {isXor && <path className="node-skin-selection gate-back-curve" d={xorBackCurvePath(height)} fill="none" />}
       <path className="node-skin-selection" d={path} />
       {negated && <circle className="node-skin-selection gate-bubble-selection" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
     </>
