@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
+import { buildFixtureView, openView, paddedAllNodesClip, recordPendingRenderDuration, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
 import { elkNodeForDiagramNode, elkRoutingNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
@@ -412,6 +412,7 @@ test.describe('elk geometry grid', () => {
     await injectOverlay(page, overlay);
     await waitForViewportTransformToSettle(page);
     await page.waitForTimeout(100);
+    recordPendingRenderDuration(page);
 
     await expect(page).toHaveScreenshot('elk-geometry-grid.png', {
       clip: await paddedAllNodesClip(page)

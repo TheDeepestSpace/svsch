@@ -1,10 +1,20 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {
+  renderSuiteChart,
+  renderDeltaTableMarkdown,
+  computeDeltaRows,
+  extractBaseline,
+} from './render-benchmark-charts.mjs';
 
-// One review comment covering every diagram-generation benchmark suite, instead
-// of a separate comment per suite. Args are "<benchmark-name>=<benchmark-file>"
-// pairs, one per suite (system/bdd/visual).
-const suites = process.argv.slice(2).map((arg) => {
+// One review comment covering every diagram-generation benchmark suite, with
+// a real "master vs. this run" bar chart (hosted on gh-pages, since GitHub
+// comments can't embed raw <svg>) plus a worst/best delta table per suite.
+// Args are "<benchmark-name>=<benchmark-file>" pairs — one per individually
+// tracked benchmark (visual has two: elaboration and rendering).
+const suiteArgs = process.argv.slice(2).map((arg) => {
   const [name, file] = arg.split('=');
   if (!name || !file) {
     throw new Error(`Invalid suite argument "${arg}", expected <benchmark-name>=<benchmark-file>`);
@@ -15,70 +25,149 @@ const suites = process.argv.slice(2).map((arg) => {
 const { GITHUB_API_URL = 'https://api.github.com', GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, PR_NUMBER } =
   process.env;
 
-if (suites.length === 0) {
+if (suiteArgs.length === 0) {
   throw new Error('Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]');
 }
 if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
   throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, and PR_NUMBER must be set');
 }
 
-const baseline = (() => {
+// Which chart each benchmark suite belongs to, and how it's labeled there.
+// visual's two suites share one chart (two stacked panels, elaboration drawn
+// first/emphasized since that's the Surelog/UHDM C++ path); system and bdd
+// each get their own single-panel chart.
+const METRIC_META = {
+  'system-diagram-generation-duration': { chartKey: 'system', chartTitle: 'system-diagram-generation-duration', label: 'Duration', order: 0 },
+  'bdd-diagram-generation-duration': { chartKey: 'bdd', chartTitle: 'bdd-diagram-generation-duration', label: 'Diagram rebuild duration', order: 0 },
+  'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
+  'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Rendering — webview paint', order: 1 },
+};
+
+function git(args, opts = {}) {
+  return execFileSync('git', args, { encoding: 'utf8', ...opts });
+}
+
+const baselineData = (() => {
   try {
-    const script = execFileSync('git', ['show', 'origin/gh-pages:dev/bench/data.js'], { encoding: 'utf8' });
+    const script = git(['show', 'origin/gh-pages:dev/bench/data.js']);
     return JSON.parse(script.slice('window.BENCHMARK_DATA = '.length));
   } catch {
     return undefined;
   }
 })();
 
-const formatChange = (current, previous) => {
-  if (!Number.isFinite(previous) || previous === 0) return '';
-  const pct = ((current - previous) / previous) * 100;
-  const sign = pct > 0 ? '+' : '';
-  return ` (${sign}${pct.toFixed(1)}%)`;
-};
+const chartGroups = new Map();
+for (const { name, file } of suiteArgs) {
+  const meta = METRIC_META[name];
+  if (!meta) {
+    throw new Error(`Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`);
+  }
+  const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const baselineByName = extractBaseline(baselineData, name);
+  const group = chartGroups.get(meta.chartKey) ?? { title: meta.chartTitle, metrics: [] };
+  group.metrics.push({ order: meta.order, label: meta.label, unit: entries[0]?.unit ?? 'ms', entries, baselineByName });
+  chartGroups.set(meta.chartKey, group);
+}
 
-const escapeCell = (value) => String(value).replaceAll('|', '\\|').replaceAll('`', '\\`');
+// Publishes chart SVGs to gh-pages (dev/bench-charts/pr-<N>/<chartKey>.svg)
+// via a throwaway worktree, so they're reachable at a raw.githubusercontent
+// URL for the PR comment — GitHub markdown can't render inline <svg>, only
+// <img> references to a hosted file. Same branch github-action-benchmark
+// already publishes benchmark history to; this just adds a few static image
+// files there rather than a second place to manage. Retries a few times
+// since concurrent PR runs can race to push.
+function publishCharts(chartsByKey) {
+  const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
+  try {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      git(['fetch', 'origin', 'gh-pages']);
+      if (attempt > 1) {
+        git(['worktree', 'remove', '--force', worktreeDir]);
+      }
+      git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
 
-const rows = suites.map(({ name, file }) => {
-  const [{ value, unit }] = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const previousEntry = baseline?.entries?.[name]?.at(-1)?.benches?.find((bench) => bench.name === name);
-  const previous = previousEntry
-    ? `\`${escapeCell(previousEntry.value)}\` ${escapeCell(previousEntry.unit)}`
-    : '_no baseline yet_';
-  const change = previousEntry ? formatChange(value, previousEntry.value) : '';
-  return `| \`${escapeCell(name)}\` | ${previous} | \`${escapeCell(value)}\` ${escapeCell(unit)}${change} |`;
-});
+      const chartsDir = path.join(worktreeDir, 'dev', 'bench-charts', `pr-${PR_NUMBER}`);
+      fs.mkdirSync(chartsDir, { recursive: true });
+      for (const [key, svg] of chartsByKey) {
+        fs.writeFileSync(path.join(chartsDir, `${key}.svg`), svg, 'utf8');
+      }
+
+      git(['add', '-A'], { cwd: worktreeDir });
+      const status = git(['status', '--porcelain'], { cwd: worktreeDir }).trim();
+      if (!status) {
+        return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
+      }
+
+      git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=github-actions[bot]@users.noreply.github.com',
+        'commit', '-m', `Update benchmark charts for PR #${PR_NUMBER}`], { cwd: worktreeDir });
+      try {
+        git(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
+        return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
+      } catch (err) {
+        if (attempt === 3) throw err;
+        // Someone else pushed to gh-pages first — refetch and retry.
+      }
+    }
+    throw new Error('Failed to publish benchmark charts after 3 attempts');
+  } finally {
+    try {
+      git(['worktree', 'remove', '--force', worktreeDir]);
+    } catch {
+      // Best-effort cleanup.
+    }
+  }
+}
+
+const [owner, repo] = GITHUB_REPOSITORY.split('/');
+const chartSvgByKey = new Map();
+for (const [key, group] of chartGroups) {
+  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+  chartSvgByKey.set(key, renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics }));
+}
+const chartCommitSha = publishCharts(chartSvgByKey);
+
+const sections = [];
+for (const [key, group] of chartGroups) {
+  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+  const chartUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${key}.svg`;
+  const lines = [`### ${group.title}`, '', `![${group.title} chart](${chartUrl})`];
+  for (const metric of metrics) {
+    const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+    const table = renderDeltaTableMarkdown(rows);
+    if (table) {
+      const heading = metrics.length > 1 ? `${metric.label} delta` : 'Delta summary';
+      lines.push('', `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`, '', table, '', '</details>');
+    }
+  }
+  sections.push(lines.join('\n'));
+}
 
 const commentId = 'diagram-generation-benchmark Summary';
 const startTag = `<!-- github-benchmark-action-comment(start): ${commentId} -->`;
 const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
 const body = [
   startTag,
-  '# diagram-generation-benchmark',
+  `# diagram-generation-benchmark — ${GITHUB_SHA.slice(0, 7)}`,
   '',
-  `| Benchmark suite | Baseline (master) | Current: ${GITHUB_SHA.slice(0, 7)} |`,
-  '|-|-|-|',
-  ...rows,
+  ...sections,
   '',
   endTag,
-].join('\n');
+].join('\n\n');
 
-const [owner, repo] = GITHUB_REPOSITORY.split('/');
 const headers = {
   Accept: 'application/vnd.github+json',
   Authorization: `Bearer ${GITHUB_TOKEN}`,
   'Content-Type': 'application/json',
   'X-GitHub-Api-Version': '2022-11-28',
 };
-const request = async (method, path, requestBody) => {
-  const response = await fetch(`${GITHUB_API_URL}${path}`, {
+const request = async (method, apiPath, requestBody) => {
+  const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
     method,
     headers,
     body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
   });
   if (!response.ok) {
-    throw new Error(`${method} ${path} failed (${response.status}): ${await response.text()}`);
+    throw new Error(`${method} ${apiPath} failed (${response.status}): ${await response.text()}`);
   }
   return response.json();
 };

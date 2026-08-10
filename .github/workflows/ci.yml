@@ -254,12 +254,12 @@ jobs:
         # over a dirty tree, so drop those CI-only changes first.
         run: git checkout -- test/visual/__screenshots__
 
-      - name: Track diagram-generation benchmark (visual)
+      - name: Track diagram-generation benchmark (visual elaboration)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
-          name: visual-diagram-generation-duration
+          name: visual-elaboration-diagram-generation-duration
           tool: customSmallerIsBetter
-          output-file-path: test-results/visual/artifacts/benchmark.json
+          output-file-path: test-results/visual/artifacts/benchmark-elaboration.json
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -270,11 +270,27 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
+      - name: Track diagram-generation benchmark (visual rendering)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: visual-rendering-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/visual/artifacts/benchmark-rendering.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-always: false
+          comment-on-alert: false
+          fail-on-alert: false
+
       - name: Upload benchmark result (visual)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-visual
-          path: test-results/visual/artifacts/benchmark.json
+          path: |
+            test-results/visual/artifacts/benchmark-elaboration.json
+            test-results/visual/artifacts/benchmark-rendering.json
 
       - name: Upload Playwright artifacts
         if: always()
@@ -439,6 +455,11 @@ jobs:
         if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      # Every matrix version writes its own benchmark.json (test/system/diagram.spec.ts
+      # names the entry "vscode <version>"), so the PR chart can show one bar per
+      # version. Only the latest version's job pushes to gh-pages history, though —
+      # running benchmark-action's auto-push from all 3 matrix jobs at once would race
+      # to push the same branch concurrently.
       - name: Track diagram-generation benchmark (system, ${{ matrix.vscode_version }})
         if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
@@ -456,11 +477,10 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
-      - name: Upload benchmark result (system)
-        if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
+      - name: Upload benchmark result (system, ${{ matrix.vscode_version }})
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: benchmark-system
+          name: benchmark-system-${{ matrix.vscode_version }}
           path: test-results/system/artifacts/benchmark.json
 
       - name: Upload System Test Artifacts
@@ -482,10 +502,16 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      contents: read
+      # comment-benchmark-summary.mjs pushes the rendered chart SVGs to
+      # gh-pages (a static asset next to the benchmark history data it
+      # already publishes there) before posting the PR comment.
+      contents: write
       pull-requests: write
     steps:
       - *checkout_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Fetch gh-pages baseline
         run: git fetch origin gh-pages:refs/remotes/origin/gh-pages || true
@@ -496,12 +522,16 @@ jobs:
           pattern: benchmark-*
           path: benchmarks
 
+      - name: Merge per-version system benchmark results
+        run: node scripts/merge-system-benchmarks.mjs benchmarks
+
       - name: Post combined benchmark comment
         run: >-
           node scripts/comment-benchmark-summary.mjs
           system-diagram-generation-duration=benchmarks/benchmark-system/benchmark.json
           bdd-diagram-generation-duration=benchmarks/benchmark-bdd/benchmark.json
-          visual-diagram-generation-duration=benchmarks/benchmark-visual/benchmark.json
+          visual-elaboration-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-elaboration.json
+          visual-rendering-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-rendering.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

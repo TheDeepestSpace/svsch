@@ -13,7 +13,7 @@ import {
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
-import { recordBenchmarkSample } from '../benchmarkUtils';
+import { recordNamedBenchmarkSample } from '../benchmarkUtils';
 
 type ScreenshotCompareBox = {
   x: number;
@@ -44,6 +44,7 @@ export class BddWorld {
   stepCounter = 0;
   updateSnapshots = false;
   nextCliSnapshotStepCounter?: number;
+  diagramRebuildCounter = 0;
 
   // Diagram state
   layout: any = { version: 1, modules: {} };
@@ -361,12 +362,18 @@ export class BddWorld {
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
-    recordBenchmarkSample(
-      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
-      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'benchmark.json'),
-      'bdd-diagram-generation-duration',
-      Date.now() - rebuildStartedAt
-    );
+    this.diagramRebuildCounter += 1;
+    if (this.scenarioName) {
+      const outlineSuffix = this.isScenarioOutline ? ` #${this.scenarioExampleIndex}` : '';
+      const rebuildSuffix = this.diagramRebuildCounter > 1 ? ` (rebuild ${this.diagramRebuildCounter})` : '';
+      recordNamedBenchmarkSample(
+        path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
+        path.join(BddWorld.BDD_ARTIFACTS_DIR, 'benchmark.json'),
+        `${this.scenarioName}${outlineSuffix}${rebuildSuffix}`,
+        'ms',
+        Date.now() - rebuildStartedAt
+      );
+    }
     await this.workbox.waitForTimeout(500);
   }
 

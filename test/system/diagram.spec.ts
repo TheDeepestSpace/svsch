@@ -247,7 +247,8 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
 
     if (parse >= 0) {
-      writeBenchmark(path.join(logDir, 'benchmark.json'), 'system-diagram-generation-duration', parse);
+      const vscodeVersion = process.env.VSCODE_VERSION || 'default';
+      writeBenchmark(path.join(logDir, 'benchmark.json'), `vscode ${vscodeVersion}`, parse);
     }
 
     // --- 11. Switch to a different module via the dropdown.
