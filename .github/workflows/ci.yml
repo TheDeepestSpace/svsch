@@ -6,17 +6,10 @@ on:
       - main
       - master
   pull_request:
-  schedule:
-    - cron: '17 6 * * *'
-  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'nightly' || github.run_id }}
-  cancel-in-progress: false
 
 jobs:
   prep:
@@ -40,12 +33,10 @@ jobs:
 
   build_ci_image:
     needs: prep
-    # do this during a push to a branch (e.g. to main), a non-fork PR, or a nightly/manual security audit run
+    # do this during a push to a branch (e.g. to main) or on a non-fork PR
     if: >
       github.event_name == 'push' ||
-      github.event.pull_request.head.repo.full_name == github.repository ||
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch'
+      github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/docker-image.yml
     with:
       image-name: ${{ needs.prep.outputs.ci_image_name }}
@@ -94,7 +85,7 @@ jobs:
 
   build_backend:
     needs: [prep, build_ci_image, setup]
-    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped') && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -112,7 +103,7 @@ jobs:
 
   build_extension:
     needs: [prep, build_ci_image, setup]
-    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped') && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -139,7 +130,7 @@ jobs:
 
   build_cli:
     needs: [prep, build_ci_image, setup]
-    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped') && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -157,7 +148,7 @@ jobs:
 
   test_backend:
     needs: [prep, build_ci_image, setup]
-    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped') && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -384,7 +375,7 @@ jobs:
       - *restore_npm_step
 
       - name: Run npm audit
-        run: npm audit --audit-level=low
+        uses: ./.github/actions/security-audit
 
   package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
