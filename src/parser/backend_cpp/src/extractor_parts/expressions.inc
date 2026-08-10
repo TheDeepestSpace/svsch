@@ -925,7 +925,13 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
     n.kind = "gate";
     n.label = "";
     n.source = getSourceInfo(text_expr);
-    refineSourceInfo(n.source, text_expr);
+    // For a fused NAND/NOR/XNOR, text_expr is the enclosing `~(...)` and its own
+    // reported range already covers that full span. Refining would replace it
+    // with the inner AND/OR/XOR operand's hull, dropping the `~( )` wrapper we
+    // deliberately kept text_expr for.
+    if (!negate_output) {
+        refineSourceInfo(n.source, text_expr);
+    }
     n.metadata.expression = getExprText(text_expr);
     n.metadata.operation = opName;
     n.metadata.isProcedural = is_procedural;

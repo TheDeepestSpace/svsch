@@ -467,7 +467,7 @@ Negating an AND chain of the same operator fuses into one n-input NAND gate with
   input logic c,
   output logic y
 );
-  assign y = ~(<mark>a &amp; b &amp; c</mark>);
+  assign y = <mark>~(a &amp; b &amp; c)</mark>;
 endmodule
 </code></pre>
 
@@ -518,7 +518,7 @@ Negating an OR expression fuses into a single NOR gate with a negated-output bub
   input logic b,
   output logic y
 );
-  assign y = ~(<mark>a | b</mark>);
+  assign y = <mark>~(a | b)</mark>;
 endmodule
 </code></pre>
 

@@ -68,7 +68,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, gate]
-      selectedText: "a & b & c"
+      selectedText: "~(a & b & c)"
 
   - id: gate-or
     title: Boolean OR Gate
@@ -137,7 +137,7 @@ cases:
       action: doubleClick
     expect:
       nodeKinds: [port, gate]
-      selectedText: "a | b"
+      selectedText: "~(a | b)"
 
   - id: gate-xnor
     title: Boolean XNOR Gate
