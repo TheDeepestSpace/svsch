@@ -213,15 +213,15 @@ function renderXLabels(names, originY) {
 }
 
 // suiteTitle: chart headline. metrics: [{ label, unit, entries, baselineByName, emphasize? }],
-// sharing one x-axis (`names`, taken from the metric with the most entries so
-// every test that has *any* data gets a labeled column, even if a lighter-
-// weight metric like elaboration doesn't cover it).
+// sharing one x-axis (`names`, the ordered union of every metric's entry
+// names so every test that has *any* data gets a labeled column, even if a
+// lighter-weight metric like elaboration doesn't cover it).
 export function renderSuiteChart({ suiteTitle, metrics }) {
   const metricRows = metrics.map((metric) => ({
     ...metric,
     rowsByName: new Map(computeDeltaRows(metric.entries, metric.baselineByName).map((row) => [row.name, row])),
   }));
-  const names = [...metricRows].sort((a, b) => b.entries.length - a.entries.length)[0]?.entries.map((e) => e.name) ?? [];
+  const names = [...new Set(metricRows.flatMap((metric) => metric.entries.map((entry) => entry.name)))];
 
   const barsWidth = LEFT_MARGIN + Math.max(names.length, 1) * BAR_PITCH + RIGHT_MARGIN;
   const width = Math.max(barsWidth, legendWidth(24), estimateTextWidth(suiteTitle, 18) + 48);

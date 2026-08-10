@@ -18,19 +18,12 @@ jobs:
       ci_image_name: ${{ steps.names.outputs.ci_image_name }}
       dev_image_name: ${{ steps.names.outputs.dev_image_name }}
       vscode_versions: ${{ steps.versions.outputs.vscode_versions }}
-      vscode_versions_latest: ${{ steps.versions.outputs.vscode_versions_latest }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: versions
         run: |
           VERSIONS=$(cat vscode-versions.json | tr -d '\n ' )
           echo "vscode_versions=$VERSIONS" >> $GITHUB_OUTPUT
-          # test_system runs a matrix over every version above; only the
-          # newest (last entry, vscode-versions.json is kept ascending)
-          # reports a diagram-generation benchmark so the gh-pages history
-          # doesn't get 3x noisy/duplicate samples per CI run.
-          LATEST_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('vscode-versions.json','utf8')).at(-1))")
-          echo "vscode_versions_latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
       - name: Set lower case image names
         id: names
         run: |
@@ -434,10 +427,6 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
-    permissions:
-      # The benchmark action pushes results and comments on same-repository PRs.
-      contents: write
-      pull-requests: write
     strategy:
       matrix:
         vscode_version: ${{ fromJson(needs.prep.outputs.vscode_versions) }}
@@ -459,32 +448,11 @@ jobs:
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
 
-      - name: Mark workspace as a safe git directory
-        if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       # Every matrix version writes its own benchmark.json (test/system/diagram.spec.ts
-      # names the entry "vscode <version>"), so the PR chart can show one bar per
-      # version. Only the latest version's job pushes to gh-pages history, though —
-      # running benchmark-action's auto-push from all 3 matrix jobs at once would race
-      # to push the same branch concurrently.
-      - name: Track diagram-generation benchmark (system, ${{ matrix.vscode_version }})
-        if: matrix.vscode_version == needs.prep.outputs.vscode_versions_latest
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-        with:
-          name: system-diagram-generation-duration
-          tool: customSmallerIsBetter
-          output-file-path: test-results/system/artifacts/benchmark.json
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name == 'push' }}
-          # PR comments are posted once, combined across suites, by the
-          # report_benchmarks job below instead of per-suite here.
-          comment-always: false
-          comment-on-alert: false
-          fail-on-alert: false
-
+      # names the entry "vscode <version>"). Publishing to gh-pages happens once, after
+      # the whole matrix completes, in publish_system_benchmark below — so every version
+      # gets a real baseline instead of only the latest, and only one job ever pushes to
+      # gh-pages (avoiding a race between concurrent matrix jobs).
       - name: Upload benchmark result (system, ${{ matrix.vscode_version }})
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -500,10 +468,53 @@ jobs:
             playwright-report/system/**
             test/system/__screenshots__/**
 
+  publish_system_benchmark:
+    # Merges the whole matrix's per-version benchmark-system-<version> artifacts into one
+    # file and publishes it to gh-pages history once, after the matrix completes — so every
+    # vscode version gets a real baseline to compare against on later runs (instead of only
+    # the latest version ever getting history), and only one job ever pushes to gh-pages
+    # (avoiding a race between concurrent matrix jobs).
+    needs: [prep, build_ci_image, test_system]
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # The benchmark action pushes results to gh-pages on same-repository pushes.
+      contents: write
+    steps:
+      - *checkout_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download per-version system benchmark results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: benchmark-system-*
+          path: benchmarks
+
+      - name: Merge per-version system benchmark results
+        run: node scripts/merge-system-benchmarks.mjs benchmarks
+
+      - name: Track diagram-generation benchmark (system)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: system-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: benchmarks/benchmark-system/benchmark.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          # PR comments are posted once, combined across suites, by the
+          # report_benchmarks job below instead of per-suite here.
+          comment-always: false
+          comment-on-alert: false
+          fail-on-alert: false
+
   report_benchmarks:
     # Posts one PR comment covering all three diagram-generation benchmark
     # suites, instead of test_visual/test_bdd/test_system each posting their own.
-    needs: [prep, build_ci_image, test_visual, test_bdd, test_system]
+    needs: [prep, build_ci_image, test_visual, test_bdd, test_system, publish_system_benchmark]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
