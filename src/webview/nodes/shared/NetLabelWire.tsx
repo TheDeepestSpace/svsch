@@ -2,7 +2,7 @@ import React from 'react';
 import { Position } from '@xyflow/react';
 import { diagramSizing } from '../../../diagram/constants';
 import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
-import { arrayStackLayer, ARRAY_STACK_LEAD_EDGE_GAP, arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import { arrayStackLayer, arrayStackLeadSegments } from '../../arrayStackGeometry';
 import type { PositionedNode } from '../../../ir/types';
 
 export function ArrayStackLeads({
@@ -30,39 +30,13 @@ export function ArrayStackLeads({
       aria-hidden="true"
       focusable="false"
     >
-      {arrayStackLeadLayersFor(wide).map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id, wide);
-        const shapeX = (side === 'top' || side === 'bottom')
-          ? (x ?? width / 2) + layer.dx
-          : side === 'left'
-            ? layer.dx
-            : width + layer.dx;
-        const shapeY = y + layer.dy;
-        const endY = side === 'top' && trimSink
-          ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
-          : shapeY;
-        const sourceRightExitX = width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP;
-        const bottomExitY = y + arrayStackLayer('back', wide).dy + ARRAY_STACK_LEAD_EDGE_GAP;
-        const leadX = (side === 'top' || side === 'bottom')
-          ? shapeX
-          : side === 'left'
-            ? shapeX - trim
-            : trimSink
-              ? shapeX + trim
-              : Math.max(shapeX + trim, sourceRightExitX);
-        const leadY = side === 'top'
-          ? endY - trim
-          : side === 'bottom'
-            ? Math.max(endY + trim, bottomExitY)
-            : shapeY;
-        return (
-          <path
-            key={layer.id}
-            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
-            d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
-          />
-        );
-      })}
+      {arrayStackLeadSegments({ side, width, y, x, trimSink, wide }).map((segment) => (
+        <path
+          key={segment.id}
+          className={`svsch-array-stack-lead svsch-array-stack-lead-${segment.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
+          d={segment.d}
+        />
+      ))}
     </svg>
   );
 }

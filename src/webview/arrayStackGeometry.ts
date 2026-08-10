@@ -65,3 +65,68 @@ export function arrayStackSkinLayersFor(wide: boolean): ArrayStackLayer[] {
 export function arrayStackLayerTrim(layerId: ArrayStackLayerId, wide = false): number {
   return diagramSizing.gridSize * arrayStackLayer(layerId, wide).trimUnits;
 }
+
+export type ArrayStackLeadSide = 'left' | 'right' | 'top' | 'bottom';
+
+/**
+ * Sides whose exit direction (+x for right, +y for bottom) points the same way
+ * the 'back' layer is already offset. On those sides 'back' is the layer
+ * closest to clearing the stack and 'front' is the one lagging behind, which is
+ * the reverse of 'left'/'top' (where the exit direction matches 'front's
+ * offset). Trim length must track "how far behind this layer is", not layer
+ * identity, or the already-leading layer's own trim reinforces its head start
+ * instead of the lanes converging.
+ */
+const REVERSED_LEAD_TRIM_SIDES: ReadonlySet<ArrayStackLeadSide> = new Set(['right', 'bottom']);
+
+function leadTrimLayerId(layerId: ArrayStackLayerId, side: ArrayStackLeadSide): ArrayStackLayerId {
+  if (!REVERSED_LEAD_TRIM_SIDES.has(side)) return layerId;
+  if (layerId === 'front') return 'back';
+  if (layerId === 'back') return 'front';
+  return layerId;
+}
+
+export interface ArrayStackLeadSegment {
+  id: ArrayStackLayerId;
+  d: string;
+}
+
+export function arrayStackLeadSegments({
+  side,
+  width,
+  y,
+  x,
+  trimSink = false,
+  wide = false
+}: {
+  side: ArrayStackLeadSide;
+  width: number;
+  y: number;
+  x?: number;
+  trimSink?: boolean;
+  wide?: boolean;
+}): ArrayStackLeadSegment[] {
+  return arrayStackLeadLayersFor(wide).map((layer) => {
+    const trim = arrayStackLayerTrim(leadTrimLayerId(layer.id, side), wide);
+    const shapeX = (side === 'top' || side === 'bottom')
+      ? Math.round((x ?? width / 2) + layer.dx)
+      : side === 'left'
+        ? Math.round(layer.dx)
+        : Math.round(width + layer.dx);
+    const shapeY = Math.round(y + layer.dy);
+    const endY = Math.round(side === 'top' && trimSink
+      ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
+      : shapeY);
+    const leadX = Math.round((side === 'top' || side === 'bottom')
+      ? shapeX
+      : side === 'left'
+        ? shapeX - trim
+        : shapeX + trim);
+    const leadY = Math.round(side === 'top'
+      ? endY - trim
+      : side === 'bottom'
+        ? endY + trim
+        : shapeY);
+    return { id: layer.id, d: `M ${leadX} ${leadY} L ${shapeX} ${endY}` };
+  });
+}
