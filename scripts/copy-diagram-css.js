@@ -8,5 +8,16 @@ const path = require('path');
 const src = path.join(__dirname, '..', 'src', 'webview', 'diagram.css');
 const dest = path.join(__dirname, '..', 'media', 'diagram.css');
 
-fs.mkdirSync(path.dirname(dest), { recursive: true });
-fs.copyFileSync(src, dest);
+function copy() {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(src, dest);
+}
+
+copy();
+
+// `npm run watch` runs vite in watch mode, which never reaches the
+// build:webview step that normally triggers this copy — keep media/diagram.css
+// in sync with the source as it's edited during development.
+if (process.argv.includes('--watch')) {
+  fs.watch(src, copy);
+}

@@ -115,7 +115,7 @@ jobs:
 
       - name: Compile Extension and Webview
         run: |
-          CI=true npx vite build
+          npm run build:webview
           npx tsc -p tsconfig.extension.json
           SURELOG_AUTO_INSTALL=1 npm run install-surelog
 

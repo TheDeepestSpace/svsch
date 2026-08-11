@@ -672,24 +672,6 @@ svg.react-flow__connectionline {
   --svsch-error-highlight-fill: color-mix(in srgb, var(--svsch-error-highlight) 9%, transparent);
 }
 
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  background: var(--vscode-editor-background);
-  color: var(--vscode-editor-foreground);
-  font-family: var(--vscode-font-family);
-}
-
-button,
-select {
-  font: inherit;
-}
-
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -1419,9 +1401,6 @@ text {
   opacity: 0.75;
 }
 
-.port-skin-array-front {
-}
-
 .port-skin-selection {
   fill: none;
   opacity: 0;
@@ -1609,24 +1588,6 @@ text {
 .hdl-net-label .react-flow__handle-bottom {
   bottom: 0;
   left: 50%;
-}
-
-.hdl-net-label:hover .hdl-net-label-actions,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
-.hdl-net-label:focus-within .hdl-net-label-actions,
-.hdl-net-label:focus .hdl-net-label-actions {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-actions button:first-child {
-  border-radius: 3px 0 0 3px;
-}
-
-.hdl-net-label-actions button:last-child {
-  border-radius: 0 3px 3px 0;
-  border-right: 1px solid var(--vscode-panel-border);
 }
 
 .hdl-node-inverter>.react-flow__handle-left,
@@ -1837,42 +1798,18 @@ text {
   stroke-width: 0.5;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
+.svsch-interface-stripe {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
   overflow: visible;
   pointer-events: none;
-}
-
-.svsch-edge-connection-controls-inner button {
-  align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-family: var(--vscode-font-family);
-  font-size: 10px;
-  height: 22px;
-  justify-content: center;
-  line-height: 1;
-  padding: 0 9px;
-  white-space: nowrap;
-}
-
-.svsch-edge-connection-controls-inner button:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-/* Merge into a single button group (matching the edge Reroute/Cut controls)
-   whenever both buttons are showing — Auto Layout only renders from 2+
-   selected blocks, so it's always the group's left half when present. Cut
-   out is omitted entirely when there's nothing left to cut, and either
-   control falls back to full rounding when it ends up alone. */
-.svsch-selection-relayout-control {
-  border-radius: 3px 0 0 3px;
-  border-right: none;
 }
 
 /* Plain text sitting just above the wire, matching the cut-net label
