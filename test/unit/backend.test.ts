@@ -2203,8 +2203,14 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       }
     });
 
+    let instanceArrayGraphPromise: ReturnType<typeof runParser> | undefined;
+    function instanceArrayGraph() {
+      instanceArrayGraphPromise ??= runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      return instanceArrayGraphPromise;
+    }
+
     it('collapses a [MSB:LSB] multi-instance instantiation into a single stacked instance node', async () => {
-      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const graph = await instanceArrayGraph();
       const mod = graph.modules.instance_array_top;
       expect(mod).toBeDefined();
 
@@ -2223,7 +2229,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     });
 
     it('broadcasts a scalar port connection to every element of an instance array', async () => {
-      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const graph = await instanceArrayGraph();
       const mod = graph.modules.instance_array_top;
       const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
       expect(arrayInstance).toBeDefined();
@@ -2239,7 +2245,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     });
 
     it('connects a matching-size unpacked array port element-wise as a stacked edge', async () => {
-      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const graph = await instanceArrayGraph();
       const mod = graph.modules.instance_array_top;
       const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
       expect(arrayInstance).toBeDefined();
@@ -2256,6 +2262,118 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(mod.edges.some((e) => (
         e.source === arrayInstance?.id && e.sourcePort === 'port:y' && e.signal === 'y_arr' && e.isStacked
       ))).toBe(true);
+    });
+
+    it('preserves element-wise stacked connections for a reversed [0:MSB] array range', async () => {
+      const graph = await runParser(backend, [{ file: 'instance_array_reversed.sv', text: `
+        module mux2 (
+            input  logic sel,
+            input  logic a,
+            input  logic b,
+            output logic y
+        );
+            assign y = sel ? b : a;
+        endmodule
+
+        module instance_array_reversed_top (
+            input  logic sel,
+            input  logic [3:0] a_bus,
+            input  logic [3:0] b_bus,
+            output logic [3:0] y_bus
+        );
+            logic a_arr [0:3];
+            logic b_arr [0:3];
+            logic y_arr [0:3];
+
+            assign a_arr[0] = a_bus[0];
+            assign a_arr[1] = a_bus[1];
+            assign a_arr[2] = a_bus[2];
+            assign a_arr[3] = a_bus[3];
+
+            assign b_arr[0] = b_bus[0];
+            assign b_arr[1] = b_bus[1];
+            assign b_arr[2] = b_bus[2];
+            assign b_arr[3] = b_bus[3];
+
+            mux2 u_mux [0:3] (
+                .sel (sel),
+                .a   (a_arr),
+                .b   (b_arr),
+                .y   (y_arr)
+            );
+
+            assign y_bus[0] = y_arr[0];
+            assign y_bus[1] = y_arr[1];
+            assign y_bus[2] = y_arr[2];
+            assign y_bus[3] = y_arr[3];
+        endmodule
+      ` }]);
+      const mod = graph.modules.instance_array_reversed_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+      expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
+      expect(arrayInstance?.arrayDimension ?? arrayInstance?.metadata?.arrayDimension).toBe('[0:3]');
+
+      expect(arrayInstance?.ports.find((p) => p.name === 'a')?.connectedSignal).toBe('a_arr');
+      expect(arrayInstance?.ports.find((p) => p.name === 'y')?.connectedSignal).toBe('y_arr');
+      expect(mod.edges.some((e) => (
+        e.target === arrayInstance?.id && e.targetPort === 'port:a' && e.signal === 'a_arr' && e.isStacked
+      ))).toBe(true);
+    });
+
+    it('falls back to the parsed element count when the array range bound is parameterized', async () => {
+      const graph = await runParser(backend, [{ file: 'instance_array_param.sv', text: `
+        module mux2 (
+            input  logic sel,
+            input  logic a,
+            input  logic b,
+            output logic y
+        );
+            assign y = sel ? b : a;
+        endmodule
+
+        module instance_array_param_top (
+            input  logic sel,
+            input  logic [3:0] a_bus,
+            input  logic [3:0] b_bus,
+            output logic [3:0] y_bus
+        );
+            localparam N = 4;
+            logic a_arr [3:0];
+            logic b_arr [3:0];
+            logic y_arr [3:0];
+
+            assign a_arr[0] = a_bus[0];
+            assign a_arr[1] = a_bus[1];
+            assign a_arr[2] = a_bus[2];
+            assign a_arr[3] = a_bus[3];
+
+            assign b_arr[0] = b_bus[0];
+            assign b_arr[1] = b_bus[1];
+            assign b_arr[2] = b_bus[2];
+            assign b_arr[3] = b_bus[3];
+
+            mux2 u_mux [N-1:0] (
+                .sel (sel),
+                .a   (a_arr),
+                .b   (b_arr),
+                .y   (y_arr)
+            );
+
+            assign y_bus[0] = y_arr[0];
+            assign y_bus[1] = y_arr[1];
+            assign y_bus[2] = y_arr[2];
+            assign y_bus[3] = y_arr[3];
+        endmodule
+      ` }]);
+      const mod = graph.modules.instance_array_param_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+      // The bound expression doesn't decompile to constant text, so arraySize falls back
+      // to the number of elaborated elements instead of throwing or miscounting.
+      expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
+      expect(arrayInstance?.ports.find((p) => p.name === 'a')?.connectedSignal).toBe('a_arr');
+      expect(arrayInstance?.ports.find((p) => p.name === 'y')?.connectedSignal).toBe('y_arr');
     });
 
     it('emits a single stacked addr mux for variable-index writes', async () => {

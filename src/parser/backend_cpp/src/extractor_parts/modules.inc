@@ -239,15 +239,99 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             const char* pn = vpi_get_str(vpiName, p);
             if (pn && port_name == pn) {
                 vpiHandle high = vpi_handle(vpiHighConn, p);
-                return getSignalName(high);
+                std::string sig = getSignalName(high);
+                vpi_release_handle(p_itr);
+                return sig;
             }
         }
         return "";
     };
 
-    const int vpiModuleArrayType = 112;
+    // Shared port-enrichment logic for both the collapsed array-instance loop below and
+    // the flat submodule loop further down: width fallbacks, widthExpression/parameterRefs,
+    // literal/bus-select synthesis, struct-field breakout, and interface/modport resolution.
+    auto buildInstancePort = [&](vpiHandle p_handle, const std::string& module_name) -> NodePort {
+        NodePort np;
+        const char* pn = vpi_get_str(vpiName, p_handle);
+        np.name = pn ? pn : "unnamed";
+        int dir = vpi_get(vpiDirection, p_handle);
+        np.direction = (dir == vpiInput) ? "input" : (dir == vpiOutput ? "output" : (dir == vpiInout ? "inout" : "unknown"));
+        vpiHandle high = vpi_handle(vpiHighConn, p_handle);
+        vpiHandle low = vpi_handle(vpiLowConn, p_handle);
+        np.signal = getSignalName(high);
+        np.width = getWidth(low);
+        if (np.width.empty() || np.width == "[0:0]") {
+            std::string w = getWidth(p_handle);
+            if (!w.empty() && w != "[0:0]") np.width = w;
+        }
+        if (np.width.empty() || np.width == "[0:0]") {
+            std::string w = getDeclaredSignalWidth(mod, np.signal.empty() ? np.name : np.signal);
+            if (!w.empty()) np.width = w;
+        }
+        if (np.width.empty()) np.width = "[0:0]";
+
+        np.widthExpression = getRangeExpression(low ? low : p_handle);
+        if (np.widthExpression.empty() && std::regex_search(np.width, std::regex(R"([A-Za-z_$])"))) {
+            np.widthExpression = np.width;
+        }
+        np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
+        fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
+
+        if (high && (np.direction == "input" || np.direction == "inout")) {
+            // A bit-select/literal used directly in the port list (e.g. `.opcode(instr[7:4])`,
+            // `.b(8'd1)`) has no other driver in the design producing that exact signal string,
+            // so buildEdges would never find a source for it. Synthesize the same breakout/literal
+            // node processAssign already synthesizes for the equivalent `assign` RHS.
+            if (isLiteralExpr(high)) {
+                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
+            } else {
+                int high_type = vpi_get(vpiType, high);
+                if (isBusSelectExprType(high_type)) {
+                    processBusSelect(high, mod);
+                }
+            }
+        }
+        if (auto field = getStructFieldRef(high, mod)) {
+            const std::string field_signal = field->first + "." + field->second;
+            if (np.direction == "input") {
+                np.signal = ensureStructBreakout(mod, field->first, field->second, getSourceInfo(high));
+            } else if (np.direction == "output") {
+                np.signal = field_signal;
+                ensureStructFieldCompositionInput(mod, field->first, field->second, field_signal, getSourceInfo(high));
+            }
+            np.width = fieldWidth(mod.structSignals[field->first].type, field->second);
+        }
+        np.typeName = getTypeName(low);
+        if (np.typeName.empty()) np.typeName = getTypeName(p_handle);
+        if (auto iface = interfacePortInfoForModule(module_name, np.name)) {
+            np.typeName = iface->typeName;
+            np.modportName = iface->modportName;
+            auto type_it = interfaceTypes_.find(np.typeName);
+            if (type_it != interfaceTypes_.end()) {
+                np.typeSource = type_it->second.source;
+                if (!np.modportName.empty()) {
+                    auto mp_it = type_it->second.modports.find(np.modportName);
+                    if (mp_it != type_it->second.modports.end()) {
+                        np.modportSource = mp_it->second.source;
+                        np.preferredSide = mp_it->second.preferredSide;
+                        if (np.preferredSide == "left") {
+                            np.direction = "output";
+                        } else if (np.preferredSide == "right") {
+                            np.direction = "input";
+                        }
+                    }
+                }
+            }
+        }
+        if (!np.typeName.empty()) {
+            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(low);
+            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(p_handle);
+        }
+        return np;
+    };
+
     {
-        vpiHandle arr_itr = vpi_iterate(vpiModuleArrayType, mod_handle);
+        vpiHandle arr_itr = vpi_iterate(vpiModuleArray, mod_handle);
         if (arr_itr) {
             while (vpiHandle arr_handle = vpi_scan(arr_itr)) {
                 const char* base_name_c = vpi_get_str(vpiName, arr_handle);
@@ -307,31 +391,11 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                 vpiHandle rep_port_itr = vpi_iterate(vpiPort, rep);
                 if (rep_port_itr) {
                     while (vpiHandle p_handle = vpi_scan(rep_port_itr)) {
-                        NodePort np;
                         const char* pn = vpi_get_str(vpiName, p_handle);
-                        np.name = pn ? pn : "unnamed";
-                        int dir = vpi_get(vpiDirection, p_handle);
-                        np.direction = (dir == vpiInput) ? "input" : (dir == vpiOutput ? "output" : (dir == vpiInout ? "inout" : "unknown"));
-                        vpiHandle high = vpi_handle(vpiHighConn, p_handle);
-                        vpiHandle low = vpi_handle(vpiLowConn, p_handle);
-                        np.signal = getSignalName(high);
-                        np.width = getWidth(low);
-                        if (np.width.empty() || np.width == "[0:0]") {
-                            std::string w = getWidth(p_handle);
-                            if (!w.empty() && w != "[0:0]") np.width = w;
-                        }
-                        if (np.width.empty() || np.width == "[0:0]") {
-                            std::string w = getDeclaredSignalWidth(mod, np.signal.empty() ? np.name : np.signal);
-                            if (!w.empty()) np.width = w;
-                        }
-                        if (np.width.empty()) np.width = "[0:0]";
+                        std::string port_name = pn ? pn : "unnamed";
+                        std::string raw_signal = getSignalName(vpi_handle(vpiHighConn, p_handle));
 
-                        np.widthExpression = getRangeExpression(low ? low : p_handle);
-                        if (np.widthExpression.empty() && std::regex_search(np.width, std::regex(R"([A-Za-z_$])"))) {
-                            np.widthExpression = np.width;
-                        }
-                        np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
-                        fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
+                        NodePort np = buildInstancePort(p_handle, n.moduleName);
 
                         // SV LRM 23.2: a port connection expression is evaluated once and
                         // broadcast to every element, UNLESS the actual is itself an unpacked
@@ -340,10 +404,10 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         // across every elaborated element to tell which case applies.
                         bool all_same = true;
                         std::string common_base;
-                        bool matches_index_pattern = !np.signal.empty();
+                        bool matches_index_pattern = !raw_signal.empty();
                         for (vpiHandle elem : elements) {
-                            std::string sig = (elem == rep) ? np.signal : portHighConnSignal(elem, np.name);
-                            if (sig != np.signal) all_same = false;
+                            std::string sig = (elem == rep) ? raw_signal : portHighConnSignal(elem, port_name);
+                            if (sig != raw_signal) all_same = false;
                             size_t br = sig.find('[');
                             if (br == std::string::npos || sig.empty() || sig.back() != ']') {
                                 matches_index_pattern = false;
@@ -366,52 +430,6 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         // Otherwise (all_same, i.e. broadcast — or a shape we don't recognize):
                         // keep the representative element's own connection as-is.
 
-                        if (high && (np.direction == "input" || np.direction == "inout")) {
-                            if (isLiteralExpr(high)) {
-                                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
-                            } else {
-                                int high_type = vpi_get(vpiType, high);
-                                if (isBusSelectExprType(high_type)) {
-                                    processBusSelect(high, mod);
-                                }
-                            }
-                        }
-                        if (auto field = getStructFieldRef(high, mod)) {
-                            const std::string field_signal = field->first + "." + field->second;
-                            if (np.direction == "input") {
-                                np.signal = ensureStructBreakout(mod, field->first, field->second, getSourceInfo(high));
-                            } else if (np.direction == "output") {
-                                np.signal = field_signal;
-                                ensureStructFieldCompositionInput(mod, field->first, field->second, field_signal, getSourceInfo(high));
-                            }
-                            np.width = fieldWidth(mod.structSignals[field->first].type, field->second);
-                        }
-                        np.typeName = getTypeName(low);
-                        if (np.typeName.empty()) np.typeName = getTypeName(p_handle);
-                        if (auto iface = interfacePortInfoForModule(n.moduleName, np.name)) {
-                            np.typeName = iface->typeName;
-                            np.modportName = iface->modportName;
-                            auto type_it = interfaceTypes_.find(np.typeName);
-                            if (type_it != interfaceTypes_.end()) {
-                                np.typeSource = type_it->second.source;
-                                if (!np.modportName.empty()) {
-                                    auto mp_it = type_it->second.modports.find(np.modportName);
-                                    if (mp_it != type_it->second.modports.end()) {
-                                        np.modportSource = mp_it->second.source;
-                                        np.preferredSide = mp_it->second.preferredSide;
-                                        if (np.preferredSide == "left") {
-                                            np.direction = "output";
-                                        } else if (np.preferredSide == "right") {
-                                            np.direction = "input";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (!np.typeName.empty()) {
-                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(low);
-                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(p_handle);
-                        }
                         n.ports.push_back(np);
                     }
                 }
@@ -456,82 +474,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                 vpiHandle inst_port_itr = vpi_iterate(vpiPort, inst_handle);
                 if (inst_port_itr) {
                     while (vpiHandle p_handle = vpi_scan(inst_port_itr)) {
-                        NodePort np;
-                        const char* pn = vpi_get_str(vpiName, p_handle);
-                        np.name = pn ? pn : "unnamed";
-                        int dir = vpi_get(vpiDirection, p_handle);
-                        np.direction = (dir == vpiInput) ? "input" : (dir == vpiOutput ? "output" : (dir == vpiInout ? "inout" : "unknown"));
-                        vpiHandle high = vpi_handle(vpiHighConn, p_handle);
-                        vpiHandle low = vpi_handle(vpiLowConn, p_handle);
-                        np.signal = getSignalName(high);
-                        np.width = getWidth(low);
-                        if (np.width.empty() || np.width == "[0:0]") {
-                            std::string w = getWidth(p_handle);
-                            if (!w.empty() && w != "[0:0]") np.width = w;
-                        }
-                        if (np.width.empty() || np.width == "[0:0]") {
-                            std::string w = getDeclaredSignalWidth(mod, np.signal.empty() ? np.name : np.signal);
-                            if (!w.empty()) np.width = w;
-                        }
-                        if (np.width.empty()) np.width = "[0:0]";
-                        
-                        np.widthExpression = getRangeExpression(low ? low : p_handle);
-                        if (np.widthExpression.empty() && std::regex_search(np.width, std::regex(R"([A-Za-z_$])"))) {
-                            np.widthExpression = np.width;
-                        }
-                        np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
-                        fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
-                        if (high && (np.direction == "input" || np.direction == "inout")) {
-                            // A bit-select/literal used directly in the port list (e.g. `.opcode(instr[7:4])`,
-                            // `.b(8'd1)`) has no other driver in the design producing that exact signal string,
-                            // so buildEdges would never find a source for it. Synthesize the same breakout/literal
-                            // node processAssign already synthesizes for the equivalent `assign` RHS.
-                            if (isLiteralExpr(high)) {
-                                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
-                            } else {
-                                int high_type = vpi_get(vpiType, high);
-                                if (isBusSelectExprType(high_type)) {
-                                    processBusSelect(high, mod);
-                                }
-                            }
-                        }
-                        if (auto field = getStructFieldRef(high, mod)) {
-                            const std::string field_signal = field->first + "." + field->second;
-                            if (np.direction == "input") {
-                                np.signal = ensureStructBreakout(mod, field->first, field->second, getSourceInfo(high));
-                            } else if (np.direction == "output") {
-                                np.signal = field_signal;
-                                ensureStructFieldCompositionInput(mod, field->first, field->second, field_signal, getSourceInfo(high));
-                            }
-                            np.width = fieldWidth(mod.structSignals[field->first].type, field->second);
-                        }
-                        np.typeName = getTypeName(low);
-                        if (np.typeName.empty()) np.typeName = getTypeName(p_handle);
-                        if (auto iface = interfacePortInfoForModule(n.moduleName, np.name)) {
-                            np.typeName = iface->typeName;
-                            np.modportName = iface->modportName;
-                            auto type_it = interfaceTypes_.find(np.typeName);
-                            if (type_it != interfaceTypes_.end()) {
-                                np.typeSource = type_it->second.source;
-                                if (!np.modportName.empty()) {
-                                    auto mp_it = type_it->second.modports.find(np.modportName);
-                                    if (mp_it != type_it->second.modports.end()) {
-                                        np.modportSource = mp_it->second.source;
-                                        np.preferredSide = mp_it->second.preferredSide;
-                                        if (np.preferredSide == "left") {
-                                            np.direction = "output";
-                                        } else if (np.preferredSide == "right") {
-                                            np.direction = "input";
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (!np.typeName.empty()) {
-                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(low);
-                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(p_handle);
-                        }
-                        n.ports.push_back(np);
+                        n.ports.push_back(buildInstancePort(p_handle, n.moduleName));
                     }
                 }
                 mod.nodes.push_back(n);

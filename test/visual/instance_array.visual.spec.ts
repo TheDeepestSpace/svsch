@@ -8,7 +8,7 @@ test.describe('instance array visual', () => {
 
     const instanceNodes = page.locator('[data-node-kind="instance"]');
     await expect(instanceNodes).toHaveCount(1);
-    await expect(instanceNodes.first().locator('.hdl-node-array-layer')).not.toHaveCount(0);
+    await expect(instanceNodes.first().locator('.hdl-node-array-layer')).toHaveCount(3);
     await expect(instanceNodes.first().locator('.svsch-array-badge')).toHaveText('[3:0]');
 
     await expectGraphAndScreenshot(page, 'instance-array-stacked.png');
