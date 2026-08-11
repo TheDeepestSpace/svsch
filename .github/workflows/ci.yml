@@ -213,7 +213,9 @@ jobs:
       - &fetch_base_step
         name: Fetch base ref for baseline diff gate
         if: github.event_name == 'pull_request'
-        run: git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
 
       - name: Reject sub-threshold screenshot baseline updates
         if: github.event_name == 'pull_request'
