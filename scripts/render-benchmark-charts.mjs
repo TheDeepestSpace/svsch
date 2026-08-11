@@ -280,6 +280,18 @@ export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
 </svg>`;
 }
 
+// Shared by renderStackedSuiteChart and the CSV export (comment-benchmark-summary.mjs)
+// so the CSV's row order always matches the chart's left-to-right bar order:
+// fastest-to-slowest by total (elaboration + rendering), not by name.
+export function computeStackedData(metrics) {
+  const [elaboration, rendering] = metrics;
+  const elabRows = new Map(computeDeltaRows(elaboration.entries, elaboration.baselineByName).map((row) => [row.name, row]));
+  const renderRows = new Map(computeDeltaRows(rendering.entries, rendering.baselineByName).map((row) => [row.name, row]));
+  const totalFor = (name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0);
+  const names = [...new Set([...elabRows.keys(), ...renderRows.keys()])].sort((a, b) => totalFor(a) - totalFor(b));
+  return { elabRows, renderRows, names };
+}
+
 // Visual suite's chart: one stacked bar per test instead of two separate
 // baseline-diff panels — elaboration segment stacked first (blue), rendering
 // stacked on top (purple), so the bar height reads as total diagram-open
@@ -289,11 +301,7 @@ export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
 // of solid, in the same color as its solid counterpart — a test can gain a
 // baseline for one half before the other, so "new" is tracked per segment.
 export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true }) {
-  const [elaboration, rendering] = metrics;
-  const elabRows = new Map(computeDeltaRows(elaboration.entries, elaboration.baselineByName).map((row) => [row.name, row]));
-  const renderRows = new Map(computeDeltaRows(rendering.entries, rendering.baselineByName).map((row) => [row.name, row]));
-  const totalFor = (name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0);
-  const names = [...new Set([...elabRows.keys(), ...renderRows.keys()])].sort((a, b) => totalFor(a) - totalFor(b));
+  const { elabRows, renderRows, names } = computeStackedData(metrics);
 
   const width = Math.max(legendWidth(24, STACKED_LEGEND_ITEMS), estimateTextWidth(suiteTitle, 18) + 48);
   const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
