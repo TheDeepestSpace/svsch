@@ -2283,6 +2283,57 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       ))).toBe(true);
     });
 
+    it('keeps the declared element width when composing a bus from multi-bit unpacked-array elements', async () => {
+      const graph = await runParser(backend, [{ file: 'wide_reg_array.sv', text: `
+        module reg8 (
+            input  logic [7:0] d,
+            output logic [7:0] q
+        );
+            assign q = d;
+        endmodule
+
+        module wide_reg_array_top (
+            input  logic clk,
+            input  logic [7:0] d0,
+            input  logic [7:0] d1,
+            input  logic [7:0] d2,
+            input  logic [7:0] d3,
+            output logic [7:0] q_arr [3:0]
+        );
+            logic [7:0] arr [3:0];
+
+            always_ff @(posedge clk) begin
+                arr[0] <= d0;
+                arr[1] <= d1;
+                arr[2] <= d2;
+                arr[3] <= d3;
+            end
+
+            reg8 u_reg [3:0] (
+                .d (arr),
+                .q (q_arr)
+            );
+        endmodule
+      ` }]);
+      const mod = graph.modules.wide_reg_array_top;
+      expect(mod).toBeDefined();
+
+      // "arr" is `logic [7:0] arr [3:0]`: each constant-index register write
+      // ("arr[i] <= di;") drives a full 8-bit element, not a single packed bit.
+      // Since arr is also read whole (the "u_reg" array's ".d" port), a bus_comp
+      // node must be synthesized from those 4 element drivers — and each must
+      // keep its declared 8-bit element width, not collapse to 1 bit the way a
+      // packed-bus bit-index slice would.
+      const compNode = mod?.nodes.find((n) => n.id === 'bus_comp:wide_reg_array_top:arr');
+      expect(compNode).toBeDefined();
+
+      const inputs = compNode?.ports.filter((p) => p.direction === 'input') || [];
+      expect(inputs.length).toBe(4);
+      for (const p of inputs) {
+        expect(p.width).toBe('[7:0]');
+      }
+    });
+
     it('preserves element-wise stacked connections for a reversed [0:MSB] array range', async () => {
       const graph = await runParser(backend, [{ file: 'instance_array_reversed.sv', text: `
         module mux2 (

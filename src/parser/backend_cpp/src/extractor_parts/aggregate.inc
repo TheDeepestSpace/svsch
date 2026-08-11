@@ -701,7 +701,13 @@ void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {
         std::set<std::string> seen_slices;
         for (const auto& driver : drivers) {
             if (!seen_slices.insert(driver.slice).second) continue;
-            std::string port_width = widthFromSignalSlice(driver.slice);
+            // For an unpacked array (e.g. `logic [7:0] a_arr [3:0]`), `[i]` selects a
+            // whole multi-bit element, not a packed bit/slice — widthFromSignalSlice
+            // would wrongly read it as a 1-bit index. Use the declared element width
+            // instead; only fall back to packed-slice parsing for actual bus slices.
+            std::string port_width = mod.arrayDimensions.count(base)
+                ? resolveSignalWidth(mod, base, driver.width)
+                : widthFromSignalSlice(driver.slice);
             if (port_width.empty()) port_width = driver.width;
             comp.ports.push_back({driver.slice, "input", base + driver.slice, port_width, driver.slice});
 
