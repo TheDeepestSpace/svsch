@@ -475,7 +475,7 @@ function DiagramApp(): React.ReactElement {
       if (key !== 'r' && key !== 't' && key !== 'c') return;
 
       const target = event.target;
-      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
         return;
       }
       if (!view) return;
@@ -487,7 +487,11 @@ function DiagramApp(): React.ReactElement {
       // combines a new moduleName with ids that belong to the old graph.
       const viewNodeIds = new Set(view.nodes.map((node) => node.id));
       const viewEdgeIds = new Set(view.edges.map((edge) => edge.id));
-      const graphInSync = nodes.every((node) => viewNodeIds.has(node.id)) && edges.every((edge) => viewEdgeIds.has(edge.id));
+      const graphInSync =
+        nodes.length === view.nodes.length &&
+        edges.length === view.edges.length &&
+        nodes.every((node) => node.data.moduleName === view.moduleName && viewNodeIds.has(node.id)) &&
+        edges.every((edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id));
       if (!graphInSync) return;
 
       if (key === 't') {
