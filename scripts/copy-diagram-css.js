@@ -18,6 +18,12 @@ copy();
 // `npm run watch` runs vite in watch mode, which never reaches the
 // build:webview step that normally triggers this copy — keep media/diagram.css
 // in sync with the source as it's edited during development.
+//
+// Watching the directory (not the file) survives editors/tools that replace
+// the file atomically (write-temp + rename), which swaps its inode and would
+// otherwise silently drop a plain `fs.watch(src, ...)` watch.
 if (process.argv.includes('--watch')) {
-  fs.watch(src, copy);
+  fs.watch(path.dirname(src), (_event, filename) => {
+    if (filename === path.basename(src)) copy();
+  });
 }
