@@ -10,7 +10,7 @@ import {
 } from '../../diagram/interfaceGeometry';
 import { structRole, nodeTypeName, gateBodyOperation, gateIsNegated } from '../../ir/nodeMetadata';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
-import { andBodyPath, orBodyPath } from './gate/GateNodeSvg';
+import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
 
 export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
@@ -197,7 +197,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       <g transform={`translate(${x}, ${y})`}>
         {isXor && (
           <path
-            d={`M 0 0 Q ${xorGap * 0.7} ${gateMidY} 0 ${height}`}
+            d={xorBackCurvePath(right - left, height)}
             className={className}
             data-minimap-node-id={id}
             data-minimap-node-kind={node.kind}

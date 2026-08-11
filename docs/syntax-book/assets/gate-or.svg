@@ -3772,7 +3772,7 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:top:decoded:or" data-node-kind="gate" transform="translate(360 24)">
 <svg class="hdl-node-svg gate-skin" width="96" height="96" aria-hidden="true">
-<path class="svsch-node-shape hdl-node-gate node-skin-body" d="M 0 0 Q 17.28 48 0 96 Q 52.800000000000004 78.72 96 48 Q 52.800000000000004 17.28 0 0 Z"></path><path class="node-skin-selection" d="M 0 0 Q 17.28 48 0 96 Q 52.800000000000004 78.72 96 48 Q 52.800000000000004 17.28 0 0 Z"></path>
+<path class="svsch-node-shape hdl-node-gate node-skin-body" d="M 0 0 C 17.4820000032 29.095999996799996 17.4820000032 66.9040000032 0 96 C 39.939 93.8050000032 73.161 84.9889999968 96 48 C 73.161 11.011000003199996 39.939 2.194999996799993 0 0 Z"></path><path class="node-skin-selection" d="M 0 0 C 17.4820000032 29.095999996799996 17.4820000032 66.9040000032 0 96 C 39.939 93.8050000032 73.161 84.9889999968 96 48 C 73.161 11.011000003199996 39.939 2.194999996799993 0 0 Z"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 36)">
