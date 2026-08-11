@@ -250,7 +250,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
     // Shared port-enrichment logic for both the collapsed array-instance loop below and
     // the flat submodule loop further down: width fallbacks, widthExpression/parameterRefs,
     // literal/bus-select synthesis, struct-field breakout, and interface/modport resolution.
-    auto buildInstancePort = [&](vpiHandle p_handle, const std::string& module_name) -> NodePort {
+    auto buildInstancePort = [&](vpiHandle p_handle, const std::string& module_name, bool skip_breakout_synthesis = false) -> NodePort {
         NodePort np;
         const char* pn = vpi_get_str(vpiName, p_handle);
         np.name = pn ? pn : "unnamed";
@@ -277,7 +277,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
         fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
 
-        if (high && (np.direction == "input" || np.direction == "inout")) {
+        if (high && !skip_breakout_synthesis && (np.direction == "input" || np.direction == "inout")) {
             // A bit-select/literal used directly in the port list (e.g. `.opcode(instr[7:4])`,
             // `.b(8'd1)`) has no other driver in the design producing that exact signal string,
             // so buildEdges would never find a source for it. Synthesize the same breakout/literal
@@ -363,6 +363,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                                 array_size = std::abs(std::stoi(lft) - std::stoi(rgt)) + 1;
                             } catch (...) {}
                         }
+                        vpi_release_handle(range_itr);
                     }
                 }
 
@@ -395,13 +396,15 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                         std::string port_name = pn ? pn : "unnamed";
                         std::string raw_signal = getSignalName(vpi_handle(vpiHighConn, p_handle));
 
-                        NodePort np = buildInstancePort(p_handle, n.moduleName);
-
                         // SV LRM 23.2: a port connection expression is evaluated once and
                         // broadcast to every element, UNLESS the actual is itself an unpacked
                         // array of matching size, in which case elaboration connects
                         // element-wise (element i <-> actual[i]). Compare the connected signal
-                        // across every elaborated element to tell which case applies.
+                        // across every elaborated element to tell which case applies. This must
+                        // run before buildInstancePort: when the representative's connection is
+                        // itself an indexed select (e.g. `a_arr[0]`), buildInstancePort would
+                        // otherwise synthesize a bus-breakout tap for that one element, which
+                        // ends up with no consumer once the port is repointed at the array base.
                         bool all_same = true;
                         std::string common_base;
                         bool matches_index_pattern = !raw_signal.empty();
@@ -417,9 +420,15 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                             if (common_base.empty()) common_base = b;
                             else if (common_base != b) matches_index_pattern = false;
                         }
-                        if (!all_same && matches_index_pattern && !common_base.empty()
+                        auto array_size_it = mod.arraySizes.find(common_base);
+                        bool is_elementwise_array = !all_same && matches_index_pattern && !common_base.empty()
                             && mod.arrayDimensions.count(common_base)
-                            && mod.arraySizes[common_base] == static_cast<int>(elements.size())) {
+                            && array_size_it != mod.arraySizes.end()
+                            && array_size_it->second == static_cast<int>(elements.size());
+
+                        NodePort np = buildInstancePort(p_handle, n.moduleName, is_elementwise_array);
+
+                        if (is_elementwise_array) {
                             // Element-wise connection to a matching-size unpacked array: point
                             // the port at the array's base name so it participates in the same
                             // stacked-edge machinery already used for array reg/mux nodes.

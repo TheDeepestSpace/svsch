@@ -2328,8 +2328,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         endmodule
       ` }]);
       const mod = graph.modules.instance_array_reversed_top;
-      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
-      expect(arrayInstance).toBeDefined();
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes).toHaveLength(1);
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
       expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
       expect(arrayInstance?.arrayDimension ?? arrayInstance?.metadata?.arrayDimension).toBe('[0:3]');
 
@@ -2386,8 +2388,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         endmodule
       ` }]);
       const mod = graph.modules.instance_array_param_top;
-      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
-      expect(arrayInstance).toBeDefined();
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes).toHaveLength(1);
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
       // The bound expression doesn't decompile to constant text, so arraySize falls back
       // to the number of elaborated elements instead of throwing or miscounting.
       expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
