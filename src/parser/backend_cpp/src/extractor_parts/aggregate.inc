@@ -339,6 +339,17 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
             }
             if (!in_port || !out_port) continue;
 
+            // A continuous assign to one bit/slice of a packed signal (e.g.
+            // `assign out[0] = a;`) is lowered to an [alias] comb node whose output
+            // signal is that slice ("out[0]"). synthesizeBusCompositionNodes (which
+            // runs after this pass) is what stitches such slices into a single
+            // bus_comp node driving "out" — it needs this node's sliced output port
+            // to still exist when it scans. Don't bypass/delete these: they aren't
+            // dead ends, they're waiting to be picked up by that later pass. This
+            // mirrors the equivalent procedural case, which this loop already skips
+            // outright via the isProcedural check above.
+            if (out_port->signal.find('[') != std::string::npos) continue;
+
             // Copy edges by value BEFORE any push_back (which could reallocate the vector).
             std::vector<Edge> incoming_copy, outgoing_copy;
             for (const auto& e : mod.edges) {
@@ -635,7 +646,6 @@ void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {
 
     for (const auto& n : mod.nodes) {
         if (n.kind == "bus") continue;
-        if (n.kind == "comb" && n.metadata.expression == "[alias]" && !n.metadata.isProcedural) continue;
         for (const auto& p : n.ports) {
             if (p.direction != "output" || p.signal.empty()) continue;
             size_t bracket = p.signal.find('[');

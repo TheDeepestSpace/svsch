@@ -2264,6 +2264,25 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       ))).toBe(true);
     });
 
+    it('composes the per-element y_arr reads back into the y_bus output port', async () => {
+      const graph = await instanceArrayGraph();
+      const mod = graph.modules.instance_array_top;
+
+      // "assign y_bus[i] = y_arr[i]" reads a scalar out of the stacked instance's
+      // array output on each of the 4 lines; those reads must recompose into a
+      // single driver for the y_bus output port, not leave it unconnected.
+      const compNode = mod.nodes.find((n) => n.id === 'bus_comp:instance_array_top:y_bus');
+      expect(compNode).toBeDefined();
+      for (let i = 0; i < 4; i++) {
+        expect(mod.edges.some((e) => (
+          e.target === compNode?.id && e.signal === `y_bus[${i}]`
+        ))).toBe(true);
+      }
+      expect(mod.edges.some((e) => (
+        e.source === compNode?.id && e.target === 'port:instance_array_top:y_bus' && e.signal === 'y_bus'
+      ))).toBe(true);
+    });
+
     it('preserves element-wise stacked connections for a reversed [0:MSB] array range', async () => {
       const graph = await runParser(backend, [{ file: 'instance_array_reversed.sv', text: `
         module mux2 (
