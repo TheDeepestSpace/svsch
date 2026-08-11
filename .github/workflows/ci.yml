@@ -210,6 +210,17 @@ jobs:
       - *download_cli_step
       - *fix_perms_step
 
+      - &fetch_base_step
+        name: Fetch base ref for baseline diff gate
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
+
+      - name: Reject sub-threshold screenshot baseline updates
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-baseline-diffs.js visual
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
       - &pw_version_step
         name: Get Playwright version
         id: playwright-version
@@ -284,6 +295,14 @@ jobs:
       - *pw_cache_step
       - *pw_install_step
 
+      - *fetch_base_step
+
+      - name: Reject sub-threshold screenshot baseline updates
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-baseline-diffs.js bdd
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
       - &prepare_vscode_user_step
         name: Prepare non-root user for VS Code
         # vscode-test-playwright launches VS Code (Electron) which must run as the
@@ -353,6 +372,14 @@ jobs:
       - *pw_cache_step
       - *pw_install_step
       - *prepare_vscode_user_step
+
+      - *fetch_base_step
+
+      - name: Reject sub-threshold screenshot baseline updates
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-baseline-diffs.js system
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
       - name: Run System Tests (${{ matrix.vscode_version }})
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
