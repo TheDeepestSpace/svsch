@@ -13,18 +13,13 @@ export function writeBenchmark(benchmarkFile: string, name: string, valueMs: num
   writeBenchmarkEntries(benchmarkFile, [{ name, unit: 'ms', value: Math.round(valueMs) }]);
 }
 
-// Records one named sample (e.g. one per test/scenario/fixture) into a shared
-// benchmark file, so the file ends up holding one entry per distinct name
-// instead of a single suite-wide aggregate. Suites with many workers call this
-// once per test; each call appends to samplesLogFile (a durable, append-only
-// record safe under concurrent workers) and rewrites benchmarkFile from every
-// line recorded so far, keyed by name — a later call for the same name (e.g. a
-// retried test, or a test that renders more than once) overwrites the earlier
-// value rather than accumulating a mean, so the file always reflects the most
-// recent sample per name without needing a separate finalization step.
+// Records one named sample (e.g. one per test/scenario/fixture) by appending
+// it to a shared, durable, append-only log — safe to call concurrently from
+// many worker processes, since each append is independent and nothing reads
+// the log back until finalizeNamedBenchmarkSamples() runs once, after every
+// worker has finished.
 export function recordNamedBenchmarkSample(
   samplesLogFile: string,
-  benchmarkFile: string,
   name: string,
   unit: string,
   value: number
@@ -33,6 +28,17 @@ export function recordNamedBenchmarkSample(
 
   fs.mkdirSync(path.dirname(samplesLogFile), { recursive: true });
   fs.appendFileSync(samplesLogFile, `${JSON.stringify({ name, unit, value: Math.round(value) })}\n`, 'utf8');
+}
+
+// Collapses a samples log into the benchmark file consumed by
+// github-action-benchmark: one entry per distinct name (a later sample for
+// the same name — e.g. a retried test, or a test that renders more than
+// once — overwrites the earlier value rather than accumulating a mean).
+// Must run once, after every worker that might call recordNamedBenchmarkSample
+// has finished (e.g. from a Playwright globalTeardown) — reading the log
+// while workers are still appending to it would race an in-progress write.
+export function finalizeNamedBenchmarkSamples(samplesLogFile: string, benchmarkFile: string): void {
+  if (!fs.existsSync(samplesLogFile)) return;
 
   const entries = new Map<string, BenchmarkEntry>();
   for (const line of fs.readFileSync(samplesLogFile, 'utf8').split('\n')) {
@@ -42,8 +48,7 @@ export function recordNamedBenchmarkSample(
       const entry = JSON.parse(trimmed) as BenchmarkEntry;
       entries.set(entry.name, entry);
     } catch {
-      // A concurrent worker's write can be read mid-flush; the line self-heals
-      // once that worker's append completes, so just skip it for now.
+      // An unterminated last line (process killed mid-write) — skip it.
     }
   }
   writeBenchmarkEntries(

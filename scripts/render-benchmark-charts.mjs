@@ -21,9 +21,14 @@ const COLORS = {
   critical: '#d03b3b',
 };
 
-const BAR_WIDTH = 16;
-const BAR_GAP = 20;
-const BAR_PITCH = BAR_WIDTH + BAR_GAP;
+// Bars fill the whole plot width regardless of how many there are — a
+// 3-entry chart gets three wide bars instead of three skinny ones stranded in
+// empty space, and an 80-entry chart gets 80 hairline bars instead of being
+// truncated. BAR_WIDTH_FRACTION is how much of each bar's slot the bar itself
+// occupies (the rest is gap); MIN_BAR_WIDTH is a floor so a bar never
+// disappears to 0px even when there are hundreds of entries.
+const BAR_WIDTH_FRACTION = 0.72;
+const MIN_BAR_WIDTH = 1;
 const PANEL_HEIGHT = 260;
 const PANEL_GAP = 56;
 const LABEL_LINE_HEIGHT = 11;
@@ -140,31 +145,34 @@ function renderLegend(x, y) {
   return parts.join('\n');
 }
 
-function renderPanel({ label, unit, rows, names, originY, maxValue }) {
+function renderPanel({ label, unit, rows, names, originY, maxValue, barWidth, barPitch, annotate }) {
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
   const parts = [];
+  const plotWidth = names.length * barPitch;
 
   parts.push(`<text x="${LEFT_MARGIN - 12}" y="${originY - PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(label)} (${escapeXml(unit)})</text>`);
 
   // Gridlines + y-axis ticks.
   for (let tick = 0; tick <= chartMax; tick += step) {
     const y = originY - tick * scale;
-    parts.push(`<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + names.length * BAR_PITCH}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
+    parts.push(`<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
     parts.push(`<text x="${LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
   }
-  parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + names.length * BAR_PITCH}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+  parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
 
   names.forEach((name, index) => {
     const row = rows.get(name);
     if (!row) return;
-    const x = LEFT_MARGIN + index * BAR_PITCH + (BAR_PITCH - BAR_WIDTH) / 2;
+    const x = LEFT_MARGIN + index * barPitch + (barPitch - barWidth) / 2;
 
     if (row.isNew) {
       const h = row.value * scale;
-      parts.push(`<rect x="${x}" y="${originY - h}" width="${BAR_WIDTH}" height="${h}" fill="url(#newHatch)" />`);
-      parts.push(`<text x="${x + BAR_WIDTH / 2}" y="${originY - h - 6}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">new</text>`);
+      parts.push(`<rect x="${x}" y="${originY - h}" width="${barWidth}" height="${h}" fill="url(#newHatch)" />`);
+      if (annotate) {
+        parts.push(`<text x="${x + barWidth / 2}" y="${originY - h - 6}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">new</text>`);
+      }
       return;
     }
 
@@ -174,21 +182,21 @@ function renderPanel({ label, unit, rows, names, originY, maxValue }) {
       // Faster: draw the full baseline bar, then repaint the top slice
       // (the saved amount) green — the visible top edge still sits at the
       // baseline height, with the green cap showing what was shaved off.
-      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${BAR_WIDTH}" height="${valueH}" fill="${COLORS.blue}" />`);
-      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${BAR_WIDTH}" height="${baselineH - valueH}" fill="${COLORS.good}" />`);
+      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${barWidth}" height="${valueH}" fill="${COLORS.blue}" />`);
+      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${barWidth}" height="${baselineH - valueH}" fill="${COLORS.good}" />`);
     } else {
       // Slower: draw the full baseline bar, then grow a red cap above it up
       // to the new (taller) value.
-      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${BAR_WIDTH}" height="${baselineH}" fill="${COLORS.blue}" />`);
-      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${BAR_WIDTH}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`);
+      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${barWidth}" height="${baselineH}" fill="${COLORS.blue}" />`);
+      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${barWidth}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`);
     }
 
     const pct = row.deltaPct;
-    if (pct !== undefined) {
+    if (annotate && pct !== undefined) {
       const topH = Math.max(baselineH, valueH);
       const sign = pct > 0 ? '+' : '';
       const color = pct > 0 ? COLORS.critical : pct < 0 ? COLORS.goodText : COLORS.inkMuted;
-      parts.push(`<text x="${x + BAR_WIDTH / 2}" y="${originY - topH - 6}" font-size="10" text-anchor="middle" fill="${color}" font-family="system-ui, -apple-system, sans-serif">${sign}${pct.toFixed(0)}%</text>`);
+      parts.push(`<text x="${x + barWidth / 2}" y="${originY - topH - 6}" font-size="10" text-anchor="middle" fill="${color}" font-family="system-ui, -apple-system, sans-serif">${sign}${pct.toFixed(0)}%</text>`);
     }
   });
 
@@ -198,10 +206,10 @@ function renderPanel({ label, unit, rows, names, originY, maxValue }) {
 // Rotated 90°: each wrapped line is its own vertical strip of text that reads
 // top-to-bottom, growing away from the axis; earlier lines sit closer to the
 // bar they label so short labels stay tight against it.
-function renderXLabels(names, originY) {
+function renderXLabels(names, originY, barPitch) {
   const parts = [];
   names.forEach((name, index) => {
-    const x = LEFT_MARGIN + index * BAR_PITCH + BAR_PITCH / 2;
+    const x = LEFT_MARGIN + index * barPitch + barPitch / 2;
     const lines = wrapLabel(name, 32, 3);
     lines.forEach((line, lineIndex) => {
       const lineX = x + LABEL_LINE_HEIGHT / 2 - lineIndex * LABEL_LINE_HEIGHT;
@@ -215,25 +223,30 @@ function renderXLabels(names, originY) {
 // suiteTitle: chart headline. metrics: [{ label, unit, entries, baselineByName, emphasize? }],
 // sharing one x-axis (`names`, the ordered union of every metric's entry
 // names so every test that has *any* data gets a labeled column, even if a
-// lighter-weight metric like elaboration doesn't cover it).
-export function renderSuiteChart({ suiteTitle, metrics }) {
+// lighter-weight metric like elaboration doesn't cover it). showLabels turns
+// off x-axis names and per-bar value text — for suites with too many entries
+// to label legibly, showing every bar (however thin) beats showing a legible
+// label on a truncated subset of them.
+export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
   const metricRows = metrics.map((metric) => ({
     ...metric,
     rowsByName: new Map(computeDeltaRows(metric.entries, metric.baselineByName).map((row) => [row.name, row])),
   }));
   const names = [...new Set(metricRows.flatMap((metric) => metric.entries.map((entry) => entry.name)))];
 
-  const barsWidth = LEFT_MARGIN + Math.max(names.length, 1) * BAR_PITCH + RIGHT_MARGIN;
-  const width = Math.max(barsWidth, legendWidth(24), estimateTextWidth(suiteTitle, 18) + 48);
+  const width = Math.max(legendWidth(24), estimateTextWidth(suiteTitle, 18) + 48);
+  const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
+  const barWidth = Math.max(MIN_BAR_WIDTH, barPitch * BAR_WIDTH_FRACTION);
   const panelCount = metricRows.length;
   const chartAreaHeight = panelCount * PANEL_HEIGHT + (panelCount - 1) * PANEL_GAP;
-  const height = TOP_MARGIN + chartAreaHeight + LABEL_AREA_HEIGHT + 24;
+  const labelAreaHeight = showLabels ? LABEL_AREA_HEIGHT : 0;
+  const height = TOP_MARGIN + chartAreaHeight + labelAreaHeight + 24;
 
   const panels = [];
   metricRows.forEach((metric, index) => {
     const originY = TOP_MARGIN + PANEL_HEIGHT + index * (PANEL_HEIGHT + PANEL_GAP);
     const maxValue = Math.max(1, ...metric.entries.map((e) => Math.max(e.value, metric.baselineByName.get(e.name) ?? 0)));
-    panels.push(renderPanel({ label: metric.label, unit: metric.unit ?? 'ms', rows: metric.rowsByName, names, originY, maxValue }));
+    panels.push(renderPanel({ label: metric.label, unit: metric.unit ?? 'ms', rows: metric.rowsByName, names, originY, maxValue, barWidth, barPitch, annotate: showLabels }));
   });
   const lastOriginY = TOP_MARGIN + panelCount * PANEL_HEIGHT + (panelCount - 1) * PANEL_GAP;
 
@@ -248,7 +261,7 @@ export function renderSuiteChart({ suiteTitle, metrics }) {
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(suiteTitle)}</text>
   ${renderLegend(24, 52)}
   ${panels.join('\n')}
-  ${renderXLabels(names, lastOriginY)}
+  ${showLabels ? renderXLabels(names, lastOriginY, barPitch) : ''}
 </svg>`;
 }
 
@@ -283,6 +296,30 @@ export function renderDeltaTableMarkdown(rows) {
   lines.push(`| Avg | across ${withBaseline.length} test${withBaseline.length === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avgNominal.toFixed(0)} ms | ${avgSignPct}${avgPct.toFixed(1)}% |`);
 
   return lines.join('\n');
+}
+
+// Full per-entry data as CSV — the complete dataset behind a chart that drops
+// labels/per-bar text to stay legible with many entries (unlike the delta
+// table above, which only ever shows a worst-5/best-5 slice).
+export function renderDeltaCsv(rows) {
+  const csvField = (value) => {
+    const str = String(value);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+  const header = ['name', 'unit', 'baseline', 'value', 'delta_ms', 'delta_pct', 'is_new'];
+  const lines = [header.join(',')];
+  for (const row of rows) {
+    lines.push([
+      row.name,
+      row.unit,
+      row.baseline ?? '',
+      row.value,
+      row.deltaMs ?? '',
+      row.deltaPct !== undefined ? row.deltaPct.toFixed(2) : '',
+      row.isNew ? 'true' : 'false',
+    ].map(csvField).join(','));
+  }
+  return lines.join('\n') + '\n';
 }
 
 export { COLORS };

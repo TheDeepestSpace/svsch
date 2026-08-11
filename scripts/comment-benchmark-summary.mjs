@@ -5,9 +5,19 @@ import path from 'node:path';
 import {
   renderSuiteChart,
   renderDeltaTableMarkdown,
+  renderDeltaCsv,
   computeDeltaRows,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
+
+// Charts with few enough entries to label legibly (vscode-version columns for
+// system) keep x-axis names and per-bar delta text. bdd (one column per BDD
+// scenario) and visual (one per spec file/test) can run into the dozens, so
+// their charts drop labels in favor of showing every bar, however thin —
+// visual also gets a full CSV per metric (see below) so the exact numbers
+// aren't lost along with the labels.
+const CHART_KEYS_WITH_LABELS = new Set(['system']);
+const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
 // One review comment covering every diagram-generation benchmark suite, with
 // a real "master vs. this run" bar chart (hosted on gh-pages, since GitHub
@@ -65,18 +75,19 @@ for (const { name, file } of suiteArgs) {
   const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
   const baselineByName = extractBaseline(baselineData, name);
   const group = chartGroups.get(meta.chartKey) ?? { title: meta.chartTitle, metrics: [] };
-  group.metrics.push({ order: meta.order, label: meta.label, unit: entries[0]?.unit ?? 'ms', entries, baselineByName });
+  group.metrics.push({ name, order: meta.order, label: meta.label, unit: entries[0]?.unit ?? 'ms', entries, baselineByName });
   chartGroups.set(meta.chartKey, group);
 }
 
-// Publishes chart SVGs to gh-pages (dev/bench-charts/pr-<N>/<chartKey>.svg)
-// via a throwaway worktree, so they're reachable at a raw.githubusercontent
-// URL for the PR comment — GitHub markdown can't render inline <svg>, only
-// <img> references to a hosted file. Same branch github-action-benchmark
-// already publishes benchmark history to; this just adds a few static image
-// files there rather than a second place to manage. Retries a few times
-// since concurrent PR runs can race to push.
-function publishCharts(chartsByKey) {
+// Publishes chart SVGs (and, for CHART_KEYS_WITH_CSV, per-metric CSVs) to
+// gh-pages (dev/bench-charts/pr-<N>/<file>) via a throwaway worktree, so
+// they're reachable at a raw.githubusercontent URL for the PR comment —
+// GitHub markdown can't render inline <svg>, only <img>/link references to a
+// hosted file. Same branch github-action-benchmark already publishes
+// benchmark history to; this just adds a few static files there rather than
+// a second place to manage. Retries a few times since concurrent PR runs can
+// race to push.
+function publishFiles(contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -88,8 +99,8 @@ function publishCharts(chartsByKey) {
 
       const chartsDir = path.join(worktreeDir, 'dev', 'bench-charts', `pr-${PR_NUMBER}`);
       fs.mkdirSync(chartsDir, { recursive: true });
-      for (const [key, svg] of chartsByKey) {
-        fs.writeFileSync(path.join(chartsDir, `${key}.svg`), svg, 'utf8');
+      for (const [filename, content] of contentByFilename) {
+        fs.writeFileSync(path.join(chartsDir, filename), content, 'utf8');
       }
 
       git(['add', '-A'], { cwd: worktreeDir });
@@ -119,18 +130,42 @@ function publishCharts(chartsByKey) {
 }
 
 const [owner, repo] = GITHUB_REPOSITORY.split('/');
-const chartSvgByKey = new Map();
+const contentByFilename = new Map();
+const csvFilenamesByKey = new Map();
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
-  chartSvgByKey.set(key, renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics }));
+  const showLabels = CHART_KEYS_WITH_LABELS.has(key);
+  contentByFilename.set(`${key}.svg`, renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics, showLabels }));
+
+  if (CHART_KEYS_WITH_CSV.has(key)) {
+    const csvFilenames = [];
+    for (const metric of metrics) {
+      const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+      const filename = `${metric.name}.csv`;
+      contentByFilename.set(filename, renderDeltaCsv(rows));
+      csvFilenames.push({ label: metric.label, filename });
+    }
+    csvFilenamesByKey.set(key, csvFilenames);
+  }
 }
-const chartCommitSha = publishCharts(chartSvgByKey);
+const chartCommitSha = publishFiles(contentByFilename);
 
 const sections = [];
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
   const chartUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${key}.svg`;
   const lines = [`### ${group.title}`, '', `![${group.title} chart](${chartUrl})`];
+
+  const csvFilenames = csvFilenamesByKey.get(key);
+  if (csvFilenames?.length) {
+    const csvLinks = csvFilenames.map(({ label, filename }) => {
+      const csvUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${filename}`;
+      const linkLabel = csvFilenames.length > 1 ? `${label} CSV` : 'CSV';
+      return `[${linkLabel}](${csvUrl})`;
+    });
+    lines.push('', `Full data (chart omits labels above ~10 entries): ${csvLinks.join(' · ')}`);
+  }
+
   for (const metric of metrics) {
     const rows = computeDeltaRows(metric.entries, metric.baselineByName);
     const table = renderDeltaTableMarkdown(rows);

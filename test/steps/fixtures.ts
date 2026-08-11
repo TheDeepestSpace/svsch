@@ -354,10 +354,14 @@ export class BddWorld {
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
     const rebuildStartedAt = Date.now();
-    // Wait for the busy indicator to appear then disappear (extension is rebuilding).
-    await this.webviewPage.locator('div.busy-indicator[role="status"]')
-      .waitFor({ state: 'visible', timeout: 10_000 })
-      .catch(() => {});
+    // Wait for the busy indicator to be hidden — the one state that reliably
+    // signals the rebuild finished, whether the indicator is still showing or
+    // (for a rebuild fast enough to complete within the 500ms head start
+    // above) already flashed and disappeared before we got here. A prior
+    // version of this also waited for the indicator to become 'visible'
+    // first, but that wait almost always timed out for fast rebuilds — the
+    // indicator was already gone by the time it started polling — inflating
+    // every recorded duration by a flat 10s regardless of actual work.
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
@@ -368,7 +372,6 @@ export class BddWorld {
       const rebuildSuffix = this.diagramRebuildCounter > 1 ? ` (rebuild ${this.diagramRebuildCounter})` : '';
       recordNamedBenchmarkSample(
         path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
-        path.join(BddWorld.BDD_ARTIFACTS_DIR, 'benchmark.json'),
         `${this.scenarioName}${outlineSuffix}${rebuildSuffix}`,
         'ms',
         Date.now() - rebuildStartedAt

@@ -41,9 +41,7 @@ const postViewStartedAt = new WeakMap<Page, number>();
 const pendingDiagramDurationMs = new WeakMap<Page, number>();
 const visualArtifactsDir = path.resolve(__dirname, '../../test-results/visual/artifacts');
 const visualRenderingSamplesFile = path.join(visualArtifactsDir, 'diagram-render-samples.log');
-const visualRenderingBenchmarkFile = path.join(visualArtifactsDir, 'benchmark-rendering.json');
 const visualElaborationSamplesFile = path.join(visualArtifactsDir, 'diagram-elaboration-samples.log');
-const visualElaborationBenchmarkFile = path.join(visualArtifactsDir, 'benchmark-elaboration.json');
 
 // Groups samples under "<spec file> › <test title>", matching how they read in
 // the benchmark PR comment. Returns undefined outside of a running test.
@@ -59,10 +57,8 @@ function currentVisualBenchmarkName(): string | undefined {
 function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durationMs: number): void {
   const name = currentVisualBenchmarkName();
   if (!name) return;
-  const [samplesFile, benchmarkFile] = metric === 'elaboration'
-    ? [visualElaborationSamplesFile, visualElaborationBenchmarkFile]
-    : [visualRenderingSamplesFile, visualRenderingBenchmarkFile];
-  recordNamedBenchmarkSample(samplesFile, benchmarkFile, name, 'ms', durationMs);
+  const samplesFile = metric === 'elaboration' ? visualElaborationSamplesFile : visualRenderingSamplesFile;
+  recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
 }
 
 // Resolves and records whatever rendering timer is pending for `page` — the
