@@ -354,14 +354,25 @@ export class BddWorld {
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
     const rebuildStartedAt = Date.now();
-    // Wait for the busy indicator to be hidden — the one state that reliably
-    // signals the rebuild finished, whether the indicator is still showing or
-    // (for a rebuild fast enough to complete within the 500ms head start
-    // above) already flashed and disappeared before we got here. A prior
-    // version of this also waited for the indicator to become 'visible'
-    // first, but that wait almost always timed out for fast rebuilds — the
-    // indicator was already gone by the time it started polling — inflating
-    // every recorded duration by a flat 10s regardless of actual work.
+    // Wait for the busy indicator to appear then disappear (extension is rebuilding).
+    //
+    // The 'visible' wait below times out (10s) on most scenarios instead of
+    // observing a transition — the indicator has usually already flashed and
+    // gone by the time this starts polling — which is why the bdd benchmark
+    // chart's bars cluster tightly around 10s regardless of actual work. That
+    // looked purely wasteful, but removing it is NOT safe: it also acts as a
+    // grace period that lets the extension-host round trip (command -> status
+    // 'rebuilding' -> new view -> status 'idle') actually complete before the
+    // 'hidden' wait below is allowed to resolve. Dropping it let 'hidden'
+    // resolve while a rebuild was still in flight (indicator not yet flipped
+    // to visible), producing a stale screenshot and a real snapshot-mismatch
+    // failure in "Navigating to connection source" — so the accurate fix here
+    // needs a real completion signal (e.g. a rebuild generation/version the
+    // webview echoes back) rather than trimming this wait, and is left as
+    // follow-up rather than risking more scenarios on an unverified guess.
+    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .catch(() => {});
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
