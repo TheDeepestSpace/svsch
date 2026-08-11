@@ -102,7 +102,7 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
-  Scenario: Cutting and tying back a fanout net whose source name is declared in the SV source
+  Scenario: Declared nets are automatically cut on first open
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
@@ -113,8 +113,87 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I move the port node "a"
-    When I hover the connection between "a" and "x" and click its Cut control
+    Then I should see 3 cut net labels named "chip_select"
+    And the original connection between "a" and "x" should be hidden
+    And the original connection between "a" and "y" should be hidden
+
+  Scenario: Register clock and reset nets are automatically cut on first open
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic rst_n, input logic d, output logic q);
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should see 2 cut net labels named "clk"
+    And I should see 2 cut net labels named "rst_n"
+
+  Scenario: Register clock and reset automatic cuts can be disabled
+    Given I disable clock and reset cuts using this setting:
+      """
+      "svsch.autocut-clk-reset": false
+      """
+    And I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic rst_n, input logic d, output logic q);
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    Then I should not see cut net labels named "clk"
+    And I should not see cut net labels named "rst_n"
+
+  Scenario: Resetting the layout reapplies both automatic cut heuristics
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(
+        input logic clk,
+        input logic rst_n,
+        input logic d,
+        input logic a,
+        output logic q,
+        output logic x,
+        output logic y
+      );
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+        always_ff @(posedge clk or negedge rst_n) begin
+          if (!rst_n) q <= 1'b0;
+          else q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I tie back the cut net "chip_select"
+    And I tie back the cut net "clk"
+    And I tie back the cut net "rst_n"
+    Then I should not see cut net labels named "chip_select"
+    And I should not see cut net labels named "clk"
+    And I should not see cut net labels named "rst_n"
+    When I reset the layout
+    Then I should see 3 cut net labels named "chip_select"
+    And I should see 2 cut net labels named "clk"
+    And I should see 2 cut net labels named "rst_n"
+
+  Scenario: An automatically cut fanout net keeps its declared source name
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input a, output x, output y);
+        wire chip_select;
+        assign chip_select = a;
+        assign x = chip_select;
+        assign y = chip_select;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
     Then I should see 3 cut net labels named "chip_select"
     And the original connection between "a" and "x" should be hidden
     And the original connection between "a" and "y" should be hidden
@@ -125,10 +204,6 @@ Feature: Diagram Interaction
     When I double-click the cut net "chip_select"
     Then the cut net "chip_select" should not become editable
     And I should see 3 cut net labels named "chip_select"
-    When I tie back the cut net "chip_select"
-    Then the original connection between "a" and "x" should be restored
-    And the original connection between "a" and "y" should be restored
-    And I should not see cut net labels named "chip_select"
 
   Scenario: Renaming a cut net that has no declared name of its own (implicit wiring)
     Given I have a file "top.sv" in my workspace:
@@ -377,14 +452,14 @@ Feature: Diagram Interaction
     Then the diagram should contain a "generate if" generate block
     And the diagram should contain a "generate case (MODE)" generate block
     And no generate region should be flagged as overlapping
-    When I move the "generate if" generate region by (8, 0) grid cells
+    When I move the "generate if" generate region by (-8, 0) grid cells
     Then the "generate if" generate region should be flagged as overlapping
     And the "generate case (MODE)" generate region should be flagged as overlapping
     And I should see a warning icon on the "generate if" generate region
     And I should see a warning icon on the "generate case (MODE)" generate region
     When I hover over the warning icon on the "generate if" generate region
     Then a tooltip should appear reading "generate blocks overlapping"
-    When I move the "generate if" generate region by (-8, 0) grid cells
+    When I move the "generate if" generate region by (8, 0) grid cells
     Then no generate region should be flagged as overlapping
     And I should not see any generate region warning icons
 
@@ -485,12 +560,18 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I note the position of port node "x"
+    And I note the position of port node "y"
     And click and drag the mouse to select "a" and "b" together
     And I hover the connection between "a" and "x" and click its Cut control
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
     And the original connection between "a" and "x" should be hidden
     And the original connection between "b" and "y" should be hidden
+    And the port node "a" should not have moved
+    And the port node "b" should not have moved
+    And the port node "x" should not have moved
+    And the port node "y" should not have moved
 
   Scenario: The Auto Layout control only appears once multiple blocks are selected
     Given I have a file "top.sv" in my workspace:
@@ -598,10 +679,9 @@ Feature: Diagram Interaction
     And I note the position of the cut net label attached to "u1"
     And I move the port node "b" by (0, 72)
     And I move the block "u2" by (3, 5) grid cells
-    # u2's dangling end also isn't marqueed directly, but its stub wire is
-    # selected along with u2 (React Flow selects every edge touching a
-    # selected node) — noted here, right before the selection, as the
-    # baseline for proving it does move.
+    # Note u2's dangling end before the upcoming lasso. It sits above the
+    # rectangle spanning b/u2/y, so it remains unselected but follows u2 when
+    # the selected nodes are laid out.
     And I note the position of the cut net label attached to "u2"
     And I move the port node "y" by (0, 72)
     And click and drag the mouse to select "b", "u2", and "y" together

@@ -68,21 +68,28 @@ function findSimplification(
     }
 
     const elbows: OrthogonalRoutePoint[] = [];
+    const alternateElbows: OrthogonalRoutePoint[] = [];
     if (first.length <= maxExcursion + GEOMETRY_EPSILON) {
       elbows.push(first.axis === 'vertical'
         ? { x: secondTurn.x, y: start.y }
         : { x: start.x, y: secondTurn.y });
+      alternateElbows.push(first.axis === 'vertical'
+        ? { x: firstTurn.x, y: end.y }
+        : { x: end.x, y: firstTurn.y });
     }
     if (last.length <= maxExcursion + GEOMETRY_EPSILON) {
       elbows.push(last.axis === 'vertical'
         ? { x: firstTurn.x, y: end.y }
         : { x: end.x, y: firstTurn.y });
+      alternateElbows.push(last.axis === 'vertical'
+        ? { x: secondTurn.x, y: start.y }
+        : { x: start.x, y: secondTurn.y });
     }
 
     const localLength = first.length + middle.length + last.length;
-    const candidates = elbows
+    const candidatesFor = (candidateElbows: OrthogonalRoutePoint[]) => candidateElbows
       .filter((elbow, elbowIndex) => (
-        elbows.findIndex((candidate) => pointsEqual(candidate, elbow)) === elbowIndex
+        candidateElbows.findIndex((candidate) => pointsEqual(candidate, elbow)) === elbowIndex
       ))
       .filter((elbow) => (
         segmentLength(start, elbow) + segmentLength(elbow, end)
@@ -111,7 +118,14 @@ function findSimplification(
         || routeKey(left.route).localeCompare(routeKey(right.route))
       ));
 
-    if (candidates[0]) return candidates[0].route;
+    const preferred = candidatesFor(elbows)[0];
+    if (preferred) return preferred.route;
+
+    // Both elbows shorten the same U-turn. Prefer the one that collapses the
+    // short outer segment, but if an obstacle blocks it, the mirrored elbow
+    // can still remove the dogleg without changing endpoint directions.
+    const alternate = candidatesFor(alternateElbows)[0];
+    if (alternate) return alternate.route;
   }
 
   return undefined;

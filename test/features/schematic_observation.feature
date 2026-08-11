@@ -81,6 +81,8 @@ Feature: Schematic Observation
       endmodule
       """
     When I open the "top" module in SVSCH
+    And I tie back every cut net
+    And I fit the diagram in view
     Then I should see a port node "i"
     And I should see a port node "o"
     And there should be a connection between "i" and "o"
@@ -114,7 +116,7 @@ Feature: Schematic Observation
     When I open the "top" module in SVSCH
     Then I should see a register node "q"
     And there should be a connection between "d" and the register node "q"
-    And there should be a connection between "clk" and the register node "q"
+    And there should be a cut connection between "clk" and the register node "q"
 
   Scenario: Observing bus breakouts
     Given I have a file "top.sv" in my workspace:

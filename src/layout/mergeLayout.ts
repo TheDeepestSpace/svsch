@@ -79,7 +79,13 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   // The generate-block wrappers are derived from their arms, so keep them out of the ELK /
   // packing layout (arms fall back to roots) and only add their bounds in positionGenerateRegions.
   const armRegions = generateRegions.filter((region) => !region.isGenerateBlock);
-  const elkLayout = await autoLayoutMissingNodes(designModule.nodes, routedDesignEdges, moduleLayout, armRegions, netCutPortMargins(designModule, activeCuts));
+  const elkLayout = await autoLayoutMissingNodes(
+    designModule.nodes,
+    routedDesignEdges,
+    moduleLayout,
+    armRegions,
+    netCutPortMargins(designModule, activeCuts)
+  );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
     const elk = elkLayout.positions.get(node.id);
@@ -98,7 +104,15 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
   const packedGenerateLayout = elkLayout.regionBounds.size > 0
     ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
     : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
-  const positioned = packedGenerateLayout.nodes;
+  // A pristine layout (nothing dragged, nothing released back to Auto Layout
+  // yet — see mergeRelayoutSelection/mergeNodePositions, both of which always
+  // write a `moduleLayout.nodes` entry) is the only state this "free preset"
+  // columnizing applies to; touching the diagram at all opts a module out
+  // until a full Reset clears moduleLayout.nodes and restores it.
+  const isPristineLayout = Object.keys(moduleLayout.nodes).length === 0;
+  const positioned = isPristineLayout
+    ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
+    : packedGenerateLayout.nodes;
   const positionedRegions = positionGenerateRegions(generateRegions, positioned, moduleLayout, elkLayout.regionBounds);
 
   const externalBlockIds = findExternalBlockIds(positionedRegions, positioned);
@@ -109,20 +123,28 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     : positioned;
 
   const nodesById = new Map<string, DiagramNode>(positionedWithWarnings.map((node) => [node.id, node]));
-  const nodePositions = new Map(positionedWithWarnings.map((node) => [node.id, node.position]));
+  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+  const routingNodesById = new Map<string, DiagramNode>(
+    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node])
+  );
+  const routingNodePositions = new Map(
+    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node.position])
+  );
   const candidates = routedDesignEdges.filter((edge) => !moduleLayout.edges?.[edge.id]?.routePoints);
   const result = await routeDiagramWithLibavoid(
-    positionedWithWarnings,
+    // Dangling ends are real visual obstacles too. Build them before routing
+    // so ordinary nets cannot pass through a cut label that happens to land
+    // in their otherwise-clear corridor.
+    [...positionedWithWarnings, ...cutProjection.nodes],
     candidates,
     (nodeId, portId, includeLeadMargins) => renderedLeadPoint(
       nodeId,
       portId,
-      nodesById,
-      nodePositions,
+      routingNodesById,
+      routingNodePositions,
       includeLeadMargins
     )
   );
-  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
   const edgeLabels = assignEdgeNetLabels(routedDesignEdges, nodesById);
 
   return {
@@ -609,6 +631,118 @@ function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undef
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+// A module's own top-level I/O ports that lost every edge to a first-open
+// cut (register clock/reset, or any other declared net) have nothing left to
+// place them relative to, so ELK just drops them wherever its isolated-node
+// heuristic lands — usually not near where they'd read best. As a one-time
+// default arrangement (see the `isPristineLayout` gate at the call site),
+// stack them into two columns flanking the rest of the design instead: every
+// disconnected source-direction port on the left, every disconnected
+// sink-direction port on the right. A port that still carries at least one
+// surviving edge is left exactly where ELK placed it.
+function columnizeFullyCutBoundaryPorts(
+  designModule: DesignModule,
+  activeCuts: Map<string, ActiveNetCut>,
+  positioned: PositionedNode[]
+): PositionedNode[] {
+  const activeCutKeys = new Set(activeCuts.keys());
+  const edgesByNodeId = new Map<string, DiagramEdge[]>();
+  for (const edge of designModule.edges) {
+    for (const nodeId of [edge.source, edge.target]) {
+      const touching = edgesByNodeId.get(nodeId) ?? [];
+      touching.push(edge);
+      edgesByNodeId.set(nodeId, touching);
+    }
+  }
+  const isFullyCut = (nodeId: string): boolean => {
+    const touching = edgesByNodeId.get(nodeId);
+    return Boolean(touching?.length) && touching!.every((edge) => activeCutKeys.has(edgeNetKey(edge)));
+  };
+
+  const detached = positioned.filter((node) => node.kind === 'port' && isFullyCut(node.id));
+  if (detached.length === 0) {
+    return positioned;
+  }
+
+  const detachedIds = new Set(detached.map((node) => node.id));
+  const survivingBodyBounds = boundsForPositionedNodes(positioned.filter((node) => !detachedIds.has(node.id)));
+  // When every node in the module is a fully-cut boundary port (a pure
+  // pass-through with nothing left uncut to anchor against), there's no
+  // surviving body to flank. Collapse the anchor to a zero-width point at
+  // the detached ports' own ELK center instead of reserving body-sized
+  // space that's no longer occupied by anything.
+  const bodyBounds = survivingBodyBounds ?? (() => {
+    const allBounds = boundsForPositionedNodes(positioned);
+    return allBounds && { ...allBounds, x: allBounds.x + allBounds.width / 2, width: 0 };
+  })();
+  if (!bodyBounds) {
+    return positioned;
+  }
+
+  const sideFor = (node: DiagramNode): 'input' | 'output' => (
+    node.ports[0]?.direction === 'output' ? 'output' : 'input'
+  );
+  const detachedSideById = new Map(detached.map((node) => [node.id, sideFor(node)]));
+  const bySide = (side: 'input' | 'output') => detached
+    .filter((node) => sideFor(node) === side)
+    .sort((a, b) => a.position.y - b.position.y);
+
+  const rowGap = diagramSizing.sameLayerNodeSeparation;
+  const stack = (nodes: PositionedNode[], anchorX: (width: number) => number): Map<string, { x: number; y: number }> => {
+    const result = new Map<string, { x: number; y: number }>();
+    let y = bodyBounds.y;
+    for (const node of nodes) {
+      const size = diagramNodeDimensions(node);
+      result.set(node.id, snapPosition({ x: anchorX(size.width), y }, node.kind, structRole(node)));
+      y += size.height + rowGap;
+    }
+    return result;
+  };
+
+  const pairGapFor = (cut: SavedNetCut): number => {
+    const labelWidth = diagramNodeDimensions({
+      id: 'cut-label-column-gap',
+      kind: 'netLabel',
+      label: cut.label,
+      ports: []
+    }).width;
+    return diagramSizing.edgeLeadLength * 2 + labelWidth * 2 + diagramSizing.gridSize;
+  };
+
+  let inputGap = survivingBodyBounds ? diagramSizing.columnGap : 0;
+  let outputGap = diagramSizing.columnGap;
+  for (const { cut, edges } of activeCuts.values()) {
+    const sourceSide = detachedSideById.get(cut.source.nodeId);
+    for (const edge of edges) {
+      const targetSide = detachedSideById.get(edge.target);
+      const pairGap = pairGapFor(cut);
+      if (!survivingBodyBounds && sourceSide && targetSide && sourceSide !== targetSide) {
+        // With no body, the two boundary-port columns face each other
+        // directly. Reserve both labels, both leads, and one clear grid
+        // between the dangling ends as part of the column gap itself.
+        outputGap = Math.max(outputGap, pairGap);
+      } else if (survivingBodyBounds && sourceSide === 'input' && !targetSide) {
+        inputGap = Math.max(inputGap, pairGap);
+      } else if (survivingBodyBounds && !sourceSide && targetSide === 'output') {
+        outputGap = Math.max(outputGap, pairGap);
+      }
+    }
+  }
+
+  // A real body needs clearance on both sides. With no body, there is only
+  // one relationship left — input column to output column — so reserve one
+  // column gap total instead of two gaps around an empty point.
+  const overrides = new Map([
+    ...stack(bySide('input'), (width) => bodyBounds.x - inputGap - width),
+    ...stack(bySide('output'), () => bodyBounds.x + bodyBounds.width + outputGap)
+  ]);
+
+  return positioned.map((node) => {
+    const override = overrides.get(node.id);
+    return override ? { ...node, position: override } : node;
+  });
+}
+
 function unionBounds(boundsList: RegionBounds[]): RegionBounds {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -686,6 +820,8 @@ function buildNetCutProjection(
 ): { nodes: PositionedNode[]; edges: DiagramEdge[] } {
   const nodes: PositionedNode[] = [];
   const edges: DiagramEdge[] = [];
+  const deferredNodeIds = new Set<string>();
+  const endpointByLabelId = new Map<string, string>();
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
@@ -709,6 +845,9 @@ function buildNetCutProjection(
     const isSourceStacked = sourceNode ? nodeIsArrayNode(sourceNode) : false;
 
     const sourceLabelId = cutLabelNodeId(netKey, 'source');
+    if (cut.deferLabelPlacement) {
+      deferredNodeIds.add(sourceLabelId);
+    }
     const sourceHandleSide = oppositeHandleSide(elkSideToHandleSide(sourceLead.side));
     const sourceLabelNode = makeCutLabelNode(
       sourceLabelId,
@@ -730,6 +869,7 @@ function buildNetCutProjection(
       labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
     );
     nodes.push(sourceLabelNode);
+    endpointByLabelId.set(sourceLabelId, endpointKey(cut.source.nodeId, cut.source.portId));
 
     edges.push(makeCutStubEdge({
       id: cutStubEdgeId(netKey, 'source'),
@@ -751,6 +891,9 @@ function buildNetCutProjection(
       }
 
       const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
+      if (cut.deferLabelPlacement) {
+        deferredNodeIds.add(sinkLabelId);
+      }
       const sinkHandleSide = oppositeHandleSide(elkSideToHandleSide(targetLead.side));
       const sinkLabelNode = makeCutLabelNode(
         sinkLabelId,
@@ -772,6 +915,7 @@ function buildNetCutProjection(
         labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
       );
       nodes.push(sinkLabelNode);
+      endpointByLabelId.set(sinkLabelId, endpointKey(edge.target, edge.targetPort));
 
       edges.push(makeCutStubEdge({
         id: cutStubEdgeId(netKey, 'sink', edge.id),
@@ -788,7 +932,133 @@ function buildNetCutProjection(
     }
   }
 
-  return { nodes, edges };
+  const resolvedNodes = resolveCutLabelCollisions(
+    nodes.filter((node) => !deferredNodeIds.has(node.id)),
+    positionedNodes,
+    endpointByLabelId
+  );
+  const resolvedById = new Map(resolvedNodes.map((node) => [node.id, node]));
+  return {
+    // A manual cut should look exactly like a wire split in place. Its ends
+    // therefore stay at their canonical port-lead positions and do not act as
+    // blockers for already-placed labels until Auto Layout activates them.
+    nodes: nodes.map((node) => resolvedById.get(node.id) ?? node),
+    edges
+  };
+}
+
+interface NodeBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function nodeBounds(node: PositionedNode, position = node.position): NodeBounds {
+  const dimensions = diagramNodeDimensions(node);
+  return { ...position, width: dimensions.width, height: dimensions.height };
+}
+
+function boundsOverlap(a: NodeBounds, b: NodeBounds): boolean {
+  return (
+    a.x < b.x + b.width
+    && b.x < a.x + a.width
+    && a.y < b.y + b.height
+    && b.y < a.y + a.height
+  );
+}
+
+function resolveCutLabelCollisions(
+  nodes: PositionedNode[],
+  positionedNodes: PositionedNode[],
+  endpointByLabelId: Map<string, string>
+): PositionedNode[] {
+  // Preserve user-pinned labels. For label/label collisions, keep distinct
+  // endpoints level with their ports while staggering labels that share one
+  // endpoint across its axis. If a canonical position hits a design node,
+  // search both axes for the nearest clear grid position.
+  const resolved = new Map<string, PositionedNode>();
+  const designBounds = positionedNodes.map((node) => nodeBounds(node));
+  const occupiedLabels: Array<NodeBounds & { id: string }> = [];
+  const ordered = [...nodes].sort((a, b) => {
+    if (Boolean(a.fixed) !== Boolean(b.fixed)) return a.fixed ? -1 : 1;
+    return a.id.localeCompare(b.id);
+  });
+
+  for (const node of ordered) {
+    const overlaps = (position: { x: number; y: number }, occupied: NodeBounds[]) => {
+      const bounds = nodeBounds(node, position);
+      return occupied.some((other) => boundsOverlap(bounds, other));
+    };
+    const isBlocked = (position: { x: number; y: number }) => (
+      overlaps(position, designBounds) || overlaps(position, occupiedLabels)
+    );
+
+    let position = node.position;
+    if (!node.fixed && isBlocked(position)) {
+      const side = node.metadata?.cutNet?.handleSide;
+      const crossAxisIsVertical = side === 'left' || side === 'right';
+      const overlapsDesignNode = overlaps(position, designBounds);
+      const maxOffset = diagramSizing.gridSize * (designBounds.length + occupiedLabels.length + 8);
+      const axisCandidates = (offset: number, alongHandle: boolean) => {
+        const moveVertically = alongHandle ? !crossAxisIsVertical : crossAxisIsVertical;
+        return [1, -1].map((direction) => (
+          moveVertically
+            ? { x: node.position.x, y: node.position.y + offset * direction }
+            : { x: node.position.x + offset * direction, y: node.position.y }
+        ));
+      };
+      const firstClearAlongAxis = (alongHandle: boolean) => {
+        for (
+          let offset = diagramSizing.gridSize;
+          offset <= maxOffset;
+          offset += diagramSizing.gridSize
+        ) {
+          const candidate = axisCandidates(offset, alongHandle).find((position) => !isBlocked(position));
+          if (candidate) return candidate;
+        }
+        return undefined;
+      };
+
+      if (!overlapsDesignNode) {
+        const endpoint = endpointByLabelId.get(node.id);
+        const sharesEndpoint = endpoint !== undefined && occupiedLabels.some((bounds) => (
+          boundsOverlap(nodeBounds(node, node.position), bounds)
+          && endpointByLabelId.get(bounds.id) === endpoint
+        ));
+        // Labels on adjacent port rows commonly overlap even though there is
+        // ample room farther out from the owning node. Keep each label on its
+        // port's axis before considering a cross-axis dogleg. Multiple labels
+        // attached to the exact same endpoint have no distinct axes to
+        // preserve, so stagger those across the endpoint instead.
+        const preferHandleAxis = !sharesEndpoint;
+        position = firstClearAlongAxis(preferHandleAxis)
+          ?? firstClearAlongAxis(!preferHandleAxis)
+          ?? position;
+      } else {
+        search: for (
+          let offset = diagramSizing.gridSize;
+          offset <= maxOffset;
+          offset += diagramSizing.gridSize
+        ) {
+          const crossAxisCandidates = axisCandidates(offset, false);
+          const handleAxisCandidates = axisCandidates(offset, true);
+          for (const candidate of [...crossAxisCandidates, ...handleAxisCandidates]) {
+            if (!isBlocked(candidate)) {
+              position = candidate;
+              break search;
+            }
+          }
+        }
+      }
+    }
+
+    const positioned = position === node.position ? node : { ...node, position };
+    resolved.set(node.id, positioned);
+    occupiedLabels.push({ ...nodeBounds(node, position), id: node.id });
+  }
+
+  return nodes.map((node) => resolved.get(node.id) ?? node);
 }
 
 function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
@@ -1441,7 +1711,27 @@ export function elkNodeForDiagramNode(
     let portY = height / 2;
     let leadOverride: number | undefined;
 
-    if (node.kind === 'register') {
+    if (node.kind === 'netLabel') {
+      const handleSide = node.metadata?.cutNet?.handleSide;
+      if (handleSide === 'right') {
+        side = 'EAST';
+        portX = width;
+      } else if (handleSide === 'top') {
+        side = 'NORTH';
+        portX = width / 2;
+        portY = 0;
+      } else if (handleSide === 'bottom') {
+        side = 'SOUTH';
+        portX = width / 2;
+        portY = height;
+      } else {
+        side = 'WEST';
+        portX = 0;
+      }
+      // A cut stub reserves one grid immediately outside the label handle,
+      // independent of whether that handle is horizontal or vertical.
+      leadOverride = grid;
+    } else if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
       const resetSignal = registerResetSignal(node);
       const inputs = node.ports.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');
@@ -2674,12 +2964,12 @@ function netCutOrigin(edge: DiagramEdge, label: string): 'declared' | 'synthetic
   return edge.metadata?.declaredNetName && edge.metadata.declaredNetName === label ? 'declared' : 'synthetic';
 }
 
-export function mergeNetCut(
+function mergeNetCutState(
   layout: SavedLayout,
   moduleName: string,
   edge: DiagramEdge,
   designModule: DesignModule,
-  nodes: PositionedNode[]
+  nodes?: PositionedNode[]
 ): SavedLayout {
   const netKey = edgeNetKey(edge);
   const existing = layout.modules[moduleName] ?? { nodes: {} };
@@ -2687,15 +2977,15 @@ export function mergeNetCut(
     return layout;
   }
 
-  // Freeze every *real* node currently on screen so cutting this net doesn't
-  // disturb the rest of the diagram — but leave any other net-cut label's own
-  // fixed state exactly as it was: it was never meant to be pinned just
-  // because an unrelated net got cut while it happened to be visible.
-  const frozenNodes = nodes.map((node) => ({
-    ...node,
-    fixed: node.kind === 'netLabel' ? node.fixed : true
-  }));
-  const next = mergeNodePositions(layout, moduleName, frozenNodes);
+  // A manual cut freezes every real node currently on screen so the operation
+  // does not disturb an established layout. First-open automatic cuts omit
+  // `nodes`, allowing ELK to compute the initial layout with the cuts active.
+  const next = nodes
+    ? mergeNodePositions(layout, moduleName, nodes.map((node) => ({
+      ...node,
+      fixed: node.kind === 'netLabel' ? node.fixed : true
+    })))
+    : { version: 1 as const, modules: { ...layout.modules } };
   const nextModule = next.modules[moduleName] ?? { nodes: {} };
   const label = defaultNetCutLabel(edge, designModule, nextModule);
   next.modules[moduleName] = {
@@ -2708,6 +2998,7 @@ export function mergeNetCut(
           nodeId: edge.source,
           ...(edge.sourcePort ? { portId: edge.sourcePort } : {})
         },
+        ...(nodes ? { deferLabelPlacement: true } : {}),
         origin: netCutOrigin(edge, label),
         defaultLabel: label
       }
@@ -2715,6 +3006,16 @@ export function mergeNetCut(
   };
 
   return next;
+}
+
+export function mergeNetCut(
+  layout: SavedLayout,
+  moduleName: string,
+  edge: DiagramEdge,
+  designModule: DesignModule,
+  nodes: PositionedNode[]
+): SavedLayout {
+  return mergeNetCutState(layout, moduleName, edge, designModule, nodes);
 }
 
 // Cuts every one of the given edges' nets in one pass (used when the user
@@ -2731,6 +3032,67 @@ export function mergeNetCuts(
     (acc, edge) => mergeNetCut(acc, moduleName, edge, designModule, nodes),
     layout
   );
+}
+
+/** Adds first-open cuts without pinning a pre-cut set of node positions. */
+export function mergeFirstOpenNetCuts(
+  layout: SavedLayout,
+  moduleName: string,
+  edges: DiagramEdge[],
+  designModule: DesignModule
+): SavedLayout {
+  return edges.reduce(
+    (acc, edge) => mergeNetCutState(acc, moduleName, edge, designModule),
+    layout
+  );
+}
+
+/** Nets that form the computed default for a module with no saved layout. */
+export function firstOpenAutoCutEdges(
+  designModule: DesignModule,
+  includeClockAndReset: boolean
+): DiagramEdge[] {
+  const registerControlPorts = new Set<string>();
+  if (includeClockAndReset) {
+    for (const node of designModule.nodes) {
+      if (node.kind !== 'register') continue;
+      const signals = [registerClockSignal(node), registerResetSignal(node)].filter(
+        (signal): signal is string => Boolean(signal)
+      );
+      for (const port of node.ports) {
+        if (signals.some((signal) => (
+          port.name === signal
+          || port.id === signal
+          || port.connectedSignal === signal
+        ))) {
+          registerControlPorts.add(`${node.id}\0${port.id}`);
+          registerControlPorts.add(`${node.id}\0${port.name}`);
+        }
+      }
+    }
+  }
+
+  const nodesById = new Map(designModule.nodes.map((node) => [node.id, node]));
+
+  const selected: DiagramEdge[] = [];
+  const selectedNets = new Set<string>();
+  for (const edge of designModule.edges) {
+    // Interface links (modport connections, member taps) stay whole on first
+    // open — cutting them hides the interface's own port/modport grouping,
+    // which is the whole point of looking at an interface node.
+    const touchesInterface = nodesById.get(edge.source)?.kind === 'interface'
+      || nodesById.get(edge.target)?.kind === 'interface';
+    if (touchesInterface) continue;
+    const isRegisterControl = edge.targetPort !== undefined
+      && registerControlPorts.has(`${edge.target}\0${edge.targetPort}`);
+    const isDeclared = Boolean(edge.metadata?.declaredNetName);
+    const netKey = edgeNetKey(edge);
+    if ((isRegisterControl || isDeclared) && !selectedNets.has(netKey)) {
+      selected.push(edge);
+      selectedNets.add(netKey);
+    }
+  }
+  return selected;
 }
 
 export function renameCutNet(layout: SavedLayout, moduleName: string, netKey: string, label: string): SavedLayout {
@@ -3050,6 +3412,35 @@ export function mergeRelayoutSelection(
     Object.entries(existing.edges ?? {}).filter(([edgeId]) => !touchedEdgeIds.has(edgeId))
   );
 
+  // A manual cut deliberately leaves its ends where the wire was split, even
+  // if the labels overlap. Auto Layout is the explicit point at which those
+  // ends may start participating in placement. Activate a cut when the
+  // selection contains one of its synthetic labels or either real endpoint.
+  const placedCutKeys = new Set<string>();
+  for (const node of nodes) {
+    if (!released.has(node.id)) continue;
+    const netKey = node.metadata?.cutNet?.netKey;
+    if (netKey) placedCutKeys.add(netKey);
+  }
+  for (const [netKey, cut] of Object.entries(existing.netCuts ?? {})) {
+    if (!cut.deferLabelPlacement) continue;
+    if (released.has(cut.source.nodeId) || designModule.edges.some((edge) => (
+      edgeNetKey(edge) === netKey
+      && edge.source === cut.source.nodeId
+      && edge.sourcePort === cut.source.portId
+      && released.has(edge.target)
+    ))) {
+      placedCutKeys.add(netKey);
+    }
+  }
+  const netCuts = existing.netCuts && Object.fromEntries(
+    Object.entries(existing.netCuts).map(([netKey, cut]) => {
+      if (!placedCutKeys.has(netKey)) return [netKey, cut];
+      const { deferLabelPlacement: _deferred, ...placed } = cut;
+      return [netKey, placed];
+    })
+  );
+
   return {
     version: 1,
     modules: {
@@ -3057,7 +3448,8 @@ export function mergeRelayoutSelection(
       [moduleName]: {
         ...existing,
         nodes: mergedNodes,
-        edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined
+        edges: Object.keys(remainingEdges).length > 0 ? remainingEdges : undefined,
+        netCuts
       }
     }
   };

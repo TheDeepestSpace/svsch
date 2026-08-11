@@ -488,7 +488,7 @@
       "target": "target:interface",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 360 L 528 360 L 600 360 L 600 360"
+      "path": "M 528 360 L 528 360 L 576 360 L 600 360"
     },
     {
       "id": "cut-stub:styled:interface:source",
@@ -496,7 +496,7 @@
       "target": "cut-label:styled:interface:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 360 L 120 360 L 168 360 L 168 360"
+      "path": "M 120 360 L 144 360 L 168 360 L 168 360"
     },
     {
       "id": "cut-stub:styled:plain:sink",
@@ -504,7 +504,7 @@
       "target": "target:plain",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 144 L 528 144 L 600 144 L 600 144"
+      "path": "M 528 144 L 528 144 L 576 144 L 600 144"
     },
     {
       "id": "cut-stub:styled:plain:source",
@@ -512,7 +512,7 @@
       "target": "cut-label:styled:plain:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 144 L 120 144 L 168 144 L 168 144"
+      "path": "M 120 144 L 144 144 L 168 144 L 168 144"
     },
     {
       "id": "cut-stub:styled:stacked:sink",
@@ -536,7 +536,7 @@
       "target": "target:struct",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 288 L 528 288 L 600 288 L 600 288"
+      "path": "M 528 288 L 528 288 L 576 288 L 600 288"
     },
     {
       "id": "cut-stub:styled:struct:source",
@@ -544,7 +544,7 @@
       "target": "cut-label:styled:struct:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 288 L 120 288 L 168 288 L 168 288"
+      "path": "M 120 288 L 144 288 L 168 288 L 168 288"
     },
     {
       "id": "cut-stub:styled:thick:sink",
@@ -552,7 +552,7 @@
       "target": "target:thick",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 528 216 L 528 216 L 600 216 L 600 216"
+      "path": "M 528 216 L 528 216 L 576 216 L 600 216"
     },
     {
       "id": "cut-stub:styled:thick:source",
@@ -560,7 +560,7 @@
       "target": "cut-label:styled:thick:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 144 216 L 144 216 L 168 216 L 168 216"
+      "path": "M 144 216 L 168 216 L 168 216"
     },
     {
       "id": "cut-stub:styled:wstacked:sink",

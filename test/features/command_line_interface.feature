@@ -156,15 +156,15 @@ Feature: Command Line Interface
       [svsch] Using cached design data
       [svsch] Extracting design graph...
       [svsch] Finalizing...
-      [svsch] rendering <expected_file> without a layout file
+      [svsch] rendering <expected_file> <layout_status>
       """
     And a file named "<expected_file>" should exist in the workspace
 
     Examples:
-      | command                            | expected_file |
-      | svsch render top.sv --no-layout    | top.svg       |
-      | svsch render top.sv -o custom.svg  | custom.svg    |
-      | svsch render top.sv --output o.svg | o.svg         |
+      | command                            | expected_file | layout_status                             |
+      | svsch render top.sv --no-layout    | top.svg       | without a layout file                     |
+      | svsch render top.sv -o custom.svg  | custom.svg    | using layout file .svsch/layouts/top.json |
+      | svsch render top.sv --output o.svg | o.svg         | using layout file .svsch/layouts/top.json |
 
   Scenario: Batch rendering to a directory
     Given I have the following files in my workspace:
