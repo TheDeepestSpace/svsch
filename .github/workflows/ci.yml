@@ -334,10 +334,6 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
-    permissions:
-      # The benchmark action pushes results and comments on same-repository PRs.
-      contents: write
-      pull-requests: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -367,28 +363,6 @@ jobs:
         run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
 
       - *mark_workspace_safe_step
-
-      - name: Track diagram-generation benchmark (bdd)
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-        with:
-          name: bdd-diagram-generation-duration
-          tool: customSmallerIsBetter
-          output-file-path: test-results/bdd/artifacts/benchmark.json
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name == 'push' }}
-          # PR comments are posted once, combined across suites, by the
-          # report_benchmarks job below instead of per-suite here.
-          comment-always: false
-          comment-on-alert: false
-          fail-on-alert: false
-
-      - name: Upload benchmark result (bdd)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: benchmark-bdd
-          path: test-results/bdd/artifacts/benchmark.json
 
       - name: Upload BDD Artifacts
         if: always()
@@ -517,14 +491,16 @@ jobs:
           fail-on-alert: false
 
   report_benchmarks:
-    # Posts one PR comment covering all three diagram-generation benchmark
-    # suites, instead of test_visual/test_bdd/test_system each posting their own.
+    # Posts one PR comment covering both diagram-generation benchmark suites
+    # (visual, system), instead of test_visual/test_system each posting their
+    # own. BDD no longer tracks a perf benchmark — see #167 tracking its
+    # re-introduction once the busy-indicator timing artifact is fixed.
     #
     # publish_system_benchmark is deliberately not a dependency: it only runs on
     # push (see above) while this job only runs on pull_request, and it doesn't
     # produce any artifact this job consumes (the system benchmark is re-merged
     # from test_system's raw per-version artifacts below).
-    needs: [prep, build_ci_image, test_visual, test_bdd, test_system]
+    needs: [prep, build_ci_image, test_visual, test_system]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -572,7 +548,6 @@ jobs:
         run: >-
           node scripts/comment-benchmark-summary.mjs
           system-diagram-generation-duration=benchmarks/benchmark-system/benchmark.json
-          bdd-diagram-generation-duration=benchmarks/benchmark-bdd/benchmark.json
           visual-elaboration-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-elaboration.json
           visual-rendering-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-rendering.json
         env:

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   renderSuiteChart,
+  renderStackedSuiteChart,
   renderDeltaTableMarkdown,
   renderDeltaCsv,
   computeDeltaRows,
@@ -11,11 +12,10 @@ import {
 } from './render-benchmark-charts.mjs';
 
 // Charts with few enough entries to label legibly (vscode-version columns for
-// system) keep x-axis names and per-bar delta text. bdd (one column per BDD
-// scenario) and visual (one per spec file/test) can run into the dozens, so
-// their charts drop labels in favor of showing every bar, however thin —
-// visual also gets a full CSV per metric (see below) so the exact numbers
-// aren't lost along with the labels.
+// system) keep x-axis names and per-bar delta text. visual (one column per
+// spec file/test) can run into the dozens, so its chart drops labels in
+// favor of showing every bar, however thin — it also gets a full CSV per
+// metric (see below) so the exact numbers aren't lost along with the labels.
 const CHART_KEYS_WITH_LABELS = new Set(['system']);
 const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
@@ -43,12 +43,11 @@ if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
 }
 
 // Which chart each benchmark suite belongs to, and how it's labeled there.
-// visual's two suites share one chart (two stacked panels, elaboration drawn
-// first/emphasized since that's the Surelog/UHDM C++ path); system and bdd
-// each get their own single-panel chart.
+// visual's two suites share one stacked chart (elaboration segment drawn
+// first since that's the Surelog/UHDM C++ path); system gets its own
+// single-panel chart.
 const METRIC_META = {
   'system-diagram-generation-duration': { chartKey: 'system', chartTitle: 'system-diagram-generation-duration', label: 'Duration', order: 0 },
-  'bdd-diagram-generation-duration': { chartKey: 'bdd', chartTitle: 'bdd-diagram-generation-duration', label: 'Diagram rebuild duration', order: 0 },
   'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
   'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Rendering — webview paint', order: 1 },
 };
@@ -157,7 +156,10 @@ const csvFilenamesByKey = new Map();
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
   const showLabels = CHART_KEYS_WITH_LABELS.has(key);
-  contentByFilename.set(`${key}.svg`, renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics, showLabels }));
+  const svg = key === 'visual'
+    ? renderStackedSuiteChart({ suiteTitle: `${group.title} — fastest to slowest`, metrics, showLabels })
+    : renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics, showLabels });
+  contentByFilename.set(`${key}.svg`, svg);
 
   if (CHART_KEYS_WITH_CSV.has(key)) {
     const csvFilenames = [];

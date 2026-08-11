@@ -13,7 +13,6 @@ import {
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
-import { recordNamedBenchmarkSample } from '../benchmarkUtils';
 
 type ScreenshotCompareBox = {
   x: number;
@@ -44,7 +43,6 @@ export class BddWorld {
   stepCounter = 0;
   updateSnapshots = false;
   nextCliSnapshotStepCounter?: number;
-  diagramRebuildCounter = 0;
 
   // Diagram state
   layout: any = { version: 1, modules: {} };
@@ -284,7 +282,6 @@ export class BddWorld {
 
   // Root of the VSCode workspace shown in the Explorer during BDD tests.
   static readonly BDD_WORKSPACE = path.resolve(__dirname, '../../test/bdd-workspace');
-  static readonly BDD_ARTIFACTS_DIR = path.resolve(__dirname, '../../test-results/bdd/artifacts');
 
   async _ensureGraphBuilt(): Promise<void> {
     if (this.lastGraph) return;
@@ -353,23 +350,21 @@ export class BddWorld {
     }).catch(() => {});
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
-    const rebuildStartedAt = Date.now();
     // Wait for the busy indicator to appear then disappear (extension is rebuilding).
     //
     // The 'visible' wait below times out (10s) on most scenarios instead of
     // observing a transition — the indicator has usually already flashed and
-    // gone by the time this starts polling — which is why the bdd benchmark
-    // chart's bars cluster tightly around 10s regardless of actual work. That
-    // looked purely wasteful, but removing it is NOT safe: it also acts as a
-    // grace period that lets the extension-host round trip (command -> status
-    // 'rebuilding' -> new view -> status 'idle') actually complete before the
-    // 'hidden' wait below is allowed to resolve. Dropping it let 'hidden'
-    // resolve while a rebuild was still in flight (indicator not yet flipped
-    // to visible), producing a stale screenshot and a real snapshot-mismatch
-    // failure in "Navigating to connection source" — so the accurate fix here
-    // needs a real completion signal (e.g. a rebuild generation/version the
-    // webview echoes back) rather than trimming this wait, and is left as
-    // follow-up rather than risking more scenarios on an unverified guess.
+    // gone by the time this starts polling. That looked purely wasteful, but
+    // removing it is NOT safe: it also acts as a grace period that lets the
+    // extension-host round trip (command -> status 'rebuilding' -> new view
+    // -> status 'idle') actually complete before the 'hidden' wait below is
+    // allowed to resolve. Dropping it let 'hidden' resolve while a rebuild
+    // was still in flight (indicator not yet flipped to visible), producing
+    // a stale screenshot and a real snapshot-mismatch failure in "Navigating
+    // to connection source" — so the accurate fix here needs a real
+    // completion signal (e.g. a rebuild generation/version the webview
+    // echoes back) rather than trimming this wait, and is left as follow-up
+    // rather than risking more scenarios on an unverified guess.
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'visible', timeout: 10_000 })
       .catch(() => {});
@@ -377,33 +372,7 @@ export class BddWorld {
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
-    this.diagramRebuildCounter += 1;
-    if (this.scenarioName) {
-      const outlineSuffix = this.isScenarioOutline ? ` #${this.scenarioExampleIndex}` : '';
-      const rebuildSuffix = this.diagramRebuildCounter > 1 ? ` (rebuild ${this.diagramRebuildCounter})` : '';
-      recordNamedBenchmarkSample(
-        path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
-        `${this.scenarioName}${outlineSuffix}${rebuildSuffix}`,
-        'ms',
-        Date.now() - rebuildStartedAt
-      );
-    }
     await this.workbox.waitForTimeout(500);
-  }
-
-  // Records the initial "open a module in SVSCH" render every scenario does
-  // at least once, before any explicit reload/rebuild — distinct name suffix
-  // (" (open)") from _waitForDiagramRebuild()'s samples so the two don't
-  // collide/overwrite each other in the same scenario's benchmark entries.
-  _recordInitialRenderSample(startedAt: number): void {
-    if (!this.scenarioName) return;
-    const outlineSuffix = this.isScenarioOutline ? ` #${this.scenarioExampleIndex}` : '';
-    recordNamedBenchmarkSample(
-      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
-      `${this.scenarioName}${outlineSuffix} (open)`,
-      'ms',
-      Date.now() - startedAt
-    );
   }
 
   async _waitForRenderedModule(moduleName: string, timeout = 60_000): Promise<void> {

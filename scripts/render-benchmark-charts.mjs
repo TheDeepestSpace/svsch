@@ -1,13 +1,17 @@
-// Renders a "master vs. this run" diff bar chart (+ a worst/best delta table)
-// per benchmark suite, as static SVG — no headless browser or charting
-// library, just hand-rolled SVG since the output is a flat image embedded in
-// a GitHub PR comment (no interactivity possible there anyway).
+// Renders per-benchmark-suite bar charts (+ a worst/best delta table) as
+// static SVG — no headless browser or charting library, just hand-rolled SVG
+// since the output is a flat image embedded in a GitHub PR comment (no
+// interactivity possible there anyway). Two chart shapes: a "master vs. this
+// run" diff chart (system) and a stacked elaboration+rendering chart
+// (visual) — see renderSuiteChart / renderStackedSuiteChart below.
 //
-// Palette: blue baseline bar, status-good green / status-critical red delta
-// caps, green-hatched "new" bars for entries with no baseline sample yet.
-// Green/red alone fail the colorblind-separation check for a bar chart, so
-// every delta also carries a direct % label and a positional cue (the cap
-// grows down when faster, up when slower) — never color alone.
+// Diff chart palette: blue baseline bar, status-good green / status-critical
+// red delta caps, blue-hatched "new" bars for entries with no baseline
+// sample yet. Green/red alone fail the colorblind-separation check for a bar
+// chart, so every delta also carries a direct % label and a positional cue
+// (the cap grows down when faster, up when slower) — never color alone.
+// Stacked chart palette: blue elaboration segment, purple rendering segment,
+// hatched in the same color when that segment has no baseline yet.
 const COLORS = {
   surface: '#fcfcfb',
   ink: '#0b0b0b',
@@ -16,6 +20,7 @@ const COLORS = {
   gridline: '#e1e0d9',
   axis: '#c3c2b7',
   blue: '#2a78d6',
+  purple: '#7c4dcc',
   good: '#0ca30c',
   goodText: '#006300',
   critical: '#d03b3b',
@@ -111,11 +116,22 @@ function niceStep(maxValue) {
   return step * magnitude;
 }
 
-const LEGEND_ITEMS = [
-  { swatch: 'solid', color: COLORS.blue, label: 'Baseline (master)' },
-  { swatch: 'solid', color: COLORS.good, label: 'Faster than baseline' },
-  { swatch: 'solid', color: COLORS.critical, label: 'Slower than baseline' },
-  { swatch: 'hatch', color: COLORS.good, label: 'New (no baseline yet)' },
+// "New" (no baseline yet) entries are drawn hatched rather than solid — a
+// texture cue rather than relying on color alone — recolored per chart: blue
+// for the system suite's single baseline-diff bar, blue/purple (matching the
+// solid segment they stand in for) on the visual suite's stacked bar.
+const DIFF_LEGEND_ITEMS = [
+  { fill: COLORS.blue, label: 'Baseline (master)' },
+  { fill: COLORS.good, label: 'Faster than baseline' },
+  { fill: COLORS.critical, label: 'Slower than baseline' },
+  { fill: 'url(#newHatch)', label: 'New (no baseline yet)' },
+];
+
+const STACKED_LEGEND_ITEMS = [
+  { fill: COLORS.blue, label: 'Elaboration' },
+  { fill: COLORS.purple, label: 'Rendering' },
+  { fill: 'url(#newHatchBlue)', label: 'Elaboration (new)' },
+  { fill: 'url(#newHatchPurple)', label: 'Rendering (new)' },
 ];
 
 // Rough (monospace-ish upper bound) text width estimate — good enough to lay
@@ -124,20 +140,19 @@ function estimateTextWidth(text, fontSize) {
   return text.length * fontSize * 0.6;
 }
 
-function legendWidth(x) {
+function legendWidth(x, items) {
   let cursorX = x;
-  for (const item of LEGEND_ITEMS) {
+  for (const item of items) {
     cursorX += 20 + estimateTextWidth(item.label, 12) + LEGEND_ITEM_GAP;
   }
   return cursorX;
 }
 
-function renderLegend(x, y) {
+function renderLegend(x, y, items) {
   let cursorX = x;
   const parts = [];
-  for (const item of LEGEND_ITEMS) {
-    const fill = item.swatch === 'hatch' ? 'url(#newHatch)' : item.color;
-    parts.push(`<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${fill}" />`);
+  for (const item of items) {
+    parts.push(`<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}" />`);
     const labelX = cursorX + 20;
     parts.push(`<text x="${labelX}" y="${y + 11}" font-size="12" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(item.label)}</text>`);
     cursorX = labelX + estimateTextWidth(item.label, 12) + LEGEND_ITEM_GAP;
@@ -234,7 +249,7 @@ export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
   }));
   const names = [...new Set(metricRows.flatMap((metric) => metric.entries.map((entry) => entry.name)))];
 
-  const width = Math.max(legendWidth(24), estimateTextWidth(suiteTitle, 18) + 48);
+  const width = Math.max(legendWidth(24, DIFF_LEGEND_ITEMS), estimateTextWidth(suiteTitle, 18) + 48);
   const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
   const barWidth = Math.max(MIN_BAR_WIDTH, barPitch * BAR_WIDTH_FRACTION);
   const panelCount = metricRows.length;
@@ -253,15 +268,89 @@ export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
   <defs>
     <pattern id="newHatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <rect width="8" height="8" fill="${COLORS.good}" />
+      <rect width="8" height="8" fill="${COLORS.blue}" />
       <line x1="0" y1="0" x2="0" y2="8" stroke="${COLORS.surface}" stroke-width="3" />
     </pattern>
   </defs>
   <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(suiteTitle)}</text>
-  ${renderLegend(24, 52)}
+  ${renderLegend(24, 52, DIFF_LEGEND_ITEMS)}
   ${panels.join('\n')}
   ${showLabels ? renderXLabels(names, lastOriginY, barPitch) : ''}
+</svg>`;
+}
+
+// Visual suite's chart: one stacked bar per test instead of two separate
+// baseline-diff panels — elaboration segment stacked first (blue), rendering
+// stacked on top (purple), so the bar height reads as total diagram-open
+// time. Sorted fastest-to-slowest by that total (not by name) so the shape
+// of the distribution is visible left-to-right. A segment with no baseline
+// yet (first time this test's elaboration/rendering ran) is hatched instead
+// of solid, in the same color as its solid counterpart — a test can gain a
+// baseline for one half before the other, so "new" is tracked per segment.
+export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true }) {
+  const [elaboration, rendering] = metrics;
+  const elabRows = new Map(computeDeltaRows(elaboration.entries, elaboration.baselineByName).map((row) => [row.name, row]));
+  const renderRows = new Map(computeDeltaRows(rendering.entries, rendering.baselineByName).map((row) => [row.name, row]));
+  const totalFor = (name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0);
+  const names = [...new Set([...elabRows.keys(), ...renderRows.keys()])].sort((a, b) => totalFor(a) - totalFor(b));
+
+  const width = Math.max(legendWidth(24, STACKED_LEGEND_ITEMS), estimateTextWidth(suiteTitle, 18) + 48);
+  const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
+  const barWidth = Math.max(MIN_BAR_WIDTH, barPitch * BAR_WIDTH_FRACTION);
+  const labelAreaHeight = showLabels ? LABEL_AREA_HEIGHT : 0;
+  const height = TOP_MARGIN + PANEL_HEIGHT + labelAreaHeight + 24;
+  const originY = TOP_MARGIN + PANEL_HEIGHT;
+  const plotWidth = names.length * barPitch;
+
+  const maxValue = Math.max(1, ...names.map(totalFor));
+  const step = niceStep(maxValue);
+  const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
+  const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
+
+  const parts = [];
+  parts.push(`<text x="${LEFT_MARGIN - 12}" y="${originY - PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Elaboration + rendering duration (ms)</text>`);
+
+  for (let tick = 0; tick <= chartMax; tick += step) {
+    const y = originY - tick * scale;
+    parts.push(`<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
+    parts.push(`<text x="${LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
+  }
+  parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+
+  names.forEach((name, index) => {
+    const x = LEFT_MARGIN + index * barPitch + (barPitch - barWidth) / 2;
+    const elabRow = elabRows.get(name);
+    const renderRow = renderRows.get(name);
+    const elabH = (elabRow?.value ?? 0) * scale;
+    const renderH = (renderRow?.value ?? 0) * scale;
+
+    if (elabRow) {
+      const fill = elabRow.isNew ? 'url(#newHatchBlue)' : COLORS.blue;
+      parts.push(`<rect x="${x}" y="${originY - elabH}" width="${barWidth}" height="${elabH}" fill="${fill}" />`);
+    }
+    if (renderRow) {
+      const fill = renderRow.isNew ? 'url(#newHatchPurple)' : COLORS.purple;
+      parts.push(`<rect x="${x}" y="${originY - elabH - renderH}" width="${barWidth}" height="${renderH}" fill="${fill}" />`);
+    }
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <pattern id="newHatchBlue" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="${COLORS.blue}" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="${COLORS.surface}" stroke-width="3" />
+    </pattern>
+    <pattern id="newHatchPurple" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="${COLORS.purple}" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="${COLORS.surface}" stroke-width="3" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(suiteTitle)}</text>
+  ${renderLegend(24, 52, STACKED_LEGEND_ITEMS)}
+  ${parts.join('\n')}
+  ${showLabels ? renderXLabels(names, originY, barPitch) : ''}
 </svg>`;
 }
 
