@@ -2105,6 +2105,19 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
   const actualImage = PNG.sync.read(pngBuffer);
   const { width, height } = expectedImage;
+  if (actualImage.width !== width || actualImage.height !== height) {
+    if (updateSnapshots) {
+      fs.writeFileSync(snapshotPath, pngBuffer);
+      return;
+    }
+    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    fs.mkdirSync(resultsDir, { recursive: true });
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
+    throw new Error(
+      `CLI PNG snapshot size mismatch for "${snapshotName}": expected ${width}x${height}, got ${actualImage.width}x${actualImage.height}.`,
+    );
+  }
   const diff = new PNG({ width, height });
   const numDiffPixels = pixelmatch(expectedImage.data, actualImage.data, diff.data, width, height, { threshold: 0.1 });
   if (numDiffPixels > 100) {
