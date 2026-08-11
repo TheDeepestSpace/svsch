@@ -215,6 +215,7 @@ jobs:
         env:
           SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA"
           npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" visual
 
@@ -294,6 +295,7 @@ jobs:
         env:
           SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA"
           npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" bdd
 
@@ -372,6 +374,7 @@ jobs:
         env:
           SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA"
           npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" system
 
