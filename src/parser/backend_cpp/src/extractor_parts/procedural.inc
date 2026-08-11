@@ -203,7 +203,19 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle init_lhs = init ? vpi_handle(vpiLhs, init) : nullptr;
     vpiHandle init_rhs = init ? vpi_handle(vpiRhs, init) : nullptr;
     std::string loop_var = getSignalName(init_lhs);
-    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs) || getConstantInt(init_rhs) != 0) return false;
+    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs)) return false;
+
+    // A loop that visits every address 0..N-1 covers the full array regardless of direction:
+    // ascending (init 0, counts up) or descending (init N-1, counts down). Either is canonical.
+    int init_value = getConstantInt(init_rhs);
+    bool descending;
+    if (init_value == 0) {
+        descending = false;
+    } else if (init_value == array_size - 1) {
+        descending = true;
+    } else {
+        return false;
+    }
 
     // RV represents one value broadcast to the full stack, so reject per-address values.
     std::vector<vpiHandle> reset_value_identifiers;
@@ -214,7 +226,11 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle condition = vpi_handle(vpiCondition, loop);
     if (!condition || vpi_get(vpiType, condition) != vpiOperation) return false;
     int condition_op = vpi_get(vpiOpType, condition);
-    if (condition_op != vpiLtOp && condition_op != vpiLeOp) return false;
+    if (descending) {
+        if (condition_op != vpiGeOp) return false;
+    } else {
+        if (condition_op != vpiLtOp && condition_op != vpiLeOp) return false;
+    }
     vpiHandle condition_operands = vpi_iterate(vpiOperand, condition);
     if (!condition_operands) return false;
     vpiHandle condition_lhs = vpi_scan(condition_operands);
@@ -222,7 +238,7 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
     vpi_release_handle(condition_operands);
     if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var || !isLiteralExpr(condition_rhs)) return false;
-    int expected_bound = condition_op == vpiLtOp ? array_size : array_size - 1;
+    int expected_bound = descending ? 0 : (condition_op == vpiLtOp ? array_size : array_size - 1);
     if (getConstantInt(condition_rhs) != expected_bound) return false;
 
     vpiHandle increment = loop_control(vpiForIncStmt);
@@ -230,7 +246,11 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     int increment_type = vpi_get(vpiType, increment);
     if (increment_type == vpiOperation) {
         int increment_op = vpi_get(vpiOpType, increment);
-        if (increment_op != 62 /* post-increment */ && increment_op != 63 /* pre-increment */) return false;
+        if (descending) {
+            if (increment_op != vpiPostDecOp && increment_op != vpiPreDecOp) return false;
+        } else {
+            if (increment_op != vpiPostIncOp && increment_op != vpiPreIncOp) return false;
+        }
         vpiHandle operands = vpi_iterate(vpiOperand, increment);
         if (!operands) return false;
         vpiHandle operand = vpi_scan(operands);
@@ -241,7 +261,8 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
 
     vpiHandle increment_lhs = vpi_handle(vpiLhs, increment);
     vpiHandle increment_rhs = vpi_handle(vpiRhs, increment);
-    if (!increment_lhs || getSignalName(increment_lhs) != loop_var || !increment_rhs || vpi_get(vpiType, increment_rhs) != vpiOperation || vpi_get(vpiOpType, increment_rhs) != vpiAddOp) return false;
+    int expected_step_op = descending ? vpiSubOp : vpiAddOp;
+    if (!increment_lhs || getSignalName(increment_lhs) != loop_var || !increment_rhs || vpi_get(vpiType, increment_rhs) != vpiOperation || vpi_get(vpiOpType, increment_rhs) != expected_step_op) return false;
     vpiHandle increment_operands = vpi_iterate(vpiOperand, increment_rhs);
     if (!increment_operands) return false;
     vpiHandle add_lhs = vpi_scan(increment_operands);

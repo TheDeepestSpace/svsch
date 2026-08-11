@@ -1,4 +1,4 @@
-module array_multi_index_write_reset_non_canonical
+module array_multi_index_write_reset_descending
   ( input logic clk
   , input logic reset
   , input logic [4:0] address

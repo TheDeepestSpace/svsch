@@ -2399,43 +2399,28 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'))).toHaveLength(2);
     });
 
-    it('does not blow up on a non-canonical (decrementing) reset loop, and falls back to per-index addr/rst muxing', async () => {
-      // storage[a] <= 0 for a counting down from 31 to 0 covers the full array, but the loop
-      // shape (descending, `a >= 0`) isn't the ascending 0..N-1 form isCanonicalFullArrayResetLoop
-      // recognizes. This configuration isn't officially supported, but it must still degrade
-      // gracefully to the general variable-index write path instead of crashing the extractor.
+    it('folds a full-range descending reset loop into the stacked array register reset', async () => {
+      // storage[a] <= 0 for a counting down from 31 to 0 covers the full array just like the
+      // ascending 0..N-1 form — only the direction differs — so it folds into the same
+      // register R/RV representation instead of falling back to per-index addr/rst muxing.
       const graph = await runParser(
         backend,
-        'array_multi_index_write_reset_non_canonical.sv',
-        fixture('array_multi_index_write_reset_non_canonical.sv'),
+        'array_multi_index_write_reset_descending.sv',
+        fixture('array_multi_index_write_reset_descending.sv'),
       );
-      const mod = graph.modules.array_multi_index_write_reset_non_canonical ?? Object.values(graph.modules)[0];
-      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_non_canonical:storage');
+      const mod = graph.modules.array_multi_index_write_reset_descending ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_descending:storage');
 
-      // Not folded into the register's reset ports — the loop wasn't recognized as canonical.
       expect(arrayReg).toBeDefined();
-      expect(arrayReg?.ports.some((p) => p.name === 'reset')).toBe(false);
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
       expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
 
-      // Falls back to the same general chained-addr-mux mechanism used for any two distinct
-      // indexed writes to the same array: one addr mux stage per index expression ('a' from the
-      // loop, 'address' from the plain write), rst-gated the same way a genuine partial reset
-      // (same-index write in both branches) would be.
-      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_non_canonical:storage_addr'));
-      expect(addressMuxes).toHaveLength(2);
-
-      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write_reset_non_canonical:storage_addr');
-      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('a');
-      const addressStageMux = addressMuxes.find((n) => n.id !== finalMux?.id);
-      expect(addressStageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
-
-      const rstMux = mod.nodes.find((n) => n.kind === 'mux' && n.label === 'if reset');
-      expect(rstMux).toBeDefined();
-      expect(rstMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('reset');
-      expect(mod.edges.some((e) => e.source === rstMux?.id && e.target === finalMux?.id)).toBe(true);
-
-      // Everything is fully wired — no dangling/empty mux inputs from the unsupported loop shape.
-      expect(mod.nodes.filter((n) => n.kind === 'mux').every((n) => n.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal))).toBe(true);
+      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_descending:storage_addr'));
+      expect(addressMuxes).toHaveLength(1);
+      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write_reset_descending:storage_addr');
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+      expect(mod.edges.some((e) => e.signal === 'reset' && e.target === arrayReg?.id && e.isStacked)).toBe(true);
     });
 
     it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {
