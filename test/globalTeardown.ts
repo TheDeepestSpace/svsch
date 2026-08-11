@@ -22,8 +22,11 @@ const BENCHMARK_SAMPLE_LOGS = [
 ];
 
 export default async function globalTeardown() {
-  for (const { samplesLogFile, benchmarkFile } of BENCHMARK_SAMPLE_LOGS) {
-    finalizeNamedBenchmarkSamples(samplesLogFile, benchmarkFile);
+  try {
+    for (const { samplesLogFile, benchmarkFile } of BENCHMARK_SAMPLE_LOGS) {
+      finalizeNamedBenchmarkSamples(samplesLogFile, benchmarkFile);
+    }
+  } finally {
+    releasePlaywrightLock();
   }
-  releasePlaywrightLock();
 }

@@ -256,7 +256,7 @@ jobs:
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name == 'push' }}
+          auto-push: ${{ github.ref == 'refs/heads/master' }}
           # PR comments are posted once, combined across suites, by the
           # report_benchmarks job below instead of per-suite here.
           comment-always: false
@@ -280,7 +280,7 @@ jobs:
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name == 'push' }}
+          auto-push: ${{ github.ref == 'refs/heads/master' }}
           comment-always: false
           comment-on-alert: false
           fail-on-alert: false
@@ -449,11 +449,11 @@ jobs:
     # the latest version ever getting history), and only one job ever pushes to gh-pages
     # (avoiding a race between concurrent matrix jobs).
     #
-    # Push-only: this is the only place gh-pages actually gets written (auto-push below is
-    # false on pull_request anyway), so PR runs — which execute PR-controlled test code —
-    # never hold this job's contents: write token.
+    # master-only: this is the only place gh-pages actually gets written (auto-push below is
+    # false off master anyway), so PR runs and pushes to other branches — which execute
+    # PR-controlled test code — never hold this job's contents: write token.
     needs: [prep, build_ci_image, test_system]
-    if: github.event_name == 'push'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
@@ -483,7 +483,7 @@ jobs:
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.event_name == 'push' }}
+          auto-push: ${{ github.ref == 'refs/heads/master' }}
           # PR comments are posted once, combined across suites, by the
           # report_benchmarks job below instead of per-suite here.
           comment-always: false
