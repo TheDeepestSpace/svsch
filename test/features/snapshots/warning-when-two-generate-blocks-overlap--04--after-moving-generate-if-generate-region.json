@@ -1,11 +1,51 @@
 {
   "nodes": [
     {
+      "id": "cut-label:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 336
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:g_if_on.u_if:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "instance:top:g_case_def.u_case_def",
       "type": "hdl",
       "position": {
-        "x": 936,
-        "y": 144
+        "x": 192,
+        "y": 312
       },
       "width": 240,
       "height": 96,
@@ -29,7 +69,7 @@
       "id": "instance:top:g_if_on.u_if",
       "type": "hdl",
       "position": {
-        "x": 408,
+        "x": 768,
         "y": 144
       },
       "width": 192,
@@ -55,7 +95,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 360,
         "y": 180
       },
       "width": 120,
@@ -75,8 +115,8 @@
       "id": "port:top:z",
       "type": "hdl",
       "position": {
-        "x": 1440,
-        "y": 180
+        "x": 720,
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -94,21 +134,30 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "source": "cut-label:instance:top:g_if_on.u_if:port:y:sink:edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
+      "target": "instance:top:g_case_def.u_case_def",
+      "sourceHandle": "cut",
+      "targetHandle": "port:a",
+      "path": "M 168 360 L 168 360 L 192 360",
+      "active": true
+    },
+    {
+      "id": "cut-stub:instance:top:g_if_on.u_if:port:y:source",
+      "source": "instance:top:g_if_on.u_if",
+      "target": "cut-label:instance:top:g_if_on.u_if:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 960 192 L 984 192 L 984 192",
+      "active": true
+    },
+    {
       "id": "edge:instance:top:g_case_def.u_case_def:port:top:z:z",
       "source": "instance:top:g_case_def.u_case_def",
       "target": "port:top:z",
       "sourceHandle": "port:y",
       "targetHandle": "port:z",
-      "path": "M 1176 192 L 1200 192 L 1416 192 L 1440 192"
-    },
-    {
-      "id": "edge:instance:top:g_if_on.u_if:instance:top:g_case_def.u_case_def:w1",
-      "source": "instance:top:g_if_on.u_if",
-      "target": "instance:top:g_case_def.u_case_def",
-      "sourceHandle": "port:y",
-      "targetHandle": "port:a",
-      "path": "M 600 192 L 624 192 L 912 192 L 936 192",
-      "active": true
+      "path": "M 432 360 L 456 360 L 696 360 L 720 360"
     },
     {
       "id": "edge:port:top:a:instance:top:g_if_on.u_if:a",
@@ -116,7 +165,7 @@
       "target": "instance:top:g_if_on.u_if",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 144 192 L 168 192 L 384 192 L 408 192",
+      "path": "M 480 192 L 504 192 L 744 192 L 768 192",
       "active": true
     }
   ],
@@ -126,8 +175,8 @@
       "kind": "generate-case",
       "label": "generate case (MODE)",
       "bounds": {
-        "x": 840,
-        "y": 48,
+        "x": 96,
+        "y": 216,
         "width": 432,
         "height": 288
       },
@@ -138,7 +187,7 @@
       "kind": "generate-if",
       "label": "generate if",
       "bounds": {
-        "x": 312,
+        "x": 672,
         "y": 48,
         "width": 384,
         "height": 288
@@ -150,8 +199,8 @@
       "kind": "case-default",
       "label": "g_case_def /* default */",
       "bounds": {
-        "x": 888,
-        "y": 96,
+        "x": 144,
+        "y": 264,
         "width": 336,
         "height": 192
       }
@@ -161,7 +210,7 @@
       "kind": "if",
       "label": "g_if_on /* MODE == 1 */",
       "bounds": {
-        "x": 360,
+        "x": 720,
         "y": 96,
         "width": 288,
         "height": 192

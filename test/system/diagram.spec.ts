@@ -668,6 +668,32 @@ async function systemZoom(webview: FrameLocator): Promise<number> {
   return webview.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
 }
 
+// The webview sits to the right of VS Code's activity/explorer sidebar, whose
+// width varies across VS Code versions. A node panned near the left edge of
+// the canvas can end up rendered underneath that sidebar, so raw-coordinate
+// mouse drags miss it entirely. Pan the canvas right until every box involved
+// clears a safe margin before computing drag coordinates.
+const SYSTEM_DRAG_SAFE_MARGIN_PX = 420;
+
+async function panSystemFlowClear(
+  webview: FrameLocator,
+  boxes: Array<{ x: number } | null>
+): Promise<boolean> {
+  const xs = boxes.filter((box): box is { x: number } => box !== null).map((box) => box.x);
+  const minX = Math.min(...xs);
+  if (!Number.isFinite(minX) || minX >= SYSTEM_DRAG_SAFE_MARGIN_PX) {
+    return false;
+  }
+  const delta = SYSTEM_DRAG_SAFE_MARGIN_PX - minX;
+  await webview.locator('html').evaluate((_element, dx) => {
+    const rf = (window as any).reactFlowInstance;
+    const viewport = rf?.getViewport?.();
+    if (!rf || !viewport) return;
+    rf.setViewport({ ...viewport, x: viewport.x + dx });
+  }, delta);
+  return true;
+}
+
 async function dragSystemNodeByGridCells(
   workbox: Page,
   webview: FrameLocator,
@@ -676,9 +702,16 @@ async function dragSystemNodeByGridCells(
   cellsY: number
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
-  const box = await node.boundingBox();
+  let box = await node.boundingBox();
   if (!box) {
     throw new Error(`Could not get node box for ${nodeId}`);
+  }
+  if (await panSystemFlowClear(webview, [box])) {
+    await workbox.waitForTimeout(100);
+    box = await node.boundingBox();
+    if (!box) {
+      throw new Error(`Could not get node box for ${nodeId}`);
+    }
   }
   const before = await systemNodePosition(webview, nodeId);
   const zoom = await systemZoom(webview);
@@ -703,10 +736,18 @@ async function dragSystemNodeOntoRegion(
   region: Locator
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
-  const nodeBox = await node.boundingBox();
-  const regionBox = await region.boundingBox();
+  let nodeBox = await node.boundingBox();
+  let regionBox = await region.boundingBox();
   if (!nodeBox || !regionBox) {
     throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+  }
+  if (await panSystemFlowClear(webview, [nodeBox, regionBox])) {
+    await workbox.waitForTimeout(100);
+    nodeBox = await node.boundingBox();
+    regionBox = await region.boundingBox();
+    if (!nodeBox || !regionBox) {
+      throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+    }
   }
   const before = await systemNodePosition(webview, nodeId);
   const startX = nodeBox.x + nodeBox.width / 2;

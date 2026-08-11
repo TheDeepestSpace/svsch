@@ -262,6 +262,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: syntax-playwright-artifacts
+          if-no-files-found: ignore
           path: |
             test-results/syntax-book/**
             playwright-report/**
@@ -373,7 +374,7 @@ jobs:
       - *restore_npm_step
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=low
 
   package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
