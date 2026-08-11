@@ -447,6 +447,7 @@ function DiagramApp(): React.ReactElement {
         setView(view);
         setModules(event.data.modules);
         setHovered(undefined, true);
+        setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
       }
@@ -469,6 +470,7 @@ function DiagramApp(): React.ReactElement {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.repeat) return;
       const key = event.key.toLowerCase();
       if (key !== 'r' && key !== 't' && key !== 'c') return;
 
