@@ -208,6 +208,218 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
     // arms, including inactive arms, so expose it separately from the active schematic.
     processGenerateRegions(mod_handle, mod);
 
+    // Multi-instance instantiation (SV LRM 23.2 implicit instance arrays):
+    // `leaf u_leaf [MSB:LSB] (...)`. UHDM elaborates this into N flat vpiModule siblings
+    // (u_leaf[0], u_leaf[1], ...) *and* a dedicated vpiModuleArray container sitting
+    // alongside them on the parent scope, holding the declared vpiRange plus vpiModule
+    // children pointing at those same N elaborated objects. Collapse each array container
+    // into a single stacked "instance" node here (mirroring recordArrayDim's pattern for
+    // reg/wire arrays above) instead of letting the flat loop below emit N separate nodes
+    // and re-walk the submodule body N times. Verified against a real compiled fixture:
+    // uhdm-dump / direct vpi_iterate(112 /* vpiModuleArray */, ...) both show this shape.
+    std::set<std::string> instance_array_bases;
+
+    // vpi_get(vpiLeftRange/vpiRightRange) on a vpiModuleArray's range does not resolve
+    // through UHDM's constant-expr wrapper the way it does for vpiRegArray/vpiArrayVar
+    // (empirically returns 0/0), so read the bound expression's decompiled text instead.
+    auto rangeBoundText = [&](vpiHandle range_handle, int prop) -> std::string {
+        vpiHandle bound = vpi_handle(prop, range_handle);
+        if (!bound) return "";
+        const char* dec = vpi_get_str(vpiDecompile, bound);
+        return dec ? dec : "";
+    };
+
+    // Per port, gather the connected signal name for every array element so we can tell
+    // whether the actual is broadcast to all elements or connects element-wise to a
+    // matching-size unpacked array (SV LRM 23.2 port-connection rule).
+    auto portHighConnSignal = [&](vpiHandle inst, const std::string& port_name) -> std::string {
+        vpiHandle p_itr = vpi_iterate(vpiPort, inst);
+        if (!p_itr) return "";
+        while (vpiHandle p = vpi_scan(p_itr)) {
+            const char* pn = vpi_get_str(vpiName, p);
+            if (pn && port_name == pn) {
+                vpiHandle high = vpi_handle(vpiHighConn, p);
+                return getSignalName(high);
+            }
+        }
+        return "";
+    };
+
+    const int vpiModuleArrayType = 112;
+    {
+        vpiHandle arr_itr = vpi_iterate(vpiModuleArrayType, mod_handle);
+        if (arr_itr) {
+            while (vpiHandle arr_handle = vpi_scan(arr_itr)) {
+                const char* base_name_c = vpi_get_str(vpiName, arr_handle);
+                if (!base_name_c || strlen(base_name_c) == 0) continue;
+                std::string label = base_name_c;
+                if (mod.interfaceSignals.count(label)) continue;
+
+                std::vector<vpiHandle> elements;
+                vpiHandle elem_itr = vpi_iterate(vpiModule, arr_handle);
+                if (elem_itr) {
+                    while (vpiHandle e = vpi_scan(elem_itr)) elements.push_back(e);
+                }
+                if (elements.empty()) continue;
+
+                instance_array_bases.insert(label);
+                vpiHandle rep = elements.front();
+                const char* d_name = vpi_get_str(vpiDefName, rep);
+
+                std::string dim_str;
+                int array_size = static_cast<int>(elements.size());
+                vpiHandle range_itr = vpi_iterate(vpiRange, arr_handle);
+                if (range_itr) {
+                    if (vpiHandle r = vpi_scan(range_itr)) {
+                        std::string lft = rangeBoundText(r, vpiLeftRange);
+                        std::string rgt = rangeBoundText(r, vpiRightRange);
+                        if (!lft.empty() && !rgt.empty()) {
+                            dim_str = "[" + lft + ":" + rgt + "]";
+                            try {
+                                array_size = std::abs(std::stoi(lft) - std::stoi(rgt)) + 1;
+                            } catch (...) {}
+                        }
+                    }
+                }
+
+                Node n;
+                n.id = "instance:" + mod.name + ":" + label;
+                n.kind = "instance";
+                n.label = label;
+                if (d_name) {
+                    std::string dn = d_name;
+                    if (dn.rfind("work@", 0) == 0) dn = dn.substr(5);
+                    n.instanceOf = dn;
+                    n.moduleName = dn;
+                }
+                n.source = getSourceInfo(arr_handle);
+                n.metadata.instanceParameters = collectInstanceParameters(rep, mod);
+                n.metadata.isArrayNode = true;
+                n.metadata.arraySize = array_size;
+                if (!dim_str.empty()) n.metadata.arrayDimension = dim_str;
+
+                // Elaborate the submodule body once, from a single representative element,
+                // instead of once per array element.
+                if (vpi_get(vpiType, rep) == vpiModule && !n.instanceOf.empty()) {
+                    processModule(rep);
+                }
+
+                vpiHandle rep_port_itr = vpi_iterate(vpiPort, rep);
+                if (rep_port_itr) {
+                    while (vpiHandle p_handle = vpi_scan(rep_port_itr)) {
+                        NodePort np;
+                        const char* pn = vpi_get_str(vpiName, p_handle);
+                        np.name = pn ? pn : "unnamed";
+                        int dir = vpi_get(vpiDirection, p_handle);
+                        np.direction = (dir == vpiInput) ? "input" : (dir == vpiOutput ? "output" : (dir == vpiInout ? "inout" : "unknown"));
+                        vpiHandle high = vpi_handle(vpiHighConn, p_handle);
+                        vpiHandle low = vpi_handle(vpiLowConn, p_handle);
+                        np.signal = getSignalName(high);
+                        np.width = getWidth(low);
+                        if (np.width.empty() || np.width == "[0:0]") {
+                            std::string w = getWidth(p_handle);
+                            if (!w.empty() && w != "[0:0]") np.width = w;
+                        }
+                        if (np.width.empty() || np.width == "[0:0]") {
+                            std::string w = getDeclaredSignalWidth(mod, np.signal.empty() ? np.name : np.signal);
+                            if (!w.empty()) np.width = w;
+                        }
+                        if (np.width.empty()) np.width = "[0:0]";
+
+                        np.widthExpression = getRangeExpression(low ? low : p_handle);
+                        if (np.widthExpression.empty() && std::regex_search(np.width, std::regex(R"([A-Za-z_$])"))) {
+                            np.widthExpression = np.width;
+                        }
+                        np.parameterRefs = collectParameterRefs(low ? low : p_handle, mod);
+                        fill_parameter_refs_from_width_text(np.widthExpression, getSourceInfo(low ? low : p_handle), np.parameterRefs);
+
+                        // SV LRM 23.2: a port connection expression is evaluated once and
+                        // broadcast to every element, UNLESS the actual is itself an unpacked
+                        // array of matching size, in which case elaboration connects
+                        // element-wise (element i <-> actual[i]). Compare the connected signal
+                        // across every elaborated element to tell which case applies.
+                        bool all_same = true;
+                        std::string common_base;
+                        bool matches_index_pattern = !np.signal.empty();
+                        for (vpiHandle elem : elements) {
+                            std::string sig = (elem == rep) ? np.signal : portHighConnSignal(elem, np.name);
+                            if (sig != np.signal) all_same = false;
+                            size_t br = sig.find('[');
+                            if (br == std::string::npos || sig.empty() || sig.back() != ']') {
+                                matches_index_pattern = false;
+                                continue;
+                            }
+                            std::string b = sig.substr(0, br);
+                            if (common_base.empty()) common_base = b;
+                            else if (common_base != b) matches_index_pattern = false;
+                        }
+                        if (!all_same && matches_index_pattern && !common_base.empty()
+                            && mod.arrayDimensions.count(common_base)
+                            && mod.arraySizes[common_base] == static_cast<int>(elements.size())) {
+                            // Element-wise connection to a matching-size unpacked array: point
+                            // the port at the array's base name so it participates in the same
+                            // stacked-edge machinery already used for array reg/mux nodes.
+                            np.signal = common_base;
+                            std::string element_width = getDeclaredSignalWidth(mod, common_base);
+                            if (!element_width.empty()) np.width = element_width;
+                        }
+                        // Otherwise (all_same, i.e. broadcast — or a shape we don't recognize):
+                        // keep the representative element's own connection as-is.
+
+                        if (high && (np.direction == "input" || np.direction == "inout")) {
+                            if (isLiteralExpr(high)) {
+                                ensureLiteralNode(high, mod, np.signal, np.width, high, np.signal);
+                            } else {
+                                int high_type = vpi_get(vpiType, high);
+                                if (isBusSelectExprType(high_type)) {
+                                    processBusSelect(high, mod);
+                                }
+                            }
+                        }
+                        if (auto field = getStructFieldRef(high, mod)) {
+                            const std::string field_signal = field->first + "." + field->second;
+                            if (np.direction == "input") {
+                                np.signal = ensureStructBreakout(mod, field->first, field->second, getSourceInfo(high));
+                            } else if (np.direction == "output") {
+                                np.signal = field_signal;
+                                ensureStructFieldCompositionInput(mod, field->first, field->second, field_signal, getSourceInfo(high));
+                            }
+                            np.width = fieldWidth(mod.structSignals[field->first].type, field->second);
+                        }
+                        np.typeName = getTypeName(low);
+                        if (np.typeName.empty()) np.typeName = getTypeName(p_handle);
+                        if (auto iface = interfacePortInfoForModule(n.moduleName, np.name)) {
+                            np.typeName = iface->typeName;
+                            np.modportName = iface->modportName;
+                            auto type_it = interfaceTypes_.find(np.typeName);
+                            if (type_it != interfaceTypes_.end()) {
+                                np.typeSource = type_it->second.source;
+                                if (!np.modportName.empty()) {
+                                    auto mp_it = type_it->second.modports.find(np.modportName);
+                                    if (mp_it != type_it->second.modports.end()) {
+                                        np.modportSource = mp_it->second.source;
+                                        np.preferredSide = mp_it->second.preferredSide;
+                                        if (np.preferredSide == "left") {
+                                            np.direction = "output";
+                                        } else if (np.preferredSide == "right") {
+                                            np.direction = "input";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (!np.typeName.empty()) {
+                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(low);
+                            if (np.typeSource.file.empty()) np.typeSource = getTypeSource(p_handle);
+                        }
+                        n.ports.push_back(np);
+                    }
+                }
+                mod.nodes.push_back(n);
+            }
+        }
+    }
+
     // Submodules (Instances)
     for (int it_type : {32, 33}) {
         vpiHandle inst_itr = vpi_iterate(it_type, mod_handle);
@@ -218,6 +430,12 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
                 std::string label = i_name ? i_name : (d_name ? d_name : "instance");
 
                 if (mod.interfaceSignals.count(label)) continue;
+
+                // Already collapsed into a single stacked node above.
+                size_t array_bracket = label.find('[');
+                if (array_bracket != std::string::npos && instance_array_bases.count(label.substr(0, array_bracket))) {
+                    continue;
+                }
 
                 Node n;
                 n.id = "instance:" + mod.name + ":" + label;

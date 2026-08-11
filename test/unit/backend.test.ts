@@ -2203,6 +2203,61 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       }
     });
 
+    it('collapses a [MSB:LSB] multi-instance instantiation into a single stacked instance node', async () => {
+      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const mod = graph.modules.instance_array_top;
+      expect(mod).toBeDefined();
+
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes.length).toBe(1);
+
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
+      expect(arrayInstance.instanceOf).toBe('mux2');
+      expect(arrayInstance.isArrayNode ?? arrayInstance.metadata?.isArrayNode).toBe(true);
+      expect(arrayInstance.arraySize ?? arrayInstance.metadata?.arraySize).toBe(4);
+      expect(arrayInstance.arrayDimension ?? arrayInstance.metadata?.arrayDimension).toBe('[3:0]');
+
+      // The submodule body is elaborated once, not once per array element.
+      expect(Object.keys(graph.modules).sort()).toEqual(['instance_array_top', 'mux2']);
+    });
+
+    it('broadcasts a scalar port connection to every element of an instance array', async () => {
+      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const mod = graph.modules.instance_array_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+
+      // A single shared scalar wire ("sel"), not one element-indexed signal per array slot.
+      const selPort = arrayInstance?.ports.find((p) => p.name === 'sel');
+      expect(selPort?.connectedSignal).toBe('sel');
+
+      expect(mod.edges.some((e) => (
+        e.source === 'port:instance_array_top:sel' && e.sourcePort === 'port:sel'
+        && e.target === arrayInstance?.id && e.targetPort === 'port:sel'
+      ))).toBe(true);
+    });
+
+    it('connects a matching-size unpacked array port element-wise as a stacked edge', async () => {
+      const graph = await runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      const mod = graph.modules.instance_array_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+
+      // The array-typed actuals ("a_arr"/"y_arr"), not a single element's indexed name.
+      const aPort = arrayInstance?.ports.find((p) => p.name === 'a');
+      const yPort = arrayInstance?.ports.find((p) => p.name === 'y');
+      expect(aPort?.connectedSignal).toBe('a_arr');
+      expect(yPort?.connectedSignal).toBe('y_arr');
+
+      expect(mod.edges.some((e) => (
+        e.target === arrayInstance?.id && e.targetPort === 'port:a' && e.signal === 'a_arr' && e.isStacked
+      ))).toBe(true);
+      expect(mod.edges.some((e) => (
+        e.source === arrayInstance?.id && e.sourcePort === 'port:y' && e.signal === 'y_arr' && e.isStacked
+      ))).toBe(true);
+    });
+
     it('emits a single stacked addr mux for variable-index writes', async () => {
       const graph = await arrayRegisterGraph();
       const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
