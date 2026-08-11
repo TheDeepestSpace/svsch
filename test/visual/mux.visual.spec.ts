@@ -1623,8 +1623,18 @@ test.describe('edge route editing', () => {
     await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
     await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
 
-    // A real click selects the node directly.
-    await page.click(`[data-node-id="${nodeId}"]`);
+    const labelBox = await labelLocator.boundingBox();
+    if (!labelBox) throw new Error('Unable to locate cut-label bounding box');
+    const startX = labelBox.x - 8;
+    const startY = labelBox.y - 8;
+    const endX = labelBox.x + labelBox.width + 8;
+    const endY = labelBox.y + labelBox.height + 8;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(endX, endY, { steps: 12 });
+    await page.mouse.up();
+
     await expect(labelLocator).toHaveClass(/react-flow__node-hdl.*selected|selected.*react-flow__node-hdl/);
 
     await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);

@@ -111,7 +111,7 @@
       "target": "cut-label:clk_n",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 168 L 120 168 L 168 168 L 168 168"
+      "path": "M 120 168 L 144 168 L 168 168 L 168 168"
     }
   ]
 }

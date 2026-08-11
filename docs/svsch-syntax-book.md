@@ -566,7 +566,7 @@ endmodule
 
 ### Named Net
 
-An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
+An explicitly declared internal wire is cut automatically on first open, with its declared name labeling both cut ends.
 
 <pre><code>module top (
   input logic a,
@@ -584,7 +584,7 @@ endmodule
 
 ### Multiple Aliases
 
-A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
+A chain of assigns through several named wires collapses into one automatically cut net. The first-declared wire names both cut ends; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
 
 <pre><code>module top (
   input logic a,

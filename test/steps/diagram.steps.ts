@@ -284,14 +284,58 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
 });
 
 When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
-  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
-  await expect(labelNode).toBeVisible();
+  const labelNodes = cutNetLabelNodes(this.webviewPage, label);
+  await expect(labelNodes.first()).toBeVisible();
   const before = JSON.stringify(await readExtensionLayout(this));
-  // Hover the cut-net label to reveal its tie control, then click it.
-  await labelNode.hover({ force: true });
-  await expect(labelNode.locator('.hdl-net-label-tie')).toBeVisible();
-  await labelNode.locator('.hdl-net-label-tie').click();
+  // Fanout labels can overlap after auto-layout, so use the first label whose
+  // hover action is reachable instead of assuming the first DOM node is clear.
+  let tied = false;
+  for (let index = 0; index < await labelNodes.count(); index += 1) {
+    const labelNode = labelNodes.nth(index);
+    await labelNode.hover({ force: true });
+    const tieButton = labelNode.locator('.hdl-net-label-tie');
+    if (await tieButton.isVisible()) {
+      await tieButton.focus();
+      await tieButton.press('Enter');
+      tied = true;
+      break;
+    }
+  }
+  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
   await waitForLayoutChange(this, before, 'After tie net');
+});
+
+When('I tie back every cut net', async function (this: BddWorld) {
+  const labels = this.webviewPage.locator('[data-node-kind="netLabel"]');
+  while (await labels.count() > 0) {
+    const beforeLayout = JSON.stringify(await readExtensionLayout(this));
+    const beforeCount = await labels.count();
+    let tied = false;
+    for (let index = 0; index < beforeCount; index += 1) {
+      const labelNode = labels.nth(index);
+      await labelNode.hover({ force: true });
+      const tieButton = labelNode.locator('.hdl-net-label-tie');
+      if (await tieButton.isVisible()) {
+        await tieButton.focus();
+        await tieButton.press('Enter');
+        tied = true;
+        break;
+      }
+    }
+    expect(tied, 'No reachable Tie control found for the remaining cut nets').toBe(true);
+    await expect.poll(async () => JSON.stringify(await readExtensionLayout(this)) !== beforeLayout, {
+      timeout: 10_000
+    }).toBe(true);
+    await expect.poll(async () => labels.count(), { timeout: 10_000 }).toBeLessThan(beforeCount);
+  }
+  this.layout = await readExtensionLayout(this);
+  await syncLastViewModel(this, this.lastViewModel?.moduleName);
+  await waitForViewportTransformToSettle(this.webviewPage);
+});
+
+When('I fit the diagram in view', async function (this: BddWorld) {
+  await this.webviewPage.locator('.react-flow__controls-fitview').click();
+  await waitForViewportTransformToSettle(this.webviewPage);
 });
 
 When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
@@ -1012,10 +1056,9 @@ Then('the cut net label attached to {string} should not overlap the block {strin
   expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
 });
 
-// Guards against the label picking up the highlight halo/hovered-text style
-// merely because its stub edge got auto-selected along with the block it's
-// attached to (React Flow selects every edge touching a selected node) — the
-// label itself was never actually marqueed, so neither class should appear.
+// Guards against a label picking up the highlight halo/hovered-text style
+// merely because its stub edge got selected along with the attached block.
+// A label physically outside the lasso is not itself selected.
 Then('the cut net label attached to {string} should not be highlighted', async function (this: BddWorld, blockLabel: string) {
   const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
   const labelNode = this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`);
@@ -1643,6 +1686,36 @@ Then('there should be a connection between {string} and the register node {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a cut connection between {string} and the register node {string}', async function (this: BddWorld, source: string, reg: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findNodeIdByLabel(this.webviewPage, reg, 'register');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, reg ${reg}=${targetId}`);
+
+  const result = await this.webviewPage.locator('html').evaluate((_, { sourceId, targetId }) => {
+    const instance = (window as any).getReactFlowInstance?.() ?? (window as any).reactFlowInstance;
+    const edges = instance?.getEdges() ?? [];
+    const sourceStubs = edges.filter((edge: any) => (
+      edge.source === sourceId && edge.data?.edge?.metadata?.cutStub?.role === 'source'
+    ));
+    const sinkStubs = edges.filter((edge: any) => (
+      edge.target === targetId && edge.data?.edge?.metadata?.cutStub?.role === 'sink'
+    ));
+    return {
+      hasMatchingStubs: sourceStubs.some((sourceStub: any) => sinkStubs.some((sinkStub: any) => (
+        sourceStub.data.edge.metadata.cutStub.netKey === sinkStub.data.edge.metadata.cutStub.netKey
+      ))),
+      hasOriginalEdge: edges.some((edge: any) => (
+        edge.source === sourceId
+        && edge.target === targetId
+        && edge.data?.edge?.metadata?.cutStub === undefined
+      ))
+    };
+  }, { sourceId, targetId });
+
+  expect(result.hasMatchingStubs, `Cut connection not found between ${sourceId} and ${targetId}`).toBe(true);
+  expect(result.hasOriginalEdge, `Original connection still shown between ${sourceId} and ${targetId}`).toBe(false);
+});
+
 Then('there should be a connection between {string} and the latch node {string}', async function (this: BddWorld, source: string, latch: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await findNodeIdByLabel(this.webviewPage, latch, 'latch');
@@ -1936,7 +2009,17 @@ Then('there should be a connection from {string} port {string} to {string} port 
     return instance?.getEdges() ?? [];
   });
   const edge = edges.find((e: any) => handleMatches(e.sourceHandle, srcPort) && handleMatches(e.targetHandle, dstPort));
-  expect(edge).toBeDefined();
+  const sourceCutNetKeys = new Set(edges.flatMap((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'source' && handleMatches(e.sourceHandle, srcPort) ? [cutStub.netKey] : [];
+  }));
+  const cutEdge = edges.find((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'sink'
+      && sourceCutNetKeys.has(cutStub.netKey)
+      && handleMatches(e.targetHandle, dstPort);
+  });
+  expect(edge ?? cutEdge).toBeDefined();
 });
 
 Then('I should see a {string} block for {string}', async function (this: BddWorld, kind: string, label: string) {
@@ -2417,15 +2500,27 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
   const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
   const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
-  const startX = box.x + box.width / 2;
-  const startY = box.y + box.height / 2;
+  // Avoid the midpoint: a dangling cut label can sit directly over a region's
+  // resize handle there. The first quarter stays on the same handle while
+  // leaving the common port/label row clear.
+  const startX = box.x + (side === 'top' || side === 'bottom' ? box.width / 4 : box.width / 2);
+  const startY = box.y + (side === 'left' || side === 'right' ? box.height / 4 : box.height / 2);
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  // Keep extreme clamp-testing drags inside the nested webview. Pointer events
+  // do not cross back from VS Code's outer document, so releasing outside the
+  // canvas would leave the resize preview uncommitted.
+  const targetX = canvas
+    ? Math.max(canvas.x + 8, Math.min(startX + dx, canvas.x + canvas.width - 8))
+    : startX + dx;
+  const targetY = canvas
+    ? Math.max(canvas.y + 8, Math.min(startY + dy, canvas.y + canvas.height - 8))
+    : startY + dy;
 
   await world.workbox.mouse.move(startX, startY);
   await world.workbox.mouse.down();
   await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
-  await world.workbox.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  await world.workbox.mouse.move(targetX, targetY, { steps: 12 });
   await world.workbox.mouse.up();
-  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
   if (canvas) {
     await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
   }
