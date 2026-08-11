@@ -2326,6 +2326,26 @@ text {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
+/* Bordered single-letter badge documenting a button's keyboard shortcut
+   (r/t/c), in the style of VS Code's tab/quick-pick kbd hint. Shared by the
+   edge Reroute/Cut controls and the net label Tie control, reusing the same
+   theme tokens as the buttons they sit next to. */
+.svsch-shortcut-glyph {
+  align-items: center;
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 2px;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 9px;
+  height: 12px;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 5px;
+  min-width: 12px;
+  padding: 0 2px;
+}
+
 /* Portal root for floating controls that must paint above node bodies —
    the selection Auto Layout/Cut out toolbar and a cut stub's
    Reroute-to-canonical control (see NodeSelectionToolbar and OrthogonalEdge).

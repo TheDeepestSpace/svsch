@@ -346,6 +346,7 @@ function DiagramApp(): React.ReactElement {
     }, { duration: 250 });
   }, [reactFlow, minZoom, maxZoom]);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
   const [selectionHoverActive, setSelectionHoverActive] = useState(false);
@@ -454,6 +455,84 @@ function DiagramApp(): React.ReactElement {
     vscode.postMessage({ type: 'ready' });
     return () => window.removeEventListener('message', listener);
   }, [setHovered]);
+
+  // r/t/c shortcuts for the Reroute/Cut/Tie controls (see their badges next
+  // to the button labels). Each mirrors exactly what clicking the button
+  // would post, so it only fires when the same hover/selection state that
+  // reveals the button is present — never globally, since with nothing
+  // hovered or selected the target would be ambiguous.
+  useEffect(() => {
+    const isCuttable = (edge: Edge): boolean => {
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'r' && key !== 't' && key !== 'c') return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (!view) return;
+
+      if (key === 't') {
+        const netLabelNode = nodes.find((node) => {
+          const cutNet = node.data.node.metadata?.cutNet;
+          if (!cutNet) return false;
+          return node.selected === true || (hoveredNetKey !== undefined && hoveredNetKey === cutNet.netKey);
+        });
+        const cutNet = netLabelNode?.data.node.metadata?.cutNet;
+        if (!cutNet) return;
+        event.preventDefault();
+        vscode.postMessage({ type: 'tieNet', moduleName: view.moduleName, netKey: cutNet.netKey });
+        return;
+      }
+
+      // Selection wins over hover (matches the batch-Cut/Reroute controls, which
+      // take over the moment more than one cuttable wire is selected); a solo
+      // hover only ever targets the one specific edge under the pointer.
+      const selectedEdges = edges.filter((edge) => edge.selected === true && isCuttable(edge));
+      const targetEdges = selectedEdges.length > 0
+        ? selectedEdges
+        : edges.filter((edge) => edge.id === hoveredEdgeId && isCuttable(edge));
+      if (targetEdges.length === 0) return;
+      event.preventDefault();
+
+      // Matches positionedNodesFromFlowNodes in OrthogonalEdge.tsx: cutting/
+      // rerouting freezes every real block in place, but a net-cut label that's
+      // still tracking its port dynamically must not be forced fixed just
+      // because it happened to be on screen.
+      const positioned = nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
+      }));
+
+      if (key === 'r') {
+        if (targetEdges.length === 1) {
+          vscode.postMessage({ type: 'rerouteEdge', moduleName: view.moduleName, edgeId: targetEdges[0].id, nodes: positioned });
+        } else {
+          vscode.postMessage({ type: 'rerouteEdges', moduleName: view.moduleName, edgeIds: targetEdges.map((edge) => edge.id), nodes: positioned });
+        }
+        return;
+      }
+
+      const diagramEdges = targetEdges
+        .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
+        .filter((edge): edge is DiagramEdge => edge !== undefined);
+      if (diagramEdges.length === 1) {
+        vscode.postMessage({ type: 'cutNet', moduleName: view.moduleName, edge: diagramEdges[0], nodes: positioned });
+      } else {
+        vscode.postMessage({ type: 'cutNets', moduleName: view.moduleName, edges: diagramEdges, nodes: positioned });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, edges, view, hoveredNetKey, hoveredEdgeId]);
 
   useEffect(() => {
     if (!view) {
@@ -772,6 +851,8 @@ function DiagramApp(): React.ReactElement {
           <InteractionContext.Provider value={{
             hoveredNetKey,
             setHovered,
+            hoveredEdgeId,
+            setHoveredEdgeId,
             selectionHoverActive,
             setSelectionHoverActive,
             pendingSelectionAction,
