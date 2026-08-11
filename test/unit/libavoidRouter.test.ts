@@ -169,6 +169,26 @@ describe('single-connection dogleg simplification', () => {
     ], [])).toEqual(route);
   });
 
+  it('uses the mirrored elbow when an obstacle blocks the preferred shortcut', () => {
+    const route = [
+      { x: 144, y: 360 },
+      { x: 216, y: 360 },
+      { x: 216, y: 552 },
+      { x: 384, y: 552 },
+      { x: 384, y: 528 },
+      { x: 456, y: 528 }
+    ];
+
+    expect(simplifyOrthogonalRoute(route, [
+      { x: 212, y: 452, width: 152, height: 104 }
+    ], [])).toEqual([
+      { x: 144, y: 360 },
+      { x: 384, y: 360 },
+      { x: 384, y: 528 },
+      { x: 456, y: 528 }
+    ]);
+  });
+
   it('keeps a dogleg when the shorter replacement would add shared-path overlap', () => {
     const route = [
       { x: 144, y: 0 },

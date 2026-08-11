@@ -46,4 +46,38 @@ describe('routing obstacle geometry', () => {
       bottom: diagramSizing.gridSize / 2
     });
   });
+
+  it('uses the lead instead of extra obstacle padding on a cut source end\'s connected side', () => {
+    const cutEnd: DiagramNode = {
+      id: 'cut-label:clk:source',
+      kind: 'netLabel',
+      label: 'clk',
+      ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+      metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } }
+    };
+
+    expect(routingObstacleMargins(cutEnd, ['WEST'])).toEqual({
+      left: 0,
+      right: diagramSizing.gridSize,
+      top: diagramSizing.gridSize,
+      bottom: diagramSizing.gridSize
+    });
+  });
+
+  it('mirrors cut-end clearance for a sink end with a right-side lead', () => {
+    const cutEnd: DiagramNode = {
+      id: 'cut-label:clk:sink',
+      kind: 'netLabel',
+      label: 'clk',
+      ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
+      metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } }
+    };
+
+    expect(routingObstacleMargins(cutEnd, ['EAST'])).toEqual({
+      left: diagramSizing.gridSize,
+      right: 0,
+      top: diagramSizing.gridSize,
+      bottom: diagramSizing.gridSize
+    });
+  });
 });
