@@ -57,6 +57,28 @@ function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', ...opts });
 }
 
+// Checkout's persisted credentials don't reliably reach git commands run
+// against a linked worktree (fetch/read still work anonymously since the
+// repo is public, but push needs real auth and gets none there), so
+// fetch/push against gh-pages authenticate explicitly with GITHUB_TOKEN —
+// the same "AUTHORIZATION: basic" header actions/checkout itself sets up.
+// Passed via GIT_CONFIG_* env vars rather than a `-c` argv flag: a failed
+// exec's error includes its argv in the thrown message, and since the header
+// is base64 (not the raw token), GitHub's log masking wouldn't catch it there.
+const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${GITHUB_TOKEN}`).toString('base64')}`;
+function gitAuthed(args, opts = {}) {
+  return git(args, {
+    ...opts,
+    env: {
+      ...process.env,
+      ...opts.env,
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+      GIT_CONFIG_VALUE_0: authHeader,
+    },
+  });
+}
+
 const baselineData = (() => {
   try {
     const script = git(['show', 'origin/gh-pages:dev/bench/data.js']);
@@ -91,7 +113,7 @@ function publishFiles(contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      git(['fetch', 'origin', 'gh-pages']);
+      gitAuthed(['fetch', 'origin', 'gh-pages']);
       if (attempt > 1) {
         git(['worktree', 'remove', '--force', worktreeDir]);
       }
@@ -112,7 +134,7 @@ function publishFiles(contentByFilename) {
       git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=github-actions[bot]@users.noreply.github.com',
         'commit', '-m', `Update benchmark charts for PR #${PR_NUMBER}`], { cwd: worktreeDir });
       try {
-        git(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
+        gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
       } catch (err) {
         if (attempt === 3) throw err;
