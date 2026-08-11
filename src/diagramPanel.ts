@@ -317,7 +317,7 @@ export class DiagramPanel {
 
       let extensionCss = '';
       try {
-        const p = path.join(this.context.extensionUri.fsPath, 'media', 'webview.css');
+        const p = path.join(this.context.extensionUri.fsPath, 'media', 'diagram.css');
         if (fs.existsSync(p)) {
           extensionCss = fs.readFileSync(p, 'utf8');
         }

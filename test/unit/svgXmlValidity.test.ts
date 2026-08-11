@@ -21,7 +21,7 @@ describe('exported SVG XML validity', () => {
     `);
     const viewModel = await buildViewModel(graph, 'top', { version: 1, modules: {} });
 
-    const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+    const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
     const reactFlowCssCandidates = [
       path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
       path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css')

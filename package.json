@@ -97,8 +97,8 @@
   "scripts": {
     "clean": "rm -rf media dist node_modules/.vite src/parser/backend_cpp/build",
     "build": "npm run compile",
-    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
-    "build:webview": "CI=true npx vite build",
+    "compile": "npm run clean && npm run build:webview && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
+    "build:webview": "CI=true npx vite build && node scripts/copy-diagram-css.js",
     "build:extension": "npx tsc -p tsconfig.extension.json",
     "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
