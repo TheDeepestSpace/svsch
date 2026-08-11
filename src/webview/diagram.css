@@ -1222,16 +1222,6 @@ text {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 
-/* Merge into a single button group (matching the edge Reroute/Cut controls)
-   whenever both buttons are showing — Auto Layout only renders from 2+
-   selected blocks, so it's always the group's left half when present. Cut
-   out is omitted entirely when there's nothing left to cut, and either
-   control falls back to full rounding when it ends up alone. */
-.svsch-selection-relayout-control {
-  border-radius: 3px 0 0 3px;
-  border-right: none;
-}
-
 /* Plain text sitting just above the wire, matching the cut-net label
    convention (.hdl-net-label-text) — no box/background of its own. */
 .svsch-edge-label div {
