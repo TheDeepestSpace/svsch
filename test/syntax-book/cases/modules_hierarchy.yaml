@@ -67,3 +67,49 @@ cases:
             .a(a),
             .b(b)
           );
+
+  - id: submodule-instance-array
+    title: Instance Array
+    description: Instantiating a submodule with a [MSB:LSB] range collapses the whole array into a single stacked instance node.
+    tags: [instance, hierarchy, array, source-highlight]
+    files:
+      child.sv: |
+        module child (
+          input logic a,
+          output logic b
+        );
+          assign b = a;
+        endmodule
+      top.sv: |
+        module top (
+          input logic [3:0] a,
+          output logic [3:0] b
+        );
+          logic a_arr [3:0];
+          logic b_arr [3:0];
+
+          assign a_arr[0] = a[0];
+          assign a_arr[1] = a[1];
+          assign a_arr[2] = a[2];
+          assign a_arr[3] = a[3];
+
+          child u_child [3:0] (
+            .a (a_arr),
+            .b (b_arr)
+          );
+
+          assign b[0] = b_arr[0];
+          assign b[1] = b_arr[1];
+          assign b[2] = b_arr[2];
+          assign b[3] = b_arr[3];
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: instance
+      nodeLabel: u_child
+      action: doubleClick
+    expect:
+      nodeKinds: [port, instance]
+      targetIsArray: true
+      selectedText: "u_child"
