@@ -185,7 +185,7 @@ export function NetLabelNode({
             onPointerDown={stopDrag}
           >
             Tie
-            <span className="svsch-shortcut-glyph" aria-hidden="true">T</span>
+            <kbd className="svsch-shortcut-glyph" aria-hidden="true">T</kbd>
           </button>
         </span>
       )}

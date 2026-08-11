@@ -2972,14 +2972,19 @@ text {
 /* Bordered single-letter badge documenting a button's keyboard shortcut
    (r/t/c), in the style of VS Code's tab/quick-pick kbd hint. Shared by the
    edge Reroute/Cut controls and the net label Tie control, reusing the same
-   theme tokens as the buttons they sit next to. */
-.svsch-shortcut-glyph {
+   theme tokens as the buttons they sit next to. The heavier bottom border
+   plus inset top highlight read as a keycap with a bit of physical
+   thickness, rather than a flat pill. */
+kbd.svsch-shortcut-glyph {
   align-items: center;
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 2px;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
   display: inline-flex;
   flex-shrink: 0;
+  font-family: inherit;
   font-size: 9px;
   height: 12px;
   justify-content: center;
