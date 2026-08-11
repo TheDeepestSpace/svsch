@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwright';
 import path from 'path';
+import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -15,6 +16,7 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  updateSnapshots: configuredPlaywrightUpdateMode(),
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
@@ -26,7 +28,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     toHaveScreenshot: {
       // Full VSCode window includes the sidebar and status bar which can
       // have minor rendering differences — use a generous pixel budget.
-      maxDiffPixels: 2500,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
     },
   },
   use: {

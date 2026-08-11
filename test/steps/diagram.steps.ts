@@ -7,8 +7,8 @@ import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
+import { comparePngBuffers } from '../pngSnapshotComparison';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
@@ -2097,23 +2097,39 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  const updateSnapshots = shouldUpdateSnapshots(world);
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, pngBuffer);
     return;
   }
-  const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
-  const actualImage = PNG.sync.read(pngBuffer);
-  const { width, height } = expectedImage;
-  const diff = new PNG({ width, height });
-  const numDiffPixels = pixelmatch(expectedImage.data, actualImage.data, diff.data, width, height, { threshold: 0.1 });
-  if (numDiffPixels > 100) {
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
-    fs.mkdirSync(resultsDir, { recursive: true });
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), PNG.sync.write(diff));
-    throw new Error(`CLI PNG snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ.`);
+  const expectedBuffer = fs.readFileSync(snapshotPath);
+  const comparison = comparePngBuffers(
+    expectedBuffer,
+    pngBuffer,
+    SNAPSHOT_THRESHOLDS.pixelmatch.cli,
+    SNAPSHOT_THRESHOLDS.pixelmatch.threshold
+  );
+  if (comparison.matches) return;
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, pngBuffer);
+    return;
   }
+
+  const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+  fs.mkdirSync(resultsDir, { recursive: true });
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), expectedBuffer);
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
+  if (comparison.diffBuffer) {
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), comparison.diffBuffer);
+  }
+  if (comparison.numDiffPixels === undefined) {
+    throw new Error(
+      `CLI PNG snapshot size mismatch for "${snapshotName}": `
+      + `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, `
+      + `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`
+    );
+  }
+  throw new Error(`CLI PNG snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`);
 }
 
 async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
@@ -2125,11 +2141,17 @@ async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  const updateSnapshots = shouldUpdateSnapshots(world);
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, svgContent, 'utf8');
     return;
   }
   const expected = fs.readFileSync(snapshotPath, 'utf8');
+  if (expected === svgContent) return;
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, svgContent, 'utf8');
+    return;
+  }
   if (expected !== svgContent) {
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
     fs.mkdirSync(resultsDir, { recursive: true });
