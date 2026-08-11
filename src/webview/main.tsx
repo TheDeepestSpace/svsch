@@ -480,6 +480,16 @@ function DiagramApp(): React.ReactElement {
       }
       if (!view) return;
 
+      // `nodes`/`edges` are rebuilt from `view` in a separate effect one render
+      // behind this one, so a new graph message can leave this handler holding a
+      // fresh `view` alongside stale node/edge ids from the previous graph.
+      // Bail until the local state has actually caught up, so a shortcut never
+      // combines a new moduleName with ids that belong to the old graph.
+      const viewNodeIds = new Set(view.nodes.map((node) => node.id));
+      const viewEdgeIds = new Set(view.edges.map((edge) => edge.id));
+      const graphInSync = nodes.every((node) => viewNodeIds.has(node.id)) && edges.every((edge) => viewEdgeIds.has(edge.id));
+      if (!graphInSync) return;
+
       if (key === 't') {
         const netLabelNode = nodes.find((node) => {
           const cutNet = node.data.node.metadata?.cutNet;
