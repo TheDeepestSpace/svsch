@@ -90,6 +90,11 @@
           "type": "boolean",
           "default": true,
           "description": "Minify SVG diagrams exported via 'Export as SVG' using SVGO."
+        },
+        "svsch.autocut-clk-reset": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically cut nets feeding register clock and reset pins when a module diagram is first opened."
         }
       }
     }

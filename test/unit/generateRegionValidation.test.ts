@@ -91,6 +91,19 @@ describe('generate region validation', () => {
     ])]).toEqual(['external-port']);
   });
 
+  it('does not treat a cut-net label as an external block', () => {
+    const nodes = [
+      node('owned', 24, 24),
+      node('cut-label', 96, 96, 'netLabel')
+    ];
+    const [validated] = annotateGenerateRegionWarnings([
+      region('g0', { x: 0, y: 0, width: 240, height: 240 }, ['owned'])
+    ], nodes);
+
+    expect(validated.invalid).toBeUndefined();
+    expect(findExternalBlockIds([validated], nodes)).toEqual(new Set());
+  });
+
   it('does not flag a generate-block wrapper for its own arms or their blocks', () => {
     const regions = annotateGenerateRegionWarnings([
       region('wrap', { x: 0, y: 0, width: 240, height: 240 }, []),

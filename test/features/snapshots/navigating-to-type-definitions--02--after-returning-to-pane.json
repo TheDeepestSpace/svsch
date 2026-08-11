@@ -1,11 +1,51 @@
 {
   "nodes": [
     {
+      "id": "cut-label:reg:top:current_state:q:sink:edge:reg:top:current_state:port:top:out_state:out_state",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 96
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:current_state:q:source",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 120
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "port:top:in_state",
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 60
+        "y": 132
       },
       "width": 192,
       "height": 24,
@@ -24,8 +64,8 @@
       "id": "port:top:out_state",
       "type": "hdl",
       "position": {
-        "x": 888,
-        "y": 60
+        "x": 1032,
+        "y": 108
       },
       "width": 192,
       "height": 24,
@@ -45,7 +85,7 @@
       "type": "hdl",
       "position": {
         "x": 432,
-        "y": 24
+        "y": 96
       },
       "width": 240,
       "height": 96,
@@ -73,20 +113,28 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:reg:top:current_state:q:sink:edge:reg:top:current_state:port:top:out_state:out_state",
+      "source": "cut-label:reg:top:current_state:q:sink:edge:reg:top:current_state:port:top:out_state:out_state",
+      "target": "port:top:out_state",
+      "sourceHandle": "cut",
+      "targetHandle": "port:out_state",
+      "path": "M 1008 120 L 1008 120 L 1032 120"
+    },
+    {
+      "id": "cut-stub:reg:top:current_state:q:source",
+      "source": "reg:top:current_state",
+      "target": "cut-label:reg:top:current_state:q:source",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 672 144 L 696 144 L 696 144"
+    },
+    {
       "id": "edge:port:top:in_state:reg:top:current_state:in_state",
       "source": "port:top:in_state",
       "target": "reg:top:current_state",
       "sourceHandle": "port:in_state",
       "targetHandle": "d",
-      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
-    },
-    {
-      "id": "edge:reg:top:current_state:port:top:out_state:out_state",
-      "source": "reg:top:current_state",
-      "target": "port:top:out_state",
-      "sourceHandle": "q",
-      "targetHandle": "port:out_state",
-      "path": "M 672 72 L 696 72 L 864 72 L 888 72"
+      "path": "M 216 144 L 240 144 L 408 144 L 432 144"
     }
   ]
 }

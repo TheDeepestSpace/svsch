@@ -42,6 +42,13 @@ export interface SavedNetCut {
     portId?: string;
   };
   /**
+   * Manual cuts initially keep both dangling ends at the exact point where
+   * the wire was split, even if their labels overlap. The first Auto Layout
+   * involving either endpoint removes this marker and enables normal label
+   * placement. Automatic first-open cuts never set it.
+   */
+  deferLabelPlacement?: boolean;
+  /**
    * 'declared' means `label` is the net's actual SV-declared name (a port or
    * wire/reg/var name known from the source) — it must not be silently
    * regenerated and the UI should not allow renaming it. 'synthetic' means
@@ -109,6 +116,18 @@ export class LayoutStore {
 
   private modulePath(moduleName: string): string {
     return path.join(this.layoutsDir, `${encodeURIComponent(moduleName)}.json`);
+  }
+
+  async hasModuleLayout(moduleName: string): Promise<boolean> {
+    try {
+      await fs.access(this.modulePath(moduleName));
+      return true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.warn(`Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+      }
+      return false;
+    }
   }
 
   async readModuleLayout(moduleName: string): Promise<SavedModuleLayout> {

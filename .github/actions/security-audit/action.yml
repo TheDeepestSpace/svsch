@@ -1,0 +1,9 @@
+name: Security Audit
+description: Run npm audit against installed dependencies
+
+runs:
+  using: composite
+  steps:
+    - name: Run npm audit
+      shell: bash
+      run: npm audit --audit-level=low

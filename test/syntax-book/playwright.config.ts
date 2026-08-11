@@ -16,7 +16,10 @@ function getWorktreePort(defaultPort = 5174): number {
 const visualPort = getWorktreePort();
 const visualBaseUrl = `http://127.0.0.1:${visualPort}`;
 
-const reporters: any[] = [['list']];
+const reporters: any[] = process.env.CI
+  ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+  : [['list']];
+
 if (process.env.SVSCH_TEST_STATUS_FILE) {
   reporters.push([path.resolve(root, 'scripts/playwright-progress-reporter.js')]);
 }
