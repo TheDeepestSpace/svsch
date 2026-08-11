@@ -311,7 +311,7 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
   const originY = TOP_MARGIN + PANEL_HEIGHT;
   const plotWidth = names.length * barPitch;
 
-  const maxValue = Math.max(1, ...names.map(totalFor));
+  const maxValue = Math.max(1, ...names.map((name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0)));
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
