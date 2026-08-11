@@ -54,6 +54,7 @@ Feature: Command Line Interface
     And a file named "top.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
     And the CLI SVG should contain "port:top:y"
+    And the CLI SVG should be minified
 
   Scenario: Skipping SVGO minification (--no-minify)
     Given I have a file "top.sv" in my workspace:
@@ -79,7 +80,7 @@ Feature: Command Line Interface
       [svsch] rendering top.svg without a layout file
       """
     And a file named "top.svg" should exist in the workspace
-    And the CLI SVG should contain "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    And the CLI SVG should not be minified
 
   Scenario: Render with manual layout
     Given I have a file "top.sv" in my workspace:
