@@ -64,6 +64,7 @@ When('I open the {string} module in SVSCH', async function (this: BddWorld, modu
       .update('projectFolder', f, (_vscode as any).ConfigurationTarget.Workspace);
   }, folder);
 
+  const openStartedAt = Date.now();
   await this.workbox.keyboard.press('Control+Shift+P');
   await this.workbox.waitForSelector('.quick-input-widget', { timeout: 5_000 });
   await this.workbox.keyboard.type('SVSCH: Open Diagram');
@@ -79,6 +80,7 @@ When('I open the {string} module in SVSCH', async function (this: BddWorld, modu
     .catch(() => {});
 
   await this.selectModule(moduleName, false);
+  this._recordInitialRenderSample(openStartedAt);
   // Remember the original position of every port so movement scenarios can later
   // assert against it without an explicit "I note the position" step.
   await this.recordPortPositions();

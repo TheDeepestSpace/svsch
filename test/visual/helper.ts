@@ -54,7 +54,12 @@ function currentVisualBenchmarkName(): string | undefined {
   }
 }
 
-function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durationMs: number): void {
+// Exported so spec files that keep their own local render helpers (instead of
+// this module's postView()/openFixture()) can still record a sample with the
+// same naming/log-file convention — see mux.visual.spec.ts and
+// bus_composition.visual.spec.ts, which predate this instrumentation and
+// otherwise silently produce zero benchmark data.
+export function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durationMs: number): void {
   const name = currentVisualBenchmarkName();
   if (!name) return;
   const samplesFile = metric === 'elaboration' ? visualElaborationSamplesFile : visualRenderingSamplesFile;

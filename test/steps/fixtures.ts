@@ -391,6 +391,21 @@ export class BddWorld {
     await this.workbox.waitForTimeout(500);
   }
 
+  // Records the initial "open a module in SVSCH" render every scenario does
+  // at least once, before any explicit reload/rebuild — distinct name suffix
+  // (" (open)") from _waitForDiagramRebuild()'s samples so the two don't
+  // collide/overwrite each other in the same scenario's benchmark entries.
+  _recordInitialRenderSample(startedAt: number): void {
+    if (!this.scenarioName) return;
+    const outlineSuffix = this.isScenarioOutline ? ` #${this.scenarioExampleIndex}` : '';
+    recordNamedBenchmarkSample(
+      path.join(BddWorld.BDD_ARTIFACTS_DIR, 'diagram-rebuild-samples.log'),
+      `${this.scenarioName}${outlineSuffix} (open)`,
+      'ms',
+      Date.now() - startedAt
+    );
+  }
+
   async _waitForRenderedModule(moduleName: string, timeout = 60_000): Promise<void> {
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
     try {
