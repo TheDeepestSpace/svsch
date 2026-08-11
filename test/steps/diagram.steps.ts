@@ -2097,7 +2097,8 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  const updateSnapshots = shouldUpdateSnapshots(world);
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, pngBuffer);
     return;
   }
@@ -2107,6 +2108,10 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   const diff = new PNG({ width, height });
   const numDiffPixels = pixelmatch(expectedImage.data, actualImage.data, diff.data, width, height, { threshold: 0.1 });
   if (numDiffPixels > 100) {
+    if (updateSnapshots) {
+      fs.writeFileSync(snapshotPath, pngBuffer);
+      return;
+    }
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
     fs.mkdirSync(resultsDir, { recursive: true });
     fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
@@ -2125,18 +2130,23 @@ async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, svgContent, 'utf8');
     return;
   }
   const expected = fs.readFileSync(snapshotPath, 'utf8');
-  if (expected !== svgContent) {
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
-    fs.mkdirSync(resultsDir, { recursive: true });
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.svg`), expected, 'utf8');
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.svg`), svgContent, 'utf8');
-    throw new Error(`SVG snapshot mismatch for "${snapshotName}".`);
+  if (expected === svgContent) {
+    return;
   }
+  if (shouldUpdateSnapshots(world)) {
+    fs.writeFileSync(snapshotPath, svgContent, 'utf8');
+    return;
+  }
+  const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+  fs.mkdirSync(resultsDir, { recursive: true });
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.svg`), expected, 'utf8');
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.svg`), svgContent, 'utf8');
+  throw new Error(`SVG snapshot mismatch for "${snapshotName}".`);
 }
 
 function consumeCliSnapshotStepCounter(world: BddWorld): number {

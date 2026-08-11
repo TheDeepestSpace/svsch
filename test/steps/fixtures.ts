@@ -238,8 +238,6 @@ export class BddWorld {
     const snapshotMissing = !fs.existsSync(snapshotPath);
     if (snapshotMissing) {
       assertBaselineCreatable(snapshotPath, updateSnapshots);
-    }
-    if (snapshotMissing || updateSnapshots) {
       fs.writeFileSync(snapshotPath, actualBuffer);
       return;
     }
@@ -250,6 +248,10 @@ export class BddWorld {
     const actualForCompare = compareBox ? cropPng(actualImage, compareBox) : actualImage;
     const { width, height } = expectedForCompare;
     if (width !== actualForCompare.width || height !== actualForCompare.height) {
+      if (updateSnapshots) {
+        fs.writeFileSync(snapshotPath, actualBuffer);
+        return;
+      }
       if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
       fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
       fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
@@ -268,6 +270,10 @@ export class BddWorld {
       { threshold: 0.1 }
     );
     if (numDiffPixels > 50) {
+      if (updateSnapshots) {
+        fs.writeFileSync(snapshotPath, actualBuffer);
+        return;
+      }
       if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
       fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
       fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
