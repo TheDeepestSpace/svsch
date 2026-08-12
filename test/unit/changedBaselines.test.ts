@@ -120,6 +120,19 @@ describe('parseChangedBaselines', () => {
     });
   });
 
+  it('pairs a type-change (T) record with itself, like a modification', () => {
+    const output = nameStatus('T', 'test/visual/__screenshots__/foo.spec.ts-snapshots/bar.png');
+    expect(parseChangedBaselines(output)).toEqual({
+      pairs: [
+        {
+          oldPath: 'test/visual/__screenshots__/foo.spec.ts-snapshots/bar.png',
+          newPath: 'test/visual/__screenshots__/foo.spec.ts-snapshots/bar.png',
+        },
+      ],
+      ambiguous: [],
+    });
+  });
+
   it('returns nothing for empty output', () => {
     expect(parseChangedBaselines('')).toEqual({ pairs: [], ambiguous: [] });
   });

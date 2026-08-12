@@ -60,7 +60,7 @@ export function parseChangedBaselines(nameStatusOutput: string): ParsedChangedBa
         pairs.push({ oldPath: records[i + 1], newPath: records[i + 2] });
       }
       i += 3;
-    } else if (status === 'M') {
+    } else if (status === 'M' || status === 'T') {
       if (isBaselinePath(records[i + 1])) {
         pairs.push({ oldPath: records[i + 1], newPath: records[i + 1] });
       }
