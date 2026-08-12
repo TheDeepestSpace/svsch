@@ -8,5 +8,10 @@ test.describe('variable bit select visual', () => {
 
     await expect(page.locator('[data-node-kind="select"]')).toHaveCount(2);
     await expectGraphAndScreenshot(page, 'variable-bit-select.png');
+
+    const select = page.locator('[data-node-kind="select"]').first();
+    await select.click();
+    await expect(select.locator('.node-skin-selection')).toHaveCSS('opacity', '1');
+    await expect(select.locator('.hdl-node-selection-rect')).toHaveCount(0);
   });
 });

@@ -128,7 +128,7 @@
       "target": "cut-label:declared:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 144 52 L 144 52 L 192 52 L 192 52"
+      "path": "M 144 52 L 168 52 L 192 52 L 192 52"
     },
     {
       "id": "cut-stub:renamed:source",
@@ -136,7 +136,7 @@
       "target": "cut-label:renamed:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 292 L 120 292 L 144 292 L 144 292"
+      "path": "M 120 292 L 144 292 L 144 292"
     },
     {
       "id": "cut-stub:synthetic:source",
@@ -144,7 +144,7 @@
       "target": "cut-label:synthetic:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 120 172 L 120 172 L 144 172 L 144 172"
+      "path": "M 120 172 L 144 172 L 144 172"
     }
   ]
 }

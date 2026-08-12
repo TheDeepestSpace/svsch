@@ -1,11 +1,211 @@
 {
   "nodes": [
     {
+      "id": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:mux:top:next_r:next_state_en:next_r_latch_d:next_r",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 312
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:reg:top:r:next_r",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 456
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:latch:top:next_r:q:source",
+      "type": "hdl",
+      "position": {
+        "x": 1584,
+        "y": 288
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
+      "type": "hdl",
+      "position": {
+        "x": 240,
+        "y": 480
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk:port:clk:source",
+      "type": "hdl",
+      "position": {
+        "x": -216,
+        "y": 96
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:r:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 600
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:rst_n:port:rst_n:source",
+      "type": "hdl",
+      "position": {
+        "x": -216,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:r:q:sink:edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:r:q:sink:edge:reg:top:r:port:top:state:state",
+      "type": "hdl",
+      "position": {
+        "x": 1704,
+        "y": 96
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:r:q:source",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 456
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "latch:top:next_r",
       "type": "hdl",
       "position": {
-        "x": 48,
-        "y": 120
+        "x": 1368,
+        "y": 264
       },
       "width": 192,
       "height": 96,
@@ -29,8 +229,8 @@
       "id": "literal:top:IDLE:IDLE",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 324
+        "x": 24,
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -59,8 +259,8 @@
       "id": "literal:top:next_r_BUSY:DONE",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 348
+        "x": 24,
+        "y": 300
       },
       "width": 120,
       "height": 24,
@@ -79,8 +279,8 @@
       "id": "literal:top:next_r_IDLE:START",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 36
+        "x": 24,
+        "y": 204
       },
       "width": 120,
       "height": 24,
@@ -99,8 +299,8 @@
       "id": "literal:top:next_r_START:BUSY",
       "type": "hdl",
       "position": {
-        "x": 504,
-        "y": 84
+        "x": 24,
+        "y": 252
       },
       "width": 120,
       "height": 24,
@@ -119,8 +319,8 @@
       "id": "mux:top:next_r:next_state_en:next_r_latch_d",
       "type": "hdl",
       "position": {
-        "x": 1248,
-        "y": 72
+        "x": 1008,
+        "y": 264
       },
       "width": 144,
       "height": 96,
@@ -154,8 +354,8 @@
       "id": "mux:top:next_r:r:next_r_if_true_n0",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": 192
+        "x": 384,
+        "y": 216
       },
       "width": 192,
       "height": 192,
@@ -204,8 +404,8 @@
       "id": "port:top:clk",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 276
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -224,8 +424,8 @@
       "id": "port:top:next_state_en",
       "type": "hdl",
       "position": {
-        "x": 864,
-        "y": 36
+        "x": 528,
+        "y": 108
       },
       "width": 168,
       "height": 24,
@@ -244,8 +444,8 @@
       "id": "port:top:rst_n",
       "type": "hdl",
       "position": {
-        "x": 120,
-        "y": 228
+        "x": -360,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -264,8 +464,8 @@
       "id": "port:top:state",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": 132
+        "x": 1824,
+        "y": 108
       },
       "width": 144,
       "height": 24,
@@ -284,8 +484,8 @@
       "id": "reg:top:r",
       "type": "hdl",
       "position": {
-        "x": 480,
-        "y": 144
+        "x": 456,
+        "y": 432
       },
       "width": 144,
       "height": 120,
@@ -323,20 +523,84 @@
   ],
   "edges": [
     {
-      "id": "edge:latch:top:next_r:mux:top:next_r:next_state_en:next_r_latch_d:next_r",
-      "source": "latch:top:next_r",
+      "id": "cut-stub:latch:top:next_r:q:sink:edge:latch:top:next_r:mux:top:next_r:next_state_en:next_r_latch_d:next_r",
+      "source": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:mux:top:next_r:next_state_en:next_r_latch_d:next_r",
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
-      "sourceHandle": "q",
+      "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 240 168 L 264 168 L 456 168 L 456 24 L 744 24 L 744 96 L 1128 96 L 1128 144 L 1224 144 L 1248 144"
+      "path": "M 984 336 L 984 336 L 1008 336"
     },
     {
-      "id": "edge:latch:top:next_r:reg:top:r:next_r",
-      "source": "latch:top:next_r",
+      "id": "cut-stub:latch:top:next_r:q:sink:edge:latch:top:next_r:reg:top:r:next_r",
+      "source": "cut-label:latch:top:next_r:q:sink:edge:latch:top:next_r:reg:top:r:next_r",
       "target": "reg:top:r",
-      "sourceHandle": "q",
+      "sourceHandle": "cut",
       "targetHandle": "d",
-      "path": "M 240 168 L 264 168 L 456 168 L 456 192 L 480 192"
+      "path": "M 432 480 L 432 480 L 456 480"
+    },
+    {
+      "id": "cut-stub:latch:top:next_r:q:source",
+      "source": "latch:top:next_r",
+      "target": "cut-label:latch:top:next_r:q:source",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 1560 312 L 1584 312 L 1584 312"
+    },
+    {
+      "id": "cut-stub:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
+      "source": "cut-label:port:top:clk:port:clk:sink:edge:port:top:clk:reg:top:r:clk",
+      "target": "reg:top:r",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 336 504 L 336 504 L 432 504 L 456 504"
+    },
+    {
+      "id": "cut-stub:port:top:clk:port:clk:source",
+      "source": "port:top:clk",
+      "target": "cut-label:port:top:clk:port:clk:source",
+      "sourceHandle": "port:clk",
+      "targetHandle": "cut",
+      "path": "M -240 120 L -216 120 L -216 120"
+    },
+    {
+      "id": "cut-stub:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:r:rst_n",
+      "source": "cut-label:port:top:rst_n:port:rst_n:sink:edge:port:top:rst_n:reg:top:r:rst_n",
+      "target": "reg:top:r",
+      "sourceHandle": "cut",
+      "targetHandle": "rst_n",
+      "path": "M 528 600 L 528 600 L 528 552"
+    },
+    {
+      "id": "cut-stub:port:top:rst_n:port:rst_n:source",
+      "source": "port:top:rst_n",
+      "target": "cut-label:port:top:rst_n:port:rst_n:source",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "cut",
+      "path": "M -240 168 L -216 168 L -216 168"
+    },
+    {
+      "id": "cut-stub:reg:top:r:q:sink:edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
+      "source": "cut-label:reg:top:r:q:sink:edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
+      "target": "mux:top:next_r:r:next_r_if_true_n0",
+      "sourceHandle": "cut",
+      "targetHandle": "sel",
+      "path": "M 480 192 L 480 192 L 480 240"
+    },
+    {
+      "id": "cut-stub:reg:top:r:q:sink:edge:reg:top:r:port:top:state:state",
+      "source": "cut-label:reg:top:r:q:sink:edge:reg:top:r:port:top:state:state",
+      "target": "port:top:state",
+      "sourceHandle": "cut",
+      "targetHandle": "port:state",
+      "path": "M 1800 120 L 1800 120 L 1824 120"
+    },
+    {
+      "id": "cut-stub:reg:top:r:q:source",
+      "source": "reg:top:r",
+      "target": "cut-label:reg:top:r:q:source",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 600 480 L 624 480 L 624 480"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:mux:top:next_r:r:next_r_if_true_n0:next_r_default",
@@ -344,7 +608,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_default",
       "targetHandle": "in:default",
-      "path": "M 240 336 L 264 336 L 816 336 L 840 336"
+      "path": "M 144 360 L 168 360 L 360 360 L 384 360"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:mux:top:next_r:r:next_r_if_true_n0:next_r_DONE",
@@ -352,7 +616,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_DONE",
       "targetHandle": "in:DONE",
-      "path": "M 240 336 L 264 336 L 456 336 L 456 312 L 816 312 L 840 312"
+      "path": "M 144 360 L 168 360 L 192 360 L 192 336 L 360 336 L 384 336"
     },
     {
       "id": "edge:literal:top:IDLE:IDLE:reg:top:r:IDLE",
@@ -360,7 +624,7 @@
       "target": "reg:top:r",
       "sourceHandle": "port:IDLE",
       "targetHandle": "rv",
-      "path": "M 240 336 L 264 336 L 456 336 L 456 240 L 480 240"
+      "path": "M 144 360 L 168 360 L 216 360 L 216 528 L 432 528 L 456 528"
     },
     {
       "id": "edge:literal:top:next_r_BUSY:DONE:mux:top:next_r:r:next_r_if_true_n0:next_r_BUSY",
@@ -368,7 +632,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_BUSY",
       "targetHandle": "in:BUSY",
-      "path": "M 624 360 L 648 360 L 744 360 L 744 345 Q 753 336 744 327 L 744 321 Q 753 312 744 303 L 744 288 L 816 288 L 840 288"
+      "path": "M 144 312 L 168 312 L 360 312 L 384 312"
     },
     {
       "id": "edge:literal:top:next_r_IDLE:START:mux:top:next_r:r:next_r_if_true_n0:next_r_IDLE",
@@ -376,7 +640,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_IDLE",
       "targetHandle": "in:IDLE",
-      "path": "M 624 48 L 648 48 L 744 48 L 744 240 L 816 240 L 840 240"
+      "path": "M 144 216 L 168 216 L 264 216 L 264 264 L 360 264 L 384 264"
     },
     {
       "id": "edge:literal:top:next_r_START:BUSY:mux:top:next_r:r:next_r_if_true_n0:next_r_START",
@@ -384,7 +648,7 @@
       "target": "mux:top:next_r:r:next_r_if_true_n0",
       "sourceHandle": "port:next_r_START",
       "targetHandle": "in:START",
-      "path": "M 624 96 L 648 96 L 720 96 L 720 264 L 816 264 L 840 264"
+      "path": "M 144 264 L 168 264 L 264 264 L 264 288 L 360 288 L 384 288"
     },
     {
       "id": "edge:mux:top:next_r:next_state_en:next_r_latch_d:latch:top:next_r:next_r_latch_d",
@@ -392,7 +656,7 @@
       "target": "latch:top:next_r",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1392 120 L 1416 120 L 1416 0 L 24 0 L 24 168 L 48 168"
+      "path": "M 1152 312 L 1176 312 L 1344 312 L 1368 312"
     },
     {
       "id": "edge:mux:top:next_r:r:next_r_if_true_n0:mux:top:next_r:next_state_en:next_r_latch_d:next_r_if_true_n0",
@@ -400,15 +664,7 @@
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
       "sourceHandle": "out",
       "targetHandle": "in:true",
-      "path": "M 1032 288 L 1056 288 L 1152 288 L 1152 153 Q 1161 144 1152 135 L 1152 120 L 1224 120 L 1248 120"
-    },
-    {
-      "id": "edge:port:top:clk:reg:top:r:clk",
-      "source": "port:top:clk",
-      "target": "reg:top:r",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 240 288 L 264 288 L 360 288 L 360 216 L 456 216 L 480 216"
+      "path": "M 576 312 L 600 312 L 984 312 L 1008 312"
     },
     {
       "id": "edge:port:top:next_state_en:mux:top:next_r:next_state_en:next_r_latch_d:next_state_en",
@@ -416,31 +672,7 @@
       "target": "mux:top:next_r:next_state_en:next_r_latch_d",
       "sourceHandle": "port:next_state_en",
       "targetHandle": "sel",
-      "path": "M 1032 48 L 1056 48 L 1320 48 L 1320 96"
-    },
-    {
-      "id": "edge:port:top:rst_n:reg:top:r:rst_n",
-      "source": "port:top:rst_n",
-      "target": "reg:top:r",
-      "sourceHandle": "port:rst_n",
-      "targetHandle": "rst_n",
-      "path": "M 240 240 L 264 240 L 312 240 L 312 281 Q 319 288 312 295 L 312 312 L 447 312 Q 456 303 465 312 L 552 312 L 552 264"
-    },
-    {
-      "id": "edge:reg:top:r:mux:top:next_r:r:next_r_if_true_n0:r",
-      "source": "reg:top:r",
-      "target": "mux:top:next_r:r:next_r_if_true_n0",
-      "sourceHandle": "q",
-      "targetHandle": "sel",
-      "path": "M 624 192 L 648 192 L 711 192 Q 720 183 729 192 L 735 192 Q 744 183 753 192 L 816 192 L 816 168 L 936 168 L 936 216"
-    },
-    {
-      "id": "edge:reg:top:r:port:top:state:state",
-      "source": "reg:top:r",
-      "target": "port:top:state",
-      "sourceHandle": "q",
-      "targetHandle": "port:state",
-      "path": "M 624 192 L 648 192 L 711 192 Q 720 183 729 192 L 735 192 Q 744 183 753 192 L 816 192 L 816 144 L 840 144"
+      "path": "M 696 120 L 720 120 L 1080 120 L 1080 240 L 1080 288"
     }
   ]
 }

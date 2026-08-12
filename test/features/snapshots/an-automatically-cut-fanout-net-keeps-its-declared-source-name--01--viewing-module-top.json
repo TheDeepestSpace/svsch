@@ -4,7 +4,7 @@
       "id": "cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:x:x",
       "type": "hdl",
       "position": {
-        "x": 216,
+        "x": 336,
         "y": 24
       },
       "width": 120,
@@ -24,7 +24,7 @@
       "id": "cut-label:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
       "type": "hdl",
       "position": {
-        "x": 216,
+        "x": 336,
         "y": 72
       },
       "width": 120,
@@ -44,8 +44,8 @@
       "id": "cut-label:port:top:a:port:a:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": -24
+        "x": 192,
+        "y": 24
       },
       "width": 120,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": -12
+        "x": 48,
+        "y": 36
       },
       "width": 120,
       "height": 24,
@@ -84,7 +84,7 @@
       "id": "port:top:x",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 480,
         "y": 36
       },
       "width": 120,
@@ -104,7 +104,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 480,
         "y": 84
       },
       "width": 120,
@@ -128,7 +128,7 @@
       "target": "port:top:x",
       "sourceHandle": "cut",
       "targetHandle": "port:x",
-      "path": "M 336 48 L 336 48 L 360 48 L 360 48"
+      "path": "M 456 48 L 456 48 L 480 48"
     },
     {
       "id": "cut-stub:port:top:a:port:a:sink:edge:port:top:a:port:top:y:y",
@@ -136,7 +136,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 336 96 L 336 96 L 360 96 L 360 96"
+      "path": "M 456 96 L 456 96 L 480 96"
     },
     {
       "id": "cut-stub:port:top:a:port:a:source",
@@ -144,7 +144,7 @@
       "target": "cut-label:port:top:a:port:a:source",
       "sourceHandle": "port:a",
       "targetHandle": "cut",
-      "path": "M 144 0 L 144 0 L 168 0 L 168 0"
+      "path": "M 168 48 L 192 48 L 192 48"
     }
   ]
 }

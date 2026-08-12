@@ -19,7 +19,7 @@ jobs:
       dev_image_name: ${{ steps.names.outputs.dev_image_name }}
       vscode_versions: ${{ steps.versions.outputs.vscode_versions }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: versions
         run: |
           VERSIONS=$(cat vscode-versions.json | tr -d '\n ' )
@@ -67,7 +67,9 @@ jobs:
     steps:
       - &checkout_step
         name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - &restore_npm_step
         name: Restore node modules
@@ -96,7 +98,7 @@ jobs:
         run: npm run compile:backend
 
       - name: Upload Backend Binary
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: backend-binary
           path: dist/svsch_backend
@@ -120,7 +122,7 @@ jobs:
           SURELOG_AUTO_INSTALL=1 npm run install-surelog
 
       - name: Upload Dist
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-dist
           path: |
@@ -141,7 +143,7 @@ jobs:
         run: npm run build:cli
 
       - name: Upload CLI Dist
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cli-dist
           path: dist/
@@ -168,21 +170,21 @@ jobs:
 
       - &download_dist_step
         name: Download Dist
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: extension-dist
           path: .
 
       - &download_backend_step
         name: Download Backend
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: backend-binary
           path: dist
 
       - &download_cli_step
         name: Download CLI
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: cli-dist
           path: dist
@@ -302,7 +304,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-artifacts
           path: |
@@ -330,9 +332,10 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: syntax-playwright-artifacts
+          if-no-files-found: ignore
           path: |
             test-results/syntax-book/**
             playwright-report/**
@@ -373,7 +376,7 @@ jobs:
 
       - name: Upload BDD Artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts
           path: |
@@ -389,7 +392,7 @@ jobs:
       - *restore_npm_step
 
       - name: Download BDD Artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: bdd-artifacts
           path: .
@@ -398,7 +401,7 @@ jobs:
         run: npm run docs:generate
 
       - name: Upload BDD HTML Documentation
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-html-docs
           path: |
@@ -442,7 +445,7 @@ jobs:
 
       - name: Upload System Test Artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: system-test-results-${{ matrix.vscode_version }}
           path: |
@@ -568,6 +571,8 @@ jobs:
 
   security_audit:
     needs: [prep, build_ci_image, setup]
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -575,7 +580,7 @@ jobs:
       - *restore_npm_step
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
+        uses: ./.github/actions/security-audit
 
   package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
@@ -595,7 +600,7 @@ jobs:
           SURELOG_AUTO_INSTALL: 1
 
       - name: Upload VSIX
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-vsix
           path: "*.vsix"
@@ -616,7 +621,7 @@ jobs:
         run: npm pack
 
       - name: Upload Tarball
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: npm-tarball
           path: "*.tgz"
@@ -627,7 +632,7 @@ jobs:
     container: *container_config
     steps:
       - name: Download Tarball
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: npm-tarball
           path: .

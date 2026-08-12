@@ -284,14 +284,58 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
 });
 
 When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
-  const labelNode = cutNetLabelNodes(this.webviewPage, label).first();
-  await expect(labelNode).toBeVisible();
+  const labelNodes = cutNetLabelNodes(this.webviewPage, label);
+  await expect(labelNodes.first()).toBeVisible();
   const before = JSON.stringify(await readExtensionLayout(this));
-  // Hover the cut-net label to reveal its tie control, then click it.
-  await labelNode.hover({ force: true });
-  await expect(labelNode.locator('.hdl-net-label-tie')).toBeVisible();
-  await labelNode.locator('.hdl-net-label-tie').click();
+  // Fanout labels can overlap after auto-layout, so use the first label whose
+  // hover action is reachable instead of assuming the first DOM node is clear.
+  let tied = false;
+  for (let index = 0; index < await labelNodes.count(); index += 1) {
+    const labelNode = labelNodes.nth(index);
+    await labelNode.hover({ force: true });
+    const tieButton = labelNode.locator('.hdl-net-label-tie');
+    if (await tieButton.isVisible()) {
+      await tieButton.focus();
+      await tieButton.press('Enter');
+      tied = true;
+      break;
+    }
+  }
+  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
   await waitForLayoutChange(this, before, 'After tie net');
+});
+
+When('I tie back every cut net', async function (this: BddWorld) {
+  const labels = this.webviewPage.locator('[data-node-kind="netLabel"]');
+  while (await labels.count() > 0) {
+    const beforeLayout = JSON.stringify(await readExtensionLayout(this));
+    const beforeCount = await labels.count();
+    let tied = false;
+    for (let index = 0; index < beforeCount; index += 1) {
+      const labelNode = labels.nth(index);
+      await labelNode.hover({ force: true });
+      const tieButton = labelNode.locator('.hdl-net-label-tie');
+      if (await tieButton.isVisible()) {
+        await tieButton.focus();
+        await tieButton.press('Enter');
+        tied = true;
+        break;
+      }
+    }
+    expect(tied, 'No reachable Tie control found for the remaining cut nets').toBe(true);
+    await expect.poll(async () => JSON.stringify(await readExtensionLayout(this)) !== beforeLayout, {
+      timeout: 10_000
+    }).toBe(true);
+    await expect.poll(async () => labels.count(), { timeout: 10_000 }).toBeLessThan(beforeCount);
+  }
+  this.layout = await readExtensionLayout(this);
+  await syncLastViewModel(this, this.lastViewModel?.moduleName);
+  await waitForViewportTransformToSettle(this.webviewPage);
+});
+
+When('I fit the diagram in view', async function (this: BddWorld) {
+  await this.webviewPage.locator('.react-flow__controls-fitview').click();
+  await waitForViewportTransformToSettle(this.webviewPage);
 });
 
 When('I click the Revert label control on the cut net {string}', async function (this: BddWorld, label: string) {
@@ -757,6 +801,15 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
   if (this.lastViewModel?.moduleName) {
     await syncLastViewModel(this, this.lastViewModel.moduleName);
   }
+  // Clear any hover affordance (e.g. the Reroute/Cut popup) left over from a
+  // prior step's mouse position; otherwise whether it's still showing here
+  // is a race with the OS/browser re-evaluating :hover, making the
+  // screenshot below flaky.
+  const pane = this.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox().catch(() => null);
+  if (box) {
+    await pane.hover({ position: { x: box.width - 16, y: 16 }, force: true }).catch(() => {});
+  }
   await this.takeScreenshot('After returning to pane');
 });
 
@@ -1012,10 +1065,9 @@ Then('the cut net label attached to {string} should not overlap the block {strin
   expect(overlaps, `the cut net label attached to ${labelBlockLabel} should not overlap ${otherBlockLabel}`).toBe(false);
 });
 
-// Guards against the label picking up the highlight halo/hovered-text style
-// merely because its stub edge got auto-selected along with the block it's
-// attached to (React Flow selects every edge touching a selected node) — the
-// label itself was never actually marqueed, so neither class should appear.
+// Guards against a label picking up the highlight halo/hovered-text style
+// merely because its stub edge got selected along with the attached block.
+// A label physically outside the lasso is not itself selected.
 Then('the cut net label attached to {string} should not be highlighted', async function (this: BddWorld, blockLabel: string) {
   const labelId = await cutLabelNodeIdAttachedTo(this.webviewPage, blockLabel);
   const labelNode = this.webviewPage.locator(`.react-flow__node[data-id="${labelId}"]`);
@@ -1324,6 +1376,29 @@ Then('the CLI SVG should not contain {string}', function (this: BddWorld, unexpe
   expect(this.lastCliSvg).not.toContain(unexpected);
 });
 
+// renderSvg() always emits multi-line output (elements joined with '\n'); SVGO's
+// js2svg defaults to compact (non-pretty) output regardless of which plugins run,
+// collapsing everything to one line. That makes newline presence a check of
+// minification itself, unlike asserting on a specific plugin's output (e.g. the
+// XML prolog, which only removeXMLProcInst strips and could stop being true if
+// the plugin list changes). The embedded <style> block is excluded: its CSS is
+// deliberately left untouched by minifySvg (minifyStyles/inlineStyles are
+// excluded from SAFE_MINIFY_PLUGINS, see svgMinify.ts) to avoid mangling the
+// var(--vscode-...) custom properties, so it keeps its source newlines either way.
+function cliSvgWithoutStyleBlock(svg: string): string {
+  return svg.replace(/<style>[\s\S]*?<\/style>/, '');
+}
+
+Then('the CLI SVG should be minified', function (this: BddWorld) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(cliSvgWithoutStyleBlock(this.lastCliSvg)).not.toContain('\n');
+});
+
+Then('the CLI SVG should not be minified', function (this: BddWorld) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(cliSvgWithoutStyleBlock(this.lastCliSvg)).toContain('\n');
+});
+
 // The CLI honoured the saved layout: the node sits where the user dragged it on
 // the diagram. The CLI SVG and the live diagram share the same layout
 // coordinate frame (both come from buildViewModel), so we compare the SVG node's
@@ -1568,6 +1643,20 @@ Then('there should be a connection between the combinational block in the {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a connection between {string} and the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, mux in ${region}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the mux block in the {string} generate region and {string}', async function (this: BddWorld, region: string, target: string) {
+  const sourceId = await findGenerateRegionNodeIdByKind(this, region, 'mux');
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: mux in ${region}=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
 Then('there should be a connection between {string} and the inverter node', async function (this: BddWorld, source: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await this.webviewPage.locator('html').evaluate(() =>
@@ -1629,6 +1718,36 @@ Then('there should be a connection between {string} and the register node {strin
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
+Then('there should be a cut connection between {string} and the register node {string}', async function (this: BddWorld, source: string, reg: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findNodeIdByLabel(this.webviewPage, reg, 'register');
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, reg ${reg}=${targetId}`);
+
+  const result = await this.webviewPage.locator('html').evaluate((_, { sourceId, targetId }) => {
+    const instance = (window as any).getReactFlowInstance?.() ?? (window as any).reactFlowInstance;
+    const edges = instance?.getEdges() ?? [];
+    const sourceStubs = edges.filter((edge: any) => (
+      edge.source === sourceId && edge.data?.edge?.metadata?.cutStub?.role === 'source'
+    ));
+    const sinkStubs = edges.filter((edge: any) => (
+      edge.target === targetId && edge.data?.edge?.metadata?.cutStub?.role === 'sink'
+    ));
+    return {
+      hasMatchingStubs: sourceStubs.some((sourceStub: any) => sinkStubs.some((sinkStub: any) => (
+        sourceStub.data.edge.metadata.cutStub.netKey === sinkStub.data.edge.metadata.cutStub.netKey
+      ))),
+      hasOriginalEdge: edges.some((edge: any) => (
+        edge.source === sourceId
+        && edge.target === targetId
+        && edge.data?.edge?.metadata?.cutStub === undefined
+      ))
+    };
+  }, { sourceId, targetId });
+
+  expect(result.hasMatchingStubs, `Cut connection not found between ${sourceId} and ${targetId}`).toBe(true);
+  expect(result.hasOriginalEdge, `Original connection still shown between ${sourceId} and ${targetId}`).toBe(false);
+});
+
 Then('there should be a connection between {string} and the latch node {string}', async function (this: BddWorld, source: string, latch: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await findNodeIdByLabel(this.webviewPage, latch, 'latch');
@@ -1679,6 +1798,21 @@ Then('the route from {string} to the combinational block should have shifted by 
   const before = this.notedRoutes.get(routeKey(source, 'comb'));
   if (!before) throw new Error(`Missing noted route for ${source} -> comb`);
   const after = await combRoutePath(this.webviewPage, source);
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+When('I note the route from {string} to the mux block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
+  this.notedRoutes.set(routeKey(source, `mux:${region}`), await generateRegionNodeRoutePath(this, source, region, 'mux'));
+});
+
+Then('the route from {string} to the mux block in the {string} generate region should have shifted by \\({int}, {int}\\) grid cells', async function (this: BddWorld, source: string, region: string, cellsX: number, cellsY: number) {
+  const before = this.notedRoutes.get(routeKey(source, `mux:${region}`));
+  if (!before) throw new Error(`Missing noted route for ${source} -> mux in ${region}`);
+  const after = await generateRegionNodeRoutePath(this, source, region, 'mux');
+  expectRouteToHaveShifted(before, after, cellsX, cellsY);
+});
+
+function expectRouteToHaveShifted(before: string, after: string, cellsX: number, cellsY: number): void {
   const beforeNums = (before.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   const afterNums = (after.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
   expect(afterNums.length, 'route point count changed').toBe(beforeNums.length);
@@ -1691,7 +1825,7 @@ Then('the route from {string} to the combinational block should have shifted by 
     const expectedDelta = i % 2 === 0 ? dx : dy;
     expect(afterNums[i] - beforeNums[i], `coordinate ${i} of the route`).toBeCloseTo(expectedDelta, 0);
   }
-});
+}
 
 Then('the port node {string} should have moved', async function (this: BddWorld, name: string) {
   const id = await findNodeIdByLabel(this.webviewPage, name, 'port');
@@ -1907,7 +2041,17 @@ Then('there should be a connection from {string} port {string} to {string} port 
     return instance?.getEdges() ?? [];
   });
   const edge = edges.find((e: any) => handleMatches(e.sourceHandle, srcPort) && handleMatches(e.targetHandle, dstPort));
-  expect(edge).toBeDefined();
+  const sourceCutNetKeys = new Set(edges.flatMap((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'source' && handleMatches(e.sourceHandle, srcPort) ? [cutStub.netKey] : [];
+  }));
+  const cutEdge = edges.find((e: any) => {
+    const cutStub = e.data?.edge?.metadata?.cutStub;
+    return cutStub?.role === 'sink'
+      && sourceCutNetKeys.has(cutStub.netKey)
+      && handleMatches(e.targetHandle, dstPort);
+  });
+  expect(edge ?? cutEdge).toBeDefined();
 });
 
 Then('I should see a {string} block for {string}', async function (this: BddWorld, kind: string, label: string) {
@@ -2255,6 +2399,17 @@ async function combRoutePath(webviewPage: FrameLocator, source: string): Promise
   return route;
 }
 
+async function generateRegionNodeRoutePath(world: BddWorld, source: string, region: string, kind: string): Promise<string> {
+  const sourceId = await findNodeIdByLabel(world.webviewPage, source);
+  const targetId = await findGenerateRegionNodeIdByKind(world, region, kind);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${kind} in ${region}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(world.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Edge not found between ${sourceId} and ${kind} in ${region}`);
+  const route = await world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`).first().getAttribute('d');
+  if (!route) throw new Error(`Route path not found for ${edgeId}`);
+  return route;
+}
+
 async function waitForViewportTransformToSettle(webviewPage: FrameLocator): Promise<void> {
   await webviewPage.locator('body').evaluate(async () => {
     const getTransform = () => (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
@@ -2377,15 +2532,27 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
   const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
   const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
-  const startX = box.x + box.width / 2;
-  const startY = box.y + box.height / 2;
+  // Avoid the midpoint: a dangling cut label can sit directly over a region's
+  // resize handle there. The first quarter stays on the same handle while
+  // leaving the common port/label row clear.
+  const startX = box.x + (side === 'top' || side === 'bottom' ? box.width / 4 : box.width / 2);
+  const startY = box.y + (side === 'left' || side === 'right' ? box.height / 4 : box.height / 2);
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  // Keep extreme clamp-testing drags inside the nested webview. Pointer events
+  // do not cross back from VS Code's outer document, so releasing outside the
+  // canvas would leave the resize preview uncommitted.
+  const targetX = canvas
+    ? Math.max(canvas.x + 8, Math.min(startX + dx, canvas.x + canvas.width - 8))
+    : startX + dx;
+  const targetY = canvas
+    ? Math.max(canvas.y + 8, Math.min(startY + dy, canvas.y + canvas.height - 8))
+    : startY + dy;
 
   await world.workbox.mouse.move(startX, startY);
   await world.workbox.mouse.down();
   await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
-  await world.workbox.mouse.move(startX + dx, startY + dy, { steps: 12 });
+  await world.workbox.mouse.move(targetX, targetY, { steps: 12 });
   await world.workbox.mouse.up();
-  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
   if (canvas) {
     await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
   }

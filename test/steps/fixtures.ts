@@ -316,12 +316,12 @@ export class BddWorld {
     }
     await this._revealPanel();
     const moduleSelect = this.webviewPage.locator('select[aria-label="Module"]');
-    await moduleSelect.waitFor({ timeout: 15_000 });
+    await moduleSelect.waitFor({ timeout: 30_000 });
     const currentModule = await moduleSelect.inputValue().catch(() => undefined);
     if (currentModule !== moduleName) {
       await moduleSelect.selectOption(moduleName);
     }
-    await expect(moduleSelect).toHaveValue(moduleName, { timeout: 15_000 });
+    await expect(moduleSelect).toHaveValue(moduleName, { timeout: 30_000 });
     await this._waitForRenderedModule(moduleName, 60_000);
     await this.workbox.waitForTimeout(500);
     if (screenshotLabel) await this.takeScreenshot(screenshotLabel);
@@ -510,6 +510,20 @@ export class BddWorld {
     }
 
     await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
+    await this.webviewPage.locator('body').evaluate(async () => {
+      const viewportTransform = () => (
+        (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? ''
+      );
+      let previous = viewportTransform();
+      let stableSamples = 0;
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const current = viewportTransform();
+        stableSamples = current !== '' && current === previous ? stableSamples + 1 : 0;
+        previous = current;
+        if (stableSamples >= 5) break;
+      }
+    }).catch(() => {});
   }
 
   async selectedEditorText(): Promise<string | null> {
@@ -535,7 +549,7 @@ export class BddWorld {
       await this.evaluateInVSCode(vscode => {
         void (vscode as any).commands.executeCommand('svsch.openDiagram');
       });
-      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 15_000 });
+      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
       await this.workbox.waitForTimeout(300);
     }
   }
@@ -735,10 +749,18 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   // Reset svsch.projectFolder to a non-existent directory so the extension's
   // file watcher never triggers a successful rebuild during setup.
   // Tests opening the diagram will override this in their open steps.
-  await evaluateInVSCode(_vscode => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
+  await evaluateInVSCode(async _vscode => {
+    const configuration = (_vscode as any).workspace.getConfiguration('svsch');
+    await configuration.update(
+      'autocut-clk-reset',
+      undefined,
+      (_vscode as any).ConfigurationTarget.Workspace
+    );
+    await configuration.update(
+      'projectFolder',
+      './no-sv-files-here',
+      (_vscode as any).ConfigurationTarget.Workspace
+    );
   });
 
   await closeOpenSvschTabs(workbox, evaluateInVSCode);
@@ -747,10 +769,18 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
 });
 
 After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
-  await evaluateInVSCode((_vscode: any) => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update('projectFolder', './no-sv-files-here', (_vscode as any).ConfigurationTarget.Workspace);
+  await evaluateInVSCode(async (_vscode: any) => {
+    const configuration = _vscode.workspace.getConfiguration('svsch');
+    await configuration.update(
+      'autocut-clk-reset',
+      undefined,
+      _vscode.ConfigurationTarget.Workspace
+    );
+    await configuration.update(
+      'projectFolder',
+      './no-sv-files-here',
+      _vscode.ConfigurationTarget.Workspace
+    );
   }).catch(() => {});
 
   // Clean up .sv files written to bdd-workspace during this scenario

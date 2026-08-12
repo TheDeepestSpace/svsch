@@ -503,6 +503,44 @@ async function expectMuxBodyMasksTopStackLead(page: Page, nodeId: string): Promi
 }
 
 test.describe('mux visual rendering', () => {
+  test('renders a ternary expression as a two-way mux', async ({ page }) => {
+    const view = await openFixture(page, 'mux_ternary.sv');
+
+    expect(view.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('.mux-skin')).toBeVisible();
+    await expect(page.locator('.svsch-mux-select-port >> text=s')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b1')).toBeVisible();
+    await expect(page.locator('.svsch-mux-side-port >> text=1\'b0')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'mux-ternary-node.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders nested ternaries as cascaded muxes', async ({ page }) => {
+    const view = await openFixture(page, 'mux_nested_ternary.sv');
+    const muxes = view.nodes.filter((node) => node.kind === 'mux');
+
+    expect(muxes).toHaveLength(2);
+    expect(view.edges.some((edge) => muxes.some((source) => source.id === edge.source) && muxes.some((target) => target.id === edge.target))).toBe(true);
+    await expect(page.locator('[data-node-kind="mux"]')).toHaveCount(2);
+
+    await expectGraphAndScreenshot(page, 'mux-nested-ternary.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a ternary mux feeding its containing ALU', async ({ page }) => {
+    const view = await openFixture(page, 'mux_ternary_in_alu.sv');
+    const mux = view.nodes.find((node) => node.kind === 'mux');
+    const alu = view.nodes.find((node) => node.kind === 'alu');
+
+    expect(mux).toBeDefined();
+    expect(alu).toBeDefined();
+    expect(view.edges.some((edge) => edge.source === mux?.id && edge.target === alu?.id)).toBe(true);
+    await expect(page.locator('[data-node-kind="mux"]')).toBeVisible();
+    await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
+
+    await expectGraphAndScreenshot(page, 'mux-ternary-in-alu.png', { clip: await paddedGraphClip(page) });
+  });
+
   test('renders a mux node interpreted from SystemVerilog', async ({ page }) => {
     await openFixture(page, 'mux_only.sv', 'manual');
 
@@ -518,6 +556,11 @@ test.describe('mux visual rendering', () => {
     await expect(page.locator('.svsch-mux-side-port >> text=default')).toBeVisible();
 
     await expectGraphAndScreenshot(page, 'mux-node.png', { clip: await paddedLocatorClip(page, '[data-node-kind="mux"]') });
+
+    const mux = page.locator('[data-node-kind="mux"]');
+    await mux.click();
+    await expect(mux.locator('.node-skin-selection')).toHaveCSS('opacity', '1');
+    await expect(mux.locator('.hdl-node-selection-rect')).toHaveCount(0);
   });
 
   test('renders a connected mux canvas interpreted from SystemVerilog', async ({ page }) => {
@@ -919,6 +962,81 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders a full-range zero reset loop on the stacked array register', async ({ page }) => {
+    const view = await openFixture(page, 'array_multi_index_write_reset_sorts_first.sv', 'auto');
+
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+    const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'));
+    const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_sorts_first:storage_addr');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+
+    expect(arrayReg).toBeDefined();
+    expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(1);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
+    expect(view.nodes.some((node) => node.kind === 'mux' && node.label === 'if reset')).toBe(false);
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(view.edges.some((edge) => edge.source === finalMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
+
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-sorts-first-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders RV for a non-zero full-range reset loop', async ({ page }) => {
+    const view = await openFixture(page, 'array_multi_index_write_reset_nonzero.sv', 'auto');
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_nonzero:storage');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+    const resetValueEdge = view.edges.find((edge) => edge.signal === "32'hDEADBEEF" && edge.target === arrayReg?.id);
+
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.find((port) => port.name === 'RV')?.connectedSignal).toBe("32'hDEADBEEF");
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(resetValueEdge?.isStacked).toBe(true);
+    expect(view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_nonzero:storage_addr'))).toHaveLength(1);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] text`, { hasText: 'RV' })).toBeVisible();
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-nonzero-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a full-range descending reset loop on the stacked array register', async ({ page }) => {
+    // storage[a] <= 0 for a counting down from 31 to 0 covers the full array just like the
+    // ascending 0..N-1 form — only the direction differs — so it folds into the same
+    // register R port + single addr-mux structure as the ascending canonical case.
+    const view = await openFixture(page, 'array_multi_index_write_reset_descending.sv', 'auto');
+
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_descending:storage');
+    const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_descending:storage_addr'));
+    const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_descending:storage_addr');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+
+    expect(arrayReg).toBeDefined();
+    expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(1);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
+    expect(view.nodes.some((node) => node.kind === 'mux' && node.label === 'if reset')).toBe(false);
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(view.edges.some((edge) => edge.source === finalMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
+
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-descending-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {
@@ -1066,6 +1184,11 @@ test.describe('ALU visual rendering', () => {
     await expect(page.locator('[data-node-kind="alu"]')).toBeVisible();
     await expect(page.locator('.svsch-alu-operation')).toHaveText('+');
     await expectGraphAndScreenshot(page, 'alu-connected-canvas.png', { clip: await paddedGraphClip(page) });
+
+    const alu = page.locator('[data-node-kind="alu"]');
+    await alu.click();
+    await expect(alu.locator('.node-skin-selection')).toHaveCSS('opacity', '1');
+    await expect(alu.locator('.hdl-node-selection-rect')).toHaveCount(0);
 
     for (const edge of view.edges) {
       await expect(page.locator(`.react-flow__edge[data-id="${edge.id}"]`)).toBeAttached();
@@ -1517,8 +1640,18 @@ test.describe('edge route editing', () => {
     await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(0);
     await expect(labelLocator.locator('.hdl-net-label-text-hovered')).toHaveCount(0);
 
-    // A real click selects the node directly.
-    await page.click(`[data-node-id="${nodeId}"]`);
+    const labelBox = await labelLocator.boundingBox();
+    if (!labelBox) throw new Error('Unable to locate cut-label bounding box');
+    const startX = labelBox.x - 8;
+    const startY = labelBox.y - 8;
+    const endX = labelBox.x + labelBox.width + 8;
+    const endY = labelBox.y + labelBox.height + 8;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(endX, endY, { steps: 12 });
+    await page.mouse.up();
+
     await expect(labelLocator).toHaveClass(/react-flow__node-hdl.*selected|selected.*react-flow__node-hdl/);
 
     await expect(labelLocator.locator('.svsch-edge-net-highlight')).toHaveCount(1);

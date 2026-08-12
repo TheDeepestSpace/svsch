@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -98,6 +98,274 @@ const twoNetGraph: DesignGraph = {
     }
   }
 };
+
+describe('first-open auto-cuts', () => {
+  const module = {
+    name: 'top',
+    file: 'top.sv',
+    ports: [],
+    nodes: [
+      { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'out', name: 'src', direction: 'output' as const }] },
+      {
+        id: 'reg',
+        kind: 'register' as const,
+        label: 'q',
+        clockSignal: 'clk',
+        resetSignal: 'rst_n',
+        ports: [
+          { id: 'd', name: 'D', direction: 'input' as const },
+          { id: 'clock-pin', name: 'clk', direction: 'input' as const },
+          { id: 'reset-pin', name: 'rst_n', direction: 'input' as const }
+        ]
+      },
+      { id: 'sink', kind: 'instance' as const, label: 'sink', ports: [{ id: 'in', name: 'in', direction: 'input' as const }] }
+    ],
+    edges: [
+      { id: 'clock', source: 'clock-src', sourcePort: 'out', target: 'reg', targetPort: 'clock-pin' },
+      { id: 'reset', source: 'reset-src', sourcePort: 'out', target: 'reg', targetPort: 'reset-pin' },
+      { id: 'data', source: 'src', sourcePort: 'out', target: 'reg', targetPort: 'd' },
+      { id: 'declared', source: 'named-src', sourcePort: 'out', target: 'sink', targetPort: 'in', metadata: { declaredNetName: 'named_wire' } },
+      { id: 'inline', source: 'reg', sourcePort: 'd', target: 'sink', targetPort: 'in' }
+    ]
+  };
+
+  it('selects register control nets and declared-name nets', () => {
+    expect(firstOpenAutoCutEdges(module, true).map((edge) => edge.id)).toEqual([
+      'clock',
+      'reset',
+      'declared'
+    ]);
+  });
+
+  it('can disable register control cuts without disabling declared nets', () => {
+    expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
+  });
+
+  it('keeps links touching interface nodes whole on first open', () => {
+    const interfaceModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' as const }] },
+        { id: 'link', kind: 'interface' as const, label: 'link', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
+        { id: 'consumer', kind: 'instance' as const, label: 'consumer', ports: [{ id: 'bus', name: 'bus', direction: 'input' as const }] },
+        { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'p', name: 'src', direction: 'input' as const }] },
+        { id: 'sink', kind: 'port' as const, label: 'sink', ports: [{ id: 'p', name: 'sink', direction: 'output' as const }] }
+      ],
+      edges: [
+        { id: 'clk-link', source: 'clk', sourcePort: 'p', target: 'link', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
+        { id: 'link-consumer', source: 'link', sourcePort: 'clk', target: 'consumer', targetPort: 'bus', metadata: { declaredNetName: 'link' } },
+        { id: 'ordinary', source: 'src', sourcePort: 'p', target: 'sink', targetPort: 'p', metadata: { declaredNetName: 'ordinary' } }
+      ]
+    };
+
+    expect(firstOpenAutoCutEdges(interfaceModule, true).map((edge) => edge.id)).toEqual(['ordinary']);
+  });
+
+  it('columnizes a top-level port that lost every edge to a first-open cut, flanking the rest of the design', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
+      ],
+      edges: [
+        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+    expect(cutLayout.modules.top.nodes).toEqual({});
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const source = byId.get('a')!;
+    const target = byId.get('u')!;
+    const sourceLabel = byId.get('cut-label:a:out:source')!;
+    const sinkLabel = byId.get('cut-label:a:out:sink:a-u')!;
+    const sourceBounds = boundsOf(source);
+    const targetBounds = boundsOf(target);
+    const sourceLabelBounds = boundsOf(sourceLabel);
+    const sinkLabelBounds = boundsOf(sinkLabel);
+
+    // 'a' is the only node in the design apart from 'u', so 'u' alone forms
+    // the "body" the disconnected input port is columnized against. Port
+    // nodes snap to the half-grid row (y ≡ gridSize/2 mod gridSize).
+    expect(sourceBounds.y % diagramSizing.gridSize).toBe(diagramSizing.gridSize / 2);
+    expect(sourceBounds.x + sourceBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+    expect(sourceBounds.x + sourceBounds.width).toBeLessThan(sourceLabelBounds.x);
+    expect(sourceLabelBounds.x + sourceLabelBounds.width).toBeLessThan(sinkLabelBounds.x);
+    expect(sinkLabelBounds.x + sinkLabelBounds.width).toBeLessThan(targetBounds.x);
+  });
+
+  it('stacks multiple disconnected ports on the same side top-to-bottom and sorts input/output into opposite columns', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
+        { id: 'rst_n', kind: 'port' as const, label: 'rst_n', ports: [{ id: 'rst_n', name: 'rst_n', direction: 'input' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'y', name: 'y', direction: 'output' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [
+          { id: 'clk', name: 'clk', direction: 'input' as const },
+          { id: 'rst_n', name: 'rst_n', direction: 'input' as const },
+          { id: 'y', name: 'y', direction: 'output' as const }
+        ] }
+      ],
+      edges: [
+        { id: 'clk-u', source: 'clk', sourcePort: 'clk', target: 'u', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
+        { id: 'rst-u', source: 'rst_n', sourcePort: 'rst_n', target: 'u', targetPort: 'rst_n', metadata: { declaredNetName: 'rst_n' } },
+        { id: 'u-y', source: 'u', sourcePort: 'y', target: 'y', targetPort: 'y', metadata: { declaredNetName: 'y' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const clkBounds = boundsOf(byId.get('clk')!);
+    const rstBounds = boundsOf(byId.get('rst_n')!);
+    const yBounds = boundsOf(byId.get('y')!);
+    const targetBounds = boundsOf(byId.get('u')!);
+
+    // Both cut inputs land left of the body, stacked with no vertical overlap.
+    expect(clkBounds.x + clkBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+    expect(rstBounds.x + rstBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+    expect(boxesOverlap(clkBounds, rstBounds)).toBe(false);
+
+    // The cut output lands right of the body, on the opposite side from the inputs.
+    expect(yBounds.x).toBe(targetBounds.x + targetBounds.width + diagramSizing.columnGap);
+  });
+
+  it('columnizes fully-cut ports even when nothing else survives to anchor a body against', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' as const }] },
+        { id: 'x', kind: 'port' as const, label: 'x', ports: [{ id: 'p', name: 'x', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        { id: 'a-x', source: 'a', sourcePort: 'p', target: 'x', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } },
+        { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', cutLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const aBounds = boundsOf(byId.get('a')!);
+    const xBounds = boundsOf(byId.get('x')!);
+    const yBounds = boundsOf(byId.get('y')!);
+    const sourceLabelBounds = boundsOf(byId.get('cut-label:a:p:source')!);
+    const xLabelBounds = boundsOf(byId.get('cut-label:a:p:sink:a-x')!);
+
+    // 'a' (the only source-direction port) is alone in the left column; 'x'
+    // and 'y' stack in the right column, sorted top-to-bottom. There's no
+    // surviving body here, so the columns sit right next to each other
+    // rather than flanking body-sized empty space.
+    expect(aBounds.x).toBeLessThan(xBounds.x);
+    expect(aBounds.x).toBeLessThan(yBounds.x);
+    expect(xBounds.x).toBe(yBounds.x);
+    expect(xBounds.y).toBeLessThan(yBounds.y);
+    expect(boxesOverlap(xBounds, yBounds)).toBe(false);
+    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(
+      diagramSizing.edgeLeadLength * 2
+      + sourceLabelBounds.width * 2
+      + diagramSizing.gridSize
+    );
+    expect(sourceLabelBounds.x).toBe(
+      aBounds.x + aBounds.width + diagramSizing.edgeLeadLength
+    );
+    expect(sourceLabelBounds.y + sourceLabelBounds.height / 2).toBe(
+      aBounds.y + aBounds.height / 2
+    );
+    expect(sourceLabelBounds.x + sourceLabelBounds.width + diagramSizing.gridSize).toBe(
+      xLabelBounds.x
+    );
+    expect(xLabelBounds.x + xLabelBounds.width + diagramSizing.edgeLeadLength).toBe(xBounds.x);
+  });
+
+  it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {
+    const designModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
+        { id: 'other', kind: 'port' as const, label: 'other', ports: [{ id: 'out', name: 'other', direction: 'input' as const }] },
+        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
+      ],
+      edges: [
+        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
+      ]
+    };
+    const cutLayout = mergeFirstOpenNetCuts(
+      { version: 1, modules: {} },
+      'top',
+      designModule.edges,
+      designModule
+    );
+    // Simulate the module already having a customized layout (e.g. the user
+    // dragged an unrelated node) — moduleLayout.nodes is no longer empty.
+    const customizedLayout: SavedLayout = {
+      version: 1,
+      modules: {
+        ...cutLayout.modules,
+        top: {
+          ...cutLayout.modules.top,
+          nodes: { other: { x: 999, y: 999, fixed: true } }
+        }
+      }
+    };
+
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: designModule }
+    }, 'top', customizedLayout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const source = boundsOf(byId.get('a')!);
+    const target = boundsOf(byId.get('u')!);
+
+    expect(source.x + source.width).not.toBe(target.x - diagramSizing.columnGap);
+  });
+});
 
 function renderedPortCenterY(node: PositionedNode): number {
   return node.position.y + diagramSizing.portHeight / 2;
@@ -311,6 +579,32 @@ describe('layout merge', () => {
         x: placementPort.x! - placement.layoutOffset.x,
         y: placementPort.y! - placement.layoutOffset.y
       });
+    }
+  });
+
+  it('centers cut-label ELK leads on the rendered wire', () => {
+    const cutEnds: DiagramNode[] = [
+      {
+        id: 'cut-label:clk:source',
+        kind: 'netLabel',
+        label: 'clk',
+        ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
+        metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } }
+      },
+      {
+        id: 'cut-label:clk:sink',
+        kind: 'netLabel',
+        label: 'clk',
+        ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
+        metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } }
+      }
+    ];
+
+    for (const cutEnd of cutEnds) {
+      const geometry = elkNodeForDiagramNode(cutEnd, true);
+      expect(geometry.ports[0].y! - geometry.layoutOffset.y).toBe(
+        diagramNodeDimensions(cutEnd).height / 2
+      );
     }
   });
 
@@ -843,6 +1137,7 @@ describe('layout merge', () => {
     expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
+      deferLabelPlacement: true,
       origin: 'declared',
       defaultLabel: 'clk'
     });
@@ -956,6 +1251,7 @@ describe('layout merge', () => {
     expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
       label: 'clk',
       source: { nodeId: 'clk', portId: 'p' },
+      deferLabelPlacement: true,
       origin: 'synthetic',
       defaultLabel: 'clk'
     });
@@ -1033,6 +1329,311 @@ describe('layout merge', () => {
       'cut-label:clk:p:sink:e-clk-u1',
       'cut-label:clk:p:sink:e-clk-u2'
     ]);
+  });
+
+  it('separates automatic cut labels that share the same canonical position', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 0, fixed: true },
+            u1: { x: 144, y: 0, fixed: true },
+            u2: { x: 144, y: 0, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(fanoutGraph, 'top', layout);
+    const labels = view.nodes.filter((node) => node.kind === 'netLabel').map(boundsOf);
+    expect(labels).toHaveLength(3);
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        expect(boxesOverlap(labels[i], labels[j])).toBe(false);
+      }
+    }
+  });
+
+  it('stacks cut labels that share one endpoint across that endpoint axis', async () => {
+    const sharedSinkGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
+            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'input' }] },
+            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+          ],
+          edges: [
+            { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p' },
+            { id: 'b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' }
+          ]
+        }
+      }
+    };
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            a: { x: 0, y: 0, fixed: true },
+            b: { x: 0, y: 96, fixed: true },
+            y: { x: 240, y: 0, fixed: true }
+          },
+          netCuts: {
+            'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
+            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(sharedSinkGraph, 'top', layout);
+    const sinks = view.nodes
+      .filter((node) => node.metadata?.cutNet?.role === 'sink')
+      .map(boundsOf);
+
+    expect(sinks).toHaveLength(2);
+    expect(sinks[0].x).toBe(sinks[1].x);
+    expect(sinks[0].y).not.toBe(sinks[1].y);
+    expect(boxesOverlap(sinks[0], sinks[1])).toBe(false);
+  });
+
+  it('keeps adjacent register cut labels level with their input ports', async () => {
+    const registerCutGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            { id: 'data', kind: 'port', label: 'data', ports: [{ id: 'p', name: 'data', direction: 'input' }] },
+            { id: 'clk', kind: 'port', label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' }] },
+            {
+              id: 'r',
+              kind: 'register',
+              label: 'r',
+              clockSignal: 'clk',
+              ports: [
+                { id: 'd', name: 'D', direction: 'input' },
+                { id: 'clk', name: 'clk', direction: 'input' },
+                { id: 'q', name: 'Q', direction: 'output' }
+              ]
+            }
+          ],
+          edges: [
+            { id: 'data-r', source: 'data', sourcePort: 'p', target: 'r', targetPort: 'd' },
+            { id: 'clk-r', source: 'clk', sourcePort: 'p', target: 'r', targetPort: 'clk' }
+          ]
+        }
+      }
+    };
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            data: { x: 0, y: 12, fixed: true },
+            clk: { x: 0, y: 108, fixed: true },
+            r: { x: 456, y: 432, fixed: true }
+          },
+          netCuts: {
+            'data:p': { label: 'data', source: { nodeId: 'data', portId: 'p' } },
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(registerCutGraph, 'top', layout);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const register = byId.get('r')!;
+    const dataLabel = byId.get('cut-label:data:p:sink:data-r')!;
+    const clockLabel = byId.get('cut-label:clk:p:sink:clk-r')!;
+    const dataBounds = boundsOf(dataLabel);
+    const clockBounds = boundsOf(clockLabel);
+
+    expect(dataBounds.y + dataBounds.height / 2).toBe(
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2
+    );
+    expect(clockBounds.y + clockBounds.height / 2).toBe(
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5
+    );
+    expect(boxesOverlap(dataBounds, clockBounds)).toBe(false);
+  });
+
+  it('lets a manual cut overlap until an endpoint participates in Auto Layout', async () => {
+    const manualCutGraph: DesignGraph = {
+      ...twoNetGraph,
+      modules: {
+        top: {
+          ...twoNetGraph.modules.top,
+          nodes: twoNetGraph.modules.top.nodes.map((node) => ({
+            ...node,
+            ports: node.ports.map((port) => ({
+              ...port,
+              direction: node.id === 'a' ? 'input' : node.id === 'x' ? 'output' : port.direction
+            }))
+          }))
+        }
+      }
+    };
+    const module = manualCutGraph.modules.top;
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 0, y: 60 } },
+      { ...module.nodes[2], position: { x: 240, y: 12 } },
+      { ...module.nodes[3], position: { x: 240, y: 60 } }
+    ];
+    const netKey = edgeNetKey(module.edges[0]);
+    const cut = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+
+    expect(cut.modules.top.netCuts?.[netKey].deferLabelPlacement).toBe(true);
+    const cutView = await buildViewModel(manualCutGraph, 'top', cut);
+    const cutLabels = cutView.nodes.filter((node) => node.metadata?.cutNet?.netKey === netKey);
+    expect(cutLabels).toHaveLength(2);
+    expect(boxesOverlap(boundsOf(cutLabels[0]), boundsOf(cutLabels[1]))).toBe(true);
+
+    const relayouted = mergeRelayoutSelection(
+      cut,
+      'top',
+      ['a', 'x'],
+      cutView.nodes,
+      module
+    );
+    expect(relayouted.modules.top.netCuts?.[netKey].deferLabelPlacement).toBeUndefined();
+
+    const relaidView = await buildViewModel(manualCutGraph, 'top', relayouted);
+    const relaidLabels = relaidView.nodes.filter((node) => node.metadata?.cutNet?.netKey === netKey);
+    expect(relaidLabels).toHaveLength(2);
+    expect(boxesOverlap(boundsOf(relaidLabels[0]), boundsOf(relaidLabels[1]))).toBe(false);
+  });
+
+  it('moves an automatic cut label away from an overlapping design node', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+    const baseline = await buildViewModel(fanoutGraph, 'top', layout);
+    const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    const graphWithBlocker: DesignGraph = {
+      ...fanoutGraph,
+      modules: {
+        top: {
+          ...fanoutGraph.modules.top,
+          nodes: [
+            ...fanoutGraph.modules.top.nodes,
+            { id: 'blocker', kind: 'instance', label: 'blocker', ports: [] }
+          ]
+        }
+      }
+    };
+    const blockedLayout: SavedLayout = {
+      ...layout,
+      modules: {
+        top: {
+          ...layout.modules.top,
+          nodes: {
+            ...layout.modules.top.nodes,
+            blocker: { ...sourceLabel.position, fixed: true }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
+    const blocker = view.nodes.find((node) => node.id === 'blocker')!;
+    const relocatedSource = view.nodes.find((node) => node.id === sourceLabel.id)!;
+    expect(boxesOverlap(boundsOf(relocatedSource), boundsOf(blocker))).toBe(false);
+    expect(relocatedSource.position).not.toEqual(sourceLabel.position);
+  });
+
+  it('falls back when the bounded cut-label collision search finds no clear spot', async () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          },
+          netCuts: {
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
+          }
+        }
+      }
+    };
+    const baseline = await buildViewModel(fanoutGraph, 'top', layout);
+    const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+    const blocker: DiagramNode = {
+      id: 'blocker',
+      kind: 'instance',
+      label: 'blocker'.repeat(40),
+      ports: Array.from({ length: 80 }, (_, index) => ({
+        id: `in-${index}`,
+        name: `in-${index}`,
+        direction: 'input' as const
+      }))
+    };
+    const blockerSize = diagramNodeDimensions(blocker);
+    const sourceLabelSize = diagramNodeDimensions(sourceLabel);
+    const graphWithBlocker: DesignGraph = {
+      ...fanoutGraph,
+      modules: {
+        top: {
+          ...fanoutGraph.modules.top,
+          nodes: [...fanoutGraph.modules.top.nodes, blocker]
+        }
+      }
+    };
+    const blockedLayout: SavedLayout = {
+      ...layout,
+      modules: {
+        top: {
+          ...layout.modules.top,
+          nodes: {
+            ...layout.modules.top.nodes,
+            blocker: {
+              x: sourceLabel.position.x - (blockerSize.width - sourceLabelSize.width) / 2,
+              y: sourceLabel.position.y - (blockerSize.height - sourceLabelSize.height) / 2,
+              fixed: true
+            }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
+    const blockedSource = view.nodes.find((node) => node.id === sourceLabel.id)!;
+    const positionedBlocker = view.nodes.find((node) => node.id === blocker.id)!;
+    // The oversized blocker covers every candidate within the search bound.
+    // Remaining overlapped confirms that resolution fell back instead of
+    // continuing outward until it eventually escaped the blocker.
+    expect(boxesOverlap(boundsOf(blockedSource), boundsOf(positionedBlocker))).toBe(true);
   });
 
   it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {

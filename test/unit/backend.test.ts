@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runParser } from '../helper';
+import { expectMuxSelector } from './helpers';
 import type { DesignModule, DiagramNode } from '../../src/ir/types';
 
 function fixture(name: string): string {
@@ -32,7 +33,12 @@ function expectMuxInput(module: DesignModule, mux: DiagramNode | undefined, sign
 
 function expectMuxOutput(module: DesignModule, mux: DiagramNode | undefined, signal: string): void {
   expect(mux).toBeDefined();
-  expect(mux?.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)).toBe(true);
+  expect(mux?.ports.some((port) => (
+    port.direction === 'output'
+    && port.name === 'out'
+    && port.connectedSignal === signal
+  ))).toBe(true);
+  expect(module.edges.some((edge) => edge.source === mux?.id && edge.signal === signal)).toBe(true);
 }
 
 function regionNodes(module: DesignModule, blockLabel: string): DiagramNode[] {
@@ -222,7 +228,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const pathA = generatedInstance(module, 'g_if_one', 'u_path_a');
     const pathB = generatedInstance(module, 'g_if_one', 'u_path_b');
     const expr = regionNodes(module, 'g_if_one').find((node) => (
-      node.kind === 'comb'
+      node.kind === 'mux'
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'sel')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'left_tap')
       && node.ports.some((port) => port.direction === 'input' && port.connectedSignal === 'right_tap')
@@ -232,6 +238,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(pathA, 'left generated leaf instance').toBeDefined();
     expect(pathB, 'right generated leaf instance').toBeDefined();
     expect(expr, 'generate ternary assignment expression').toBeDefined();
+    expect(expr?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
 
     expectEdge(module, 'port:generate_expression_assign:a', pathA!.id, 'a');
     expectEdge(module, 'port:generate_expression_assign:b', pathB!.id, 'b');
@@ -495,6 +502,66 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(assignCombChain.edges.some((edge) => edge.source === midBlock?.id && edge.target === yBlock?.id && edge.signal === 'mid')).toBe(true);
   });
 
+  it('promotes ternary expressions to recursively connected muxes', async () => {
+    const graph = await runParser(backend, [{ file: 'ternary_muxes.sv', text: `
+      module ternary_simple(input logic sel, a, b, output logic y);
+        assign y = sel ? a : b;
+      endmodule
+
+      module ternary_nested(input logic sel1, sel2, a, b, c, output logic y);
+        assign y = sel1 ? (sel2 ? a : b) : c;
+      endmodule
+
+      module ternary_in_alu(input logic sel, a, b, c, output logic y);
+        assign y = a + (sel ? b : c);
+      endmodule
+
+      module ternary_array(
+        input logic sel,
+        input logic [7:0] a [0:1],
+        input logic [7:0] b [0:1],
+        output logic [7:0] y [0:1]
+      );
+        assign y = sel ? a : b;
+      endmodule
+    ` }]);
+
+    const simple = graph.modules.ternary_simple;
+    const simpleMux = muxesSelectedBy(simple, 'sel')[0];
+    expect(simple.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expectMuxInput(simple, simpleMux, 'a', "1'b1");
+    expectMuxInput(simple, simpleMux, 'b', "1'b0");
+    expectMuxSelector(simple, simpleMux, 'sel');
+    expectMuxOutput(simple, simpleMux, 'y');
+    expect(simple.nodes.some((node) => node.kind === 'comb')).toBe(false);
+
+    const nested = graph.modules.ternary_nested;
+    const outerMux = muxesSelectedBy(nested, 'sel1')[0];
+    const innerMux = muxesSelectedBy(nested, 'sel2')[0];
+    expect(nested.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
+    expectMuxInput(nested, innerMux, 'a', "1'b1");
+    expectMuxInput(nested, innerMux, 'b', "1'b0");
+    expectMuxInput(nested, outerMux, 'c', "1'b0");
+    expectMuxSelector(nested, outerMux, 'sel1');
+    expectMuxSelector(nested, innerMux, 'sel2');
+    expect(nested.edges.some((edge) => edge.source === innerMux?.id && edge.target === outerMux?.id)).toBe(true);
+
+    const embedded = graph.modules.ternary_in_alu;
+    const embeddedMux = muxesSelectedBy(embedded, 'sel')[0];
+    const alu = embedded.nodes.find((node) => node.kind === 'alu');
+    expect(embedded.nodes.filter((node) => node.kind === 'mux')).toHaveLength(1);
+    expect(alu).toBeDefined();
+    expect(embedded.nodes.some((node) => node.kind === 'comb')).toBe(false);
+    expectMuxSelector(embedded, embeddedMux, 'sel');
+    expect(embedded.edges.some((edge) => edge.source === embeddedMux?.id && edge.target === alu?.id)).toBe(true);
+
+    const array = graph.modules.ternary_array;
+    const arrayMux = muxesSelectedBy(array, 'sel')[0];
+    expect(arrayMux?.isArrayNode ?? arrayMux?.metadata?.isArrayNode).toBe(true);
+    expect(arrayMux?.arrayDimension ?? arrayMux?.metadata?.arrayDimension).toBe('[0:1]');
+    expect(arrayMux?.arraySize ?? arrayMux?.metadata?.arraySize).toBe(2);
+  });
+
   it('promotes unary bitwise inversions to inverter nodes for scalar and vector signals', async () => {
     const graph = await runParser(backend, [{ file: 'inverters.sv', text: `
       module inv_scalar(input logic a, output logic y);
@@ -679,6 +746,44 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(mod.nodes.some((node) => node.kind === 'comb')).toBe(false);
     expect(mod.edges.some((edge) => edge.source === literal?.id && edge.target === 'port:literal_assigns:literal_y')).toBe(true);
     expect(mod.edges.some((edge) => edge.source === version?.id && edge.target === 'port:literal_assigns:version_y')).toBe(true);
+  });
+
+  it('connects instance ports whose expression is an inline bit-select or literal', async () => {
+    const graph = await runParser(backend, [{ file: 'inline_port_exprs.sv', text: `
+      module sub (input logic [3:0] a, input logic [3:0] b, input logic c, inout wire [3:0] io, output logic [3:0] y);
+        assign y = a + b;
+      endmodule
+
+      module top (input logic [7:0] data, inout wire [7:0] ext_bus, output logic [3:0] result);
+        sub u_sub (
+          .a (data[7:4]),
+          .b (4'd1),
+          .c (data[0]),
+          .io (ext_bus[3:0]),
+          .y (result)
+        );
+      endmodule
+    ` }]);
+    const mod = graph.modules.top;
+    const instance = mod.nodes.find((node) => node.kind === 'instance' && node.label === 'u_sub');
+    expect(instance).toBeDefined();
+
+    const busNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'data');
+    expect(busNode).toBeDefined();
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[7:4]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:a' && edge.signal === 'data[7:4]')).toBe(true);
+
+    const literal = mod.nodes.find((node) => node.kind === 'literal' && node.label === "4'd1");
+    expect(literal).toBeDefined();
+    expect(mod.edges.some((edge) => edge.source === literal?.id && edge.target === instance?.id && edge.targetPort === 'port:b' && edge.signal === "4'd1")).toBe(true);
+
+    expect(busNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'data[0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === busNode?.id && edge.target === instance?.id && edge.targetPort === 'port:c' && edge.signal === 'data[0]')).toBe(true);
+
+    const extBusNode = mod.nodes.find((node) => node.kind === 'bus' && node.label === 'ext_bus');
+    expect(extBusNode).toBeDefined();
+    expect(extBusNode?.ports.some((port) => port.direction === 'output' && port.connectedSignal === 'ext_bus[3:0]')).toBe(true);
+    expect(mod.edges.some((edge) => edge.source === extBusNode?.id && edge.target === instance?.id && edge.targetPort === 'port:io' && edge.signal === 'ext_bus[3:0]')).toBe(true);
   });
 
   it('represents enum state literals in simple FSM reset and transition logic', async () => {
@@ -2197,6 +2302,125 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.startLine).toBe(10);
       expect(addrMux?.source?.startColumn).toBe(16);
       expect(addrMux?.source?.endColumn).toBe(24);
+    });
+
+    it('merges multiple normal index expressions into a chained address mux for the same array', async () => {
+      const graph = await runParser(backend, [{ file: 'array_multi_index_write.sv', text: `
+        module array_multi_index_write
+          ( input logic clk
+          , input logic [4:0] address
+          , input logic [4:0] i
+          , input logic [31:0] in_data
+          );
+
+          reg [31:0] storage [0:31];
+
+          always @(posedge clk) begin
+            storage[i] <= 32'b0;
+            storage[address] <= in_data;
+          end
+        endmodule
+      ` }]);
+      const mod = graph.modules.array_multi_index_write ?? Object.values(graph.modules)[0];
+
+      // Exactly one array register — both writes fold into the same stacked storage node.
+      const arrayRegs = mod.nodes.filter((n) => n.kind === 'register' && n.label === 'storage');
+      expect(arrayRegs).toHaveLength(1);
+      const arrayReg = arrayRegs[0];
+
+      // Both index expressions are represented, and the later source assignment is the
+      // canonical final stage so procedural last-assignment priority is preserved.
+      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write:storage_addr'));
+      expect(addressMuxes).toHaveLength(2);
+
+      // The mux that keeps the canonical id is the one wired to the register's D input.
+      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write:storage_addr');
+      expect(finalMux).toBeDefined();
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(mod.edges.some((e) => (
+        e.source === finalMux?.id && e.target === arrayReg.id && e.signal === 'storage_next'
+      ))).toBe(true);
+
+      const stageMux = addressMuxes.find((n) => n.id !== finalMux?.id);
+      expect(stageMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('i');
+      expect(stageMux?.ports.find((p) => p.name === '5\'b0')?.connectedSignal).toBe("32'b0");
+      expect(stageMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe('storage');
+
+      // The earlier write stage feeds the later write's default path.
+      const stageOutSignal = stageMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
+      expect(stageOutSignal).toBeTruthy();
+      expect(finalMux?.ports.find((p) => p.name === 'default')?.connectedSignal).toBe(stageOutSignal);
+      expect(mod.edges.some((e) => (
+        e.source === stageMux?.id && e.target === finalMux?.id && e.signal === stageOutSignal
+      ))).toBe(true);
+
+      // No dangling/empty inputs on either mux — both writes are fully connected.
+      expect(stageMux?.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal)).toBe(true);
+      expect(finalMux?.ports.every((p) => p.direction !== 'input' || !!p.connectedSignal)).toBe(true);
+    });
+
+    it('folds a full-range zero reset loop into the stacked array register reset', async () => {
+      const graph = await runParser(backend, 'array_multi_index_write_reset_sorts_first.sv', fixture('array_multi_index_write_reset_sorts_first.sv'));
+      const mod = graph.modules.array_multi_index_write_reset_sorts_first ?? Object.values(graph.modules)[0];
+
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
+      expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
+      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'));
+      expect(addressMuxes).toHaveLength(1);
+      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write_reset_sorts_first:storage_addr');
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+      expect(mod.edges.some((e) => e.signal === 'reset' && e.target === arrayReg?.id && e.isStacked)).toBe(true);
+    });
+
+    it('adds RV to the stacked array register for a non-zero full-range reset loop', async () => {
+      const graph = await runParser(backend, 'array_multi_index_write_reset_nonzero.sv', fixture('array_multi_index_write_reset_nonzero.sv'));
+      const mod = graph.modules.array_multi_index_write_reset_nonzero ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_nonzero:storage');
+
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
+      expect(arrayReg?.ports.find((p) => p.name === 'RV')?.connectedSignal).toBe("32'hDEADBEEF");
+      expect(mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_nonzero:storage_addr'))).toHaveLength(1);
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+    });
+
+    it('does not fold a partial-range reset loop into a whole-array reset', async () => {
+      const canonicalSource = fixture('array_multi_index_write_reset_sorts_first.sv');
+      const source = canonicalSource.replace('a < 32', 'a < 16');
+      expect(source).not.toBe(canonicalSource);
+      const graph = await runParser(backend, 'array_multi_index_write_reset_sorts_first.sv', source);
+      const mod = graph.modules.array_multi_index_write_reset_sorts_first ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+
+      expect(arrayReg?.ports.some((p) => p.name === 'reset')).toBe(false);
+      expect(mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'))).toHaveLength(2);
+    });
+
+    it('folds a full-range descending reset loop into the stacked array register reset', async () => {
+      // storage[a] <= 0 for a counting down from 31 to 0 covers the full array just like the
+      // ascending 0..N-1 form — only the direction differs — so it folds into the same
+      // register R/RV representation instead of falling back to per-index addr/rst muxing.
+      const graph = await runParser(
+        backend,
+        'array_multi_index_write_reset_descending.sv',
+        fixture('array_multi_index_write_reset_descending.sv'),
+      );
+      const mod = graph.modules.array_multi_index_write_reset_descending ?? Object.values(graph.modules)[0];
+      const arrayReg = mod.nodes.find((n) => n.id === 'reg:array_multi_index_write_reset_descending:storage');
+
+      expect(arrayReg).toBeDefined();
+      expect(arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset')).toBe(true);
+      expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
+      const addressMuxes = mod.nodes.filter((n) => n.id.startsWith('mux:array_multi_index_write_reset_descending:storage_addr'));
+      expect(addressMuxes).toHaveLength(1);
+      const finalMux = mod.nodes.find((n) => n.id === 'mux:array_multi_index_write_reset_descending:storage_addr');
+      expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+      expect(mod.nodes.some((n) => n.kind === 'mux' && n.label === 'if reset')).toBe(false);
+      expect(mod.edges.some((e) => e.signal === 'reset' && e.target === arrayReg?.id && e.isStacked)).toBe(true);
     });
 
     it('promotes write_en mux to stacked and chains it upstream of the addr mux for conditional array writes', async () => {

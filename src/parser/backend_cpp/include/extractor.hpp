@@ -380,6 +380,8 @@ private:
     bool isAluOperation(vpiHandle expr);
     std::string aluOperationSymbol(vpiHandle expr);
     std::string promoteAluExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    bool isConditionalOperation(vpiHandle expr);
+    std::string promoteMuxExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     bool isInverterOperation(vpiHandle expr);
     std::string promoteInverterExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     vpiHandle unwrapRef(vpiHandle handle);
@@ -392,6 +394,7 @@ private:
     void ensureDeclaredArray(Module& mod, const std::string& signal);
     std::string getDeclaredLiteralWidth(const Module& mod, const std::string& literal);
     bool isNonZeroResetValue(vpiHandle handle);
+    bool isCanonicalFullArrayResetLoop(vpiHandle assignment_handle, const Module& mod, const std::string& array_name, const std::string& index_expr);
     bool isAncestor(vpiHandle ancestor, vpiHandle descendant);
     bool isSameObject(vpiHandle h1, vpiHandle h2);
     SourceInfo getSourceInfo(vpiHandle handle);
