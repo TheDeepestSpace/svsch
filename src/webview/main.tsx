@@ -16,7 +16,8 @@ import {
   useStore
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './styles.css';
+import './diagram.css';
+import './webview-chrome.css';
 import { diagramSizing, normalizeWidth } from '../diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import {

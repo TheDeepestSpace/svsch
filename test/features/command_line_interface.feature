@@ -20,6 +20,7 @@ Feature: Command Line Interface
             --top <module>        Render a specific module
             --layout <json>       Use an explicit saved layout file
             --no-layout           Ignore saved layout and run auto-layout
+            --no-minify           Skip SVGO minification of the exported SVG
             --theme <dark|light>  Fixed SVG color theme (default: dark)
             --workspace <dir>     Workspace root used for parser cache and relative paths
             --project-folder <d>  Project folder relative to workspace
@@ -53,6 +54,33 @@ Feature: Command Line Interface
     And a file named "top.svg" should exist in the workspace
     And the CLI SVG should contain "port:top:a"
     And the CLI SVG should contain "port:top:y"
+    And the CLI SVG should be minified
+
+  Scenario: Skipping SVGO minification (--no-minify)
+    Given I have a file "top.sv" in my workspace:
+      """sv
+      module top(input a, output y);
+        assign y = a;
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I run the CLI command:
+      """
+      svsch render top.sv --output top.svg --no-layout --no-minify
+      """
+    Then the CLI stdout should be exactly (workspace-relative):
+      """
+      top.svg
+      """
+    And the CLI stderr should be exactly:
+      """
+      [svsch] Using cached design data
+      [svsch] Extracting design graph...
+      [svsch] Finalizing...
+      [svsch] rendering top.svg without a layout file
+      """
+    And a file named "top.svg" should exist in the workspace
+    And the CLI SVG should not be minified
 
   Scenario: Render with manual layout
     Given I have a file "top.sv" in my workspace:
