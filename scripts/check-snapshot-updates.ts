@@ -21,11 +21,26 @@ const nameStatusOutput = execFileSync(
   ['diff', '--name-status', '-z', '-M', baseCommit, 'HEAD'],
   { encoding: 'utf8' }
 );
-const changedBaselines = parseChangedBaselines(nameStatusOutput);
+const { pairs: changedBaselines, ambiguous } = parseChangedBaselines(nameStatusOutput);
 
 let checked = 0;
 let rejected = 0;
 let bypassed = 0;
+
+for (const group of ambiguous) {
+  const isRelevant = [...group.addedPaths, ...group.deletedPaths].some(
+    (path) => baselineThresholdFor(path)?.suite === suite
+  );
+  if (!isRelevant) continue;
+
+  checked += 1;
+  rejected += 1;
+  console.error(
+    `::error::Ambiguous baseline rename for "${group.basename}": cannot determine which of `
+    + `${group.deletedPaths.join(', ')} corresponds to which of ${group.addedPaths.join(', ')}. `
+    + 'Rename the files so git can match them 1:1, or split the changes into separate commits.'
+  );
+}
 
 for (const { oldPath, newPath } of changedBaselines) {
   const policy = baselineThresholdFor(newPath);
