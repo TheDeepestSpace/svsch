@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import { comparePngBuffers } from '../test/pngSnapshotComparison';
 import { baselineThresholdFor, type SnapshotSuite } from '../test/snapshotPolicy';
+import { findSnapshotBypass, loadSnapshotBypassEntries } from '../test/snapshotBypass';
 
 function usage(): never {
   throw new Error('Usage: check-snapshot-updates <base-commit> <visual|bdd|system>');
@@ -11,6 +12,8 @@ const [baseCommit, suiteArg, ...extraArgs] = process.argv.slice(2);
 if (!baseCommit || !suiteArg || extraArgs.length > 0) usage();
 if (suiteArg !== 'visual' && suiteArg !== 'bdd' && suiteArg !== 'system') usage();
 const suite: SnapshotSuite = suiteArg;
+const prNumber = Number(process.env.PR_NUMBER);
+const bypassEntries = loadSnapshotBypassEntries();
 
 const changedFiles = execFileSync(
   'git',
@@ -20,6 +23,7 @@ const changedFiles = execFileSync(
 
 let checked = 0;
 let rejected = 0;
+let bypassed = 0;
 
 for (const filePath of changedFiles) {
   const policy = baselineThresholdFor(filePath);
@@ -39,11 +43,22 @@ for (const filePath of changedFiles) {
   // baseline update for this gate. Pixel-identical metadata changes are not.
   if (comparison.numDiffPixels === undefined || !comparison.matches) continue;
 
+  const bypass = findSnapshotBypass(bypassEntries, filePath, prNumber, comparison.numDiffPixels);
+  if (bypass) {
+    bypassed += 1;
+    console.log(
+      `::notice file=${filePath}::Sub-threshold update allowed via test/snapshot-bypass.yml `
+      + `(PR #${bypass.pr}, diff ${comparison.numDiffPixels} px): ${bypass.reason}`
+    );
+    continue;
+  }
+
   rejected += 1;
   console.error(
     `::error file=${filePath}::This screenshot update looks like sub-threshold noise `
     + `(diff was ${comparison.numDiffPixels} px, threshold is ${policy.maxDiffPixels} px) — `
-    + 'the baseline was rejected, no update needed.'
+    + 'the baseline was rejected, no update needed. If this is a real change, add an entry to '
+    + 'test/snapshot-bypass.yml instead of forcing the update.'
   );
 }
 
@@ -52,4 +67,5 @@ if (rejected > 0) {
   process.exit(1);
 }
 
-console.log(`Checked ${checked} changed ${suite} baseline image(s); no sub-threshold updates found.`);
+const bypassSuffix = bypassed > 0 ? ` (${bypassed} allowed via test/snapshot-bypass.yml)` : '';
+console.log(`Checked ${checked} changed ${suite} baseline image(s); no sub-threshold updates found${bypassSuffix}.`);
