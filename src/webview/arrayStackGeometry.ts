@@ -3,7 +3,6 @@ import { diagramSizing } from '../diagram/constants';
 export const ARRAY_STACK_LANE_OFFSET = 4;
 /** Multi-bit array stacks spread wider (0.25 grid) so the thicker lines keep clear gaps. */
 export const ARRAY_STACK_WIDE_LANE_OFFSET = diagramSizing.gridSize * 0.25;
-export const ARRAY_STACK_LEAD_EDGE_GAP = 1.5;
 
 export interface ArrayStackLayer {
   id: ArrayStackLayerId;

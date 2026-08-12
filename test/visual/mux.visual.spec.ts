@@ -178,15 +178,17 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
   const bySourceLead = geometry.sourceLeads
     .filter((lead) => sourceLaneYs.some((y) => Math.abs((lead.start?.y ?? 0) - y) < 1))
     .sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
-  const sourceStackRight = Math.max(geometry.source.front!.right, geometry.source.middle!.right, geometry.source.back!.right);
   expect(bySourceLead).toHaveLength(3);
-  expect(bySourceLead[0].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  // Each lead's far endpoint should land exactly where its own layer's wire
+  // begins (same trim formula on both sides) — not some shared boundary —
+  // so the lead and wire form one continuous line with no visible seam.
+  expect(bySourceLead[0].start?.x).toBeCloseTo(bySourceLayer[0].start!.x, -1);
   expect(Math.abs((bySourceLead[0].end?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(8);
   expect(bySourceLead[0].stroke).toBe(bySourceLayer[0].stroke);
-  expect(bySourceLead[1].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  expect(bySourceLead[1].start?.x).toBeCloseTo(bySourceLayer[1].start!.x, -1);
   expect(Math.abs((bySourceLead[1].end?.x ?? 0) - geometry.source.middle!.right)).toBeLessThan(8);
   expect(bySourceLead[1].stroke).toBe(bySourceLayer[1].stroke);
-  expect(bySourceLead[2].start?.x).toBeGreaterThanOrEqual(sourceStackRight - 0.5);
+  expect(bySourceLead[2].start?.x).toBeCloseTo(bySourceLayer[2].start!.x, -1);
   expect(Math.abs((bySourceLead[2].end?.x ?? 0) - geometry.source.back!.right)).toBeLessThan(8);
   expect(bySourceLead[2].stroke).toBe(bySourceLayer[2].stroke);
 
