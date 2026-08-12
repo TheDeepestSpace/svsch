@@ -718,7 +718,7 @@ function NodeResizeControls({ nodeId, moduleName, isResized }: {
       {RESIZE_HANDLES.map((handle) => (
         <div
           key={handle}
-          className={`svsch-node-resize-handle svsch-node-resize-${handle}`}
+          className={`nodrag svsch-node-resize-handle svsch-node-resize-${handle}`}
           onPointerDown={(event) => startNodeResize(event, nodeId, handle)}
           onClick={(event) => event.stopPropagation()}
           onDoubleClick={(event) => event.stopPropagation()}
@@ -731,7 +731,7 @@ function NodeResizeControls({ nodeId, moduleName, isResized }: {
         <div
           role="button"
           tabIndex={0}
-          className="svsch-node-revert-size"
+          className="nodrag svsch-node-revert-size"
           title="Revert to canonical size"
           aria-label="Revert to canonical size"
           onClick={(event) => {

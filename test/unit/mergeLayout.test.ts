@@ -1133,6 +1133,34 @@ describe('layout merge', () => {
     expect(relayouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 20, y: 20 }] });
   });
 
+  it('preserves a resized node\'s size override when releasing it back to auto-layout', () => {
+    const module = fanoutGraph.modules.top;
+    const seeded: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, width: 96, height: 64, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          }
+        }
+      }
+    };
+
+    // u1 was manually resized before the user clicked "Auto Layout" for it.
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 288, y: 0 }, sizeOverride: { width: 96, height: 64 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
+
+    // u1 is released back to auto-layout, but its resize override survives.
+    expect(relayouted.modules.top.nodes.u1).toEqual({ x: 288, y: 0, fixed: false, width: 96, height: 64 });
+  });
+
   it('uses shared net keys for ordinary, literal, and cut stub edges', () => {
     expect(edgeNetKey({ id: 'e', source: 'n1', sourcePort: 'out', target: 'n2' } as any)).toBe('n1:out');
     expect(edgeNetKey({ id: 'lit', source: 'literal:1', sourcePort: 'out', target: 'n2' } as any)).toBe('literal:1');

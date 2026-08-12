@@ -3417,7 +3417,8 @@ export function mergeRelayoutSelection(
     if (released.has(node.id)) {
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
-        fixed: false
+        fixed: false,
+        ...(node.sizeOverride ? { width: node.sizeOverride.width, height: node.sizeOverride.height } : {})
       };
       continue;
     }
