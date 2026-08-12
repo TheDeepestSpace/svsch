@@ -7,6 +7,7 @@ import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, Positione
 import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
+import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
 import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
 
@@ -317,20 +318,25 @@ export class DiagramPanel {
 
       let extensionCss = '';
       try {
-        const p = path.join(this.context.extensionUri.fsPath, 'media', 'webview.css');
+        const p = path.join(this.context.extensionUri.fsPath, 'media', 'diagram.css');
         if (fs.existsSync(p)) {
           extensionCss = fs.readFileSync(p, 'utf8');
+        } else {
+          logger.log(`Warning: ${p} not found; the exported SVG will have no diagram styling. Run "npm run build:webview".`);
         }
       } catch (err) {
         logger.log(`Warning: Could not load extension CSS for export: ${err}`);
       }
 
       const viewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
-      const svg = renderSvg(viewModel, {
+      let svg = renderSvg(viewModel, {
         theme: vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
         reactFlowCss,
         extensionCss
       });
+      if (vscode.workspace.getConfiguration('svsch').get<boolean>('minifySvg', true)) {
+        svg = await minifySvg(svg);
+      }
 
       const defaultUri = vscode.Uri.file(path.join(workspaceRootPath() ?? '.', `${this.currentModule.replace(/[^a-z0-9]/gi, '_')}.svg`));
       

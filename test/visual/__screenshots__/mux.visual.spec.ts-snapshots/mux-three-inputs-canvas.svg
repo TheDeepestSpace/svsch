@@ -672,24 +672,6 @@ svg.react-flow__connectionline {
   --svsch-error-highlight-fill: color-mix(in srgb, var(--svsch-error-highlight) 9%, transparent);
 }
 
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  background: var(--vscode-editor-background);
-  color: var(--vscode-editor-foreground);
-  font-family: var(--vscode-font-family);
-}
-
-button,
-select {
-  font: inherit;
-}
-
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -700,454 +682,9 @@ text {
   text-rendering: geometricPrecision;
 }
 
-.shell {
-  display: grid;
-  grid-template-rows: auto minmax(320px, 1fr);
-  height: 100vh;
-  min-height: 100vh;
-  position: relative;
-}
-
-.status-indicator {
-  display: inline-flex;
-  margin-left: auto;
-}
-
-.busy-indicator {
-  align-items: center;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 4px;
-  box-shadow: 0 2px 10px color-mix(in srgb, black 35%, transparent);
-  color: var(--vscode-editor-foreground);
-  display: inline-flex;
-  font-size: 12px;
-  gap: 8px;
-  padding: 6px 9px;
-}
-
-.busy-indicator span {
-  animation: svsch-spin 0.9s linear infinite;
-  border: 2px solid color-mix(in srgb, var(--vscode-editor-foreground) 24%, transparent);
-  border-top-color: var(--vscode-focusBorder);
-  border-radius: 999px;
-  height: 12px;
-  width: 12px;
-}
-
-@keyframes svsch-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.diagnostics-indicator {
-  align-items: center;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-inputValidation-warningBorder);
-  border-radius: 4px;
-  box-shadow: 0 2px 10px color-mix(in srgb, black 35%, transparent);
-  color: var(--vscode-editorWarning-foreground, #cca700);
-  display: inline-flex;
-  font-size: 12px;
-  gap: 6px;
-  line-height: 1;
-  padding: 6px 9px;
-}
-
-.toolbar {
-  align-items: center;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  display: flex;
-  gap: 12px;
-  min-height: 40px;
-  padding: 6px 12px;
-}
-
-/* Shared VS Code Control Styles */
-.vscode-control {
-  border-radius: var(--vscode-button-borderRadius, 4px);
-  font-size: 13px;
-  min-height: 26px;
-  outline: none;
-  font-family: inherit;
-  transition: background-color 0.1s ease;
-}
-
-.vscode-select {
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border);
-  color: var(--vscode-dropdown-foreground);
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: var(--vscode-input-borderRadius, 4px);
-}
-
-.vscode-select:focus {
-  border-color: var(--vscode-focusBorder);
-}
-
-.vscode-button {
-  background: var(--vscode-button-background);
-  border: none;
-  color: var(--vscode-button-foreground);
-  cursor: pointer;
-  padding: 4px 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vscode-button:hover {
-  background: var(--vscode-button-hoverBackground);
-}
-
-.vscode-button:active {
-  background: var(--vscode-button-secondaryBackground);
-}
-
-.vscode-button:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 2px;
-}
-
-.vscode-button-secondary {
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-}
-
-.vscode-button-secondary:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.canvas {
-  height: calc(100vh - 96px);
-  min-height: 320px;
-  position: relative;
-  width: 100%;
-}
-
-.module-parameter-table {
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 92%, transparent);
-  border: 1px solid var(--vscode-panel-border);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 20%);
-  color: var(--vscode-editor-foreground);
-  font-family: var(--vscode-font-family);
-  font-size: 11px;
-  left: var(--svsch-grid);
-  line-height: 1.35;
-  min-width: 168px;
-  padding: 8px 10px;
-  position: absolute;
-  top: var(--svsch-grid);
-  z-index: 5;
-}
-
-.module-parameter-line,
-.module-parameter-section-title {
-  color: var(--vscode-editor-foreground);
-}
-
-.module-parameter-rule {
-  border-top: 1px solid var(--vscode-panel-border);
-  margin: 6px 0 5px;
-}
-
-.module-parameter-rows {
-  display: grid;
-  column-gap: 12px;
-  grid-template-columns: max-content max-content;
-  row-gap: 2px;
-  margin-top: 2px;
-}
-
-.module-parameter-row {
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  display: contents;
-  font: inherit;
-  text-align: left;
-}
-
-.module-parameter-row:disabled {
-  cursor: default;
-}
-
-.module-parameter-mono,
-.module-parameter-name,
-.module-parameter-default {
-  font-family: var(--vscode-editor-font-family, monospace);
-}
-
-.module-parameter-name {
-  color: var(--vscode-editor-foreground);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 2px;
-}
-
-.module-parameter-default {
-  color: var(--vscode-descriptionForeground);
-  min-width: 0;
-  white-space: pre;
-}
-
-.react-flow {
-  inset: 0;
-  height: 100%;
-  position: absolute;
-  width: 100%;
-  z-index: 1;
-}
-
-.react-flow .react-flow__edges {
-  z-index: 1;
-}
-
-.react-flow .react-flow__edges svg {
-  z-index: 1 !important;
-}
-
-.react-flow__nodes {
-  z-index: 2 !important;
-}
-
-/* Hosts only GenerateRegionOverlay now (see svsch-overlay-portal-root for the
-   floating controls that used to share this portal) — kept at the same tier
-   as edges so the region fill stays beneath node bodies instead of tinting
-   them. */
-.react-flow__viewport-portal {
-  z-index: 1;
-}
-
-.generate-region-layer {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
-  transform-origin: 0 0;
-  z-index: 1;
-}
-
-.generate-region {
-  color: var(--vscode-editor-foreground);
-  position: absolute;
-  pointer-events: none;
-}
-
-.generate-region-outline {
-  border: 1.5px solid var(--vscode-charts-orange);
-  inset: 0;
-  position: absolute;
-}
-
-.generate-region-title {
-  background: transparent;
-  border: 0;
-  color: color-mix(in srgb, var(--vscode-editor-foreground) 90%, var(--vscode-descriptionForeground));
-  cursor: move;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 11px;
-  left: 8px;
-  line-height: 18px;
-  max-width: calc(100% - 16px);
-  overflow: hidden;
-  padding: 0;
-  pointer-events: auto;
-  position: absolute;
-  text-overflow: ellipsis;
-  top: 8px;
-  white-space: nowrap;
-}
-
-.generate-region-warning {
-  color: var(--svsch-error-highlight);
-  cursor: help;
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: auto;
-  position: absolute;
-  right: -20px;
-  top: -20px;
-  z-index: 1;
-}
-
-.node-warning {
-  color: var(--svsch-error-highlight);
-  cursor: help;
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: auto;
-  position: absolute;
-  right: 4px;
-  top: 4px;
-  z-index: 11;
-}
-
-.svsch-tooltip {
-  /* Border matches the arm-block error highlight; Tooltip.tsx resolves the same
-     token for the arrow's SVG stroke. */
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid var(--svsch-error-highlight);
-  border-radius: 0;
-  color: var(--vscode-editor-foreground);
-  font-size: 12px;
-  line-height: 1.4;
-  max-width: 280px;
-  padding: 3px 8px;
-  pointer-events: none;
-  width: max-content;
-  z-index: 1000;
-}
-
-/* Plain informational popovers (e.g. "Also declared as: ...") aren't warnings
-   or errors, so they don't borrow the error-highlight border. */
-.svsch-tooltip-info {
-  border-color: var(--vscode-panel-border);
-}
-
-.generate-region-resize {
-  background: transparent;
-  border: 0;
-  pointer-events: auto;
-  position: absolute;
-}
-
-.generate-region-resize-left,
-.generate-region-resize-right {
-  cursor: ew-resize;
-  height: 100%;
-  top: 0;
-  width: 10px;
-}
-
-.generate-region-resize-left {
-  left: -5px;
-}
-
-.generate-region-resize-right {
-  right: -5px;
-}
-
-.generate-region-resize-top,
-.generate-region-resize-bottom {
-  cursor: ns-resize;
-  height: 10px;
-  left: 0;
-  width: 100%;
-}
-
-.generate-region-resize-top {
-  top: -5px;
-}
-
-.generate-region-resize-bottom {
-  bottom: -5px;
-}
-
-.generate-region-inactive {
-  opacity: 0.75;
-}
-
-/* Selection brightness must not depend on the arm's active state — the inactive
-   dimming would fade the selection border with it, so selection lifts it. */
-.generate-region-inactive.generate-region-selected {
-  opacity: 1;
-}
-
-.generate-region-active .generate-region-outline {
-  border-color: var(--vscode-charts-orange);
-  border-style: solid;
-}
-
-/* The generate-block wrapper carries the fill (no border); arms are border-only. */
-.generate-block .generate-region-outline {
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 16%, transparent);
-  border: none;
-}
-
-.generate-block.generate-region-invalid .generate-region-outline {
-  border: 2px dashed var(--svsch-error-highlight);
-  background: var(--svsch-error-highlight-fill);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
-}
-
-.generate-region-active .generate-region-title {
-  color: var(--vscode-editor-foreground);
-}
-
-.generate-region-invalid .generate-region-outline {
-  border-color: var(--svsch-error-highlight);
-  border-style: dashed;
-  border-width: 2px;
-  background: var(--svsch-error-highlight-fill);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--svsch-error-highlight) 18%, transparent);
-}
-
-.generate-region-invalid .generate-region-title {
-  color: color-mix(in srgb, var(--svsch-error-highlight) 78%, var(--vscode-editor-foreground));
-}
-
-/* Selected regions use the standard blue selection border — for arms (border-only)
-   and generate blocks (normally borderless fill) alike. The error style wins over
-   selection, matching node behavior. */
-.generate-region-selected:not(.generate-region-invalid) .generate-region-outline,
-.generate-block.generate-region-selected:not(.generate-region-invalid) .generate-region-outline {
-  border: var(--svsch-selection-width) solid var(--svsch-selection-color);
-}
-
-.generate-region-note {
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-charts-red);
-  color: color-mix(in srgb, var(--vscode-charts-red) 82%, var(--vscode-editor-foreground));
-  font-size: 11px;
-  line-height: 16px;
-  max-width: 220px;
-  padding: 2px 6px;
-  pointer-events: none;
-  position: absolute;
-  right: 6px;
-  top: 6px;
-}
-
-.empty {
-  align-items: center;
-  display: flex;
-  height: 100%;
-  justify-content: center;
-}
-
 :root {
   --svsch-selection-width: 2.5px;
   --svsch-selection-color: var(--vscode-focusBorder);
-}
-
-.hdl-node-selection-rect {
-  border: var(--svsch-selection-width) solid var(--svsch-selection-color);
-  inset: calc(-1 * var(--svsch-selection-width) / 2);
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 10;
-}
-
-.hdl-node-array-selection-skin {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
-  z-index: 10;
-}
-
-.hdl-node-array-selection {
-  fill: none;
-  opacity: 0;
-  stroke: var(--svsch-selection-color);
-  stroke-linejoin: round;
-  stroke-width: var(--svsch-selection-width);
 }
 
 .react-flow__node.selected .hdl-node-selection-rect,
@@ -1271,7 +808,6 @@ text {
   padding: 0 12px;
 }
 
-
 .hdl-node-module > .node-kind,
 .hdl-node-instance > .node-kind {
   font-family: var(--vscode-editor-font-family, monospace);
@@ -1280,42 +816,6 @@ text {
 
 .hdl-node-instance .node-title {
   max-width: calc(var(--svsch-node-width) - 24px);
-}
-
-.instance-parameter-list {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  justify-content: center;
-  min-width: 0;
-  overflow: visible;
-  padding-top: 0;
-}
-
-.instance-parameter-chip {
-  align-items: center;
-  background: color-mix(in srgb, var(--vscode-editorWidget-background) 80%, var(--vscode-descriptionForeground));
-  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 65%, var(--vscode-descriptionForeground));
-  border-radius: 4px;
-  color: var(--vscode-descriptionForeground);
-  display: inline-flex;
-  font-size: 10px;
-  gap: 2px;
-  line-height: 16px;
-  min-width: 0;
-  padding: 0 4px;
-  white-space: nowrap;
-}
-
-.instance-parameter-name,
-.instance-parameter-value {
-  overflow: visible;
-}
-
-.instance-parameter-name {
-  color: var(--vscode-editor-foreground);
-  font-weight: 600;
 }
 
 .hdl-node-instance .node-port .react-flow__handle-left,
@@ -1354,76 +854,6 @@ text {
   padding-top: 6px;
 }
 
-.register-port {
-  align-items: center;
-  color: var(--vscode-editor-foreground);
-  display: flex;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 12px;
-  height: var(--svsch-grid);
-  line-height: var(--svsch-grid);
-  pointer-events: all;
-  position: absolute;
-}
-
-.register-port-d {
-  left: 0;
-  padding-left: 12px;
-  top: var(--svsch-register-d-top);
-}
-
-.register-port-q {
-  justify-content: flex-end;
-  padding-right: 12px;
-  right: 0;
-  top: var(--svsch-register-q-top);
-}
-
-.register-clock-port {
-  left: 0;
-  padding-left: 0;
-  top: var(--svsch-register-clock-top);
-}
-
-.register-reset-port {
-  justify-content: center;
-  left: 0;
-  right: 0;
-  top: var(--svsch-register-reset-top);
-}
-
-.register-port-rv {
-  left: 0;
-  padding-left: 12px;
-  top: var(--svsch-register-rv-top);
-}
-
-.register-extra-input-port {
-  left: 0;
-  max-width: calc(var(--svsch-node-width) - 24px);
-  padding-left: 12px;
-}
-
-.register-extra-input-port span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.register-reset-label {
-  align-items: center;
-  display: inline-flex;
-  justify-content: center;
-  line-height: 1;
-  position: relative;
-}
-
-.register-reset-port span {
-  overflow: visible;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .register-clock-glyph {
   fill: none;
   height: 12px;
@@ -1433,31 +863,6 @@ text {
   stroke-linejoin: round;
   stroke-width: 1.25;
   width: 12px;
-}
-
-.register-port .react-flow__handle-left,
-.register-port .react-flow__handle-right,
-.register-port .react-flow__handle-bottom {
-  background: transparent;
-  border: 0;
-  height: 0;
-  min-height: 0;
-  min-width: 0;
-  pointer-events: all;
-  width: 0;
-}
-
-.register-port .react-flow__handle-left {
-  left: 0;
-}
-
-.register-port .react-flow__handle-right {
-  right: 0;
-}
-
-.register-reset-port .react-flow__handle-bottom {
-  bottom: 0;
-  left: 50%;
 }
 
 .hdl-node-mux,
@@ -1480,12 +885,6 @@ text {
   box-shadow: none;
   isolation: isolate;
   overflow: visible;
-}
-
-/* Multi-bit array stacks spread wider (0.4 grid lane offset), so the
-   content shift toward the front card scales with it. */
-.hdl-node-array-wide {
-  --svsch-array-content-shift: calc(var(--svsch-grid) * 0.3);
 }
 
 .hdl-node-array-layer {
@@ -1564,29 +963,6 @@ text {
 
 .hdl-node-array .hdl-node-svg .register-clock-glyph {
   transform: none;
-}
-
-.hdl-node-array-index {
-  color: color-mix(in srgb, var(--vscode-editor-foreground) 45%, transparent);
-  font-weight: 400;
-  margin-left: 4px;
-}
-
-/* ── Array dimension badge ─────────────────────────────── */
-
-.hdl-node-array-badge {
-  background: transparent;
-  border: 0;
-  color: var(--vscode-editor-foreground);
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
-  line-height: 1;
-  padding: 0;
-  pointer-events: none;
-  position: absolute;
-  right: -22px;
-  top: -20px;
-  z-index: 4;
 }
 
 .svsch-array-stack-leads {
@@ -1710,14 +1086,6 @@ text {
   box-shadow: none;
 }
 
-.hdl-port-input {
-  box-shadow: inset 0 0 0 1px var(--vscode-charts-yellow);
-}
-
-.hdl-port-output {
-  box-shadow: inset 0 0 0 1px var(--vscode-charts-orange);
-}
-
 .hdl-port-interface .port-skin-body {
   fill: color-mix(in srgb, var(--vscode-charts-blue) 28%, var(--vscode-editor-background));
   stroke: var(--vscode-charts-blue);
@@ -1725,11 +1093,6 @@ text {
 
 .hdl-port-interface .port-skin-selection {
   stroke: var(--svsch-selection-color);
-}
-
-.hdl-port-inout,
-.hdl-port-unknown {
-  border-style: dashed;
 }
 
 .hdl-node-unknown {
@@ -1751,13 +1114,6 @@ text {
 
 .hdl-bus-node:focus {
   outline: 1px solid var(--vscode-focusBorder);
-}
-
-.bus-pipe {
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
-  border-radius: 999px;
-  position: absolute;
-  width: 6px;
 }
 
 .hdl-bus-node.hdl-bus-breakout .bus-pipe {
@@ -1799,22 +1155,6 @@ text {
   width: 34px;
 }
 
-.bus-taps {
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}
-
-.bus-tap {
-  align-items: center;
-  color: var(--vscode-editor-foreground);
-  display: flex;
-  font-size: 12px;
-  height: var(--svsch-grid);
-  line-height: var(--svsch-grid);
-  position: absolute;
-}
-
 .hdl-bus-node.hdl-bus-breakout .bus-tap {
   left: calc(var(--svsch-grid) * 2);
   right: 0;
@@ -1828,14 +1168,6 @@ text {
   justify-content: flex-end;
 }
 
-.bus-tap::before {
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 72%, transparent);
-  content: "";
-  height: 2px;
-  position: absolute;
-  top: calc(50% - 1px);
-}
-
 .hdl-bus-node.hdl-bus-breakout .bus-tap::before {
   left: 3px;
   right: 0;
@@ -1845,7 +1177,6 @@ text {
   left: 0;
   right: 3px;
 }
-
 
 .svsch-port-type-suffix-blue {
   color: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
@@ -1869,7 +1200,6 @@ text {
 .hdl-interface-node .bus-tap::before {
   background: color-mix(in srgb, var(--vscode-charts-blue) 72%, var(--vscode-editor-foreground));
 }
-
 
 .hdl-interface-instance {
   background: transparent;
@@ -1903,64 +1233,6 @@ text {
 .hdl-interface-instance.selected .hdl-interface-skin-selection {
   stroke: var(--svsch-selection-color);
   opacity: 1;
-}
-
-.interface-bundle-handle {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.interface-bundle-port {
-  height: var(--svsch-grid);
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  width: var(--svsch-grid);
-}
-
-.interface-top-port,
-.interface-bottom-port {
-  position: absolute;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  z-index: 2;
-}
-
-.interface-top-port {
-  top: 0;
-}
-
-.interface-top-port .react-flow__handle,
-.interface-bottom-port .react-flow__handle {
-  background: transparent;
-  border: 0;
-  height: 0;
-  min-height: 0;
-  min-width: 0;
-  pointer-events: all;
-  width: 0;
-}
-
-.interface-port-label {
-  color: color-mix(in srgb, var(--vscode-charts-blue) 45%, var(--vscode-editor-foreground));
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
-  position: absolute;
-  white-space: nowrap;
-  z-index: 3;
-}
-
-.interface-top-port .interface-port-label {
-  left: 50%;
-  top: 8px;
-  transform: translateX(-50%);
-}
-
-.interface-bottom-port .interface-port-label {
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 .hdl-bus-node.hdl-interface-modport .bus-tap-left,
@@ -2010,78 +1282,10 @@ text {
   display: none;
 }
 
-.interface-instance-title {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  width: calc(100% - 40px);
-  text-align: center;
-}
-
-.interface-modport-title {
-  inset: 0 0 auto 0;
-  pointer-events: none;
-  position: absolute;
-  text-align: center;
-  top: 4px;
-}
-
 .hdl-bus-node.hdl-interface-modport .bus-pipe {
   left: 50%;
   right: auto;
   transform: translateX(-50%);
-}
-
-.interface-modport-title-button {
-  background: var(--vscode-editor-background);
-  border: 0;
-  color: color-mix(in srgb, var(--vscode-charts-blue) 45%, var(--vscode-editor-foreground));
-  cursor: pointer;
-  font: inherit;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  padding: 0 4px;
-  pointer-events: all;
-}
-
-.interface-modport-title-button[aria-disabled="true"] {
-  cursor: default;
-}
-
-.interface-instance-title-button {
-  background: transparent;
-  border: 0;
-  color: var(--vscode-editor-foreground);
-  cursor: pointer;
-  font: inherit;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
-  padding: 0 4px;
-  pointer-events: all;
-}
-
-.interface-instance-title-button[aria-disabled="true"] {
-  cursor: default;
-}
-
-.bus-tap .interface-side-modport-label {
-  background: transparent;
-  cursor: pointer;
-  font-family: var(--vscode-editor-font-family, monospace);
-  text-decoration: underline;
-  text-decoration-style: dotted;
-}
-
-.struct-field-annotation {
-  color: color-mix(in srgb, var(--vscode-editor-foreground) 48%, var(--vscode-editor-background));
-  font-size: 11px;
-  font-weight: 400;
 }
 
 .svsch-type-label {
@@ -2113,69 +1317,7 @@ text {
   left: 0;
 }
 
-.node-kind {
-  color: var(--vscode-descriptionForeground);
-  font-size: 10px;
-  letter-spacing: 0;
-  line-height: 16px;
-  text-transform: uppercase;
-}
-
-.node-title {
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: calc(var(--svsch-node-header-height) - 16px);
-  max-width: calc(var(--svsch-node-width) - 20px);
-  overflow: hidden;
-  pointer-events: all;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.svsch-node-title-container {
-  display: flex;
-  align-items: baseline;
-  pointer-events: all;
-}
-
-.port-skin-label .svsch-node-title-container {
-  justify-content: center;
-  min-width: 0;
-  width: 100%;
-}
-
-.svsch-node-label {
-  font-family: var(--vscode-editor-font-family, monospace);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.port-direction {
-  color: var(--vscode-descriptionForeground);
-  font-size: 9px;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.port-title {
-  font-size: 13px;
-  font-weight: 600;
-  max-width: calc(var(--svsch-port-width) - 24px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .port-skin {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
-}
-
-.node-skin {
   inset: 0;
   overflow: visible;
   pointer-events: none;
@@ -2259,9 +1401,6 @@ text {
   opacity: 0.75;
 }
 
-.port-skin-array-front {
-}
-
 .port-skin-selection {
   fill: none;
   opacity: 0;
@@ -2274,27 +1413,6 @@ text {
 .hdl-port-skinned:focus .port-skin-selection,
 .hdl-port-skinned:focus-visible .port-skin-selection {
   opacity: 1;
-}
-
-.port-skin-label {
-  color: var(--vscode-editor-foreground);
-  display: flex;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 12px;
-  font-weight: 600;
-  left: 12px;
-  line-height: var(--svsch-port-skin-height);
-  max-width: calc(100% - 24px);
-  overflow: hidden;
-  pointer-events: all;
-  position: absolute;
-  right: 12px;
-  justify-content: center;
-  z-index: 2;
-  text-align: center;
-  text-overflow: ellipsis;
-  top: calc((var(--svsch-port-height) - var(--svsch-port-skin-height)) / 2);
-  white-space: nowrap;
 }
 
 .svsch-param-token {
@@ -2315,40 +1433,6 @@ text {
   fill: color-mix(in srgb, var(--vscode-charts-blue) 12%, var(--vscode-editor-background));
   stroke: var(--vscode-charts-blue);
   stroke-width: 1.5;
-}
-
-.node-ports {
-  display: flex;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 11px;
-  justify-content: space-between;
-  min-height: var(--svsch-grid);
-}
-
-.node-port {
-  align-items: center;
-  display: flex;
-  height: var(--svsch-grid);
-  line-height: 1.4;
-  min-height: var(--svsch-grid);
-  min-width: 44px;
-  padding-left: 18px;
-  position: relative;
-}
-
-.node-port-out {
-  justify-content: flex-end;
-  padding-left: 0;
-  padding-right: 18px;
-  text-align: right;
-}
-
-.node-port .react-flow__handle-left {
-  left: 0;
-}
-
-.node-port .react-flow__handle-right {
-  right: 0;
 }
 
 .hdl-node-comb .node-port .react-flow__handle-left,
@@ -2401,7 +1485,6 @@ text {
   border-color: var(--vscode-charts-red);
 }
 
-
 .svsch-repeat-label {
   cursor: default;
 }
@@ -2451,26 +1534,8 @@ text {
   width: var(--svsch-node-width);
 }
 
-.hdl-net-label-text {
-  bottom: calc(50% + var(--svsch-net-label-text-gap));
-  display: block;
-  line-height: 13px;
-  max-width: calc(var(--svsch-node-width) - 8px);
-  overflow: hidden;
-  padding: 0 3px;
-  position: absolute;
-  text-overflow: ellipsis;
-  user-select: none;
-  white-space: nowrap;
-}
-
 .hdl-net-label-wire-svg .svsch-edge-net-highlight {
   stroke-width: 9;
-}
-
-.hdl-net-label-text-hovered {
-  box-shadow: 0 0 0 1.5px var(--svsch-selection-color);
-  border-radius: 2px;
 }
 
 /* Tool-invented labels (NET_3, u_alu.result, ...) read as italic; a label
@@ -2488,56 +1553,11 @@ text {
   user-select: none;
 }
 
-.hdl-net-label-align-start .hdl-net-label-text {
-  left: 0;
-  text-align: left;
-}
-
-.hdl-net-label-align-end .hdl-net-label-text {
-  right: 0;
-  text-align: right;
-}
-
-.hdl-net-label-input {
-  background: var(--vscode-input-background, var(--vscode-editorWidget-background));
-  border: 1px solid var(--vscode-focusBorder);
-  bottom: calc(50% + var(--svsch-net-label-text-gap));
-  box-sizing: border-box;
-  color: var(--vscode-input-foreground, var(--vscode-editor-foreground));
-  font: inherit;
-  height: 18px;
-  min-width: 0;
-  outline: none;
-  padding: 1px 3px;
-  position: absolute;
-  width: calc(var(--svsch-node-width) - 8px);
-}
-
-.hdl-net-label-align-start .hdl-net-label-input {
-  left: 0;
-}
-
-.hdl-net-label-align-end .hdl-net-label-input {
-  right: 0;
-}
-
 .hdl-net-label-wire-svg {
   inset: 0;
   overflow: visible;
   pointer-events: none;
   position: absolute;
-}
-
-.hdl-net-label-struct {
-  --svsch-net-label-text-gap: 5px;
-}
-
-.hdl-net-label-interface {
-  --svsch-net-label-text-gap: 8px;
-}
-
-.hdl-net-label-stacked {
-  --svsch-net-label-text-gap: 8px;
 }
 
 .hdl-net-label .react-flow__handle {
@@ -2568,114 +1588,6 @@ text {
 .hdl-net-label .react-flow__handle-bottom {
   bottom: 0;
   left: 50%;
-}
-
-/* One seamless pill (matching the wire's Cut/Reroute control block), not
-   separate buttons with a gap between them — Revert (when shown) and Tie
-   sit flush against each other, sharing borders. */
-.hdl-net-label-actions {
-  align-items: center;
-  display: flex;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  bottom: calc(50% + var(--svsch-net-label-text-gap) - 1px);
-  transform: translateX(calc(100% + 4px));
-  transition: opacity 80ms ease;
-  visibility: hidden;
-  white-space: nowrap;
-}
-
-.hdl-net-label:hover .hdl-net-label-actions,
-.hdl-net-label.hdl-net-label-hovered .hdl-net-label-actions,
-.hdl-net-label:focus-within .hdl-net-label-actions,
-.hdl-net-label:focus .hdl-net-label-actions {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
-}
-
-.hdl-net-label-tie,
-.hdl-net-label-revert {
-  align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 0;
-  border-right: none;
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 9px;
-  height: 16px;
-  justify-content: center;
-  line-height: 1;
-  padding: 0 4px;
-  white-space: nowrap;
-}
-
-.hdl-net-label-actions button:first-child {
-  border-radius: 3px 0 0 3px;
-}
-
-.hdl-net-label-actions button:last-child {
-  border-radius: 0 3px 3px 0;
-  border-right: 1px solid var(--vscode-panel-border);
-}
-
-.hdl-net-label-tie:hover,
-.hdl-net-label-revert:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.mux-select-port {
-  color: var(--vscode-editor-foreground);
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 10px;
-  left: 50%;
-  line-height: 1;
-  pointer-events: none;
-  position: absolute;
-  text-align: center;
-  top: var(--svsch-grid);
-  transform: translateX(-50%);
-  z-index: 1;
-}
-
-.mux-select-port span {
-  background: transparent;
-  border: 0;
-  display: block;
-  font-family: inherit;
-  max-width: calc(var(--svsch-node-width) / 2);
-  overflow: visible;
-  padding: 0 4px;
-  position: relative;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mux-select-lead {
-  background: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
-  display: block;
-  left: 50%;
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  width: 1.5px;
-}
-
-.mux-select-port .react-flow__handle-top {
-  background: transparent !important;
-  border: 0 !important;
-  height: 0 !important;
-  left: 50%;
-  min-height: 0 !important;
-  min-width: 0 !important;
-  pointer-events: all;
-  top: 0;
-  width: 0 !important;
 }
 
 .hdl-node-inverter>.react-flow__handle-left,
@@ -2731,13 +1643,6 @@ text {
 .svsch-edge-bridge {
   fill: none;
   pointer-events: stroke;
-}
-
-.svsch-edge-bridge {
-  stroke: transparent;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 9;
 }
 
 .svsch-edge-jump-halo {
@@ -2824,18 +1729,10 @@ text {
   stroke-width: 4.5;
 }
 
-.svsch-edge-bridge-thick {
-  stroke-width: 13.5;
-}
-
 .svsch-edge-struct {
   stroke: url("#svsch-struct-stripes");
   stroke-linecap: butt;
   stroke-width: 8;
-}
-
-.svsch-edge-bridge-struct {
-  stroke-width: 15.5;
 }
 
 .svsch-edge-interface {
@@ -2850,28 +1747,10 @@ text {
   stroke-width: 8;
 }
 
-/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
-.svsch-interface-stripe {
-  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
-  stroke-width: 2;
-}
-
 /* Stripe width stays aligned with .svsch-interface-stripe. */
 .svsch-struct-stripe {
   stroke: var(--vscode-editor-foreground);
   stroke-width: 2;
-}
-
-.svsch-edge-bridge-interface {
-  stroke-width: 15.5;
-}
-
-.svsch-edge-segment-highlight {
-  fill: none;
-  pointer-events: none;
-  stroke: var(--svsch-selection-color);
-  stroke-linecap: round;
-  stroke-width: var(--svsch-selection-width);
 }
 
 .svsch-edge-net-highlight-group {
@@ -2919,155 +1798,18 @@ text {
   stroke-width: 0.5;
 }
 
+/* Same shade as the {} port designator (.svsch-port-type-suffix-blue). */
+.svsch-interface-stripe {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-width: 2;
+}
+
 .svsch-edge-label {
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
   overflow: visible;
   pointer-events: none;
-}
-
-.svsch-edge-connection-controls {
-  overflow: visible;
-  pointer-events: all;
-}
-
-.svsch-edge-connection-controls-inner {
-  display: flex;
-  height: 22px;
-}
-
-.svsch-edge-connection-controls-inner button {
-  align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-family: var(--vscode-font-family);
-  font-size: 10px;
-  height: 22px;
-  justify-content: center;
-  line-height: 1;
-  padding: 0 9px;
-  white-space: nowrap;
-}
-
-.svsch-edge-connection-controls-inner .svsch-edge-reroute-control {
-  border-radius: 3px 0 0 3px;
-  border-right: none;
-}
-
-.svsch-edge-connection-controls-inner .svsch-edge-reroute-control-solo {
-  border-radius: 3px;
-  border-right: 1px solid var(--vscode-panel-border);
-}
-
-.svsch-edge-connection-controls-inner .svsch-edge-cut-control {
-  border-radius: 0 3px 3px 0;
-}
-
-.svsch-edge-connection-controls-inner button:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-/* Portal root for floating controls that must paint above node bodies —
-   the selection Auto Layout/Cut out toolbar and a cut stub's
-   Reroute-to-canonical control (see NodeSelectionToolbar and OrthogonalEdge).
-   Deliberately NOT react-flow's own ViewportPortal/.react-flow__viewport-portal:
-   that one also hosts GenerateRegionOverlay, whose translucent region fill
-   must stay beneath node bodies, so it can't share a stacking tier with
-   controls that need the opposite. Its inline transform (set in main.tsx)
-   reproduces react-flow's pan/zoom so flow-space coordinates still work for
-   anything portaled in here. */
-.svsch-overlay-portal-root {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
-  transform-origin: 0 0;
-  z-index: 12;
-}
-
-.svsch-cut-stub-reset-layer {
-  overflow: visible;
-  pointer-events: auto;
-  position: absolute;
-}
-
-.svsch-selection-toolbar-layer {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
-}
-
-.svsch-selection-toolbar {
-  display: flex;
-  pointer-events: none;
-  position: absolute;
-  transform: translate(-100%, 8px);
-}
-
-.svsch-selection-relayout-control,
-.svsch-selection-cutout-control {
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  font-family: var(--vscode-font-family);
-  font-size: 10px;
-  height: 22px;
-  line-height: 1;
-  padding: 0 9px;
-  pointer-events: auto;
-  white-space: nowrap;
-}
-
-/* Merge into a single button group (matching the edge Reroute/Cut controls)
-   whenever both buttons are showing — Auto Layout only renders from 2+
-   selected blocks, so it's always the group's left half when present. Cut
-   out is omitted entirely when there's nothing left to cut, and either
-   control falls back to full rounding when it ends up alone. */
-.svsch-selection-relayout-control {
-  border-radius: 3px 0 0 3px;
-  border-right: none;
-}
-
-.svsch-selection-relayout-control:last-child {
-  border-radius: 3px;
-  border-right: 1px solid var(--vscode-panel-border);
-}
-
-.svsch-selection-cutout-control {
-  border-radius: 0 3px 3px 0;
-}
-
-.svsch-selection-cutout-control:first-child {
-  border-radius: 3px;
-}
-
-.svsch-selection-relayout-control:hover,
-.svsch-selection-cutout-control:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.svsch-edge-segment-handle {
-  fill: none;
-  opacity: 0;
-  pointer-events: stroke;
-  stroke: var(--vscode-focusBorder);
-  stroke-linecap: round;
-  stroke-width: 6;
-}
-
-.svsch-edge-segment-horizontal {
-  cursor: ns-resize;
-}
-
-.svsch-edge-segment-vertical {
-  cursor: ew-resize;
 }
 
 /* Plain text sitting just above the wire, matching the cut-net label
@@ -3082,61 +1824,6 @@ text {
   text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;
-}
-
-.react-flow__controls-button {
-  background: var(--vscode-editorWidget-background);
-  border-bottom-color: var(--vscode-panel-border);
-  color: var(--vscode-editor-foreground);
-}
-
-.react-flow__controls-button svg {
-  fill: currentColor;
-}
-
-.react-flow__minimap,
-.svsch-minimap {
-  background: var(--vscode-editorWidget-background) !important;
-  border: 1px solid var(--vscode-panel-border) !important;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-}
-
-.react-flow__minimap-mask {
-  fill: #000 !important;
-  fill-opacity: 0.5 !important;
-}
-
-.react-flow__minimap-node {
-  fill-opacity: 0.8;
-  stroke-width: 2;
-}
-
-/* Generate/arm region outlines injected into the minimap svg — outlines only, no fill.
-   Generate blocks match the minimap objects' foreground; arms are a bit more transparent. */
-.svsch-minimap-regions {
-  pointer-events: none;
-}
-
-.svsch-minimap-region {
-  fill: none;
-  stroke: var(--vscode-editor-foreground);
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
-.svsch-minimap-region-block {
-  stroke-opacity: 0.8;
-}
-
-.svsch-minimap-region-arm {
-  stroke-opacity: 0.6;
-}
-
-/* Regions flagged with the shared error style render in the same red on the minimap. */
-.svsch-minimap-region-invalid {
-  stroke: var(--svsch-error-highlight);
-  stroke-opacity: 1;
 }
 
 /* ── SVG-native node components ─────────────────────────── */
@@ -3619,7 +2306,6 @@ path.port-skin-body.port-skin-harness {
 .hdl-bus-node:has(> .hdl-node-svg) .bus-tap-right::before {
   display: none;
 }
-
 :root {
   --vscode-editor-background: #1e1e1e;
   --vscode-editor-foreground: #cccccc;
@@ -3659,7 +2345,7 @@ path.port-skin-body.port-skin-harness {
   font-size: 11px;
   dominant-baseline: middle;
 }
-/* styles.css sets a text color on this class for the webview's HTML
+/* diagram.css sets a text color on this class for the webview's HTML
    foreignObject span — an SVG text element ignores that for its own fill,
    so the exported SVG needs an explicit fill here or it defaults to black. */
 .svsch-edge-label {

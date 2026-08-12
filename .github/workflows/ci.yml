@@ -68,6 +68,8 @@ jobs:
       - &checkout_step
         name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - &restore_npm_step
         name: Restore node modules
@@ -115,7 +117,7 @@ jobs:
 
       - name: Compile Extension and Webview
         run: |
-          CI=true npx vite build
+          npm run build:webview
           npx tsc -p tsconfig.extension.json
           SURELOG_AUTO_INSTALL=1 npm run install-surelog
 
@@ -367,6 +369,8 @@ jobs:
 
   security_audit:
     needs: [prep, build_ci_image, setup]
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -374,7 +378,7 @@ jobs:
       - *restore_npm_step
 
       - name: Run npm audit
-        run: npm audit --audit-level=low
+        uses: ./.github/actions/security-audit
 
   package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, test_visual, test_syntax, test_bdd, test_system, security_audit]
