@@ -43,6 +43,31 @@ export function xorBackCurvePath(span: number, height: number): string {
   return `M 0 0 C ${ctrlX} ${ctrl1Y} ${ctrlX} ${ctrl2Y} 0 ${height}`;
 }
 
+/**
+ * Selection outline for an XOR/XNOR gate as a single path: it runs the tip's two bulge
+ * curves but swaps the body's own concave edge for a jump out to the detached back-curve
+ * and back, so the outline follows the back-curve instead of doubling the body's edge.
+ */
+export function xorSelectionPath(left: number, right: number, height: number): string {
+  const span = right - left;
+  const midY = height / 2;
+  const bulgeCtrl1X = left + span * 0.4160312500;
+  const bulgeCtrl1Y = height * 0.9771354167;
+  const bulgeCtrl2X = left + span * 0.7620937500;
+  const bulgeCtrl2Y = height * 0.8853020833;
+  const backCtrlX = span * 0.1821041667;
+  const backCtrl1Y = height * 0.3030833333;
+  const backCtrl2Y = height * 0.6969166667;
+  return [
+    `M ${right} ${midY}`,
+    `C ${bulgeCtrl2X} ${height - bulgeCtrl2Y} ${bulgeCtrl1X} ${height - bulgeCtrl1Y} ${left} 0`,
+    'M 0 0',
+    `C ${backCtrlX} ${backCtrl1Y} ${backCtrlX} ${backCtrl2Y} 0 ${height}`,
+    `M ${left} ${height}`,
+    `C ${bulgeCtrl1X} ${bulgeCtrl1Y} ${bulgeCtrl2X} ${bulgeCtrl2Y} ${right} ${midY}`
+  ].join(' ');
+}
+
 export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
@@ -66,6 +91,7 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   const backCurve = xorBackCurvePath(right - left, height);
 
   const path = bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
+  const selectionPath = isXor ? xorSelectionPath(left, right, height) : path;
   const bubbleCx = right + gateBubbleGap + gateBubbleRadius;
 
   return (
@@ -101,8 +127,7 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
       )}
-      {isXor && <path className="node-skin-selection gate-back-curve" d={backCurve} fill="none" />}
-      <path className="node-skin-selection" d={path} />
+      <path className="node-skin-selection" d={selectionPath} />
       {negated && <circle className="node-skin-selection gate-bubble-selection" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
     </>
   );
