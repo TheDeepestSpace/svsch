@@ -159,6 +159,16 @@ describe('HdlNode render snapshots (no-visual-change guard)', () => {
     expect(renderNode(node)).toMatchSnapshot();
   });
 
+  it('unknown kind (instance catch-all)', () => {
+    const node: PositionedNode = {
+      id: 'unk1', kind: 'unknown', label: 'mystery', ports: [
+        port({ id: 'unki', name: 'a', direction: 'input' }),
+        port({ id: 'unko', name: 'y', direction: 'output' })
+      ], position: pos
+    } as PositionedNode;
+    expect(renderNode(node)).toMatchSnapshot();
+  });
+
   it('port: input', () => {
     const node: PositionedNode = {
       id: 'p1', kind: 'port', label: 'clk', ports: [

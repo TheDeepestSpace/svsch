@@ -7,19 +7,9 @@ import type { PositionedNode } from '../../../ir/types';
 import { ArrayStackSelection } from '../shared/skins';
 import { HdlNodeBase } from '../shared/HdlNodeBase';
 import { NodeWarningIcon } from '../shared/NodeWarningIcon';
-import { handleNodeDoubleClick, navigateToSource } from '../shared/navigation';
+import { handleNodeDoubleClick, navigateToSource, stopIfBusTapDescendant, isInterfacePortLike } from '../shared/navigation';
 import type { HdlNodeData } from '../types';
 import { PortNodeSvg } from './PortNodeSvg';
-
-// The port skin (and its ancestor bus/interface node) renders navigable
-// tap/field labels as descendants; a double-click there should navigate to
-// that label's own source, not fall through to the port node's.
-function stopIfBusTapDescendant(event: React.MouseEvent, onDoubleClick: () => void): void {
-  if (event.target instanceof Element && event.target.closest('.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label')) {
-    return;
-  }
-  onDoubleClick();
-}
 
 export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const node = data.node as PositionedNode & { kind: 'port' };
@@ -36,7 +26,7 @@ export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const isOutput = portDirection === 'output';
   const isInput = portDirection === 'input';
   const isInout = portDirection === 'inout';
-  const isInterfacePort = Boolean(node.ports[0]?.typeName && node.ports[0]?.modportName !== undefined || node.ports[0]?.typeName?.endsWith('_if') || node.ports[0]?.typeName?.endsWith('if'));
+  const isInterfacePort = isInterfacePortLike(node.ports[0]);
   const isSkinnedPort = isInput || isOutput || isInout || isInterfacePort;
   const handlePositionOverride = node.metadata?.handlePosition as Position | undefined;
 
@@ -48,10 +38,7 @@ export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
       style={nodeStyle}
       className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'port'}
-      onDoubleClick={(event) => {
-        console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
-        stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node));
-      }}
+      onDoubleClick={(event) => stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node))}
       svg={
         <PortNodeSvg
           node={node}
@@ -106,10 +93,7 @@ export function InterfacePortNode({ data }: { data: HdlNodeData }): React.ReactE
       style={nodeStyle}
       className={`hdl-node hdl-node-port hdl-port-${port?.direction ?? 'unknown'} hdl-port-skinned hdl-port-interface hdl-interface-node`}
       title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'interface port'}
-      onDoubleClick={(event) => {
-        console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
-        stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node));
-      }}
+      onDoubleClick={(event) => stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node))}
       svg={
         <PortNodeSvg
           node={node}

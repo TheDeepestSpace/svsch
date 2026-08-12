@@ -31,7 +31,7 @@ import { InstanceNode } from './instance/InstanceNode';
 import { ArrayStackSelection } from './shared/skins';
 import { NodeWarningIcon } from './shared/NodeWarningIcon';
 import { InputPortHandles } from './shared/InputPortHandles';
-import { handleNodeDoubleClick, navigateToSource } from './shared/navigation';
+import { handleNodeDoubleClick, navigateToSource, stopIfBusTapDescendant } from './shared/navigation';
 
 // Bus/struct/interface rendering (below) is intentionally not yet split into
 // self-contained per-kind components — see issue #172's "Shape A/B" writeup
@@ -41,19 +41,12 @@ import { handleNodeDoubleClick, navigateToSource } from './shared/navigation';
 export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
-  const typeName = nodeTypeName(node);
   const nodeRole = structRole(node);
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
-  const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
-  const parameterRows = instanceParameterRows(node);
-  const nodeStyle = {
-    '--svsch-node-width': `${nodeWidth}px`,
-    '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`,
-  } as React.CSSProperties;
-  const warningIcon = <NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />;
 
   if (node.kind === 'netLabel') {
+    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    const parameterRows = instanceParameterRows(node);
     return (
       <NetLabelNode
         node={node}
@@ -79,6 +72,14 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
 
   if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {
     const role = nodeRole;
+    const typeName = nodeTypeName(node);
+    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    const nodeStyle = {
+      '--svsch-node-width': `${nodeWidth}px`,
+      '--svsch-node-height': `${nodeHeight}px`,
+      '--svsch-port-width': `${diagramSizing.portWidth}px`,
+    } as React.CSSProperties;
+    const warningIcon = <NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />;
     const isInterface = node.kind === 'interface';
     const isInterfaceModport = isInterface && role === 'modport';
     const isModuleInterfaceModport = isInterfaceModport && node.label !== typeName;
@@ -159,13 +160,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
         onClickCapture={navigateTapFromEvent}
         onDoubleClickCapture={navigateTapFromEvent}
-        onDoubleClick={(event) => {
-          console.log('HdlNode.tsx onDoubleClick target class:', (event.target as Element).className);
-          if (event.target instanceof Element && event.target.closest('.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label')) {
-            return;
-          }
-          handleNodeDoubleClick(node);
-        }}
+        onDoubleClick={(event) => stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node))}
       >
         <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
           <BusNodeSvg
@@ -287,6 +282,13 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     const isArray = nodeIsArrayNode(node);
     const inputs = node.ports.filter(isInputSidePort);
     const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
+    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    const nodeStyle = {
+      '--svsch-node-width': `${nodeWidth}px`,
+      '--svsch-node-height': `${nodeHeight}px`,
+      '--svsch-port-width': `${diagramSizing.portWidth}px`,
+    } as React.CSSProperties;
+    const warningIcon = <NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />;
     return (
       <button
         className={`hdl-node hdl-node-gate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}

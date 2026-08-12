@@ -2,6 +2,7 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
 import { muxRightTopY } from '../../../diagram/muxGeometry';
+import { aluInputPortTops } from '../../../diagram/aluGeometry';
 import { nodeOperation, nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
@@ -47,8 +48,8 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
     `Z`
   ].join(' ');
 
-  // Input port centers: top = (index === 0 ? g : g*3) - g/2, center = top + g/2
-  const inputYs = [g * 1, g * 3];
+  // Input port centers: top = aluInputPortTops(g)[index] - g/2, center = top + g/2
+  const inputYs = aluInputPortTops(g);
 
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
