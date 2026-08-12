@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import { comparePngBuffers } from '../test/pngSnapshotComparison';
 import { baselineThresholdFor, type SnapshotSuite } from '../test/snapshotPolicy';
 import { findSnapshotBypass, loadSnapshotBypassEntries } from '../test/snapshotBypass';
+import { parseChangedBaselines } from '../test/changedBaselines';
 
 function usage(): never {
   throw new Error('Usage: check-snapshot-updates <base-commit> <visual|bdd|system>');
@@ -15,23 +16,24 @@ const suite: SnapshotSuite = suiteArg;
 const prNumber = Number(process.env.PR_NUMBER);
 const bypassEntries = loadSnapshotBypassEntries();
 
-const changedFiles = execFileSync(
+const nameStatusOutput = execFileSync(
   'git',
-  ['diff', '--name-only', '--diff-filter=M', '-z', baseCommit, 'HEAD'],
+  ['diff', '--name-status', '-z', '-M', baseCommit, 'HEAD'],
   { encoding: 'utf8' }
-).split('\0').filter(Boolean);
+);
+const changedBaselines = parseChangedBaselines(nameStatusOutput);
 
 let checked = 0;
 let rejected = 0;
 let bypassed = 0;
 
-for (const filePath of changedFiles) {
-  const policy = baselineThresholdFor(filePath);
+for (const { oldPath, newPath } of changedBaselines) {
+  const policy = baselineThresholdFor(newPath);
   if (!policy || policy.suite !== suite) continue;
 
   checked += 1;
-  const expectedBuffer = execFileSync('git', ['show', `${baseCommit}:${filePath}`]);
-  const actualBuffer = fs.readFileSync(filePath);
+  const expectedBuffer = execFileSync('git', ['show', `${baseCommit}:${oldPath}`]);
+  const actualBuffer = fs.readFileSync(newPath);
   const comparison = comparePngBuffers(
     expectedBuffer,
     actualBuffer,
@@ -43,11 +45,11 @@ for (const filePath of changedFiles) {
   // baseline update for this gate. Pixel-identical metadata changes are not.
   if (comparison.numDiffPixels === undefined || !comparison.matches) continue;
 
-  const bypass = findSnapshotBypass(bypassEntries, filePath, prNumber, comparison.numDiffPixels);
+  const bypass = findSnapshotBypass(bypassEntries, newPath, prNumber, comparison.numDiffPixels);
   if (bypass) {
     bypassed += 1;
     console.log(
-      `::notice file=${filePath}::Sub-threshold update allowed via test/snapshot-bypass.yml `
+      `::notice file=${newPath}::Sub-threshold update allowed via test/snapshot-bypass.yml `
       + `(PR #${bypass.pr}, diff ${comparison.numDiffPixels} px): ${bypass.reason}`
     );
     continue;
@@ -55,7 +57,7 @@ for (const filePath of changedFiles) {
 
   rejected += 1;
   console.error(
-    `::error file=${filePath}::This screenshot update looks like sub-threshold noise `
+    `::error file=${newPath}::This screenshot update looks like sub-threshold noise `
     + `(diff was ${comparison.numDiffPixels} px, threshold is ${policy.maxDiffPixels} px) — `
     + 'the baseline was rejected, no update needed. If this is a real change, add an entry to '
     + 'test/snapshot-bypass.yml instead of forcing the update.'
