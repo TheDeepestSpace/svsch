@@ -318,9 +318,11 @@ export class DiagramPanel {
 
       let extensionCss = '';
       try {
-        const p = path.join(this.context.extensionUri.fsPath, 'media', 'webview.css');
+        const p = path.join(this.context.extensionUri.fsPath, 'media', 'diagram.css');
         if (fs.existsSync(p)) {
           extensionCss = fs.readFileSync(p, 'utf8');
+        } else {
+          logger.log(`Warning: ${p} not found; the exported SVG will have no diagram styling. Run "npm run build:webview".`);
         }
       } catch (err) {
         logger.log(`Warning: Could not load extension CSS for export: ${err}`);

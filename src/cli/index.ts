@@ -14,7 +14,7 @@ import { renderSvg } from './svgRenderer';
 import { minifySvg } from './svgMinify';
 import type { SvgThemeName } from './theme';
 import reactFlowCss from '@xyflow/react/dist/style.css?raw';
-import extensionCss from '../webview/styles.css?raw';
+import extensionCss from '../webview/diagram.css?raw';
 
 interface RenderOptions {
   output?: string;
