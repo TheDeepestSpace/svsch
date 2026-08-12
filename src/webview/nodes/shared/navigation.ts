@@ -26,7 +26,9 @@ export function isInterfacePortLike(port: { typeName?: string; modportName?: str
 }
 
 export function navigateToSource(source: SourceRange): void {
-  vscode.postMessage({ type: 'navigateToSource', source });
+  const msg = { type: 'navigateToSource', source };
+  console.log('NAVIGATE:', JSON.stringify(msg));
+  vscode.postMessage(msg);
 }
 
 type NavigationMessage =
@@ -53,6 +55,7 @@ export function handleNodeDoubleClick(node: PositionedNode): void {
     msg = { type: 'navigateToSource', source: node.source };
   }
   if (msg) {
+    console.log('NAVIGATE:', JSON.stringify(msg));
     vscode.postMessage(msg);
   }
 }
