@@ -1,5 +1,5 @@
 {
-  "svsch.projectFolder": "./no-sv-files-here",
+  "svsch.projectFolder": ".",
   "git.openRepositoryInParentFolders": "never",
   "extensions.ignoreRecommendations": true,
   "workbench.tips.enabled": false,
