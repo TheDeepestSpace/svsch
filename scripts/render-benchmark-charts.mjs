@@ -395,14 +395,15 @@ export function renderDeltaTableMarkdown(rows) {
   return lines.join('\n');
 }
 
+function csvField(value) {
+  const str = String(value);
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
 // Full per-entry data as CSV — the complete dataset behind a chart that drops
 // labels/per-bar text to stay legible with many entries (unlike the delta
 // table above, which only ever shows a worst-5/best-5 slice).
 export function renderDeltaCsv(rows) {
-  const csvField = (value) => {
-    const str = String(value);
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
-  };
   const header = ['name', 'unit', 'baseline', 'value', 'delta_ms', 'delta_pct', 'is_new'];
   const lines = [header.join(',')];
   for (const row of rows) {
@@ -414,6 +415,44 @@ export function renderDeltaCsv(rows) {
       row.deltaMs ?? '',
       row.deltaPct !== undefined ? row.deltaPct.toFixed(2) : '',
       row.isNew ? 'true' : 'false',
+    ].map(csvField).join(','));
+  }
+  return lines.join('\n') + '\n';
+}
+
+// One CSV row per test covering both stacked-chart segments (elaboration +
+// rendering) instead of a separate file per segment, since a test's total
+// diagram-open time — the thing the stacked chart actually visualizes — only
+// exists when both halves sit side by side. Ordered fastest-to-slowest by
+// that total, same as computeStackedData/the chart itself, so this file and
+// the chart it backs never disagree on row order.
+export function renderStackedCsv(metrics) {
+  const { elabRows, renderRows, names } = computeStackedData(metrics);
+  const metricFields = (row) => [
+    row?.unit ?? '',
+    row?.baseline ?? '',
+    row?.value ?? '',
+    row?.deltaMs ?? '',
+    row?.deltaPct !== undefined ? row.deltaPct.toFixed(2) : '',
+    row ? (row.isNew ? 'true' : 'false') : '',
+  ];
+
+  const header = [
+    'name',
+    'elaboration_unit', 'elaboration_baseline', 'elaboration_value', 'elaboration_delta_ms', 'elaboration_delta_pct', 'elaboration_is_new',
+    'rendering_unit', 'rendering_baseline', 'rendering_value', 'rendering_delta_ms', 'rendering_delta_pct', 'rendering_is_new',
+    'total_value',
+  ];
+  const lines = [header.join(',')];
+  for (const name of names) {
+    const elabRow = elabRows.get(name);
+    const renderRow = renderRows.get(name);
+    const totalValue = (elabRow?.value ?? 0) + (renderRow?.value ?? 0);
+    lines.push([
+      name,
+      ...metricFields(elabRow),
+      ...metricFields(renderRow),
+      totalValue,
     ].map(csvField).join(','));
   }
   return lines.join('\n') + '\n';

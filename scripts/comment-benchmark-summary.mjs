@@ -6,17 +6,17 @@ import {
   renderSuiteChart,
   renderStackedSuiteChart,
   renderDeltaTableMarkdown,
-  renderDeltaCsv,
+  renderStackedCsv,
   computeDeltaRows,
-  computeStackedData,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
 // Charts with few enough entries to label legibly (vscode-version columns for
 // system) keep x-axis names and per-bar delta text. visual (one column per
 // spec file/test) can run into the dozens, so its chart drops labels in
-// favor of showing every bar, however thin — it also gets a full CSV per
-// metric (see below) so the exact numbers aren't lost along with the labels.
+// favor of showing every bar, however thin — it also gets a full CSV (both
+// elaboration and rendering values, plus their sum) so the exact numbers
+// aren't lost along with the labels.
 const CHART_KEYS_WITH_LABELS = new Set(['system']);
 const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
@@ -163,19 +163,13 @@ for (const [key, group] of chartGroups) {
   contentByFilename.set(`${key}.svg`, svg);
 
   if (CHART_KEYS_WITH_CSV.has(key)) {
-    // Match the chart's fastest-to-slowest bar order rather than each
-    // metric's own entries order, so the CSV lines up with what the chart
-    // shows (crucial once the chart drops per-bar labels above ~10 entries).
-    const chartOrder = key === 'visual' ? computeStackedData(metrics).names : null;
-    const csvFilenames = [];
-    for (const metric of metrics) {
-      const rowsByName = new Map(computeDeltaRows(metric.entries, metric.baselineByName).map((row) => [row.name, row]));
-      const rows = chartOrder ? chartOrder.map((name) => rowsByName.get(name)).filter(Boolean) : [...rowsByName.values()];
-      const filename = `${metric.name}.csv`;
-      contentByFilename.set(filename, renderDeltaCsv(rows));
-      csvFilenames.push({ label: metric.label, filename });
-    }
-    csvFilenamesByKey.set(key, csvFilenames);
+    // One row per test with both elaboration and rendering values plus their
+    // sum, ordered fastest-to-slowest by that sum — same order
+    // computeStackedData sorts the chart's bars in, so the CSV never
+    // disagrees with what the chart shows.
+    const filename = `${key}.csv`;
+    contentByFilename.set(filename, renderStackedCsv(metrics));
+    csvFilenamesByKey.set(key, [{ filename }]);
   }
 }
 const chartCommitSha = publishFiles(contentByFilename);
