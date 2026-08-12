@@ -801,6 +801,15 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
   if (this.lastViewModel?.moduleName) {
     await syncLastViewModel(this, this.lastViewModel.moduleName);
   }
+  // Clear any hover affordance (e.g. the Reroute/Cut popup) left over from a
+  // prior step's mouse position; otherwise whether it's still showing here
+  // is a race with the OS/browser re-evaluating :hover, making the
+  // screenshot below flaky.
+  const pane = this.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox().catch(() => null);
+  if (box) {
+    await pane.hover({ position: { x: box.width - 16, y: 16 }, force: true }).catch(() => {});
+  }
   await this.takeScreenshot('After returning to pane');
 });
 
