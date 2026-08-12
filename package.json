@@ -86,6 +86,11 @@
           "default": {},
           "description": "Macros to define for the preprocessor (e.g. { \"DEBUG\": \"1\" })."
         },
+        "svsch.minifySvg": {
+          "type": "boolean",
+          "default": true,
+          "description": "Minify SVG diagrams exported via 'Export as SVG' using SVGO."
+        },
         "svsch.autocut-clk-reset": {
           "type": "boolean",
           "default": true,
@@ -131,7 +136,8 @@
     "elkjs": "^0.12.0",
     "libavoid-js": "^0.4.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "svgo": "^4.0.2"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",

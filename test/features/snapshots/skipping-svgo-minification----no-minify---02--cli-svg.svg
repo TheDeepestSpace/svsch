@@ -1,4 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="192" aria-label="top diagram" class="svsch-diagram" role="img" viewBox="0 0 960 192"><defs><pattern id="svsch-interface-stripes" width="10" height="10" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><path d="M5 0 5 10" class="svsch-interface-stripe"/></pattern><pattern id="svsch-struct-stripes" width="10" height="10" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><path d="M5 0 5 10" class="svsch-struct-stripe"/></pattern><linearGradient id="svsch-bus-gradient" x1="0%" x2="100%" y1="0%" y2="0%"><stop offset="0%" stop-color="var(--svsch-edge-stacked-back)"/><stop offset="50%" stop-color="var(--svsch-edge-stacked-middle)"/><stop offset="100%" stop-color="var(--svsch-edge-stacked-front)"/></linearGradient></defs><style>/*<![CDATA[*/
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="552" height="144" viewBox="0 0 552 144" class="svsch-diagram" role="img" aria-label="top diagram">
+<defs>
+  <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
+    <stop offset="50%" stop-color="var(--svsch-edge-stacked-middle)" />
+    <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />
+  </linearGradient>
+  <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
+  </pattern>
+</defs>
+<style>
+/*<![CDATA[*/
 /* this gets exported as style.css and can be used for the default theming */
 /* these are the necessary styles for React/Svelte Flow, they get used by base.css and style.css */
 .react-flow {
@@ -3709,4 +3725,25 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
-/*]]>*/</style><g transform="translate(24 24)"><g class="svsch-generate-regions"/><g class="svsch-edges"><g class="svsch-edge-group" data-edge-id="edge:instance:top:u_sub:port:top:o:o"><path d="M 552 72 L 576 72 L 744 72 L 768 72" class="svsch-edge" data-edge-id="edge:instance:top:u_sub:port:top:o:o" data-net-key="instance:top:u_sub:port:y"/></g><g class="svsch-edge-group" data-edge-id="edge:port:top:i:instance:top:u_sub:i"><path d="M 144 72 L 168 72 L 336 72 L 360 72" class="svsch-edge" data-edge-id="edge:port:top:i:instance:top:u_sub:i" data-net-key="port:top:i:port:i"/></g></g><g class="svsch-nodes"><g class="svsch-node hdl-node hdl-node-instance" data-node-id="instance:top:u_sub" data-node-kind="instance" transform="translate(360 24)"><svg width="192" height="96" aria-hidden="true" class="hdl-node-svg"><path d="M0 0H192V96H0z" class="svsch-node-shape"/><text x="12" y="14" class="svsch-node-kind" dominant-baseline="middle" text-anchor="start">sub</text><text x="12" y="26" class="svsch-node-title" dominant-baseline="middle" text-anchor="start">u_sub</text><text x="12" y="48" class="svsch-port-label" dominant-baseline="middle">a</text><text x="180" y="48" class="svsch-port-label" dominant-baseline="middle" text-anchor="end">y</text></svg></g><g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:i" data-node-kind="port" transform="translate(24 60)"><svg width="120" height="24" aria-hidden="true" class="hdl-node-svg"><g class="port-skin port-skin-input"><path d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" class="port-skin-body svsch-array-layer-middle"/><path d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" class="port-skin-selection"/><text x="60" y="12" class="svsch-port-label svsch-port-node-label" dominant-baseline="middle" font-size="12" font-weight="600" text-anchor="middle"><tspan class="svsch-port-node-name">i</tspan></text></g></svg></g><g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:o" data-node-kind="port" transform="translate(768 60)"><svg width="120" height="24" aria-hidden="true" class="hdl-node-svg"><g class="port-skin port-skin-output"><path d="M 12 0 H 120 V 24 H 12 L 0 12 Z" class="port-skin-body svsch-array-layer-middle"/><path d="M 12 0 H 120 V 24 H 12 L 0 12 Z" class="port-skin-selection"/><text x="60" y="12" class="svsch-port-label svsch-port-node-label" dominant-baseline="middle" font-size="12" font-weight="600" text-anchor="middle"><tspan class="svsch-port-node-name">o</tspan></text></g></svg></g></g></g></svg>
+/*]]>*/
+</style>
+<g transform="translate(24 12)">
+<g class="svsch-generate-regions">
+</g>
+<g class="svsch-edges">
+<g class="svsch-edge-group" data-edge-id="edge:port:top:a:port:top:y:y"><path class="svsch-edge" data-edge-id="edge:port:top:a:port:top:y:y" data-net-key="port:top:a:port:a" d="M 144 48 L 168 48 L 336 48 L 360 48" /></g>
+</g>
+<g class="svsch-nodes">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 36)">
+<svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
+<g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">a</tspan></text></g>
+</svg>
+</g>
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:y" data-node-kind="port" transform="translate(360 36)">
+<svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
+<g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">y</tspan></text></g>
+</svg>
+</g>
+</g>
+</g>
+</svg>

@@ -7,6 +7,7 @@ import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, Positione
 import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
+import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
 import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
 
@@ -326,11 +327,14 @@ export class DiagramPanel {
       }
 
       const viewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
-      const svg = renderSvg(viewModel, {
+      let svg = renderSvg(viewModel, {
         theme: vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
         reactFlowCss,
         extensionCss
       });
+      if (vscode.workspace.getConfiguration('svsch').get<boolean>('minifySvg', true)) {
+        svg = await minifySvg(svg);
+      }
 
       const defaultUri = vscode.Uri.file(path.join(workspaceRootPath() ?? '.', `${this.currentModule.replace(/[^a-z0-9]/gi, '_')}.svg`));
       
