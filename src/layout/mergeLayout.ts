@@ -865,7 +865,8 @@ function buildNetCutProjection(
         aliasNames: visibleAliasNames(firstEdge.metadata?.aliasNames, firstEdge, nodesById)
       },
       moduleLayout,
-      labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
+      labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label),
+      firstEdge
     );
     nodes.push(sourceLabelNode);
     endpointByLabelId.set(sourceLabelId, endpointKey(cut.source.nodeId, cut.source.portId));
@@ -911,7 +912,8 @@ function buildNetCutProjection(
           aliasNames: visibleAliasNames(edge.metadata?.aliasNames, edge, nodesById)
         },
         moduleLayout,
-        labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
+        labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label),
+        edge
       );
       nodes.push(sinkLabelNode);
       endpointByLabelId.set(sinkLabelId, endpointKey(edge.target, edge.targetPort));
@@ -1096,7 +1098,8 @@ function makeCutLabelNode(
   moduleName: string,
   cutNet: NonNullable<DiagramNode['metadata']>['cutNet'],
   moduleLayout: SavedModuleLayout,
-  fallbackPosition: { x: number; y: number }
+  fallbackPosition: { x: number; y: number },
+  template: DiagramEdge
 ): PositionedNode {
   const saved = moduleLayout.nodes[id];
   // Only a *pinned* (fixed) save wins over the geometry-derived fallback — a
@@ -1120,7 +1123,14 @@ function makeCutLabelNode(
         direction: cutNet?.role === 'source' ? 'input' : 'output'
       }
     ],
-    metadata: { cutNet },
+    metadata: {
+      cutNet,
+      // A cut end on a wire that lives inside an inactive generate arm must
+      // dim the same way the rest of that route does — otherwise the stub
+      // label is the one piece of the wire left at full opacity.
+      generateActiveState: template.metadata?.generateActiveState,
+      generateRegionId: template.metadata?.generateRegionId
+    },
     position,
     fixed: saved?.fixed
   };
@@ -3074,10 +3084,14 @@ export function firstOpenAutoCutEdges(
     const isRegisterControl = edge.targetPort !== undefined
       && registerControlPorts.has(`${edge.target}\0${edge.targetPort}`);
     const isDeclared = Boolean(edge.metadata?.declaredNetName);
-    const netKey = edgeNetKey(edge);
-    if ((isRegisterControl || isDeclared) && !selectedNets.has(netKey)) {
+    // Two edges from different (mutually exclusive) generate arms that both
+    // drive the same declared net/port add no semantic distinction as
+    // separate cut ends — key on the declared name so only the first is
+    // auto-cut, instead of stacking a duplicate stub on top of it.
+    const dedupeKey = edge.metadata?.declaredNetName ?? edgeNetKey(edge);
+    if ((isRegisterControl || isDeclared) && !selectedNets.has(dedupeKey)) {
       selected.push(edge);
-      selectedNets.add(netKey);
+      selectedNets.add(dedupeKey);
     }
   }
   return selected;
