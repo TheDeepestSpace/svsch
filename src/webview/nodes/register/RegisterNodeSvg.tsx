@@ -1,6 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
+import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
 import { registerPortTop, registerExtraInputPortTop } from '../../../diagram/registerGeometry';
 import {
   registerClockSignal,
@@ -24,6 +25,14 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
+  // A resize override can make `width`/`height` (the rendered box) larger than the
+  // node's canonical auto-fit size. Bottom/center-anchored content (the reset row,
+  // extra input rows) must stay pinned at its canonical position rather than track
+  // the grown box — otherwise growing the node would reflow content instead of just
+  // adding padding. Top/edge-anchored content (D/Q/clock/RV rows, the Q label's
+  // right edge) is unaffected either way, since it's already independent of height
+  // or explicitly meant to track the resized right edge.
+  const canonical = diagramNodeDimensions(node);
 
   const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
   const outputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'output');
@@ -91,7 +100,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const dTop = registerPortTop('d', height, hasReset, hasRv);
   const qTop = registerPortTop('q', height, hasReset, hasRv);
   const clkTop = registerPortTop('clock', height, hasReset, hasRv);
-  const rstTop = registerPortTop('reset', height, hasReset, hasRv);
+  const rstTop = registerPortTop('reset', canonical.height, hasReset, hasRv);
   const rvTop = registerPortTop('rv', height, hasReset, hasRv);
   const targetStackLeads = (
     <>
@@ -195,7 +204,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
       {/* Reset label: centered at bottom, if present */}
       {resetPort && (
         <g className="svsch-register-reset-port">
-          <text className="svsch-port-label svsch-register-reset-label" x={width / 2 + contentShiftX} y={rstTop + g / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
+          <text className="svsch-port-label svsch-register-reset-label" x={canonical.width / 2 + contentShiftX} y={rstTop + g / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
             {resetActiveLow ? 'R̅' : 'R'}
           </text>
         </g>
@@ -208,7 +217,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* Extra input ports */}
       {extraInputPorts.map((port: DiagramPort, index: number) => {
-        const top = registerExtraInputPortTop(index, height, hasRv);
+        const top = registerExtraInputPortTop(index, canonical.height, hasRv);
         return (
           <text key={port.id} className="svsch-port-label" x={g * 0.75 + contentShiftX} y={top + g / 2 + contentShiftY} dominantBaseline="middle">
             <SvgPortLabel port={port} />

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramSizing, nodePortCenterOffset } from '../../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth, resolvedNodeDimensions } from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
@@ -29,6 +29,7 @@ import {
 import { ArrayStackSelection } from './shared/skins';
 import { nodeStackIsWide } from '../../ir/edgeStyle';
 import { NetLabelNode } from './NetLabelNode';
+import { InteractionContext, type NodeResizeHandle } from './shared/context';
 import type { HdlFlowNode } from './types';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
 import { LatchNodeSvg } from './latch/LatchNodeSvg';
@@ -47,7 +48,7 @@ import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
-export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
+export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
@@ -67,7 +68,15 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
       : []);
   const sideInputs = muxTopPorts.length > 0 ? inputs.filter((port: DiagramPort) => !muxTopPorts.some((topPort) => topPort.id === port.id)) : inputs;
   const portDirection = node.kind === 'port' ? node.ports[0]?.direction ?? 'unknown' : undefined;
-  const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+  const { width: nodeWidth, height: nodeHeight } = resolvedNodeDimensions(node);
+  // Resizable kinds (instance/register) can render larger than their canonical
+  // auto-fit box (diagramNodeDimensions) when a manual resize override is
+  // saved. Row/column geometry that must not reflow as the box grows uses
+  // this canonical size instead of nodeWidth/nodeHeight — see the register
+  // branch below and RegisterNodeSvg.
+  const isResizable = node.kind === 'register' || node.kind === 'instance';
+  const canonicalSize = isResizable ? diagramNodeDimensions(node) : { width: nodeWidth, height: nodeHeight };
+  const isResized = nodeWidth > canonicalSize.width || nodeHeight > canonicalSize.height;
   const parameterRows = instanceParameterRows(node);
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
   const nodeStyle = {
@@ -435,16 +444,19 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
         {clockPort && <Handle type="target" id={clockPort.id} position={Position.Left}
           style={{ top: registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom}
-          style={{ left: nodeWidth / 2, bottom: 0, transform: 'translate(-50%, 0)' }} />}
+          style={{ left: canonicalSize.width / 2, top: registerPortTop('reset', canonicalSize.height, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {rvPort && <Handle type="target" id={rvPort.id} position={Position.Left}
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (
           <Handle key={port.id} type="target" id={port.id} position={Position.Left}
-            style={{ top: registerExtraInputPortTop(index, nodeHeight, hasRv) + diagramSizing.gridSize / 2 }} />
+            style={{ top: registerExtraInputPortTop(index, canonicalSize.height, hasRv) + diagramSizing.gridSize / 2 }} />
         ))}
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {node.kind === 'register' && (
+          <NodeResizeControls nodeId={id} moduleName={data.moduleName} isResized={isResized} />
+        )}
         {warningIcon}
       </button>
     );
@@ -677,8 +689,69 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
       {isArray
         ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
         : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+      {node.kind === 'instance' && (
+        <NodeResizeControls nodeId={id} moduleName={data.moduleName} isResized={isResized} />
+      )}
       {warningIcon}
     </button>
+  );
+}
+
+const RESIZE_HANDLES: NodeResizeHandle[] = [
+  'top', 'right', 'bottom', 'left',
+  'top-left', 'top-right', 'bottom-right', 'bottom-left'
+];
+
+// Edge/corner grow-only resize hit-zones plus a hover/select-only "revert to
+// canonical size" button, shared by the instance and register branches above.
+// The drag itself is driven from DiagramApp (main.tsx) — see startNodeResize
+// on InteractionContext — this component only renders the affordances and
+// fires the revert message directly (a stateless, one-shot action).
+function NodeResizeControls({ nodeId, moduleName, isResized }: {
+  nodeId: string;
+  moduleName?: string;
+  isResized: boolean;
+}): React.ReactElement {
+  const { startNodeResize } = useContext(InteractionContext);
+  return (
+    <>
+      {RESIZE_HANDLES.map((handle) => (
+        <div
+          key={handle}
+          className={`svsch-node-resize-handle svsch-node-resize-${handle}`}
+          onPointerDown={(event) => startNodeResize(event, nodeId, handle)}
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+        />
+      ))}
+      {isResized && (
+        // A real <button> can't nest inside the outer .hdl-node <button> (invalid
+        // HTML — browsers would close the outer button early), so this is a
+        // div styled and keyboard-activatable as one instead.
+        <div
+          role="button"
+          tabIndex={0}
+          className="svsch-node-revert-size"
+          title="Revert to canonical size"
+          aria-label="Revert to canonical size"
+          onClick={(event) => {
+            event.stopPropagation();
+            vscode.postMessage({ type: 'revertNodeSize', moduleName, nodeId });
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+            vscode.postMessage({ type: 'revertNodeSize', moduleName, nodeId });
+          }}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          ⟲
+        </div>
+      )}
+    </>
   );
 }
 

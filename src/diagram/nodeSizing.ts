@@ -19,6 +19,29 @@ export interface DiagramNodeDimensions {
   height: number;
 }
 
+/**
+ * The size a node actually renders/occupies at: the canonical auto-fit size
+ * (diagramNodeDimensions), grown per axis to fit a manual resize override if
+ * one is saved. Never shrinks below canonical, even if the override is
+ * stale (e.g. canonical grew after the override was saved) — see
+ * `sizeOverride` on BaseDiagramNode. Every consumer that needs a node's true
+ * on-screen/routing footprint (ELK sizing, obstacle bounds, region
+ * auto-grow, collision checks) should use this instead of
+ * diagramNodeDimensions; diagramNodeDimensions itself stays the pure
+ * canonical calculation, since resize logic needs that as its grow-only
+ * floor independent of any current override.
+ */
+export function resolvedNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
+  const canonical = diagramNodeDimensions(node);
+  const override = node.sizeOverride;
+  if (!override) return canonical;
+  const grid = diagramSizing.gridSize;
+  return {
+    width: Math.max(canonical.width, override.width * grid),
+    height: Math.max(canonical.height, override.height * grid)
+  };
+}
+
 export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
   const role = structRole(node);
   const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';

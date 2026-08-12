@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from './layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -29,6 +29,7 @@ type WebviewMessage =
   | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
+  | { type: 'revertNodeSize'; moduleName: string; nodeId: string }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
@@ -268,6 +269,10 @@ export class DiagramPanel {
     }
     if (message.type === 'resetCutLabelPosition') {
       await this.resetCutLabelPosition(message.moduleName, message.nodeId);
+      return;
+    }
+    if (message.type === 'revertNodeSize') {
+      await this.revertNodeSize(message.moduleName, message.nodeId);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -654,6 +659,18 @@ export class DiagramPanel {
     await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = resetCutLabelPosition(this.layout, moduleName, nodeId);
+    await this.persistModuleLayout(store, moduleName);
+    await this.postView();
+  }
+
+  private async revertNodeSize(moduleName: string, nodeId: string): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    await this.ensureModuleLayout(store, moduleName);
+    this.currentModule = moduleName;
+    this.layout = revertNodeSize(this.layout, moduleName, nodeId);
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }

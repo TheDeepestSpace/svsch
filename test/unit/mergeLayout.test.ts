@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
@@ -633,6 +633,101 @@ describe('layout merge', () => {
     expect(merged.modules.top.nodes.a).toEqual({ x: 24, y: 36, fixed: true });
     expect(merged.modules.top.nodes.auto).toBeUndefined(); // auto was not fixed
     expect(merged.modules.top.nodes.b).toBeUndefined(); // b was not fixed
+  });
+
+  it('persists a node size override as grid units alongside its fixed position', () => {
+    const nodes: PositionedNode[] = [
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 120, y: 96 },
+        fixed: true,
+        sizeOverride: { width: 12, height: 8 }
+      }
+    ];
+
+    const merged = mergeNodePositions({ version: 1, modules: {} }, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true, width: 12, height: 8 });
+  });
+
+  it('drops a previously saved size override once the node reports none (revert)', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 120, y: 96, fixed: true, width: 12, height: 8 }
+          }
+        }
+      }
+    };
+    const nodes: PositionedNode[] = [
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 120, y: 96 }, fixed: true }
+    ];
+
+    const merged = mergeNodePositions(layout, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true });
+  });
+
+  it('revertNodeSize clears only the size override, keeping position and fixed', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 100, y: 100, fixed: true, width: 12, height: 8 }
+          }
+        }
+      }
+    };
+
+    const reverted = revertNodeSize(layout, 'top', 'u');
+
+    expect(reverted.modules.top.nodes.u).toEqual({ x: 100, y: 100, fixed: true });
+  });
+
+  it('revertNodeSize is a no-op when the node has no saved override', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: { top: { nodes: { u: { x: 100, y: 100, fixed: true } } } }
+    };
+
+    expect(revertNodeSize(layout, 'top', 'u')).toEqual(layout);
+    expect(revertNodeSize(layout, 'top', 'missing')).toEqual(layout);
+    expect(revertNodeSize(layout, 'missing-module', 'u')).toEqual(layout);
+  });
+
+  it('grows a resized instance past its saved size at view-model build time, floored by canonical size', async () => {
+    const canonical = diagramNodeDimensions({ id: 'u', kind: 'instance', label: 'u', ports: [] });
+    const grid = diagramSizing.gridSize;
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: {
+              x: 0,
+              y: 0,
+              fixed: true,
+              width: canonical.width / grid + 3,
+              height: canonical.height / grid + 2
+            }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graph, 'top', layout);
+    const node = view.nodes.find((candidate) => candidate.id === 'u');
+
+    expect(node?.sizeOverride).toEqual({ width: canonical.width / grid + 3, height: canonical.height / grid + 2 });
+    const resolved = node && resolvedNodeDimensions(node);
+    expect(resolved?.width).toBe(canonical.width + grid * 3);
+    expect(resolved?.height).toBe(canonical.height + grid * 2);
   });
 
   it('persists edge waypoints and applies them to the view model', async () => {
