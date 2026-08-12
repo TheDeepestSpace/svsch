@@ -210,7 +210,7 @@
       "target": "reg:register_clock_enable:q",
       "sourceHandle": "port:rst",
       "targetHandle": "rst",
-      "path": "M 144 288 L 168 288 L 408 288 L 408 264 L 408 216"
+      "path": "M 144 288 L 168 288 L 408 288 L 408 264 L 408 213"
     },
     {
       "id": "edge:reg:register_clock_enable:q:mux:register_clock_enable:q:en:q_next:q",

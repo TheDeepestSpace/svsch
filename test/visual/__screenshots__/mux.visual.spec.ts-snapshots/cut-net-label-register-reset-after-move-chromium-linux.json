@@ -163,7 +163,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "cut",
       "targetHandle": "rst",
-      "path": "M 432 168 L 432 168 L 432 120"
+      "path": "M 432 168 L 432 168 L 432 117"
     },
     {
       "id": "cut-stub:port:register_async_reset:rst:port:rst:source",

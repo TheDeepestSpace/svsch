@@ -139,7 +139,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:rst",
       "targetHandle": "rst",
-      "path": "M 192 192 L 480 192 L 480 144"
+      "path": "M 192 192 L 480 192 L 480 141"
     },
     {
       "id": "edge:reg:array_complete_reset:arr:port:array_complete_reset:out_data:out_data",

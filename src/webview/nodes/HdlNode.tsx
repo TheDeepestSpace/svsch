@@ -721,7 +721,6 @@ function NodeResizeControls({ nodeId, moduleName, isResized }: {
           className={`nodrag svsch-node-resize-handle svsch-node-resize-${handle}`}
           onPointerDown={(event) => startNodeResize(event, nodeId, handle)}
           onClick={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()}
         />
       ))}
       {isResized && (

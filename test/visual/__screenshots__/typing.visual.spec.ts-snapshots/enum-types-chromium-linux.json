@@ -172,7 +172,7 @@
       "target": "reg:enum_types:current_state",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 216 192 L 240 192 L 552 192 L 552 144"
+      "path": "M 216 192 L 240 192 L 552 192 L 552 141"
     },
     {
       "id": "edge:reg:enum_types:current_state:port:enum_types:out_state:out_state",
