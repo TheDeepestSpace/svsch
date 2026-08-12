@@ -64,7 +64,7 @@ Feature: Diagram Interaction
     And I reset the layout
     Then the port node "a" should be at its original position
 
-  Scenario: Rerouting a single connection without affecting other routes or positions
+  Scenario Outline: Rerouting a single connection without affecting other routes or positions
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
@@ -77,11 +77,16 @@ Feature: Diagram Interaction
     And I move the port node "y"
     And I adjust the connection between "a" and "y" upward
     And I adjust the connection between "b" and "x" downward
-    And I hover the connection between "a" and "y" and click its Reroute control
+    And I hover the connection between "a" and "y" and <reroute trigger>
     Then the route of the connection between "a" and "y" should have changed
     And the route of the connection between "b" and "x" should not have changed
     And the port node "a" should not have moved
     And the port node "y" should not have moved
+
+    Examples:
+      | reroute trigger           |
+      | click its Reroute control |
+      | press R to reroute it     |
 
   Scenario: Rerouting without moving blocks
     Given I have a file "top.sv" in my workspace:
@@ -149,7 +154,7 @@ Feature: Diagram Interaction
     Then I should not see cut net labels named "clk"
     And I should not see cut net labels named "rst_n"
 
-  Scenario: Resetting the layout reapplies both automatic cut heuristics
+  Scenario Outline: Resetting the layout reapplies both automatic cut heuristics
     Given I have a file "top.sv" in my workspace:
       """
       module top(
@@ -172,9 +177,9 @@ Feature: Diagram Interaction
       endmodule
       """
     When I open the "top" module in SVSCH
-    And I tie back the cut net "chip_select"
-    And I tie back the cut net "clk"
-    And I tie back the cut net "rst_n"
+    And I tie back the cut net "chip_select" <tie trigger>
+    And I tie back the cut net "clk" <tie trigger>
+    And I tie back the cut net "rst_n" <tie trigger>
     Then I should not see cut net labels named "chip_select"
     And I should not see cut net labels named "clk"
     And I should not see cut net labels named "rst_n"
@@ -182,6 +187,11 @@ Feature: Diagram Interaction
     Then I should see 3 cut net labels named "chip_select"
     And I should see 2 cut net labels named "clk"
     And I should see 2 cut net labels named "rst_n"
+
+    Examples:
+      | tie trigger                  |
+      | by clicking its Tie control  |
+      | by pressing T                |
 
   Scenario: An automatically cut fanout net keeps its declared source name
     Given I have a file "top.sv" in my workspace:
@@ -205,7 +215,7 @@ Feature: Diagram Interaction
     Then the cut net "chip_select" should not become editable
     And I should see 3 cut net labels named "chip_select"
 
-  Scenario: Renaming a cut net that has no declared name of its own (implicit wiring)
+  Scenario Outline: Renaming a cut net that has no declared name of its own (implicit wiring)
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, output x, output y);
@@ -215,7 +225,7 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     And I move the port node "a"
-    When I hover the connection between "a" and "x" and click its Cut control
+    When I hover the connection between "a" and "x" and <cut trigger>
     Then I should see 3 cut net labels named "a"
     # "a" is only ever the port's own name here — there is no wire declared
     # for this net, so its cut label is a tool-invented guess and stays
@@ -229,6 +239,11 @@ Feature: Diagram Interaction
     When I click the Revert label control on the cut net "chip_select"
     Then I should see 3 cut net labels named "a"
     And the cut net "a" should be shown in regular type
+
+    Examples:
+      | cut trigger           |
+      | click its Cut control |
+      | press C to cut it     |
 
   Scenario: Moving multiple blocks as a group preserves all positions on reload
     Given I have a file "top.sv" in my workspace:
@@ -531,7 +546,7 @@ Feature: Diagram Interaction
     Then the connection between "a" and "x" should show its controls
     And the connection between "b" and "y" should show its controls
 
-  Scenario: Rerouting one wire in a multi-wire selection reroutes every selected wire
+  Scenario Outline: Rerouting one wire in a multi-wire selection reroutes every selected wire
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
@@ -545,13 +560,18 @@ Feature: Diagram Interaction
     And I adjust the connection between "a" and "x" upward
     And I adjust the connection between "b" and "y" downward
     And click and drag the mouse to select "a" and "b" together
-    And I hover the connection between "a" and "x" and click its Reroute control
+    And I hover the connection between "a" and "x" and <reroute trigger>
     Then the route of the connection between "a" and "x" should have changed
     And the route of the connection between "b" and "y" should have changed
     And the port node "a" should not have moved
     And the port node "b" should not have moved
 
-  Scenario: Cutting one wire in a multi-wire selection cuts every selected wire
+    Examples:
+      | reroute trigger           |
+      | click its Reroute control |
+      | press R to reroute it     |
+
+  Scenario Outline: Cutting one wire in a multi-wire selection cuts every selected wire
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output x, output y);
@@ -563,7 +583,7 @@ Feature: Diagram Interaction
     And I note the position of port node "x"
     And I note the position of port node "y"
     And click and drag the mouse to select "a" and "b" together
-    And I hover the connection between "a" and "x" and click its Cut control
+    And I hover the connection between "a" and "x" and <cut trigger>
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
     And the original connection between "a" and "x" should be hidden
@@ -572,6 +592,11 @@ Feature: Diagram Interaction
     And the port node "b" should not have moved
     And the port node "x" should not have moved
     And the port node "y" should not have moved
+
+    Examples:
+      | cut trigger           |
+      | click its Cut control |
+      | press C to cut it     |
 
   Scenario: The Auto Layout control only appears once multiple blocks are selected
     Given I have a file "top.sv" in my workspace:
@@ -590,7 +615,7 @@ Feature: Diagram Interaction
     When click and drag the mouse to select the blocks "u1" and "u2"
     Then the "Auto Layout" button should be visible
 
-  Scenario: Cutting out a single selected block cuts every wire connected to it
+  Scenario Outline: Cutting out a single selected block cuts every wire connected to it
     Given I have a file "top.sv" in my workspace:
       """
       module leaf(input logic a, input logic b, output logic y);
@@ -604,7 +629,7 @@ Feature: Diagram Interaction
     When I open the "top" module in SVSCH
     And I click to select the block "u1"
     Then the "Auto Layout" button should not be visible
-    When I click the "Cut out" button
+    When I <cut out trigger>
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "b"
     And I should see 2 cut net labels named "u1.y"
@@ -612,7 +637,12 @@ Feature: Diagram Interaction
     And the original connection between "b" and "u1" should be hidden
     And the original connection between "u1" and "y" should be hidden
 
-  Scenario: Cutting out one block in a multi-block selection cuts every selected block's wires
+    Examples:
+      | cut out trigger                        |
+      | click the "Cut out" button              |
+      | press C to cut out the selected blocks  |
+
+  Scenario Outline: Cutting out one block in a multi-block selection cuts every selected block's wires
     Given I have a file "top.sv" in my workspace:
       """
       module leaf(input logic a, output logic y);
@@ -627,7 +657,7 @@ Feature: Diagram Interaction
       """
     When I open the "top" module in SVSCH
     And click and drag the mouse to select the blocks "u1" and "u2"
-    And I click the "Cut out" button
+    And I <cut out trigger>
     Then I should see 2 cut net labels named "a"
     And I should see 2 cut net labels named "u1.y"
     And I should see 2 cut net labels named "b"
@@ -638,6 +668,11 @@ Feature: Diagram Interaction
     And the original connection between "u2" and "y" should be hidden
     And I should not see cut net labels named "c"
     And the original connection between "c" and "u3" should be restored
+
+    Examples:
+      | cut out trigger                        |
+      | click the "Cut out" button              |
+      | press C to cut out the selected blocks  |
 
   Scenario: The Cut out button is hidden for a block that's already fully cut out
     Given I have a file "top.sv" in my workspace:
