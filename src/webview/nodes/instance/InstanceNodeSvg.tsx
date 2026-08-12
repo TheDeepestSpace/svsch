@@ -6,7 +6,9 @@ import { nodeArrayDimension, nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
+import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
 import { isInputSidePort } from '../../../diagram/portDirection';
 
@@ -17,9 +19,9 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
@@ -76,22 +78,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   return (
     <>
       {targetStackLeads}
-      {/* Array stack layers (back→middle→front for correct z-order) */}
-      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
-        <rect
-          key={layer.id}
-          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          width={width} height={height}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
-      <rect
-        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
-        transform={shapeTransform}
-        width={width}
-        height={height}
-      />
+      <ArrayStackSkinRect isArray={isArray} skinLayers={skinLayers} shapeTransform={shapeTransform} width={width} height={height} />
       <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
         {kindLabel}
       </text>

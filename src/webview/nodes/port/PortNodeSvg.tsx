@@ -14,6 +14,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
+import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
 
 export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -21,9 +22,9 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
   const stackLayers = arrayStackLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const port = node.ports[0];
   const direction = port?.direction ?? 'unknown';
   const isInterface = Boolean(

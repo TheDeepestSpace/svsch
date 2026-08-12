@@ -16,14 +16,16 @@ import {
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
+import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
 export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const g = diagramSizing.gridSize;
   // A resize override can make `width`/`height` (the rendered box) larger than the
   // node's canonical auto-fit size. Extra input rows stay pinned at their canonical
@@ -113,24 +115,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   return (
     <>
       {targetStackLeads}
-      {/* Array stack layers (back→middle→front for correct z-order) */}
-      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
-        <rect
-          key={layer.id}
-          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          width={width} height={height}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
-
-      {/* Background */}
-      <rect
-        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
-        transform={shapeTransform}
-        width={width}
-        height={height}
-      />
+      <ArrayStackSkinRect isArray={isArray} skinLayers={skinLayers} shapeTransform={shapeTransform} width={width} height={height} />
 
       {/* Kind + title in header */}
       <text className="svsch-node-kind" x={10 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">REGISTER</text>

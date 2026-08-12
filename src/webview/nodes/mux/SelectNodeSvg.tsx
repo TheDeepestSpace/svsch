@@ -13,6 +13,7 @@ import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 import { isInputSidePort } from '../../../diagram/portDirection';
 
@@ -22,9 +23,9 @@ export function SelectNodeSvg({ node, width, height, arrayConnections }: NodeSvg
   const stackLayers = arrayStackLayersFor(stackWide);
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
