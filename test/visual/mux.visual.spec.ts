@@ -946,6 +946,81 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'array-address-write-enable-register-canvas.png', { clip: await paddedGraphClip(page) });
   });
+
+  test('renders a full-range zero reset loop on the stacked array register', async ({ page }) => {
+    const view = await openFixture(page, 'array_multi_index_write_reset_sorts_first.sv', 'auto');
+
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_sorts_first:storage');
+    const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_sorts_first:storage_addr'));
+    const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_sorts_first:storage_addr');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+
+    expect(arrayReg).toBeDefined();
+    expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(1);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
+    expect(view.nodes.some((node) => node.kind === 'mux' && node.label === 'if reset')).toBe(false);
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(view.edges.some((edge) => edge.source === finalMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
+
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-sorts-first-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders RV for a non-zero full-range reset loop', async ({ page }) => {
+    const view = await openFixture(page, 'array_multi_index_write_reset_nonzero.sv', 'auto');
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_nonzero:storage');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+    const resetValueEdge = view.edges.find((edge) => edge.signal === "32'hDEADBEEF" && edge.target === arrayReg?.id);
+
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.find((port) => port.name === 'RV')?.connectedSignal).toBe("32'hDEADBEEF");
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(resetValueEdge?.isStacked).toBe(true);
+    expect(view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_nonzero:storage_addr'))).toHaveLength(1);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] text`, { hasText: 'RV' })).toBeVisible();
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-nonzero-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a full-range descending reset loop on the stacked array register', async ({ page }) => {
+    // storage[a] <= 0 for a counting down from 31 to 0 covers the full array just like the
+    // ascending 0..N-1 form — only the direction differs — so it folds into the same
+    // register R port + single addr-mux structure as the ascending canonical case.
+    const view = await openFixture(page, 'array_multi_index_write_reset_descending.sv', 'auto');
+
+    const arrayReg = view.nodes.find((node) => node.id === 'reg:array_multi_index_write_reset_descending:storage');
+    const addressMuxes = view.nodes.filter((node) => node.id.startsWith('mux:array_multi_index_write_reset_descending:storage_addr'));
+    const finalMux = view.nodes.find((node) => node.id === 'mux:array_multi_index_write_reset_descending:storage_addr');
+    const resetEdge = view.edges.find((edge) => edge.signal === 'reset' && edge.target === arrayReg?.id);
+
+    expect(arrayReg).toBeDefined();
+    expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'reset')).toBe(true);
+    expect(arrayReg?.ports.some((port) => port.name === 'RV')).toBe(false);
+    expect(addressMuxes).toHaveLength(1);
+    expect(finalMux?.ports.find((port) => port.name === 'sel')?.connectedSignal).toBe('address');
+    expect(view.nodes.some((node) => node.kind === 'mux' && node.label === 'if reset')).toBe(false);
+    expect(resetEdge?.isStacked).toBe(true);
+    expect(view.edges.some((edge) => edge.source === finalMux?.id && edge.target === arrayReg?.id && edge.isStacked)).toBe(true);
+
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"].hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"].hdl-node-mux.hdl-node-array`)).toBeVisible();
+    await expect(page.locator(`[data-node-id="${arrayReg!.id}"] .svsch-register-reset-port`, { hasText: 'R' })).toBeVisible();
+    await expect(page.locator(`[data-node-id="${finalMux!.id}"] .svsch-mux-select-port`, { hasText: 's[]' })).toBeVisible();
+
+    await expectStackedEdgeSegmentsOrthogonal(page);
+    await expectGraphAndScreenshot(page, 'array-multi-index-write-reset-descending-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 test.describe('bus visual rendering', () => {

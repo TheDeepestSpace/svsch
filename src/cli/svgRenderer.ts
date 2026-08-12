@@ -186,7 +186,7 @@ export function svgBridgeCss(): string {
   font-size: 11px;
   dominant-baseline: middle;
 }
-/* styles.css sets a text color on this class for the webview's HTML
+/* diagram.css sets a text color on this class for the webview's HTML
    foreignObject span — an SVG text element ignores that for its own fill,
    so the exported SVG needs an explicit fill here or it defaults to black. */
 .svsch-edge-label {
