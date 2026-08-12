@@ -264,6 +264,33 @@ endmodule
   <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
 </p>
 
+### Array Register with For-Loop Reset
+
+A register array whose full-range for-loop reset folds into the array register's own reset, leaving the indexed write on a single write-address mux.
+
+<pre><code>module top (
+  input logic clk,
+  input logic reset,
+  input logic [1:0] address,
+  input logic [7:0] in_data
+);
+  logic [7:0] storage [0:3];
+  integer i;
+<br />
+  <mark>always_ff @(posedge clk) begin
+    if (reset) begin
+      for (i = 0; i &lt; 4; i = i + 1) storage[i] &lt;= 8&#39;b0;
+    end else begin
+      storage[address] &lt;= in_data;
+    end
+  end</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/register-array-reset-loop.svg" alt="Array Register with For-Loop Reset diagram" />
+</p>
+
 ## Muxes
 
 ### Case Statement Mux

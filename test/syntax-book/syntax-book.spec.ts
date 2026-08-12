@@ -303,7 +303,7 @@ test.describe('Syntax Book Generation & Verification', () => {
                 break;
               }
             }
-            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
             const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
 
             generatedEntries.push({
@@ -428,7 +428,7 @@ test.describe('Syntax Book Generation & Verification', () => {
               break;
             }
           }
-          const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+          const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
 
           const targetNode = viewModel.nodes.find(
             (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel

@@ -808,6 +808,15 @@ When('I go back to the SVSCH diagram pane', async function (this: BddWorld) {
   if (this.lastViewModel?.moduleName) {
     await syncLastViewModel(this, this.lastViewModel.moduleName);
   }
+  // Clear any hover affordance (e.g. the Reroute/Cut popup) left over from a
+  // prior step's mouse position; otherwise whether it's still showing here
+  // is a race with the OS/browser re-evaluating :hover, making the
+  // screenshot below flaky.
+  const pane = this.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox().catch(() => null);
+  if (box) {
+    await pane.hover({ position: { x: box.width - 16, y: 16 }, force: true }).catch(() => {});
+  }
   await this.takeScreenshot('After returning to pane');
 });
 
@@ -1376,6 +1385,29 @@ Then('the CLI SVG should contain {string}', function (this: BddWorld, expected: 
 Then('the CLI SVG should not contain {string}', function (this: BddWorld, unexpected: string) {
   if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
   expect(this.lastCliSvg).not.toContain(unexpected);
+});
+
+// renderSvg() always emits multi-line output (elements joined with '\n'); SVGO's
+// js2svg defaults to compact (non-pretty) output regardless of which plugins run,
+// collapsing everything to one line. That makes newline presence a check of
+// minification itself, unlike asserting on a specific plugin's output (e.g. the
+// XML prolog, which only removeXMLProcInst strips and could stop being true if
+// the plugin list changes). The embedded <style> block is excluded: its CSS is
+// deliberately left untouched by minifySvg (minifyStyles/inlineStyles are
+// excluded from SAFE_MINIFY_PLUGINS, see svgMinify.ts) to avoid mangling the
+// var(--vscode-...) custom properties, so it keeps its source newlines either way.
+function cliSvgWithoutStyleBlock(svg: string): string {
+  return svg.replace(/<style>[\s\S]*?<\/style>/, '');
+}
+
+Then('the CLI SVG should be minified', function (this: BddWorld) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(cliSvgWithoutStyleBlock(this.lastCliSvg)).not.toContain('\n');
+});
+
+Then('the CLI SVG should not be minified', function (this: BddWorld) {
+  if (!this.lastCliSvg) throw new Error('No CLI SVG has been rendered');
+  expect(cliSvgWithoutStyleBlock(this.lastCliSvg)).toContain('\n');
 });
 
 // The CLI honoured the saved layout: the node sits where the user dragged it on
