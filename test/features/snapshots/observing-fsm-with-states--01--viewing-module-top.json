@@ -568,7 +568,7 @@
       "target": "reg:top:r",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 528 600 L 528 600 L 528 552"
+      "path": "M 528 600 L 528 600 L 528 549"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",

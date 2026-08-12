@@ -223,7 +223,7 @@
       "target": "reg:top:q",
       "sourceHandle": "cut",
       "targetHandle": "rst_n",
-      "path": "M 504 336 L 504 336 L 504 288"
+      "path": "M 504 336 L 504 336 L 504 285"
     },
     {
       "id": "cut-stub:port:top:rst_n:port:rst_n:source",

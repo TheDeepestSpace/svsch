@@ -215,7 +215,7 @@
       "target": "reg:top:q",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M -240 168 L -216 168 L -120 168 L -120 336 L 504 336 L 504 288"
+      "path": "M -240 168 L -216 168 L -120 168 L -120 336 L 504 336 L 504 285"
     },
     {
       "id": "edge:reg:top:q:port:top:q:q",
