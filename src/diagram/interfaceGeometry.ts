@@ -74,7 +74,9 @@ export function interfaceSidePortCenters(sidePorts: DiagramPort[], height: numbe
   return centers;
 }
 
-export function portSkinPath(direction: 'input' | 'output' | 'harness', width: number, height: number, skinHeight: number, noseLength: number): string {
+export type PortSkinDirection = 'input' | 'output' | 'harness';
+
+export function portSkinPath(direction: PortSkinDirection, width: number, height: number, skinHeight: number, noseLength: number): string {
   const top = (height - skinHeight) / 2;
   const midY = height / 2;
   const bottom = top + skinHeight;
@@ -86,6 +88,28 @@ export function portSkinPath(direction: 'input' | 'output' | 'harness', width: n
     // Harness: chevrons on both sides
     return `M ${noseLength} ${top} H ${width - noseLength} L ${width} ${midY} L ${width - noseLength} ${bottom} H ${noseLength} L 0 ${midY} Z`;
   }
+}
+
+export function portSkinDirection(port: DiagramPort | undefined): PortSkinDirection {
+  const isInterface = Boolean(
+    (port?.typeName && port?.modportName !== undefined) ||
+    port?.typeName?.endsWith('_if') ||
+    port?.typeName?.endsWith('if')
+  );
+  if (isInterface) return 'harness';
+  return port?.direction === 'input' || port?.direction === 'output' ? port.direction : 'input';
+}
+
+/**
+ * The port skin's right-most vertex (ties broken by smallest y). Output skins
+ * have a flat right edge, so the top-most point of that edge wins; input and
+ * harness skins come to a single nose point at mid-height.
+ */
+export function portSkinTopRightVertex(direction: PortSkinDirection, width: number, height: number): { x: number; y: number } {
+  if (direction === 'output') {
+    return { x: width, y: (height - diagramSizing.portSkinHeight) / 2 };
+  }
+  return { x: width, y: height / 2 };
 }
 
 export function interfaceSkinPath({

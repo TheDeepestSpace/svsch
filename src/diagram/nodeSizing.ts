@@ -12,7 +12,7 @@ import {
 } from './constants';
 import { selectPortLabel } from './selectLabels';
 import { isBusComposition } from './busGeometry';
-import { interfaceTopHatHeight, orderedInterfaceSidePorts } from './interfaceGeometry';
+import { interfaceTopHatHeight, orderedInterfaceSidePorts, portSkinDirection, portSkinTopRightVertex } from './interfaceGeometry';
 import { muxRightTopY } from './muxGeometry';
 
 export interface DiagramNodeDimensions {
@@ -29,11 +29,20 @@ export interface NodeOutlineVertex {
  * The node outline's right-most vertex (ties broken by smallest y, i.e. the
  * top-most of the right-most points). Rectangular skins have it at the
  * bbox corner; mux/select/alu slope their right edge in from the top, so
- * their true corner sits below y=0.
+ * their true corner sits below y=0; the inverter's true corner is its output
+ * bubble, offset from the bbox and vertically centred; port skins (and
+ * interface ports, which reuse the port skin) come to a nose point or a
+ * vertical edge short of the top-right corner.
  */
 export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
   if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu') {
     return { x: width, y: muxRightTopY(height) };
+  }
+  if (node.kind === 'inverter') {
+    return { x: inverterGeometryWidth(), y: height / 2 };
+  }
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return portSkinTopRightVertex(portSkinDirection(node.ports[0]), width, height);
   }
   return { x: width, y: 0 };
 }
