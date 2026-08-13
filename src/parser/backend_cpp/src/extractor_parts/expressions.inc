@@ -1028,8 +1028,14 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
         if (!mux_signal.empty()) return mux_signal;
     }
 
-    // Simple types that don't need promotion
-    if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || isLiteralExpr(expr)) {
+    // Simple types that don't need promotion. vpiHierPath (5000) is UHDM's node for a
+    // dotted hierarchical reference like an interface/modport field access (`bus.ready`);
+    // without this, such a reference falls through to the generic comb-node promotion
+    // below, which can't find any identifier inside a hier_path (collectIdentifierHandlesRecursive
+    // doesn't walk it either) and ends up naming its lone output port after the caller's
+    // `preferred_name` — a synthetic label, not the real signal — leaving a node with no
+    // real inputs standing in for a plain signal reference.
+    if (type == vpiNet || type == vpiReg || type == vpiPort || type == 608 || type == vpiHierPath || isLiteralExpr(expr)) {
         return getSignalName(expr, current_drivers);
     }
 
