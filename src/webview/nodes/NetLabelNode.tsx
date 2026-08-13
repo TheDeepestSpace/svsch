@@ -1,5 +1,5 @@
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
@@ -13,7 +13,7 @@ export function NetLabelNode({
   node,
   moduleName,
   selected,
-  style
+  style,
 }: {
   node: PositionedNode;
   moduleName: string;
@@ -54,7 +54,7 @@ export function NetLabelNode({
         type: 'renameCutNet',
         moduleName,
         netKey: cutNet.netKey,
-        label: trimmed
+        label: trimmed,
       });
     }
     setEditing(false);
@@ -78,14 +78,22 @@ export function NetLabelNode({
   const edgeStyleClasses = [
     cutNet?.edgeStyle?.aggregate === 'struct' ? 'hdl-net-label-struct' : '',
     cutNet?.edgeStyle?.aggregate === 'interface' ? 'hdl-net-label-interface' : '',
-    cutNet?.isSourceStacked ? 'hdl-net-label-stacked' : ''
-  ].filter(Boolean).join(' ');
+    cutNet?.isSourceStacked ? 'hdl-net-label-stacked' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+  const netLabelClassName =
+    `hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} ` +
+    `hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}` +
+    `${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}` +
+    `${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}` +
+    `${selected ? ' hdl-net-label-selected' : ''}`;
 
   return (
     <div
-      className={`hdl-net-label hdl-net-label-${cutNet?.role ?? 'sink'} hdl-net-label-align-${cutNet?.align ?? 'start'} hdl-net-label-handle-${handleSide}${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}${selected ? ' hdl-net-label-selected' : ''}`}
+      className={netLabelClassName}
       data-node-id={node.id}
       data-node-kind={node.kind}
       style={style}
@@ -96,13 +104,33 @@ export function NetLabelNode({
         if (isDeclaredName) return;
         setEditing(true);
       }}
-      onMouseEnter={() => { setHovered(cutNet?.netKey); setIsDirectlyHovered(true); }}
-      onMouseLeave={() => { setHovered(undefined); setIsDirectlyHovered(false); }}
+      onMouseEnter={() => {
+        setHovered(cutNet?.netKey);
+        setIsDirectlyHovered(true);
+      }}
+      onMouseLeave={() => {
+        setHovered(undefined);
+        setIsDirectlyHovered(false);
+      }}
     >
       {cutNet && <Handle type={handleType} id="cut" position={handlePosition} />}
-      <NetLabelWire node={node} handleSide={handleSide} edgeStyle={cutNet?.edgeStyle} align={cutNet?.align} isSourceStacked={cutNet?.isSourceStacked} isHighlighted={isHighlighted} />
+      <NetLabelWire
+        node={node}
+        handleSide={handleSide}
+        edgeStyle={cutNet?.edgeStyle}
+        align={cutNet?.align}
+        isSourceStacked={cutNet?.isSourceStacked}
+        isHighlighted={isHighlighted}
+      />
       {cutNet?.isSourceStacked && (
-        <ArrayStackLeads side={handleSide} width={nodeWidth} y={nodeHeight / 2} trimSink={cutNet?.role === 'source'} wide={cutNet?.edgeStyle?.thick === true} thick={cutNet?.edgeStyle?.thick === true} />
+        <ArrayStackLeads
+          side={handleSide}
+          width={nodeWidth}
+          y={nodeHeight / 2}
+          trimSink={cutNet?.role === 'source'}
+          wide={cutNet?.edgeStyle?.thick === true}
+          thick={cutNet?.edgeStyle?.thick === true}
+        />
       )}
       {editing ? (
         <input
@@ -126,7 +154,12 @@ export function NetLabelNode({
           }}
         />
       ) : (
-        <span className={`hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`}>
+        <span
+          className={
+            `hdl-net-label-text${isHighlighted ? ' hdl-net-label-text-hovered' : ''}` +
+            `${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`
+          }
+        >
           <span className="hdl-net-label-text-value">{node.label}</span>
           {aliasNames && aliasNames.length > 0 && (
             <Tooltip content={`Also declared as: ${aliasNames.join(', ')}`} tone="info">
@@ -157,7 +190,7 @@ export function NetLabelNode({
                 vscode.postMessage({
                   type: 'revertCutNetLabel',
                   moduleName,
-                  netKey: cutNet.netKey
+                  netKey: cutNet.netKey,
                 });
               }}
               onDoubleClick={stopDrag}
@@ -177,7 +210,7 @@ export function NetLabelNode({
               vscode.postMessage({
                 type: 'tieNet',
                 moduleName,
-                netKey: cutNet.netKey
+                netKey: cutNet.netKey,
               });
             }}
             onDoubleClick={stopDrag}
@@ -191,12 +224,7 @@ export function NetLabelNode({
       {node.warningNote && (
         <Tooltip content={node.warningNote}>
           {(trigger) => (
-            <span
-              {...trigger}
-              className="node-warning"
-              role="img"
-              aria-label={node.warningNote}
-            >
+            <span {...trigger} className="node-warning" role="img" aria-label={node.warningNote}>
               ⚠
             </span>
           )}

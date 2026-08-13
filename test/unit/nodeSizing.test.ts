@@ -17,10 +17,13 @@ describe('diagram node sizing', () => {
     // Bus/struct pipes sit flush with the single-port edge, so they are two
     // grid units narrower than generic nodes.
     ['bus', diagramSizing.nodeWidth - diagramSizing.gridSize * 2],
-    ['unknown', diagramSizing.nodeWidth]
-  ] satisfies Array<[DiagramNodeKind, number]>)('keeps the default %s width', (kind, expectedWidth) => {
-    expect(diagramNodeDimensions(nodeOfKind(kind)).width).toBe(expectedWidth);
-  });
+    ['unknown', diagramSizing.nodeWidth],
+  ] satisfies Array<[DiagramNodeKind, number]>)(
+    'keeps the default %s width',
+    (kind, expectedWidth) => {
+      expect(diagramNodeDimensions(nodeOfKind(kind)).width).toBe(expectedWidth);
+    },
+  );
 
   test.each([
     ['module', diagramSizing.nodeWidth],
@@ -30,13 +33,16 @@ describe('diagram node sizing', () => {
     ['port', diagramSizing.portWidth],
     ['literal', diagramSizing.literalMinWidth],
     ['bus', diagramSizing.nodeWidth],
-    ['unknown', diagramSizing.nodeWidth]
-  ] satisfies Array<[Exclude<DiagramNodeKind, 'comb' | 'replicate'>, number]>)('extends long-label %s widths on the snap grid', (kind, minimumWidth) => {
-    const width = diagramNodeDimensions(nodeOfKind(kind, true)).width;
+    ['unknown', diagramSizing.nodeWidth],
+  ] satisfies Array<[Exclude<DiagramNodeKind, 'comb' | 'replicate'>, number]>)(
+    'extends long-label %s widths on the snap grid',
+    (kind, minimumWidth) => {
+      const width = diagramNodeDimensions(nodeOfKind(kind, true)).width;
 
-    expect(width).toBeGreaterThan(minimumWidth);
-    expect(width % diagramSizing.gridSize).toBe(0);
-  });
+      expect(width).toBeGreaterThan(minimumWidth);
+      expect(width % diagramSizing.gridSize).toBe(0);
+    },
+  );
 
   test('keeps comb width fixed even with long rendered output labels', () => {
     const width = diagramNodeDimensions({
@@ -44,9 +50,19 @@ describe('diagram node sizing', () => {
       kind: 'comb',
       label: 'very_long_comb_block_label_that_is_not_rendered',
       ports: [
-        { id: 'in', name: 'very_long_hidden_input_label_that_is_not_rendered', direction: 'input', width: '[255:0]' },
-        { id: 'out', name: 'very_long_rendered_output_label_that_should_not_resize_the_block', direction: 'output', width: '[255:0]' }
-      ]
+        {
+          id: 'in',
+          name: 'very_long_hidden_input_label_that_is_not_rendered',
+          direction: 'input',
+          width: '[255:0]',
+        },
+        {
+          id: 'out',
+          name: 'very_long_rendered_output_label_that_should_not_resize_the_block',
+          direction: 'output',
+          width: '[255:0]',
+        },
+      ],
     }).width;
 
     expect(width).toBe(diagramSizing.nodeWidth);
@@ -58,21 +74,33 @@ describe('diagram node sizing', () => {
       kind: 'bus',
       label: 'concat_repeated',
       ports: [
-        { id: 'out', name: 'concat_repeated', label: 'concat_repeated', direction: 'output', width: '[23:0]' },
+        {
+          id: 'out',
+          name: 'concat_repeated',
+          label: 'concat_repeated',
+          direction: 'output',
+          width: '[23:0]',
+        },
         { id: 'head', name: '[2]', label: '[2]', direction: 'input', width: '[0:0]' },
         { id: 'body', name: '[1]', label: '[1]', direction: 'input', width: '[0:0]' },
-        { id: 'tail', name: '[0]', label: '[0]', direction: 'input', width: '[0:0]' }
-      ]
+        { id: 'tail', name: '[0]', label: '[0]', direction: 'input', width: '[0:0]' },
+      ],
     }).width;
     const internalOutput = diagramNodeDimensions({
       id: 'bus:nested_concat_rep_concat0',
       kind: 'bus',
       label: 'nested_concat_rep_concat0',
       ports: [
-        { id: 'out', name: 'nested_concat_rep_concat0', label: 'nested_concat_rep_concat0', direction: 'output', width: '[2:0]' },
+        {
+          id: 'out',
+          name: 'nested_concat_rep_concat0',
+          label: 'nested_concat_rep_concat0',
+          direction: 'output',
+          width: '[2:0]',
+        },
         { id: 'head', name: '[2]', label: '[2]', direction: 'input', width: '[0:0]' },
-        { id: 'pair', name: '[1:0]', label: '[1:0]', direction: 'input', width: '[1:0]' }
-      ]
+        { id: 'pair', name: '[1:0]', label: '[1:0]', direction: 'input', width: '[1:0]' },
+      ],
     }).width;
 
     expect(shortOutput).toBe(diagramSizing.nodeWidth - diagramSizing.gridSize * 2);
@@ -85,9 +113,19 @@ describe('diagram node sizing', () => {
       kind: 'replicate',
       label: 'x128',
       ports: [
-        { id: 'in', name: 'very_long_replicated_input_signal', direction: 'input', width: '[255:0]' },
-        { id: 'out', name: 'very_long_replicated_output_signal', direction: 'output', width: '[32767:0]' }
-      ]
+        {
+          id: 'in',
+          name: 'very_long_replicated_input_signal',
+          direction: 'input',
+          width: '[255:0]',
+        },
+        {
+          id: 'out',
+          name: 'very_long_replicated_output_signal',
+          direction: 'output',
+          width: '[32767:0]',
+        },
+      ],
     });
 
     expect(dimensions.height).toBe(diagramSizing.gridSize * 2);
@@ -104,8 +142,8 @@ describe('diagram node sizing', () => {
       ports: [
         { id: 'sel', name: 'sel', direction: 'input', label: 's', width: '[4:0]' },
         { id: 'in', name: 'in', direction: 'input', width: '[31:0]' },
-        { id: 'out', name: 'out', direction: 'output', width: '[0:0]' }
-      ]
+        { id: 'out', name: 'out', direction: 'output', width: '[0:0]' },
+      ],
     };
     const partSelect: DiagramNode = {
       id: 'select:part',
@@ -115,18 +153,48 @@ describe('diagram node sizing', () => {
         { id: 'sel', name: 'sel', direction: 'input', label: 's', width: '[4:0]' },
         { id: 'width', name: 'width', direction: 'input', label: 'w', width: '[7:0]' },
         { id: 'in', name: 'in', direction: 'input', width: '[31:0]' },
-        { id: 'out', name: 'out', direction: 'output', width: '[7:0]' }
-      ]
+        { id: 'out', name: 'out', direction: 'output', width: '[7:0]' },
+      ],
     };
 
     expect(selectNodeHasVectorOutput(bitSelect)).toBe(false);
-    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'sel')!)).toBe('s[]');
-    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'in')!)).toBe('in[]');
-    expect(selectPortLabel(bitSelect, bitSelect.ports.find(p => p.id === 'out')!)).toBe('out');
+    expect(
+      selectPortLabel(
+        bitSelect,
+        bitSelect.ports.find((p) => p.id === 'sel')!,
+      ),
+    ).toBe('s[]');
+    expect(
+      selectPortLabel(
+        bitSelect,
+        bitSelect.ports.find((p) => p.id === 'in')!,
+      ),
+    ).toBe('in[]');
+    expect(
+      selectPortLabel(
+        bitSelect,
+        bitSelect.ports.find((p) => p.id === 'out')!,
+      ),
+    ).toBe('out');
     expect(selectNodeHasVectorOutput(partSelect)).toBe(true);
-    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'sel')!)).toBe('s[]');
-    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'width')!)).toBe('w[]');
-    expect(selectPortLabel(partSelect, partSelect.ports.find(p => p.id === 'out')!)).toBe('out[]');
+    expect(
+      selectPortLabel(
+        partSelect,
+        partSelect.ports.find((p) => p.id === 'sel')!,
+      ),
+    ).toBe('s[]');
+    expect(
+      selectPortLabel(
+        partSelect,
+        partSelect.ports.find((p) => p.id === 'width')!,
+      ),
+    ).toBe('w[]');
+    expect(
+      selectPortLabel(
+        partSelect,
+        partSelect.ports.find((p) => p.id === 'out')!,
+      ),
+    ).toBe('out[]');
   });
 
   test('keeps a toy case mux at the default width', () => {
@@ -138,8 +206,8 @@ describe('diagram node sizing', () => {
         { id: 'sel', name: 'sel', direction: 'input' },
         { id: 'zero', name: 'zero', label: "1'b0", direction: 'input' },
         { id: 'default', name: 'default', label: 'default', direction: 'input' },
-        { id: 'y', name: 'y', direction: 'output' }
-      ]
+        { id: 'y', name: 'y', direction: 'output' },
+      ],
     }).width;
 
     expect(width).toBe(diagramSizing.muxWidth);
@@ -155,8 +223,8 @@ describe('diagram node sizing', () => {
         { id: 'case0', name: 'case0', label: "2'd0", direction: 'input' },
         { id: 'case1', name: 'case1', label: "2'd1", direction: 'input' },
         { id: 'default', name: 'default', label: 'default', direction: 'input' },
-        { id: 'out', name: 'output_value_with_long_name', direction: 'output' }
-      ]
+        { id: 'out', name: 'output_value_with_long_name', direction: 'output' },
+      ],
     }).width;
 
     expect((width / diagramSizing.gridSize) % 2).toBe(0);
@@ -171,13 +239,13 @@ describe('diagram node sizing', () => {
         { id: 'd', name: 'D', direction: 'input' },
         { id: 'clk', name: 'clk', direction: 'input' },
         { id: 'reset', name: 'rst_n', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' }
+        { id: 'q', name: 'Q', direction: 'output' },
       ],
       metadata: {
         width: '[255:0]',
         resetSignal: 'rst_n',
-        resetActiveLow: true
-      }
+        resetActiveLow: true,
+      },
     }).width;
 
     expect(width).toBeGreaterThan(diagramSizing.registerWidth);
@@ -190,9 +258,14 @@ describe('diagram node sizing', () => {
       kind: 'comb',
       label: 'comb',
       ports: [
-        { id: 'hidden', name: 'very_long_hidden_input_label_that_is_not_rendered', direction: 'input', width: '[255:0]' },
-        { id: 'out', name: 'y', direction: 'output' }
-      ]
+        {
+          id: 'hidden',
+          name: 'very_long_hidden_input_label_that_is_not_rendered',
+          direction: 'input',
+          width: '[255:0]',
+        },
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
     }).width;
 
     expect(width).toBe(diagramSizing.nodeWidth);
@@ -206,8 +279,8 @@ describe('diagram node sizing', () => {
       label: 'comb_wide_label_growth',
       ports: [
         { id: 'hidden', name: 'wide_label_growth', direction: 'input', width: '[255:0]' },
-        { id: 'out', name: outputName, direction: 'output', width: '[255:0]' }
-      ]
+        { id: 'out', name: outputName, direction: 'output', width: '[255:0]' },
+      ],
     }).width;
     const muxWidth = diagramNodeDimensions({
       id: 'mux',
@@ -215,10 +288,16 @@ describe('diagram node sizing', () => {
       label: 'case sel',
       ports: [
         { id: 'sel', name: 'sel', direction: 'input' },
-        { id: 'case0', name: 'case0', label: 'wide_label_growth', direction: 'input', width: '[255:0]' },
+        {
+          id: 'case0',
+          name: 'case0',
+          label: 'wide_label_growth',
+          direction: 'input',
+          width: '[255:0]',
+        },
         { id: 'case1', name: 'case1', label: 'default_wide_label_growth', direction: 'input' },
-        { id: 'out', name: 'wide_label_growth', direction: 'output' }
-      ]
+        { id: 'out', name: 'wide_label_growth', direction: 'output' },
+      ],
     }).width;
 
     expect(combWidth).toBeLessThan(muxWidth);
@@ -232,8 +311,8 @@ describe('diagram node sizing', () => {
       label: 'very_long_comb_block_label_that_is_not_rendered',
       ports: [
         { id: 'in', name: 'a', direction: 'input' },
-        { id: 'out', name: 'y', direction: 'output' }
-      ]
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
     }).width;
 
     expect(width).toBe(diagramSizing.nodeWidth);
@@ -246,8 +325,8 @@ describe('diagram node sizing', () => {
       label: '',
       ports: [
         { id: 'in', name: 'a', direction: 'input' },
-        { id: 'out', name: 'y', direction: 'output' }
-      ]
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
     }).height;
     const twoRows = diagramNodeDimensions({
       id: 'comb:two',
@@ -256,8 +335,8 @@ describe('diagram node sizing', () => {
       ports: [
         { id: 'in:a', name: 'a', direction: 'input' },
         { id: 'in:b', name: 'b', direction: 'input' },
-        { id: 'out', name: 'y', direction: 'output' }
-      ]
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
     }).height;
     const threeRows = diagramNodeDimensions({
       id: 'comb:three',
@@ -267,8 +346,8 @@ describe('diagram node sizing', () => {
         { id: 'in:a', name: 'a', direction: 'input' },
         { id: 'in:b', name: 'b', direction: 'input' },
         { id: 'in:c', name: 'c', direction: 'input' },
-        { id: 'out', name: 'y', direction: 'output' }
-      ]
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
     }).height;
 
     expect(oneRow).toBe(diagramSizing.gridSize * 3);
@@ -307,14 +386,14 @@ describe('diagram node sizing', () => {
       id: 'port',
       kind: 'port',
       label: 'clk',
-      ports: [{ id: 'p', name: 'clk', direction: 'input' }]
+      ports: [{ id: 'p', name: 'clk', direction: 'input' }],
     }).width;
 
     const singleBitWidth = diagramNodeDimensions({
       id: 'port',
       kind: 'port',
       label: 'clk',
-      ports: [{ id: 'p', name: 'clk', direction: 'input', width: '[0:0]' }]
+      ports: [{ id: 'p', name: 'clk', direction: 'input', width: '[0:0]' }],
     }).width;
 
     expect(singleBitWidth).toBe(defaultWidth);
@@ -335,9 +414,9 @@ describe('diagram node sizing', () => {
           width: 'interface',
           preferredSide: 'right',
           typeName: 'simple_if',
-          modportName: 'slave'
-        }
-      ]
+          modportName: 'slave',
+        },
+      ],
     });
 
     expect(dimensions.height).toBe(diagramSizing.portHeight);
@@ -348,14 +427,24 @@ describe('diagram node sizing', () => {
 
 function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
   const long = 'very_long_signal_or_block_label_for_width_growth';
-  const label = extended ? long : kind === 'instance' ? 'u' : kind === 'register' ? 'q' : kind === 'unknown' ? 'x' : kind;
+  const label = extended
+    ? long
+    : kind === 'instance'
+      ? 'u'
+      : kind === 'register'
+        ? 'q'
+        : kind === 'unknown'
+          ? 'x'
+          : kind;
 
   if (kind === 'port') {
     return {
       id: `node:${kind}`,
       kind,
       label,
-      ports: [{ id: 'p', name: label, direction: 'input', width: extended ? '[127:0]' : undefined }]
+      ports: [
+        { id: 'p', name: label, direction: 'input', width: extended ? '[127:0]' : undefined },
+      ],
     };
   }
 
@@ -366,9 +455,14 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       label,
       ports: [
         { id: 'sel', name: 'sel', direction: 'input' },
-        { id: 'in0', name: extended ? long : 'a', label: extended ? long : 'a', direction: 'input' },
-        { id: 'out', name: extended ? long : 'y', direction: 'output' }
-      ]
+        {
+          id: 'in0',
+          name: extended ? long : 'a',
+          label: extended ? long : 'a',
+          direction: 'input',
+        },
+        { id: 'out', name: extended ? long : 'y', direction: 'output' },
+      ],
     };
   }
 
@@ -381,8 +475,8 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       ports: [
         { id: 'lhs', name: 'lhs', direction: 'input' },
         { id: 'rhs', name: 'rhs', direction: 'input' },
-        { id: 'out', name: extended ? long : 'y', direction: 'output' }
-      ]
+        { id: 'out', name: extended ? long : 'y', direction: 'output' },
+      ],
     };
   }
 
@@ -394,9 +488,9 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       ports: [
         { id: 'd', name: 'D', direction: 'input' },
         { id: 'clk', name: 'clk', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' }
+        { id: 'q', name: 'Q', direction: 'output' },
       ],
-      metadata: extended ? { width: '[255:0]' } : undefined
+      metadata: extended ? { width: '[255:0]' } : undefined,
     };
   }
 
@@ -407,8 +501,13 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       label,
       ports: [
         { id: 'in', name: 'instr', direction: 'input' },
-        { id: 'tap', name: extended ? long : '[6:0]', label: extended ? long : '[6:0]', direction: 'output' }
-      ]
+        {
+          id: 'tap',
+          name: extended ? long : '[6:0]',
+          label: extended ? long : '[6:0]',
+          direction: 'output',
+        },
+      ],
     };
   }
 
@@ -418,8 +517,13 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       kind,
       label: extended ? `literal_${long}` : "8'h42",
       ports: [
-        { id: 'out', name: extended ? long : 'literal_y', direction: 'output', width: extended ? '[255:0]' : undefined }
-      ]
+        {
+          id: 'out',
+          name: extended ? long : 'literal_y',
+          direction: 'output',
+          width: extended ? '[255:0]' : undefined,
+        },
+      ],
     };
   }
 
@@ -429,8 +533,18 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
     label,
     instanceOf: kind === 'instance' ? (extended ? long : 'child') : undefined,
     ports: [
-      { id: 'in', name: extended ? long : 'a', direction: 'input', width: extended ? '[127:0]' : undefined },
-      { id: 'out', name: extended ? long : 'y', direction: 'output', width: extended ? '[127:0]' : undefined }
-    ]
+      {
+        id: 'in',
+        name: extended ? long : 'a',
+        direction: 'input',
+        width: extended ? '[127:0]' : undefined,
+      },
+      {
+        id: 'out',
+        name: extended ? long : 'y',
+        direction: 'output',
+        width: extended ? '[127:0]' : undefined,
+      },
+    ],
   };
 }

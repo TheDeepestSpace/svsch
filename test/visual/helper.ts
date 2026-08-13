@@ -10,13 +10,10 @@ import type { SavedLayout } from '../../src/storage/layoutStore';
 import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
 import { renderSvg } from '../../src/cli/svgRenderer';
 
-const reactFlowCss = fs.readFileSync(
-  require.resolve('@xyflow/react/dist/style.css'),
-  'utf8'
-);
+const reactFlowCss = fs.readFileSync(require.resolve('@xyflow/react/dist/style.css'), 'utf8');
 const extensionCss = fs.readFileSync(
   path.resolve(__dirname, '../../src/webview/diagram.css'),
-  'utf8'
+  'utf8',
 );
 
 const currentPageViews = new WeakMap<Page, DiagramViewModel>();
@@ -27,11 +24,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
-export async function expectGraphAndScreenshot(
-  page: Page,
-  name: string,
-  options?: any
-) {
+export async function expectGraphAndScreenshot(page: Page, name: string, options?: any) {
   const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
 
   // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
@@ -41,7 +34,8 @@ export async function expectGraphAndScreenshot(
   const baseName = path.basename(snapshotPath, '.json');
   // Note: a bare `--update-snapshots` sets the mode to 'changed'.
   const updateMode = test.info().config.updateSnapshots;
-  const updateSnapshots = !!process.env.UPDATE_SNAPSHOTS || updateMode === 'all' || updateMode === 'changed';
+  const updateSnapshots =
+    !!process.env.UPDATE_SNAPSHOTS || updateMode === 'all' || updateMode === 'changed';
 
   // 1. Graph Regression (JSON)
   const graphState = await captureGraphState(page);
@@ -61,29 +55,46 @@ export async function expectGraphAndScreenshot(
   await expect(page).toHaveScreenshot(name, options);
 }
 
-export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface' | 'register' | 'comb' | 'alu' | 'inverter' | 'generate' | 'cutNet';
+export type VisualLayoutMode =
+  | 'auto'
+  | 'manual'
+  | 'bus'
+  | 'struct'
+  | 'interface'
+  | 'register'
+  | 'comb'
+  | 'alu'
+  | 'inverter'
+  | 'generate'
+  | 'cutNet';
 
-export async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
+export async function openFixture(
+  page: Page,
+  fixtureName: string,
+  layoutMode: VisualLayoutMode = 'auto',
+  moduleName?: string,
+): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
 
   await openView(page, view);
-  const readySelector = layoutMode === 'bus'
-    ? '[data-node-kind="bus"]'
-    : layoutMode === 'struct'
-      ? '[data-node-kind="struct"]'
-      : layoutMode === 'interface'
-        ? '[data-node-kind="interface"], .react-flow__node'
-        : layoutMode === 'register'
-          ? '[data-node-kind="register"]'
-          : layoutMode === 'comb'
-            ? '[data-node-kind="comb"]'
-            : layoutMode === 'alu'
-              ? '[data-node-kind="alu"]'
-              : layoutMode === 'inverter'
-                ? '[data-node-kind="inverter"]'
-                : layoutMode === 'generate'
-                  ? '.generate-region'
-                  : '.react-flow__node';
+  const readySelector =
+    layoutMode === 'bus'
+      ? '[data-node-kind="bus"]'
+      : layoutMode === 'struct'
+        ? '[data-node-kind="struct"]'
+        : layoutMode === 'interface'
+          ? '[data-node-kind="interface"], .react-flow__node'
+          : layoutMode === 'register'
+            ? '[data-node-kind="register"]'
+            : layoutMode === 'comb'
+              ? '[data-node-kind="comb"]'
+              : layoutMode === 'alu'
+                ? '[data-node-kind="alu"]'
+                : layoutMode === 'inverter'
+                  ? '[data-node-kind="inverter"]'
+                  : layoutMode === 'generate'
+                    ? '.generate-region'
+                    : '.react-flow__node';
   await page.waitForSelector(readySelector, { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
@@ -102,15 +113,21 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
   await page.evaluate((fixtureView) => {
-    window.postMessage({
-      type: 'graph',
-      view: fixtureView,
-      modules: [fixtureView.moduleName]
-    }, '*');
+    window.postMessage(
+      {
+        type: 'graph',
+        view: fixtureView,
+        modules: [fixtureView.moduleName],
+      },
+      '*',
+    );
   }, view);
 }
 
-export async function paddedLocatorClip(page: Page, selector: string): Promise<{ x: number; y: number; width: number; height: number }> {
+export async function paddedLocatorClip(
+  page: Page,
+  selector: string,
+): Promise<{ x: number; y: number; width: number; height: number }> {
   await page.evaluate(() => document.fonts.ready);
   const padding = 24;
   const box = await page.locator(selector).first().boundingBox();
@@ -120,7 +137,9 @@ export async function paddedLocatorClip(page: Page, selector: string): Promise<{
   return paddedClipFromBox(page, box, padding);
 }
 
-export async function paddedGraphClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+export async function paddedGraphClip(
+  page: Page,
+): Promise<{ x: number; y: number; width: number; height: number }> {
   await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.locator('.react-flow__nodes').boundingBox();
@@ -133,7 +152,9 @@ export async function paddedGraphClip(page: Page): Promise<{ x: number; y: numbe
 // Union-based clip: queries every rendered node's getBoundingClientRect so nodes
 // above canvas y=0 (which fall above the .react-flow__nodes container bbox) are
 // included correctly.
-export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+export async function paddedAllNodesClip(
+  page: Page,
+): Promise<{ x: number; y: number; width: number; height: number }> {
   await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.evaluate(() => {
@@ -153,7 +174,9 @@ export async function paddedAllNodesClip(page: Page): Promise<{ x: number; y: nu
   return paddedClipFromBox(page, box, padding);
 }
 
-export async function paddedGraphAndRegionsClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+export async function paddedGraphAndRegionsClip(
+  page: Page,
+): Promise<{ x: number; y: number; width: number; height: number }> {
   await page.evaluate(() => document.fonts.ready);
   const padding = 48;
   const box = await page.evaluate(() => {
@@ -173,7 +196,9 @@ export async function paddedGraphAndRegionsClip(page: Page): Promise<{ x: number
   return paddedClipFromBox(page, box, padding);
 }
 
-export async function canvasClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+export async function canvasClip(
+  page: Page,
+): Promise<{ x: number; y: number; width: number; height: number }> {
   await page.evaluate(() => document.fonts.ready);
   const box = await page.locator('.canvas').boundingBox();
   if (!box) {
@@ -184,14 +209,15 @@ export async function canvasClip(page: Page): Promise<{ x: number; y: number; wi
     x: Math.max(0, Math.floor(box.x)),
     y: Math.max(0, Math.floor(box.y)),
     width: Math.min(viewport.width, Math.ceil(box.x + box.width)) - Math.max(0, Math.floor(box.x)),
-    height: Math.min(viewport.height, Math.ceil(box.y + box.height)) - Math.max(0, Math.floor(box.y))
+    height:
+      Math.min(viewport.height, Math.ceil(box.y + box.height)) - Math.max(0, Math.floor(box.y)),
   };
 }
 
 export function paddedClipFromBox(
   page: Page,
   box: { x: number; y: number; width: number; height: number },
-  padding: number
+  padding: number,
 ): { x: number; y: number; width: number; height: number } {
   const viewport = page.viewportSize() ?? { width: 900, height: 640 };
   const x = Math.max(0, Math.floor(box.x - padding));
@@ -203,7 +229,7 @@ export function paddedClipFromBox(
     x,
     y,
     width: right - x,
-    height: bottom - y
+    height: bottom - y,
   };
 }
 
@@ -228,7 +254,9 @@ export async function waitForViewportTransformToSettle(page: Page): Promise<void
 }
 
 export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
-  await page.waitForFunction(() => Boolean((window as any).reactFlowInstance), undefined, { timeout: 5000 });
+  await page.waitForFunction(() => Boolean((window as any).reactFlowInstance), undefined, {
+    timeout: 5000,
+  });
   const fitViewButton = page.locator('button.react-flow__controls-fitview');
   if (await fitViewButton.isVisible()) {
     await fitViewButton.click();
@@ -241,7 +269,11 @@ export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
   await page.waitForTimeout(100);
 }
 
-export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
+export async function buildFixtureView(
+  fixtureName: string,
+  layoutMode: VisualLayoutMode,
+  requestedModuleName?: string,
+): Promise<DiagramViewModel> {
   const fixturePath = path.join(fixtureRoot, fixtureName);
   const text = fs.readFileSync(fixturePath, 'utf8');
 
@@ -250,7 +282,8 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     const tmpFile = path.join(tmpDir, path.basename(fixtureName));
     fs.writeFileSync(tmpFile, text);
 
-    const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+    const surelogPath =
+      process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
     const graph = await buildDesignGraph({
@@ -260,31 +293,32 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
       veriblePath: 'verible-verilog-syntax',
       surelogPath,
       backendPath,
-      includeExternalDiagnostics: false
+      includeExternalDiagnostics: false,
     });
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
-    const layout = layoutMode === 'manual'
-      ? createVisualLayout(graph, moduleName)
-      : layoutMode === 'bus'
-        ? createBusVisualLayout(graph, moduleName)
-        : layoutMode === 'struct'
-          ? createStructVisualLayout(graph, moduleName)
-          : layoutMode === 'interface'
-            ? createInterfaceVisualLayout(graph, moduleName)
-            : layoutMode === 'register'
-              ? createRegisterVisualLayout(graph, moduleName)
-              : layoutMode === 'comb'
-                ? createCombVisualLayout(graph, moduleName)
-                : layoutMode === 'alu'
-                  ? createAluVisualLayout(graph, moduleName)
-                  : layoutMode === 'inverter'
-                    ? createInverterVisualLayout(graph, moduleName)
-                    : layoutMode === 'generate'
-                      ? createGenerateVisualLayout(graph, moduleName)
-                      : layoutMode === 'cutNet'
-                        ? createCutNetVisualLayout(graph, moduleName)
-                        : { version: 1, modules: {} } as SavedLayout;
+    const layout =
+      layoutMode === 'manual'
+        ? createVisualLayout(graph, moduleName)
+        : layoutMode === 'bus'
+          ? createBusVisualLayout(graph, moduleName)
+          : layoutMode === 'struct'
+            ? createStructVisualLayout(graph, moduleName)
+            : layoutMode === 'interface'
+              ? createInterfaceVisualLayout(graph, moduleName)
+              : layoutMode === 'register'
+                ? createRegisterVisualLayout(graph, moduleName)
+                : layoutMode === 'comb'
+                  ? createCombVisualLayout(graph, moduleName)
+                  : layoutMode === 'alu'
+                    ? createAluVisualLayout(graph, moduleName)
+                    : layoutMode === 'inverter'
+                      ? createInverterVisualLayout(graph, moduleName)
+                      : layoutMode === 'generate'
+                        ? createGenerateVisualLayout(graph, moduleName)
+                        : layoutMode === 'cutNet'
+                          ? createCutNetVisualLayout(graph, moduleName)
+                          : ({ version: 1, modules: {} } as SavedLayout);
 
     return buildViewModel(graph, moduleName, layout);
   } finally {
@@ -300,18 +334,22 @@ function createCutNetVisualLayout(graph: DesignGraph, moduleName: string): Saved
   const designModule = graph.modules[moduleName];
   const edge = designModule.edges[0];
   if (!edge) {
-    throw new Error(`No edge found in module "${moduleName}" to cut for the cut-net visual fixture`);
+    throw new Error(
+      `No edge found in module "${moduleName}" to cut for the cut-net visual fixture`,
+    );
   }
   const sourceNode = designModule.nodes.find((node) => node.id === edge.source);
   const targetNode = designModule.nodes.find((node) => node.id === edge.target);
   if (!sourceNode || !targetNode) {
-    throw new Error(`Could not resolve edge endpoints for the cut-net visual fixture in "${moduleName}"`);
+    throw new Error(
+      `Could not resolve edge endpoints for the cut-net visual fixture in "${moduleName}"`,
+    );
   }
 
   const grid = 24;
   const positionedNodes: PositionedNode[] = [
     { ...sourceNode, position: { x: grid * 4, y: grid * 4 } },
-    { ...targetNode, position: { x: grid * 24, y: grid * 4 } }
+    { ...targetNode, position: { x: grid * 24, y: grid * 4 } },
   ];
 
   return mergeNetCut({ version: 1, modules: {} }, moduleName, edge, designModule, positionedNodes);
@@ -320,8 +358,12 @@ function createCutNetVisualLayout(graph: DesignGraph, moduleName: string): Saved
 function createRegisterVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const registerNode = designModule.nodes.find((node) => node.kind === 'register');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const regX = grid * 10;
@@ -342,16 +384,20 @@ function createRegisterVisualLayout(graph: DesignGraph, moduleName: string): Sav
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createBusVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const bus = designModule.nodes.find((node) => node.kind === 'bus');
-  const inputPort = designModule.nodes.find((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPort = designModule.nodes.find(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const busX = grid * 10;
@@ -372,16 +418,20 @@ function createBusVisualLayout(graph: DesignGraph, moduleName: string): SavedLay
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createStructVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const struct = designModule.nodes.find((node) => node.kind === 'struct');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const registers = designModule.nodes.filter((node) => node.kind === 'register');
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
@@ -407,16 +457,20 @@ function createStructVisualLayout(graph: DesignGraph, moduleName: string): Saved
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const interfaces = designModule.nodes.filter((node) => node.kind === 'interface');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const instances = designModule.nodes.filter((node) => node.kind === 'instance');
   const combs = designModule.nodes.filter((node) => node.kind === 'comb');
   const nodes: Record<string, { x: number; y: number; fixed?: boolean }> = {};
@@ -436,7 +490,10 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
       const modport = interfaceModportNodes[index] ?? interfaceModportNodes[0];
       const modportHeight = modport ? diagramNodeDimensions(modport).height : grid * 4;
       const portHeight = diagramNodeDimensions(node).height;
-      nodes[node.id] = fixed(ifaceX - grid * 8, ifaceY + grid * index * 10 + modportHeight / 2 - portHeight / 2);
+      nodes[node.id] = fixed(
+        ifaceX - grid * 8,
+        ifaceY + grid * index * 10 + modportHeight / 2 - portHeight / 2,
+      );
     });
     interfaceModportNodes.forEach((node, index) => {
       nodes[node.id] = fixed(ifaceX, ifaceY + grid * index * 10);
@@ -457,8 +514,8 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
     return {
       version: 1,
       modules: {
-        [moduleName]: { nodes }
-      }
+        [moduleName]: { nodes },
+      },
     };
   }
 
@@ -467,12 +524,13 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
   });
 
   inputPorts.forEach((node, index) => {
-    const interfaceClockEdge = designModule.edges.find((edge) => (
-      edge.source === node.id
-      && interfaces.some((iface) => iface.id === edge.target)
-      && !String(edge.targetPort ?? '').includes('master')
-      && !String(edge.targetPort ?? '').includes('slave')
-    ));
+    const interfaceClockEdge = designModule.edges.find(
+      (edge) =>
+        edge.source === node.id &&
+        interfaces.some((iface) => iface.id === edge.target) &&
+        !String(edge.targetPort ?? '').includes('master') &&
+        !String(edge.targetPort ?? '').includes('slave'),
+    );
     const targetInterface = interfaces.find((iface) => iface.id === interfaceClockEdge?.target);
     if (targetInterface) {
       const ifacePosition = nodes[targetInterface.id] ?? { x: ifaceX, y: ifaceY };
@@ -480,7 +538,7 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
       const portSize = diagramNodeDimensions(node);
       nodes[node.id] = fixed(
         ifacePosition.x + ifaceSize.width / 2 - portSize.width - grid,
-        ifacePosition.y - grid * 2.5
+        ifacePosition.y - grid * 2.5,
       );
       return;
     }
@@ -491,8 +549,14 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
   let leftInstanceRow = 0;
   let rightInstanceRow = 0;
   instances.forEach((node, index) => {
-    const interfacePort = node.ports.find((port) => port.width === 'interface' || port.typeName?.endsWith('_if') || port.typeName?.endsWith('if'));
-    const goesLeft = interfacePort?.preferredSide === 'left' || interfacePort?.direction === 'output';
+    const interfacePort = node.ports.find(
+      (port) =>
+        port.width === 'interface' ||
+        port.typeName?.endsWith('_if') ||
+        port.typeName?.endsWith('if'),
+    );
+    const goesLeft =
+      interfacePort?.preferredSide === 'left' || interfacePort?.direction === 'output';
     if (goesLeft) {
       nodes[node.id] = fixed(ifaceX - grid * 12, ifaceY + grid * leftInstanceRow * 6);
       leftInstanceRow += 1;
@@ -515,8 +579,8 @@ function createInterfaceVisualLayout(graph: DesignGraph, moduleName: string): Sa
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
@@ -524,8 +588,12 @@ function createVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout
   const designModule = graph.modules[moduleName];
   const mux = designModule.nodes.find((node) => node.kind === 'mux');
   const muxSelector = mux?.ports.find((port) => port.direction === 'input')?.name;
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const muxX = grid * 15;
@@ -557,16 +625,20 @@ function createVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createCombVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const comb = designModule.nodes.find((node) => node.kind === 'comb');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const combX = grid * 10;
@@ -588,16 +660,20 @@ function createCombVisualLayout(graph: DesignGraph, moduleName: string): SavedLa
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createAluVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const alus = designModule.nodes.filter((node) => node.kind === 'alu');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const aluX = grid * 10;
@@ -618,16 +694,20 @@ function createAluVisualLayout(graph: DesignGraph, moduleName: string): SavedLay
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createInverterVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
   const inverters = designModule.nodes.filter((node) => node.kind === 'inverter');
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
   const nodes: Record<string, { x: number; y: number }> = {};
   const grid = 24;
   const invX = grid * 10;
@@ -648,17 +728,25 @@ function createInverterVisualLayout(graph: DesignGraph, moduleName: string): Sav
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes }
-    }
+      [moduleName]: { nodes },
+    },
   };
 }
 
 function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
   const designModule = graph.modules[moduleName];
-  const inputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'input');
-  const outputPorts = designModule.nodes.filter((node) => node.kind === 'port' && node.ports[0]?.direction === 'output');
-  const regionNodeIds = new Set((designModule.generateRegions ?? []).flatMap((region) => region.nodeIds ?? []));
-  const bodyNodes = designModule.nodes.filter((node) => node.kind !== 'port' && !regionNodeIds.has(node.id));
+  const inputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
+  );
+  const outputPorts = designModule.nodes.filter(
+    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
+  );
+  const regionNodeIds = new Set(
+    (designModule.generateRegions ?? []).flatMap((region) => region.nodeIds ?? []),
+  );
+  const bodyNodes = designModule.nodes.filter(
+    (node) => node.kind !== 'port' && !regionNodeIds.has(node.id),
+  );
   const nodes: Record<string, { x: number; y: number; fixed?: boolean }> = {};
   const regions: NonNullable<SavedLayout['modules'][string]['regions']> = {};
   const grid = 24;
@@ -677,9 +765,10 @@ function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): Sav
     nodes[node.id] = fixed(grid * 38, centerY + grid * 11.5 + grid * index * 2);
   });
 
-  const roots = designModule.generateRegions
-    ?.filter((region) => !region.parentRegionId)
-    .sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0) || a.id.localeCompare(b.id)) ?? [];
+  const roots =
+    designModule.generateRegions
+      ?.filter((region) => !region.parentRegionId)
+      .sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0) || a.id.localeCompare(b.id)) ?? [];
   const childGroups = new Map<string, typeof roots>();
   for (const region of designModule.generateRegions ?? []) {
     if (!region.parentRegionId) continue;
@@ -705,7 +794,7 @@ function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): Sav
         y: baseY + grid * 2 + childIndex * grid * 10,
         width: grid * 14,
         height: grid * 8,
-        fixed: true
+        fixed: true,
       };
     });
   });
@@ -722,8 +811,8 @@ function createGenerateVisualLayout(graph: DesignGraph, moduleName: string): Sav
   return {
     version: 1,
     modules: {
-      [moduleName]: { nodes, regions }
-    }
+      [moduleName]: { nodes, regions },
+    },
   };
 }
 
@@ -760,7 +849,7 @@ export async function installStableTheme(page: Page): Promise<void> {
       text {
         text-rendering: geometricPrecision !important;
       }
-    `
+    `,
   });
   // Force Chrome to load and cache the font file for every weight used by SVG
   // text elements before any diagram renders. SVG dominantBaseline="middle"

@@ -12,18 +12,18 @@ export interface RoutingObstacleMargins {
 
 export function routingObstacleMargins(
   node: DiagramNode,
-  portSides: Array<string | undefined>
+  portSides: Array<string | undefined>,
 ): RoutingObstacleMargins {
   const vertical = {
     top: portSides.includes('NORTH') ? 0 : ROUTING_OBSTACLE_MARGIN,
-    bottom: portSides.includes('SOUTH') ? 0 : ROUTING_OBSTACLE_MARGIN
+    bottom: portSides.includes('SOUTH') ? 0 : ROUTING_OBSTACLE_MARGIN,
   };
 
   if (node.kind === 'literal') {
     return {
       left: diagramSizing.gridSize,
       right: 0,
-      ...vertical
+      ...vertical,
     };
   }
 
@@ -31,8 +31,9 @@ export function routingObstacleMargins(
   // port lead does. Keep a full grid on the other three sides so snapped
   // routes cannot run directly along the label's outline.
   if (node.kind === 'netLabel') {
-    const handleSide = node.metadata?.cutNet?.handleSide
-      ?? (portSides.includes('WEST')
+    const handleSide =
+      node.metadata?.cutNet?.handleSide ??
+      (portSides.includes('WEST')
         ? 'left'
         : portSides.includes('EAST')
           ? 'right'
@@ -45,7 +46,7 @@ export function routingObstacleMargins(
       left: handleSide === 'left' ? 0 : diagramSizing.gridSize,
       right: handleSide === 'right' ? 0 : diagramSizing.gridSize,
       top: handleSide === 'top' ? 0 : diagramSizing.gridSize,
-      bottom: handleSide === 'bottom' ? 0 : diagramSizing.gridSize
+      bottom: handleSide === 'bottom' ? 0 : diagramSizing.gridSize,
     };
   }
 
@@ -58,13 +59,13 @@ export function routingObstacleMargins(
   return {
     left: portSides.includes('EAST') ? diagramSizing.gridSize : 0,
     right: portSides.includes('WEST') ? diagramSizing.gridSize : 0,
-    ...vertical
+    ...vertical,
   };
 }
 
 export function routingVerticalMargins(
   node: DiagramNode,
-  portSides: Array<string | undefined>
+  portSides: Array<string | undefined>,
 ): { top: number; bottom: number } {
   const { top, bottom } = routingObstacleMargins(node, portSides);
   return { top, bottom };

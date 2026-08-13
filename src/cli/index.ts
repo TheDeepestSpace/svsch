@@ -3,12 +3,12 @@ import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { parseArgs } from 'node:util';
-import { 
-  buildDesignGraph, 
-  resolveProjectScope, 
+import {
+  buildDesignGraph,
+  resolveProjectScope,
   renderModuleFromGraph,
   resolveSurelogPath,
-  resolveBackendPath
+  resolveBackendPath,
 } from '../core';
 import { renderSvg } from './svgRenderer';
 import { minifySvg } from './svgMinify';
@@ -64,8 +64,8 @@ async function renderCommand(argv: string[]): Promise<void> {
       'project-folder': { type: 'string' },
       'svsch-data-dir': { type: 'string' },
       watch: { type: 'boolean', default: false },
-      help: { type: 'boolean', short: 'h', default: false }
-    }
+      help: { type: 'boolean', short: 'h', default: false },
+    },
   });
 
   if (parsed.values.help) {
@@ -76,7 +76,8 @@ async function renderCommand(argv: string[]): Promise<void> {
     throw new Error('--watch is not implemented yet.');
   }
 
-  const theme = parsed.values.theme === 'light' ? 'light' : parsed.values.theme === 'dark' ? 'dark' : undefined;
+  const theme =
+    parsed.values.theme === 'light' ? 'light' : parsed.values.theme === 'dark' ? 'dark' : undefined;
   if (!theme) {
     throw new Error(`Unsupported theme: ${parsed.values.theme}`);
   }
@@ -86,8 +87,8 @@ async function renderCommand(argv: string[]): Promise<void> {
     throw new Error('No input SystemVerilog files matched.');
   }
 
-  let output = parsed.values.output;
-  let outputDir = parsed.values['output-dir'];
+  const output = parsed.values.output;
+  const outputDir = parsed.values['output-dir'];
   if (output && outputDir) {
     throw new Error('Use either --output or --output-dir, not both.');
   }
@@ -102,7 +103,7 @@ async function renderCommand(argv: string[]): Promise<void> {
     theme,
     workspaceRoot: parsed.values.workspace,
     projectFolder: parsed.values['project-folder'],
-    svschDataDir: parsed.values['svsch-data-dir']
+    svschDataDir: parsed.values['svsch-data-dir'],
   };
 
   if (options.workspaceRoot) {
@@ -132,7 +133,7 @@ async function renderCommand(argv: string[]): Promise<void> {
     includeExternalDiagnostics: true,
     onProgress: (message) => {
       process.stderr.write(`[svsch] ${message}\n`);
-    }
+    },
   });
 
   // 3. Early validation of top module and input reduction
@@ -151,18 +152,25 @@ async function renderCommand(argv: string[]): Promise<void> {
     options.output = undefined;
   }
   if (inputs.length > 1 && options.output) {
-    throw new Error('--output can only be used with a single input. Use --output-dir for multiple files.');
+    throw new Error(
+      '--output can only be used with a single input. Use --output-dir for multiple files.',
+    );
   }
 
   // 5. Pre-render all SVGs to ensure everything is valid before writing ANY files
   const results: Array<{ output: string; svg: string; layoutSource?: string }> = [];
   for (const input of inputs) {
     const output = outputPathFor(input, options);
-    const { view, layoutSource } = await renderModuleFromGraph(graph, path.resolve(input), workspaceRoot, {
-      ...options,
-      layoutFile: options.layout,
-      topModule: options.top
-    });
+    const { view, layoutSource } = await renderModuleFromGraph(
+      graph,
+      path.resolve(input),
+      workspaceRoot,
+      {
+        ...options,
+        layoutFile: options.layout,
+        topModule: options.top,
+      },
+    );
     let svg = renderSvg(view, { theme: options.theme, reactFlowCss, extensionCss });
     if (options.minifySvg) {
       svg = await minifySvg(svg);
@@ -175,7 +183,9 @@ async function renderCommand(argv: string[]): Promise<void> {
     await fs.mkdir(path.dirname(output), { recursive: true });
     const relativeOutput = relativeToCwd(output);
     if (layoutSource) {
-      process.stderr.write(`[svsch] rendering ${relativeOutput} using layout file ${relativeToCwd(layoutSource)}\n`);
+      process.stderr.write(
+        `[svsch] rendering ${relativeOutput} using layout file ${relativeToCwd(layoutSource)}\n`,
+      );
     } else {
       process.stderr.write(`[svsch] rendering ${relativeOutput} without a layout file\n`);
     }
@@ -296,7 +306,7 @@ async function walk(root: string): Promise<string[]> {
     }
     const fullPath = path.join(root, entry.name);
     if (entry.isDirectory()) {
-      files.push(...await walk(fullPath));
+      files.push(...(await walk(fullPath)));
     } else {
       files.push(fullPath);
     }
@@ -341,9 +351,11 @@ Options:
 `);
 }
 
-main(process.argv.slice(2)).then(() => {
-  process.exit(0);
-}).catch((error) => {
-  process.stderr.write(`[svsch] ${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
-});
+main(process.argv.slice(2))
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    process.stderr.write(`[svsch] ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  });

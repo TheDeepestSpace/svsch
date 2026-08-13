@@ -39,10 +39,14 @@ export function arrayBreakoutPipeCapPivot(node: DiagramNode): { x: number; y: nu
  * already compute that via diagramNodeDimensions (importing it here would
  * create a cycle: nodeSizing.ts imports isBusComposition from this module).
  */
-export function arrayCompositionPipeCapPivot(node: DiagramNode, width: number): { x: number; y: number } {
+export function arrayCompositionPipeCapPivot(
+  node: DiagramNode,
+  width: number,
+): { x: number; y: number } {
   const g = diagramSizing.gridSize;
-  const tapCount = node.ports.filter((port: DiagramPort) =>
-    port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown'
+  const tapCount = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
   ).length;
   return pipeCapPivotFromTapCount(tapCount, width - g * 0.5 - 3);
 }
@@ -53,7 +57,7 @@ export function isBusComposition(node: DiagramNode, role?: string): boolean {
   // For bus nodes: sidePorts = node.ports (aggregatePorts for non-interface = node.ports)
   const aggregateInputs = node.ports.filter(
     (port: DiagramPort) =>
-      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown'
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
   );
   return aggregateInputs.length > 1;
 }

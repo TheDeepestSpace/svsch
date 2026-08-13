@@ -13,9 +13,14 @@ export interface ArrayStackLayer {
 }
 
 export const ARRAY_STACK_LAYERS = {
-  front: { id: 'front', dx: -ARRAY_STACK_LANE_OFFSET, dy: -ARRAY_STACK_LANE_OFFSET, trimUnits: 1 / 8 },
+  front: {
+    id: 'front',
+    dx: -ARRAY_STACK_LANE_OFFSET,
+    dy: -ARRAY_STACK_LANE_OFFSET,
+    trimUnits: 1 / 8,
+  },
   middle: { id: 'middle', dx: 0, dy: 0, trimUnits: 1 / 4 },
-  back: { id: 'back', dx: ARRAY_STACK_LANE_OFFSET, dy: ARRAY_STACK_LANE_OFFSET, trimUnits: 3 / 8 }
+  back: { id: 'back', dx: ARRAY_STACK_LANE_OFFSET, dy: ARRAY_STACK_LANE_OFFSET, trimUnits: 3 / 8 },
 } as const;
 
 export type ArrayStackLayerId = keyof typeof ARRAY_STACK_LAYERS;
@@ -27,7 +32,12 @@ export function arrayStackScale(wide: boolean): number {
 function scaledLayer(layer: ArrayStackLayer, wide: boolean): ArrayStackLayer {
   if (!wide) return layer;
   const scale = arrayStackScale(true);
-  return { ...layer, dx: layer.dx * scale, dy: layer.dy * scale, trimUnits: layer.trimUnits * scale };
+  return {
+    ...layer,
+    dx: layer.dx * scale,
+    dy: layer.dy * scale,
+    trimUnits: layer.trimUnits * scale,
+  };
 }
 
 export function arrayStackLayer(layerId: ArrayStackLayerId, wide: boolean): ArrayStackLayer {
@@ -38,20 +48,20 @@ export function arrayStackLayersFor(wide: boolean): Record<ArrayStackLayerId, Ar
   return {
     front: arrayStackLayer('front', wide),
     middle: arrayStackLayer('middle', wide),
-    back: arrayStackLayer('back', wide)
+    back: arrayStackLayer('back', wide),
   };
 }
 
 export const ARRAY_STACK_LEAD_LAYERS = [
   ARRAY_STACK_LAYERS.front,
   ARRAY_STACK_LAYERS.middle,
-  ARRAY_STACK_LAYERS.back
+  ARRAY_STACK_LAYERS.back,
 ] as const;
 
 export const ARRAY_STACK_SKIN_LAYERS = [
   ARRAY_STACK_LAYERS.back,
   ARRAY_STACK_LAYERS.middle,
-  ARRAY_STACK_LAYERS.front
+  ARRAY_STACK_LAYERS.front,
 ] as const;
 
 export function arrayStackLeadLayersFor(wide: boolean): ArrayStackLayer[] {

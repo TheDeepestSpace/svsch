@@ -5,7 +5,7 @@ import type {
   Point,
   PolylineEdgeGeometry,
   ResolvedLineJumpOptions,
-  LineJumpHalo
+  LineJumpHalo,
 } from './types';
 import { formatPathNumber } from '../../core/pathUtils';
 
@@ -14,7 +14,7 @@ const EPSILON = 0.5;
 export const defaultLineJumpOptions: ResolvedLineJumpOptions = {
   jumpSize: 7,
   endpointPadding: 4,
-  minOverlapLength: 4
+  minOverlapLength: 4,
 };
 
 type Orientation = 'horizontal' | 'vertical';
@@ -44,7 +44,10 @@ interface Crossing {
   haloWidth: number;
 }
 
-function getJumpSizeForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: PolylineEdgeGeometry): number {
+function getJumpSizeForCrossing(
+  geometry: PolylineEdgeGeometry,
+  otherGeometry: PolylineEdgeGeometry,
+): number {
   let requiredClearance = 7;
   if (otherGeometry.isInterface || otherGeometry.isStruct) {
     requiredClearance = 12;
@@ -64,14 +67,14 @@ function getJumpSizeForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: P
   return Math.max(minJump, requiredClearance);
 }
 
-function getHaloWidthForCrossing(geometry: PolylineEdgeGeometry, otherGeometry: PolylineEdgeGeometry): number {
+function getHaloWidthForCrossing(): number {
   return 12;
 }
 
 function resolveOptions(options?: LineJumpOptions): ResolvedLineJumpOptions {
   return {
     ...defaultLineJumpOptions,
-    ...options
+    ...options,
   };
 }
 
@@ -115,7 +118,7 @@ function segmentsFor(edge: PolylineEdgeGeometry): Segment[] {
       minX: Math.min(start.x, end.x),
       maxX: Math.max(start.x, end.x),
       minY: Math.min(start.y, end.y),
-      maxY: Math.max(start.y, end.y)
+      maxY: Math.max(start.y, end.y),
     });
   }
 
@@ -142,8 +145,8 @@ function crossingBetween(a: Segment, b: Segment, padding: number): Point | undef
   const point = { x: vertical.start.x, y: horizontal.start.y };
 
   if (
-    !between(point.x, horizontal.minX, horizontal.maxX, padding)
-    || !between(point.y, vertical.minY, vertical.maxY, padding)
+    !between(point.x, horizontal.minX, horizontal.maxX, padding) ||
+    !between(point.y, vertical.minY, vertical.maxY, padding)
   ) {
     return undefined;
   }
@@ -152,7 +155,12 @@ function crossingBetween(a: Segment, b: Segment, padding: number): Point | undef
 }
 
 function pathFromPoints(points: Point[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`).join(' ');
+  return points
+    .map(
+      (point, index) =>
+        `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`,
+    )
+    .join(' ');
 }
 
 function pathCommand(command: 'M' | 'L' | 'Q', ...values: number[]): string {
@@ -166,7 +174,7 @@ function crossingKey(crossing: Crossing): string {
 export function buildLineJumpPath(
   geometry: PolylineEdgeGeometry,
   allGeometries: PolylineEdgeGeometry[],
-  options?: LineJumpOptions
+  options?: LineJumpOptions,
 ): string {
   return buildLineJumpRender(geometry, allGeometries, options).path;
 }
@@ -174,7 +182,7 @@ export function buildLineJumpPath(
 export function buildLineJumpRender(
   geometry: PolylineEdgeGeometry,
   allGeometries: PolylineEdgeGeometry[],
-  options?: LineJumpOptions
+  options?: LineJumpOptions,
 ): LineJumpRender {
   const resolved = resolveOptions(options);
   const ownSegments = segmentsFor(geometry);
@@ -205,7 +213,7 @@ export function buildLineJumpRender(
           point,
           distance: segmentDistance(ownSegment, point),
           jumpSize: getJumpSizeForCrossing(geometry, otherGeometry),
-          haloWidth: getHaloWidthForCrossing(geometry, otherGeometry)
+          haloWidth: getHaloWidthForCrossing(),
         };
         const key = crossingKey(crossing);
 
@@ -221,7 +229,7 @@ export function buildLineJumpRender(
     return {
       path: pathFromPoints(geometry.points),
       jumpPaths: [],
-      jumpHalos: []
+      jumpHalos: [],
     };
   }
 
@@ -249,11 +257,11 @@ export function buildLineJumpRender(
       continue;
     }
 
-    const segmentCrossings = (crossingsBySegment.get(index) ?? [])
-      .sort((a, b) => a.distance - b.distance);
-    const direction = orientation === 'horizontal'
-      ? Math.sign(end.x - start.x)
-      : Math.sign(end.y - start.y);
+    const segmentCrossings = (crossingsBySegment.get(index) ?? []).sort(
+      (a, b) => a.distance - b.distance,
+    );
+    const direction =
+      orientation === 'horizontal' ? Math.sign(end.x - start.x) : Math.sign(end.y - start.y);
 
     for (const crossing of segmentCrossings) {
       const currentJumpSize = crossing.jumpSize;
@@ -261,25 +269,29 @@ export function buildLineJumpRender(
         const before = { x: crossing.point.x - direction * currentJumpSize, y: crossing.point.y };
         const after = { x: crossing.point.x + direction * currentJumpSize, y: crossing.point.y };
         const control = { x: crossing.point.x, y: crossing.point.y - currentJumpSize };
-        const jump = `${pathCommand('M', before.x, before.y)} ${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
+        const jump =
+          `${pathCommand('M', before.x, before.y)} ` +
+          `${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
         commands.push(pathCommand('L', before.x, before.y));
         commands.push(pathCommand('Q', control.x, control.y, after.x, after.y));
         jumpPaths.push(jump);
         jumpHalos.push({
           path: jump,
-          strokeWidth: crossing.haloWidth
+          strokeWidth: crossing.haloWidth,
         });
       } else {
         const before = { x: crossing.point.x, y: crossing.point.y - direction * currentJumpSize };
         const after = { x: crossing.point.x, y: crossing.point.y + direction * currentJumpSize };
         const control = { x: crossing.point.x + currentJumpSize, y: crossing.point.y };
-        const jump = `${pathCommand('M', before.x, before.y)} ${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
+        const jump =
+          `${pathCommand('M', before.x, before.y)} ` +
+          `${pathCommand('Q', control.x, control.y, after.x, after.y)}`;
         commands.push(pathCommand('L', before.x, before.y));
         commands.push(pathCommand('Q', control.x, control.y, after.x, after.y));
         jumpPaths.push(jump);
         jumpHalos.push({
           path: jump,
-          strokeWidth: crossing.haloWidth
+          strokeWidth: crossing.haloWidth,
         });
       }
     }
@@ -290,7 +302,7 @@ export function buildLineJumpRender(
   return {
     path: commands.join(' '),
     jumpPaths,
-    jumpHalos
+    jumpHalos,
   };
 }
 
@@ -304,14 +316,23 @@ function sameTarget(a: Segment, b: Segment): boolean {
 
 function touchesSameHandle(a: Segment, b: Segment): boolean {
   return Boolean(
-    a.sourceHandlePoint
-    && b.sourceHandlePoint
-    && pointsEqual(a.sourceHandlePoint, b.sourceHandlePoint)
+    a.sourceHandlePoint &&
+    b.sourceHandlePoint &&
+    pointsEqual(a.sourceHandlePoint, b.sourceHandlePoint),
   );
 }
 
-function overlapInterval(a: Segment, b: Segment, options: ResolvedLineJumpOptions): [number, number] | undefined {
-  if (a.orientation !== b.orientation || sameSource(a, b) || sameTarget(a, b) || touchesSameHandle(a, b)) {
+function overlapInterval(
+  a: Segment,
+  b: Segment,
+  options: ResolvedLineJumpOptions,
+): [number, number] | undefined {
+  if (
+    a.orientation !== b.orientation ||
+    sameSource(a, b) ||
+    sameTarget(a, b) ||
+    touchesSameHandle(a, b)
+  ) {
     return undefined;
   }
 
@@ -336,7 +357,7 @@ function overlapInterval(a: Segment, b: Segment, options: ResolvedLineJumpOption
 export function getEdgeOverlapHints(
   geometry: PolylineEdgeGeometry,
   allGeometries: PolylineEdgeGeometry[],
-  options?: LineJumpOptions
+  options?: LineJumpOptions,
 ): OverlapHint[] {
   const resolved = resolveOptions(options);
   const hints: OverlapHint[] = [];
@@ -355,13 +376,16 @@ export function getEdgeOverlapHints(
         }
 
         const [start, end] = interval;
-        const path = ownSegment.orientation === 'horizontal'
-          ? `M ${start} ${ownSegment.start.y} L ${end} ${ownSegment.start.y}`
-          : `M ${ownSegment.start.x} ${start} L ${ownSegment.start.x} ${end}`;
+        const path =
+          ownSegment.orientation === 'horizontal'
+            ? `M ${start} ${ownSegment.start.y} L ${end} ${ownSegment.start.y}`
+            : `M ${ownSegment.start.x} ${start} L ${ownSegment.start.x} ${end}`;
 
         hints.push({
-          id: `${geometry.edgeId}-overlap-${ownSegment.index}-${otherGeometry.edgeId}-${otherSegment.index}`,
-          path
+          id:
+            `${geometry.edgeId}-overlap-${ownSegment.index}-` +
+            `${otherGeometry.edgeId}-${otherSegment.index}`,
+          path,
         });
       }
     }

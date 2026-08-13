@@ -1,4 +1,4 @@
-import { type Page, expect, test } from '@playwright/test';
+import { type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { diffLines } from 'diff';
@@ -57,7 +57,7 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
     if (!rf) {
       throw new Error('reactFlowInstance not found on window');
     }
-    
+
     const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
     const nodeMap = new Map<string, Element>();
     for (const el of nodeElems) {
@@ -71,23 +71,25 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
         type: n.type,
         position: {
           x: Math.round(n.position.x),
-          y: Math.round(n.position.y)
+          y: Math.round(n.position.y),
         },
         width: Math.round(n.measured?.width ?? n.width ?? 0),
         height: Math.round(n.measured?.height ?? n.height ?? 0),
-        data: n.data ? {
-          label: n.data.label,
-          kind: n.data.node?.kind,
-          ports: n.data.node?.ports?.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            side: p.side,
-            direction: p.direction,
-            metadata: p.metadata
-          }))
-        } : undefined,
+        data: n.data
+          ? {
+              label: n.data.label,
+              kind: n.data.node?.kind,
+              ports: n.data.node?.ports?.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                side: p.side,
+                direction: p.direction,
+                metadata: p.metadata,
+              })),
+            }
+          : undefined,
         active: nodeElement?.classList.contains('generate-node-active') || undefined,
-        inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined
+        inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined,
       };
     });
 
@@ -106,7 +108,7 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
       // render first.
       const pathEl = edgeElement?.querySelector('path.svsch-edge');
       const pathData = pathEl?.getAttribute('d') ?? '';
-      
+
       return {
         id: e.id,
         source: e.source,
@@ -115,33 +117,36 @@ export async function captureGraphState(page: Page): Promise<GraphState> {
         targetHandle: e.targetHandle,
         path: pathData,
         active: edgeElement?.classList.contains('generate-edge-active') || undefined,
-        inactive: edgeElement?.classList.contains('generate-edge-inactive') || undefined
+        inactive: edgeElement?.classList.contains('generate-edge-inactive') || undefined,
       };
     });
 
-    const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
-      const element = region as HTMLElement;
-      const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
-      const warningNote = element.dataset.warningNote
-        ?? element.querySelector('.generate-region-warning')?.getAttribute('aria-label')
-        ?? element.querySelector('.generate-region-note')?.textContent?.trim()
-        ?? undefined;
-      return {
-        id: element.dataset.regionId ?? '',
-        kind: element.dataset.regionKind,
-        label: title,
-        bounds: {
-          x: Math.round(Number.parseFloat(element.style.left || '0')),
-          y: Math.round(Number.parseFloat(element.style.top || '0')),
-          width: Math.round(Number.parseFloat(element.style.width || '0')),
-          height: Math.round(Number.parseFloat(element.style.height || '0'))
-        },
-        active: element.classList.contains('generate-region-active') || undefined,
-        inactive: element.classList.contains('generate-region-inactive') || undefined,
-        invalid: element.classList.contains('generate-region-invalid') || undefined,
-        warningNote
-      };
-    }).filter((region) => region.id);
+    const regions = Array.from(document.querySelectorAll('.generate-region'))
+      .map((region: Element) => {
+        const element = region as HTMLElement;
+        const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
+        const warningNote =
+          element.dataset.warningNote ??
+          element.querySelector('.generate-region-warning')?.getAttribute('aria-label') ??
+          element.querySelector('.generate-region-note')?.textContent?.trim() ??
+          undefined;
+        return {
+          id: element.dataset.regionId ?? '',
+          kind: element.dataset.regionKind,
+          label: title,
+          bounds: {
+            x: Math.round(Number.parseFloat(element.style.left || '0')),
+            y: Math.round(Number.parseFloat(element.style.top || '0')),
+            width: Math.round(Number.parseFloat(element.style.width || '0')),
+            height: Math.round(Number.parseFloat(element.style.height || '0')),
+          },
+          active: element.classList.contains('generate-region-active') || undefined,
+          inactive: element.classList.contains('generate-region-inactive') || undefined,
+          invalid: element.classList.contains('generate-region-invalid') || undefined,
+          warningNote,
+        };
+      })
+      .filter((region) => region.id);
 
     // Sort to ensure deterministic comparison
     nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
@@ -160,7 +165,8 @@ export function assertBaselineCreatable(snapshotPath: string, updateSnapshots: b
   if (!updateSnapshots && process.env.CI) {
     throw new Error(
       `No baseline snapshot committed for "${snapshotPath}".\n` +
-      `Run the test locally to generate it (or with UPDATE_SNAPSHOTS=true to regenerate), then commit the result.`
+        `Run the test locally to generate it (or with UPDATE_SNAPSHOTS=true to regenerate), ` +
+        `then commit the result.`,
     );
   }
 }
@@ -171,13 +177,15 @@ export function compareGraphState(
   snapshotsDir: string,
   resultsDir: string,
   updateSnapshots: boolean = false,
-  onFailure?: (expected: string, actual: string, diff: string) => void
+  onFailure?: (expected: string, actual: string, diff: string) => void,
 ) {
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.json`);
   const actualJson = JSON.stringify(actual, null, 2);
-  const actualHasContent = actual.nodes.length > 0 || actual.edges.length > 0 || (actual.regions?.length ?? 0) > 0;
+  const actualHasContent =
+    actual.nodes.length > 0 || actual.edges.length > 0 || (actual.regions?.length ?? 0) > 0;
 
-  const snapshotMissingOrEmpty = !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
+  const snapshotMissingOrEmpty =
+    !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
   if (snapshotMissingOrEmpty) {
     assertBaselineCreatable(snapshotPath, updateSnapshots);
   }
@@ -193,7 +201,10 @@ export function compareGraphState(
 
   const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
   const normalizedExpectedJson = normalizeGraphSnapshotJson(expectedJson);
-  if (actualHasContent && normalizedExpectedJson === JSON.stringify({ nodes: [], edges: [] }, null, 2)) {
+  if (
+    actualHasContent &&
+    normalizedExpectedJson === JSON.stringify({ nodes: [], edges: [] }, null, 2)
+  ) {
     fs.writeFileSync(snapshotPath, actualJson);
     console.log(`Replaced empty baseline graph: ${snapshotPath}`);
     return;
@@ -205,7 +216,7 @@ export function compareGraphState(
     console.log(`Restored port data in baseline graph: ${snapshotPath}`);
     return;
   }
-  
+
   if (actualJson !== normalizedExpectedJson) {
     if (!fs.existsSync(resultsDir)) {
       fs.mkdirSync(resultsDir, { recursive: true });
@@ -222,7 +233,10 @@ export function compareGraphState(
     let diffText = '';
     diff.forEach((part) => {
       const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
-      diffText += part.value.split('\n').map(line => line ? prefix + line : line).join('\n');
+      diffText += part.value
+        .split('\n')
+        .map((line) => (line ? prefix + line : line))
+        .join('\n');
     });
     fs.writeFileSync(diffPath, diffText);
 
@@ -232,12 +246,17 @@ export function compareGraphState(
 
     throw new Error(
       `Graph regression failure for "${snapshotName}".\n` +
-      `Visual structure has changed from the baseline.\n\n` +
-      `Expected: ${expectedPath}\n` +
-      `Actual:   ${actualPath}\n` +
-      `Diff:     ${diffPath}\n\n` +
-      `Summary of changes:\n${diffText.split('\n').filter(l => l.startsWith('+') || l.startsWith('-')).slice(0, 20).join('\n')}\n...\n\n` +
-      `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update the baseline.`
+        `Visual structure has changed from the baseline.\n\n` +
+        `Expected: ${expectedPath}\n` +
+        `Actual:   ${actualPath}\n` +
+        `Diff:     ${diffPath}\n\n` +
+        `Summary of changes:\n${diffText
+          .split('\n')
+          .filter((l) => l.startsWith('+') || l.startsWith('-'))
+          .slice(0, 20)
+          .join('\n')}\n...\n\n` +
+        `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update ` +
+        `the baseline.`,
     );
   }
 }
@@ -262,16 +281,19 @@ function isMissingOnlyPortData(expected: GraphState, actual: GraphState): boolea
   if (!hasAnyPortData(actual) || !hasMissingPortData(expected, actual)) {
     return false;
   }
-  return JSON.stringify(stripPortData(expected), null, 2) === JSON.stringify(stripPortData(actual), null, 2);
+  return (
+    JSON.stringify(stripPortData(expected), null, 2) ===
+    JSON.stringify(stripPortData(actual), null, 2)
+  );
 }
 
 function hasAnyPortData(graph: GraphState): boolean {
-  return graph.nodes.some(node => (node.data?.ports?.length ?? 0) > 0);
+  return graph.nodes.some((node) => (node.data?.ports?.length ?? 0) > 0);
 }
 
 function hasMissingPortData(expected: GraphState, actual: GraphState): boolean {
-  const expectedById = new Map(expected.nodes.map(node => [node.id, node]));
-  return actual.nodes.some(node => {
+  const expectedById = new Map(expected.nodes.map((node) => [node.id, node]));
+  return actual.nodes.some((node) => {
     const actualPorts = node.data?.ports;
     if (!actualPorts || actualPorts.length === 0) return false;
     const expectedPorts = expectedById.get(node.id)?.data?.ports;
@@ -281,14 +303,16 @@ function hasMissingPortData(expected: GraphState, actual: GraphState): boolean {
 
 function stripPortData(graph: GraphState): GraphState {
   return {
-    nodes: graph.nodes.map(node => ({
+    nodes: graph.nodes.map((node) => ({
       ...node,
-      data: node.data ? {
-        ...node.data,
-        ports: undefined
-      } : undefined
+      data: node.data
+        ? {
+            ...node.data,
+            ports: undefined,
+          }
+        : undefined,
     })),
-    edges: graph.edges
+    edges: graph.edges,
   };
 }
 
@@ -297,7 +321,7 @@ export function compareSvgSnapshot(
   snapshotName: string,
   snapshotsDir: string,
   resultsDir: string,
-  updateSnapshots: boolean = false
+  updateSnapshots: boolean = false,
 ) {
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
   const snapshotMissing = !fs.existsSync(snapshotPath);
@@ -328,18 +352,26 @@ export function compareSvgSnapshot(
     let diffText = '';
     diff.forEach((part) => {
       const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
-      diffText += part.value.split('\n').map((line) => (line ? prefix + line : line)).join('\n');
+      diffText += part.value
+        .split('\n')
+        .map((line) => (line ? prefix + line : line))
+        .join('\n');
     });
     fs.writeFileSync(diffPath, diffText);
 
     throw new Error(
       `SVG regression failure for "${snapshotName}".\n` +
-      `SVG output has changed from the baseline.\n\n` +
-      `Expected: ${expectedPath}\n` +
-      `Actual:   ${actualPath}\n` +
-      `Diff:     ${diffPath}\n\n` +
-      `Summary of changes:\n${diffText.split('\n').filter((l) => l.startsWith('+') || l.startsWith('-')).slice(0, 20).join('\n')}\n...\n\n` +
-      `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update the baseline.`
+        `SVG output has changed from the baseline.\n\n` +
+        `Expected: ${expectedPath}\n` +
+        `Actual:   ${actualPath}\n` +
+        `Diff:     ${diffPath}\n\n` +
+        `Summary of changes:\n${diffText
+          .split('\n')
+          .filter((l) => l.startsWith('+') || l.startsWith('-'))
+          .slice(0, 20)
+          .join('\n')}\n...\n\n` +
+        `If these changes are intentional, run tests with UPDATE_SNAPSHOTS=true to update ` +
+        `the baseline.`,
     );
   }
 }

@@ -2,26 +2,42 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildDesignGraph, type ParserOptions } from './parser/backend';
-import type { ElaborationRequest, ElaborationServiceHost, InvalidationWatcher } from './elaborationService';
+import type {
+  ElaborationRequest,
+  ElaborationServiceHost,
+  InvalidationWatcher,
+} from './elaborationService';
 import { logger } from './logger';
 
-export function createVscodeElaborationHost(context: vscode.ExtensionContext): ElaborationServiceHost {
+export function createVscodeElaborationHost(
+  context: vscode.ExtensionContext,
+): ElaborationServiceHost {
   return {
     build: buildDesignGraph,
     createParserOptions: (request) => createParserOptions(context, request),
-    withProgress: (task) => Promise.resolve(vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'SVSCH',
-      cancellable: false
-    }, async (progress) => task((message, increment) => {
-      logger.log(`Progress: ${message} (${increment}%)`);
-      progress.report({ message, increment });
-    }))),
-    watch: createSharedWatcher
+    withProgress: (task) =>
+      Promise.resolve(
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: 'SVSCH',
+            cancellable: false,
+          },
+          async (progress) =>
+            task((message, increment) => {
+              logger.log(`Progress: ${message} (${increment}%)`);
+              progress.report({ message, increment });
+            }),
+        ),
+      ),
+    watch: createSharedWatcher,
   };
 }
 
-function createParserOptions(context: vscode.ExtensionContext, request: ElaborationRequest): ParserOptions {
+function createParserOptions(
+  context: vscode.ExtensionContext,
+  request: ElaborationRequest,
+): ParserOptions {
   const workspaceRoot = workspaceRootPath();
   if (!workspaceRoot) {
     throw new Error('SVSCH requires an open workspace folder.');
@@ -44,32 +60,44 @@ function createParserOptions(context: vscode.ExtensionContext, request: Elaborat
     moduleName: request.moduleName,
     listOnly: request.listOnly,
     overlays: request.live ? openHdlDocumentOverlays(workspaceRoot, projectFolder) : undefined,
-    includeExternalDiagnostics: request.moduleName ? false : !request.live
+    includeExternalDiagnostics: request.moduleName ? false : !request.live,
   };
 }
 
 function resolveSurelogPath(
   context: vscode.ExtensionContext,
   workspaceRoot: string,
-  configuredPath: string | undefined
+  configuredPath: string | undefined,
 ): string {
   if (configuredPath && configuredPath !== 'surelog') {
     logger.log(`Using user-configured surelogPath: ${configuredPath}`);
     return configuredPath;
   }
 
-  const packagedPath = vscode.Uri.joinPath(context.extensionUri, 'dist', 'surelog', 'bin', 'surelog').fsPath;
+  const packagedPath = vscode.Uri.joinPath(
+    context.extensionUri,
+    'dist',
+    'surelog',
+    'bin',
+    'surelog',
+  ).fsPath;
   logger.log(`Checking for packaged surelog at: ${packagedPath}`);
   if (fs.existsSync(packagedPath)) {
     if (process.platform === 'linux' && process.arch !== 'x64') {
-      logger.warn(`Packaged surelog is x64, but system is ${process.arch}. Falling back to system 'surelog'.`);
+      logger.warn(
+        `Packaged surelog is x64, but system is ${process.arch}. Falling back to system 'surelog'.`,
+      );
     } else {
       logger.log(`Using packaged surelog (absolute): ${packagedPath}`);
       return packagedPath;
     }
   }
 
-  const projectPath = findUp(workspaceRoot, path.join('dist', 'surelog', 'bin', 'surelog'), workspaceRoot);
+  const projectPath = findUp(
+    workspaceRoot,
+    path.join('dist', 'surelog', 'bin', 'surelog'),
+    workspaceRoot,
+  );
   if (projectPath) {
     logger.log(`Found packaged surelog at project root: ${projectPath}`);
     return projectPath;
@@ -130,10 +158,13 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
     if (rebuildTimer) {
       clearTimeout(rebuildTimer);
     }
-    rebuildTimer = setTimeout(() => {
-      rebuildTimer = undefined;
-      onDidInvalidate(live);
-    }, live ? 350 : 250);
+    rebuildTimer = setTimeout(
+      () => {
+        rebuildTimer = undefined;
+        onDidInvalidate(live);
+      },
+      live ? 350 : 250,
+    );
   };
 
   const disposeWatcher = () => {
@@ -163,15 +194,17 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
     watcherSubscriptions = [
       watcher.onDidCreate(onFileEvent),
       watcher.onDidChange(onFileEvent),
-      watcher.onDidDelete(onFileEvent)
+      watcher.onDidDelete(onFileEvent),
     ];
   };
 
   const subscriptions = [
     vscode.workspace.onDidChangeTextDocument((event) => {
-      if (watchedProjectRoot
-        && isHdlUri(event.document.uri)
-        && isWithin(watchedProjectRoot, event.document.uri.fsPath)) {
+      if (
+        watchedProjectRoot &&
+        isHdlUri(event.document.uri) &&
+        isWithin(watchedProjectRoot, event.document.uri.fsPath)
+      ) {
         schedule(true);
       }
     }),
@@ -186,7 +219,7 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       recreateWatcher();
       schedule(false);
-    })
+    }),
   ];
   recreateWatcher();
 
@@ -205,7 +238,7 @@ function createSharedWatcher(onDidInvalidate: (live: boolean) => void): Invalida
         subscription.dispose();
       }
       disposeWatcher();
-    }
+    },
   };
 }
 
@@ -218,7 +251,8 @@ function projectRootPath(): string | undefined {
   if (!workspaceRoot) {
     return undefined;
   }
-  const projectFolder = vscode.workspace.getConfiguration('svsch').get<string>('projectFolder') || '.';
+  const projectFolder =
+    vscode.workspace.getConfiguration('svsch').get<string>('projectFolder') || '.';
   return path.resolve(workspaceRoot, projectFolder);
 }
 
@@ -226,13 +260,16 @@ function isHdlUri(uri: vscode.Uri): boolean {
   return /\.(sv|v|svh|vh)$/i.test(uri.fsPath);
 }
 
-function openHdlDocumentOverlays(workspaceRoot: string, projectFolder: string): Array<{ file: string; text: string }> {
+function openHdlDocumentOverlays(
+  workspaceRoot: string,
+  projectFolder: string,
+): Array<{ file: string; text: string }> {
   const projectRoot = path.resolve(workspaceRoot, projectFolder || '.');
   return vscode.workspace.textDocuments
     .filter((document) => isHdlUri(document.uri) && isWithin(projectRoot, document.uri.fsPath))
     .map((document) => ({
       file: vscode.workspace.asRelativePath(document.uri, false),
-      text: document.getText()
+      text: document.getText(),
     }));
 }
 

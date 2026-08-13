@@ -25,5 +25,5 @@ export const InteractionContext = React.createContext<{
   selectionHoverActive: false,
   setSelectionHoverActive: () => {},
   setPendingSelectionAction: () => {},
-  overlayPortalNode: null
+  overlayPortalNode: null,
 });

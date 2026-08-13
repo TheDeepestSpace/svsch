@@ -4,7 +4,11 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel, firstOpenAutoCutEdges, mergeFirstOpenNetCuts } from '../../src/layout/mergeLayout';
+import {
+  buildViewModel,
+  firstOpenAutoCutEdges,
+  mergeFirstOpenNetCuts,
+} from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -25,7 +29,7 @@ function escapeAndHighlight(fileContent: string, range: SourceRange): string {
   let escaped = '';
   let startOffsetEscaped = -1;
   let endOffsetEscaped = -1;
-  
+
   const lines = fileContent.split('\n');
   const startLine = range.startLine ?? 1;
   const startColumn = range.startColumn ?? 0;
@@ -50,11 +54,17 @@ function escapeAndHighlight(fileContent: string, range: SourceRange): string {
     else if (char === "'") escaped += '&#39;';
     else escaped += char;
   }
-  
+
   if (startOffsetEscaped === -1) startOffsetEscaped = escaped.length;
   if (endOffsetEscaped === -1) endOffsetEscaped = escaped.length;
 
-  return escaped.slice(0, startOffsetEscaped) + '<mark>' + escaped.slice(startOffsetEscaped, endOffsetEscaped) + '</mark>' + escaped.slice(endOffsetEscaped);
+  return (
+    escaped.slice(0, startOffsetEscaped) +
+    '<mark>' +
+    escaped.slice(startOffsetEscaped, endOffsetEscaped) +
+    '</mark>' +
+    escaped.slice(endOffsetEscaped)
+  );
 }
 
 // Plain HTML-escaped source with no <mark> at all — for the wiring section,
@@ -97,7 +107,7 @@ const sectionFiles = [
   'structs.yaml',
   'interfaces.yaml',
   'generate.yaml',
-  'other.yaml'
+  'other.yaml',
 ];
 
 test.describe('Syntax Book Generation & Verification', () => {
@@ -129,7 +139,9 @@ test.describe('Syntax Book Generation & Verification', () => {
     }
 
     let mdContent = `# SVSCH Syntax Book\n\n`;
-    mdContent += `This book contains generated block diagrams representing various SystemVerilog constructs.\n\n`;
+    mdContent +=
+      `This book contains generated block diagrams representing various SystemVerilog ` +
+      `constructs.\n\n`;
 
     for (const sectionFile of sectionFiles) {
       const sectionPath = path.join(casesDir, sectionFile);
@@ -138,7 +150,7 @@ test.describe('Syntax Book Generation & Verification', () => {
       const groupName = sectionData.group;
 
       const groupEntries = sectionData.cases
-        .map((c: any) => generatedEntries.find(e => e.id === c.id))
+        .map((c: any) => generatedEntries.find((e) => e.id === c.id))
         .filter(Boolean);
 
       if (groupEntries.length === 0) continue;
@@ -155,7 +167,8 @@ test.describe('Syntax Book Generation & Verification', () => {
         mdContent += `${entry.description}\n\n`;
         mdContent += `<pre><code>${codeHtml}</code></pre>\n\n`;
         mdContent += `<p align="center">\n`;
-        mdContent += `  <img src="syntax-book/assets/${entry.id}.svg" alt="${entry.title} diagram" />\n`;
+        mdContent +=
+          `  <img src="syntax-book/assets/${entry.id}.svg" ` + `alt="${entry.title} diagram" />\n`;
         mdContent += `</p>\n\n`;
       }
     }
@@ -209,7 +222,9 @@ test.describe('Syntax Book Generation & Verification', () => {
             fs.writeFileSync(path.join(tmpDir, filename), content as string);
           }
 
-          const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+          const surelogPath =
+            process.env.SVSCH_SURELOG_PATH ??
+            path.resolve(__dirname, '../../dist/surelog/bin/surelog');
           const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
           const graph = await buildDesignGraph({
@@ -219,7 +234,7 @@ test.describe('Syntax Book Generation & Verification', () => {
             veriblePath: 'verible-verilog-syntax',
             surelogPath,
             backendPath,
-            includeExternalDiagnostics: false
+            includeExternalDiagnostics: false,
           });
 
           const designModule = graph.modules[caseData.module];
@@ -228,38 +243,59 @@ test.describe('Syntax Book Generation & Verification', () => {
             { version: 1, modules: {} },
             caseData.module,
             firstOpenAutoCutEdges(designModule, true),
-            designModule
+            designModule,
           );
           const viewModel = await buildViewModel(graph, caseData.module, layout);
 
           // Assert declared node kinds and target exist
           for (const kind of caseData.expect.nodeKinds) {
-            const kindExists = viewModel.nodes.some(n => n.kind === kind);
+            const kindExists = viewModel.nodes.some((n) => n.kind === kind);
             if (!kindExists) {
-              console.log(`CASE ${caseData.id}: MISSING KIND "${kind}". Nodes:`, viewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
+              console.log(
+                `CASE ${caseData.id}: MISSING KIND "${kind}". Nodes:`,
+                viewModel.nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
+              );
             }
             expect(kindExists).toBe(true);
           }
 
           if (caseData.target.kind === 'node') {
-            const targetNode = viewModel.nodes.find(n => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel);
+            const targetNode = viewModel.nodes.find(
+              (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
+            );
             if (!targetNode) {
-              console.log(`CASE ${caseData.id}: TARGET NOT FOUND. Kind: ${caseData.target.nodeKind}, Label: ${caseData.target.nodeLabel}. Nodes:`, viewModel.nodes.map(n => ({ id: n.id, kind: n.kind, label: n.label })));
+              console.log(
+                `CASE ${caseData.id}: TARGET NOT FOUND. Kind: ${caseData.target.nodeKind}, ` +
+                  `Label: ${caseData.target.nodeLabel}. Nodes:`,
+                viewModel.nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
+              );
             }
             expect(targetNode).toBeDefined();
             if (caseData.expect.targetIsArray !== undefined) {
-              expect(targetNode?.isArrayNode ?? targetNode?.metadata?.isArrayNode).toBe(caseData.expect.targetIsArray);
+              expect(targetNode?.isArrayNode ?? targetNode?.metadata?.isArrayNode).toBe(
+                caseData.expect.targetIsArray,
+              );
             }
           } else if (caseData.target.kind === 'region') {
-            const targetExists = viewModel.generateRegions?.some(r => r.label === caseData.target.regionLabel);
+            const targetExists = viewModel.generateRegions?.some(
+              (r) => r.label === caseData.target.regionLabel,
+            );
             if (!targetExists) {
-              console.log(`CASE ${caseData.id}: REGION TARGET NOT FOUND. Label: ${caseData.target.regionLabel}. Regions:`, viewModel.generateRegions?.map(r => ({ id: r.id, label: r.label, kind: r.kind })));
+              console.log(
+                `CASE ${caseData.id}: REGION TARGET NOT FOUND. ` +
+                  `Label: ${caseData.target.regionLabel}. Regions:`,
+                viewModel.generateRegions?.map((r) => ({ id: r.id, label: r.label, kind: r.kind })),
+              );
             }
             expect(targetExists).toBe(true);
           } else if (caseData.target.kind === 'netLabel') {
-            const targetExists = viewModel.edges.some(e => e.signal === caseData.target.signal);
+            const targetExists = viewModel.edges.some((e) => e.signal === caseData.target.signal);
             if (!targetExists) {
-              console.log(`CASE ${caseData.id}: NET-LABEL TARGET NOT FOUND. Signal: ${caseData.target.signal}. Edges:`, viewModel.edges.map(e => ({ id: e.id, signal: e.signal })));
+              console.log(
+                `CASE ${caseData.id}: NET-LABEL TARGET NOT FOUND. ` +
+                  `Signal: ${caseData.target.signal}. Edges:`,
+                viewModel.edges.map((e) => ({ id: e.id, signal: e.signal })),
+              );
             }
             expect(targetExists).toBe(true);
           }
@@ -274,19 +310,23 @@ test.describe('Syntax Book Generation & Verification', () => {
           // ever marked/selected here — the code block just shows the plain
           // source as-is.
           if (caseData.target.kind === 'netLabel') {
-            const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
-            const cutLabelId = targetEdge.metadata?.cutStub?.role === 'source'
-              ? targetEdge.target
-              : targetEdge.metadata?.cutStub?.role === 'sink'
-                ? targetEdge.source
-                : undefined;
+            const targetEdge = viewModel.edges.find((e) => e.signal === caseData.target.signal)!;
+            const cutLabelId =
+              targetEdge.metadata?.cutStub?.role === 'source'
+                ? targetEdge.target
+                : targetEdge.metadata?.cutStub?.role === 'sink'
+                  ? targetEdge.source
+                  : undefined;
             const cutLabel = cutLabelId
               ? viewModel.nodes.find((node) => node.id === cutLabelId && node.kind === 'netLabel')
               : undefined;
-            expect(cutLabel?.label ?? targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
+            expect(cutLabel?.label ?? targetEdge.label ?? null).toBe(
+              caseData.expect.labelText ?? null,
+            );
             if (caseData.expect.aliasNames) {
-              expect(cutLabel?.metadata?.cutNet?.aliasNames ?? targetEdge.metadata?.aliasNames)
-                .toEqual(caseData.expect.aliasNames);
+              expect(
+                cutLabel?.metadata?.cutNet?.aliasNames ?? targetEdge.metadata?.aliasNames,
+              ).toEqual(caseData.expect.aliasNames);
             }
 
             const firstFileContent = Object.values(caseData.files)[0] as string;
@@ -303,7 +343,10 @@ test.describe('Syntax Book Generation & Verification', () => {
                 break;
               }
             }
-            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
+            const extensionCss = fs.readFileSync(
+              path.resolve(__dirname, '../../src/webview/diagram.css'),
+              'utf8',
+            );
             const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
 
             generatedEntries.push({
@@ -312,7 +355,7 @@ test.describe('Syntax Book Generation & Verification', () => {
               description: caseData.description,
               group: groupName,
               highlightedHtml,
-              svgContent
+              svgContent,
             });
             return;
           }
@@ -330,7 +373,10 @@ test.describe('Syntax Book Generation & Verification', () => {
 
           const testView = JSON.parse(JSON.stringify(viewModel));
           if (caseData.target.kind === 'node') {
-            const targetNode = testView.nodes.find((n: any) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel);
+            const targetNode = testView.nodes.find(
+              (n: any) =>
+                n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
+            );
             if (targetNode) {
               if (targetNode.kind === 'instance') {
                 delete targetNode.moduleName;
@@ -351,7 +397,7 @@ test.describe('Syntax Book Generation & Verification', () => {
                   capturedMsg = JSON.parse(msg.text().substring(9));
                   page.off('console', handler);
                   resolve();
-                } catch (e) {}
+                } catch {}
               }
             };
             page.on('console', handler);
@@ -359,11 +405,14 @@ test.describe('Syntax Book Generation & Verification', () => {
           });
 
           await page.evaluate((view) => {
-            window.postMessage({
-              type: 'graph',
-              view,
-              modules: [view.moduleName]
-            }, '*');
+            window.postMessage(
+              {
+                type: 'graph',
+                view,
+                modules: [view.moduleName],
+              },
+              '*',
+            );
           }, testView);
 
           await page.waitForSelector('.react-flow__node', { state: 'attached' });
@@ -371,20 +420,24 @@ test.describe('Syntax Book Generation & Verification', () => {
 
           // Perform interaction
           if (caseData.target.kind === 'node') {
-            const targetNode = viewModel.nodes.find(n => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel);
+            const targetNode = viewModel.nodes.find(
+              (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
+            );
             const locator = page.locator(`[data-node-id="${targetNode!.id}"]`).first();
             await locator.dblclick({ position: { x: 5, y: 5 }, force: true });
           } else if (caseData.target.kind === 'edge') {
-            const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal);
+            const targetEdge = viewModel.edges.find((e) => e.signal === caseData.target.signal);
             const locator = page.locator(`.react-flow__edge[data-id="${targetEdge!.id}"]`).first();
             await locator.dblclick({ force: true });
           } else if (caseData.target.kind === 'region') {
             await page.waitForSelector('.generate-region-title', { state: 'attached' });
             await page.evaluate((labelText) => {
               const buttons = Array.from(document.querySelectorAll('.generate-region-title'));
-              const targetButton = buttons.find(b => b.textContent?.trim() === labelText);
+              const targetButton = buttons.find((b) => b.textContent?.trim() === labelText);
               if (targetButton) {
-                targetButton.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+                targetButton.dispatchEvent(
+                  new MouseEvent('dblclick', { bubbles: true, cancelable: true }),
+                );
               }
             }, caseData.target.regionLabel);
           }
@@ -410,7 +463,9 @@ test.describe('Syntax Book Generation & Verification', () => {
           expect(fileContent).toBeDefined();
 
           const rawSelectedText = getRawSelectedText(fileContent, range!);
-          expect(rawSelectedText.replace(/\r\n/g, '\n').trim()).toBe(caseData.expect.selectedText.replace(/\r\n/g, '\n').trim());
+          expect(rawSelectedText.replace(/\r\n/g, '\n').trim()).toBe(
+            caseData.expect.selectedText.replace(/\r\n/g, '\n').trim(),
+          );
 
           const highlightedHtml = escapeAndHighlight(fileContent, range!);
 
@@ -428,18 +483,29 @@ test.describe('Syntax Book Generation & Verification', () => {
               break;
             }
           }
-          const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
+          const extensionCss = fs.readFileSync(
+            path.resolve(__dirname, '../../src/webview/diagram.css'),
+            'utf8',
+          );
 
           const targetNode = viewModel.nodes.find(
-            (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel
+            (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
           );
-          
+
           let customCss = extensionCss;
           if (targetNode) {
-            customCss += `\n/* Dim everything except target node */\n.svsch-edges { opacity: 0.3; }\n.svsch-node { opacity: 0.3; }\n.svsch-node[data-node-id="${targetNode.id}"] { opacity: 1 !important; }\n`;
+            customCss +=
+              `\n/* Dim everything except target node */\n` +
+              `.svsch-edges { opacity: 0.3; }\n` +
+              `.svsch-node { opacity: 0.3; }\n` +
+              `.svsch-node[data-node-id="${targetNode.id}"] { opacity: 1 !important; }\n`;
           }
 
-          const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss: customCss, theme: 'dark' });
+          const svgContent = renderSvg(viewModel, {
+            reactFlowCss,
+            extensionCss: customCss,
+            theme: 'dark',
+          });
 
           generatedEntries.push({
             id: caseData.id,
@@ -447,7 +513,7 @@ test.describe('Syntax Book Generation & Verification', () => {
             description: caseData.description,
             group: groupName,
             highlightedHtml,
-            svgContent
+            svgContent,
           });
         } finally {
           fs.rmSync(tmpDir, { recursive: true, force: true });

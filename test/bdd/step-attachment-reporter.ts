@@ -20,30 +20,30 @@ export default class StepAttachmentReporter {
     if (/^(Given|When|Then|And|But)\s/.test(step.title)) {
       const previousLength = this.attachmentsCount.get(step) || 0;
       const currentLength = result.attachments.length;
-      
+
       if (currentLength > previousLength) {
         let scenarioTitle = test.title;
         if (scenarioTitle.startsWith('Example #') && test.parent) {
           scenarioTitle = `${test.parent.title} - ${scenarioTitle}`;
         }
         const text = step.title.replace(/^(Given|When|Then|And|But)\s+/, '');
-        
+
         if (!this.scenarioAttachments.has(scenarioTitle)) {
           this.scenarioAttachments.set(scenarioTitle, new Map());
         }
-        
+
         const stepMap = this.scenarioAttachments.get(scenarioTitle);
         if (!stepMap.has(text)) {
           stepMap.set(text, []);
         }
-        
+
         const addedAttachments = result.attachments.slice(previousLength, currentLength);
         stepMap.get(text).push(addedAttachments);
       }
     }
   }
 
-  onEnd(result) {
+  onEnd() {
     const out = {};
     for (const [scenario, stepMap] of this.scenarioAttachments.entries()) {
       out[scenario] = {};
@@ -51,7 +51,7 @@ export default class StepAttachmentReporter {
         out[scenario][step] = atts;
       }
     }
-    
+
     const outPath = path.resolve('test-results/bdd/step-attachments.json');
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, JSON.stringify(out, null, 2));

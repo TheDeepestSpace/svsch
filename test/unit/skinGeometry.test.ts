@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { diagramSizing } from '../../src/diagram/constants';
-import {
-  portSkinPath,
-  interfaceSkinPath
-} from '../../src/diagram/interfaceGeometry';
+import { portSkinPath, interfaceSkinPath } from '../../src/diagram/interfaceGeometry';
 
 describe('SVG Skin Geometry', () => {
   const grid = diagramSizing.gridSize;
   const nose = diagramSizing.portNoseLength;
   const width = grid * 8;
   const height = grid * 4;
-  const skinHeight = grid;
 
   describe('portSkinPath', () => {
     it('generates a right-pointing chevron for input ports', () => {
@@ -41,7 +37,7 @@ describe('SVG Skin Geometry', () => {
         leftCenters,
         rightCenters,
         topPortCount: 1,
-        shiftY
+        shiftY,
       });
 
       // shiftY = 72
@@ -53,7 +49,7 @@ describe('SVG Skin Geometry', () => {
 
       // bodyTop = topHatTop + topHatHeight = 120 + 24 = 144
       // shifted notch top = 156 - 12 = 144
-      expect(path).toContain(`V 144`); 
+      expect(path).toContain(`V 144`);
       expect(path).toContain(`L ${width} 156`); // tip of right chevron
     });
 
@@ -63,7 +59,7 @@ describe('SVG Skin Geometry', () => {
         height,
         leftCenters: [grid * 2],
         rightCenters: [grid * 2],
-        topPortCount: 0
+        topPortCount: 0,
       });
 
       expect(path).toMatch(new RegExp(`^M ${nose}`));
@@ -78,7 +74,7 @@ describe('SVG Skin Geometry', () => {
         height,
         leftCenters: [grid * 2, grid * 4],
         rightCenters: [],
-        topPortCount: 2
+        topPortCount: 2,
       });
 
       expect(path).toContain('L 0');
@@ -91,7 +87,7 @@ describe('SVG Skin Geometry', () => {
         height,
         leftCenters: [],
         rightCenters: [grid * 2, grid * 4],
-        topPortCount: 2
+        topPortCount: 2,
       });
 
       expect(path).toContain(`L ${width}`);
@@ -105,7 +101,7 @@ describe('SVG Skin Geometry', () => {
         leftCenters: [grid * 2],
         rightCenters: [grid * 2],
         topPortCount: 1,
-        bottomPortCount: 1
+        bottomPortCount: 1,
       });
 
       expect(bottomHatHeight).toBe(grid);

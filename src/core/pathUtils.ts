@@ -4,7 +4,12 @@ export interface OrthogonalPoint {
 }
 
 export function pathFromPoints(points: OrthogonalPoint[]): string {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`).join(' ');
+  return points
+    .map(
+      (point, index) =>
+        `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`,
+    )
+    .join(' ');
 }
 
 export function formatPathNumber(value: number): string {

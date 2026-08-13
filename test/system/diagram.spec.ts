@@ -3,17 +3,17 @@ import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-  const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
-  const webviewLogs: string[] = [];
+const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
+const webviewLogs: string[] = [];
 
-  test.beforeEach(async ({ workbox }) => {
-    fs.mkdirSync(logDir, { recursive: true });
-    workbox.on('console', msg => {
-      const line = `[WEBVIEW CONSOLE] [${msg.type()}] ${msg.text()}`;
-      webviewLogs.push(line);
-      if (msg.type() === 'error') console.error(line);
-    });
+test.beforeEach(async ({ workbox }) => {
+  fs.mkdirSync(logDir, { recursive: true });
+  workbox.on('console', (msg) => {
+    const line = `[WEBVIEW CONSOLE] [${msg.type()}] ${msg.text()}`;
+    webviewLogs.push(line);
+    if (msg.type() === 'error') console.error(line);
   });
+});
 
 test('opens svsch diagram and captures screenshot + output logs', async ({
   workbox,
@@ -31,7 +31,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     (e.g. the "git repository found" prompt) so they don't pollute
     //     the screenshot. Settings suppress most, but some fire before
     //     settings are read.
-    for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+    for (const button of await workbox
+      .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+      .all()) {
       await button.click().catch(() => {});
     }
     const closeAll = workbox.locator('.notifications-toasts .codicon-notifications-clear-all');
@@ -42,7 +44,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     // --- 3. Install pre-activation interceptors before any svsch.* command fires.
     //     Extension activates lazily on svsch.* commands, so these patches
     //     land before logger.init() and DiagramPanel construction are called.
-    await evaluateInVSCode(vscode => {
+    await evaluateInVSCode((vscode) => {
       // (a) Capture SVSCH output channel log lines and console calls.
       const captureLine = (line: string) => {
         if (!(global as any).__svschLogs) (global as any).__svschLogs = [];
@@ -85,7 +87,11 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
       //     The webview lives in a cross-origin iframe so Playwright cannot touch it
       //     directly; this extension-host patch is the only bridge available.
       const origCreatePanel = vscode.window.createWebviewPanel;
-      (vscode.window as any).createWebviewPanel = function (viewType: string, title: string, ...args: any[]) {
+      (vscode.window as any).createWebviewPanel = function (
+        viewType: string,
+        title: string,
+        ...args: any[]
+      ) {
         const panel = (origCreatePanel as any).call(vscode.window, viewType, title, ...args);
         if (viewType === 'svsch.diagram') {
           const origPostMessage = panel.webview.postMessage.bind(panel.webview);
@@ -103,10 +109,13 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
               (global as any).__svschModules = msg.modules;
               (global as any).__svschCurrentModule = msg.view?.moduleName;
               (global as any).__svschGraphCount = ((global as any).__svschGraphCount ?? 0) + 1;
-              
+
               const nodes = msg.view?.nodes?.length ?? 0;
               const edges = msg.view?.edges?.length ?? 0;
-              captureLine(`[WEBVIEW] Received graph for ${msg.view?.moduleName}: ${nodes} nodes, ${edges} edges`);
+              captureLine(
+                `[WEBVIEW] Received graph for ${msg.view?.moduleName}: ${nodes} nodes, ` +
+                  `${edges} edges`,
+              );
             }
             if (msg?.type === 'status' && msg.status === 'idle') {
               (global as any).__svschIdleAt = now;
@@ -118,9 +127,18 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
           // directly, simulating a message posted from the webview.
           const origOnDidReceiveMessage = panel.webview.onDidReceiveMessage;
           const msgListeners: Array<(msg: any) => void> = [];
-          (panel.webview as any).onDidReceiveMessage = function (listener: any, thisArgs?: any, disposables?: any) {
+          (panel.webview as any).onDidReceiveMessage = function (
+            listener: any,
+            thisArgs?: any,
+            disposables?: any,
+          ) {
             msgListeners.push(thisArgs ? listener.bind(thisArgs) : listener);
-            return (origOnDidReceiveMessage as any).call(panel.webview, listener, thisArgs, disposables);
+            return (origOnDidReceiveMessage as any).call(
+              panel.webview,
+              listener,
+              thisArgs,
+              disposables,
+            );
           };
           (global as any).__svschFireWebviewMessage = (msg: any) => {
             for (const l of msgListeners) l(msg);
@@ -132,12 +150,13 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // --- 4. Clear the UHDM cache so Surelog always runs and the progress
     //     notification is guaranteed to appear during this test.
-    await evaluateInVSCode(vscode => {
+    await evaluateInVSCode((vscode) => {
       const ws = vscode.workspace.workspaceFolders?.[0]?.uri;
       if (ws) {
         const cacheUri = vscode.Uri.joinPath(ws, '.svsch', 'uhdm_cache');
         return vscode.workspace.fs.delete(cacheUri, { recursive: true, useTrash: false }).then(
-          () => {}, () => {} // ignore "not found" errors
+          () => {},
+          () => {}, // ignore "not found" errors
         );
       }
     });
@@ -146,7 +165,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     executeCommand resolves only when the full rebuild finishes (~18 s),
     //     so returning it would block until Surelog completes and we'd never
     //     catch the progress notification mid-flight.
-    await evaluateInVSCode(vscode => {
+    await evaluateInVSCode((vscode) => {
       (global as any).__svschOpenRequestedAt = Date.now();
       void vscode.commands.executeCommand('svsch.openDiagram');
     });
@@ -154,10 +173,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     // --- 6. Confirm the SVSCH panel tab opened.
     //     This ensures the webview is created and visible before we snapshot
     //     the progress notification.
-    await workbox.waitForSelector(
-      '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-      { timeout: 30_000 }
-    );
+    await workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', {
+      timeout: 30_000,
+    });
 
     // --- 7. Programmatically verify the progress notification appears.
     //     This replaces the unstable visual screenshot check.
@@ -165,13 +183,15 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     await progress.waitFor({ state: 'visible', timeout: 10_000 });
     await expect(progress).toContainText(/Extracting|Elaborating/);
 
-    const webviewIframe = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    const webviewIframe = workbox
+      .frameLocator('iframe.webview')
+      .frameLocator('iframe#active-frame');
 
     // --- 8. Poll until the first graph arrives. Older supported VS Code
     //     builds can take longer to cold-start the extension and Surelog.
     let loaded = false;
     for (let i = 0; i < 180; i++) {
-      loaded = await evaluateInVSCode(vscode => {
+      loaded = await evaluateInVSCode((vscode) => {
         void vscode;
         return ((global as any).__svschGraphCount ?? 0) > 0;
       });
@@ -183,7 +203,10 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     // some VS Code builds even though the webview has rendered. Treat the
     // visible diagram shell as the authoritative fallback.
     if (!loaded) {
-      loaded = await webviewIframe.locator('.shell select[aria-label="Module"]').isVisible({ timeout: 1_000 }).catch(() => false);
+      loaded = await webviewIframe
+        .locator('.shell select[aria-label="Module"]')
+        .isVisible({ timeout: 1_000 })
+        .catch(() => false);
     }
     expect(loaded, 'Expected graph to be received by webview').toBe(true);
 
@@ -196,12 +219,20 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     try {
       await expect(webviewIframe.locator('.shell')).toBeVisible({ timeout: 20_000 });
     } catch (e) {
-      const html = await workbox.mainFrame().locator('body').innerHTML().catch(() => 'could not capture body');
+      const html = await workbox
+        .mainFrame()
+        .locator('body')
+        .innerHTML()
+        .catch(() => 'could not capture body');
       console.log('--- WORKBOX BODY HTML ---');
       console.log(html);
       console.log('--- END WORKBOX BODY HTML ---');
-      
-      const webviewHtml = await workbox.frameLocator('iframe.webview').locator('body').innerHTML().catch(() => 'could not capture webview body');
+
+      const webviewHtml = await workbox
+        .frameLocator('iframe.webview')
+        .locator('body')
+        .innerHTML()
+        .catch(() => 'could not capture webview body');
       console.log('--- WEBVIEW BODY HTML ---');
       console.log(webviewHtml);
       console.log('--- END WEBVIEW BODY HTML ---');
@@ -209,7 +240,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     }
 
     // Dismiss any notifications that appeared during parsing.
-    for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+    for (const button of await workbox
+      .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+      .all()) {
       await button.click().catch(() => {});
     }
 
@@ -221,7 +254,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     await expect(workbox).toHaveScreenshot('full-window.png');
 
     // --- 10. Report load timing.
-    const timing = await evaluateInVSCode(vscode => {
+    const timing = await evaluateInVSCode((vscode) => {
       void vscode;
       const openedAt: number = (global as any).__svschOpenRequestedAt ?? 0;
       const rebuildingAt: number = (global as any).__svschRebuildingAt ?? 0;
@@ -230,31 +263,37 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
       return { openedAt, rebuildingAt, firstGraphAt, idleAt };
     });
 
-    const toMs = (a: number, b: number) => b > 0 && a > 0 ? b - a : -1;
-    const startup  = toMs(timing.openedAt, timing.rebuildingAt);
-    const parse    = toMs(timing.rebuildingAt, timing.firstGraphAt);
-    const total    = toMs(timing.openedAt, timing.firstGraphAt);
-    const settle   = toMs(timing.firstGraphAt, timing.idleAt);
+    const toMs = (a: number, b: number) => (b > 0 && a > 0 ? b - a : -1);
+    const startup = toMs(timing.openedAt, timing.rebuildingAt);
+    const parse = toMs(timing.rebuildingAt, timing.firstGraphAt);
+    const total = toMs(timing.openedAt, timing.firstGraphAt);
+    const settle = toMs(timing.firstGraphAt, timing.idleAt);
 
     const timingLines = [
-      `[timing] openDiagram → rebuilding status : ${startup  >= 0 ? startup  + ' ms' : 'n/a'}`,
-      `[timing] rebuilding  → first graph data  : ${parse    >= 0 ? parse    + ' ms' : 'n/a'}`,
-      `[timing] openDiagram → diagram visible   : ${total    >= 0 ? total    + ' ms' : 'n/a'} (total)`,
-      `[timing] first graph → idle status       : ${settle   >= 0 ? settle   + ' ms' : 'n/a'}`,
+      `[timing] openDiagram → rebuilding status : ${startup >= 0 ? startup + ' ms' : 'n/a'}`,
+      `[timing] rebuilding  → first graph data  : ${parse >= 0 ? parse + ' ms' : 'n/a'}`,
+      `[timing] openDiagram → diagram visible   : ${total >= 0 ? total + ' ms' : 'n/a'} (total)`,
+      `[timing] first graph → idle status       : ${settle >= 0 ? settle + ' ms' : 'n/a'}`,
     ];
     for (const line of timingLines) console.log(line);
     fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
 
     // --- 11. Switch to a different module via the dropdown.
     //     We prioritize a complex module to ensure meaningful screenshots.
-    const switchedViaHost = await evaluateInVSCode(vscode => {
+    const switchedViaHost = await evaluateInVSCode((vscode) => {
       void vscode;
       const modules: string[] = (global as any).__svschModules ?? [];
-      const complexModule = modules.find(m => m === 'aggregate_assignment_showcase');
-      const next = complexModule || modules.find((m: string) => m !== (global as any).__svschCurrentModule);
-      
-      if (!next || next === (global as any).__svschCurrentModule || !(global as any).__svschFireWebviewMessage) return false;
-      
+      const complexModule = modules.find((m) => m === 'aggregate_assignment_showcase');
+      const next =
+        complexModule || modules.find((m: string) => m !== (global as any).__svschCurrentModule);
+
+      if (
+        !next ||
+        next === (global as any).__svschCurrentModule ||
+        !(global as any).__svschFireWebviewMessage
+      )
+        return false;
+
       (global as any).__svschGraphCountBeforeSwitch = (global as any).__svschGraphCount ?? 0;
       (global as any).__svschFireWebviewMessage({ type: 'openModule', moduleName: next });
       return true;
@@ -263,7 +302,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     if (switchedViaHost) {
       // Poll until the extension has sent the new graph (max 15 s).
       for (let i = 0; i < 30; i++) {
-        const received: boolean = await evaluateInVSCode(vscode => {
+        const received: boolean = await evaluateInVSCode((vscode) => {
           void vscode;
           const before: number = (global as any).__svschGraphCountBeforeSwitch ?? 0;
           const now: number = (global as any).__svschGraphCount ?? 0;
@@ -276,10 +315,13 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
       const moduleSelect = webviewIframe.locator('select[aria-label="Module"]');
       const next = await moduleSelect.locator('option').evaluateAll((options) => {
         const values = options.map((option) => (option as HTMLOptionElement).value);
-        const selected = options.find(option => (option as HTMLOptionElement).selected) as HTMLOptionElement | undefined;
-        return values.find(value => value === 'aggregate_assignment_showcase')
-          ?? values.find(value => value !== selected?.value)
-          ?? '';
+        const selected = options.find((option) => (option as HTMLOptionElement).selected) as
+          HTMLOptionElement | undefined;
+        return (
+          values.find((value) => value === 'aggregate_assignment_showcase') ??
+          values.find((value) => value !== selected?.value) ??
+          ''
+        );
       });
       if (next) {
         await moduleSelect.selectOption(next);
@@ -292,10 +334,9 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     await workbox.waitForTimeout(1_000);
 
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
-
   } finally {
     // --- 12. Collect captured log lines (even on failure).
-    const logs: string[] = await evaluateInVSCode(vscode => {
+    const logs: string[] = await evaluateInVSCode((vscode) => {
       void vscode;
       return (global as any).__svschLogs ?? [];
     }).catch(() => []);
@@ -347,19 +388,21 @@ test('preserves moved node positions after editing a connection route', async ({
 
     await dragSystemConnectionSegmentByGridCells(workbox, webview, edgeId, -1);
 
-    await expect.poll(async () => {
-      const current = await systemNodePosition(webview, sourceId);
-      return closeTo(current.x, movedPosition.x) && closeTo(current.y, movedPosition.y);
-    }, { timeout: 10_000 }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const current = await systemNodePosition(webview, sourceId);
+          return closeTo(current.x, movedPosition.x) && closeTo(current.y, movedPosition.y);
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
   } finally {
     await clearSystemLayout();
   }
 });
 
-test('flags a module port dragged into a generate block', async ({
-  workbox,
-  evaluateInVSCode,
-}) => {
+test('flags a module port dragged into a generate block', async ({ workbox, evaluateInVSCode }) => {
   await clearSystemLayout();
 
   try {
@@ -423,15 +466,24 @@ test('hides the block-selection toolbar when only a cut net label is selected', 
     await cutOutButton.click();
 
     let labelId: string | null = null;
-    await expect.poll(async () => {
-      labelId = await findSystemCutLabelIdAttachedTo(webview, blockId);
-      return labelId !== null;
-    }, { timeout: 10_000 }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          labelId = await findSystemCutLabelIdAttachedTo(webview, blockId);
+          return labelId !== null;
+        },
+        { timeout: 10_000 },
+      )
+      .toBe(true);
 
     await clickSystemNode(workbox, webview, labelId!);
 
-    await expect(webview.locator('.svsch-selection-toolbar button', { hasText: 'Auto Layout' })).toHaveCount(0);
-    await expect(webview.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' })).toHaveCount(0);
+    await expect(
+      webview.locator('.svsch-selection-toolbar button', { hasText: 'Auto Layout' }),
+    ).toHaveCount(0);
+    await expect(
+      webview.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' }),
+    ).toHaveCount(0);
   } finally {
     await clearSystemLayout();
   }
@@ -445,27 +497,28 @@ async function clearSystemLayout(): Promise<void> {
   await fs.promises.rm(SYSTEM_LAYOUTS_DIR, { recursive: true, force: true }).catch(() => {});
 }
 
-async function openSystemDiagram(
-  workbox: Page,
-  evaluateInVSCode: EvaluateInVSCode
-): Promise<void> {
+async function openSystemDiagram(workbox: Page, evaluateInVSCode: EvaluateInVSCode): Promise<void> {
   await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
   await dismissSystemNotifications(workbox);
   await installSystemWebviewBridge(evaluateInVSCode);
-  await evaluateInVSCode(vscode => vscode.commands.executeCommand('svsch.openDiagram'));
-  await workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
+  await evaluateInVSCode((vscode) => vscode.commands.executeCommand('svsch.openDiagram'));
+  await workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', {
+    timeout: 30_000,
+  });
   await dismissSystemNotifications(workbox);
 }
 
-async function installSystemWebviewBridge(
-  evaluateInVSCode: EvaluateInVSCode
-): Promise<void> {
-  await evaluateInVSCode(vscode => {
+async function installSystemWebviewBridge(evaluateInVSCode: EvaluateInVSCode): Promise<void> {
+  await evaluateInVSCode((vscode) => {
     if ((global as any).__svschSystemBridgeInstalled) return;
     (global as any).__svschSystemBridgeInstalled = true;
 
     const origCreatePanel = vscode.window.createWebviewPanel;
-    (vscode.window as any).createWebviewPanel = function (viewType: string, title: string, ...args: any[]) {
+    (vscode.window as any).createWebviewPanel = function (
+      viewType: string,
+      title: string,
+      ...args: any[]
+    ) {
       const panel = (origCreatePanel as any).call(vscode.window, viewType, title, ...args);
       if (viewType !== 'svsch.diagram') {
         return panel;
@@ -483,9 +536,18 @@ async function installSystemWebviewBridge(
 
       const origOnDidReceiveMessage = panel.webview.onDidReceiveMessage;
       const msgListeners: Array<(msg: any) => void> = [];
-      (panel.webview as any).onDidReceiveMessage = function (listener: any, thisArgs?: any, disposables?: any) {
+      (panel.webview as any).onDidReceiveMessage = function (
+        listener: any,
+        thisArgs?: any,
+        disposables?: any,
+      ) {
         msgListeners.push(thisArgs ? listener.bind(thisArgs) : listener);
-        return (origOnDidReceiveMessage as any).call(panel.webview, listener, thisArgs, disposables);
+        return (origOnDidReceiveMessage as any).call(
+          panel.webview,
+          listener,
+          thisArgs,
+          disposables,
+        );
       };
       (global as any).__svschFireWebviewMessage = (msg: any) => {
         for (const listener of msgListeners) listener(msg);
@@ -500,7 +562,7 @@ async function openSystemModule(
   workbox: Page,
   webview: FrameLocator,
   evaluateInVSCode: EvaluateInVSCode,
-  moduleName: string
+  moduleName: string,
 ): Promise<void> {
   const switchedViaHost = await evaluateInVSCode((vscode, requestedModule) => {
     void vscode;
@@ -520,24 +582,35 @@ async function openSystemModule(
   }, moduleName);
 
   if (switchedViaHost) {
-    await expect.poll(async () => evaluateInVSCode(vscode => {
-      void vscode;
-      return (global as any).__svschCurrentModule;
-    }), { timeout: 15_000 }).toBe(moduleName);
+    await expect
+      .poll(
+        async () =>
+          evaluateInVSCode((vscode) => {
+            void vscode;
+            return (global as any).__svschCurrentModule;
+          }),
+        { timeout: 15_000 },
+      )
+      .toBe(moduleName);
   } else {
     const moduleSelect = webview.locator('select[aria-label="Module"]');
     await moduleSelect.selectOption(moduleName);
     await expect(moduleSelect).toHaveValue(moduleName);
   }
 
-  await webview.locator('.react-flow__node').first().waitFor({ state: 'attached', timeout: 30_000 });
+  await webview
+    .locator('.react-flow__node')
+    .first()
+    .waitFor({ state: 'attached', timeout: 30_000 });
   await waitForSystemModuleRendered(webview, moduleName);
   await waitForViewportToSettle(webview);
   await workbox.waitForTimeout(300);
 }
 
 async function dismissSystemNotifications(workbox: Page): Promise<void> {
-  for (const button of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+  for (const button of await workbox
+    .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+    .all()) {
     await button.click().catch(() => {});
   }
   const closeAll = workbox.locator('.notifications-toasts .codicon-notifications-clear-all');
@@ -551,13 +624,14 @@ async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
   // (see main.tsx), so a fixed delay after the first node appears can race
   // it — poll until the transform stops changing instead of guessing a delay.
   await webview.locator('body').evaluate(async () => {
-    const getTransform = () => (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
+    const getTransform = () =>
+      (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
     let last = getTransform();
     let stable = 0;
     for (let i = 0; i < 100; i++) {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
       const current = getTransform();
-      stable = (current === last && current !== '') ? stable + 1 : 0;
+      stable = current === last && current !== '' ? stable + 1 : 0;
       last = current;
       if (stable >= 5) break;
     }
@@ -568,19 +642,33 @@ async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
   await webview.locator('body').evaluate(() => document.fonts.ready);
 }
 
-async function waitForSystemModuleRendered(webview: FrameLocator, moduleName: string): Promise<void> {
+async function waitForSystemModuleRendered(
+  webview: FrameLocator,
+  moduleName: string,
+): Promise<void> {
   try {
-    await expect.poll(async () => webview.locator('html').evaluate((_element, expectedModule) => {
-      const rf = (window as any).reactFlowInstance;
-      const nodes = rf?.getNodes?.() ?? [];
-      return nodes.length > 0 && nodes.every((node: any) => node.data?.moduleName === expectedModule);
-    }, moduleName), { timeout: 30_000 }).toBe(true);
+    await expect
+      .poll(
+        async () =>
+          webview.locator('html').evaluate((_element, expectedModule) => {
+            const rf = (window as any).reactFlowInstance;
+            const nodes = rf?.getNodes?.() ?? [];
+            return (
+              nodes.length > 0 &&
+              nodes.every((node: any) => node.data?.moduleName === expectedModule)
+            );
+          }, moduleName),
+        { timeout: 30_000 },
+      )
+      .toBe(true);
   } catch (error) {
     const state = await webview.locator('html').evaluate(() => {
       const rf = (window as any).reactFlowInstance;
       const nodes = rf?.getNodes?.() ?? [];
       const edges = rf?.getEdges?.() ?? [];
-      const select = document.querySelector('select[aria-label="Module"]') as HTMLSelectElement | null;
+      const select = document.querySelector(
+        'select[aria-label="Module"]',
+      ) as HTMLSelectElement | null;
       return {
         selectedModule: select?.value ?? null,
         nodeCount: nodes.length,
@@ -589,63 +677,106 @@ async function waitForSystemModuleRendered(webview: FrameLocator, moduleName: st
           id: node.id,
           moduleName: node.data?.moduleName,
           label: node.data?.node?.label,
-          kind: node.data?.node?.kind
-        }))
+          kind: node.data?.node?.kind,
+        })),
       };
     });
-    throw new Error(`Timed out waiting for rendered module ${moduleName}: ${JSON.stringify(state)}`, { cause: error });
+    throw new Error(
+      `Timed out waiting for rendered module ${moduleName}: ${JSON.stringify(state)}`,
+      { cause: error },
+    );
   }
 }
 
-async function findSystemNodeId(webview: FrameLocator, label: string, kind?: string): Promise<string | null> {
-  return webview.locator('html').evaluate((_element, { wantedLabel, wantedKind }) => {
-    const rf = (window as any).reactFlowInstance;
-    const node = rf?.getNodes?.().find((candidate: any) => (
-      candidate.data?.node?.label === wantedLabel
-      && (!wantedKind || candidate.data?.node?.kind === wantedKind)
-    ));
-    if (node) return node.id;
+async function findSystemNodeId(
+  webview: FrameLocator,
+  label: string,
+  kind?: string,
+): Promise<string | null> {
+  return webview.locator('html').evaluate(
+    (_element, { wantedLabel, wantedKind }) => {
+      const rf = (window as any).reactFlowInstance;
+      const node = rf
+        ?.getNodes?.()
+        .find(
+          (candidate: any) =>
+            candidate.data?.node?.label === wantedLabel &&
+            (!wantedKind || candidate.data?.node?.kind === wantedKind),
+        );
+      if (node) return node.id;
 
-    const domNodes = Array.from(document.querySelectorAll('.react-flow__node'));
-    const domNode = domNodes.find((element) => {
-      if (wantedKind && !element.querySelector(`[data-node-kind="${wantedKind}"]`)) return false;
-      const labels = Array.from(element.querySelectorAll(
-        '.port-skin-label,.node-title,.node-kind,.svsch-node-title,.svsch-node-kind,.svsch-port-label'
-      )).map((child) => child.textContent?.trim()).filter(Boolean);
-      return labels.includes(wantedLabel);
-    });
-    return domNode?.getAttribute('data-id') ?? null;
-  }, { wantedLabel: label, wantedKind: kind });
+      const domNodes = Array.from(document.querySelectorAll('.react-flow__node'));
+      const domNode = domNodes.find((element) => {
+        if (wantedKind && !element.querySelector(`[data-node-kind="${wantedKind}"]`)) return false;
+        const labels = Array.from(
+          element.querySelectorAll(
+            '.port-skin-label,.node-title,.node-kind,.svsch-node-title,.svsch-node-kind,' +
+              '.svsch-port-label',
+          ),
+        )
+          .map((child) => child.textContent?.trim())
+          .filter(Boolean);
+        return labels.includes(wantedLabel);
+      });
+      return domNode?.getAttribute('data-id') ?? null;
+    },
+    { wantedLabel: label, wantedKind: kind },
+  );
 }
 
-async function findSystemEdgeId(webview: FrameLocator, sourceId: string, targetId: string): Promise<string | null> {
-  return webview.locator('html').evaluate((_element, { source, target }) => {
-    const rf = (window as any).reactFlowInstance;
-    const edge = rf?.getEdges?.().find((candidate: any) => candidate.source === source && candidate.target === target);
-    return edge?.id ?? null;
-  }, { source: sourceId, target: targetId });
+async function findSystemEdgeId(
+  webview: FrameLocator,
+  sourceId: string,
+  targetId: string,
+): Promise<string | null> {
+  return webview.locator('html').evaluate(
+    (_element, { source, target }) => {
+      const rf = (window as any).reactFlowInstance;
+      const edge = rf
+        ?.getEdges?.()
+        .find((candidate: any) => candidate.source === source && candidate.target === target);
+      return edge?.id ?? null;
+    },
+    { source: sourceId, target: targetId },
+  );
 }
 
-async function clickSystemNode(workbox: Page, webview: FrameLocator, nodeId: string): Promise<void> {
+async function clickSystemNode(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+): Promise<void> {
   const box = await webview.locator(`.react-flow__node[data-id="${nodeId}"]`).boundingBox();
   if (!box) {
     throw new Error(`Could not get node box for ${nodeId}`);
   }
   await workbox.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 
-  await expect.poll(async () => webview.locator('html').evaluate((_element, id) => {
-    const rf = (window as any).reactFlowInstance;
-    return rf?.getNode?.(id)?.selected ?? false;
-  }, nodeId), { timeout: 5_000 }).toBe(true);
+  await expect
+    .poll(
+      async () =>
+        webview.locator('html').evaluate((_element, id) => {
+          const rf = (window as any).reactFlowInstance;
+          return rf?.getNode?.(id)?.selected ?? false;
+        }, nodeId),
+      { timeout: 5_000 },
+    )
+    .toBe(true);
 }
 
-async function findSystemCutLabelIdAttachedTo(webview: FrameLocator, blockId: string): Promise<string | null> {
+async function findSystemCutLabelIdAttachedTo(
+  webview: FrameLocator,
+  blockId: string,
+): Promise<string | null> {
   return webview.locator('html').evaluate((_element, id) => {
     const rf = (window as any).reactFlowInstance;
     const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
-    const stub = rf.getEdges().find((e: any) => (
-      (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined
-    ));
+    const stub = rf
+      .getEdges()
+      .find(
+        (e: any) =>
+          (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined,
+      );
     if (!stub) return null;
     const otherEndId = stub.source === id ? stub.target : stub.source;
     const otherNode = nodesById.get(otherEndId) as any;
@@ -653,7 +784,10 @@ async function findSystemCutLabelIdAttachedTo(webview: FrameLocator, blockId: st
   }, blockId);
 }
 
-async function systemNodePosition(webview: FrameLocator, nodeId: string): Promise<{ x: number; y: number }> {
+async function systemNodePosition(
+  webview: FrameLocator,
+  nodeId: string,
+): Promise<{ x: number; y: number }> {
   return webview.locator('html').evaluate((_element, id) => {
     const rf = (window as any).reactFlowInstance;
     const node = rf?.getNode?.(id);
@@ -665,7 +799,9 @@ async function systemNodePosition(webview: FrameLocator, nodeId: string): Promis
 }
 
 async function systemZoom(webview: FrameLocator): Promise<number> {
-  return webview.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
+  return webview
+    .locator('html')
+    .evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
 }
 
 // The webview sits to the right of VS Code's activity/explorer sidebar, whose
@@ -677,7 +813,7 @@ const SYSTEM_DRAG_SAFE_MARGIN_PX = 420;
 
 async function panSystemFlowClear(
   webview: FrameLocator,
-  boxes: Array<{ x: number } | null>
+  boxes: Array<{ x: number } | null>,
 ): Promise<boolean> {
   const xs = boxes.filter((box): box is { x: number } => box !== null).map((box) => box.x);
   const minX = Math.min(...xs);
@@ -699,7 +835,7 @@ async function dragSystemNodeByGridCells(
   webview: FrameLocator,
   nodeId: string,
   cellsX: number,
-  cellsY: number
+  cellsY: number,
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
   let box = await node.boundingBox();
@@ -720,20 +856,29 @@ async function dragSystemNodeByGridCells(
 
   await workbox.mouse.move(startX, startY);
   await workbox.mouse.down();
-  await workbox.mouse.move(startX + cellsX * SYSTEM_GRID_SIZE * zoom, startY + cellsY * SYSTEM_GRID_SIZE * zoom, { steps: 12 });
+  await workbox.mouse.move(
+    startX + cellsX * SYSTEM_GRID_SIZE * zoom,
+    startY + cellsY * SYSTEM_GRID_SIZE * zoom,
+    { steps: 12 },
+  );
   await workbox.mouse.up();
 
-  await expect.poll(async () => {
-    const current = await systemNodePosition(webview, nodeId);
-    return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
-  }, { timeout: 10_000 }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const current = await systemNodePosition(webview, nodeId);
+        return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 }
 
 async function dragSystemNodeOntoRegion(
   workbox: Page,
   webview: FrameLocator,
   nodeId: string,
-  region: Locator
+  region: Locator,
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
   let nodeBox = await node.boundingBox();
@@ -761,17 +906,22 @@ async function dragSystemNodeOntoRegion(
   await workbox.mouse.move(endX, endY, { steps: 10 });
   await workbox.mouse.up();
 
-  await expect.poll(async () => {
-    const current = await systemNodePosition(webview, nodeId);
-    return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
-  }, { timeout: 10_000 }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const current = await systemNodePosition(webview, nodeId);
+        return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 }
 
 async function dragSystemConnectionSegmentByGridCells(
   workbox: Page,
   webview: FrameLocator,
   edgeId: string,
-  cellsY: number
+  cellsY: number,
 ): Promise<void> {
   const edge = webview.locator(`.react-flow__edge[data-id="${edgeId}"]`);
   await edge.locator('path.svsch-edge-bridge').hover({ force: true });
@@ -811,11 +961,20 @@ async function dragSystemConnectionSegmentByGridCells(
   await workbox.mouse.move(startX, endY, { steps: 16 });
   await workbox.mouse.up();
 
-  await expect.poll(async () => JSON.stringify(await readSystemLayout()) !== layoutBefore, { timeout: 10_000 }).toBe(true);
-  await expect.poll(async () => {
-    const layout = await readSystemLayout();
-    return !!layout.modules?.assign_wire?.edges?.[edgeId]?.routePoints;
-  }, { timeout: 10_000 }).toBe(true);
+  await expect
+    .poll(async () => JSON.stringify(await readSystemLayout()) !== layoutBefore, {
+      timeout: 10_000,
+    })
+    .toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const layout = await readSystemLayout();
+        return !!layout.modules?.assign_wire?.edges?.[edgeId]?.routePoints;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 }
 
 // The extension persists each module's layout as its own file under
@@ -834,7 +993,9 @@ async function readSystemLayout(): Promise<any> {
     if (!entry.endsWith('.json')) continue;
     const moduleName = decodeURIComponent(entry.slice(0, -'.json'.length));
     try {
-      modules[moduleName] = JSON.parse(await fs.promises.readFile(path.join(SYSTEM_LAYOUTS_DIR, entry), 'utf8'));
+      modules[moduleName] = JSON.parse(
+        await fs.promises.readFile(path.join(SYSTEM_LAYOUTS_DIR, entry), 'utf8'),
+      );
     } catch {
       // Ignore a file that's mid-write; the poll loops calling this retry.
     }
@@ -842,12 +1003,20 @@ async function readSystemLayout(): Promise<any> {
   return { version: 1, modules };
 }
 
-async function waitForSystemNodePersisted(nodeId: string, position: { x: number; y: number }): Promise<void> {
-  await expect.poll(async () => {
-    const layout = await readSystemLayout();
-    const node = layout.modules?.assign_wire?.nodes?.[nodeId];
-    return !!node && closeTo(node.x, position.x) && closeTo(node.y, position.y);
-  }, { timeout: 10_000 }).toBe(true);
+async function waitForSystemNodePersisted(
+  nodeId: string,
+  position: { x: number; y: number },
+): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const layout = await readSystemLayout();
+        const node = layout.modules?.assign_wire?.nodes?.[nodeId];
+        return !!node && closeTo(node.x, position.x) && closeTo(node.y, position.y);
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
 }
 
 function closeTo(a: number, b: number): boolean {

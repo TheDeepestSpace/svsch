@@ -1,4 +1,22 @@
-export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown' | 'netLabel';
+export type DiagramNodeKind =
+  | 'module'
+  | 'instance'
+  | 'mux'
+  | 'select'
+  | 'register'
+  | 'port'
+  | 'comb'
+  | 'alu'
+  | 'inverter'
+  | 'bus'
+  | 'struct'
+  | 'interface'
+  | 'literal'
+  | 'latch'
+  | 'loop'
+  | 'replicate'
+  | 'unknown'
+  | 'netLabel';
 
 export interface SourceRange {
   file: string;
@@ -109,11 +127,15 @@ export interface DiagramNodeMetadata {
       thick?: boolean;
     };
     isSourceStacked?: boolean;
-    /** 'declared' locks the label from renaming (it's the net's real SV source name); 'synthetic' is tool-invented and freely renameable. */
+    /** 'declared' locks the label from renaming (it's the net's real SV source
+     * name); 'synthetic' is tool-invented and freely renameable. */
     origin?: 'declared' | 'synthetic';
-    /** True once the label has been edited away from its default (the text it had right when the net was cut) — drives italic styling, independent of `origin`. */
+    /** True once the label has been edited away from its default (the text it
+     * had right when the net was cut) — drives italic styling, independent of
+     * `origin`. */
     isRenamed?: boolean;
-    /** Other declared wire names this net's chain of `assign` aliases collapsed together, for the hover popover. */
+    /** Other declared wire names this net's chain of `assign` aliases
+     * collapsed together, for the hover popover. */
     aliasNames?: string[];
   };
 }
@@ -162,24 +184,60 @@ export interface BaseDiagramNode {
   metadata?: DiagramNodeMetadata;
 }
 
-export interface RegisterDiagramNode extends BaseDiagramNode { kind: 'register'; }
-export interface LatchDiagramNode extends BaseDiagramNode { kind: 'latch'; }
-export interface AluDiagramNode extends BaseDiagramNode { kind: 'alu'; }
-export interface InverterDiagramNode extends BaseDiagramNode { kind: 'inverter'; }
-export interface CombDiagramNode extends BaseDiagramNode { kind: 'comb'; }
-export interface MuxDiagramNode extends BaseDiagramNode { kind: 'mux'; }
-export interface SelectDiagramNode extends BaseDiagramNode { kind: 'select'; }
-export interface BusDiagramNode extends BaseDiagramNode { kind: 'bus'; }
-export interface StructDiagramNode extends BaseDiagramNode { kind: 'struct'; }
-export interface InterfaceDiagramNode extends BaseDiagramNode { kind: 'interface'; }
-export interface LiteralDiagramNode extends BaseDiagramNode { kind: 'literal'; }
-export interface ReplicateDiagramNode extends BaseDiagramNode { kind: 'replicate'; }
-export interface InstanceDiagramNode extends BaseDiagramNode { kind: 'instance'; }
-export interface PortDiagramNode extends BaseDiagramNode { kind: 'port'; }
-export interface LoopDiagramNode extends BaseDiagramNode { kind: 'loop'; }
-export interface UnknownDiagramNode extends BaseDiagramNode { kind: 'unknown'; }
-export interface ModuleDiagramNode extends BaseDiagramNode { kind: 'module'; }
-export interface NetLabelDiagramNode extends BaseDiagramNode { kind: 'netLabel'; }
+export interface RegisterDiagramNode extends BaseDiagramNode {
+  kind: 'register';
+}
+export interface LatchDiagramNode extends BaseDiagramNode {
+  kind: 'latch';
+}
+export interface AluDiagramNode extends BaseDiagramNode {
+  kind: 'alu';
+}
+export interface InverterDiagramNode extends BaseDiagramNode {
+  kind: 'inverter';
+}
+export interface CombDiagramNode extends BaseDiagramNode {
+  kind: 'comb';
+}
+export interface MuxDiagramNode extends BaseDiagramNode {
+  kind: 'mux';
+}
+export interface SelectDiagramNode extends BaseDiagramNode {
+  kind: 'select';
+}
+export interface BusDiagramNode extends BaseDiagramNode {
+  kind: 'bus';
+}
+export interface StructDiagramNode extends BaseDiagramNode {
+  kind: 'struct';
+}
+export interface InterfaceDiagramNode extends BaseDiagramNode {
+  kind: 'interface';
+}
+export interface LiteralDiagramNode extends BaseDiagramNode {
+  kind: 'literal';
+}
+export interface ReplicateDiagramNode extends BaseDiagramNode {
+  kind: 'replicate';
+}
+export interface InstanceDiagramNode extends BaseDiagramNode {
+  kind: 'instance';
+}
+export interface PortDiagramNode extends BaseDiagramNode {
+  kind: 'port';
+}
+export interface LoopDiagramNode extends BaseDiagramNode {
+  kind: 'loop';
+}
+export interface UnknownDiagramNode extends BaseDiagramNode {
+  kind: 'unknown';
+}
+export interface ModuleDiagramNode extends BaseDiagramNode {
+  kind: 'module';
+}
+export interface NetLabelDiagramNode extends BaseDiagramNode {
+  kind: 'netLabel';
+}
 
 export type DiagramNode =
   | RegisterDiagramNode
@@ -199,8 +257,7 @@ export type DiagramNode =
   | LoopDiagramNode
   | UnknownDiagramNode
   | ModuleDiagramNode
-  | NetLabelDiagramNode
- ;
+  | NetLabelDiagramNode;
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;

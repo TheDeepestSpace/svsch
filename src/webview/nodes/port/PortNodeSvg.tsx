@@ -8,28 +8,34 @@ import {
   nodeModportName,
   nodeModportSource,
   nodeTypeName,
-  nodeTypeSource
+  nodeTypeSource,
 } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 
-export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function PortNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const stackLayers = arrayStackLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
   const port = node.ports[0];
   const direction = port?.direction ?? 'unknown';
   const isInterface = Boolean(
-    port?.typeName && port?.modportName !== undefined ||
+    (port?.typeName && port?.modportName !== undefined) ||
     port?.typeName?.endsWith('_if') ||
-    port?.typeName?.endsWith('if')
+    port?.typeName?.endsWith('if'),
   );
   const skinDirection: 'input' | 'output' | 'harness' = isInterface
     ? 'harness'
@@ -42,12 +48,12 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
     width,
     height,
     diagramSizing.portSkinHeight,
-    diagramSizing.portNoseLength
+    diagramSizing.portNoseLength,
   );
 
   const leadSide = skinDirection === 'output' ? 'left' : 'right';
   const portWidth = normalizeWidth(port?.widthExpression ?? port?.width);
-  const displayWidth = (portWidth && portWidth !== 'interface') ? portWidth : undefined;
+  const displayWidth = portWidth && portWidth !== 'interface' ? portWidth : undefined;
   const typeName = nodeTypeName(node) ?? port?.typeName;
   const typeSource = nodeTypeSource(node) ?? port?.typeSource;
   const modportName = nodeModportName(node) ?? port?.modportName;
@@ -65,9 +71,10 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
     : widthSuffix
       ? monoTextWidth(' ', widthSuffixFontSize)
       : 0;
-  const labelWidth = monoTextWidth(node.label, labelFontSize)
-    + labelGap
-    + (typeName
+  const labelWidth =
+    monoTextWidth(node.label, labelFontSize) +
+    labelGap +
+    (typeName
       ? monoTextWidth(typeText, typeFontSize) + monoTextWidth(modportText, typeFontSize)
       : widthSuffix
         ? monoTextWidth(widthSuffix, widthSuffixFontSize)
@@ -89,6 +96,16 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
     event.stopPropagation();
     onNavigateToSource(source);
   };
+  const arrayBackClassName =
+    'port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back';
+  const arrayMiddleClassName =
+    `port-skin-body${isArray ? ' port-skin-array-middle' : ''} ` + 'svsch-array-layer-middle';
+  const arrayFrontClassName =
+    'port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front';
+  const typeLabelClassName =
+    `svsch-type-label svsch-port-type-label` + `${typeSource ? ' svsch-svg-link' : ''}`;
+  const modportLabelClassName =
+    `svsch-modport-label svsch-port-modport-label` + `${modportSource ? ' svsch-svg-link' : ''}`;
 
   return (
     // Wrap in <g> with direction class so existing CSS rules
@@ -97,27 +114,25 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
       {/* Array back layer */}
       {isArray && (
         <path
-          className="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back"
+          className={arrayBackClassName}
           transform={`translate(${stackLayers.back.dx}, ${stackLayers.back.dy})`}
           d={d}
           opacity={0.5}
         />
       )}
       {/* Main body (also serves as middle array layer) */}
-      <path
-        className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''} svsch-array-layer-middle`}
-        d={d}
-      />
+      <path className={arrayMiddleClassName} d={d} />
       {/* Array front layer */}
       {isArray && (
         <path
-          className="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front"
+          className={arrayFrontClassName}
           transform={`translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`}
           d={d}
         />
       )}
       {!isArray && <path className="port-skin-selection" d={d} />}
-      {/* Keep IO/interface port labels full in SVG; collapsed designators belong to internal block ports. */}
+      {/* Keep IO/interface port labels full in SVG; collapsed designators belong to
+      internal block ports. */}
       <text
         className="svsch-port-label svsch-port-node-label"
         x={width / 2 + labelShiftX}
@@ -132,7 +147,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
           <>
             <tspan> </tspan>
             <tspan
-              className={`svsch-type-label svsch-port-type-label${typeSource ? ' svsch-svg-link' : ''}`}
+              className={typeLabelClassName}
               onClick={(event) => navigateSvgSource(event, typeSource)}
               onDoubleClick={stopSvgInteraction}
               onMouseDown={stopSvgInteraction}
@@ -142,7 +157,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
             </tspan>
             {modportName && (
               <tspan
-                className={`svsch-modport-label svsch-port-modport-label${modportSource ? ' svsch-svg-link' : ''}`}
+                className={modportLabelClassName}
                 onClick={(event) => navigateSvgSource(event, modportSource)}
                 onDoubleClick={stopSvgInteraction}
                 onMouseDown={stopSvgInteraction}
@@ -153,7 +168,14 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
             )}
           </>
         ) : widthSuffix ? (
-          <tspan className="svsch-port-width-suffix"> <SvgParameterizedText text={widthSuffix} refs={port?.parameterRefs} onNavigateToSource={onNavigateToSource} /></tspan>
+          <tspan className="svsch-port-width-suffix">
+            {' '}
+            <SvgParameterizedText
+              text={widthSuffix}
+              refs={port?.parameterRefs}
+              onNavigateToSource={onNavigateToSource}
+            />
+          </tspan>
         ) : null}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
@@ -194,10 +216,23 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
 
       {/* Array stack leads */}
       {isArray && skinDirection === 'output' && port && hasArrayConnection(port.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(port.id, 'target')}
+          side={leadSide}
+          width={width}
+          y={diagramSizing.portHeight / 2}
+          trimSink
+        />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(port.id, 'source')}
+          side={leadSide}
+          width={width}
+          y={diagramSizing.portHeight / 2}
+        />
       )}
     </g>
   );

@@ -1,8 +1,12 @@
 import React from 'react';
 import { Position } from '@xyflow/react';
-import { diagramSizing } from '../../../diagram/constants';
 import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
-import { arrayStackLayer, ARRAY_STACK_LEAD_EDGE_GAP, arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import {
+  arrayStackLayer,
+  ARRAY_STACK_LEAD_EDGE_GAP,
+  arrayStackLeadLayersFor,
+  arrayStackLayerTrim,
+} from '../../arrayStackGeometry';
 import type { PositionedNode } from '../../../ir/types';
 
 export function ArrayStackLeads({
@@ -12,7 +16,7 @@ export function ArrayStackLeads({
   x,
   trimSink = false,
   wide = false,
-  thick = false
+  thick = false,
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
@@ -24,41 +28,46 @@ export function ArrayStackLeads({
   /** Stroke weight: tracks this specific connection's own thickness. */
   thick?: boolean;
 }): React.ReactElement {
+  const leadsClassName =
+    `svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} ` +
+    `svsch-array-stack-leads-${side}`;
   return (
-    <svg
-      className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg className={leadsClassName} aria-hidden="true" focusable="false">
       {arrayStackLeadLayersFor(wide).map((layer) => {
         const trim = arrayStackLayerTrim(layer.id, wide);
-        const shapeX = (side === 'top' || side === 'bottom')
-          ? (x ?? width / 2) + layer.dx
-          : side === 'left'
-            ? layer.dx
-            : width + layer.dx;
+        const shapeX =
+          side === 'top' || side === 'bottom'
+            ? (x ?? width / 2) + layer.dx
+            : side === 'left'
+              ? layer.dx
+              : width + layer.dx;
         const shapeY = y + layer.dy;
-        const endY = side === 'top' && trimSink
-          ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP
-          : shapeY;
-        const sourceRightExitX = width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP;
+        const endY = side === 'top' && trimSink ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP : shapeY;
+        const sourceRightExitX =
+          width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP;
         const bottomExitY = y + arrayStackLayer('back', wide).dy + ARRAY_STACK_LEAD_EDGE_GAP;
-        const leadX = (side === 'top' || side === 'bottom')
-          ? shapeX
-          : side === 'left'
-            ? shapeX - trim
-            : trimSink
-              ? shapeX + trim
-              : Math.max(shapeX + trim, sourceRightExitX);
-        const leadY = side === 'top'
-          ? endY - trim
-          : side === 'bottom'
-            ? Math.max(endY + trim, bottomExitY)
-            : shapeY;
+        const leadX =
+          side === 'top' || side === 'bottom'
+            ? shapeX
+            : side === 'left'
+              ? shapeX - trim
+              : trimSink
+                ? shapeX + trim
+                : Math.max(shapeX + trim, sourceRightExitX);
+        const leadY =
+          side === 'top'
+            ? endY - trim
+            : side === 'bottom'
+              ? Math.max(endY + trim, bottomExitY)
+              : shapeY;
+        const leadClassName =
+          `svsch-array-stack-lead svsch-array-stack-lead-${layer.id} ` +
+          `svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}` +
+          `${thick ? ' svsch-array-stack-lead-thick' : ''}`;
         return (
           <path
             key={layer.id}
-            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
+            className={leadClassName}
             d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
           />
         );
@@ -81,7 +90,7 @@ export function NetLabelWirePaths({
   isSourceStacked = false,
   width,
   height,
-  isHighlighted = false
+  isHighlighted = false,
 }: {
   handleSide: 'left' | 'right' | 'top' | 'bottom';
   edgeStyle?: { aggregate?: 'struct' | 'interface' | string; isStacked?: boolean; thick?: boolean };
@@ -99,14 +108,18 @@ export function NetLabelWirePaths({
   const isThick = !isInterface && !isStruct && edgeStyle?.thick === true;
   const isStacked = isSourceStacked;
 
-  const horizontalPath = (handleSide === 'top' || handleSide === 'bottom')
-    ? (align === 'end' ? `M ${width / 2} ${height / 2} H ${width}` : `M 0 ${height / 2} H ${width / 2}`)
-    : `M 0 ${height / 2} H ${width}`;
-  const verticalPath = handleSide === 'top'
-    ? `M ${width / 2} ${height / 2} V 0`
-    : handleSide === 'bottom'
-      ? `M ${width / 2} ${height / 2} V ${height}`
-      : '';
+  const horizontalPath =
+    handleSide === 'top' || handleSide === 'bottom'
+      ? align === 'end'
+        ? `M ${width / 2} ${height / 2} H ${width}`
+        : `M 0 ${height / 2} H ${width / 2}`
+      : `M 0 ${height / 2} H ${width}`;
+  const verticalPath =
+    handleSide === 'top'
+      ? `M ${width / 2} ${height / 2} V 0`
+      : handleSide === 'bottom'
+        ? `M ${width / 2} ${height / 2} V ${height}`
+        : '';
 
   const renderPath = (className: string, transform?: string) => (
     <g transform={transform}>
@@ -122,16 +135,39 @@ export function NetLabelWirePaths({
           <path className="svsch-edge-net-highlight" d={horizontalPath + verticalPath} />
         </g>
       )}
-      {isInterface && <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />}
-      {isStruct && <path className="svsch-edge svsch-edge-struct-bg" d={horizontalPath + verticalPath} />}
+      {isInterface && (
+        <path className="svsch-edge svsch-edge-interface-bg" d={horizontalPath + verticalPath} />
+      )}
+      {isStruct && (
+        <path className="svsch-edge svsch-edge-struct-bg" d={horizontalPath + verticalPath} />
+      )}
       {isStacked ? (
         <>
-          {renderPath(`svsch-edge svsch-edge-stacked-back${isThick ? ' svsch-edge-thick' : ''}`, `translate(${arrayStackLayer('back', isThick).dx}, ${arrayStackLayer('back', isThick).dy})`)}
+          {renderPath(
+            `svsch-edge svsch-edge-stacked-back${isThick ? ' svsch-edge-thick' : ''}`,
+            `translate(${arrayStackLayer('back', isThick).dx}, ` +
+              `${arrayStackLayer('back', isThick).dy})`,
+          )}
           {renderPath(`svsch-edge svsch-edge-stacked${isThick ? ' svsch-edge-thick' : ''}`)}
-          {renderPath(`svsch-edge svsch-edge-stacked-front${isThick ? ' svsch-edge-thick' : ''}`, `translate(${arrayStackLayer('front', isThick).dx}, ${arrayStackLayer('front', isThick).dy})`)}
+          {renderPath(
+            `svsch-edge svsch-edge-stacked-front${isThick ? ' svsch-edge-thick' : ''}`,
+            `translate(${arrayStackLayer('front', isThick).dx}, ` +
+              `${arrayStackLayer('front', isThick).dy})`,
+          )}
         </>
       ) : (
-        <path className={`svsch-edge${isInterface ? ' svsch-edge-interface' : isStruct ? ' svsch-edge-struct' : isThick ? ' svsch-edge-thick' : ''}`} d={horizontalPath + verticalPath} />
+        <path
+          className={`svsch-edge${
+            isInterface
+              ? ' svsch-edge-interface'
+              : isStruct
+                ? ' svsch-edge-struct'
+                : isThick
+                  ? ' svsch-edge-thick'
+                  : ''
+          }`}
+          d={horizontalPath + verticalPath}
+        />
       )}
     </>
   );
@@ -143,7 +179,7 @@ export function NetLabelWire({
   edgeStyle,
   align,
   isSourceStacked = false,
-  isHighlighted = false
+  isHighlighted = false,
 }: {
   node: PositionedNode;
   handleSide: 'left' | 'right' | 'top' | 'bottom';
@@ -164,11 +200,17 @@ export function NetLabelWire({
     isInterface ? 'svsch-edge-interface' : '',
     isStruct ? 'svsch-edge-struct' : '',
     isThick ? 'svsch-edge-thick' : '',
-    isStacked ? 'svsch-edge-stacked' : ''
-  ].filter(Boolean).join(' ');
+    isStacked ? 'svsch-edge-stacked' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <svg className={classes} viewBox={`0 0 ${nodeWidth} ${nodeHeight}`} style={{ overflow: 'visible' }}>
+    <svg
+      className={classes}
+      viewBox={`0 0 ${nodeWidth} ${nodeHeight}`}
+      style={{ overflow: 'visible' }}
+    >
       <NetLabelWirePaths
         handleSide={handleSide}
         edgeStyle={edgeStyle}

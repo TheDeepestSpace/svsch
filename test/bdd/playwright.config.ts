@@ -12,10 +12,7 @@ const reportDir = path.join(os.tmpdir(), `svsch-bdd-report-${path.basename(root)
 const outputDir = defineBddConfig({
   features: path.join(root, 'test/features/**/*.feature'),
   featuresRoot: path.join(root, 'test'),
-  steps: [
-    path.join(root, 'test/steps/fixtures.ts'),
-    path.join(root, 'test/steps/*.steps.ts'),
-  ],
+  steps: [path.join(root, 'test/steps/fixtures.ts'), path.join(root, 'test/steps/*.steps.ts')],
   outputDir: generatedDir,
   tags: 'not @skip',
   disableWarnings: { importTestFrom: true },
@@ -29,7 +26,9 @@ const reporters: any[] = [
   // Emit a cucumber-JSON report so `npm run docs:generate` can build the
   // living BDD documentation (multiple-cucumber-html-reporter consumes this).
   // Own subdir so the reporter doesn't pick up snapshot-diff JSON in bdd/.
-  cucumberReporter('json', { outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json') }),
+  cucumberReporter('json', {
+    outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json'),
+  }),
 ];
 
 if (process.env.SVSCH_TEST_STATUS_FILE) {
