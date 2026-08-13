@@ -14,7 +14,7 @@ function arrayNode(kind: DiagramNodeKind, ports: DiagramPort[]): DiagramNode {
   return { id: 'n1', kind, label: 'n1', ports, isArrayNode: true } as DiagramNode;
 }
 
-function renderLeft(Component: NodeSvgComponent, node: DiagramNode, portId: string): string {
+function renderLeft(Component: NodeSvgComponent, node: DiagramNode, portId: string, thick = false): string {
   const markup = renderToStaticMarkup(
     React.createElement(
       'svg',
@@ -23,7 +23,7 @@ function renderLeft(Component: NodeSvgComponent, node: DiagramNode, portId: stri
         node,
         width: 160,
         height: 80,
-        arrayConnections: [{ portId, role: 'source', thick: false }]
+        arrayConnections: [{ portId, role: 'source', thick }]
       })
     )
   );
@@ -57,4 +57,42 @@ describe('array-stack leads for source-connected inout ports', () => {
       expect(markup).toContain('svsch-array-stack-leads-left');
     }
   );
+
+  test.each([
+    ['comb', CombNodeSvg, [
+      { id: 'io', name: 'io', direction: 'inout' },
+      { id: 'out', name: 'out', direction: 'output' }
+    ]],
+    ['alu', AluNodeSvg, [
+      { id: 'io', name: 'io', direction: 'inout' },
+      { id: 'b', name: 'b', direction: 'input' },
+      { id: 'out', name: 'out', direction: 'output' }
+    ]],
+    ['inverter', InverterNodeSvg, [
+      { id: 'io', name: 'io', direction: 'inout' },
+      { id: 'out', name: 'out', direction: 'output' }
+    ]],
+    ['mux', MuxNodeSvg, [
+      { id: 'io', name: 'io', direction: 'inout' },
+      { id: 'sel', name: 'sel', direction: 'input' },
+      { id: 'out', name: 'out', direction: 'output' }
+    ]]
+  ] as Array<[string, NodeSvgComponent, DiagramPort[]]>)(
+    'uses the source connection thickness for an inout port that is only a source (%s)',
+    (_kind, Component, ports) => {
+      const markup = renderLeft(Component, arrayNode(_kind as DiagramNodeKind, ports), 'io', true);
+      expect(markup).toContain('svsch-array-stack-lead-thick');
+    }
+  );
+
+  test('renders the top lead for a mux inout sel port that is only a source', () => {
+    const ports: DiagramPort[] = [
+      { id: 'sel', name: 'sel', direction: 'inout' },
+      { id: 'a', name: 'a', direction: 'input' },
+      { id: 'b', name: 'b', direction: 'input' },
+      { id: 'out', name: 'out', direction: 'output' }
+    ] as DiagramPort[];
+    const markup = renderLeft(MuxNodeSvg, arrayNode('mux', ports), 'sel');
+    expect(markup).toContain('svsch-array-stack-leads-top');
+  });
 });
