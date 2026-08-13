@@ -359,7 +359,7 @@ async function injectOverlay(page: Page, overlay: OverlayEntry[]): Promise<void>
 // the node coordinate space.
 function renderSvgWithOverlay(view: DiagramViewModel, overlay: OverlayEntry[]): string {
   const reactFlowCss = fs.readFileSync(require.resolve('@xyflow/react/dist/style.css'), 'utf8');
-  const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+  const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
   const svg = renderSvg(view, { theme: 'dark', reactFlowCss, extensionCss, padding: GRID * 3 });
   const tail = '</g>\n</svg>';
   const tailIndex = svg.lastIndexOf(tail);
