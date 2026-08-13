@@ -2433,7 +2433,7 @@ path.port-skin-body.port-skin-harness {
 </svg>
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="132" y="-12" text-anchor="middle">⚠</text>
+<text x="132" y="0" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned svsch-node-invalid" data-node-id="err_output_port" data-node-kind="port" transform="translate(350 80)">
@@ -2451,7 +2451,7 @@ path.port-skin-body.port-skin-harness {
 </svg>
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="276" y="-12" text-anchor="middle">⚠</text>
+<text x="276" y="0" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb svsch-node-invalid" data-node-id="err_comb" data-node-kind="comb" transform="translate(890 80)">
@@ -2527,7 +2527,7 @@ path.port-skin-body.port-skin-harness {
 </svg>
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="60" y="-12" text-anchor="middle">⚠</text>
+<text x="42.78" y="12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-literal svsch-node-invalid" data-node-id="err_literal" data-node-kind="literal" transform="translate(350 500)">
@@ -2651,7 +2651,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="122.5" height="26.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="132" y="-12" text-anchor="middle">⚠</text>
+<text x="132" y="0" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb hdl-node-array svsch-node-invalid" data-node-id="err_array_comb" data-node-kind="comb" transform="translate(1160 920)">
