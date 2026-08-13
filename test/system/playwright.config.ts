@@ -35,7 +35,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   use: {
     extensionDevelopmentPath: root,
     // VSCode workspace: ./test/ already has .vscode/settings.json configuring
-    // svsch.projectFolder = visual/fixtures and suppressing noisy popups.
+    // svsch.projectFolder = fixtures and suppressing noisy popups.
     baseDir: path.join(root, 'test'),
     deviceScaleFactor: 1,
     // Pin to Electron 30 era. VSCode 1.121 uses Electron 35+ which

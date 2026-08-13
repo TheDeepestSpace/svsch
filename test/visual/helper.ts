@@ -25,7 +25,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
   currentPageViews.set(page, view);
 }
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
+export const fixtureRoot = path.resolve(__dirname, '..', 'fixtures');
 
 export async function expectGraphAndScreenshot(
   page: Page,

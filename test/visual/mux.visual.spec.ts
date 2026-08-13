@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot, fitGraphView, paddedAllNodesClip, trackView } from './helper';
+import { expectGraphAndScreenshot, fitGraphView, fixtureRoot, paddedAllNodesClip, trackView } from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
@@ -11,7 +11,6 @@ import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../../src
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
 async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
   const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-back, .svsch-edge-stacked-front').evaluateAll((paths) => {
