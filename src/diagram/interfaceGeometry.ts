@@ -236,7 +236,7 @@ export function interfaceSkinPath({
   // right notch the outline stays flush with the cap/shoulder inner wall.
   const drawsRightNotch = hasRightNotches || !hasLeftNotches;
   const topRightVertex = drawsRightNotch
-    ? { x: width, y: clampY(usableRightCenters[0]) }
+    ? { x: width, y: Math.min(...usableRightCenters.map(clampY)) }
     : { x: rightInnerWall, y: topEdgeY };
 
   return { path, topHatTop, topHatHeight, bottomHatTop, bottomHatHeight, topRightVertex };

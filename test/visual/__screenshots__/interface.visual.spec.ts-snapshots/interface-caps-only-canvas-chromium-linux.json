@@ -81,7 +81,7 @@
       "target": "interface:interface_caps_only:status",
       "sourceHandle": "port:clk",
       "targetHandle": "in:clk",
-      "path": "M 144 48 L 168 48 L 456 48 L 456 66"
+      "path": "M 144 48 L 168 48 L 456 48 L 456 72"
     }
   ]
 }

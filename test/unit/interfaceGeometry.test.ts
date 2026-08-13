@@ -115,7 +115,8 @@ describe('interface instance geometry', () => {
       leftCenters: [],
       rightCenters: [],
       topPortCount: 1,
-      bottomPortCount: 1
+      bottomPortCount: 1,
+      shiftY: diagramSizing.interfaceInstanceShiftY
     });
 
     expect(interfaceInstanceTopHatY(node, height)).toBe(rendered.topHatTop);
