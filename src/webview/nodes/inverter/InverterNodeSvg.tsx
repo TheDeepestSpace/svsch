@@ -6,7 +6,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
-import { isInputSidePort } from '../../../diagram/portDirection';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function InverterNodeSvg({ node, width: _width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -16,6 +16,10 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') || (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
   const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const g = diagramSizing.gridSize;
@@ -44,8 +48,8 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
       <circle className="svsch-node-shape hdl-node-inverter node-skin-body inverter-bubble" cx={bubbleCx} cy={midY} r={bubbleRadius} />
 
       {/* Array stack leads */}
-      {isArray && inputs[0] && hasArrayConnection(inputs[0].id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(inputs[0].id, 'target')} side="left" width={_width} y={height / 2} trimSink />
+      {isArray && inputs[0] && hasInputSideConnection(inputs[0]) && (
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(inputs[0].id, inputSideRole(inputs[0]))} side="left" width={_width} y={height / 2} trimSink />
       )}
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
         <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={_width} y={height / 2} />

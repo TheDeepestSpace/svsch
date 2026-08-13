@@ -13,7 +13,7 @@ import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGe
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
-import { isInputSidePort } from '../../../diagram/portDirection';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -24,6 +24,10 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') || (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
   const g = diagramSizing.gridSize;
   const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
@@ -47,10 +51,10 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   const targetLeads = (
     <>
       {muxTopPorts.map((port: DiagramPort, index: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-top-${port.id}`}
             side="top"
             width={width}
@@ -61,10 +65,10 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         ) : null
       )}
       {sideInputs.map((port: DiagramPort, index: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-left-${port.id}`}
             side="left"
             width={width}

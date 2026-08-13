@@ -7,7 +7,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
-import { isInputSidePort } from '../../../diagram/portDirection';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -18,6 +18,10 @@ export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') || (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
   const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const paramRows = instanceParameterRows(node);
@@ -50,10 +54,10 @@ export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
 
       {/* Array stack leads */}
       {isArray && inputs.map((port: DiagramPort, i: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-${port.id}`}
             side="left"
             width={width}

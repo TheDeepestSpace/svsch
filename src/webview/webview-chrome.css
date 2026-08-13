@@ -632,6 +632,7 @@ select {
 .hdl-port-inout {
   --svsch-inout-port-fill: color-mix(in srgb, var(--vscode-charts-green) 22%, var(--vscode-editor-background));
   --svsch-inout-port-stroke: var(--vscode-charts-green);
+
   box-shadow: inset 0 0 0 1px var(--vscode-charts-green);
 }
 
