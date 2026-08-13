@@ -130,6 +130,8 @@ const DIFF_LEGEND_ITEMS = [
 const STACKED_LEGEND_ITEMS = [
   { fill: COLORS.blue, label: 'Elaboration' },
   { fill: COLORS.purple, label: 'Rendering' },
+  { fill: COLORS.good, label: 'Faster than baseline' },
+  { fill: COLORS.critical, label: 'Slower than baseline' },
   { fill: 'url(#newHatchBlue)', label: 'Elaboration (new)' },
   { fill: 'url(#newHatchPurple)', label: 'Rendering (new)' },
 ];
@@ -160,6 +162,40 @@ function renderLegend(x, y, items) {
   return parts.join('\n');
 }
 
+// Draws one baseline-vs-current bar segment (a solid bar up to whichever of
+// baseline/value is shorter, capped in green/red up to whichever is taller)
+// anchored at `baseY` — the bottom of *this* segment, not necessarily the
+// chart's own origin. That indirection is what lets renderStackedSuiteChart
+// reuse this for a second segment stacked on top of the first: it just
+// passes the first segment's returned `top` back in as the second's `baseY`
+// offset. Returns the segment's own rendered height (px) so the caller can
+// do that stacking (or place an annotation above a single segment).
+function renderDiffSegment({ x, width, baseY, row, scale, solidFill, hatchFill }) {
+  if (!row) return { parts: [], top: 0 };
+
+  if (row.isNew) {
+    const h = row.value * scale;
+    return { parts: [`<rect x="${x}" y="${baseY - h}" width="${width}" height="${h}" fill="${hatchFill}" />`], top: h };
+  }
+
+  const baselineH = row.baseline * scale;
+  const valueH = row.value * scale;
+  const parts = [];
+  if (row.value <= row.baseline) {
+    // Faster: draw the full baseline bar, then repaint the top slice
+    // (the saved amount) green — the visible top edge still sits at the
+    // baseline height, with the green cap showing what was shaved off.
+    parts.push(`<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH}" fill="${solidFill}" />`);
+    parts.push(`<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH - valueH}" fill="${COLORS.good}" />`);
+  } else {
+    // Slower: draw the full baseline bar, then grow a red cap above it up
+    // to the new (taller) value.
+    parts.push(`<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH}" fill="${solidFill}" />`);
+    parts.push(`<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`);
+  }
+  return { parts, top: Math.max(baselineH, valueH) };
+}
+
 function renderPanel({ label, unit, rows, names, originY, maxValue, barWidth, barPitch, annotate }) {
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
@@ -182,36 +218,19 @@ function renderPanel({ label, unit, rows, names, originY, maxValue, barWidth, ba
     if (!row) return;
     const x = LEFT_MARGIN + index * barPitch + (barPitch - barWidth) / 2;
 
+    const { parts: segParts, top } = renderDiffSegment({ x, width: barWidth, baseY: originY, row, scale, solidFill: COLORS.blue, hatchFill: 'url(#newHatch)' });
+    parts.push(...segParts);
+
+    if (!annotate) return;
     if (row.isNew) {
-      const h = row.value * scale;
-      parts.push(`<rect x="${x}" y="${originY - h}" width="${barWidth}" height="${h}" fill="url(#newHatch)" />`);
-      if (annotate) {
-        parts.push(`<text x="${x + barWidth / 2}" y="${originY - h - 6}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">new</text>`);
-      }
+      parts.push(`<text x="${x + barWidth / 2}" y="${originY - top - 6}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">new</text>`);
       return;
     }
-
-    const baselineH = row.baseline * scale;
-    const valueH = row.value * scale;
-    if (row.value <= row.baseline) {
-      // Faster: draw the full baseline bar, then repaint the top slice
-      // (the saved amount) green — the visible top edge still sits at the
-      // baseline height, with the green cap showing what was shaved off.
-      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${barWidth}" height="${valueH}" fill="${COLORS.blue}" />`);
-      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${barWidth}" height="${baselineH - valueH}" fill="${COLORS.good}" />`);
-    } else {
-      // Slower: draw the full baseline bar, then grow a red cap above it up
-      // to the new (taller) value.
-      parts.push(`<rect x="${x}" y="${originY - baselineH}" width="${barWidth}" height="${baselineH}" fill="${COLORS.blue}" />`);
-      parts.push(`<rect x="${x}" y="${originY - valueH}" width="${barWidth}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`);
-    }
-
     const pct = row.deltaPct;
-    if (annotate && pct !== undefined) {
-      const topH = Math.max(baselineH, valueH);
+    if (pct !== undefined) {
       const sign = pct > 0 ? '+' : '';
       const color = pct > 0 ? COLORS.critical : pct < 0 ? COLORS.goodText : COLORS.inkMuted;
-      parts.push(`<text x="${x + barWidth / 2}" y="${originY - topH - 6}" font-size="10" text-anchor="middle" fill="${color}" font-family="system-ui, -apple-system, sans-serif">${sign}${pct.toFixed(0)}%</text>`);
+      parts.push(`<text x="${x + barWidth / 2}" y="${originY - top - 6}" font-size="10" text-anchor="middle" fill="${color}" font-family="system-ui, -apple-system, sans-serif">${sign}${pct.toFixed(0)}%</text>`);
     }
   });
 
@@ -295,11 +314,16 @@ export function computeStackedData(metrics) {
 // Visual suite's chart: one stacked bar per test instead of two separate
 // baseline-diff panels — elaboration segment stacked first (blue), rendering
 // stacked on top (purple), so the bar height reads as total diagram-open
-// time. Sorted fastest-to-slowest by that total (not by name) so the shape
-// of the distribution is visible left-to-right. A segment with no baseline
-// yet (first time this test's elaboration/rendering ran) is hatched instead
-// of solid, in the same color as its solid counterpart — a test can gain a
-// baseline for one half before the other, so "new" is tracked per segment.
+// time. Sorted fastest-to-slowest by current-run total (not by name) so the
+// shape of the distribution is visible left-to-right. Each segment carries
+// its own baseline-vs-current diff (renderDiffSegment) — a green/red cap the
+// same as the system suite's chart — so a slowdown in just one half (e.g.
+// rendering regresses while elaboration doesn't) is still visible rather
+// than being averaged away into the combined bar height. A segment with no
+// baseline yet (first time this test's elaboration/rendering ran) is hatched
+// instead of solid, in the same color as its solid counterpart — a test can
+// gain a baseline for one half before the other, so "new" is tracked per
+// segment.
 export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true }) {
   const { elabRows, renderRows, names } = computeStackedData(metrics);
 
@@ -311,7 +335,11 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
   const originY = TOP_MARGIN + PANEL_HEIGHT;
   const plotWidth = names.length * barPitch;
 
-  const maxValue = Math.max(1, ...names.map((name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0)));
+  // A segment's rendered top is max(baseline, value) — same as the diff
+  // chart's single bar — since a "slower" cap grows past the current value
+  // while a "faster" cap grows past it up to the (taller) baseline.
+  const diffTop = (row) => (!row ? 0 : row.isNew ? row.value : Math.max(row.baseline, row.value));
+  const maxValue = Math.max(1, ...names.map((name) => diffTop(elabRows.get(name)) + diffTop(renderRows.get(name))));
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
@@ -326,21 +354,20 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
   }
   parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
 
+  // Elaboration is drawn as its own baseline-vs-current diff segment
+  // (renderDiffSegment), then rendering stacks on top starting from wherever
+  // the elaboration segment actually topped out — so each half's own
+  // faster/slower-than-baseline cap is visible, not just the combined total.
   names.forEach((name, index) => {
     const x = LEFT_MARGIN + index * barPitch + (barPitch - barWidth) / 2;
     const elabRow = elabRows.get(name);
     const renderRow = renderRows.get(name);
-    const elabH = (elabRow?.value ?? 0) * scale;
-    const renderH = (renderRow?.value ?? 0) * scale;
 
-    if (elabRow) {
-      const fill = elabRow.isNew ? 'url(#newHatchBlue)' : COLORS.blue;
-      parts.push(`<rect x="${x}" y="${originY - elabH}" width="${barWidth}" height="${elabH}" fill="${fill}" />`);
-    }
-    if (renderRow) {
-      const fill = renderRow.isNew ? 'url(#newHatchPurple)' : COLORS.purple;
-      parts.push(`<rect x="${x}" y="${originY - elabH - renderH}" width="${barWidth}" height="${renderH}" fill="${fill}" />`);
-    }
+    const elab = renderDiffSegment({ x, width: barWidth, baseY: originY, row: elabRow, scale, solidFill: COLORS.blue, hatchFill: 'url(#newHatchBlue)' });
+    parts.push(...elab.parts);
+
+    const render = renderDiffSegment({ x, width: barWidth, baseY: originY - elab.top, row: renderRow, scale, solidFill: COLORS.purple, hatchFill: 'url(#newHatchPurple)' });
+    parts.push(...render.parts);
   });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">

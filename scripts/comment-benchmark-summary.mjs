@@ -48,9 +48,9 @@ if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
 // first since that's the Surelog/UHDM C++ path); system gets its own
 // single-panel chart.
 const METRIC_META = {
-  'system-diagram-generation-duration': { chartKey: 'system', chartTitle: 'system-diagram-generation-duration', label: 'Duration', order: 0 },
-  'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
-  'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'visual-diagram-generation-duration', label: 'Rendering — webview paint', order: 1 },
+  'system-diagram-generation-duration': { chartKey: 'system', chartTitle: 'System suite performance statistics', label: 'Duration', order: 0 },
+  'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
+  'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Rendering — webview paint', order: 1 },
 };
 
 function git(args, opts = {}) {
@@ -158,7 +158,7 @@ for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
   const showLabels = CHART_KEYS_WITH_LABELS.has(key);
   const svg = key === 'visual'
-    ? renderStackedSuiteChart({ suiteTitle: `${group.title} — fastest to slowest`, metrics, showLabels })
+    ? renderStackedSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`, metrics, showLabels })
     : renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics, showLabels });
   contentByFilename.set(`${key}.svg`, svg);
 
@@ -206,7 +206,7 @@ const startTag = `<!-- github-benchmark-action-comment(start): ${commentId} -->`
 const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
 const body = [
   startTag,
-  `# diagram-generation-benchmark — ${GITHUB_SHA.slice(0, 7)}`,
+  `# Diagram generation benchmark — ${GITHUB_SHA.slice(0, 7)}`,
   '',
   ...sections,
   '',
