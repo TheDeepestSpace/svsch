@@ -47,8 +47,8 @@ describe('textExtractor clock/reset signal name detection', () => {
       endmodule
     `;
     const metadata = registerMetadata('custom_names_reordered', code, {
-      clockSignalNames: ['tck'],
-      resetSignalNames: ['clr']
+      clockSignalNames: ['TCK'],
+      resetSignalNames: ['CLR']
     });
     expect(metadata?.clockSignal).toBe('tck');
     expect(metadata?.resetSignal).toBe('clr_n');

@@ -91,6 +91,61 @@ TEST(ExtractorTest, BusBreakoutOutputsExpectedNodes) {
     EXPECT_TRUE(found_edge_bus_to_b);
 }
 
+TEST(ExtractorTest, ClockSignalNamesDisambiguatesReorderedAsyncSensitivityList) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_async_reorder_dir/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/async_reset_clock_reordered.sv";
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_async_reorder_dir";
+        int ret = std::system(command.c_str());
+        if (ret != 0 || !fs::exists(uhdm_path)) {
+            GTEST_SKIP() << "Surelog not available or failed";
+        }
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    extractor.clock_signal_names = {"tck"};
+    extractor.reset_signal_names = {"rst"};
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& m : result["modules"]) {
+        if (m["name"] == "async_reset_clock_reordered") {
+            mod = &m;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    const nlohmann::json* reg = nullptr;
+    for (const auto& node : (*mod)["nodes"]) {
+        if (node["kind"] == "register") {
+            reg = &node;
+            break;
+        }
+    }
+    ASSERT_NE(reg, nullptr) << mod->dump(2);
+
+    // "rst_n" is listed first in the sensitivity list, but only "tck" matches
+    // the configured clock_signal_names -- without honoring that config the
+    // extractor would (wrongly) pick "rst_n" as the clock via positional
+    // fallback.
+    EXPECT_EQ((*reg)["metadata"]["clockSignal"], "tck");
+    EXPECT_EQ((*reg)["metadata"]["resetSignal"], "rst_n");
+    EXPECT_EQ((*reg)["metadata"]["resetActiveLow"], true);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

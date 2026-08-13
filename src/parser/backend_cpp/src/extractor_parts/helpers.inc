@@ -55,6 +55,10 @@ bool looksResetSignal(const std::string& name, const std::vector<std::string>& r
     return matchesSignalNameList(name, reset_signal_names);
 }
 
+bool looksClockSignal(const std::string& name, const std::vector<std::string>& clock_signal_names) {
+    return matchesSignalNameList(name, clock_signal_names);
+}
+
 std::string constantIntString(vpiHandle handle) {
     if (!handle) return "";
     s_vpi_value value;
