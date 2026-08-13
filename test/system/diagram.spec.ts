@@ -189,7 +189,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // Let the React render settle before snapshotting.
     await webviewIframe.locator('.react-flow__node').first().waitFor();
-    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
+    await waitForViewportToSettle(webviewIframe);
     await workbox.waitForTimeout(1_000);
 
     // Verify the webview iframe exists
@@ -288,7 +288,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // Let the React render settle before snapshotting.
     await webviewIframe.locator('.react-flow__node').first().waitFor();
-    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
+    await waitForViewportToSettle(webviewIframe);
     await workbox.waitForTimeout(1_000);
 
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
@@ -547,10 +547,24 @@ async function dismissSystemNotifications(workbox: Page): Promise<void> {
 }
 
 async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
-  await expect.poll(async () => webview.locator('html').evaluate(() => {
-    const transform = document.querySelector('.react-flow__viewport')?.getAttribute('style') ?? '';
-    return transform;
-  }), { timeout: 10_000 }).not.toBe('');
+  // fitView() is scheduled via setTimeout(0) after the graph/nodes settle
+  // (see main.tsx), so a fixed delay after the first node appears can race
+  // it — poll until the transform stops changing instead of guessing a delay.
+  await webview.locator('body').evaluate(async () => {
+    const getTransform = () => (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
+    let last = getTransform();
+    let stable = 0;
+    for (let i = 0; i < 100; i++) {
+      await new Promise(r => setTimeout(r, 50));
+      const current = getTransform();
+      stable = (current === last && current !== '') ? stable + 1 : 0;
+      last = current;
+      if (stable >= 5) break;
+    }
+    if (stable < 5) {
+      throw new Error('React Flow viewport did not settle within 5 seconds');
+    }
+  });
   await webview.locator('body').evaluate(() => document.fonts.ready);
 }
 
