@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, nodeOutlineTopRightVertex } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
@@ -777,7 +777,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textClass = `svsch-net-label${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`;
     const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
-    const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width);
+    const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width, height);
     const classes = [
       'svsch-node',
       'hdl-net-label',
@@ -798,7 +798,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     content,
     '</svg>',
     nodeErrorOutline(node, width, height),
-    nodeWarningIcon(node, width),
+    nodeWarningIcon(node, width, height),
     '</g>'
   ].filter(Boolean).join('\n');
 }
@@ -812,12 +812,14 @@ function nodeErrorOutline(node: PositionedNode, width: number, height: number): 
   return `<rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="${formatNumber(width + 2.5)}" height="${formatNumber(height + 2.5)}" />`;
 }
 
-function nodeWarningIcon(node: PositionedNode, width: number): string {
+function nodeWarningIcon(node: PositionedNode, width: number, height: number): string {
   if (!node.warningNote) return '';
+  const vertex = nodeOutlineTopRightVertex(node, width, height);
+  const halfGrid = diagramSizing.gridSize / 2;
   return [
     `<g class="svsch-node-warning" aria-label="${escapeAttr(node.warningNote)}">`,
     `<title>${escapeXml(node.warningNote)}</title>`,
-    `<text x="${formatNumber(width - 6)}" y="10" text-anchor="end">⚠</text>`,
+    `<text x="${formatNumber(vertex.x + halfGrid)}" y="${formatNumber(vertex.y - halfGrid)}" text-anchor="middle">⚠</text>`,
     '</g>'
   ].join('\n');
 }

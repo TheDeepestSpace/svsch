@@ -13,10 +13,29 @@ import {
 import { selectPortLabel } from './selectLabels';
 import { isBusComposition } from './busGeometry';
 import { interfaceTopHatHeight, orderedInterfaceSidePorts } from './interfaceGeometry';
+import { muxRightTopY } from './muxGeometry';
 
 export interface DiagramNodeDimensions {
   width: number;
   height: number;
+}
+
+export interface NodeOutlineVertex {
+  x: number;
+  y: number;
+}
+
+/**
+ * The node outline's right-most vertex (ties broken by smallest y, i.e. the
+ * top-most of the right-most points). Rectangular skins have it at the
+ * bbox corner; mux/select/alu slope their right edge in from the top, so
+ * their true corner sits below y=0.
+ */
+export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu') {
+    return { x: width, y: muxRightTopY(height) };
+  }
+  return { x: width, y: 0 };
 }
 
 export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
