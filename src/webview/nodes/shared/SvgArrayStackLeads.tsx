@@ -32,22 +32,28 @@ export function SvgArrayStackLeads({
     >
       {arrayStackLeadLayersFor(wide).map((layer) => {
         const trim = arrayStackLayerTrim(layer.id, wide);
+        // Deliberately unrounded — this must land exactly where the routed
+        // wire's own layer begins (computeStackedEdgeLayerPoints in
+        // stackedEdgeGeometry.ts uses the same unrounded arrayStackLayerTrim).
+        // Rounding either side independently reintroduces the sub-pixel
+        // overlap/gap this geometry exists to avoid, since `wide` mode's 1.5x
+        // lane scale makes trims fractional (e.g. 4.5, 13.5).
         const shapeX = (side === 'top' || side === 'bottom')
-          ? Math.round((x ?? width / 2) + layer.dx)
+          ? (x ?? width / 2) + layer.dx
           : side === 'left'
-            ? Math.round(layer.dx)
-            : Math.round(width + layer.dx);
-        const shapeY = Math.round(y + layer.dy);
-        const leadX = Math.round((side === 'top' || side === 'bottom')
+            ? layer.dx
+            : width + layer.dx;
+        const shapeY = y + layer.dy;
+        const leadX = (side === 'top' || side === 'bottom')
           ? shapeX
           : side === 'left'
             ? shapeX - trim
-            : shapeX + trim);
-        const leadY = Math.round(side === 'top'
+            : shapeX + trim;
+        const leadY = side === 'top'
           ? shapeY - trim
           : side === 'bottom'
             ? shapeY + trim
-            : shapeY);
+            : shapeY;
         return (
           <path
             key={layer.id}
