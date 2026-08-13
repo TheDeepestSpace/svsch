@@ -135,9 +135,23 @@ void DesignExtractor::buildEdges(Module& mod) {
                     || has_array_alias(signal);
 
                 bool duplicate = false;
-                for (const auto& existing : mod.edges) {
+                for (auto& existing : mod.edges) {
                     if (existing.source == e.source && existing.target == e.target &&
                         existing.sourcePort == e.sourcePort && existing.targetPort == e.targetPort) { duplicate = true; break; }
+                    // An `inout` endpoint is pushed into both `drivers` and `loads` above,
+                    // so a signal shared by two inout ports produces this same pair twice,
+                    // once in each direction — the same physical wire rendered as two
+                    // overlapping edges. Collapse it to one, preferring the direction where
+                    // the module boundary ("self") is the source, matching the convention
+                    // already used for scalar ports (boundary drives inward into instances).
+                    if (existing.source == e.target && existing.target == e.source &&
+                        existing.sourcePort == e.targetPort && existing.targetPort == e.sourcePort) {
+                        if (e.source == "self" && existing.source != "self") {
+                            existing = e;
+                        }
+                        duplicate = true;
+                        break;
+                    }
                 }
                 bool is_bus_selection_signal = (signal.find('[') != std::string::npos && signal.find(']') != std::string::npos);
 

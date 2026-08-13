@@ -40,7 +40,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 156
+        "y": 132
       },
       "width": 192,
       "height": 24,
@@ -60,7 +60,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 60
+        "y": 36
       },
       "width": 192,
       "height": 24,
@@ -80,7 +80,7 @@
       "type": "hdl",
       "position": {
         "x": 48,
-        "y": 108
+        "y": 84
       },
       "width": 168,
       "height": 24,
@@ -118,14 +118,6 @@
   ],
   "edges": [
     {
-      "id": "edge:instance:inout_ports:u_leaf:port:inout_ports:external_bus:external_bus",
-      "source": "instance:inout_ports:u_leaf",
-      "target": "port:inout_ports:external_bus",
-      "sourceHandle": "port:io",
-      "targetHandle": "port:external_bus",
-      "path": "M 432 72 L 408 72 L 240 72 L 216 72"
-    },
-    {
       "id": "edge:instance:inout_ports:u_leaf:port:inout_ports:sampled_data:sampled_data",
       "source": "instance:inout_ports:u_leaf",
       "target": "port:inout_ports:sampled_data",
@@ -139,7 +131,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:drive_data",
       "targetHandle": "port:drive_data",
-      "path": "M 216 168 L 240 168 L 336 168 L 336 120 L 408 120 L 432 120"
+      "path": "M 216 144 L 240 144 L 336 144 L 336 120 L 408 120 L 432 120"
     },
     {
       "id": "edge:port:inout_ports:external_bus:instance:inout_ports:u_leaf:external_bus",
@@ -147,7 +139,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:external_bus",
       "targetHandle": "port:io",
-      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
+      "path": "M 216 48 L 240 48 L 336 48 L 336 72 L 408 72 L 432 72"
     },
     {
       "id": "edge:port:inout_ports:output_enable:instance:inout_ports:u_leaf:output_enable",
@@ -155,7 +147,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:output_enable",
       "targetHandle": "port:output_enable",
-      "path": "M 216 120 L 240 120 L 312 120 L 312 96 L 408 96 L 432 96"
+      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
     }
   ]
 }
