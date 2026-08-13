@@ -317,6 +317,7 @@ export function ModuleParameterTable({
     items.map((param) => (
       <button
         key={`${param.kind}:${param.name}`}
+        type="button"
         className="module-parameter-row"
         title={`${param.kind} ${param.name}${param.defaultValue ? ` = ${param.defaultValue}` : ''}`}
         onClick={() => navigateToSource(param.source)}

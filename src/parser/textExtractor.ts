@@ -417,13 +417,18 @@ interface RegisterExpressions {
   reset?: string;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function identifyRegisterExpressions(
   block: string,
   target: string,
   resetSignal?: string,
 ): RegisterExpressions {
+  const escapedTarget = escapeRegExp(target);
   const assignments: string[] = [];
-  const assignmentRegex = new RegExp(`\\b${target}\\s*<=\\s*([^;]+);`, 'g');
+  const assignmentRegex = new RegExp(`\\b${escapedTarget}\\s*<=\\s*([^;]+);`, 'g');
   let match: RegExpExecArray | null;
   while ((match = assignmentRegex.exec(block))) {
     assignments.push(match[1].trim());
@@ -439,13 +444,15 @@ function identifyRegisterExpressions(
   // which assignment is inside the 'if (reset)' block.
 
   const ifResetRegex = new RegExp(
-    `\\bif\\s*\\([^)]*\\b${resetSignal}\\b[^)]*\\)\\s*(?:begin\\s*)?` +
+    `\\bif\\s*\\([^)]*\\b${escapeRegExp(resetSignal)}(?![\\w$])[^)]*\\)\\s*(?:begin\\s*)?` +
       `([^]*?)(?:\\belse\\b|\\bend\\b|$)`,
   );
   const ifResetMatch = block.match(ifResetRegex);
   if (ifResetMatch) {
     const resetBlock = ifResetMatch[1];
-    const resetAssignmentMatch = resetBlock.match(new RegExp(`\\b${target}\\s*<=\\s*([^;]+);`));
+    const resetAssignmentMatch = resetBlock.match(
+      new RegExp(`\\b${escapedTarget}\\s*<=\\s*([^;]+);`),
+    );
     if (resetAssignmentMatch) {
       const resetExpr = resetAssignmentMatch[1].trim();
       const dataExpr = assignments.find((a) => a !== resetExpr) || resetExpr;

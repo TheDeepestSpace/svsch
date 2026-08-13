@@ -804,6 +804,19 @@ function DiagramApp(): React.ReactElement {
     [],
   );
 
+  const interactionValue = useMemo(
+    () => ({
+      hoveredNetKey,
+      setHovered,
+      selectionHoverActive,
+      setSelectionHoverActive,
+      pendingSelectionAction,
+      setPendingSelectionAction,
+      overlayPortalNode,
+    }),
+    [hoveredNetKey, setHovered, selectionHoverActive, pendingSelectionAction, overlayPortalNode],
+  );
+
   if (!view) {
     return <div className="empty">Building diagram...</div>;
   }
@@ -859,17 +872,7 @@ function DiagramApp(): React.ReactElement {
       </header>
       <main className="canvas" key={view.moduleName}>
         <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
-        <InteractionContext.Provider
-          value={{
-            hoveredNetKey,
-            setHovered,
-            selectionHoverActive,
-            setSelectionHoverActive,
-            pendingSelectionAction,
-            setPendingSelectionAction,
-            overlayPortalNode,
-          }}
-        >
+        <InteractionContext.Provider value={interactionValue}>
           <LineJumpProvider>
             <ReactFlow<HdlFlowNode, Edge>
               nodes={nodes}

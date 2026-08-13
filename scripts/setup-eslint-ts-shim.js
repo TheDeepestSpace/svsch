@@ -34,5 +34,12 @@ for (const target of targets) {
   const linkPath = path.join(pkgDir, 'node_modules', 'typescript');
   fs.mkdirSync(path.dirname(linkPath), { recursive: true });
   fs.rmSync(linkPath, { recursive: true, force: true });
-  fs.symlinkSync(path.relative(path.dirname(linkPath), compatSrc), linkPath, 'dir');
+  if (process.platform === 'win32') {
+    // Junctions don't require the elevated 'Create symbolic links' privilege
+    // that plain directory symlinks need on Windows, and they require an
+    // absolute target.
+    fs.symlinkSync(compatSrc, linkPath, 'junction');
+  } else {
+    fs.symlinkSync(path.relative(path.dirname(linkPath), compatSrc), linkPath, 'dir');
+  }
 }
