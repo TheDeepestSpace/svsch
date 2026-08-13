@@ -2626,7 +2626,7 @@ path.port-skin-body.port-skin-harness {
 </svg>
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="204" y="-12" text-anchor="middle">⚠</text>
+<text x="204" y="60" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-bus-node hdl-interface-node hdl-interface-modport hdl-bus-breakout svsch-node-invalid" data-node-id="err_interface_modport" data-node-kind="interface" transform="translate(350 920)">

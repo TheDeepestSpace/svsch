@@ -128,7 +128,14 @@ export function interfaceSkinPath({
   topPortCount: number;
   bottomPortCount?: number;
   shiftY?: number;
-}): { path: string; topHatTop: number; topHatHeight: number; bottomHatTop: number; bottomHatHeight: number } {
+}): {
+  path: string;
+  topHatTop: number;
+  topHatHeight: number;
+  bottomHatTop: number;
+  bottomHatHeight: number;
+  topRightVertex: { x: number; y: number };
+} {
   const noseLength = diagramSizing.portNoseLength;
   const grid = diagramSizing.gridSize;
   const hasTopHat = topPortCount > 0;
@@ -224,5 +231,13 @@ export function interfaceSkinPath({
       'Z'
     ].join(' ');
 
-  return { path, topHatTop, topHatHeight, bottomHatTop, bottomHatHeight };
+  // The outline's right-most vertex (ties broken by smallest y): a right-side
+  // notch juts out to the full width, its topmost instance winning; with no
+  // right notch the outline stays flush with the cap/shoulder inner wall.
+  const drawsRightNotch = hasRightNotches || !hasLeftNotches;
+  const topRightVertex = drawsRightNotch
+    ? { x: width, y: clampY(usableRightCenters[0]) }
+    : { x: rightInnerWall, y: topEdgeY };
+
+  return { path, topHatTop, topHatHeight, bottomHatTop, bottomHatHeight, topRightVertex };
 }

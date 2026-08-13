@@ -12,7 +12,14 @@ import {
 } from './constants';
 import { selectPortLabel } from './selectLabels';
 import { isBusComposition } from './busGeometry';
-import { interfaceTopHatHeight, orderedInterfaceSidePorts, portSkinDirection, portSkinTopRightVertex } from './interfaceGeometry';
+import {
+  distributedInterfaceSideCenters,
+  interfaceSkinPath,
+  interfaceTopHatHeight,
+  orderedInterfaceSidePorts,
+  portSkinDirection,
+  portSkinTopRightVertex
+} from './interfaceGeometry';
 import { muxRightTopY } from './muxGeometry';
 
 export interface DiagramNodeDimensions {
@@ -44,7 +51,37 @@ export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, heig
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
     return portSkinTopRightVertex(portSkinDirection(node.ports[0]), width, height);
   }
+  if (node.kind === 'interface' && structRole(node) !== 'modport') {
+    return interfaceInstanceTopRightVertex(node, width, height);
+  }
   return { x: width, y: 0 };
+}
+
+// Mirrors the port/side-notch geometry BusNodeSvg feeds into interfaceSkinPath,
+// so the warning icon lands on the chevron outline's actual right-most vertex
+// instead of the (possibly notch-shorted or hat-narrowed) bbox corner.
+function interfaceInstanceTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+  const grid = diagramSizing.gridSize;
+  const visible = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'));
+  const topPorts = visible.filter((port) => port.direction === 'input' && port.width !== 'interface');
+  const bottomPorts = visible.filter((port) => port.direction === 'output' && port.width !== 'interface');
+  const sidePorts = visible.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'));
+  const ordered = orderedInterfaceSidePorts(sidePorts);
+  const topHatH = interfaceTopHatHeight(topPorts.length > 0);
+  const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
+  const shiftY = diagramSizing.interfaceInstanceShiftY;
+  const unshiftedH = Math.max(grid, height - shiftY);
+  const leftCenters = distributedInterfaceSideCenters(ordered.left.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
+  const rightCenters = distributedInterfaceSideCenters(ordered.right.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
+
+  return interfaceSkinPath({
+    width,
+    height,
+    leftCenters,
+    rightCenters,
+    topPortCount: topPorts.length,
+    bottomPortCount: bottomPorts.length
+  }).topRightVertex;
 }
 
 export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
