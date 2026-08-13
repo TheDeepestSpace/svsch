@@ -279,6 +279,8 @@ public:
     DesignExtractor(vpiHandle design);
     json extract(const std::string& targetModule = "");
     std::string workspace_root;
+    std::vector<std::string> clock_signal_names = {"clk", "clock"};
+    std::vector<std::string> reset_signal_names = {"rst", "reset"};
 
 private:
     void processModule(vpiHandle module_handle);

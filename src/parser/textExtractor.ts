@@ -58,6 +58,19 @@ interface RegisterTimingInfo {
   resetActiveLow?: boolean;
 }
 
+export interface TextExtractorOptions {
+  clockSignalNames?: string[];
+  resetSignalNames?: string[];
+}
+
+export const DEFAULT_CLOCK_SIGNAL_NAMES = ['clk', 'clock'];
+export const DEFAULT_RESET_SIGNAL_NAMES = ['rst', 'reset'];
+
+function matchesSignalNameList(signal: string, names: string[]): boolean {
+  const lower = signal.toLowerCase();
+  return names.some((name) => name.length > 0 && lower.includes(name.toLowerCase()));
+}
+
 const KEYWORDS = new Set([
   'always',
   'always_comb',
@@ -83,7 +96,7 @@ const KEYWORDS = new Set([
   'wire'
 ]);
 
-export function extractDesignFromText(sources: SourceFile[]): DesignGraph {
+export function extractDesignFromText(sources: SourceFile[], options?: TextExtractorOptions): DesignGraph {
   const graph: DesignGraph = {
     rootModules: [],
     modules: {},
@@ -91,9 +104,12 @@ export function extractDesignFromText(sources: SourceFile[]): DesignGraph {
     generatedAt: new Date().toISOString()
   };
 
+  const clockSignalNames = options?.clockSignalNames ?? DEFAULT_CLOCK_SIGNAL_NAMES;
+  const resetSignalNames = options?.resetSignalNames ?? DEFAULT_RESET_SIGNAL_NAMES;
+
   const allModules = sources.flatMap(findModules);
   for (const match of allModules) {
-    graph.modules[match.name] = extractModule(match);
+    graph.modules[match.name] = extractModule(match, clockSignalNames, resetSignalNames);
   }
   enrichInstanceConnections(graph);
   graph.diagnostics.push(...detectMultipleDrivers(graph));
@@ -164,7 +180,7 @@ function findModules(source: SourceFile): ModuleMatch[] {
   return matches;
 }
 
-function extractModule(match: ModuleMatch): DesignModule {
+function extractModule(match: ModuleMatch, clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES, resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES): DesignModule {
   const ports = extractPorts(match);
   const signalWidths = extractSignalWidths(match.header, match.body, ports);
   const nodes: DiagramNode[] = [
@@ -186,7 +202,7 @@ function extractModule(match: ModuleMatch): DesignModule {
 
   const edges: DesignModule['edges'] = [];
   const instances = extractInstances(match);
-  const registers = extractRegisters(match, ports, signalWidths);
+  const registers = extractRegisters(match, ports, signalWidths, clockSignalNames, resetSignalNames);
   const continuousAssigns = extractContinuousAssigns(match, ports, [...nodes, ...instances, ...registers.nodes], signalWidths);
   const muxes = extractMuxes(match, ports, [...nodes, ...instances, ...registers.nodes, ...continuousAssigns.nodes], signalWidths);
   nodes.push(...instances);
@@ -420,7 +436,13 @@ function isNonZeroExpression(expression: string): boolean {
   return true;
 }
 
-function extractRegisters(match: ModuleMatch, modulePorts: DiagramPort[], signalWidths: Map<string, string>): RegisterExtraction {
+function extractRegisters(
+  match: ModuleMatch,
+  modulePorts: DiagramPort[],
+  signalWidths: Map<string, string>,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+): RegisterExtraction {
   const nodes: DiagramNode[] = [];
   const edges: DesignModule['edges'] = [];
   const combNodes: DiagramNode[] = [];
@@ -439,7 +461,7 @@ function extractRegisters(match: ModuleMatch, modulePorts: DiagramPort[], signal
   while ((alwaysMatch = alwaysRegex.exec(match.body))) {
     const eventExpression = alwaysMatch[1];
     const block = alwaysMatch[2];
-    const timing = parseAlwaysFfTiming(eventExpression, block);
+    const timing = parseAlwaysFfTiming(eventExpression, block, clockSignalNames, resetSignalNames);
     
     // Find all targets in this block
     const targets = new Set<string>();
@@ -653,14 +675,19 @@ function extractRegisters(match: ModuleMatch, modulePorts: DiagramPort[], signal
   return { nodes: [...nodes, ...combNodes], edges };
 }
 
-function parseAlwaysFfTiming(eventExpression: string, block: string): RegisterTimingInfo {
+function parseAlwaysFfTiming(
+  eventExpression: string,
+  block: string,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+): RegisterTimingInfo {
   const edgeTerms = [...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g)].map((term) => ({
     edge: term[1],
     signal: term[2]
   }));
 
   const fallbackClock = edgeTerms[0]?.signal ?? 'clk';
-  const clockTerm = edgeTerms.find((term) => /^c/i.test(term.signal)) ?? edgeTerms[0];
+  const clockTerm = edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ?? edgeTerms[0];
   const clockSignal = clockTerm?.signal ?? fallbackClock;
   const resetTerm = edgeTerms.find((term) => term.signal !== clockSignal);
   if (resetTerm) {
@@ -672,7 +699,7 @@ function parseAlwaysFfTiming(eventExpression: string, block: string): RegisterTi
     };
   }
 
-  const syncReset = detectSynchronousReset(block, clockSignal);
+  const syncReset = detectSynchronousReset(block, clockSignal, resetSignalNames);
   if (syncReset) {
     return {
       clockSignal,
@@ -688,7 +715,11 @@ function parseAlwaysFfTiming(eventExpression: string, block: string): RegisterTi
   };
 }
 
-function detectSynchronousReset(block: string, clockSignal: string): { signal: string; activeLow: boolean } | undefined {
+function detectSynchronousReset(
+  block: string,
+  clockSignal: string,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+): { signal: string; activeLow: boolean } | undefined {
   const condition = block.match(/\bif\s*\(([^)]*)\)/)?.[1];
   if (!condition) {
     return undefined;
@@ -699,7 +730,7 @@ function detectSynchronousReset(block: string, clockSignal: string): { signal: s
     return undefined;
   }
 
-  const resetSignal = identifiers.find((identifier) => !/^c/i.test(identifier)) ?? identifiers[0];
+  const resetSignal = identifiers.find((identifier) => matchesSignalNameList(identifier, resetSignalNames)) ?? identifiers[0];
   return {
     signal: resetSignal,
     activeLow: isActiveLowResetCondition(condition, resetSignal)

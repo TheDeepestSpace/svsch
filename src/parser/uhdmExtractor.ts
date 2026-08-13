@@ -131,7 +131,9 @@ export async function extractDesignWithUhdm(
   includePaths?: string[],
   defines?: Record<string, string>,
   moduleName?: string,
-  onProgress?: (message: string, increment: number) => void
+  onProgress?: (message: string, increment: number) => void,
+  clockSignalNames?: string[],
+  resetSignalNames?: string[]
 ): Promise<DesignGraph> {
   const cacheDir = path.join(workspaceRoot, '.svsch', 'uhdm_cache');
   const fingerprintFile = path.join(cacheDir, 'fingerprint.json');
@@ -218,6 +220,7 @@ export async function extractDesignWithUhdm(
         backendArgs.push(""); // empty targetModule means extract all
     }
     backendArgs.push(workspaceRoot);
+    backendArgs.push(JSON.stringify({ clockSignalNames, resetSignalNames }));
 
     const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, { maxBuffer: 100 * 1024 * 1024 });
     if (stderr) {
@@ -229,7 +232,7 @@ export async function extractDesignWithUhdm(
 
     const graph = transformToDesignGraph(raw, workspaceRoot);
 
-    const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot);
+    const sourceGraph = await extractSourceAwareGraph(files, workspaceRoot, clockSignalNames, resetSignalNames);
     mergeBusNodesFromSourceGraph(graph, workspaceRoot, sourceGraph);
 
     // Array aggregate bus nodes: UHDM reports full-element taps (arr[i]) as
@@ -480,13 +483,18 @@ export async function extractDesignWithUhdm(
     return orderGraphModules(graph);
 }
 
-async function extractSourceAwareGraph(files: string[], workspaceRoot: string): Promise<DesignGraph | undefined> {
+async function extractSourceAwareGraph(
+  files: string[],
+  workspaceRoot: string,
+  clockSignalNames?: string[],
+  resetSignalNames?: string[]
+): Promise<DesignGraph | undefined> {
   try {
     const sourceFiles = await Promise.all(files.map(async (f) => ({
       file: f,
       text: await fs.readFile(f, 'utf-8')
     })));
-    return extractDesignFromText(sourceFiles);
+    return extractDesignFromText(sourceFiles, { clockSignalNames, resetSignalNames });
   } catch (err) {
     console.error(`[SVSCH] Failed to extract source-aware graph: ${err}`);
     return undefined;

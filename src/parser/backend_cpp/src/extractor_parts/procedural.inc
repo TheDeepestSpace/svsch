@@ -368,7 +368,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             vpiHandle cond = vpi_handle(vpiCondition, body);
             std::vector<vpiHandle> cond_ids;
             collectIdentifierHandles(cond, cond_ids);
-            if (!cond_ids.empty() && looksResetSignal(getSignalName(cond_ids[0]))) {
+            if (!cond_ids.empty() && looksResetSignal(getSignalName(cond_ids[0]), reset_signal_names)) {
                 rst_signal = getSignalName(cond_ids[0]);
                 reset_kind = "sync";
                 if (vpi_get(vpiType, cond) == vpiOperation && vpi_get(vpiOpType, cond) == 43) reset_active_low = true;

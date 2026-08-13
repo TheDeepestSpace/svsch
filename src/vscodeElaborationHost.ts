@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { buildDesignGraph, type ParserOptions } from './parser/backend';
 import type { ElaborationRequest, ElaborationServiceHost, InvalidationWatcher } from './elaborationService';
 import { logger } from './logger';
+import { DEFAULT_CLOCK_SIGNAL_NAMES, DEFAULT_RESET_SIGNAL_NAMES } from './parser/textExtractor';
 
 export function createVscodeElaborationHost(context: vscode.ExtensionContext): ElaborationServiceHost {
   return {
@@ -41,6 +42,8 @@ function createParserOptions(context: vscode.ExtensionContext, request: Elaborat
     backendPath,
     includePaths: config.get<string[]>('includePaths') || [],
     defines: config.get<Record<string, string>>('defines') || {},
+    clockSignalNames: config.get<string[]>('clockSignalNames', DEFAULT_CLOCK_SIGNAL_NAMES),
+    resetSignalNames: config.get<string[]>('resetSignalNames', DEFAULT_RESET_SIGNAL_NAMES),
     moduleName: request.moduleName,
     listOnly: request.listOnly,
     overlays: request.live ? openHdlDocumentOverlays(workspaceRoot, projectFolder) : undefined,
