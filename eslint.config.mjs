@@ -5,7 +5,10 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 
-const MAX_LEN = ['error', { code: 100, ignoreUrls: true, ignoreRegExpLiterals: true }];
+const MAX_LEN = [
+  'error',
+  { code: 100, ignoreUrls: true, ignoreRegExpLiterals: true, ignoreTemplateLiterals: true },
+];
 
 export default tseslint.config(
   {

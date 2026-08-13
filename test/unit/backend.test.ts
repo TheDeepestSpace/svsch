@@ -1097,8 +1097,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       {
         file: 'inline_port_exprs.sv',
         text: `
-      module sub (input logic [3:0] a, input logic [3:0] b, input logic c, inout wire [3:0] io,
-        output logic [3:0] y);
+      module sub (input logic [3:0] a, input logic [3:0] b, input logic c, inout wire [3:0] io, output logic [3:0] y);
         assign y = a + b;
       endmodule
 
@@ -1733,8 +1732,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         logic [1:0] lane;
       } packet_t;
 
-      module top(input packet_t pkt, output logic [3:0] opcode, output logic valid,
-        output logic [1:0] lane);
+      module top(input packet_t pkt, output logic [3:0] opcode, output logic valid, output logic [1:0] lane);
         assign opcode = pkt.opcode;
         assign valid = pkt.valid;
         assign lane = pkt.lane;
@@ -1794,8 +1792,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         logic valid;
       } packet_t;
 
-      module top(input packet_t pkt, input logic sel, input logic [3:0] fallback,
-        output logic [3:0] y);
+      module top(input packet_t pkt, input logic sel, input logic [3:0] fallback, output logic [3:0] y);
         always_comb begin
           if (sel) y = pkt.opcode;
           else y = fallback;
@@ -1837,8 +1834,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         logic valid;
       } packet_t;
 
-      module top(input packet_t pkt, input logic sel, input logic [3:0] fallback,
-        output logic [3:0] y);
+      module top(input packet_t pkt, input logic sel, input logic [3:0] fallback, output logic [3:0] y);
         logic [3:0] opcode_w;
         assign opcode_w = pkt.opcode;
 
@@ -1901,8 +1897,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         assign opcode = 4'hf;
       endmodule
 
-      module top(input packet_t pkt, output logic [3:0] opcode_y, output logic valid_y,
-        output packet_t out_pkt);
+      module top(input packet_t pkt, output logic [3:0] opcode_y, output logic valid_y, output packet_t out_pkt);
         opcode_consumer u_opcode (.opcode(pkt.opcode), .y(opcode_y));
         valid_consumer u_valid (.valid(pkt.valid), .y(valid_y));
         opcode_producer u_producer (.opcode(out_pkt.opcode));
@@ -2091,8 +2086,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       {
         file: 'struct_composition.sv',
         text: `
-      module top(input logic clk, input logic [3:0] opcode_i, input logic valid_i,
-        output logic [4:0] flat);
+      module top(input logic clk, input logic [3:0] opcode_i, input logic valid_i, output logic [4:0] flat);
         typedef struct packed {
           logic [3:0] opcode;
           logic valid;

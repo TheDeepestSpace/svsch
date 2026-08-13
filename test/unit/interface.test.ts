@@ -422,15 +422,11 @@ describe('parser: interfaces and modports', () => {
         logic flush;
 
         // svsch:modport:pos=left
-        modport producer(input clk, input rst_n, input ready, input flush, output data,
-          output valid, output error);
-        modport consumer(input clk, input rst_n, input data, input valid, input error,
-          input flush, output ready);
-        modport monitor(input clk, input rst_n, input data, input valid, input ready,
-          input error, input flush);
+        modport producer(input clk, input rst_n, input ready, input flush, output data, output valid, output error);
+        modport consumer(input clk, input rst_n, input data, input valid, input error, input flush, output ready);
+        modport monitor(input clk, input rst_n, input data, input valid, input ready, input error, input flush);
         // svsch:modport:pos=left
-        modport controller(input clk, input rst_n, input valid, input ready, input error,
-          output flush);
+        modport controller(input clk, input rst_n, input valid, input ready, input error, output flush);
       endinterface
 
       module packet_source(stream_if.producer bus); endmodule
