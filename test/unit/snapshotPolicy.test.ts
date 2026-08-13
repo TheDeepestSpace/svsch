@@ -39,7 +39,7 @@ describe('snapshot update policy', () => {
     expect(baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels).toBe(100);
     expect(baselineThresholdFor(
       'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png'
-    )?.maxDiffPixels).toBe(2500);
+    )?.maxDiffPixels).toBe(500);
   });
 
   it('rejects Playwright all mode', () => {

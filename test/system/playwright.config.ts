@@ -26,8 +26,11 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   reporter: reporters,
   expect: {
     toHaveScreenshot: {
-      // Full VSCode window includes the sidebar and status bar which can
-      // have minor rendering differences — use a generous pixel budget.
+      // Full VSCode window includes the sidebar and status bar, which can
+      // have a handful of anti-aliasing pixels differ across VS Code
+      // versions/electron builds. 2500 was previously found to be high
+      // enough to silently mask a missing toolbar label (2195px diff) — a
+      // real regression that shipped without any snapshot update.
       maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
     },
   },
