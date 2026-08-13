@@ -1,6 +1,7 @@
 # Unlike every other section, `netLabel` cases here drive no click-to-navigate
-# webview interaction (there's nothing to click — a plain wire's label is
-# either shown or it isn't) and highlight no source line in the generated doc.
+# webview interaction (there's nothing to click — a plain wire or automatic
+# cut-end label is either shown or it isn't) and highlight no source line in
+# the generated doc.
 # `target` still picks which edge to check (by its `signal`), and `expect`
 # is the actual regression assertion: labelText/aliasNames confirm the
 # net-labeling logic (declared-name resolution, alias filtering) produced the
@@ -30,7 +31,7 @@ cases:
 
   - id: wiring-named-net
     title: Named Net
-    description: An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
+    description: An explicitly declared internal wire is cut automatically on first open, with its declared name labeling both cut ends.
     tags: [wiring, net-label]
     files:
       top.sv: |
@@ -52,7 +53,7 @@ cases:
 
   - id: wiring-multiple-aliases
     title: Multiple Aliases
-    description: A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
+    description: A chain of assigns through several named wires collapses into one automatically cut net. The first-declared wire names both cut ends; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
     tags: [wiring, net-label]
     files:
       top.sv: |

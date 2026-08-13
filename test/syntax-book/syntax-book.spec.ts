@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import yaml from 'js-yaml';
 import { buildDesignGraph } from '../../src/parser/backend';
-import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeFirstOpenNetCuts } from '../../src/layout/mergeLayout';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { resolveSignalSource } from '../../src/core';
 import type { SourceRange } from '../../src/ir/types';
@@ -222,7 +222,15 @@ test.describe('Syntax Book Generation & Verification', () => {
             includeExternalDiagnostics: false
           });
 
-          const viewModel = await buildViewModel(graph, caseData.module, { version: 1, modules: {} });
+          const designModule = graph.modules[caseData.module];
+          expect(designModule).toBeDefined();
+          const layout = mergeFirstOpenNetCuts(
+            { version: 1, modules: {} },
+            caseData.module,
+            firstOpenAutoCutEdges(designModule, true),
+            designModule
+          );
+          const viewModel = await buildViewModel(graph, caseData.module, layout);
 
           // Assert declared node kinds and target exist
           for (const kind of caseData.expect.nodeKinds) {
@@ -256,9 +264,9 @@ test.describe('Syntax Book Generation & Verification', () => {
             expect(targetExists).toBe(true);
           }
 
-          // An automatic net label (unlike every other case here) has no
+          // A net label (unlike every other case here) has no
           // click-to-navigate interaction to drive — it's either visible on
-          // the plain, uncut wire already or it isn't, so this asserts
+          // the plain wire or on the automatically cut ends, so this asserts
           // straight against the rendered view model instead of the webview.
           // The wiring section exists to show the diagram's overall shape
           // (whether a label appears at all), not to point at one specific
@@ -267,9 +275,18 @@ test.describe('Syntax Book Generation & Verification', () => {
           // source as-is.
           if (caseData.target.kind === 'netLabel') {
             const targetEdge = viewModel.edges.find(e => e.signal === caseData.target.signal)!;
-            expect(targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
+            const cutLabelId = targetEdge.metadata?.cutStub?.role === 'source'
+              ? targetEdge.target
+              : targetEdge.metadata?.cutStub?.role === 'sink'
+                ? targetEdge.source
+                : undefined;
+            const cutLabel = cutLabelId
+              ? viewModel.nodes.find((node) => node.id === cutLabelId && node.kind === 'netLabel')
+              : undefined;
+            expect(cutLabel?.label ?? targetEdge.label ?? null).toBe(caseData.expect.labelText ?? null);
             if (caseData.expect.aliasNames) {
-              expect(targetEdge.metadata?.aliasNames).toEqual(caseData.expect.aliasNames);
+              expect(cutLabel?.metadata?.cutNet?.aliasNames ?? targetEdge.metadata?.aliasNames)
+                .toEqual(caseData.expect.aliasNames);
             }
 
             const firstFileContent = Object.values(caseData.files)[0] as string;
@@ -286,7 +303,7 @@ test.describe('Syntax Book Generation & Verification', () => {
                 break;
               }
             }
-            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+            const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
             const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
 
             generatedEntries.push({
@@ -298,6 +315,14 @@ test.describe('Syntax Book Generation & Verification', () => {
               svgContent
             });
             return;
+          }
+
+          for (const signal of caseData.expect.cutSignals ?? []) {
+            const cutRoles = viewModel.edges
+              .filter((edge) => edge.signal === signal)
+              .map((edge) => edge.metadata?.cutStub?.role);
+            expect(cutRoles).toContain('source');
+            expect(cutRoles).toContain('sink');
           }
 
           // Initialize webview
@@ -403,7 +428,7 @@ test.describe('Syntax Book Generation & Verification', () => {
               break;
             }
           }
-          const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/styles.css'), 'utf8');
+          const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
 
           const targetNode = viewModel.nodes.find(
             (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel

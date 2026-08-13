@@ -189,7 +189,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // Let the React render settle before snapshotting.
     await webviewIframe.locator('.react-flow__node').first().waitFor();
-    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
+    await waitForViewportToSettle(webviewIframe);
     await workbox.waitForTimeout(1_000);
 
     // Verify the webview iframe exists
@@ -288,7 +288,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     // Let the React render settle before snapshotting.
     await webviewIframe.locator('.react-flow__node').first().waitFor();
-    await webviewIframe.locator('body').evaluate(() => document.fonts.ready);
+    await waitForViewportToSettle(webviewIframe);
     await workbox.waitForTimeout(1_000);
 
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
@@ -547,10 +547,24 @@ async function dismissSystemNotifications(workbox: Page): Promise<void> {
 }
 
 async function waitForViewportToSettle(webview: FrameLocator): Promise<void> {
-  await expect.poll(async () => webview.locator('html').evaluate(() => {
-    const transform = document.querySelector('.react-flow__viewport')?.getAttribute('style') ?? '';
-    return transform;
-  }), { timeout: 10_000 }).not.toBe('');
+  // fitView() is scheduled via setTimeout(0) after the graph/nodes settle
+  // (see main.tsx), so a fixed delay after the first node appears can race
+  // it — poll until the transform stops changing instead of guessing a delay.
+  await webview.locator('body').evaluate(async () => {
+    const getTransform = () => (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
+    let last = getTransform();
+    let stable = 0;
+    for (let i = 0; i < 100; i++) {
+      await new Promise(r => setTimeout(r, 50));
+      const current = getTransform();
+      stable = (current === last && current !== '') ? stable + 1 : 0;
+      last = current;
+      if (stable >= 5) break;
+    }
+    if (stable < 5) {
+      throw new Error('React Flow viewport did not settle within 5 seconds');
+    }
+  });
   await webview.locator('body').evaluate(() => document.fonts.ready);
 }
 
@@ -654,6 +668,32 @@ async function systemZoom(webview: FrameLocator): Promise<number> {
   return webview.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
 }
 
+// The webview sits to the right of VS Code's activity/explorer sidebar, whose
+// width varies across VS Code versions. A node panned near the left edge of
+// the canvas can end up rendered underneath that sidebar, so raw-coordinate
+// mouse drags miss it entirely. Pan the canvas right until every box involved
+// clears a safe margin before computing drag coordinates.
+const SYSTEM_DRAG_SAFE_MARGIN_PX = 420;
+
+async function panSystemFlowClear(
+  webview: FrameLocator,
+  boxes: Array<{ x: number } | null>
+): Promise<boolean> {
+  const xs = boxes.filter((box): box is { x: number } => box !== null).map((box) => box.x);
+  const minX = Math.min(...xs);
+  if (!Number.isFinite(minX) || minX >= SYSTEM_DRAG_SAFE_MARGIN_PX) {
+    return false;
+  }
+  const delta = SYSTEM_DRAG_SAFE_MARGIN_PX - minX;
+  await webview.locator('html').evaluate((_element, dx) => {
+    const rf = (window as any).reactFlowInstance;
+    const viewport = rf?.getViewport?.();
+    if (!rf || !viewport) return;
+    rf.setViewport({ ...viewport, x: viewport.x + dx });
+  }, delta);
+  return true;
+}
+
 async function dragSystemNodeByGridCells(
   workbox: Page,
   webview: FrameLocator,
@@ -662,9 +702,16 @@ async function dragSystemNodeByGridCells(
   cellsY: number
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
-  const box = await node.boundingBox();
+  let box = await node.boundingBox();
   if (!box) {
     throw new Error(`Could not get node box for ${nodeId}`);
+  }
+  if (await panSystemFlowClear(webview, [box])) {
+    await workbox.waitForTimeout(100);
+    box = await node.boundingBox();
+    if (!box) {
+      throw new Error(`Could not get node box for ${nodeId}`);
+    }
   }
   const before = await systemNodePosition(webview, nodeId);
   const zoom = await systemZoom(webview);
@@ -689,10 +736,18 @@ async function dragSystemNodeOntoRegion(
   region: Locator
 ): Promise<void> {
   const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
-  const nodeBox = await node.boundingBox();
-  const regionBox = await region.boundingBox();
+  let nodeBox = await node.boundingBox();
+  let regionBox = await region.boundingBox();
   if (!nodeBox || !regionBox) {
     throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+  }
+  if (await panSystemFlowClear(webview, [nodeBox, regionBox])) {
+    await workbox.waitForTimeout(100);
+    nodeBox = await node.boundingBox();
+    regionBox = await region.boundingBox();
+    if (!nodeBox || !regionBox) {
+      throw new Error(`Could not get boxes for node ${nodeId} / target region`);
+    }
   }
   const before = await systemNodePosition(webview, nodeId);
   const startX = nodeBox.x + nodeBox.width / 2;

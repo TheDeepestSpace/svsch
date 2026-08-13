@@ -264,6 +264,33 @@ endmodule
   <img src="syntax-book/assets/register-array.svg" alt="Array of Registers diagram" />
 </p>
 
+### Array Register with For-Loop Reset
+
+A register array whose full-range for-loop reset folds into the array register's own reset, leaving the indexed write on a single write-address mux.
+
+<pre><code>module top (
+  input logic clk,
+  input logic reset,
+  input logic [1:0] address,
+  input logic [7:0] in_data
+);
+  logic [7:0] storage [0:3];
+  integer i;
+<br />
+  <mark>always_ff @(posedge clk) begin
+    if (reset) begin
+      for (i = 0; i &lt; 4; i = i + 1) storage[i] &lt;= 8&#39;b0;
+    end else begin
+      storage[address] &lt;= in_data;
+    end
+  end</mark>
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/register-array-reset-loop.svg" alt="Array Register with For-Loop Reset diagram" />
+</p>
+
 ## Muxes
 
 ### Case Statement Mux
@@ -566,7 +593,7 @@ endmodule
 
 ### Named Net
 
-An explicitly declared internal wire's name doesn't match either port it connects, so it shows directly on the wire, even though the net was never cut.
+An explicitly declared internal wire is cut automatically on first open, with its declared name labeling both cut ends.
 
 <pre><code>module top (
   input logic a,
@@ -584,7 +611,7 @@ endmodule
 
 ### Multiple Aliases
 
-A chain of assigns through several named wires collapses into a single net. The first-declared wire's name labels the wire directly; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
+A chain of assigns through several named wires collapses into one automatically cut net. The first-declared wire names both cut ends; any other internal wire name it passed through (but not the ports at either end, which are already visible) shows up on hover over the asterisk.
 
 <pre><code>module top (
   input logic a,

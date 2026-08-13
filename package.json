@@ -85,6 +85,16 @@
           "type": "object",
           "default": {},
           "description": "Macros to define for the preprocessor (e.g. { \"DEBUG\": \"1\" })."
+        },
+        "svsch.minifySvg": {
+          "type": "boolean",
+          "default": true,
+          "description": "Minify SVG diagrams exported via 'Export as SVG' using SVGO."
+        },
+        "svsch.autocut-clk-reset": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically cut nets feeding register clock and reset pins when a module diagram is first opened."
         }
       }
     }
@@ -92,14 +102,14 @@
   "scripts": {
     "clean": "rm -rf media dist node_modules/.vite src/parser/backend_cpp/build",
     "build": "npm run compile",
-    "compile": "npm run clean && CI=true npx vite build && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
-    "build:webview": "CI=true npx vite build",
+    "compile": "npm run clean && npm run build:webview && npx tsc -p tsconfig.extension.json && npm run compile:backend && SURELOG_AUTO_INSTALL=1 npm run install-surelog && npm run build:cli",
+    "build:webview": "CI=true npx vite build && node scripts/copy-diagram-css.js",
     "build:extension": "npx tsc -p tsconfig.extension.json",
     "build:cli": "npx vite build --config vite.config.cli.ts",
     "compile:backend": "mkdir -p src/parser/backend_cpp/build && cd src/parser/backend_cpp/build && cmake .. -G Ninja && ninja svsch_backend && mkdir -p ../../../../dist/ && cp svsch_backend ../../../../dist/",
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
     "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish",
-    "watch": "vite build --watch & tsc -watch -p tsconfig.extension.json",
+    "watch": "node scripts/copy-diagram-css.js --watch & vite build --watch & tsc -watch -p tsconfig.extension.json",
     "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
     "test": "vitest run",
     "test:backend": "node scripts/run-backend-tests.js",
@@ -126,7 +136,8 @@
     "elkjs": "^0.12.0",
     "libavoid-js": "^0.4.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "svgo": "^4.0.2"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",

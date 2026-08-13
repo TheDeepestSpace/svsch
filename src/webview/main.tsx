@@ -16,7 +16,8 @@ import {
   useStore
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './styles.css';
+import './diagram.css';
+import './webview-chrome.css';
 import { diagramSizing, normalizeWidth } from '../diagram/constants';
 import { diagramNodeDimensions } from '../diagram/nodeSizing';
 import {
@@ -129,6 +130,7 @@ function DiagramApp(): React.ReactElement {
   const [nodes, setNodes, onNodesChangeRaw] = useNodesState<HdlFlowNode>([]);
   const [regions, setRegions] = useState<PositionedGenerateRegion[]>([]);
   const regionsRef = useRef<PositionedGenerateRegion[]>([]);
+  const dynamicCutLabelIdsByOwnerRef = useRef<Map<string, string[]>>(new Map());
   const [viewport, setViewport] = useState<FlowViewport>({ x: 0, y: 0, zoom: 1 });
   // Portal target for floating controls that must paint above node bodies —
   // see InteractionContext.overlayPortalNode for why this is kept separate
@@ -169,7 +171,58 @@ function DiagramApp(): React.ReactElement {
       }
       return change;
     });
-    onNodesChangeRaw(adjusted);
+
+    // Dynamic cut labels are derived from their owning port and are not
+    // persisted as fixed nodes. If a dragged owner would run into its stale
+    // local label position, carry the label by the same delta so the node and
+    // stub stay clear until the next extension-host rebuild. Labels that are
+    // already clear remain untouched (and outside unrelated selections).
+    const changedIds = new Set(adjusted.map((change) => change.id));
+    const followers = new Map<string, any>();
+    for (const change of adjusted) {
+      if (change.type !== 'position' || !change.position) continue;
+      const owner = nodes.find((node) => node.id === change.id);
+      if (!owner || owner.data.node.kind === 'netLabel') continue;
+
+      for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
+        if (changedIds.has(labelId) || followers.has(labelId)) continue;
+
+        const label = nodes.find((node) => node.id === labelId);
+        if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
+        const ownerSize = diagramNodeDimensions(owner.data.node);
+        const labelSize = diagramNodeDimensions(label.data.node);
+        const ownerBounds = {
+          x: change.position.x - diagramSizing.gridSize,
+          y: change.position.y - diagramSizing.gridSize,
+          width: ownerSize.width + diagramSizing.gridSize * 2,
+          height: ownerSize.height + diagramSizing.gridSize * 2
+        };
+        const labelBounds = {
+          x: label.position.x,
+          y: label.position.y,
+          width: labelSize.width,
+          height: labelSize.height
+        };
+        const wouldOverlap = (
+          ownerBounds.x < labelBounds.x + labelBounds.width
+          && labelBounds.x < ownerBounds.x + ownerBounds.width
+          && ownerBounds.y < labelBounds.y + labelBounds.height
+          && labelBounds.y < ownerBounds.y + ownerBounds.height
+        );
+        if (!wouldOverlap) continue;
+        followers.set(labelId, {
+          type: 'position',
+          id: labelId,
+          position: {
+            x: label.position.x + change.position.x - owner.position.x,
+            y: label.position.y + change.position.y - owner.position.y
+          },
+          dragging: change.dragging
+        });
+      }
+    }
+
+    onNodesChangeRaw([...adjusted, ...followers.values()]);
   }, [nodes, onNodesChangeRaw]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
@@ -177,6 +230,7 @@ function DiagramApp(): React.ReactElement {
   const maxZoom = useStore((state) => state.maxZoom);
   const userSelectionRect = useStore((state) => state.userSelectionRect);
   const [selectedRegionIds, setSelectedRegionIds] = useState<Set<string>>(new Set());
+  const selectionStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const fittedModuleNameRef = useRef<string | undefined>(undefined);
   // Node ids to re-select in the very next view rebuild — set right before
   // posting an "Auto Layout" request, consumed (and cleared) the next time
@@ -210,6 +264,47 @@ function DiagramApp(): React.ReactElement {
       return inside;
     });
   }, [userSelectionRect, regions, viewport]);
+
+  const handleSelectionStart = useCallback((event: React.MouseEvent) => {
+    selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
+  }, []);
+
+  const handleSelectionEnd = useCallback((event: React.MouseEvent) => {
+    const start = selectionStartPointRef.current;
+    selectionStartPointRef.current = null;
+    if (!start) return;
+
+    const startFlow = reactFlow.screenToFlowPosition(start);
+    const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const rect = {
+      x: Math.min(startFlow.x, endFlow.x),
+      y: Math.min(startFlow.y, endFlow.y),
+      width: Math.abs(endFlow.x - startFlow.x),
+      height: Math.abs(endFlow.y - startFlow.y)
+    };
+
+    // React Flow's lasso can omit synthetic cut-label nodes even when their
+    // measured boxes are visibly inside the rectangle. Apply the same partial
+    // intersection rule explicitly so the rendered selection matches the box
+    // the user drew. Labels outside the lasso remain unselected.
+    setNodes((current) => {
+      let changed = false;
+      const next = current.map((node) => {
+        if (node.data.node.kind !== 'netLabel') return node;
+        const size = diagramNodeDimensions(node.data.node);
+        const selected = (
+          node.position.x < rect.x + rect.width
+          && rect.x < node.position.x + size.width
+          && node.position.y < rect.y + rect.height
+          && rect.y < node.position.y + size.height
+        );
+        if (Boolean(node.selected) === selected) return node;
+        changed = true;
+        return { ...node, selected };
+      });
+      return changed ? next : current;
+    });
+  }, [reactFlow, setNodes]);
 
   const clearRegionSelection = useCallback(() => {
     setSelectedRegionIds((current) => (current.size === 0 ? current : new Set()));
@@ -363,10 +458,12 @@ function DiagramApp(): React.ReactElement {
 
   useEffect(() => {
     if (!view) {
+      dynamicCutLabelIdsByOwnerRef.current = new Map();
       return;
     }
     const nodeById = new Map(view.nodes.map((node) => [node.id, node]));
     const arrayConnectionsByNode = new Map<string, ArrayStackConnection[]>();
+    const dynamicCutLabelIdsByOwner = new Map<string, string[]>();
     const addArrayConnection = (nodeId: string, connection: ArrayStackConnection) => {
       const list = arrayConnectionsByNode.get(nodeId) ?? [];
       if (!list.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
@@ -374,8 +471,21 @@ function DiagramApp(): React.ReactElement {
       }
       arrayConnectionsByNode.set(nodeId, list);
     };
+    const addDynamicCutLabel = (ownerId: string, labelId: string) => {
+      const label = nodeById.get(labelId);
+      if (label?.kind !== 'netLabel' || label.fixed) return;
+      const labelIds = dynamicCutLabelIdsByOwner.get(ownerId) ?? [];
+      if (!labelIds.includes(labelId)) labelIds.push(labelId);
+      dynamicCutLabelIdsByOwner.set(ownerId, labelIds);
+    };
 
     view.edges.forEach((edge) => {
+      const cutStub = edge.metadata?.cutStub;
+      if (cutStub?.role === 'source') {
+        addDynamicCutLabel(edge.source, edge.target);
+      } else if (cutStub?.role === 'sink') {
+        addDynamicCutLabel(edge.target, edge.source);
+      }
       if (!edge.isStacked) {
         return;
       }
@@ -396,6 +506,7 @@ function DiagramApp(): React.ReactElement {
         addArrayConnection(edge.target, { portId: edge.targetPort, role: 'target', thick });
       }
     });
+    dynamicCutLabelIdsByOwnerRef.current = dynamicCutLabelIdsByOwner;
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
@@ -625,12 +736,6 @@ function DiagramApp(): React.ReactElement {
 
   return (
     <div className="shell" style={diagramStyle}>
-        {status === 'rebuilding' && (
-          <div className="busy-indicator" role="status" aria-live="polite">
-            <span />
-            Updating
-          </div>
-        )}
         <header className="toolbar">
           <select
             className="vscode-control vscode-select"
@@ -647,16 +752,23 @@ function DiagramApp(): React.ReactElement {
           <button className="vscode-control vscode-button vscode-button-secondary" onClick={() => vscode.postMessage({ type: 'exportSvg' })}>Export SVG</button>
           <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
           <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
-        </header>
-        {view.diagnostics.length > 0 && (
-          <aside className="diagnostics">
-            {view.diagnostics.slice(0, 3).map((diagnostic, index) => (
-              <div key={`${diagnostic.message}-${index}`} className={`diagnostic diagnostic-${diagnostic.severity}`}>
-                {diagnostic.message}
+          <div className="status-indicator">
+            {status === 'rebuilding' ? (
+              <div className="busy-indicator" role="status" aria-live="polite">
+                <span />
+                Updating
               </div>
-            ))}
-          </aside>
-        )}
+            ) : view.diagnostics.length > 0 ? (
+              <div
+                className="diagnostics-indicator"
+                role="status"
+              >
+                <span aria-hidden="true">⚠</span>
+                {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
+              </div>
+            ) : null}
+          </div>
+        </header>
         <main className="canvas" key={view.moduleName}>
           <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
           <InteractionContext.Provider value={{
@@ -688,6 +800,8 @@ function DiagramApp(): React.ReactElement {
                 onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
                   if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
                 }}
+                onSelectionStart={handleSelectionStart}
+                onSelectionEnd={handleSelectionEnd}
                 onEdgeMouseEnter={onEdgeMouseEnter}
                 onEdgeMouseLeave={onEdgeMouseLeave}
                 onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
@@ -1068,7 +1182,13 @@ function NodeSelectionToolbar({
       if (edge.selected !== true) continue;
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
-      for (const endpointId of [edge.source, edge.target]) {
+      const endpointIds = [edge.source, edge.target];
+      const touchesSelectedBlock = endpointIds.some((endpointId) => (
+        selectedIds.has(endpointId)
+        && nodesById.get(endpointId)?.data.node.kind !== 'netLabel'
+      ));
+      if (!touchesSelectedBlock) continue;
+      for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
           selectedIds.add(endpointId);
         }

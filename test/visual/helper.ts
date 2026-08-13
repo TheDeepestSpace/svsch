@@ -15,7 +15,7 @@ const reactFlowCss = fs.readFileSync(
   'utf8'
 );
 const extensionCss = fs.readFileSync(
-  path.resolve(__dirname, '../../src/webview/styles.css'),
+  path.resolve(__dirname, '../../src/webview/diagram.css'),
   'utf8'
 );
 
