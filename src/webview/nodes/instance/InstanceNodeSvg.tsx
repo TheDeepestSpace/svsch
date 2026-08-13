@@ -77,6 +77,22 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   return (
     <>
       {targetStackLeads}
+      {/*
+        Front card must be the element immediately following the target leads
+        in paint order, or the leads bleed through into the card (confirmed
+        empirically in-browser — the CSS z-index on .hdl-node-array-layer/
+        .svsch-array-stack-leads-target doesn't actually govern paint order
+        here, raw DOM order does). Painting back/middle in between, even
+        though they're also opaque-ish, isn't enough to occlude the leads.
+        Back/middle themselves don't need to occlude anything, so they're
+        fine painted after front — still under the labels/ports that follow.
+      */}
+      <rect
+        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
+        transform={shapeTransform}
+        width={width}
+        height={height}
+      />
       {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
         <rect
           key={layer.id}
@@ -86,12 +102,6 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
         />
       ))}
-      <rect
-        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
-        transform={shapeTransform}
-        width={width}
-        height={height}
-      />
       <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
         {kindLabel}
       </text>
