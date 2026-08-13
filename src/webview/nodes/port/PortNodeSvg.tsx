@@ -31,11 +31,19 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
     port?.typeName?.endsWith('_if') ||
     port?.typeName?.endsWith('if')
   );
-  const skinDirection: 'input' | 'output' | 'harness' = isInterface
+  const skinDirection: 'input' | 'output' | 'inout' | 'harness' = isInterface
     ? 'harness'
-    : direction === 'input' || direction === 'output'
+    : direction === 'input' || direction === 'output' || direction === 'inout'
       ? direction
       : 'input';
+  const inoutBodyStyle: React.CSSProperties | undefined = skinDirection === 'inout'
+    ? {
+      fill: 'var(--svsch-inout-port-fill, color-mix(in srgb, var(--vscode-charts-green) 22%, var(--vscode-editor-background)))',
+      stroke: 'var(--svsch-inout-port-stroke, var(--vscode-charts-green))',
+      strokeLinejoin: 'round',
+      strokeWidth: 1.5
+    }
+    : undefined;
 
   const d = portSkinPath(
     skinDirection,
@@ -101,12 +109,14 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
           transform={`translate(${stackLayers.back.dx}, ${stackLayers.back.dy})`}
           d={d}
           opacity={0.5}
+          style={inoutBodyStyle}
         />
       )}
       {/* Main body (also serves as middle array layer) */}
       <path
         className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''} svsch-array-layer-middle`}
         d={d}
+        style={inoutBodyStyle}
       />
       {/* Array front layer */}
       {isArray && (
@@ -114,6 +124,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
           className="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front"
           transform={`translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`}
           d={d}
+          style={inoutBodyStyle}
         />
       )}
       {!isArray && <path className="port-skin-selection" d={d} />}
@@ -193,7 +204,7 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
       )}
 
       {/* Array stack leads */}
-      {isArray && skinDirection === 'output' && port && hasArrayConnection(port.id, 'target') && (
+      {isArray && (skinDirection === 'output' || skinDirection === 'inout') && port && hasArrayConnection(port.id, 'target') && (
         <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (

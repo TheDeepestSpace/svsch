@@ -19,6 +19,7 @@ import {
 } from '../diagram/interfaceGeometry';
 import { routeDiagramWithLibavoid } from './libavoidRouter';
 import { routingObstacleMargins } from './routingObstacleGeometry';
+import { isInputSidePort } from '../diagram/portDirection';
 
 interface AutoLayoutResult {
   positions: Map<string, { x: number; y: number }>;
@@ -1632,7 +1633,7 @@ function generateRegionDepth(region: GenerateRegion, regionById: Map<string, Gen
 }
 
 function isSourceBoundaryPortNode(node: DiagramNode): boolean {
-  return node.kind === 'port' && node.ports.some((port) => port.direction !== 'output');
+  return node.kind === 'port' && node.ports.some(isInputSidePort);
 }
 
 function isSinkBoundaryPortNode(node: DiagramNode): boolean {
@@ -1697,7 +1698,7 @@ export function elkNodeForDiagramNode(
   const visiblePorts = node.kind === 'interface'
     ? node.ports.filter((port) => port.width !== 'interface' || role === 'modport' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'))
     : node.ports;
-  const inputs = visiblePorts.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = visiblePorts.filter(isInputSidePort);
   const outputs = visiblePorts.filter((port) => port.direction === 'output');
 
   const portGeometry = visiblePorts.map((port, index) => {
@@ -1733,7 +1734,7 @@ export function elkNodeForDiagramNode(
     } else if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
       const resetSignal = registerResetSignal(node);
-      const inputs = node.ports.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');
+      const inputs = node.ports.filter(isInputSidePort);
       const isReset = port.name === 'R' || port.name === resetSignal;
       const isClock = port.name === clockSignal || (!isReset && port.name !== 'D' && port.name !== 'Q' && port.name !== 'RV' && inputs.indexOf(port) === 1);
       const isRv = port.name === 'RV';
@@ -1752,7 +1753,7 @@ export function elkNodeForDiagramNode(
         portY = height;
       }
     } else if (node.kind === 'mux') {
-      const inputs = node.ports.filter(p => p.direction !== 'output');
+      const inputs = node.ports.filter(isInputSidePort);
       const isSelect = port.id === inputs[0]?.id;
       if (isSelect) {
         side = 'NORTH';
@@ -1767,7 +1768,7 @@ export function elkNodeForDiagramNode(
         portY = grid * (startUnit + sideInputIndex);
       }
     } else if (node.kind === 'select') {
-      const allInputs = node.ports.filter(p => p.direction !== 'output');
+      const allInputs = node.ports.filter(isInputSidePort);
       const topPorts = allInputs.filter((p) => p.name === 's' || p.name === 'sel' || p.name === 'width');
       const portIndex = topPorts.indexOf(port);
       if (portIndex >= 0) {
@@ -1829,7 +1830,7 @@ export function elkNodeForDiagramNode(
         const sidePorts = isInterfaceInstance
           ? visiblePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'))
           : visiblePorts;
-        const sideInputs = sidePorts.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');
+        const sideInputs = sidePorts.filter(isInputSidePort);
         const sideOutputs = sidePorts.filter((p) => p.direction === 'output');
 
         const isComposition = node.kind === 'struct'

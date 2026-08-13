@@ -6,6 +6,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function InverterNodeSvg({ node, width: _width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -15,7 +16,7 @@ export function InverterNodeSvg({ node, width: _width, height, arrayConnections 
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
-  const inputs = node.ports.filter((p: DiagramPort) => p.direction !== 'output');
+  const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const g = diagramSizing.gridSize;
   const side = g;

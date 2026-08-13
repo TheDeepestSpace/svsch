@@ -1,0 +1,161 @@
+{
+  "nodes": [
+    {
+      "id": "instance:inout_ports:u_leaf",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 24
+      },
+      "width": 288,
+      "height": 120,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:io",
+            "name": "io",
+            "direction": "inout"
+          },
+          {
+            "id": "port:output_enable",
+            "name": "output_enable",
+            "direction": "input"
+          },
+          {
+            "id": "port:drive_data",
+            "name": "drive_data",
+            "direction": "input"
+          },
+          {
+            "id": "port:sampled_data",
+            "name": "sampled_data",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:drive_data",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 156
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:drive_data",
+            "name": "drive_data",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:external_bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:external_bus",
+            "name": "external_bus",
+            "direction": "inout"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:output_enable",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 108
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:output_enable",
+            "name": "output_enable",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:sampled_data",
+      "type": "hdl",
+      "position": {
+        "x": 936,
+        "y": 60
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sampled_data",
+            "name": "sampled_data",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:inout_ports:u_leaf:port:inout_ports:external_bus:external_bus",
+      "source": "instance:inout_ports:u_leaf",
+      "target": "port:inout_ports:external_bus",
+      "sourceHandle": "port:io",
+      "targetHandle": "port:external_bus",
+      "path": "M 432 72 L 408 72 L 240 72 L 216 72"
+    },
+    {
+      "id": "edge:instance:inout_ports:u_leaf:port:inout_ports:sampled_data:sampled_data",
+      "source": "instance:inout_ports:u_leaf",
+      "target": "port:inout_ports:sampled_data",
+      "sourceHandle": "port:sampled_data",
+      "targetHandle": "port:sampled_data",
+      "path": "M 720 72 L 744 72 L 912 72 L 936 72"
+    },
+    {
+      "id": "edge:port:inout_ports:drive_data:instance:inout_ports:u_leaf:drive_data",
+      "source": "port:inout_ports:drive_data",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:drive_data",
+      "targetHandle": "port:drive_data",
+      "path": "M 216 168 L 240 168 L 336 168 L 336 120 L 408 120 L 432 120"
+    },
+    {
+      "id": "edge:port:inout_ports:external_bus:instance:inout_ports:u_leaf:external_bus",
+      "source": "port:inout_ports:external_bus",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:external_bus",
+      "targetHandle": "port:io",
+      "path": "M 216 72 L 240 72 L 408 72 L 432 72"
+    },
+    {
+      "id": "edge:port:inout_ports:output_enable:instance:inout_ports:u_leaf:output_enable",
+      "source": "port:inout_ports:output_enable",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:output_enable",
+      "targetHandle": "port:output_enable",
+      "path": "M 216 120 L 240 120 L 312 120 L 312 96 L 408 96 L 432 96"
+    }
+  ]
+}
