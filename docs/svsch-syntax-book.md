@@ -151,6 +151,25 @@ endmodule
   <img src="syntax-book/assets/submodule-parameterized.svg" alt="Parameterized Submodule Instance diagram" />
 </p>
 
+### Instance Array
+
+Instantiating a submodule with a [MSB:LSB] range collapses the whole array into a single stacked instance node.
+
+<pre><code>module top (
+  input logic a [3:0],
+  output logic b [3:0]
+);
+  child <mark>u_child</mark> [3:0] (
+    .a (a),
+    .b (b)
+  );
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/submodule-instance-array.svg" alt="Instance Array diagram" />
+</p>
+
 ## Registers
 
 ### Register without Reset
