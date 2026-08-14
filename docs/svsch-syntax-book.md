@@ -469,21 +469,21 @@ endmodule
 
 ## Combinational Logic
 
-### Combinational Expression
+### Bitwise/Logical Gate
 
-A combinational logic assignment expression.
+A bitwise or logical operator (&, |, ^, &&, ||) becomes a gate block.
 
 <pre><code>module top (
   input logic a,
   input logic b,
   output logic decoded
 );
-  <mark>assign decoded = a &amp; b;</mark>
+  assign decoded = <mark>a &amp; b</mark>;
 endmodule
 </code></pre>
 
 <p align="center">
-  <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
+  <img src="syntax-book/assets/gate-expression.svg" alt="Bitwise/Logical Gate diagram" />
 </p>
 
 ### Arithmetic Addition

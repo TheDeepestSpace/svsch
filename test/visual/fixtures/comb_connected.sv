@@ -3,5 +3,5 @@ module comb_connected (
   input logic b,
   output logic decoded
 );
-  assign decoded = a & b;
+  assign decoded = a ^ b ^ (a & b);
 endmodule

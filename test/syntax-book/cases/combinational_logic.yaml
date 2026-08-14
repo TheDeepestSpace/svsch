@@ -1,9 +1,9 @@
 group: Combinational Logic
 cases:
-  - id: comb-expression
-    title: Combinational Expression
-    description: A combinational logic assignment expression.
-    tags: [comb, logical, source-highlight]
+  - id: gate-expression
+    title: Bitwise/Logical Gate
+    description: A bitwise or logical operator (&, |, ^, &&, ||) becomes a gate block.
+    tags: [gate, logical, source-highlight]
     files:
       top.sv: |
         module top (
@@ -16,12 +16,12 @@ cases:
     module: top
     target:
       kind: node
-      nodeKind: comb
+      nodeKind: gate
       nodeLabel: ""
       action: doubleClick
     expect:
-      nodeKinds: [port, comb]
-      selectedText: "assign decoded = a & b;"
+      nodeKinds: [port, gate]
+      selectedText: "a & b"
 
   - id: alu-addition
     title: Arithmetic Addition

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="204" viewBox="0 0 960 204" class="svsch-diagram" role="img" aria-label="top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="864" height="204" viewBox="0 0 864 204" class="svsch-diagram" role="img" aria-label="top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -868,12 +868,16 @@ text {
 .hdl-node-mux,
 .hdl-node-select,
 .hdl-node-alu,
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate,
+.hdl-node-comparator,
+.hdl-node-zext {
   background: transparent;
   box-shadow: none;
 }
 
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-zext {
   padding: 0;
 }
 
@@ -1015,7 +1019,10 @@ text {
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus,
-.hdl-node-inverter:focus {
+.hdl-node-inverter:focus,
+.hdl-node-gate:focus,
+.hdl-node-comparator:focus,
+.hdl-node-zext:focus {
   outline: none;
 }
 
@@ -1026,7 +1033,13 @@ text {
 .hdl-node-alu>.node-kind,
 .hdl-node-alu>.node-title,
 .hdl-node-inverter>.node-kind,
-.hdl-node-inverter>.node-title {
+.hdl-node-inverter>.node-title,
+.hdl-node-gate>.node-kind,
+.hdl-node-gate>.node-title,
+.hdl-node-comparator>.node-kind,
+.hdl-node-comparator>.node-title,
+.hdl-node-zext>.node-kind,
+.hdl-node-zext>.node-title {
   display: none;
 }
 
@@ -1366,7 +1379,13 @@ text {
 .hdl-node-alu:focus .node-skin-selection,
 .hdl-node-alu:focus-visible .node-skin-selection,
 .hdl-node-inverter:focus .node-skin-selection,
-.hdl-node-inverter:focus-visible .node-skin-selection {
+.hdl-node-inverter:focus-visible .node-skin-selection,
+.hdl-node-gate:focus .node-skin-selection,
+.hdl-node-gate:focus-visible .node-skin-selection,
+.hdl-node-comparator:focus .node-skin-selection,
+.hdl-node-comparator:focus-visible .node-skin-selection,
+.hdl-node-zext:focus .node-skin-selection,
+.hdl-node-zext:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1606,6 +1625,25 @@ text {
 }
 
 .hdl-node-inverter>.react-flow__handle-right {
+  right: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-left,
+.hdl-node-zext>.react-flow__handle-right {
+  background: transparent;
+  border: 0;
+  height: 0;
+  min-height: 0;
+  min-width: 0;
+  pointer-events: all;
+  width: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-left {
+  left: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-right {
   right: 0;
 }
 
@@ -1887,6 +1925,27 @@ text {
 .svsch-node-shape.hdl-node-inverter {
   fill: none;
   stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-gate .svsch-node-shape,
+.svsch-node-shape.hdl-node-gate {
+  fill: color-mix(in srgb, var(--vscode-charts-green) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-green);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-comparator .svsch-node-shape,
+.svsch-node-shape.hdl-node-comparator {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-blue);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-zext .svsch-node-shape,
+.svsch-node-shape.hdl-node-zext {
+  fill: color-mix(in srgb, var(--vscode-descriptionForeground) 10%, var(--vscode-editor-background));
+  stroke: var(--vscode-descriptionForeground);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -2309,7 +2368,7 @@ path.port-skin-body.port-skin-harness {
 /* Dim everything except target node */
 .svsch-edges { opacity: 0.3; }
 .svsch-node { opacity: 0.3; }
-.svsch-node[data-node-id="comb:top:decoded:expr"] { opacity: 1 !important; }
+.svsch-node[data-node-id="gate:top:decoded:expr"] { opacity: 1 !important; }
 
 :root {
   --vscode-editor-background: #1e1e1e;
@@ -2424,14 +2483,14 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:comb:top:decoded:expr:port:top:decoded:decoded"><path class="svsch-edge" data-edge-id="edge:comb:top:decoded:expr:port:top:decoded:decoded" data-net-key="comb:top:decoded:expr:out:decoded" d="M 552 72 L 576 72 L 744 72 L 768 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:a:comb:top:decoded:expr:a"><path class="svsch-edge" data-edge-id="edge:port:top:a:comb:top:decoded:expr:a" data-net-key="port:top:a:port:a" d="M 144 72 L 168 72 L 336 72 L 360 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:b:comb:top:decoded:expr:b"><path class="svsch-edge" data-edge-id="edge:port:top:b:comb:top:decoded:expr:b" data-net-key="port:top:b:port:b" d="M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:gate:top:decoded:expr:port:top:decoded:decoded"><path class="svsch-edge" data-edge-id="edge:gate:top:decoded:expr:port:top:decoded:decoded" data-net-key="gate:top:decoded:expr:port:decoded" d="M 456 72 L 480 72 L 648 72 L 672 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:a:gate:top:decoded:expr:a"><path class="svsch-edge" data-edge-id="edge:port:top:a:gate:top:decoded:expr:a" data-net-key="port:top:a:port:a" d="M 144 72 L 168 72 L 336 72 L 360 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:b:gate:top:decoded:expr:b"><path class="svsch-edge" data-edge-id="edge:port:top:b:gate:top:decoded:expr:b" data-net-key="port:top:b:port:b" d="M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:top:decoded:expr" data-node-kind="comb" transform="translate(360 24)">
-<svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
+<g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:top:decoded:expr" data-node-kind="gate" transform="translate(360 24)">
+<svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
+<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">decoded</text>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 60)">
@@ -2444,7 +2503,7 @@ path.port-skin-body.port-skin-harness {
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">b</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:decoded" data-node-kind="port" transform="translate(768 60)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:decoded" data-node-kind="port" transform="translate(672 60)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">decoded</tspan></text></g>
 </svg>

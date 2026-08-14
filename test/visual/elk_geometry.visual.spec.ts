@@ -74,7 +74,19 @@ const selections: FixtureSelection[] = [
   },
   { fixture: 'alu_connected.sv', picks: [{ label: 'alu', match: (n) => n.kind === 'alu' }] },
   { fixture: 'inverter_expr.sv', picks: [{ label: 'inverter', match: (n) => n.kind === 'inverter' }] },
-  { fixture: 'comb_assigns.sv', picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }] },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_comb_chain',
+    picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }]
+  },
+  {
+    fixture: 'alu_case_arms.sv',
+    picks: [
+      { label: 'gate', match: (n) => n.kind === 'gate' },
+      { label: 'comparator', match: (n) => n.kind === 'comparator' },
+      { label: 'zext', match: (n) => n.kind === 'zext' }
+    ]
+  },
   { fixture: 'var_bit_select.sv', picks: [{ label: 'select', match: (n) => n.kind === 'select' }] },
   { fixture: 'bus_two_taps.sv', picks: [{ label: 'bus: breakout', match: (n) => n.kind === 'bus' }] },
   { fixture: 'bus_composition.sv', picks: [{ label: 'bus: composition', match: (n) => n.kind === 'bus' }] },
