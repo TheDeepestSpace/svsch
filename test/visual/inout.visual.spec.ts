@@ -53,6 +53,19 @@ test.describe('inout port rendering', () => {
 
     await expectGraphAndScreenshot(page, 'i2c-master-sda-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
+
+  test('routes a mux into a multi-bit boundary inout port with no overlap, same as the scalar case', async ({ page }) => {
+    const view = await openFixture(page, 'inout_mux_array.sv', 'auto', 'inout_mux_array');
+    const boundary = page.locator('[data-node-id="port:inout_mux_array:a"]');
+
+    await expect(boundary).toHaveClass(/hdl-port-inout/);
+    await expectDualHandle(boundary, 'port:a', { target: 'left', source: 'right' });
+
+    expect(view.nodes.find((node) => node.id === 'port:inout_mux_array:a')?.ports[0]?.direction).toBe('inout');
+    expect(view.edges.filter((edge) => edge.target === 'port:inout_mux_array:a' || edge.source === 'port:inout_mux_array:a')).toHaveLength(2);
+
+    await expectGraphAndScreenshot(page, 'inout-mux-array-canvas.png', { clip: await paddedGraphClip(page) });
+  });
 });
 
 async function expectDualHandle(
