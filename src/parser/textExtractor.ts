@@ -63,6 +63,9 @@ export interface TextExtractorOptions {
   resetSignalNames?: string[];
 }
 
+// Keep in sync with the svsch.clockSignalNames/resetSignalNames defaults in package.json
+// (VS Code config schemas must be static JSON, so they can't import these directly);
+// test/unit/packageJsonDefaults.test.ts fails if the two drift apart.
 export const DEFAULT_CLOCK_SIGNAL_NAMES = ['clk', 'clock'];
 export const DEFAULT_RESET_SIGNAL_NAMES = ['rst', 'reset'];
 
