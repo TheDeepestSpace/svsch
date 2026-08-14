@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, nodeOutlineTopRightVertex } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
@@ -814,12 +814,11 @@ function nodeErrorOutline(node: PositionedNode, width: number, height: number): 
 
 function nodeWarningIcon(node: PositionedNode, width: number, height: number): string {
   if (!node.warningNote) return '';
-  const vertex = nodeOutlineTopRightVertex(node, width, height);
-  const halfGrid = diagramSizing.gridSize / 2;
+  const center = nodeWarningIconCenter(node, width, height);
   return [
     `<g class="svsch-node-warning" aria-label="${escapeAttr(node.warningNote)}">`,
     `<title>${escapeXml(node.warningNote)}</title>`,
-    `<text x="${formatNumber(vertex.x + halfGrid)}" y="${formatNumber(vertex.y - halfGrid)}" text-anchor="middle">⚠</text>`,
+    `<text x="${formatNumber(center.x)}" y="${formatNumber(center.y)}" text-anchor="middle">⚠</text>`,
     '</g>'
   ].join('\n');
 }

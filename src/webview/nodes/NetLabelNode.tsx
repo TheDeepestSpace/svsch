@@ -1,8 +1,7 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
-import { diagramSizing } from '../../diagram/constants';
-import { diagramNodeDimensions, nodeOutlineTopRightVertex } from '../../diagram/nodeSizing';
+import { diagramNodeDimensions, nodeWarningIconCenter } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
 import { ArrayStackLeads, handlePositionForSide, NetLabelWire } from './shared/NetLabelWire';
 import type { PositionedNode } from '../../ir/types';
@@ -83,8 +82,7 @@ export function NetLabelNode({
   ].filter(Boolean).join(' ');
 
   const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
-  const warningVertex = nodeOutlineTopRightVertex(node, nodeWidth, nodeHeight);
-  const halfGrid = diagramSizing.gridSize / 2;
+  const warningCenter = nodeWarningIconCenter(node, nodeWidth, nodeHeight);
 
   return (
     <div
@@ -199,7 +197,7 @@ export function NetLabelNode({
               className="node-warning"
               role="img"
               aria-label={node.warningNote}
-              style={{ left: warningVertex.x + halfGrid, top: warningVertex.y - halfGrid, transform: 'translate(-50%, -50%)' }}
+              style={{ left: warningCenter.x, top: warningCenter.y, transform: 'translate(-50%, -50%)' }}
             >
               ⚠
             </span>

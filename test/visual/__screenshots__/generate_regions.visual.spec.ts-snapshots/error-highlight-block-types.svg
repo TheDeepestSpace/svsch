@@ -2651,7 +2651,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="122.5" height="26.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="132" y="0" text-anchor="middle">⚠</text>
+<text x="166" y="0" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb hdl-node-array svsch-node-invalid" data-node-id="err_array_comb" data-node-kind="comb" transform="translate(1160 920)">
@@ -2671,7 +2671,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="98.5" height="98.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="108" y="-12" text-anchor="middle">⚠</text>
+<text x="142" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-mux hdl-node-array svsch-node-invalid" data-node-id="err_array_mux" data-node-kind="mux" transform="translate(350 1130)">
@@ -2691,7 +2691,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="194.5" height="98.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="204" y="-12" text-anchor="middle">⚠</text>
+<text x="238" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-bus-node hdl-bus-composition hdl-bus-array-composition hdl-node-array svsch-node-invalid" data-node-id="err_array_bus" data-node-kind="bus" transform="translate(890 1130)">
@@ -2711,7 +2711,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="74.5" height="26.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="84" y="-12" text-anchor="middle">⚠</text>
+<text x="118" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-replicate hdl-node-array svsch-node-invalid" data-node-id="err_array_replicate" data-node-kind="replicate" transform="translate(80 1340)">
@@ -2721,7 +2721,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="74.5" height="50.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="84" y="-12" text-anchor="middle">⚠</text>
+<text x="118" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="err_arm_owned" data-node-kind="comb" transform="translate(104 1594)">

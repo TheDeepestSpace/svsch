@@ -1,5 +1,5 @@
 import type { DiagramNode } from '../ir/types';
-import { nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
+import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import {
   combHeightForPortRows,
   diagramSizing,
@@ -32,6 +32,15 @@ export interface NodeOutlineVertex {
   y: number;
 }
 
+export interface NodeWarningIconCenter {
+  x: number;
+  y: number;
+}
+
+const arrayBadgeFontSize = 10;
+const arrayBadgeStartOffset = 3;
+const monospaceCharacterWidth = 0.62;
+
 /**
  * The node outline's right-most vertex (ties broken by smallest y, i.e. the
  * top-most of the right-most points). Rectangular skins have it at the
@@ -55,6 +64,44 @@ export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, heig
     return interfaceInstanceTopRightVertex(node, width, height);
   }
   return { x: width, y: 0 };
+}
+
+/**
+ * Centers the warning half a grid outside the outline. Array dimension badges
+ * occupy that same top-right space on the skins that render them, so those
+ * warnings move far enough right to clear the complete badge text.
+ */
+export function nodeWarningIconCenter(node: DiagramNode, width: number, height: number): NodeWarningIconCenter {
+  const vertex = nodeOutlineTopRightVertex(node, width, height);
+  const halfGrid = diagramSizing.gridSize / 2;
+  let x = vertex.x + halfGrid;
+  const arrayDimension = renderedArrayDimensionBadge(node);
+
+  if (arrayDimension) {
+    const badgeRight = width
+      + arrayBadgeStartOffset
+      + arrayDimension.length * arrayBadgeFontSize * monospaceCharacterWidth;
+    x = Math.max(x, badgeRight + halfGrid);
+  }
+
+  return { x, y: vertex.y - halfGrid };
+}
+
+function renderedArrayDimensionBadge(node: DiagramNode): string | undefined {
+  if (!nodeIsArrayNode(node)) return undefined;
+  const dimension = nodeArrayDimension(node);
+  if (!dimension) return undefined;
+
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return dimension;
+  }
+  if (node.kind === 'register' || node.kind === 'latch' || node.kind === 'replicate' || node.kind === 'literal') {
+    return dimension;
+  }
+  if (node.kind === 'instance' || node.kind === 'module' || node.kind === 'unknown') {
+    return dimension;
+  }
+  return undefined;
 }
 
 // Mirrors the port/side-notch geometry BusNodeSvg feeds into interfaceSkinPath,
