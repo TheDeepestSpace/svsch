@@ -2,7 +2,7 @@ module cpu_top (
   input  logic       clk,
   input  logic       reset_n,
   output logic [7:0] pc_out,
-  output logic [7:0] instr_out,
+  output logic [11:0] instr_out,
   output logic [7:0] alu_result_out
 );
 
@@ -10,8 +10,9 @@ module cpu_top (
   logic [7:0] next_pc;
   logic [7:0] pc_plus_1;
   logic [7:0] branch_target;
+  logic [7:0] branch_next_pc;
 
-  logic [7:0] instr;
+  logic [11:0] instr;
   logic [7:0] imm;
 
   logic       reg_write;
@@ -49,14 +50,14 @@ module cpu_top (
   );
 
   // Instruction Memory
-  instr_mem #(.ADDR_WIDTH(8), .DATA_WIDTH(8)) u_instr_mem (
+  instr_mem #(.ADDR_WIDTH(8), .DATA_WIDTH(12)) u_instr_mem (
     .addr  (pc),
     .instr (instr)
   );
 
   // Control Unit
   control_unit u_control_unit (
-    .opcode     (instr[7:4]),
+    .opcode     (instr[11:8]),
     .reg_write  (reg_write),
     .alu_src    (alu_src),
     .alu_op     (alu_op),
@@ -66,14 +67,15 @@ module cpu_top (
     .jump       (jump)
   );
 
+  // Instruction format: opcode[11:8], rA[7:6], rB[5:4], immediate[3:0].
   // Register File (4 registers, 8-bit data width)
   register_file #(.DATA_WIDTH(8), .REG_ADDR_WIDTH(2)) u_register_file (
     .clk        (clk),
     .reset_n    (reset_n),
     .reg_write  (reg_write),
-    .rs1_addr   (instr[3:2]),
-    .rs2_addr   (instr[1:0]),
-    .rd_addr    (instr[3:2]),
+    .rs1_addr   (instr[7:6]),
+    .rs2_addr   (instr[5:4]),
+    .rd_addr    (instr[7:6]),
     .write_data (reg_write_data),
     .rs1_data   (rs1_data),
     .rs2_data   (rs2_data)
@@ -113,8 +115,8 @@ module cpu_top (
   data_mem #(.ADDR_WIDTH(8), .DATA_WIDTH(8)) u_data_mem (
     .clk        (clk),
     .mem_write  (mem_write),
-    .addr       (alu_result),
-    .write_data (rs2_data),
+    .addr       (rs2_data),
+    .write_data (rs1_data),
     .read_data  (mem_read_data)
   );
 
@@ -127,12 +129,19 @@ module cpu_top (
   );
 
   // Next PC Mux logic
-  assign pc_src = (branch & alu_zero) | jump;
+  assign pc_src = branch & alu_zero;
 
   mux2 #(.WIDTH(8)) u_pc_src_mux (
     .d0  (pc_plus_1),
     .d1  (branch_target),
     .sel (pc_src),
+    .y   (branch_next_pc)
+  );
+
+  mux2 #(.WIDTH(8)) u_jump_mux (
+    .d0  (branch_next_pc),
+    .d1  (imm),
+    .sel (jump),
     .y   (next_pc)
   );
 

@@ -2,13 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeFirstOpenNetCuts, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
 import { renderSvg } from '../../src/cli/svgRenderer';
+import { recordNamedBenchmarkSample } from '../benchmarkUtils';
 
 const reactFlowCss = fs.readFileSync(
   require.resolve('@xyflow/react/dist/style.css'),
@@ -27,12 +28,72 @@ export function trackView(page: Page, view: DiagramViewModel): void {
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
+// Timing: "post message -> DOM attached" duration, analogous to the system
+// suite's rebuild->firstGraph interval. Set when postView() posts the graph.
+// openFixture() resolves it precisely once its readySelector attaches; any
+// other caller (openView() used directly) falls back to resolving it in
+// expectGraphAndScreenshot(), so every test that renders something records a
+// rendering sample, not just fixture-based ones — the fallback's span can
+// include whatever interactions a test does between opening the view and
+// screenshotting it, so it's a looser number than openFixture()'s, but still
+// a real "diagram is visible" measurement rather than a missing one.
+const postViewStartedAt = new WeakMap<Page, number>();
+const pendingDiagramDurationMs = new WeakMap<Page, number>();
+const visualArtifactsDir = path.resolve(__dirname, '../../test-results/visual/artifacts');
+const visualRenderingSamplesFile = path.join(visualArtifactsDir, 'diagram-render-samples.log');
+const visualElaborationSamplesFile = path.join(visualArtifactsDir, 'diagram-elaboration-samples.log');
+
+// Groups samples under "<spec file> › <test title>", matching how they read in
+// the benchmark PR comment. Returns undefined outside of a running test.
+function currentVisualBenchmarkName(): string | undefined {
+  try {
+    const info = test.info();
+    return `${path.basename(info.file)} › ${info.title}`;
+  } catch {
+    return undefined;
+  }
+}
+
+// Exported so spec files that keep their own local render helpers (instead of
+// this module's postView()/openFixture()) can still record a sample with the
+// same naming/log-file convention — see mux.visual.spec.ts and
+// bus_composition.visual.spec.ts, which predate this instrumentation and
+// otherwise silently produce zero benchmark data.
+export function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durationMs: number): void {
+  const name = currentVisualBenchmarkName();
+  if (!name) return;
+  const samplesFile = metric === 'elaboration' ? visualElaborationSamplesFile : visualRenderingSamplesFile;
+  recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
+}
+
+// Resolves and records whatever rendering timer is pending for `page` — the
+// precise one from openFixture() if set, else the postView() fallback. Called
+// automatically from expectGraphAndScreenshot(); exported so tests that
+// screenshot via a different path (e.g. a debug overlay test that skips the
+// graph/SVG regression checks) can still record a rendering sample.
+export function recordPendingRenderDuration(page: Page): void {
+  let pendingDurationMs = pendingDiagramDurationMs.get(page);
+  if (pendingDurationMs === undefined) {
+    const postedAt = postViewStartedAt.get(page);
+    if (postedAt !== undefined) {
+      pendingDurationMs = Date.now() - postedAt;
+    }
+  }
+  if (pendingDurationMs !== undefined) {
+    pendingDiagramDurationMs.delete(page);
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', pendingDurationMs);
+  }
+}
+
 export async function expectGraphAndScreenshot(
   page: Page,
   name: string,
   options?: any
 ) {
   const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
+
+  recordPendingRenderDuration(page);
 
   // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
   const jsonName = name.endsWith('.png') ? name.replace('.png', '.json') : `${name}.json`;
@@ -85,26 +146,48 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
                   ? '.generate-region'
                   : '.react-flow__node';
   await page.waitForSelector(readySelector, { state: 'attached' });
+  const postedAt = postViewStartedAt.get(page);
+  if (postedAt !== undefined) {
+    pendingDiagramDurationMs.set(page, Date.now() - postedAt);
+  }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
 }
 
 const exampleDesignRoot = path.resolve(__dirname, '../../fixtures/example_design');
+let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
+
+function exampleDesignGraph(): Promise<DesignGraph> {
+  exampleDesignGraphPromise ??= (async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
+    try {
+      for (const file of fs.readdirSync(exampleDesignRoot)) {
+        if (!file.endsWith('.sv')) continue;
+        fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
+      }
+
+      return await buildGraphFromWorkspace(tmpDir);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  })();
+  return exampleDesignGraphPromise;
+}
 
 export async function buildExampleDesignView(moduleName: string): Promise<DiagramViewModel> {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
-  try {
-    for (const file of fs.readdirSync(exampleDesignRoot)) {
-      if (!file.endsWith('.sv')) continue;
-      fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
-    }
-
-    const graph = await buildGraphFromWorkspace(tmpDir);
-    return buildViewModel(graph, moduleName, { version: 1, modules: {} });
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  }
+  const graph = await exampleDesignGraph();
+  const designModule = graph.modules[moduleName];
+  const emptyLayout: SavedLayout = { version: 1, modules: {} };
+  const layout = designModule
+    ? mergeFirstOpenNetCuts(
+      emptyLayout,
+      moduleName,
+      firstOpenAutoCutEdges(designModule, true),
+      designModule
+    )
+    : emptyLayout;
+  return buildViewModel(graph, moduleName, layout);
 }
 
 export async function openExampleDesignModule(page: Page, moduleName: string): Promise<DiagramViewModel> {
@@ -128,6 +211,7 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
+  postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',
@@ -272,7 +356,8 @@ async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGra
   const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
   const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
-  return buildDesignGraph({
+  const elaborationStartedAt = Date.now();
+  const graph = await buildDesignGraph({
     workspaceRoot,
     projectFolder: '.',
     backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
@@ -281,6 +366,8 @@ async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGra
     backendPath,
     includeExternalDiagnostics: false
   });
+  recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
+  return graph;
 }
 
 export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {

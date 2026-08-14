@@ -6,7 +6,7 @@ module instr_mem #(
   output logic [DATA_WIDTH-1:0] instr
 );
 
-  logic [DATA_WIDTH-1:0] mem [0:255];
+  logic [DATA_WIDTH-1:0] mem [0:(1<<ADDR_WIDTH)-1];
 
   assign instr = mem[addr];
 

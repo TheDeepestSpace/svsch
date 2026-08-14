@@ -9,7 +9,7 @@ module data_mem #(
   output logic [DATA_WIDTH-1:0] read_data
 );
 
-  logic [DATA_WIDTH-1:0] ram [0:255];
+  logic [DATA_WIDTH-1:0] ram [0:(1<<ADDR_WIDTH)-1];
 
   assign read_data = ram[addr];
 
