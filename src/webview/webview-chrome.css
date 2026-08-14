@@ -437,7 +437,7 @@ select {
   pointer-events: none;
   position: absolute;
   right: -9px;
-  top: -9px;
+  top: -27px;
   transition: opacity 0.1s ease-in-out;
   width: 18px;
   z-index: 7;
@@ -448,9 +448,15 @@ select {
 }
 
 .react-flow__node:hover .svsch-node-revert-size,
-.react-flow__node.selected .svsch-node-revert-size {
+.react-flow__node.selected .svsch-node-revert-size,
+.svsch-node-revert-size:focus-visible {
   opacity: 1;
   pointer-events: auto;
+}
+
+.svsch-node-revert-size:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
 }
 
 .generate-region-active .generate-region-outline {

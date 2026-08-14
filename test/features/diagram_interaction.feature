@@ -64,6 +64,21 @@ Feature: Diagram Interaction
     And I reset the layout
     Then the port node "a" should be at its original position
 
+  Scenario: Resetting the layout also resets a resized block's size
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic d, output logic q);
+        always_ff @(posedge clk) begin
+          q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "q" block on the right side by 3 grid cells
+    Then the "q" block should have grown on the right side
+    When I reset the layout
+    Then the "q" block should be at its canonical size
+
   Scenario: Rerouting a single connection without affecting other routes or positions
     Given I have a file "top.sv" in my workspace:
       """
@@ -278,6 +293,89 @@ Feature: Diagram Interaction
     Then the "g_if_one" generate region should have grown on the right side
     When I resize the "g_if_one" generate region on the right side by -30 grid cells
     Then the "g_if_one" generate region should keep 2 grid cells of padding on the right side
+
+  Scenario Outline: Resizing a <block_kind> block
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module mux2 (
+        input  logic sel,
+        input  logic a,
+        input  logic b,
+        output logic y
+      );
+        assign y = sel ? b : a;
+      endmodule
+
+      module top (
+        input  logic        clk_r,
+        input  logic        d_r,
+        output logic        r,
+
+        input  logic        leaf_a,
+        output logic        leaf_y,
+
+        input  logic        clk_m,
+        input  logic        rst_m,
+        input  logic        write_en_m,
+        input  logic [2:0]  address_m,
+        input  logic [31:0] write_data_m,
+        output logic [31:0] read_data_m,
+
+        input  logic        sel_mux,
+        input  logic [3:0]  a_bus,
+        input  logic [3:0]  b_bus,
+        output logic [3:0]  y_bus
+      );
+        always_ff @(posedge clk_r) begin
+          r <= d_r;
+        end
+
+        leaf u_leaf(.a(leaf_a), .y(leaf_y));
+
+        logic [31:0] mem [0:7];
+        always_ff @(posedge clk_m or posedge rst_m) begin
+          if (rst_m) mem[address_m] <= 32'b0;
+          else if (write_en_m) mem[address_m] <= write_data_m;
+        end
+        assign read_data_m = mem[address_m];
+
+        logic a_arr [3:0];
+        logic b_arr [3:0];
+        logic y_arr [3:0];
+        assign a_arr[0] = a_bus[0];
+        assign a_arr[1] = a_bus[1];
+        assign a_arr[2] = a_bus[2];
+        assign a_arr[3] = a_bus[3];
+        assign b_arr[0] = b_bus[0];
+        assign b_arr[1] = b_bus[1];
+        assign b_arr[2] = b_bus[2];
+        assign b_arr[3] = b_bus[3];
+        mux2 u_mux [3:0] (
+          .sel (sel_mux),
+          .a   (a_arr),
+          .b   (b_arr),
+          .y   (y_arr)
+        );
+        assign y_bus[0] = y_arr[0];
+        assign y_bus[1] = y_arr[1];
+        assign y_bus[2] = y_arr[2];
+        assign y_bus[3] = y_arr[3];
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "<block_label>" block on the right side by 3 grid cells
+    Then the "<block_label>" block should have grown on the right side
+
+    Examples:
+      | block_kind       | block_label |
+      | register          | r           |
+      | instance          | u_leaf      |
+      | stacked register  | mem         |
+      | stacked instance  | u_mux       |
 
   Scenario: Moving the block within an arm expands its boundary appropriately
     Given I have a file "top.sv" in my workspace:
