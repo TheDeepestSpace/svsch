@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { portSkinPath } from '../../../diagram/interfaceGeometry';
+import { portSkinDirection, portSkinPath } from '../../../diagram/interfaceGeometry';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
 import {
   nodeIsArrayNode,
@@ -31,17 +31,7 @@ export function PortNodeSvg({
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
   const port = node.ports[0];
-  const direction = port?.direction ?? 'unknown';
-  const isInterface = Boolean(
-    (port?.typeName && port?.modportName !== undefined) ||
-    port?.typeName?.endsWith('_if') ||
-    port?.typeName?.endsWith('if'),
-  );
-  const skinDirection: 'input' | 'output' | 'harness' = isInterface
-    ? 'harness'
-    : direction === 'input' || direction === 'output'
-      ? direction
-      : 'input';
+  const skinDirection = portSkinDirection(port);
 
   const d = portSkinPath(
     skinDirection,

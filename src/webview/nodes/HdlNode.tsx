@@ -6,6 +6,7 @@ import {
   diagramNodeDimensions,
   instanceParameterRows,
   inverterGeometryWidth,
+  nodeWarningIconCenter,
 } from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
@@ -94,7 +95,8 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
     '--svsch-node-height': `${nodeHeight}px`,
     '--svsch-port-width': `${portWidth}px`,
   } as React.CSSProperties;
-  const warningIcon = <NodeWarningIcon message={node.warningNote} />;
+  const warningCenter = nodeWarningIconCenter(node, nodeWidth, nodeHeight);
+  const warningIcon = <NodeWarningIcon message={node.warningNote} center={warningCenter} />;
 
   if (node.kind === 'netLabel') {
     return (
@@ -1120,13 +1122,25 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
   );
 }
 
-function NodeWarningIcon({ message }: { message?: string }): React.ReactElement | null {
+function NodeWarningIcon({
+  message,
+  center,
+}: {
+  message?: string;
+  center: { x: number; y: number };
+}): React.ReactElement | null {
   if (!message) return null;
+
+  const style: React.CSSProperties = {
+    left: center.x,
+    top: center.y,
+    transform: 'translate(-50%, -50%)',
+  };
 
   return (
     <Tooltip content={message}>
       {(trigger) => (
-        <span {...trigger} className="node-warning" role="img" aria-label={message}>
+        <span {...trigger} className="node-warning" role="img" aria-label={message} style={style}>
           ⚠
         </span>
       )}

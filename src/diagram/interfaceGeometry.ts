@@ -105,8 +105,10 @@ export function interfaceSidePortCenters(
   return centers;
 }
 
+export type PortSkinDirection = 'input' | 'output' | 'harness';
+
 export function portSkinPath(
-  direction: 'input' | 'output' | 'harness',
+  direction: PortSkinDirection,
   width: number,
   height: number,
   skinHeight: number,
@@ -131,6 +133,32 @@ export function portSkinPath(
   }
 }
 
+export function portSkinDirection(port: DiagramPort | undefined): PortSkinDirection {
+  const isInterface = Boolean(
+    (port?.typeName && port?.modportName !== undefined) ||
+    port?.typeName?.endsWith('_if') ||
+    port?.typeName?.endsWith('if'),
+  );
+  if (isInterface) return 'harness';
+  return port?.direction === 'input' || port?.direction === 'output' ? port.direction : 'input';
+}
+
+/**
+ * The port skin's right-most vertex (ties broken by smallest y). Output skins
+ * have a flat right edge, so the top-most point of that edge wins; input and
+ * harness skins come to a single nose point at mid-height.
+ */
+export function portSkinTopRightVertex(
+  direction: PortSkinDirection,
+  width: number,
+  height: number,
+): { x: number; y: number } {
+  if (direction === 'output') {
+    return { x: width, y: (height - diagramSizing.portSkinHeight) / 2 };
+  }
+  return { x: width, y: height / 2 };
+}
+
 export function interfaceSkinPath({
   width,
   height,
@@ -153,6 +181,7 @@ export function interfaceSkinPath({
   topHatHeight: number;
   bottomHatTop: number;
   bottomHatHeight: number;
+  topRightVertex: { x: number; y: number };
 } {
   const noseLength = diagramSizing.portNoseLength;
   const grid = diagramSizing.gridSize;
@@ -255,5 +284,13 @@ export function interfaceSkinPath({
         'Z',
       ].join(' ');
 
-  return { path, topHatTop, topHatHeight, bottomHatTop, bottomHatHeight };
+  // The outline's right-most vertex (ties broken by smallest y): a right-side
+  // notch juts out to the full width, its topmost instance winning; with no
+  // right notch the outline stays flush with the cap/shoulder inner wall.
+  const drawsRightNotch = hasRightNotches || !hasLeftNotches;
+  const topRightVertex = drawsRightNotch
+    ? { x: width, y: Math.min(...usableRightCenters.map(clampY)) }
+    : { x: rightInnerWall, y: topEdgeY };
+
+  return { path, topHatTop, topHatHeight, bottomHatTop, bottomHatHeight, topRightVertex };
 }

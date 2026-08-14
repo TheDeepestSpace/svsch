@@ -2,6 +2,7 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import {
   muxInputPortCenterY,
+  muxRightTopY,
   muxTopPortSkinEdgeY,
   muxTopPortLeadLengthY,
 } from '../../../diagram/muxGeometry';
@@ -42,7 +43,7 @@ export function MuxNodeSvg({
   );
 
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
-  const rightTop = (height - rightSideHeight) / 2;
+  const rightTop = muxRightTopY(height);
   const rightBottom = rightTop + rightSideHeight;
   const trapPath = `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
   const contentShiftX = isArray ? stackLayers.front.dx : 0;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Handle } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
-import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import { diagramNodeDimensions, nodeWarningIconCenter } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
 import { ArrayStackLeads, handlePositionForSide, NetLabelWire } from './shared/NetLabelWire';
 import type { PositionedNode } from '../../ir/types';
@@ -90,6 +90,7 @@ export function NetLabelNode({
     `${edgeStyleClasses ? ` ${edgeStyleClasses}` : ''}` +
     `${isDirectlyHovered ? ' hdl-net-label-hovered' : ''}` +
     `${selected ? ' hdl-net-label-selected' : ''}`;
+  const warningCenter = nodeWarningIconCenter(node, nodeWidth, nodeHeight);
 
   return (
     <div
@@ -224,7 +225,17 @@ export function NetLabelNode({
       {node.warningNote && (
         <Tooltip content={node.warningNote}>
           {(trigger) => (
-            <span {...trigger} className="node-warning" role="img" aria-label={node.warningNote}>
+            <span
+              {...trigger}
+              className="node-warning"
+              role="img"
+              aria-label={node.warningNote}
+              style={{
+                left: warningCenter.x,
+                top: warningCenter.y,
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
               ⚠
             </span>
           )}

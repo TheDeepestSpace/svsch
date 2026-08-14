@@ -1,5 +1,7 @@
 import type { DiagramNode } from '../ir/types';
 import {
+  nodeArrayDimension,
+  nodeIsArrayNode,
   nodeTypeName,
   nodeWidth,
   registerClockSignal,
@@ -18,11 +20,164 @@ import {
 } from './constants';
 import { selectPortLabel } from './selectLabels';
 import { isBusComposition } from './busGeometry';
-import { interfaceTopHatHeight, orderedInterfaceSidePorts } from './interfaceGeometry';
+import {
+  distributedInterfaceSideCenters,
+  interfaceSkinPath,
+  interfaceTopHatHeight,
+  orderedInterfaceSidePorts,
+  portSkinDirection,
+  portSkinTopRightVertex,
+} from './interfaceGeometry';
+import { muxRightTopY } from './muxGeometry';
 
 export interface DiagramNodeDimensions {
   width: number;
   height: number;
+}
+
+export interface NodeOutlineVertex {
+  x: number;
+  y: number;
+}
+
+export interface NodeWarningIconCenter {
+  x: number;
+  y: number;
+}
+
+const arrayBadgeFontSize = 10;
+const arrayBadgeStartOffset = 3;
+const monospaceCharacterWidth = 0.62;
+
+/**
+ * The node outline's right-most vertex (ties broken by smallest y, i.e. the
+ * top-most of the right-most points). Rectangular skins have it at the
+ * bbox corner; mux/select/alu slope their right edge in from the top, so
+ * their true corner sits below y=0; the inverter's true corner is its output
+ * bubble, offset from the bbox and vertically centred; port skins (and
+ * interface ports, which reuse the port skin) come to a nose point or a
+ * vertical edge short of the top-right corner.
+ */
+export function nodeOutlineTopRightVertex(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeOutlineVertex {
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu') {
+    return { x: width, y: muxRightTopY(height) };
+  }
+  if (node.kind === 'inverter') {
+    return { x: inverterGeometryWidth(), y: height / 2 };
+  }
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return portSkinTopRightVertex(portSkinDirection(node.ports[0]), width, height);
+  }
+  if (node.kind === 'interface' && structRole(node) !== 'modport') {
+    return interfaceInstanceTopRightVertex(node, width, height);
+  }
+  return { x: width, y: 0 };
+}
+
+/**
+ * Centers the warning half a grid outside the outline. Array dimension badges
+ * occupy that same top-right space on the skins that render them, so those
+ * warnings move far enough right to clear the complete badge text.
+ */
+export function nodeWarningIconCenter(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeWarningIconCenter {
+  const vertex = nodeOutlineTopRightVertex(node, width, height);
+  const halfGrid = diagramSizing.gridSize / 2;
+  let x = vertex.x + halfGrid;
+  const arrayDimension = renderedArrayDimensionBadge(node);
+
+  if (arrayDimension) {
+    const badgeRight =
+      width +
+      arrayBadgeStartOffset +
+      arrayDimension.length * arrayBadgeFontSize * monospaceCharacterWidth;
+    x = Math.max(x, badgeRight + halfGrid);
+  }
+
+  return { x, y: vertex.y - halfGrid };
+}
+
+function renderedArrayDimensionBadge(node: DiagramNode): string | undefined {
+  if (!nodeIsArrayNode(node)) return undefined;
+  const dimension = nodeArrayDimension(node);
+  if (!dimension) return undefined;
+
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return dimension;
+  }
+  if (
+    node.kind === 'register' ||
+    node.kind === 'latch' ||
+    node.kind === 'replicate' ||
+    node.kind === 'literal'
+  ) {
+    return dimension;
+  }
+  if (node.kind === 'instance' || node.kind === 'module' || node.kind === 'unknown') {
+    return dimension;
+  }
+  return undefined;
+}
+
+// Mirrors the port/side-notch geometry BusNodeSvg feeds into interfaceSkinPath,
+// so the warning icon lands on the chevron outline's actual right-most vertex
+// instead of the (possibly notch-shorted or hat-narrowed) bbox corner.
+function interfaceInstanceTopRightVertex(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeOutlineVertex {
+  const grid = diagramSizing.gridSize;
+  const visible = node.ports.filter(
+    (port) =>
+      port.width !== 'interface' ||
+      port.preferredSide ||
+      port.id.endsWith(':left') ||
+      port.id.endsWith(':right'),
+  );
+  const topPorts = visible.filter(
+    (port) => port.direction === 'input' && port.width !== 'interface',
+  );
+  const bottomPorts = visible.filter(
+    (port) => port.direction === 'output' && port.width !== 'interface',
+  );
+  const sidePorts = visible.filter(
+    (port) =>
+      port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'),
+  );
+  const ordered = orderedInterfaceSidePorts(sidePorts);
+  const topHatH = interfaceTopHatHeight(topPorts.length > 0);
+  const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
+  const shiftY = diagramSizing.interfaceInstanceShiftY;
+  const unshiftedH = Math.max(grid, height - shiftY);
+  const leftCenters = distributedInterfaceSideCenters(
+    ordered.left.length,
+    unshiftedH,
+    topHatH,
+    bottomHatH,
+  ).map((c) => c + shiftY);
+  const rightCenters = distributedInterfaceSideCenters(
+    ordered.right.length,
+    unshiftedH,
+    topHatH,
+    bottomHatH,
+  ).map((c) => c + shiftY);
+
+  return interfaceSkinPath({
+    width,
+    height,
+    leftCenters,
+    rightCenters,
+    topPortCount: topPorts.length,
+    bottomPortCount: bottomPorts.length,
+  }).topRightVertex;
 }
 
 export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
