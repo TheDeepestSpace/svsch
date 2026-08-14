@@ -4,7 +4,7 @@
       "id": "instance:inout_ports:u_leaf",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 456,
         "y": 24
       },
       "width": 288,
@@ -39,7 +39,7 @@
       "id": "port:inout_ports:drive_data",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 132
       },
       "width": 192,
@@ -59,7 +59,7 @@
       "id": "port:inout_ports:external_bus",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": 48,
         "y": 36
       },
       "width": 192,
@@ -79,7 +79,7 @@
       "id": "port:inout_ports:output_enable",
       "type": "hdl",
       "position": {
-        "x": 48,
+        "x": 72,
         "y": 84
       },
       "width": 168,
@@ -99,7 +99,7 @@
       "id": "port:inout_ports:sampled_data",
       "type": "hdl",
       "position": {
-        "x": 936,
+        "x": 960,
         "y": 60
       },
       "width": 192,
@@ -123,7 +123,7 @@
       "target": "port:inout_ports:sampled_data",
       "sourceHandle": "port:sampled_data",
       "targetHandle": "port:sampled_data",
-      "path": "M 720 72 L 744 72 L 912 72 L 936 72"
+      "path": "M 744 72 L 768 72 L 936 72 L 960 72"
     },
     {
       "id": "edge:port:inout_ports:drive_data:instance:inout_ports:u_leaf:drive_data",
@@ -131,7 +131,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:drive_data",
       "targetHandle": "port:drive_data",
-      "path": "M 216 144 L 240 144 L 336 144 L 336 120 L 408 120 L 432 120"
+      "path": "M 240 144 L 264 144 L 360 144 L 360 120 L 432 120 L 456 120"
     },
     {
       "id": "edge:port:inout_ports:external_bus:instance:inout_ports:u_leaf:external_bus",
@@ -139,7 +139,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:external_bus",
       "targetHandle": "port:io",
-      "path": "M 216 48 L 240 48 L 336 48 L 336 72 L 408 72 L 432 72"
+      "path": "M 240 48 L 264 48 L 360 48 L 360 72 L 432 72 L 456 72"
     },
     {
       "id": "edge:port:inout_ports:output_enable:instance:inout_ports:u_leaf:output_enable",
@@ -147,7 +147,7 @@
       "target": "instance:inout_ports:u_leaf",
       "sourceHandle": "port:output_enable",
       "targetHandle": "port:output_enable",
-      "path": "M 216 96 L 240 96 L 408 96 L 432 96"
+      "path": "M 240 96 L 264 96 L 432 96 L 456 96"
     }
   ]
 }

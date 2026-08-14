@@ -82,7 +82,20 @@ void DesignExtractor::buildEdges(Module& mod) {
                 }
             }
         }
-        
+
+        // An `inout` endpoint on this signal (pushed into both `drivers` and
+        // `loads` above) is a hub: everything else driving the net drives
+        // *into* it, and everything else reading the net reads *out of* it.
+        // Without this, a real driver (e.g. a mux assigning an inout port)
+        // and a real load (e.g. an `assign y = <the inout port>;`) would
+        // also pair up directly, bypassing the inout endpoint and rendering
+        // as a wire overlapping the one that correctly routes through it.
+        std::set<std::pair<std::string, std::string>> hubs;
+        {
+            std::set<std::pair<std::string, std::string>> driverSet(drivers.begin(), drivers.end());
+            for (const auto& l : loads) if (driverSet.count(l)) hubs.insert(l);
+        }
+
         for (const auto& d : drivers) {
             std::string edge_width = "";
             if (d.first == "self") {
@@ -102,6 +115,7 @@ void DesignExtractor::buildEdges(Module& mod) {
 
             for (const auto& l : loads) {
                 if (d.first == l.first && d.second == l.second) continue;
+                if (!hubs.empty() && !hubs.count(d) && !hubs.count(l)) continue;
                 Edge e; e.source = d.first; e.sourcePort = d.second; e.target = l.first; e.targetPort = l.second; e.signal = signal;
                 e.width = edge_width;
                 if (mod.interfaceSignals.count(signal)) {

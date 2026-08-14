@@ -149,7 +149,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
             onNavigateToSource={navigateToSource}
           />
         </svg>
-        {(isOutput || isInout) && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)} />}
+        {(isOutput || isInout) && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
         <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)} />
         {isArray && isSkinnedPort
           ? <ArrayStackSelection kind={isOutput ? 'output' : isInout ? 'inout' : 'input'} width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />

@@ -20,7 +20,11 @@ test.describe('inout port rendering', () => {
     const inputStroke = await page.locator('[data-node-id="port:inout_ports:output_enable"] .port-skin-body').evaluate((element) => getComputedStyle(element).stroke);
     expect(inoutStroke).not.toBe(inputStroke);
 
-    await expectDualHandle(boundary, 'port:external_bus', 'right');
+    // A boundary inout port's hexagonal skin has two distinct attach points:
+    // driving edges land on the left notch, edges reading the net leave from
+    // the right point — unlike an ordinary node's inout, which stays on one
+    // physical pin (see portDirection.ts).
+    await expectDualHandle(boundary, 'port:external_bus', { target: 'left', source: 'right' });
     await expectDualHandle(instance, 'port:io', 'left');
 
     expect(view.nodes.find((node) => node.id === 'port:inout_ports:external_bus')?.ports[0]?.direction).toBe('inout');
@@ -51,12 +55,21 @@ test.describe('inout port rendering', () => {
   });
 });
 
-async function expectDualHandle(node: Locator, portId: string, side: 'left' | 'right'): Promise<void> {
+async function expectDualHandle(
+  node: Locator,
+  portId: string,
+  side: 'left' | 'right' | { target: 'left' | 'right'; source: 'left' | 'right' }
+): Promise<void> {
+  const targetSide = typeof side === 'string' ? side : side.target;
+  const sourceSide = typeof side === 'string' ? side : side.source;
   const handles = node.locator(`.react-flow__handle[data-handleid="${portId}"]`);
   await expect(handles).toHaveCount(2);
-  await expect(node.locator(`.react-flow__handle.source[data-handleid="${portId}"]`)).toHaveCount(1);
-  await expect(node.locator(`.react-flow__handle.target[data-handleid="${portId}"]`)).toHaveCount(1);
-  await expect(handles).toHaveClass([new RegExp(`react-flow__handle-${side}`), new RegExp(`react-flow__handle-${side}`)]);
+  const targetHandle = node.locator(`.react-flow__handle.target[data-handleid="${portId}"]`);
+  const sourceHandle = node.locator(`.react-flow__handle.source[data-handleid="${portId}"]`);
+  await expect(targetHandle).toHaveCount(1);
+  await expect(sourceHandle).toHaveCount(1);
+  await expect(targetHandle).toHaveClass(new RegExp(`react-flow__handle-${targetSide}`));
+  await expect(sourceHandle).toHaveClass(new RegExp(`react-flow__handle-${sourceSide}`));
 }
 
 function internalInoutView(): DiagramViewModel {

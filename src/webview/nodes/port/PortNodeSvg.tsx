@@ -53,7 +53,12 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
     diagramSizing.portNoseLength
   );
 
-  const leadSide = skinDirection === 'output' ? 'left' : 'right';
+  // A target-role lead always exits the boundary node's left side (driven in, whether
+  // it's a plain output port or the driven side of an inout); a source-role lead
+  // always exits the right side (feeds outward, whether plain input or the read
+  // side of an inout).
+  const targetLeadSide = 'left';
+  const sourceLeadSide = 'right';
   const portWidth = normalizeWidth(port?.widthExpression ?? port?.width);
   const displayWidth = (portWidth && portWidth !== 'interface') ? portWidth : undefined;
   const typeName = nodeTypeName(node) ?? port?.typeName;
@@ -205,10 +210,10 @@ export function PortNodeSvg({ node, width, height, arrayConnections, onNavigateT
 
       {/* Array stack leads */}
       {isArray && (skinDirection === 'output' || skinDirection === 'inout') && port && hasArrayConnection(port.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} side={targetLeadSide} width={width} y={diagramSizing.portHeight / 2} trimSink />
       )}
       {isArray && skinDirection !== 'output' && port && hasArrayConnection(port.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} side={leadSide} width={width} y={diagramSizing.portHeight / 2} />
+        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} side={sourceLeadSide} width={width} y={diagramSizing.portHeight / 2} />
       )}
     </g>
   );
