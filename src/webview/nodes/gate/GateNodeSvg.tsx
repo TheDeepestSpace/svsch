@@ -44,9 +44,10 @@ export function xorBackCurvePath(span: number, height: number): string {
 }
 
 /**
- * Selection outline for an XOR/XNOR gate as a single path: it runs the tip's two bulge
- * curves but swaps the body's own concave edge for a jump out to the detached back-curve
- * and back, so the outline follows the back-curve instead of doubling the body's edge.
+ * Selection outline for an XOR/XNOR gate as a single closed path: it runs the tip's two
+ * bulge curves but swaps the body's own concave edge for a line out to the detached
+ * back-curve and back, so the outline follows the back-curve instead of doubling the
+ * body's edge — while staying one unbroken contour.
  */
 export function xorSelectionPath(left: number, right: number, height: number): string {
   const span = right - left;
@@ -61,10 +62,11 @@ export function xorSelectionPath(left: number, right: number, height: number): s
   return [
     `M ${right} ${midY}`,
     `C ${bulgeCtrl2X} ${height - bulgeCtrl2Y} ${bulgeCtrl1X} ${height - bulgeCtrl1Y} ${left} 0`,
-    'M 0 0',
+    'L 0 0',
     `C ${backCtrlX} ${backCtrl1Y} ${backCtrlX} ${backCtrl2Y} 0 ${height}`,
-    `M ${left} ${height}`,
-    `C ${bulgeCtrl1X} ${bulgeCtrl1Y} ${bulgeCtrl2X} ${bulgeCtrl2Y} ${right} ${midY}`
+    `L ${left} ${height}`,
+    `C ${bulgeCtrl1X} ${bulgeCtrl1Y} ${bulgeCtrl2X} ${bulgeCtrl2Y} ${right} ${midY}`,
+    'Z'
   ].join(' ');
 }
 
