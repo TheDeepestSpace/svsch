@@ -2,6 +2,7 @@ import { test, expect } from 'vscode-test-playwright';
 import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { writeBenchmark } from '../benchmarkUtils';
 
 const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
 const webviewLogs: string[] = [];
@@ -277,6 +278,11 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     ];
     for (const line of timingLines) console.log(line);
     fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
+
+    if (parse >= 0) {
+      const vscodeVersion = process.env.VSCODE_VERSION || 'default';
+      writeBenchmark(path.join(logDir, 'benchmark.json'), `vscode ${vscodeVersion}`, parse);
+    }
 
     // --- 11. Switch to a different module via the dropdown.
     //     We prioritize a complex module to ensure meaningful screenshots.

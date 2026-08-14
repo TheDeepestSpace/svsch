@@ -5,6 +5,7 @@ import {
   buildFixtureView,
   openView,
   paddedAllNodesClip,
+  recordPendingRenderDuration,
   waitForViewportTransformToSettle,
   type VisualLayoutMode,
 } from './helper';
@@ -599,6 +600,7 @@ test.describe('elk geometry grid', () => {
     await injectOverlay(page, overlay);
     await waitForViewportTransformToSettle(page);
     await page.waitForTimeout(100);
+    recordPendingRenderDuration(page);
 
     await expect(page).toHaveScreenshot('elk-geometry-grid.png', {
       clip: await paddedAllNodesClip(page),

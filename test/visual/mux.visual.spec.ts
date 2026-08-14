@@ -3,7 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot, fitGraphView, paddedAllNodesClip, trackView } from './helper';
+import {
+  expectGraphAndScreenshot as recordAndScreenshot,
+  fitGraphView,
+  paddedAllNodesClip,
+  trackView,
+  recordVisualBenchmark,
+} from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
@@ -15,6 +21,23 @@ import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
+
+// This file predates helper.ts's benchmark instrumentation and keeps its own
+// local openFixture()/postView() rather than the shared ones — so it needs
+// its own copy of the postView -> render-ready timing, wired into the same
+// recordVisualBenchmark() sink. openFixture() below resolves it precisely via
+// its ready selector; this wrapper is the fallback for the ~20 call sites
+// that use postView()/openView() directly with a hand-built view.
+const postViewStartedAt = new WeakMap<Page, number>();
+
+async function expectGraphAndScreenshot(page: Page, name: string, options?: any) {
+  const startedAt = postViewStartedAt.get(page);
+  if (startedAt !== undefined) {
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', Date.now() - startedAt);
+  }
+  return recordAndScreenshot(page, name, options);
+}
 
 async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
   const diagonalSegments = await page
@@ -2693,6 +2716,11 @@ async function openFixture(
                   ? '[data-node-kind="replicate"]'
                   : '[data-node-kind="mux"]';
   await page.waitForSelector(readySelector, { state: 'attached' });
+  const startedAt = postViewStartedAt.get(page);
+  if (startedAt !== undefined) {
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', Date.now() - startedAt);
+  }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -2780,6 +2808,7 @@ async function cutLabelPaint(
 
 async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   trackView(page, view);
+  postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage(
       {
@@ -2914,6 +2943,7 @@ async function buildFixtureView(
       process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
+    const elaborationStartedAt = Date.now();
     const graph = await buildDesignGraph({
       workspaceRoot: tmpDir,
       projectFolder: '.',
@@ -2923,6 +2953,7 @@ async function buildFixtureView(
       backendPath,
       includeExternalDiagnostics: false,
     });
+    recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout =

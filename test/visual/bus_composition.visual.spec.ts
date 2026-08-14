@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { expectGraphAndScreenshot, trackView } from './helper';
+import { expectGraphAndScreenshot, trackView, recordVisualBenchmark } from './helper';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DiagramViewModel } from '../../src/ir/types';
@@ -346,6 +346,7 @@ async function openFixture(
   // Wait a bit for React to initialize and add the event listener
   await page.waitForTimeout(500);
 
+  const renderStartedAt = Date.now();
   await page.evaluate((fixtureView) => {
     window.postMessage(
       {
@@ -358,6 +359,7 @@ async function openFixture(
   }, view);
 
   await page.waitForSelector('.react-flow__node', { state: 'attached' });
+  recordVisualBenchmark('rendering', Date.now() - renderStartedAt);
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -380,6 +382,7 @@ async function buildFixtureView(
       process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
+    const elaborationStartedAt = Date.now();
     const graph = await buildDesignGraph({
       workspaceRoot: tmpDir,
       projectFolder: '.',
@@ -389,6 +392,7 @@ async function buildFixtureView(
       backendPath,
       includeExternalDiagnostics: false,
     });
+    recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout = { version: 1, modules: {} } as SavedLayout;
