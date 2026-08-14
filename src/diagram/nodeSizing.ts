@@ -80,8 +80,7 @@ function interfaceInstanceTopRightVertex(node: DiagramNode, width: number, heigh
     leftCenters,
     rightCenters,
     topPortCount: topPorts.length,
-    bottomPortCount: bottomPorts.length,
-    shiftY
+    bottomPortCount: bottomPorts.length
   }).topRightVertex;
 }
 

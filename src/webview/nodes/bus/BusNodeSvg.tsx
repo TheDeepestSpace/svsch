@@ -105,7 +105,6 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       rightCenters,
       topPortCount: topPorts.length,
       bottomPortCount: bottomPorts.length,
-      shiftY
     });
 
     const typeName = nodeTypeName(node);

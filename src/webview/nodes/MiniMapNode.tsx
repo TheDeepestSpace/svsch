@@ -200,8 +200,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
         leftCenters,
         rightCenters,
         topPortCount: topPorts.length,
-        bottomPortCount: bottomPorts.length,
-        shiftY
+        bottomPortCount: bottomPorts.length
       });
       return (
         <g transform={`translate(${x}, ${y}) scale(${scaleX}, ${scaleY})`}>

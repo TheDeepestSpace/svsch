@@ -127,8 +127,7 @@ export function interfaceInstanceTopHatY(node: DiagramNode, height: number): num
     leftCenters,
     rightCenters,
     topPortCount: topPorts.length,
-    bottomPortCount: bottomPorts.length,
-    shiftY
+    bottomPortCount: bottomPorts.length
   }).topHatTop;
 }
 

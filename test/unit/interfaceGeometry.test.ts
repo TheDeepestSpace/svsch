@@ -9,7 +9,7 @@ import {
   interfaceTopPortX,
   orderedInterfaceSidePorts
 } from '../../src/diagram/interfaceGeometry';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, nodeOutlineTopRightVertex } from '../../src/diagram/nodeSizing';
 import { interfaceInstanceTopHatY } from '../../src/diagram/visualHandleGeometry';
 import type { DiagramNode, DiagramPort } from '../../src/ir/types';
 
@@ -115,11 +115,12 @@ describe('interface instance geometry', () => {
       leftCenters: [],
       rightCenters: [],
       topPortCount: 1,
-      bottomPortCount: 1,
-      shiftY: diagramSizing.interfaceInstanceShiftY
+      bottomPortCount: 1
     });
 
     expect(interfaceInstanceTopHatY(node, height)).toBe(rendered.topHatTop);
+    expect(rendered.topRightVertex).toEqual({ x: width, y: height / 2 });
+    expect(nodeOutlineTopRightVertex(node, width, height)).toEqual(rendered.topRightVertex);
     expect(rendered.topHatTop).toBeGreaterThan(0);
   });
 });
