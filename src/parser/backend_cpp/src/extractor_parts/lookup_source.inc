@@ -137,15 +137,21 @@ void DesignExtractor::buildEdges(Module& mod) {
                 bool duplicate = false;
                 for (auto& existing : mod.edges) {
                     if (existing.source == e.source && existing.target == e.target &&
-                        existing.sourcePort == e.sourcePort && existing.targetPort == e.targetPort) { duplicate = true; break; }
+                        existing.sourcePort == e.sourcePort && existing.targetPort == e.targetPort &&
+                        existing.signal == e.signal) { duplicate = true; break; }
                     // An `inout` endpoint is pushed into both `drivers` and `loads` above,
                     // so a signal shared by two inout ports produces this same pair twice,
                     // once in each direction — the same physical wire rendered as two
                     // overlapping edges. Collapse it to one, preferring the direction where
                     // the module boundary ("self") is the source, matching the convention
                     // already used for scalar ports (boundary drives inward into instances).
+                    // Guarded on matching `signal` too: pendingArrayAliases can produce a
+                    // reversed pair of edges between the same endpoints for two *different*
+                    // signals (e.g. reciprocal aliases on a bus breakout), which must stay
+                    // as two distinct edges rather than collapsing into one.
                     if (existing.source == e.target && existing.target == e.source &&
-                        existing.sourcePort == e.targetPort && existing.targetPort == e.sourcePort) {
+                        existing.sourcePort == e.targetPort && existing.targetPort == e.sourcePort &&
+                        existing.signal == e.signal) {
                         if (e.source == "self" && existing.source != "self") {
                             existing = e;
                         }

@@ -135,4 +135,3 @@ cases:
     expect:
       nodeKinds: [port]
       selectedText: "a"
-
