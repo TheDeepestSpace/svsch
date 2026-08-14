@@ -864,7 +864,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Reroute
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">R</kbd>
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">R</span>
+              </kbd>
             </button>
             <button
               type="button"
@@ -898,7 +900,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Cut
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">C</kbd>
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
             </button>
           </div>
         </foreignObject>

@@ -1166,13 +1166,21 @@ kbd.svsch-shortcut-glyph {
   display: inline-flex;
   flex-shrink: 0;
   font-family: inherit;
-  font-size: 8px;
+  font-size: 7px;
   height: 12px;
   justify-content: center;
   line-height: 1;
   margin-left: 5px;
   min-width: 12px;
   padding: 0 2px;
+}
+
+/* Letter sits in its own inline element so it can be nudged down within the
+   badge without resizing the kbd's border box (see svsch-shortcut-glyph
+   above). */
+.svsch-shortcut-glyph-letter {
+  display: inline-block;
+  transform: translateY(1px);
 }
 
 /* Portal root for floating controls that must paint above node bodies —

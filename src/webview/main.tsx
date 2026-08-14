@@ -1380,7 +1380,9 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Cut out
-            <kbd className="svsch-shortcut-glyph" aria-hidden="true">C</kbd>
+            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+              <span className="svsch-shortcut-glyph-letter">C</span>
+            </kbd>
           </button>
         )}
       </div>
