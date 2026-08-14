@@ -365,7 +365,7 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
       const elaborationStartedAt = Date.now();
       const sampledGraph = await buildDesignGraph(buildOptions);
-      if (sampledGraph.diagnostics.some((d) => d.severity === 'error')) {
+      if (sampledGraph.rootModules.length === 0) {
         continue;
       }
       elaborationDurationsMs.push(Date.now() - elaborationStartedAt);
