@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { openView, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
+import { openView, paddedAllNodesClip, recordPendingRenderDuration, waitForViewportTransformToSettle } from './helper';
 import { renderSvg } from '../../src/cli/svgRenderer';
 import { compareSvgSnapshot } from '../graphRegression';
 import type { DiagramViewModel } from '../../src/ir/types';
@@ -129,6 +129,7 @@ test.describe('elk geometry grid', () => {
     await injectOverlay(page, overlay);
     await waitForViewportTransformToSettle(page);
     await page.waitForTimeout(100);
+    recordPendingRenderDuration(page);
 
     await expect(page).toHaveScreenshot('elk-geometry-grid.png', {
       clip: await paddedAllNodesClip(page)
