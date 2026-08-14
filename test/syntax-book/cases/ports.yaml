@@ -112,3 +112,27 @@ cases:
       nodeKinds: [port]
       selectedText: "y"
 
+  - id: port-inout
+    title: Inout Port
+    description: An inout port declaration defines a bidirectional module boundary signal, driven or read from either side.
+    tags: [port, inout, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic drive_enable,
+          inout wire a,
+          output logic y
+        );
+          assign a = drive_enable ? 1'b1 : 1'bz;
+          assign y = a;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: port
+      nodeLabel: a
+      action: doubleClick
+    expect:
+      nodeKinds: [port]
+      selectedText: "a"
+

@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 import type { DiagramViewModel } from '../../src/ir/types';
-import { expectGraphAndScreenshot, openFixture, openView, paddedGraphClip } from './helper';
+import { expectGraphAndScreenshot, openFixture, openView, paddedAllNodesClip, paddedGraphClip } from './helper';
 
 test.describe('inout port rendering', () => {
   test('renders boundary and instance inout ports as bidirectional', async ({ page }) => {
@@ -36,6 +36,18 @@ test.describe('inout port rendering', () => {
     await expectDualHandle(page.locator('[data-node-id="bus"]'), 'io', 'left');
     await expectDualHandle(page.locator('[data-node-id="struct"]'), 'io', 'left');
     await expectDualHandle(page.locator('[data-node-id="interface"]'), 'io', 'left');
+  });
+
+  test('renders an I2C open-drain SDA line as a real-world inout usecase', async ({ page }) => {
+    const view = await openFixture(page, 'i2c_master_sda_example.sv', 'auto', 'i2c_master_sda_example');
+    const sda = page.locator('[data-node-id="port:i2c_master_sda_example:sda"]');
+
+    await expect(sda).toHaveClass(/hdl-port-inout/);
+    await expect(sda.locator('.port-skin-inout')).toBeVisible();
+
+    expect(view.nodes.find((node) => node.id === 'port:i2c_master_sda_example:sda')?.ports[0]?.direction).toBe('inout');
+
+    await expectGraphAndScreenshot(page, 'i2c-master-sda-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
 });
 
