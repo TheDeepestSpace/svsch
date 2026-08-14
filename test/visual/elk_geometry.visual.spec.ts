@@ -208,6 +208,15 @@ const selections: FixtureSelection[] = [
     fixture: 'replication_expr.sv',
     picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }],
   },
+  {
+    fixture: 'instance_array.sv',
+    picks: [
+      {
+        label: 'instance: stacked',
+        match: (n) => n.kind === 'instance' && nodeIsArrayNode(n),
+      },
+    ],
+  },
   { fixture: 'loop_logic.sv', picks: [{ label: 'loop', match: (n) => n.kind === 'loop' }] },
   { fixture: 'latch_simple.sv', picks: [{ label: 'latch', match: (n) => n.kind === 'latch' }] },
   {

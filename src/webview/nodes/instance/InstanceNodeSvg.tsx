@@ -78,8 +78,29 @@ export function InstanceNodeSvg({
     `svsch-node-shape` +
     (isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : '');
 
+  const targetStackLeads = (
+    <>
+      {isArray &&
+        inputs.map((port: DiagramPort, i: number) =>
+          hasArrayConnection(port.id, 'target') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'target')}
+              key={`lead-${port.id}`}
+              side="left"
+              width={width}
+              y={nodePortCenterOffset(i + paramRows)}
+              trimSink
+            />
+          ) : null,
+        )}
+    </>
+  );
+
   return (
     <>
+      {targetStackLeads}
+      {/* Array stack layers (back→middle→front for correct z-order) */}
       {isArray &&
         skinLayers
           .filter((layer) => layer.id !== 'front')
@@ -203,21 +224,7 @@ export function InstanceNodeSvg({
         </text>
       ))}
 
-      {/* Array stack leads */}
-      {isArray &&
-        inputs.map((port: DiagramPort, i: number) =>
-          hasArrayConnection(port.id, 'target') ? (
-            <SvgArrayStackLeads
-              wide={stackWide}
-              thick={arrayConnectionThick(port.id, 'target')}
-              key={`lead-${port.id}`}
-              side="left"
-              width={width}
-              y={nodePortCenterOffset(i + paramRows)}
-              trimSink
-            />
-          ) : null,
-        )}
+      {/* Array stack leads (source/right; target/left painted before the stack layers) */}
       {isArray &&
         outputs.map((port: DiagramPort, i: number) =>
           hasArrayConnection(port.id, 'source') ? (
