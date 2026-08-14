@@ -383,13 +383,38 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
             vpiHandle cond = vpi_handle(vpiCondition, body);
             std::vector<vpiHandle> cond_ids;
             collectIdentifierHandles(cond, cond_ids);
+            // Unlike the async event-control sensitivity list (which can only ever
+            // contain clock/reset signals), this if/else condition can be an
+            // arbitrary boolean (e.g. a plain mux select), so -- unlike clk_it/rst_it
+            // above -- there is no positional fallback here: only treat this as a
+            // synchronous reset when a configured/default reset name actually matches.
             auto reset_id = std::find_if(cond_ids.begin(), cond_ids.end(), [&](vpiHandle id) {
                 return looksResetSignal(getSignalName(id), reset_signal_names);
             });
             if (reset_id != cond_ids.end()) {
                 rst_signal = getSignalName(*reset_id);
                 reset_kind = "sync";
-                if (vpi_get(vpiType, cond) == vpiOperation && vpi_get(vpiOpType, cond) == 43) reset_active_low = true;
+                if (vpi_get(vpiType, cond) == vpiOperation) {
+                    if (vpi_get(vpiOpType, cond) == vpiNotOp) {
+                        std::vector<vpiHandle> not_ids;
+                        collectIdentifierHandles(cond, not_ids);
+                        if (!not_ids.empty() && getSignalName(not_ids[0]) == rst_signal) reset_active_low = true;
+                    } else {
+                        vpiHandle op_itr = vpi_iterate(vpiOperand, cond);
+                        while (vpiHandle op = vpi_scan(op_itr)) {
+                            std::vector<vpiHandle> op_ids;
+                            collectIdentifierHandles(op, op_ids);
+                            bool contains_rst = std::any_of(op_ids.begin(), op_ids.end(), [&](vpiHandle id) {
+                                return getSignalName(id) == rst_signal;
+                            });
+                            if (contains_rst) {
+                                if (vpi_get(vpiType, op) == vpiOperation && vpi_get(vpiOpType, op) == vpiNotOp) reset_active_low = true;
+                                break;
+                            }
+                        }
+                        vpi_release_handle(op_itr);
+                    }
+                }
             }
         }
     }
