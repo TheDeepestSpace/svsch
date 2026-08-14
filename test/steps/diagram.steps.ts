@@ -580,7 +580,7 @@ When('I resize the {string} block on the {word} side by {int} grid cells', async
   const before = JSON.stringify(await readExtensionLayout(this));
   this.notedRegionBounds.set(label, await getNodeBounds(this.webviewPage, id));
   await dragNodeSideByGridCells(this, id, side, cells);
-  await waitForLayoutChangeNoSnapshot(this, before);
+  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`);
 });
 
 When('I move the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
@@ -2525,25 +2525,6 @@ async function waitForExtensionRenderedView(world: BddWorld, screenshotLabel: st
   await waitForViewportTransformToSettle(world.webviewPage);
   await world.workbox.waitForTimeout(500);
   await world.takeScreenshot(screenshotLabel);
-}
-
-// Same as waitForLayoutChange, minus the graph-state screenshot. A node
-// resize only ever mutates that one node's own width/height in place (no
-// nodes are added/removed/repositioned), and React Flow's own `measured`
-// dimensions — what the graph-state snapshot reads — settle on their own
-// schedule via React Flow's internal change-queue, decoupled from both our
-// resize drag and the extension's layout persistence. Waiting on them here
-// would make this step's timing (and pass/fail) depend on an internal detail
-// this feature doesn't otherwise rely on; the dedicated "should have grown"/
-// "should be at its canonical size" steps already assert the real signals
-// (visual size, persisted layout) directly.
-async function waitForLayoutChangeNoSnapshot(world: BddWorld, before: string): Promise<void> {
-  await expect.poll(async () => JSON.stringify(await readExtensionLayout(world)) !== before, { timeout: 10_000 }).toBe(true);
-  world.layout = await readExtensionLayout(world);
-  await syncLastViewModel(world, world.lastViewModel?.moduleName);
-  await world.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
-  await waitForViewportTransformToSettle(world.webviewPage);
-  await world.workbox.waitForTimeout(500);
 }
 
 function isRegionSide(side: string): side is RegionSide {

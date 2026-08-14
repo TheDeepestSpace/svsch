@@ -1,0 +1,1585 @@
+{
+  "nodes": [
+    {
+      "id": "bus_comp:top:a_arr",
+      "type": "hdl",
+      "position": {
+        "x": 1512,
+        "y": 192
+      },
+      "width": 144,
+      "height": 216,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:a_arr",
+            "name": "a_arr",
+            "direction": "output"
+          },
+          {
+            "id": "in:_3_",
+            "name": "[3]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_2_",
+            "name": "[2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1_",
+            "name": "[1]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_0_",
+            "name": "[0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus_comp:top:b_arr",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 480
+      },
+      "width": 144,
+      "height": 216,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:b_arr",
+            "name": "b_arr",
+            "direction": "output"
+          },
+          {
+            "id": "in:_3_",
+            "name": "[3]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_2_",
+            "name": "[2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1_",
+            "name": "[1]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_0_",
+            "name": "[0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus_comp:top:y_bus",
+      "type": "hdl",
+      "position": {
+        "x": 936,
+        "y": 744
+      },
+      "width": 144,
+      "height": 192,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:_3_",
+            "name": "[3]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_2_",
+            "name": "[2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1_",
+            "name": "[1]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_0_",
+            "name": "[0]",
+            "direction": "input"
+          },
+          {
+            "id": "out:y_bus",
+            "name": "y_bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:top:a_bus",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 144
+      },
+      "width": 144,
+      "height": 192,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:a_bus",
+            "name": "a_bus",
+            "direction": "input"
+          },
+          {
+            "id": "out:_0_",
+            "name": "[0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_1_",
+            "name": "[1]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_2_",
+            "name": "[2]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_3_",
+            "name": "[3]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:top:b_bus",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 432
+      },
+      "width": 144,
+      "height": 192,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:b_bus",
+            "name": "b_bus",
+            "direction": "input"
+          },
+          {
+            "id": "out:_0_",
+            "name": "[0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_1_",
+            "name": "[1]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_2_",
+            "name": "[2]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_3_",
+            "name": "[3]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:top:y_arr",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 792
+      },
+      "width": 168,
+      "height": 216,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:y_arr",
+            "name": "y_arr",
+            "direction": "input"
+          },
+          {
+            "id": "out:_0_",
+            "name": "[0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_1_",
+            "name": "[1]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_2_",
+            "name": "[2]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_3_",
+            "name": "[3]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:top:y_bus[0]:alias",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 744
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y_bus_0_",
+            "name": "y_bus[0]",
+            "direction": "output"
+          },
+          {
+            "id": "port:y_arr",
+            "name": "y_arr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:top:y_bus[1]:alias",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 840
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y_bus_1_",
+            "name": "y_bus[1]",
+            "direction": "output"
+          },
+          {
+            "id": "port:y_arr",
+            "name": "y_arr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:top:y_bus[2]:alias",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 936
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y_bus_2_",
+            "name": "y_bus[2]",
+            "direction": "output"
+          },
+          {
+            "id": "port:y_arr",
+            "name": "y_arr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:top:y_bus[3]:alias",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 1032
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:y_bus_3_",
+            "name": "y_bus[3]",
+            "direction": "output"
+          },
+          {
+            "id": "port:y_arr",
+            "name": "y_arr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:bus_comp:top:a_arr:out:a_arr:sink:edge:bus_comp:top:a_arr:instance:top:u_mux:a_arr",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:bus_comp:top:a_arr:out:a_arr:source",
+      "type": "hdl",
+      "position": {
+        "x": 1680,
+        "y": 360
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:bus_comp:top:b_arr:out:b_arr:sink:edge:bus_comp:top:b_arr:instance:top:u_mux:b_arr",
+      "type": "hdl",
+      "position": {
+        "x": 240,
+        "y": 216
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:bus_comp:top:b_arr:out:b_arr:source",
+      "type": "hdl",
+      "position": {
+        "x": 912,
+        "y": 648
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:u_mux:port:y:sink:edge:instance:top:u_mux:bus:top:y_arr:y_arr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 960
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:instance:top:u_mux:port:y:source",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 168
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk_m:port:clk_m:sink:edge:port:top:clk_m:reg:top:mem:clk_m",
+      "type": "hdl",
+      "position": {
+        "x": 1704,
+        "y": 1344
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk_m:port:clk_m:source",
+      "type": "hdl",
+      "position": {
+        "x": -216,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk_r:port:clk_r:sink:edge:port:top:clk_r:reg:top:r:clk_r",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 72
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:top:clk_r:port:clk_r:source",
+      "type": "hdl",
+      "position": {
+        "x": -216,
+        "y": 24
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_addr:mem",
+      "type": "hdl",
+      "position": {
+        "x": 1224,
+        "y": 1344
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_address_m_:write_en_m:mem_address_m__next:mem",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 1440
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_read_address_m:mem",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 1176
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:reg:top:mem:q:source",
+      "type": "hdl",
+      "position": {
+        "x": 1992,
+        "y": 1320
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:u_leaf",
+      "type": "hdl",
+      "position": {
+        "x": 1776,
+        "y": 24
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:u_mux",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 144
+      },
+      "width": 192,
+      "height": 120,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:top:32_b0:32_b0",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 1308
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:32_b0",
+            "name": "32'b0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:top:mem_addr",
+      "type": "hdl",
+      "position": {
+        "x": 1344,
+        "y": 1296
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:3_b0",
+            "name": "3'b0",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:top:mem_address_m_:rst_m:mem_rst_candidate",
+      "type": "hdl",
+      "position": {
+        "x": 864,
+        "y": 1296
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:top:mem_address_m_:write_en_m:mem_address_m__next",
+      "type": "hdl",
+      "position": {
+        "x": 552,
+        "y": 1392
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:top:mem_read_address_m",
+      "type": "hdl",
+      "position": {
+        "x": 1320,
+        "y": 1152
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a_bus",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 156
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a_bus",
+            "name": "a_bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:address_m",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 1116
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:address_m",
+            "name": "address_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:b_bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 444
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b_bus",
+            "name": "b_bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:clk_m",
+      "type": "hdl",
+      "position": {
+        "x": -360,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk_m",
+            "name": "clk_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:clk_r",
+      "type": "hdl",
+      "position": {
+        "x": -360,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk_r",
+            "name": "clk_r",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:d_r",
+      "type": "hdl",
+      "position": {
+        "x": 552,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d_r",
+            "name": "d_r",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:leaf_a",
+      "type": "hdl",
+      "position": {
+        "x": 1440,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:leaf_a",
+            "name": "leaf_a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:leaf_y",
+      "type": "hdl",
+      "position": {
+        "x": 2184,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:leaf_y",
+            "name": "leaf_y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:r",
+      "type": "hdl",
+      "position": {
+        "x": 1296,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:r",
+            "name": "r",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:read_data_m",
+      "type": "hdl",
+      "position": {
+        "x": 1728,
+        "y": 1188
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:read_data_m",
+            "name": "read_data_m",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:rst_m",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 1260
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_m",
+            "name": "rst_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:sel_mux",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel_mux",
+            "name": "sel_mux",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:write_data_m",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 1404
+      },
+      "width": 216,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:write_data_m",
+            "name": "write_data_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:write_en_m",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 1332
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:write_en_m",
+            "name": "write_en_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y_bus",
+      "type": "hdl",
+      "position": {
+        "x": 1296,
+        "y": 756
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y_bus",
+            "name": "y_bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:top:mem",
+      "type": "hdl",
+      "position": {
+        "x": 1824,
+        "y": 1296
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk_m",
+            "name": "clk_m",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:top:r",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk_r",
+            "name": "clk_r",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "cut-stub:bus_comp:top:a_arr:out:a_arr:sink:edge:bus_comp:top:a_arr:instance:top:u_mux:a_arr",
+      "source": "cut-label:bus_comp:top:a_arr:out:a_arr:sink:edge:bus_comp:top:a_arr:instance:top:u_mux:a_arr",
+      "target": "instance:top:u_mux",
+      "sourceHandle": "cut",
+      "targetHandle": "port:a",
+      "path": "M 445 220 L 451 220"
+    },
+    {
+      "id": "cut-stub:bus_comp:top:a_arr:out:a_arr:source",
+      "source": "bus_comp:top:a_arr",
+      "target": "cut-label:bus_comp:top:a_arr:out:a_arr:source",
+      "sourceHandle": "out:a_arr",
+      "targetHandle": "cut",
+      "path": "M 1662 388 L 1675 388"
+    },
+    {
+      "id": "cut-stub:bus_comp:top:b_arr:out:b_arr:sink:edge:bus_comp:top:b_arr:instance:top:u_mux:b_arr",
+      "source": "cut-label:bus_comp:top:b_arr:out:b_arr:sink:edge:bus_comp:top:b_arr:instance:top:u_mux:b_arr",
+      "target": "instance:top:u_mux",
+      "sourceHandle": "cut",
+      "targetHandle": "port:b",
+      "path": "M 349 244 L 451 244"
+    },
+    {
+      "id": "cut-stub:bus_comp:top:b_arr:out:b_arr:source",
+      "source": "bus_comp:top:b_arr",
+      "target": "cut-label:bus_comp:top:b_arr:out:b_arr:source",
+      "sourceHandle": "out:b_arr",
+      "targetHandle": "cut",
+      "path": "M 894 676 L 907 676"
+    },
+    {
+      "id": "cut-stub:instance:top:u_mux:port:y:sink:edge:instance:top:u_mux:bus:top:y_arr:y_arr",
+      "source": "cut-label:instance:top:u_mux:port:y:sink:edge:instance:top:u_mux:bus:top:y_arr:y_arr",
+      "target": "bus:top:y_arr",
+      "sourceHandle": "cut",
+      "targetHandle": "in:y_arr",
+      "path": "M 133 988 L 174 988"
+    },
+    {
+      "id": "cut-stub:instance:top:u_mux:port:y:source",
+      "source": "instance:top:u_mux",
+      "target": "cut-label:instance:top:u_mux:port:y:source",
+      "sourceHandle": "port:y",
+      "targetHandle": "cut",
+      "path": "M 661 196 L 667 196"
+    },
+    {
+      "id": "cut-stub:port:top:clk_m:port:clk_m:sink:edge:port:top:clk_m:reg:top:mem:clk_m",
+      "source": "cut-label:port:top:clk_m:port:clk_m:sink:edge:port:top:clk_m:reg:top:mem:clk_m",
+      "target": "reg:top:mem",
+      "sourceHandle": "cut",
+      "targetHandle": "clk_m",
+      "path": "M 1800 1368"
+    },
+    {
+      "id": "cut-stub:port:top:clk_m:port:clk_m:source",
+      "source": "port:top:clk_m",
+      "target": "cut-label:port:top:clk_m:port:clk_m:source",
+      "sourceHandle": "port:clk_m",
+      "targetHandle": "cut",
+      "path": "M -240 96 L -216 96 L -216 96"
+    },
+    {
+      "id": "cut-stub:port:top:clk_r:port:clk_r:sink:edge:port:top:clk_r:reg:top:r:clk_r",
+      "source": "cut-label:port:top:clk_r:port:clk_r:sink:edge:port:top:clk_r:reg:top:r:clk_r",
+      "target": "reg:top:r",
+      "sourceHandle": "cut",
+      "targetHandle": "clk_r",
+      "path": "M 960 96 L 960 96 L 984 96"
+    },
+    {
+      "id": "cut-stub:port:top:clk_r:port:clk_r:source",
+      "source": "port:top:clk_r",
+      "target": "cut-label:port:top:clk_r:port:clk_r:source",
+      "sourceHandle": "port:clk_r",
+      "targetHandle": "cut",
+      "path": "M -240 48 L -216 48 L -216 48"
+    },
+    {
+      "id": "cut-stub:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_addr:mem",
+      "source": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_addr:mem",
+      "target": "mux:top:mem_addr",
+      "sourceHandle": "cut",
+      "targetHandle": "in:default",
+      "path": "M 1339.5 1374 L 1336.5 1374"
+    },
+    {
+      "id": "cut-stub:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_address_m_:write_en_m:mem_address_m__next:mem",
+      "source": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_address_m_:write_en_m:mem_address_m__next:mem",
+      "target": "mux:top:mem_address_m_:write_en_m:mem_address_m__next",
+      "sourceHandle": "cut",
+      "targetHandle": "in:false",
+      "path": "M 547.5 1470 L 544.5 1470"
+    },
+    {
+      "id": "cut-stub:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_read_address_m:mem",
+      "source": "cut-label:reg:top:mem:q:sink:edge:reg:top:mem:mux:top:mem_read_address_m:mem",
+      "target": "mux:top:mem_read_address_m",
+      "sourceHandle": "cut",
+      "targetHandle": "in:in",
+      "path": "M 1315.5 1206 L 1320 1206"
+    },
+    {
+      "id": "cut-stub:reg:top:mem:q:source",
+      "source": "reg:top:mem",
+      "target": "cut-label:reg:top:mem:q:source",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 1987.5 1350 L 1984.5 1350"
+    },
+    {
+      "id": "edge:bus_comp:top:y_bus:port:top:y_bus:y_bus",
+      "source": "bus_comp:top:y_bus",
+      "target": "port:top:y_bus",
+      "sourceHandle": "out:y_bus",
+      "targetHandle": "port:y_bus",
+      "path": "M 1080 768 L 1104 768 L 1272 768 L 1296 768"
+    },
+    {
+      "id": "edge:bus:top:a_bus:bus_comp:top:a_arr:a_bus_0_",
+      "source": "bus:top:a_bus",
+      "target": "bus_comp:top:a_arr",
+      "sourceHandle": "out:_0_",
+      "targetHandle": "in:_0_",
+      "path": "M 1296 168 L 1320 168 L 1392 168 L 1392 360 L 1488 360 L 1512 360"
+    },
+    {
+      "id": "edge:bus:top:a_bus:bus_comp:top:a_arr:a_bus_1_",
+      "source": "bus:top:a_bus",
+      "target": "bus_comp:top:a_arr",
+      "sourceHandle": "out:_1_",
+      "targetHandle": "in:_1_",
+      "path": "M 1296 216 L 1320 216 L 1385 216 Q 1392 209 1399 216 L 1416 216 L 1416 312 L 1488 312 L 1512 312"
+    },
+    {
+      "id": "edge:bus:top:a_bus:bus_comp:top:a_arr:a_bus_2_",
+      "source": "bus:top:a_bus",
+      "target": "bus_comp:top:a_arr",
+      "sourceHandle": "out:_2_",
+      "targetHandle": "in:_2_",
+      "path": "M 1296 264 L 1320 264 L 1385 264 Q 1392 257 1399 264 L 1409 264 Q 1416 257 1423 264 L 1488 264 L 1512 264"
+    },
+    {
+      "id": "edge:bus:top:a_bus:bus_comp:top:a_arr:a_bus_3_",
+      "source": "bus:top:a_bus",
+      "target": "bus_comp:top:a_arr",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "in:_3_",
+      "path": "M 1296 312 L 1320 312 L 1385 312 Q 1392 305 1399 312 L 1416 312 L 1416 271 Q 1423 264 1416 257 L 1416 216 L 1488 216 L 1512 216"
+    },
+    {
+      "id": "edge:bus:top:b_bus:bus_comp:top:b_arr:b_bus_0_",
+      "source": "bus:top:b_bus",
+      "target": "bus_comp:top:b_arr",
+      "sourceHandle": "out:_0_",
+      "targetHandle": "in:_0_",
+      "path": "M 528 456 L 552 456 L 624 456 L 624 648 L 720 648 L 744 648"
+    },
+    {
+      "id": "edge:bus:top:b_bus:bus_comp:top:b_arr:b_bus_1_",
+      "source": "bus:top:b_bus",
+      "target": "bus_comp:top:b_arr",
+      "sourceHandle": "out:_1_",
+      "targetHandle": "in:_1_",
+      "path": "M 528 504 L 552 504 L 617 504 Q 624 497 631 504 L 648 504 L 648 600 L 720 600 L 744 600"
+    },
+    {
+      "id": "edge:bus:top:b_bus:bus_comp:top:b_arr:b_bus_2_",
+      "source": "bus:top:b_bus",
+      "target": "bus_comp:top:b_arr",
+      "sourceHandle": "out:_2_",
+      "targetHandle": "in:_2_",
+      "path": "M 528 552 L 552 552 L 617 552 Q 624 545 631 552 L 641 552 Q 648 545 655 552 L 720 552 L 744 552"
+    },
+    {
+      "id": "edge:bus:top:b_bus:bus_comp:top:b_arr:b_bus_3_",
+      "source": "bus:top:b_bus",
+      "target": "bus_comp:top:b_arr",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "in:_3_",
+      "path": "M 528 600 L 552 600 L 617 600 Q 624 593 631 600 L 648 600 L 648 559 Q 655 552 648 545 L 648 504 L 720 504 L 744 504"
+    },
+    {
+      "id": "edge:bus:top:y_arr:comb:top:y_bus_0_:alias:y_arr_0_",
+      "source": "bus:top:y_arr",
+      "target": "comb:top:y_bus[0]:alias",
+      "sourceHandle": "out:_0_",
+      "targetHandle": "port:y_arr",
+      "path": "M 325 820 L 436 820 L 436 796 L 528 796"
+    },
+    {
+      "id": "edge:bus:top:y_arr:comb:top:y_bus_1_:alias:y_arr_1_",
+      "source": "bus:top:y_arr",
+      "target": "comb:top:y_bus[1]:alias",
+      "sourceHandle": "out:_1_",
+      "targetHandle": "port:y_arr",
+      "path": "M 325 868 L 436 868 L 436 892 L 528 892"
+    },
+    {
+      "id": "edge:bus:top:y_arr:comb:top:y_bus_2_:alias:y_arr_2_",
+      "source": "bus:top:y_arr",
+      "target": "comb:top:y_bus[2]:alias",
+      "sourceHandle": "out:_2_",
+      "targetHandle": "port:y_arr",
+      "path": "M 325 916 L 436 916 L 436 988 L 528 988"
+    },
+    {
+      "id": "edge:bus:top:y_arr:comb:top:y_bus_3_:alias:y_arr_3_",
+      "source": "bus:top:y_arr",
+      "target": "comb:top:y_bus[3]:alias",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "port:y_arr",
+      "path": "M 325 964 L 412 964 L 412 1084 L 528 1084"
+    },
+    {
+      "id": "edge:comb:top:y_bus_0_:alias:bus_comp:top:y_bus:y_bus_0_",
+      "source": "comb:top:y_bus[0]:alias",
+      "target": "bus_comp:top:y_bus",
+      "sourceHandle": "out:y_bus_0_",
+      "targetHandle": "in:_0_",
+      "path": "M 720 792 L 744 792 L 816 792 L 816 912 L 912 912 L 936 912"
+    },
+    {
+      "id": "edge:comb:top:y_bus_1_:alias:bus_comp:top:y_bus:y_bus_1_",
+      "source": "comb:top:y_bus[1]:alias",
+      "target": "bus_comp:top:y_bus",
+      "sourceHandle": "out:y_bus_1_",
+      "targetHandle": "in:_1_",
+      "path": "M 720 888 L 744 888 L 809 888 Q 816 881 823 888 L 840 888 L 840 864 L 912 864 L 936 864"
+    },
+    {
+      "id": "edge:comb:top:y_bus_2_:alias:bus_comp:top:y_bus:y_bus_2_",
+      "source": "comb:top:y_bus[2]:alias",
+      "target": "bus_comp:top:y_bus",
+      "sourceHandle": "out:y_bus_2_",
+      "targetHandle": "in:_2_",
+      "path": "M 720 984 L 744 984 L 840 984 L 840 919 Q 847 912 840 905 L 840 816 L 912 816 L 936 816"
+    },
+    {
+      "id": "edge:comb:top:y_bus_3_:alias:bus_comp:top:y_bus:y_bus_3_",
+      "source": "comb:top:y_bus[3]:alias",
+      "target": "bus_comp:top:y_bus",
+      "sourceHandle": "out:y_bus_3_",
+      "targetHandle": "in:_3_",
+      "path": "M 720 1080 L 744 1080 L 816 1080 L 816 991 Q 823 984 816 977 L 816 895 Q 823 888 816 881 L 816 768 L 912 768 L 936 768"
+    },
+    {
+      "id": "edge:instance:top:u_leaf:port:top:leaf_y:leaf_y",
+      "source": "instance:top:u_leaf",
+      "target": "port:top:leaf_y",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:leaf_y",
+      "path": "M 1968 72 L 1992 72 L 2160 72 L 2184 72"
+    },
+    {
+      "id": "edge:literal:top:32_b0:32_b0:mux:top:mem_address_m_:rst_m:mem_rst_candidate:32_b0",
+      "source": "literal:top:32_b0:32_b0",
+      "target": "mux:top:mem_address_m_:rst_m:mem_rst_candidate",
+      "sourceHandle": "port:32_b0",
+      "targetHandle": "in:true",
+      "path": "M 648 1320 L 768 1320 L 768 1344 L 840 1344"
+    },
+    {
+      "id": "edge:mux:top:mem_addr:reg:top:mem:mem_next",
+      "source": "mux:top:mem_addr",
+      "target": "reg:top:mem",
+      "sourceHandle": "out",
+      "targetHandle": "d",
+      "path": "M 1507.5 1350 L 1816.5 1350"
+    },
+    {
+      "id": "edge:mux:top:mem_address_m_:rst_m:mem_rst_candidate:mux:top:mem_addr:mem_rst_candidate",
+      "source": "mux:top:mem_address_m_:rst_m:mem_rst_candidate",
+      "target": "mux:top:mem_addr",
+      "sourceHandle": "out",
+      "targetHandle": "in:3_b0",
+      "path": "M 1027.5 1350 L 1336.5 1350"
+    },
+    {
+      "id": "edge:mux:top:mem_address_m_:write_en_m:mem_address_m__next:mux:top:mem_address_m_:rst_m:mem_rst_candidate:mem_address_m__next",
+      "source": "mux:top:mem_address_m_:write_en_m:mem_address_m__next",
+      "target": "mux:top:mem_address_m_:rst_m:mem_rst_candidate",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 667.5 1446 L 774 1446 L 774 1374 L 856.5 1374"
+    },
+    {
+      "id": "edge:mux:top:mem_read_address_m:port:top:read_data_m:read_data_m",
+      "source": "mux:top:mem_read_address_m",
+      "target": "port:top:read_data_m",
+      "sourceHandle": "out",
+      "targetHandle": "port:read_data_m",
+      "path": "M 1512 1200 L 1536 1200 L 1704 1200 L 1728 1200"
+    },
+    {
+      "id": "edge:port:top:a_bus:bus:top:a_bus:a_bus",
+      "source": "port:top:a_bus",
+      "target": "bus:top:a_bus",
+      "sourceHandle": "port:a_bus",
+      "targetHandle": "in:a_bus",
+      "path": "M 936 168 L 960 168 L 1128 168 L 1152 168"
+    },
+    {
+      "id": "edge:port:top:address_m:mux:top:mem_addr:address_m",
+      "source": "port:top:address_m",
+      "target": "mux:top:mem_addr",
+      "sourceHandle": "port:address_m",
+      "targetHandle": "sel",
+      "path": "M 1008 1128 L 1176 1128 L 1176 1272 L 1416 1272"
+    },
+    {
+      "id": "edge:port:top:address_m:mux:top:mem_read_address_m:address_m",
+      "source": "port:top:address_m",
+      "target": "mux:top:mem_read_address_m",
+      "sourceHandle": "port:address_m",
+      "targetHandle": "sel",
+      "path": "M 1008 1128 L 1032 1128 L 1416 1128 L 1416 1176"
+    },
+    {
+      "id": "edge:port:top:b_bus:bus:top:b_bus:b_bus",
+      "source": "port:top:b_bus",
+      "target": "bus:top:b_bus",
+      "sourceHandle": "port:b_bus",
+      "targetHandle": "in:b_bus",
+      "path": "M 168 456 L 192 456 L 360 456 L 384 456"
+    },
+    {
+      "id": "edge:port:top:d_r:reg:top:r:d_r",
+      "source": "port:top:d_r",
+      "target": "reg:top:r",
+      "sourceHandle": "port:d_r",
+      "targetHandle": "d",
+      "path": "M 672 72 L 696 72 L 960 72 L 984 72"
+    },
+    {
+      "id": "edge:port:top:leaf_a:instance:top:u_leaf:leaf_a",
+      "source": "port:top:leaf_a",
+      "target": "instance:top:u_leaf",
+      "sourceHandle": "port:leaf_a",
+      "targetHandle": "port:a",
+      "path": "M 1560 72 L 1584 72 L 1752 72 L 1776 72"
+    },
+    {
+      "id": "edge:port:top:rst_m:mux:top:mem_address_m_:rst_m:mem_rst_candidate:rst_m",
+      "source": "port:top:rst_m",
+      "target": "mux:top:mem_address_m_:rst_m:mem_rst_candidate",
+      "sourceHandle": "port:rst_m",
+      "targetHandle": "sel",
+      "path": "M 648 1272 L 936 1272"
+    },
+    {
+      "id": "edge:port:top:sel_mux:instance:top:u_mux:sel_mux",
+      "source": "port:top:sel_mux",
+      "target": "instance:top:u_mux",
+      "sourceHandle": "port:sel_mux",
+      "targetHandle": "port:sel",
+      "path": "M 144 192 L 432 192"
+    },
+    {
+      "id": "edge:port:top:write_data_m:mux:top:mem_address_m_:write_en_m:mem_address_m__next:write_data_m",
+      "source": "port:top:write_data_m",
+      "target": "mux:top:mem_address_m_:write_en_m:mem_address_m__next",
+      "sourceHandle": "port:write_data_m",
+      "targetHandle": "in:true",
+      "path": "M 240 1416 L 336 1416 L 336 1440 L 528 1440"
+    },
+    {
+      "id": "edge:port:top:write_en_m:mux:top:mem_address_m_:write_en_m:mem_address_m__next:write_en_m",
+      "source": "port:top:write_en_m",
+      "target": "mux:top:mem_address_m_:write_en_m:mem_address_m__next",
+      "sourceHandle": "port:write_en_m",
+      "targetHandle": "sel",
+      "path": "M 240 1344 L 384 1344 L 384 1368 L 600 1368"
+    },
+    {
+      "id": "edge:reg:top:r:port:top:r:r",
+      "source": "reg:top:r",
+      "target": "port:top:r",
+      "sourceHandle": "q",
+      "targetHandle": "port:r",
+      "path": "M 1152 72 L 1176 72 L 1272 72 L 1296 72"
+    }
+  ]
+}
