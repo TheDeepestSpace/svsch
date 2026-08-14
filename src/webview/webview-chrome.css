@@ -18,10 +18,15 @@ select {
 
 .shell {
   display: grid;
-  grid-template-rows: auto auto minmax(320px, 1fr);
+  grid-template-rows: auto minmax(320px, 1fr);
   height: 100vh;
   min-height: 100vh;
   position: relative;
+}
+
+.status-indicator {
+  display: inline-flex;
+  margin-left: auto;
 }
 
 .busy-indicator {
@@ -35,10 +40,6 @@ select {
   font-size: 12px;
   gap: 8px;
   padding: 6px 9px;
-  position: absolute;
-  right: 16px;
-  top: 12px;
-  z-index: 10;
 }
 
 .busy-indicator span {
@@ -54,6 +55,20 @@ select {
   to {
     transform: rotate(360deg);
   }
+}
+
+.diagnostics-indicator {
+  align-items: center;
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-inputValidation-warningBorder);
+  border-radius: 4px;
+  box-shadow: 0 2px 10px color-mix(in srgb, black 35%, transparent);
+  color: var(--vscode-editorWarning-foreground, #cca700);
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 1;
+  padding: 6px 9px;
 }
 
 .toolbar {
@@ -119,19 +134,6 @@ select {
 
 .vscode-button-secondary:hover {
   background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.diagnostics {
-  background: var(--vscode-inputValidation-warningBackground);
-  border-bottom: 1px solid var(--vscode-inputValidation-warningBorder);
-  display: grid;
-  gap: 3px;
-  padding: 6px 10px;
-}
-
-.diagnostic {
-  font-size: 12px;
-  line-height: 1.35;
 }
 
 .canvas {
