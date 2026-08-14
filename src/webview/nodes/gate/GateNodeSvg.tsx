@@ -44,30 +44,12 @@ export function xorBackCurvePath(span: number, height: number): string {
 }
 
 /**
- * Selection outline for an XOR/XNOR gate as a single closed path: it runs the tip's two
- * bulge curves but swaps the body's own concave edge for a line out to the detached
- * back-curve and back, so the outline follows the back-curve instead of doubling the
- * body's edge — while staying one unbroken contour.
+ * Selection outline for an XOR/XNOR gate: the OR body curve widened to start at the
+ * detached back-curve's own edge (x=0) instead of the inset main body, so the tip's
+ * bulge curves flow straight into the back-curve with no straight segment between them.
  */
-export function xorSelectionPath(left: number, right: number, height: number): string {
-  const span = right - left;
-  const midY = height / 2;
-  const bulgeCtrl1X = left + span * 0.4160312500;
-  const bulgeCtrl1Y = height * 0.9771354167;
-  const bulgeCtrl2X = left + span * 0.7620937500;
-  const bulgeCtrl2Y = height * 0.8853020833;
-  const backCtrlX = span * 0.1821041667;
-  const backCtrl1Y = height * 0.3030833333;
-  const backCtrl2Y = height * 0.6969166667;
-  return [
-    `M ${right} ${midY}`,
-    `C ${bulgeCtrl2X} ${height - bulgeCtrl2Y} ${bulgeCtrl1X} ${height - bulgeCtrl1Y} ${left} 0`,
-    'L 0 0',
-    `C ${backCtrlX} ${backCtrl1Y} ${backCtrlX} ${backCtrl2Y} 0 ${height}`,
-    `L ${left} ${height}`,
-    `C ${bulgeCtrl1X} ${bulgeCtrl1Y} ${bulgeCtrl2X} ${bulgeCtrl2Y} ${right} ${midY}`,
-    'Z'
-  ].join(' ');
+export function xorSelectionPath(right: number, height: number): string {
+  return orBodyPath(0, right, height);
 }
 
 export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
@@ -93,7 +75,7 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   const backCurve = xorBackCurvePath(right - left, height);
 
   const path = bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
-  const selectionPath = isXor ? xorSelectionPath(left, right, height) : path;
+  const selectionPath = isXor ? xorSelectionPath(right, height) : path;
   const bubbleCx = right + gateBubbleGap + gateBubbleRadius;
 
   return (
