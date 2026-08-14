@@ -167,6 +167,7 @@ export async function openFixture(
   const postedAt = postViewStartedAt.get(page);
   if (postedAt !== undefined) {
     pendingDiagramDurationMs.set(page, Date.now() - postedAt);
+    postViewStartedAt.delete(page);
   }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
@@ -184,6 +185,11 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
+  // Finalize any timer left over from a prior openFixture/postView on this
+  // page before starting a new one, so its duration isn't silently
+  // overwritten (or attributed to this view) once recordPendingRenderDuration
+  // next runs.
+  recordPendingRenderDuration(page);
   postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage(

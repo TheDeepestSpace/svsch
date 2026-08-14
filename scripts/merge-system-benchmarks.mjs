@@ -9,7 +9,8 @@ const outputFile = path.join(benchmarksDir, 'benchmark-system', 'benchmark.json'
 
 const versionDirs = fs
   .readdirSync(benchmarksDir)
-  .filter((name) => name.startsWith('benchmark-system-'));
+  .filter((name) => name.startsWith('benchmark-system-'))
+  .sort();
 const entries = versionDirs.flatMap((name) =>
   JSON.parse(fs.readFileSync(path.join(benchmarksDir, name, 'benchmark.json'), 'utf8')),
 );

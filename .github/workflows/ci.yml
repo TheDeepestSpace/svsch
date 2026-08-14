@@ -204,17 +204,6 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
-    permissions:
-      # The benchmark action pushes results to gh-pages on master pushes.
-      # PR comments are posted separately by report_benchmarks below.
-      contents: write
-    concurrency:
-      # test_visual and publish_system_benchmark can both auto-push to
-      # gh-pages within the same master run; serialize them per-ref so
-      # they don't race (PRs/other branches never push, so this doesn't
-      # cost them any parallelism).
-      group: gh-pages-publish-${{ github.ref }}
-      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -254,9 +243,61 @@ jobs:
       - name: Discard test-generated snapshot changes
         # The visual test suite can self-heal committed baseline snapshots
         # (e.g. restoring missing port data) during a run, leaving tracked
-        # files modified. benchmark-action then fails to switch to gh-pages
-        # over a dirty tree, so drop those CI-only changes first.
+        # files modified. benchmark-action (run in publish_visual_benchmark
+        # below) then fails to switch to gh-pages over a dirty tree, so drop
+        # those CI-only changes first.
         run: git checkout -- test/visual/__screenshots__
+
+      - name: Upload benchmark result (visual)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: benchmark-visual
+          path: |
+            test-results/visual/artifacts/benchmark-elaboration.json
+            test-results/visual/artifacts/benchmark-rendering.json
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/visual/**
+            playwright-report/**
+            test/visual/__screenshots__/**
+
+  publish_visual_benchmark:
+    # Publishes the visual suite's diagram-generation benchmark to gh-pages
+    # history. Split out of test_visual (which runs PR-controlled test code)
+    # so that job never holds a contents: write token — mirrors
+    # publish_system_benchmark's split from test_system below, master-only.
+    needs: [prep, build_ci_image, test_visual]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # The benchmark action pushes results to gh-pages on same-repository pushes.
+      contents: write
+    concurrency:
+      # publish_visual_benchmark and publish_system_benchmark can both
+      # auto-push to gh-pages within the same master run; serialize them
+      # per-ref so they don't race.
+      group: gh-pages-publish-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - *checkout_step
+
+      - name: Mark workspace as a safe git directory
+        # benchmark-action/github-action-benchmark runs git commands against
+        # the checked-out repo; the container user doesn't always own the
+        # workspace files, which trips git's dubious-ownership check.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download visual benchmark results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: benchmark-visual
+          path: test-results/visual/artifacts
 
       - name: Track diagram-generation benchmark (visual elaboration)
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
@@ -295,24 +336,6 @@ jobs:
           comment-always: false
           comment-on-alert: false
           fail-on-alert: false
-
-      - name: Upload benchmark result (visual)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: benchmark-visual
-          path: |
-            test-results/visual/artifacts/benchmark-elaboration.json
-            test-results/visual/artifacts/benchmark-rendering.json
-
-      - name: Upload Playwright artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-artifacts
-          path: |
-            test-results/visual/**
-            playwright-report/**
-            test/visual/__screenshots__/**
 
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]

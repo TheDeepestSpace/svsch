@@ -75,8 +75,12 @@ const METRIC_META = {
   },
 };
 
+// Bounds every git/GitHub API call below so a network stall (fetch/push
+// against gh-pages, or the GitHub API) can't hang the CI job indefinitely.
+const NETWORK_TIMEOUT_MS = 60_000;
+
 function git(args, opts = {}) {
-  return execFileSync('git', args, { encoding: 'utf8', ...opts });
+  return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
 }
 
 // Checkout's persisted credentials don't reliably reach git commands run
@@ -281,6 +285,7 @@ const request = async (method, apiPath, requestBody) => {
     method,
     headers,
     body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
+    signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS),
   });
   if (!response.ok) {
     throw new Error(`${method} ${apiPath} failed (${response.status}): ${await response.text()}`);

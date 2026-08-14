@@ -529,7 +529,7 @@ export function renderDeltaTableMarkdown(rows) {
     const best = byPct.slice(-5).reverse();
     const formatRow = (label, row) => {
       const sign = row.deltaMs > 0 ? '+' : '';
-      return `| ${label} | ${row.name} | ${row.baseline} | ${row.value} | ${sign}${row.deltaMs} ms | ${sign}${row.deltaPct.toFixed(0)}% |`;
+      return `| ${label} | ${escapeMarkdownCell(row.name)} | ${row.baseline} | ${row.value} | ${sign}${row.deltaMs} ms | ${sign}${row.deltaPct.toFixed(0)}% |`;
     };
     for (const row of worst) lines.push(formatRow('Worst', row));
     for (const row of best) lines.push(formatRow('Best', row));
@@ -544,6 +544,19 @@ export function renderDeltaTableMarkdown(rows) {
   );
 
   return lines.join('\n');
+}
+
+// Benchmark names come from spec filenames and test titles (see
+// test/visual/helper.ts), which a PR can control — escape table-breaking
+// pipes/newlines and Markdown link/image syntax before embedding them in a
+// PR comment.
+function escapeMarkdownCell(value) {
+  return String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('|', '\\|')
+    .replaceAll('[', '\\[')
+    .replaceAll(']', '\\]')
+    .replace(/\r?\n/g, ' ');
 }
 
 function csvField(value) {

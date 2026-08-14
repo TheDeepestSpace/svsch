@@ -375,8 +375,7 @@ describe('parser: interfaces and modports', () => {
     });
   });
 
-  // UHDM does not reliably propagate preferredSide for standalone modports.
-  it.skip('calculates modport positioning and respects svsch:modport:pos comments', async () => {
+  it('calculates modport positioning and respects svsch:modport:pos comments', async () => {
     await runParser(
       'uhdm',
       'interface_pos.sv',
