@@ -342,6 +342,20 @@ export class BddWorld {
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
     // Wait for the busy indicator to appear then disappear (extension is rebuilding).
+    //
+    // The 'visible' wait below times out (10s) on most scenarios instead of
+    // observing a transition — the indicator has usually already flashed and
+    // gone by the time this starts polling. That looked purely wasteful, but
+    // removing it is NOT safe: it also acts as a grace period that lets the
+    // extension-host round trip (command -> status 'rebuilding' -> new view
+    // -> status 'idle') actually complete before the 'hidden' wait below is
+    // allowed to resolve. Dropping it let 'hidden' resolve while a rebuild
+    // was still in flight (indicator not yet flipped to visible), producing
+    // a stale screenshot and a real snapshot-mismatch failure in "Navigating
+    // to connection source" — so the accurate fix here needs a real
+    // completion signal (e.g. a rebuild generation/version the webview
+    // echoes back) rather than trimming this wait, and is left as follow-up
+    // rather than risking more scenarios on an unverified guess.
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'visible', timeout: 10_000 })
       .catch(() => {});
@@ -377,6 +391,13 @@ export class BddWorld {
     ready: boolean;
     nodeCount?: number;
     mismatchedModuleNodeIds?: string[];
+    unsettledNodeMeasurements?: Array<{
+      id: string;
+      width?: number;
+      height?: number;
+      expectedWidth?: number;
+      expectedHeight?: number;
+    }>;
     edgeCount?: number;
     edgeElemCount?: number;
     validEdgeCount?: number;
@@ -398,8 +419,35 @@ export class BddWorld {
           return { ready: false, reason: 'moduleName mismatch', nodeCount: nodes.length, mismatchedModuleNodeIds };
         }
 
-        const nodeElems = document.querySelectorAll('.react-flow__node');
+        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
         if (nodeElems.length === 0) return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
+
+        const nodeMap = new Map<string, Element>();
+        for (const el of nodeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) nodeMap.set(id, el);
+        }
+        const unsettledNodeMeasurements = nodes.flatMap((node: any) => {
+          const content = nodeMap.get(node.id)?.querySelector<HTMLElement>('[data-node-id]');
+          const expectedWidth = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-width') ?? '');
+          const expectedHeight = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-height') ?? '');
+          const width = node.measured?.width ?? node.width;
+          const height = node.measured?.height ?? node.height;
+          const settled = content
+            && Number.isFinite(expectedWidth)
+            && Number.isFinite(expectedHeight)
+            && Math.abs(width - expectedWidth) < 0.5
+            && Math.abs(height - expectedHeight) < 0.5;
+          return settled ? [] : [{ id: node.id, width, height, expectedWidth, expectedHeight }];
+        });
+        if (unsettledNodeMeasurements.length > 0) {
+          return {
+            ready: false,
+            reason: 'node dimensions have not settled',
+            nodeCount: nodes.length,
+            unsettledNodeMeasurements,
+          };
+        }
 
         const edges = rf.getEdges();
         if (!edges || edges.length === 0) return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
