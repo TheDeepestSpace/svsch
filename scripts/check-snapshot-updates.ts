@@ -6,19 +6,21 @@ import { findSnapshotBypass, loadSnapshotBypassEntries } from '../test/snapshotB
 import { parseChangedBaselines } from '../test/changedBaselines';
 
 function usage(): never {
-  throw new Error('Usage: check-snapshot-updates <base-commit> <visual|bdd|system>');
+  throw new Error('Usage: check-snapshot-updates <base-commit> <visual|bdd|system> [head-commit]');
 }
 
-const [baseCommit, suiteArg, ...extraArgs] = process.argv.slice(2);
-if (!baseCommit || !suiteArg || extraArgs.length > 0) usage();
+const [baseCommit, suiteArg, headCommit = 'HEAD', ...extraArgs] = process.argv.slice(2);
+if (!baseCommit || !suiteArg || !headCommit || extraArgs.length > 0) usage();
 if (suiteArg !== 'visual' && suiteArg !== 'bdd' && suiteArg !== 'system') usage();
 const suite: SnapshotSuite = suiteArg;
 const prNumber = Number(process.env.PR_NUMBER);
 const bypassEntries = loadSnapshotBypassEntries();
 
+// CI checks out GitHub's merge commit, which can include base-branch changes
+// newer than the event payload. An explicit head keeps the gate scoped to the PR.
 const nameStatusOutput = execFileSync(
   'git',
-  ['diff', '--name-status', '-z', '-M', baseCommit, 'HEAD'],
+  ['diff', '--name-status', '-z', '-M', baseCommit, headCommit],
   { encoding: 'utf8' }
 );
 const { pairs: changedBaselines, ambiguous } = parseChangedBaselines(nameStatusOutput);
@@ -48,7 +50,9 @@ for (const { oldPath, newPath } of changedBaselines) {
 
   checked += 1;
   const expectedBuffer = execFileSync('git', ['show', `${baseCommit}:${oldPath}`]);
-  const actualBuffer = fs.readFileSync(newPath);
+  const actualBuffer = headCommit === 'HEAD'
+    ? fs.readFileSync(newPath)
+    : execFileSync('git', ['show', `${headCommit}:${newPath}`]);
   const comparison = comparePngBuffers(
     expectedBuffer,
     actualBuffer,
