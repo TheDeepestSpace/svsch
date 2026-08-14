@@ -380,6 +380,13 @@ private:
     bool isAluOperation(vpiHandle expr);
     std::string aluOperationSymbol(vpiHandle expr);
     std::string promoteAluExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    bool isGateOperation(vpiHandle expr);
+    std::string gateOperationSymbol(vpiHandle expr);
+    std::string promoteGateExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    bool isComparatorOperation(vpiHandle expr);
+    std::string comparatorOperationSymbol(vpiHandle expr);
+    std::string promoteComparatorExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    std::string ensureZextNode(Module& mod, const std::string& input_signal, const std::string& input_width, const std::string& output_width, vpiHandle source_handle);
     bool isConditionalOperation(vpiHandle expr);
     std::string promoteMuxExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     bool isInverterOperation(vpiHandle expr);

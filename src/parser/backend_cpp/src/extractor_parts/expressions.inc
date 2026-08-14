@@ -600,6 +600,196 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
     return out_signal;
 }
 
+bool DesignExtractor::isGateOperation(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
+    int op = vpi_get(vpiOpType, expr);
+    return op == vpiBitAndOp || op == vpiBitOrOp || op == vpiBitXorOp || op == vpiLogAndOp || op == vpiLogOrOp;
+}
+
+std::string DesignExtractor::gateOperationSymbol(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return "";
+    switch (vpi_get(vpiOpType, expr)) {
+        case vpiBitAndOp: return "&";
+        case vpiBitOrOp: return "|";
+        case vpiBitXorOp: return "^";
+        case vpiLogAndOp: return "&&";
+        case vpiLogOrOp: return "||";
+        default: return "";
+    }
+}
+
+std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
+    if (!expr || !isGateOperation(expr)) return "";
+
+    std::vector<vpiHandle> operands;
+    vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+    if (op_itr) {
+        while (vpiHandle operand = vpi_scan(op_itr)) {
+            operands.push_back(operand);
+        }
+        vpi_release_handle(op_itr);
+    }
+    if (operands.size() != 2) {
+        return "";
+    }
+
+    // Only promote simple binary gate operations. If either operand is another
+    // gate/ALU operation, fallback to a single COMB node for the whole chain.
+    if (isGateOperation(operands[0]) || isGateOperation(operands[1]) || isAluOperation(operands[0]) || isAluOperation(operands[1])) {
+        return "";
+    }
+
+    std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
+    std::string node_id = "gate:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":expr";
+    if (!is_procedural) {
+        for (const auto& n : mod.nodes) {
+            if (n.id == node_id) return out_signal;
+        }
+    }
+
+    std::string lhs_signal;
+    if (isLiteralExpr(operands[0])) {
+        lhs_signal = getLiteralLabel(operands[0]);
+        ensureLiteralNode(operands[0], mod, lhs_signal, getWidth(operands[0]), expr, lhs_signal);
+    } else {
+        lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+    }
+
+    std::string rhs_signal;
+    if (isLiteralExpr(operands[1])) {
+        rhs_signal = getLiteralLabel(operands[1]);
+        ensureLiteralNode(operands[1], mod, rhs_signal, getWidth(operands[1]), expr, rhs_signal);
+    } else {
+        rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+    }
+
+    std::string expr_str = getExprText(expr);
+    std::string width = getWidth(expr);
+    std::string declared_output_width = getDeclaredSignalWidth(mod, out_signal);
+    if (bitSizeFromWidth(declared_output_width) > bitSizeFromWidth(width)) {
+        width = declared_output_width;
+    }
+
+    Node n;
+    n.id = node_id;
+    n.kind = "gate";
+    n.label = "";
+    n.source = getSourceInfo(expr);
+    refineSourceInfo(n.source, expr);
+    n.metadata.expression = expr_str;
+    n.metadata.operation = gateOperationSymbol(expr);
+    n.metadata.isProcedural = is_procedural;
+    n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+    n.ports.push_back({"lhs", "input", lhs_signal, getWidth(operands[0]), "lhs"});
+    n.ports.push_back({"rhs", "input", rhs_signal, getWidth(operands[1]), "rhs"});
+
+    std::string display_label = out_signal;
+    if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
+        display_label = display_label.substr(0, display_label.size() - 5);
+    }
+    n.ports.push_back({out_signal, "output", out_signal, width, display_label});
+    mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
+    return out_signal;
+}
+
+bool DesignExtractor::isComparatorOperation(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
+    switch (vpi_get(vpiOpType, expr)) {
+        case vpiLtOp:
+        case vpiLeOp:
+        case vpiGtOp:
+        case vpiGeOp:
+        case vpiEqOp:
+        case vpiNeqOp:
+        case vpiCaseEqOp:
+        case vpiCaseNeqOp:
+            return true;
+        default:
+            return false;
+    }
+}
+
+std::string DesignExtractor::comparatorOperationSymbol(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return "";
+    switch (vpi_get(vpiOpType, expr)) {
+        case vpiLtOp: return "<";
+        case vpiLeOp: return "<=";
+        case vpiGtOp: return ">";
+        case vpiGeOp: return ">=";
+        case vpiEqOp: return "==";
+        case vpiNeqOp: return "!=";
+        case vpiCaseEqOp: return "===";
+        case vpiCaseNeqOp: return "!==";
+        default: return "";
+    }
+}
+
+std::string DesignExtractor::promoteComparatorExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
+    if (!expr || !isComparatorOperation(expr)) return "";
+
+    std::vector<vpiHandle> operands;
+    vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+    if (op_itr) {
+        while (vpiHandle operand = vpi_scan(op_itr)) {
+            operands.push_back(operand);
+        }
+        vpi_release_handle(op_itr);
+    }
+    if (operands.size() != 2) {
+        return "";
+    }
+
+    std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
+    std::string node_id = "comparator:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":expr";
+    if (!is_procedural) {
+        for (const auto& n : mod.nodes) {
+            if (n.id == node_id) return out_signal;
+        }
+    }
+
+    std::string lhs_signal;
+    if (isLiteralExpr(operands[0])) {
+        lhs_signal = getLiteralLabel(operands[0]);
+        ensureLiteralNode(operands[0], mod, lhs_signal, getWidth(operands[0]), expr, lhs_signal);
+    } else {
+        lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+    }
+
+    std::string rhs_signal;
+    if (isLiteralExpr(operands[1])) {
+        rhs_signal = getLiteralLabel(operands[1]);
+        ensureLiteralNode(operands[1], mod, rhs_signal, getWidth(operands[1]), expr, rhs_signal);
+    } else {
+        rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+    }
+
+    std::string expr_str = getExprText(expr);
+
+    Node n;
+    n.id = node_id;
+    n.kind = "comparator";
+    n.label = "";
+    n.source = getSourceInfo(expr);
+    refineSourceInfo(n.source, expr);
+    n.metadata.expression = expr_str;
+    n.metadata.operation = comparatorOperationSymbol(expr);
+    n.metadata.isProcedural = is_procedural;
+    n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+    n.ports.push_back({"lhs", "input", lhs_signal, getWidth(operands[0]), "lhs"});
+    n.ports.push_back({"rhs", "input", rhs_signal, getWidth(operands[1]), "rhs"});
+
+    // A comparison always yields a single bit, regardless of operand width.
+    std::string display_label = out_signal;
+    if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
+        display_label = display_label.substr(0, display_label.size() - 5);
+    }
+    n.ports.push_back({out_signal, "output", out_signal, "", display_label});
+    mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
+    return out_signal;
+}
+
 bool DesignExtractor::isConditionalOperation(vpiHandle expr) {
     return expr
         && vpi_get(vpiType, expr) == vpiOperation
@@ -859,6 +1049,16 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
     if (isAluOperation(expr)) {
         std::string alu_signal = promoteAluExpr(expr, mod, preferred_name, is_procedural, current_drivers);
         if (!alu_signal.empty()) return alu_signal;
+    }
+
+    if (isComparatorOperation(expr)) {
+        std::string comparator_signal = promoteComparatorExpr(expr, mod, preferred_name, is_procedural, current_drivers);
+        if (!comparator_signal.empty()) return comparator_signal;
+    }
+
+    if (isGateOperation(expr)) {
+        std::string gate_signal = promoteGateExpr(expr, mod, preferred_name, is_procedural, current_drivers);
+        if (!gate_signal.empty()) return gate_signal;
     }
 
     // It's a complex expression, promote it to a comb node

@@ -87,11 +87,11 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
     return muxHeightForPortRows(portRows);
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
     return muxHeightForPortRows(2);
   }
 
-  if (node.kind === 'inverter') {
+  if (node.kind === 'inverter' || node.kind === 'zext') {
     return diagramSizing.gridSize * 2;
   }
 
@@ -243,7 +243,7 @@ function nodeWidthForKind(
     );
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
     return snappedWidth(
       diagramSizing.muxWidth,
       diagramSizing.gridSize * 3,
@@ -253,6 +253,14 @@ function nodeWidthForKind(
 
   if (node.kind === 'inverter') {
     return snapUpToEvenGrid(inverterGeometryWidth());
+  }
+
+  if (node.kind === 'zext') {
+    return snappedWidth(
+      diagramSizing.gridSize * 2,
+      titleWidth + 8,
+      snapUpToEvenGrid
+    );
   }
 
   if (node.kind === 'register') {
@@ -342,11 +350,11 @@ function visiblePortLabels(
   outputs: DiagramNode['ports'],
   showPortTypes: boolean
 ): string[] {
-  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop') {
+  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop' || node.kind === 'zext') {
     return [];
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
     return outputs.map((port) => portLabel(port, true, showPortTypes));
   }
 
@@ -390,7 +398,7 @@ function nodeTitle(node: DiagramNode): string {
   const typeName = nodeTypeName(node);
   const base = node.label;
   const suffix = typeName || width;
-  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
+  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'gate' && node.kind !== 'comparator' && node.kind !== 'zext' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
 }
 
 function portNodeLabel(node: DiagramNode): string {
