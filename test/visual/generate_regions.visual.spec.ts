@@ -217,6 +217,23 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator(`.node-warning[aria-label="${GENERATE_REGION_EXTERNAL_BLOCK_WARNING}"]`)).toHaveCount(ERROR_BLOCK_VARIANTS.length);
     await expect(page.locator('.generate-region-invalid')).toHaveCount(1);
 
+    const stackedBadgeClearance = await page.locator('.react-flow__node.svsch-node-invalid').evaluateAll((nodes) =>
+      nodes.flatMap((node) => {
+        const badge = node.querySelector('.svsch-array-badge');
+        const warning = node.querySelector('.node-warning');
+        if (!badge || !warning) return [];
+        const badgeBounds = badge.getBoundingClientRect();
+        const warningBounds = warning.getBoundingClientRect();
+        return [{
+          id: node.getAttribute('data-id'),
+          badgeRight: badgeBounds.right,
+          warningLeft: warningBounds.left
+        }];
+      })
+    );
+    expect(stackedBadgeClearance.length).toBeGreaterThan(0);
+    expect(stackedBadgeClearance.every(({ badgeRight, warningLeft }) => warningLeft > badgeRight)).toBe(true);
+
     await expectGraphAndScreenshot(page, 'error-highlight-block-types.png', {
       clip: await paddedGraphAndRegionsClip(page),
       maxDiffPixels: 120
