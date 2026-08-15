@@ -510,23 +510,15 @@ function DiagramApp(): React.ReactElement {
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
-    setNodes(view.nodes.map((node) => {
-      const dimensions = resolvedNodeDimensions(node);
-      return {
-        id: node.id,
-        type: 'hdl',
-        position: node.position,
-        selected: reselectIds?.has(node.id) ?? undefined,
-        className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-        zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-        // Keep React Flow's measured wrapper in lockstep with the node body;
-        // node action markup must not determine whether resized geometry is
-        // remeasured.
-        style: dimensions,
-        measured: dimensions,
-        data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
-      };
-    }));
+    setNodes(view.nodes.map((node) => ({
+      id: node.id,
+      type: 'hdl',
+      position: node.position,
+      selected: reselectIds?.has(node.id) ?? undefined,
+      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
+      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
+    })));
     setRegions(view.generateRegions ?? []);
 
     const netToLeader = new Map<string, string>();
@@ -1018,8 +1010,6 @@ function applyNodeResizeDrag(
     return {
       ...node,
       position,
-      style: { ...node.style, width, height },
-      measured: { width, height },
       data: {
         ...node.data,
         node: {
