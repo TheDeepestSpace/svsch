@@ -505,12 +505,17 @@ jobs:
         with:
           pattern: benchmark-*
           path: benchmarks
+          # v8 only nests results under a per-artifact subdirectory when more
+          # than one artifact matches the pattern (unlike v4.3.0, which always
+          # nested). Merge explicitly so the layout stays stable regardless of
+          # how many benchmark-* artifacts exist.
+          merge-multiple: true
 
       - name: Post combined benchmark comment
         run: >-
           node scripts/comment-benchmark-summary.mjs
-          visual-elaboration-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-elaboration.json
-          visual-rendering-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-rendering.json
+          visual-elaboration-diagram-generation-duration=benchmarks/benchmark-elaboration.json
+          visual-rendering-diagram-generation-duration=benchmarks/benchmark-rendering.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
