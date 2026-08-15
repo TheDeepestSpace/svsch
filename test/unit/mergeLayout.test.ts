@@ -547,6 +547,31 @@ describe('layout merge', () => {
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
+  it('anchors a resized register reset port at the resolved bottom center', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'state',
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' },
+      sizeOverride: { width: 12, height: 8 }
+    };
+
+    const resolved = resolvedNodeDimensions(register);
+    const geometry = elkNodeForDiagramNode(register);
+    const resetPort = geometry.ports.find((port) => port.id === 'register:rst_n');
+
+    expect(geometry.width).toBe(resolved.width);
+    expect(geometry.height).toBe(resolved.height);
+    expect(resetPort).toMatchObject({ x: resolved.width / 2, y: resolved.height });
+    expect(resetPort?.layoutOptions['elk.port.side']).toBe('SOUTH');
+  });
+
   it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
     const register: DiagramNode = {
       id: 'register',

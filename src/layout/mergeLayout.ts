@@ -1750,14 +1750,9 @@ export function elkNodeForDiagramNode(
       } else if (isRv) {
         portY = diagramSizing.nodeHeaderHeight + grid * 2 + grid / 2;
       } else if (isReset) {
-        // Bottom-anchored at the register's own canonical (not resized) height —
-        // a grow-only resize adds padding below this row instead of dragging it
-        // down to track a taller box, matching the on-screen SvgRegister/HdlNode
-        // rendering (see registerPortTop('reset', ...) callers).
-        const canonical = diagramNodeDimensions(node);
         side = 'SOUTH';
-        portX = canonical.width / 2;
-        portY = canonical.height;
+        portX = width / 2;
+        portY = height;
       }
     } else if (node.kind === 'mux') {
       const inputs = node.ports.filter(p => p.direction !== 'output');

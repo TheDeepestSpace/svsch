@@ -71,9 +71,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   const { width: nodeWidth, height: nodeHeight } = resolvedNodeDimensions(node);
   // Resizable kinds (instance/register) can render larger than their canonical
   // auto-fit box (diagramNodeDimensions) when a manual resize override is
-  // saved. Row/column geometry that must not reflow as the box grows uses
-  // this canonical size instead of nodeWidth/nodeHeight — see the register
-  // branch below and RegisterNodeSvg.
+  // saved. Content rows that must not reflow as the box grows use this canonical
+  // size instead of nodeWidth/nodeHeight; edge-anchored ports use the resolved size.
   const isResizable = node.kind === 'register' || node.kind === 'instance';
   const canonicalSize = isResizable ? diagramNodeDimensions(node) : { width: nodeWidth, height: nodeHeight };
   const isResized = nodeWidth > canonicalSize.width || nodeHeight > canonicalSize.height;
@@ -445,7 +444,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         {clockPort && <Handle type="target" id={clockPort.id} position={Position.Left}
           style={{ top: registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom}
-          style={{ left: canonicalSize.width / 2, top: registerPortTop('reset', canonicalSize.height, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
+          style={{ left: nodeWidth / 2, top: registerPortTop('reset', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {rvPort && <Handle type="target" id={rvPort.id} position={Position.Left}
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (

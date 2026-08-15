@@ -474,7 +474,7 @@ test('renders a resized node at its grown size when exporting the diagram as SVG
   evaluateInVSCode,
 }) => {
   await clearSystemLayout();
-  const exportedSvgPath = path.resolve(__dirname, '../register_no_reset.svg');
+  const exportedSvgPath = path.resolve(__dirname, '../register_async_reset.svg');
   await fs.promises.rm(exportedSvgPath, { force: true });
 
   try {
@@ -483,7 +483,7 @@ test('renders a resized node at its grown size when exporting the diagram as SVG
     const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
     await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
 
-    await openSystemModule(workbox, webview, evaluateInVSCode, 'register_no_reset');
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
 
     const nodeId = await findSystemNodeId(webview, 'q', 'register');
     if (!nodeId) {
@@ -493,7 +493,8 @@ test('renders a resized node at its grown size when exporting the diagram as SVG
     const canonicalSize = await systemNodeSize(webview, nodeId);
     await dragSystemNodeResizeHandle(workbox, webview, nodeId, 'bottom-right', 3, 3);
     const resizedSize = await systemNodeSize(webview, nodeId);
-    await waitForSystemNodeSizePersisted('register_no_reset', nodeId, resizedSize.width / SYSTEM_GRID_SIZE, resizedSize.height / SYSTEM_GRID_SIZE);
+    await assertSystemRegisterResetPortAnchored(webview, nodeId, resizedSize);
+    await waitForSystemNodeSizePersisted('register_async_reset', nodeId, resizedSize.width / SYSTEM_GRID_SIZE, resizedSize.height / SYSTEM_GRID_SIZE);
 
     await setSystemSaveDialogTarget(evaluateInVSCode, exportedSvgPath);
     await webview.locator('button:has-text("Export SVG")').click();
@@ -586,7 +587,7 @@ async function resizeSystemRegisterAndAssertPersistence(
 
   let webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
   await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
-  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_no_reset');
+  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
 
   const nodeId = await findSystemNodeId(webview, 'q', 'register');
   if (!nodeId) {
@@ -605,6 +606,7 @@ async function resizeSystemRegisterAndAssertPersistence(
   );
   const resizedSize = await systemNodeSize(webview, nodeId);
   const resizedPosition = await systemNodePosition(webview, nodeId);
+  await assertSystemRegisterResetPortAnchored(webview, nodeId, resizedSize);
 
   if (resizeCase.cellsX !== 0) {
     expect(resizedSize.width - originalSize.width).toBeGreaterThanOrEqual(SYSTEM_GRID_SIZE * 2);
@@ -628,12 +630,12 @@ async function resizeSystemRegisterAndAssertPersistence(
     expect(closeTo(resizedPosition.y, originalPosition.y)).toBe(true);
   }
 
-  await waitForSystemNodeResizePersisted('register_no_reset', nodeId, resizedSize, resizedPosition);
+  await waitForSystemNodeResizePersisted('register_async_reset', nodeId, resizedSize, resizedPosition);
 
   await closeAndReopenSystemDiagram(workbox, evaluateInVSCode);
   webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
   await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
-  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_no_reset');
+  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
 
   const reopenedNodeId = await findSystemNodeId(webview, 'q', 'register');
   if (!reopenedNodeId) {
@@ -647,6 +649,7 @@ async function resizeSystemRegisterAndAssertPersistence(
       && closeTo(reopenedPosition.x, resizedPosition.x)
       && closeTo(reopenedPosition.y, resizedPosition.y);
   }, { timeout: 10_000 }).toBe(true);
+  await assertSystemRegisterResetPortAnchored(webview, reopenedNodeId, resizedSize);
 
   // Lock the final, disk-restored rendering for every resize handle. Keeping
   // the screenshot after the reopen makes the visual assertion cover both the
@@ -654,6 +657,36 @@ async function resizeSystemRegisterAndAssertPersistence(
   await dismissSystemNotifications(workbox);
   await webview.locator('.canvas').hover({ position: { x: 8, y: 8 }, force: true });
   await expect(workbox).toHaveScreenshot(`register-resized-${resizeCase.handle}-after-reload.png`);
+}
+
+async function assertSystemRegisterResetPortAnchored(
+  webview: FrameLocator,
+  nodeId: string,
+  nodeSize: { width: number; height: number }
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const resetHandle = node.locator('.react-flow__handle-bottom');
+  const resetLabel = node.locator('.svsch-register-reset-label');
+
+  await expect(resetHandle).toHaveCount(1);
+  await expect(resetLabel).toHaveCount(1);
+  const geometry = await node.evaluate((element) => {
+    const handle = element.querySelector<HTMLElement>('.react-flow__handle-bottom');
+    const label = element.querySelector<SVGTextElement>('.svsch-register-reset-label');
+    if (!handle || !label) return null;
+    return {
+      handleLeft: Number.parseFloat(handle.style.left),
+      handleTop: Number.parseFloat(handle.style.top),
+      labelX: Number.parseFloat(label.getAttribute('x') ?? ''),
+      labelY: Number.parseFloat(label.getAttribute('y') ?? ''),
+    };
+  });
+
+  expect(geometry).not.toBeNull();
+  expect(closeTo(geometry!.handleLeft, nodeSize.width / 2)).toBe(true);
+  expect(closeTo(geometry!.handleTop, nodeSize.height - SYSTEM_GRID_SIZE / 2)).toBe(true);
+  expect(closeTo(geometry!.labelX, nodeSize.width / 2)).toBe(true);
+  expect(closeTo(geometry!.labelY, nodeSize.height - SYSTEM_GRID_SIZE / 2)).toBe(true);
 }
 
 async function installSystemWebviewBridge(
