@@ -75,7 +75,6 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   // size instead of nodeWidth/nodeHeight; edge-anchored ports use the resolved size.
   const isResizable = node.kind === 'register' || node.kind === 'instance';
   const canonicalSize = isResizable ? diagramNodeDimensions(node) : { width: nodeWidth, height: nodeHeight };
-  const isResized = nodeWidth > canonicalSize.width || nodeHeight > canonicalSize.height;
   const parameterRows = instanceParameterRows(node);
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
   const nodeStyle = {
@@ -455,7 +454,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {node.kind === 'register' && (
-          <NodeResizeControls nodeId={id} moduleName={data.moduleName} isResized={isResized} />
+          <NodeResizeControls nodeId={id} />
         )}
         {warningIcon}
       </button>
@@ -690,7 +689,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
         : <div className="hdl-node-selection-rect" aria-hidden="true" />}
       {node.kind === 'instance' && (
-        <NodeResizeControls nodeId={id} moduleName={data.moduleName} isResized={isResized} />
+        <NodeResizeControls nodeId={id} />
       )}
       {warningIcon}
     </button>
@@ -702,19 +701,16 @@ const RESIZE_HANDLES: NodeResizeHandle[] = [
   'top-left', 'top-right', 'bottom-right', 'bottom-left'
 ];
 
-// Edge/corner grow-only resize hit-zones plus a hover/select-only "revert to
-// canonical size" button, shared by the instance and register branches above.
-// The drag itself is driven from DiagramApp (main.tsx) — see startNodeResize
-// on InteractionContext — this component only renders the affordances and
-// fires the revert message directly (a stateless, one-shot action).
-function NodeResizeControls({ nodeId, moduleName, isResized }: {
+// Edge/corner grow-only resize hit-zones shared by the instance and register
+// branches above. The drag itself is driven from DiagramApp (main.tsx) — see
+// startNodeResize on InteractionContext. Reverting a resize lives with the
+// other selected-block actions in NodeSelectionToolbar.
+function NodeResizeControls({ nodeId }: {
   nodeId: string;
-  moduleName?: string;
-  isResized: boolean;
 }): React.ReactElement {
   const { startNodeResize } = useContext(InteractionContext);
   return (
-    <>
+    <React.Fragment>
       {RESIZE_HANDLES.map((handle) => (
         <div
           key={handle}
@@ -723,34 +719,7 @@ function NodeResizeControls({ nodeId, moduleName, isResized }: {
           onClick={(event) => event.stopPropagation()}
         />
       ))}
-      {isResized && (
-        // A real <button> can't nest inside the outer .hdl-node <button> (invalid
-        // HTML — browsers would close the outer button early), so this is a
-        // div styled and keyboard-activatable as one instead.
-        <div
-          role="button"
-          tabIndex={0}
-          className="nodrag svsch-node-revert-size"
-          title="Revert to canonical size"
-          aria-label="Revert to canonical size"
-          onClick={(event) => {
-            event.stopPropagation();
-            vscode.postMessage({ type: 'revertNodeSize', moduleName, nodeId });
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            event.stopPropagation();
-            vscode.postMessage({ type: 'revertNodeSize', moduleName, nodeId });
-          }}
-          onDoubleClick={(event) => event.stopPropagation()}
-          onMouseDown={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          ⟲
-        </div>
-      )}
-    </>
+    </React.Fragment>
   );
 }
 

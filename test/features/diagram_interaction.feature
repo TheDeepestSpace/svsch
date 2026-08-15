@@ -79,6 +79,27 @@ Feature: Diagram Interaction
     When I reset the layout
     Then the "q" block should be at its canonical size
 
+  Scenario: Revert Size resets every resized block in the selection
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "u1" block on the right side by 3 grid cells
+    And I resize the "u2" block on the right side by 3 grid cells
+    And click and drag the mouse to select the blocks "u1" and "u2"
+    Then the "Revert Size" button should be visible
+    When I click the "Revert Size" button
+    Then the "u1" block should be at its canonical size
+    And the "u2" block should be at its canonical size
+
   Scenario: Rerouting a single connection without affecting other routes or positions
     Given I have a file "top.sv" in my workspace:
       """

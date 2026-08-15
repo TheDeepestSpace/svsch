@@ -416,49 +416,6 @@ select {
 .svsch-node-resize-bottom-right { bottom: -6px; right: -6px; cursor: nwse-resize; }
 .svsch-node-resize-bottom-left { bottom: -6px; left: -6px; cursor: nesw-resize; }
 
-/* Revert-to-canonical-size control — visually matches the edge Reroute/Cut
-   control group, but is its own single button positioned at the node's
-   top-right corner. Hover/select-only, same as the Reroute control on a
-   selected edge. */
-.svsch-node-revert-size {
-  align-items: center;
-  background: var(--vscode-button-secondaryBackground);
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  color: var(--vscode-button-secondaryForeground);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 11px;
-  height: 18px;
-  justify-content: center;
-  line-height: 1;
-  opacity: 0;
-  padding: 0;
-  pointer-events: none;
-  position: absolute;
-  right: -9px;
-  top: -27px;
-  transition: opacity 0.1s ease-in-out;
-  width: 18px;
-  z-index: 7;
-}
-
-.svsch-node-revert-size:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-.react-flow__node:hover .svsch-node-revert-size,
-.react-flow__node.selected .svsch-node-revert-size,
-.svsch-node-revert-size:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.svsch-node-revert-size:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
   border-style: solid;
@@ -1273,11 +1230,10 @@ select {
   transform: translate(-100%, 8px);
 }
 
-.svsch-selection-relayout-control,
-.svsch-selection-cutout-control {
+.svsch-selection-toolbar button {
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   font-family: var(--vscode-font-family);
@@ -1289,31 +1245,24 @@ select {
   white-space: nowrap;
 }
 
-/* Merge into a single button group (matching the edge Reroute/Cut controls)
-   whenever both buttons are showing — Auto Layout only renders from 2+
-   selected blocks, so it's always the group's left half when present. Cut
-   out is omitted entirely when there's nothing left to cut, and either
-   control falls back to full rounding when it ends up alone. */
-.svsch-selection-relayout-control {
+/* Merge every available selection action into one function-button group. */
+.svsch-selection-toolbar button:first-child {
   border-radius: 3px 0 0 3px;
-  border-right: none;
 }
 
-.svsch-selection-relayout-control:last-child {
-  border-radius: 3px;
-  border-right: 1px solid var(--vscode-panel-border);
-}
-
-.svsch-selection-cutout-control {
+.svsch-selection-toolbar button:last-child {
   border-radius: 0 3px 3px 0;
 }
 
-.svsch-selection-cutout-control:first-child {
+.svsch-selection-toolbar button:only-child {
   border-radius: 3px;
 }
 
-.svsch-selection-relayout-control:hover,
-.svsch-selection-cutout-control:hover {
+.svsch-selection-toolbar button + button {
+  border-left: none;
+}
+
+.svsch-selection-toolbar button:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 

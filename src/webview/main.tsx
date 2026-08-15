@@ -510,15 +510,23 @@ function DiagramApp(): React.ReactElement {
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
-    setNodes(view.nodes.map((node) => ({
-      id: node.id,
-      type: 'hdl',
-      position: node.position,
-      selected: reselectIds?.has(node.id) ?? undefined,
-      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
-    })));
+    setNodes(view.nodes.map((node) => {
+      const dimensions = resolvedNodeDimensions(node);
+      return {
+        id: node.id,
+        type: 'hdl',
+        position: node.position,
+        selected: reselectIds?.has(node.id) ?? undefined,
+        className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
+        zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+        // Keep React Flow's measured wrapper in lockstep with the node body;
+        // node action markup must not determine whether resized geometry is
+        // remeasured.
+        style: dimensions,
+        measured: dimensions,
+        data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
+      };
+    }));
     setRegions(view.generateRegions ?? []);
 
     const netToLeader = new Map<string, string>();
@@ -1010,6 +1018,8 @@ function applyNodeResizeDrag(
     return {
       ...node,
       position,
+      style: { ...node.style, width, height },
+      measured: { width, height },
       data: {
         ...node.data,
         node: {
@@ -1260,9 +1270,8 @@ function GenerateRegionOverlay({
 }
 
 // Floating toolbar shown above the bounding box of a block selection. "Auto
-// Layout" only makes sense once there's more than one block to re-place, but
-// "Cut out" is useful for a lone block too, so it appears from a single
-// selected block onward — as long as at least one connection remains to cut.
+// Layout" only makes sense once there's more than one block to re-place, while
+// "Revert Size" and "Cut out" can apply to a lone selected block.
 //
 // Auto Layout: releases just the selected blocks (and the routes of any edge
 // touching one of them) back to ELK's auto-layout — using their current
@@ -1312,9 +1321,16 @@ function NodeSelectionToolbar({
     });
   }, [selected, edges]);
 
-  // Nothing to offer: a lone block with every net already cut gets neither
-  // control, so skip rendering the (now empty) toolbar entirely.
-  if (!overlayPortalNode || selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) {
+  const resizedNodeIds = useMemo(
+    () => selected
+      .filter((node) => node.data.node.sizeOverride !== undefined)
+      .map((node) => node.id),
+    [selected]
+  );
+
+  // Skip rendering an empty toolbar.
+  if (!overlayPortalNode || selected.length < 1
+    || (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0)) {
     return null;
   }
 
@@ -1399,6 +1415,12 @@ function NodeSelectionToolbar({
     vscode.postMessage({ type: 'cutNets', moduleName, edges: diagramEdges, nodes: positioned });
   };
 
+  const handleRevertSize = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (resizedNodeIds.length === 0) return;
+    vscode.postMessage({ type: 'revertNodeSizes', moduleName, nodeIds: resizedNodeIds });
+  };
+
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div
@@ -1416,6 +1438,19 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Auto Layout
+          </button>
+        )}
+        {resizedNodeIds.length > 0 && (
+          <button
+            type="button"
+            className="svsch-selection-revert-size-control"
+            title={resizedNodeIds.length === 1 ? 'Revert the selected block to its canonical size' : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`}
+            onClick={handleRevertSize}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Revert Size
           </button>
         )}
         {cutOutEdges.length > 0 && (

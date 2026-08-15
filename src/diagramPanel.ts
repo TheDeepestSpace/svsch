@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
 import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize } from './layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSizes } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { minifySvg } from './cli/svgMinify';
@@ -30,7 +30,7 @@ type WebviewMessage =
   | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
-  | { type: 'revertNodeSize'; moduleName: string; nodeId: string }
+  | { type: 'revertNodeSizes'; moduleName: string; nodeIds: string[] }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
@@ -272,8 +272,8 @@ export class DiagramPanel {
       await this.resetCutLabelPosition(message.moduleName, message.nodeId);
       return;
     }
-    if (message.type === 'revertNodeSize') {
-      await this.revertNodeSize(message.moduleName, message.nodeId);
+    if (message.type === 'revertNodeSizes') {
+      await this.revertNodeSizes(message.moduleName, message.nodeIds);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -669,14 +669,14 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async revertNodeSize(moduleName: string, nodeId: string): Promise<void> {
+  private async revertNodeSizes(moduleName: string, nodeIds: string[]): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
     }
     await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
-    this.layout = revertNodeSize(this.layout, moduleName, nodeId);
+    this.layout = revertNodeSizes(this.layout, moduleName, nodeIds);
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }

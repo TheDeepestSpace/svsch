@@ -3303,6 +3303,14 @@ export function revertNodeSize(layout: SavedLayout, moduleName: string, nodeId: 
   };
 }
 
+/** Clears the manual size override from every selected node in one update. */
+export function revertNodeSizes(layout: SavedLayout, moduleName: string, nodeIds: string[]): SavedLayout {
+  return nodeIds.reduce(
+    (nextLayout, nodeId) => revertNodeSize(nextLayout, moduleName, nodeId),
+    layout
+  );
+}
+
 export function mergeRegionBounds(layout: SavedLayout, moduleName: string, regions: PositionedGenerateRegion[]): SavedLayout {
   const next: SavedLayout = {
     version: 1,

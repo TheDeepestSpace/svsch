@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize, revertNodeSizes } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
@@ -724,6 +724,29 @@ describe('layout merge', () => {
     expect(revertNodeSize(layout, 'top', 'u')).toEqual(layout);
     expect(revertNodeSize(layout, 'top', 'missing')).toEqual(layout);
     expect(revertNodeSize(layout, 'missing-module', 'u')).toEqual(layout);
+  });
+
+  it('revertNodeSizes clears every selected override and leaves other nodes alone', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u1: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
+            u2: { x: 300, y: 100, fixed: true, width: 10, height: 6 },
+            u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
+          }
+        }
+      }
+    };
+
+    const reverted = revertNodeSizes(layout, 'top', ['u1', 'u2']);
+
+    expect(reverted.modules.top.nodes).toEqual({
+      u1: { x: 100, y: 100, fixed: true },
+      u2: { x: 300, y: 100, fixed: true },
+      u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
+    });
   });
 
   it('grows a resized instance past its saved size at view-model build time, floored by canonical size', async () => {
