@@ -676,7 +676,7 @@ async function assertSystemRegisterResetPortAnchored(
     if (!handle || !label) return null;
     return {
       handleLeft: Number.parseFloat(handle.style.left),
-      handleTop: Number.parseFloat(handle.style.top),
+      handleBottom: Number.parseFloat(handle.style.bottom),
       labelX: Number.parseFloat(label.getAttribute('x') ?? ''),
       labelY: Number.parseFloat(label.getAttribute('y') ?? ''),
     };
@@ -684,7 +684,7 @@ async function assertSystemRegisterResetPortAnchored(
 
   expect(geometry).not.toBeNull();
   expect(closeTo(geometry!.handleLeft, nodeSize.width / 2)).toBe(true);
-  expect(closeTo(geometry!.handleTop, nodeSize.height - SYSTEM_GRID_SIZE / 2)).toBe(true);
+  expect(closeTo(geometry!.handleBottom, 0)).toBe(true);
   expect(closeTo(geometry!.labelX, nodeSize.width / 2)).toBe(true);
   expect(closeTo(geometry!.labelY, nodeSize.height - SYSTEM_GRID_SIZE / 2)).toBe(true);
 }

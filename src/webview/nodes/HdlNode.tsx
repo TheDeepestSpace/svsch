@@ -443,7 +443,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         {clockPort && <Handle type="target" id={clockPort.id} position={Position.Left}
           style={{ top: registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom}
-          style={{ left: nodeWidth / 2, top: registerPortTop('reset', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
+          style={{ left: nodeWidth / 2, bottom: 0, transform: 'translate(-50%, 0)' }} />}
         {rvPort && <Handle type="target" id={rvPort.id} position={Position.Left}
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (
