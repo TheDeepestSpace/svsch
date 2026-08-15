@@ -139,7 +139,7 @@
       "target": "reg:register_async_reset:q",
       "sourceHandle": "port:rst",
       "targetHandle": "rst",
-      "path": "M 144 168 L 168 168 L 432 168 L 432 117"
+      "path": "M 144 168 L 168 168 L 432 168 L 432 120"
     },
     {
       "id": "edge:reg:register_async_reset:q:port:register_async_reset:q:q",

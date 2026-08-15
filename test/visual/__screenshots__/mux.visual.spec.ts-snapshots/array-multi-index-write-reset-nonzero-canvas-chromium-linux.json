@@ -223,7 +223,7 @@
       "target": "reg:array_multi_index_write_reset_nonzero:storage",
       "sourceHandle": "port:reset",
       "targetHandle": "reset",
-      "path": "M 552 360 L 864 360 L 864 333"
+      "path": "M 552 360 L 864 360 L 864 336"
     },
     {
       "id": "edge:reg:array_multi_index_write_reset_nonzero:storage:mux:array_multi_index_write_reset_nonzero:storage_addr:storage",

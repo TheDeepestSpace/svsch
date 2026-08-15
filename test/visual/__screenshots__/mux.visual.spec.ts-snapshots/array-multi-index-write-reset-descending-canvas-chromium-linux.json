@@ -190,7 +190,7 @@
       "target": "reg:array_multi_index_write_reset_descending:storage",
       "sourceHandle": "port:reset",
       "targetHandle": "reset",
-      "path": "M 552 240 L 864 240 L 864 213"
+      "path": "M 552 240 L 864 240 L 864 216"
     },
     {
       "id": "edge:reg:array_multi_index_write_reset_descending:storage:mux:array_multi_index_write_reset_descending:storage_addr:storage",

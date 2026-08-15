@@ -139,7 +139,7 @@
       "target": "reg:register_active_low_reset:q",
       "sourceHandle": "port:rst_n",
       "targetHandle": "rst_n",
-      "path": "M 144 168 L 168 168 L 432 168 L 432 117"
+      "path": "M 144 168 L 168 168 L 432 168 L 432 120"
     },
     {
       "id": "edge:reg:register_active_low_reset:q:port:register_active_low_reset:q:q",
