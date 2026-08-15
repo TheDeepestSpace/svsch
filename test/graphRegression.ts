@@ -188,8 +188,6 @@ export function compareGraphState(
     !fs.existsSync(snapshotPath) || fs.statSync(snapshotPath).size === 0;
   if (snapshotMissingOrEmpty) {
     assertBaselineCreatable(snapshotPath, updateSnapshots);
-  }
-  if (snapshotMissingOrEmpty || updateSnapshots) {
     const parentDir = path.dirname(snapshotPath);
     if (!fs.existsSync(parentDir)) {
       fs.mkdirSync(parentDir, { recursive: true });
@@ -201,6 +199,14 @@ export function compareGraphState(
 
   const expectedJson = fs.readFileSync(snapshotPath, 'utf8');
   const normalizedExpectedJson = normalizeGraphSnapshotJson(expectedJson);
+  if (actualJson === normalizedExpectedJson) {
+    return;
+  }
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, actualJson);
+    console.log(`Updated baseline graph: ${snapshotPath}`);
+    return;
+  }
   if (
     actualHasContent &&
     normalizedExpectedJson === JSON.stringify({ nodes: [], edges: [] }, null, 2)
@@ -328,15 +334,21 @@ export function compareSvgSnapshot(
 
   if (snapshotMissing) {
     assertBaselineCreatable(snapshotPath, updateSnapshots);
-  }
-  if (snapshotMissing || updateSnapshots) {
     fs.mkdirSync(path.dirname(snapshotPath), { recursive: true });
     fs.writeFileSync(snapshotPath, actualSvg);
-    console.log(`Created or updated baseline SVG: ${snapshotPath}`);
+    console.log(`Created baseline SVG: ${snapshotPath}`);
     return;
   }
 
   const expectedSvg = fs.readFileSync(snapshotPath, 'utf8');
+  if (actualSvg === expectedSvg) {
+    return;
+  }
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, actualSvg);
+    console.log(`Updated baseline SVG: ${snapshotPath}`);
+    return;
+  }
 
   if (actualSvg !== expectedSvg) {
     fs.mkdirSync(resultsDir, { recursive: true });

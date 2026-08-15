@@ -19,6 +19,7 @@ import {
 } from '../../src/webview/arrayStackGeometry';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
@@ -750,7 +751,7 @@ test.describe('mux visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'mux-long-names-webview.png', {
       fullPage: true,
-      maxDiffPixels: 2,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.muxLongNames,
     });
   });
 
@@ -795,7 +796,7 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'register-active-low-reset-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
-      maxDiffPixels: 50,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.default,
     });
   });
 
