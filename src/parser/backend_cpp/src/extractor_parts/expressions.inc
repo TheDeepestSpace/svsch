@@ -665,9 +665,17 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
 
     std::string expr_str = getExprText(expr);
     std::string width = getWidth(expr);
-    std::string declared_output_width = getDeclaredSignalWidth(mod, out_signal);
-    if (bitSizeFromWidth(declared_output_width) > bitSizeFromWidth(width)) {
-        width = declared_output_width;
+    int gate_op = vpi_get(vpiOpType, expr);
+    if (gate_op == vpiLogAndOp || gate_op == vpiLogOrOp) {
+        // `&&` and `||` always reduce to a single bit regardless of operand
+        // width, so keep the output scalar and let the case-arm lowering
+        // insert an explicit zext (mirrors promoteComparatorExpr).
+        width = "[0:0]";
+    } else {
+        std::string declared_output_width = getDeclaredSignalWidth(mod, out_signal);
+        if (bitSizeFromWidth(declared_output_width) > bitSizeFromWidth(width)) {
+            width = declared_output_width;
+        }
     }
 
     Node n;
@@ -780,11 +788,13 @@ std::string DesignExtractor::promoteComparatorExpr(vpiHandle expr, Module& mod, 
     n.ports.push_back({"rhs", "input", rhs_signal, getWidth(operands[1]), "rhs"});
 
     // A comparison always yields a single bit, regardless of operand width.
+    // Use an explicit "[0:0]" (rather than an empty string) so downstream
+    // width checks can tell "known to be 1 bit" apart from "unknown".
     std::string display_label = out_signal;
     if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
         display_label = display_label.substr(0, display_label.size() - 5);
     }
-    n.ports.push_back({out_signal, "output", out_signal, "", display_label});
+    n.ports.push_back({out_signal, "output", out_signal, "[0:0]", display_label});
     mod.nodes.push_back(n);
     propagateStruct(mod, preferred_name, out_signal);
     return out_signal;

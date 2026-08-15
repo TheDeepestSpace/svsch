@@ -1027,7 +1027,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const muxSelectorExpr = graph.modules.mux_selector_expr;
     const mux = muxSelectorExpr.nodes.find((node) => node.kind === 'mux');
     // `sel & sidekick` now gets a dedicated gate node instead of a generic comb block.
-    const selectorComb = muxSelectorExpr.nodes.find((node) => node.kind === 'gate' || node.kind === 'comb');
+    const selectorComb = muxSelectorExpr.nodes.find((node) => node.kind === 'gate');
 
     expect(mux).toBeDefined();
     if (backend === 'uhdm') {

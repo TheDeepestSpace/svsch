@@ -637,7 +637,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
   if (node.kind === 'zext') {
     return (
       <button
-        className="hdl-node hdl-node-zext"
+        className={`hdl-node hdl-node-zext${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -653,6 +653,7 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
         {outputs.slice(0, 1).map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
+        {isArray && <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
         {warningIcon}
       </button>
     );

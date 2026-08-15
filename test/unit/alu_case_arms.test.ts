@@ -27,22 +27,36 @@ describe.each(['uhdm'] as const)('ALU-style case arms: %s', (backend) => {
     expect(aluNodes.some((n) => n.metadata?.operation === '+')).toBe(true);
     expect(aluNodes.some((n) => n.metadata?.operation === '-')).toBe(true);
 
-    // & and | each get a dedicated gate node.
-    expect(gateNodes).toHaveLength(2);
+    // &, |, and && each get a dedicated gate node.
+    expect(gateNodes).toHaveLength(3);
     expect(gateNodes.some((n) => n.metadata?.operation === '&')).toBe(true);
     expect(gateNodes.some((n) => n.metadata?.operation === '|')).toBe(true);
+    expect(gateNodes.some((n) => n.metadata?.operation === '&&')).toBe(true);
+
+    // && reduces to a single bit regardless of operand width, same as a comparator.
+    const logicalGateNode = gateNodes.find((n) => n.metadata?.operation === '&&');
+    const logicalGateOutput = logicalGateNode?.ports.find((p) => p.direction === 'output');
+    expect(logicalGateOutput?.width).toBe('[0:0]');
 
     // < gets a dedicated comparator node with a 1-bit output.
     expect(comparatorNodes).toHaveLength(1);
     expect(comparatorNodes[0].metadata?.operation).toBe('<');
     const comparatorOutput = comparatorNodes[0].ports.find((p) => p.direction === 'output');
-    expect(comparatorOutput?.width ?? '').toBe('');
+    expect(comparatorOutput?.width).toBe('[0:0]');
 
-    // The comparator's 1-bit output feeds the wider mux through an explicit zext node.
-    expect(zextNodes).toHaveLength(1);
-    const zextInput = zextNodes[0].ports.find((p) => p.direction === 'input');
-    const zextOutput = zextNodes[0].ports.find((p) => p.direction === 'output');
+    // Both the comparator's and the logical gate's 1-bit outputs feed the wider
+    // mux through explicit zext nodes.
+    expect(zextNodes).toHaveLength(2);
+    const zextForComparator = zextNodes.find((n) =>
+      n.ports.find((p) => p.direction === 'input')?.connectedSignal === comparatorOutput?.connectedSignal);
+    expect(zextForComparator).toBeDefined();
+    const zextInput = zextForComparator!.ports.find((p) => p.direction === 'input');
+    const zextOutput = zextForComparator!.ports.find((p) => p.direction === 'output');
     expect(zextInput?.connectedSignal).toBe(comparatorOutput?.connectedSignal);
+    expect(zextInput?.width).toBe(comparatorOutput?.width);
+    expect(zextOutput?.width).not.toBe(zextInput?.width);
+    const muxOutput = mux.ports.find((p) => p.direction === 'output');
+    expect(zextOutput?.width).toBe(muxOutput?.width);
     expect(mux.ports.some((p) => p.direction === 'input' && p.connectedSignal === zextOutput?.connectedSignal)).toBe(true);
 
     // default: result = '0 keeps rendering as its own constant-0 block.
