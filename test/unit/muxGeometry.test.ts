@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { diagramSizing } from '../../src/diagram/constants';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
-import { gateInputPortCenterY, muxInputPortCenterY } from '../../src/diagram/muxGeometry';
+import { gateInputPortCenterY } from '../../src/diagram/muxGeometry';
 import type { DiagramNode } from '../../src/ir/types';
 
 const grid = diagramSizing.gridSize;
@@ -35,10 +35,13 @@ describe('gateInputPortCenterY', () => {
     expect(height - ys[ys.length - 1]).toBe(grid);
   });
 
-  test('falls back to the centered mux spacing once the one-grid-apart layout would overflow the body', () => {
-    const { height } = diagramNodeDimensions(gateOfInputCount(4));
-    for (let i = 0; i < 4; i++) {
-      expect(gateInputPortCenterY(i, 4, height)).toBe(muxInputPortCenterY(i, 4, height));
+  test.each([4, 5, 8])('%i-input gate ports stay one full grid line apart, growing the body to fit', (count) => {
+    const { height } = diagramNodeDimensions(gateOfInputCount(count));
+    const ys = Array.from({ length: count }, (_, i) => gateInputPortCenterY(i, count, height));
+    expect(ys[0]).toBe(grid);
+    expect(height - ys[ys.length - 1]).toBe(grid);
+    for (let i = 1; i < ys.length; i++) {
+      expect(ys[i] - ys[i - 1]).toBe(grid * 2);
     }
   });
 });
