@@ -3,7 +3,7 @@ import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwri
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import path from 'path';
 import os from 'os';
-import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import { configuredPlaywrightUpdateMode } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -48,10 +48,6 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   workers: 1,
   timeout: 120_000,
   reporter: reporters,
-  snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
-  expect: {
-    toHaveScreenshot: { maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.bdd },
-  },
   use: {
     extensionDevelopmentPath: root,
     // Use a minimal workspace with no .sv files at startup; scenarios write

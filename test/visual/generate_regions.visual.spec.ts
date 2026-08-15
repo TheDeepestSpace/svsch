@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { diagramSizing } from '../../src/diagram/constants';
 import type { DiagramViewModel } from '../../src/ir/types';
 import { GENERATE_REGION_EXTERNAL_BLOCK_WARNING } from '../../src/layout/generateRegionValidation';
-import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 import { expectGraphAndScreenshot, openFixture, openView, paddedGraphAndRegionsClip, trackView } from './helper';
 
 type RegionSide = 'left' | 'right' | 'top' | 'bottom';
@@ -38,8 +37,7 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
 
     await expectGraphAndScreenshot(page, 'generate-if-else-regions-canvas.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
   });
 
@@ -71,8 +69,7 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator('.generate-region-inactive')).toHaveCount(2);
 
     await expectGraphAndScreenshot(page, 'generate-case-regions-canvas.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
   });
 
@@ -103,8 +100,7 @@ test.describe('generate region visual rendering', () => {
     expect(edgeStateOrder).toContain(2);
 
     await expectGraphAndScreenshot(page, 'generate-if-else-regions-auto-canvas.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
   });
 
@@ -120,8 +116,7 @@ test.describe('generate region visual rendering', () => {
     await expect(page.locator('.generate-region.generate-block .generate-region-title')).toContainText('generate case (MODE)');
 
     await expectGraphAndScreenshot(page, 'generate-case-regions-auto-canvas.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
   });
 
@@ -140,8 +135,7 @@ test.describe('generate region visual rendering', () => {
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, overlapView));
     await expectGraphAndScreenshot(page, 'generate-region-overlap-warning.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
     await page.mouse.up();
   });
@@ -162,8 +156,7 @@ test.describe('generate region visual rendering', () => {
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, externalNodeView));
     await expectGraphAndScreenshot(page, 'generate-region-external-node-warning.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
     await page.mouse.up();
   });
@@ -179,8 +172,7 @@ test.describe('generate region visual rendering', () => {
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, view));
     await expectGraphAndScreenshot(page, 'generate-block-overlap-warning.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
     await page.mouse.up();
   });
@@ -202,8 +194,7 @@ test.describe('generate region visual rendering', () => {
 
     trackView(page, await viewWithRenderedGenerateRegionBounds(page, view));
     await expectGraphAndScreenshot(page, 'generate-block-intrusion-warning.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
     await page.mouse.up();
   });
@@ -236,8 +227,7 @@ test.describe('generate region visual rendering', () => {
     expect(stackedBadgeClearance.every(({ badgeRight, warningLeft }) => warningLeft > badgeRight)).toBe(true);
 
     await expectGraphAndScreenshot(page, 'error-highlight-block-types.png', {
-      clip: await paddedGraphAndRegionsClip(page),
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+      clip: await paddedGraphAndRegionsClip(page)
     });
   });
 
@@ -376,8 +366,7 @@ test.describe('generate region visual rendering', () => {
 
       trackView(page, await viewWithRenderedGenerateRegionBounds(page, expandedView));
       await expectGraphAndScreenshot(page, `generate-region-resize-${side}.png`, {
-        clip: await paddedGraphAndRegionsClip(page),
-        maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions
+        clip: await paddedGraphAndRegionsClip(page)
       });
     });
   }
