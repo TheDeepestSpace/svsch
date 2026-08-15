@@ -223,14 +223,9 @@ jobs:
 
       - name: Reject sub-threshold visual baseline updates
         if: github.event_name == 'pull_request'
-        env:
-          SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          SNAPSHOT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA" "$SNAPSHOT_HEAD_SHA"
-          npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" visual "$SNAPSHOT_HEAD_SHA"
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: visual
 
       - &pw_version_step
         name: Get Playwright version
@@ -365,14 +360,9 @@ jobs:
 
       - name: Reject sub-threshold BDD baseline updates
         if: github.event_name == 'pull_request'
-        env:
-          SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          SNAPSHOT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA" "$SNAPSHOT_HEAD_SHA"
-          npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" bdd "$SNAPSHOT_HEAD_SHA"
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: bdd
 
       - *pw_version_step
       - *pw_cache_step
@@ -448,14 +438,9 @@ jobs:
 
       - name: Reject sub-threshold system baseline updates
         if: github.event_name == 'pull_request'
-        env:
-          SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          SNAPSHOT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA" "$SNAPSHOT_HEAD_SHA"
-          npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" system "$SNAPSHOT_HEAD_SHA"
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: system
 
       - *pw_version_step
       - *pw_cache_step
