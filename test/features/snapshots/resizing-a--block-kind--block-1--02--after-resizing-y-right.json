@@ -107,7 +107,7 @@
         "x": 456,
         "y": 96
       },
-      "width": 96,
+      "width": 168,
       "height": 96,
       "data": {
         "kind": "register",
@@ -162,7 +162,7 @@
       "target": "port:top:y",
       "sourceHandle": "q",
       "targetHandle": "port:y",
-      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+      "path": "M 624 144 L 648 144 L 744 144 L 768 144"
     }
   ]
 }

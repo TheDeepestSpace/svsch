@@ -107,7 +107,7 @@
         "x": 456,
         "y": 96
       },
-      "width": 96,
+      "width": 168,
       "height": 96,
       "data": {
         "kind": "register",
@@ -138,7 +138,7 @@
       "target": "reg:top:y",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 432 168 L 432 168 L 456 168"
+      "path": "M 432 168"
     },
     {
       "id": "cut-stub:port:top:clk:port:clk:source",
@@ -154,7 +154,7 @@
       "target": "reg:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "d",
-      "path": "M 144 144 L 168 144 L 432 144 L 456 144"
+      "path": "M 157 148 L 451 148"
     },
     {
       "id": "edge:reg:top:y:port:top:y:y",
@@ -162,7 +162,7 @@
       "target": "port:top:y",
       "sourceHandle": "q",
       "targetHandle": "port:y",
-      "path": "M 552 144 L 576 144 L 744 144 L 768 144"
+      "path": "M 637 148 L 763 148"
     }
   ]
 }
