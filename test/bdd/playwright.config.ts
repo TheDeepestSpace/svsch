@@ -3,6 +3,7 @@ import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwri
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import path from 'path';
 import os from 'os';
+import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -37,6 +38,7 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  updateSnapshots: configuredPlaywrightUpdateMode(),
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
@@ -48,7 +50,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   reporter: reporters,
   snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
   expect: {
-    toHaveScreenshot: { maxDiffPixels: 300 },
+    toHaveScreenshot: { maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.bdd },
   },
   use: {
     extensionDevelopmentPath: root,

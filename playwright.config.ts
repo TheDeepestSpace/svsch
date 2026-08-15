@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { chromiumStabilizationArgs } from './test/testConstants';
+import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from './test/snapshotPolicy';
 import path from 'path';
 
 let reporters: any[] = process.env.CI
@@ -24,6 +25,7 @@ const visualPort = getWorktreePort();
 const visualBaseUrl = `http://127.0.0.1:${visualPort}`;
 
 export default defineConfig({
+  updateSnapshots: configuredPlaywrightUpdateMode(),
   globalSetup: path.resolve(__dirname, 'test/visual/globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, 'test/globalTeardown.ts'),
   testDir: './test/visual',
@@ -34,7 +36,7 @@ export default defineConfig({
   reporter: reporters,
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 50
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.default
     }
   },
   use: {
