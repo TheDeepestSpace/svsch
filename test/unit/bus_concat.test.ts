@@ -268,8 +268,13 @@ describe('parser: concatenation as bus composition', () => {
       endmodule
     `);
     const mod = graph.modules.imm_gen;
-    const bus = mod.nodes.find(n => n.kind === 'bus' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === 'imm_next'));
+    const bus = mod.nodes.find(n => n.kind === 'bus' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === 'imm'));
     const replicate = mod.nodes.find(n => n.kind === 'replicate');
+
+    // The always_comb body is a single unconditional concat assignment, so the
+    // promoted bus-composition node drives "imm" directly — no wrapping "comb"
+    // alias node should be synthesized around it.
+    expect(mod.nodes.some(n => n.kind === 'comb')).toBe(false);
 
     expect(bus).toBeDefined();
     expect(bus?.ports.find(p => p.direction === 'output')).toMatchObject({ width: '[7:0]' });
