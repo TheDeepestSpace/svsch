@@ -647,6 +647,13 @@ async function resizeSystemRegisterAndAssertPersistence(
       && closeTo(reopenedPosition.x, resizedPosition.x)
       && closeTo(reopenedPosition.y, resizedPosition.y);
   }, { timeout: 10_000 }).toBe(true);
+
+  // Lock the final, disk-restored rendering for every resize handle. Keeping
+  // the screenshot after the reopen makes the visual assertion cover both the
+  // direction-specific geometry and its persisted representation.
+  await dismissSystemNotifications(workbox);
+  await webview.locator('.canvas').hover({ position: { x: 8, y: 8 }, force: true });
+  await expect(workbox).toHaveScreenshot(`register-resized-${resizeCase.handle}-after-reload.png`);
 }
 
 async function installSystemWebviewBridge(
