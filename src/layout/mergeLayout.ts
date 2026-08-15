@@ -824,6 +824,19 @@ function buildNetCutProjection(
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
+  // Mutually exclusive generate arms can each carry an edge to the same
+  // declared target (e.g. two case arms both driving the module's output) —
+  // only one arm is cut, but the other still lands a real, uncut edge on
+  // that same target port. Wiring this cut's sink stub into that port too
+  // would splice a redundant cut-net-end onto the middle of the arm's live
+  // wire, so skip the sink projection wherever the target is already fed.
+  const activeCutKeys = new Set(activeCuts.keys());
+  const liveTargetEndpoints = new Set(
+    designModule.edges
+      .filter((edge) => !activeCutKeys.has(edgeNetKey(edge)))
+      .map((edge) => endpointKey(edge.target, edge.targetPort))
+  );
+
   for (const [netKey, { cut, edges: cutEdges }] of activeCuts) {
     const sortedCutEdges = [...cutEdges].sort((a, b) => a.id.localeCompare(b.id));
     const firstEdge = sortedCutEdges[0];
@@ -885,6 +898,10 @@ function buildNetCutProjection(
     }));
 
     for (const edge of sortedCutEdges) {
+      if (liveTargetEndpoints.has(endpointKey(edge.target, edge.targetPort))) {
+        continue;
+      }
+
       const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
       if (!targetLead) {
         continue;

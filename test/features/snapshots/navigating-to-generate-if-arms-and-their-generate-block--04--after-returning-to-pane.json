@@ -1,27 +1,6 @@
 {
   "nodes": [
     {
-      "id": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "type": "hdl",
-      "position": {
-        "x": 936,
-        "y": 408
-      },
-      "width": 96,
-      "height": 48,
-      "data": {
-        "kind": "netLabel",
-        "ports": [
-          {
-            "id": "cut",
-            "name": "cut",
-            "direction": "output"
-          }
-        ]
-      },
-      "inactive": true
-    },
-    {
       "id": "cut-label:instance:top:g_zero.u_zero:port:y:source",
       "type": "hdl",
       "position": {
@@ -156,15 +135,6 @@
     }
   ],
   "edges": [
-    {
-      "id": "cut-stub:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "source": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "target": "port:top:y",
-      "sourceHandle": "cut",
-      "targetHandle": "port:y",
-      "path": "M 1032 432 L 1032 432 L 1056 432",
-      "inactive": true
-    },
     {
       "id": "cut-stub:instance:top:g_zero.u_zero:port:y:source",
       "source": "instance:top:g_zero.u_zero",
