@@ -580,7 +580,10 @@ When('I resize the {string} block on the {word} side by {int} grid cells', async
   const before = JSON.stringify(await readExtensionLayout(this));
   this.notedRegionBounds.set(label, await getNodeBounds(this.webviewPage, id));
   await dragNodeSideByGridCells(this, id, side, cells);
-  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`);
+  const resizedBounds = await getNodeBounds(this.webviewPage, id);
+  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`, async () => {
+    await waitForFlowNodeSize(this.webviewPage, id, resizedBounds);
+  });
 });
 
 When('I move the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
@@ -2513,10 +2516,16 @@ async function clickEdgeControl(world: BddWorld, edgeId: string, controlClass: s
   await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
 }
 
-async function waitForLayoutChange(world: BddWorld, before: string, screenshotLabel: string): Promise<void> {
+async function waitForLayoutChange(
+  world: BddWorld,
+  before: string,
+  screenshotLabel: string,
+  afterLayoutChange?: () => Promise<void>
+): Promise<void> {
   await expect.poll(async () => JSON.stringify(await readExtensionLayout(world)) !== before, { timeout: 10_000 }).toBe(true);
   world.layout = await readExtensionLayout(world);
   await syncLastViewModel(world, world.lastViewModel?.moduleName);
+  await afterLayoutChange?.();
   await waitForExtensionRenderedView(world, screenshotLabel);
 }
 
@@ -2572,6 +2581,29 @@ async function getNodeBounds(webviewPage: FrameLocator, nodeId: string): Promise
     };
   });
   return { x: position.x, y: position.y, ...size };
+}
+
+// The node body gets its persisted size from an inline custom property, while
+// graph snapshots use React Flow's asynchronously measured dimensions. Wait
+// for those two views to agree so a resize snapshot cannot capture the new
+// edge endpoints with the previous node width.
+async function waitForFlowNodeSize(
+  webviewPage: FrameLocator,
+  nodeId: string,
+  expected: { width: number; height: number }
+): Promise<void> {
+  await expect.poll(async () => webviewPage.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((candidate: any) => candidate.id === id);
+    if (!node) return undefined;
+    return {
+      width: Math.round(node.measured?.width ?? node.width ?? 0),
+      height: Math.round(node.measured?.height ?? node.height ?? 0)
+    };
+  }, nodeId), { timeout: 10_000 }).toEqual({
+    width: Math.round(expected.width),
+    height: Math.round(expected.height)
+  });
 }
 
 async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string, side: RegionSide, cells: number): Promise<void> {
