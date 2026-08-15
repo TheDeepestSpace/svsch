@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildFixtureView, openView, paddedAllNodesClip, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
+import { buildFixtureView, openView, paddedAllNodesClip, recordPendingRenderDuration, waitForViewportTransformToSettle, type VisualLayoutMode } from './helper';
 import { elkNodeForDiagramNode, elkRoutingNodeForDiagramNode } from '../../src/layout/mergeLayout';
 import { visualHandleGeometry } from '../../src/diagram/visualHandleGeometry';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
@@ -108,6 +108,7 @@ const selections: FixtureSelection[] = [
     picks: [{ label: 'interface: scalar caps only', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
   },
   { fixture: 'typed_instance_ports.sv', picks: [{ label: 'instance', match: (n) => n.kind === 'instance' }] },
+  { fixture: 'instance_array.sv', picks: [{ label: 'instance: stacked', match: (n) => n.kind === 'instance' && nodeIsArrayNode(n) }] },
   { fixture: 'replication_expr.sv', picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }] },
   { fixture: 'loop_logic.sv', picks: [{ label: 'loop', match: (n) => n.kind === 'loop' }] },
   { fixture: 'latch_simple.sv', picks: [{ label: 'latch', match: (n) => n.kind === 'latch' }] },
@@ -412,6 +413,7 @@ test.describe('elk geometry grid', () => {
     await injectOverlay(page, overlay);
     await waitForViewportTransformToSettle(page);
     await page.waitForTimeout(100);
+    recordPendingRenderDuration(page);
 
     await expect(page).toHaveScreenshot('elk-geometry-grid.png', {
       clip: await paddedAllNodesClip(page)

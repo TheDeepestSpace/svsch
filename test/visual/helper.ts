@@ -9,6 +9,7 @@ import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import { captureGraphState, compareGraphState, compareSvgSnapshot } from '../graphRegression';
 import { renderSvg } from '../../src/cli/svgRenderer';
+import { recordNamedBenchmarkSample } from '../benchmarkUtils';
 
 const reactFlowCss = fs.readFileSync(
   require.resolve('@xyflow/react/dist/style.css'),
@@ -27,12 +28,84 @@ export function trackView(page: Page, view: DiagramViewModel): void {
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
+// Timing: "post message -> DOM attached" duration, analogous to the system
+// suite's rebuild->firstGraph interval. Set when postView() posts the graph.
+// openFixture() resolves it precisely once its readySelector attaches; any
+// other caller (openView() used directly) falls back to resolving it in
+// expectGraphAndScreenshot(), so every test that renders something records a
+// rendering sample, not just fixture-based ones — the fallback's span can
+// include whatever interactions a test does between opening the view and
+// screenshotting it, so it's a looser number than openFixture()'s, but still
+// a real "diagram is visible" measurement rather than a missing one.
+const postViewStartedAt = new WeakMap<Page, number>();
+const pendingDiagramDurationMs = new WeakMap<Page, number>();
+const visualArtifactsDir = path.resolve(__dirname, '../../test-results/visual/artifacts');
+const visualRenderingSamplesFile = path.join(visualArtifactsDir, 'diagram-render-samples.log');
+const visualElaborationSamplesFile = path.join(visualArtifactsDir, 'diagram-elaboration-samples.log');
+
+// Groups samples under "<spec file> › <test title>", matching how they read in
+// the benchmark PR comment. Returns undefined outside of a running test.
+function currentVisualBenchmarkName(): string | undefined {
+  try {
+    const info = test.info();
+    return `${path.basename(info.file)} › ${info.title}`;
+  } catch {
+    return undefined;
+  }
+}
+
+// Exported so spec files that keep their own local render helpers (instead of
+// this module's postView()/openFixture()) can still record a sample with the
+// same naming/log-file convention — see mux.visual.spec.ts and
+// bus_composition.visual.spec.ts, which predate this instrumentation and
+// otherwise silently produce zero benchmark data.
+export function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durationMs: number): void {
+  const name = currentVisualBenchmarkName();
+  if (!name) return;
+  const samplesFile = metric === 'elaboration' ? visualElaborationSamplesFile : visualRenderingSamplesFile;
+  recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
+}
+
+// Median-of-11 sampling: lower std-error than x5 and rejects up to 5
+// outliers vs 2, which matters for benchmark timings noisy enough that a
+// single sample can show a spurious CI delta. BDD already dominates CI
+// runtime (~20min), so the extra samples' wall-clock cost is cheap here.
+const BENCHMARK_SAMPLE_COUNT = 11;
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+// Resolves and records whatever rendering timer is pending for `page` — the
+// precise one from openFixture() if set, else the postView() fallback. Called
+// automatically from expectGraphAndScreenshot(); exported so tests that
+// screenshot via a different path (e.g. a debug overlay test that skips the
+// graph/SVG regression checks) can still record a rendering sample.
+export function recordPendingRenderDuration(page: Page): void {
+  let pendingDurationMs = pendingDiagramDurationMs.get(page);
+  if (pendingDurationMs === undefined) {
+    const postedAt = postViewStartedAt.get(page);
+    if (postedAt !== undefined) {
+      pendingDurationMs = Date.now() - postedAt;
+    }
+  }
+  if (pendingDurationMs !== undefined) {
+    pendingDiagramDurationMs.delete(page);
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', pendingDurationMs);
+  }
+}
+
 export async function expectGraphAndScreenshot(
   page: Page,
   name: string,
   options?: any
 ) {
   const resultsDir = path.resolve(__dirname, '../../test-results/visual/graph-diffs');
+
+  recordPendingRenderDuration(page);
 
   // Use Playwright's built-in snapshot path logic to find the exact side-by-side location
   const jsonName = name.endsWith('.png') ? name.replace('.png', '.json') : `${name}.json`;
@@ -66,7 +139,6 @@ export type VisualLayoutMode = 'auto' | 'manual' | 'bus' | 'struct' | 'interface
 export async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLayoutMode = 'auto', moduleName?: string): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
 
-  await openView(page, view);
   const readySelector = layoutMode === 'bus'
     ? '[data-node-kind="bus"]'
     : layoutMode === 'struct'
@@ -84,7 +156,26 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
                 : layoutMode === 'generate'
                   ? '.generate-region'
                   : '.react-flow__node';
-  await page.waitForSelector(readySelector, { state: 'attached' });
+
+  // Re-open the view BENCHMARK_SAMPLE_COUNT times to get that many rendering
+  // (postView -> DOM attached) samples, but only the final open's DOM sticks
+  // around — the screenshot assertion downstream in expectGraphAndScreenshot()
+  // stays a single call, so this doesn't multiply screenshot cost.
+  const renderDurationsMs: number[] = [];
+  for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+    await openView(page, view);
+    await page.waitForSelector(readySelector, { state: 'attached' });
+    const postedAt = postViewStartedAt.get(page);
+    if (postedAt !== undefined) {
+      renderDurationsMs.push(Date.now() - postedAt);
+    }
+  }
+  if (renderDurationsMs.length !== BENCHMARK_SAMPLE_COUNT) {
+    throw new Error(
+      `Expected ${BENCHMARK_SAMPLE_COUNT} rendering samples, got ${renderDurationsMs.length}`
+    );
+  }
+  pendingDiagramDurationMs.set(page, median(renderDurationsMs));
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -101,6 +192,7 @@ export async function openView(page: Page, view: DiagramViewModel): Promise<void
 
 export async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
+  postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',
@@ -253,7 +345,14 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
-    const graph = await buildDesignGraph({
+    // This is the Surelog/UHDM (C++) parse + elaborate step — the part of
+    // diagram generation that doesn't run in JS at all, timed separately from
+    // the ELK layout and React render below. buildDesignGraph() repeats
+    // filesystem discovery and UHDM extraction on every call, so sampling it
+    // BENCHMARK_SAMPLE_COUNT times adds real backend work and CI time — unlike
+    // the rendering samples below, which just re-open the already-elaborated
+    // view.
+    const buildOptions = {
       workspaceRoot: tmpDir,
       projectFolder: '.',
       backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
@@ -261,7 +360,23 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
       surelogPath,
       backendPath,
       includeExternalDiagnostics: false
-    });
+    };
+    const elaborationDurationsMs: number[] = [];
+    let lastGraph: DesignGraph | undefined;
+    for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+      const elaborationStartedAt = Date.now();
+      const sampledGraph = await buildDesignGraph(buildOptions);
+      if (sampledGraph.rootModules.length === 0) {
+        continue;
+      }
+      elaborationDurationsMs.push(Date.now() - elaborationStartedAt);
+      lastGraph = sampledGraph;
+    }
+    if (!lastGraph) {
+      throw new Error(`buildDesignGraph() failed on all ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}`);
+    }
+    recordVisualBenchmark('elaboration', median(elaborationDurationsMs));
+    const graph = lastGraph;
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout = layoutMode === 'manual'
