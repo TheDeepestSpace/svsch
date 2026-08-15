@@ -401,6 +401,34 @@ describe('parser: concatenation as bus composition', () => {
     expect(mod.edges.some(e => e.source === 'port:top:bus_in' && e.target === bus?.id && e.targetPort === 'in:bus_in')).toBe(true);
   });
 
+  it('preserves tap widths for a procedural bus breakout with separate statements (UHDM)', async () => {
+    const graph = await runParser('uhdm', 'param_bus_breakout_procedural.sv', `
+      module param_bus_breakout #(
+        parameter DATA_WIDTH = 8
+      )(
+        input  logic [DATA_WIDTH-1:0] data_i,
+        output logic [3:0]            hi_o,
+        output logic [3:0]            lo_o
+      );
+        always_comb begin
+          hi_o = data_i[7:4];
+          lo_o = data_i[3:0];
+        end
+      endmodule
+    `);
+    const mod = graph.modules.param_bus_breakout;
+    const bus = mod.nodes.find(n => n.kind === 'bus' && n.label === 'data_i');
+
+    expect(bus).toBeDefined();
+    expect(bus?.ports.find(p => p.label === '[7:4]')).toMatchObject({ width: '[3:0]' });
+    expect(bus?.ports.find(p => p.label === '[3:0]')).toMatchObject({ width: '[3:0]' });
+
+    const busToHi = mod.edges.find(e => e.source === bus?.id && e.signal === 'data_i[7:4]');
+    const busToLo = mod.edges.find(e => e.source === bus?.id && e.signal === 'data_i[3:0]');
+    expect(busToHi).toMatchObject({ width: '[3:0]', metadata: expect.objectContaining({ thick: true }) });
+    expect(busToLo).toMatchObject({ width: '[3:0]', metadata: expect.objectContaining({ thick: true }) });
+  });
+
   it('interprets {a, b} for structs as a bus composition (UHDM)', async () => {
     const graph = await runParser('uhdm', 'bus_concat.sv', fixture('bus_concat.sv'));
     const mod = graph.modules.struct_concat;
