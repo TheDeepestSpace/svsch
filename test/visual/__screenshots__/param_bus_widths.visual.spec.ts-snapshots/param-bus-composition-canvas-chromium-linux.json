@@ -1,0 +1,204 @@
+{
+  "nodes": [
+    {
+      "id": "bus:param_bus_composition:imm_next:n0:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1104,
+        "y": 48
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:imm_next",
+            "name": "imm_next",
+            "direction": "output"
+          },
+          {
+            "id": "in:_7:4_",
+            "name": "[7:4]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_3:0_",
+            "name": "[3:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:param_bus_composition:instr",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 48
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:instr",
+            "name": "instr",
+            "direction": "input"
+          },
+          {
+            "id": "out:_3_",
+            "name": "[3]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_3:0_",
+            "name": "[3:0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:param_bus_composition:imm:n2:comb",
+      "type": "hdl",
+      "position": {
+        "x": 1464,
+        "y": 24
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:imm",
+            "name": "imm",
+            "direction": "output"
+          },
+          {
+            "id": "port:imm_next",
+            "name": "imm_next",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_bus_composition:imm",
+      "type": "hdl",
+      "position": {
+        "x": 1872,
+        "y": 60
+      },
+      "width": 216,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:imm",
+            "name": "imm",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_bus_composition:instr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:instr",
+            "name": "instr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "replicate:param_bus_composition:imm_next_concat_in0:n1:xDATA_WIDTH_-_4",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 48
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:imm_next_concat_in0",
+            "name": "imm_next_concat_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:param_bus_composition:imm_next:n0:expr:comb:param_bus_composition:imm:n2:comb:imm_next",
+      "source": "bus:param_bus_composition:imm_next:n0:expr",
+      "target": "comb:param_bus_composition:imm:n2:comb",
+      "sourceHandle": "out:imm_next",
+      "targetHandle": "port:imm_next",
+      "path": "M 1248 72 L 1272 72 L 1440 72 L 1464 72"
+    },
+    {
+      "id": "edge:bus:param_bus_composition:instr:bus:param_bus_composition:imm_next:n0:expr:instr_3:0_",
+      "source": "bus:param_bus_composition:instr",
+      "target": "bus:param_bus_composition:imm_next:n0:expr",
+      "sourceHandle": "out:_3:0_",
+      "targetHandle": "in:_3:0_",
+      "path": "M 528 120 L 552 120 L 1080 120 L 1104 120"
+    },
+    {
+      "id": "edge:bus:param_bus_composition:instr:replicate:param_bus_composition:imm_next_concat_in0:n1:xDATA_WIDTH___4:instr_3_",
+      "source": "bus:param_bus_composition:instr",
+      "target": "replicate:param_bus_composition:imm_next_concat_in0:n1:xDATA_WIDTH_-_4",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "port:in",
+      "path": "M 528 72 L 552 72 L 720 72 L 744 72"
+    },
+    {
+      "id": "edge:comb:param_bus_composition:imm:n2:comb:port:param_bus_composition:imm:imm",
+      "source": "comb:param_bus_composition:imm:n2:comb",
+      "target": "port:param_bus_composition:imm",
+      "sourceHandle": "out:imm",
+      "targetHandle": "port:imm",
+      "path": "M 1656 72 L 1680 72 L 1848 72 L 1872 72"
+    },
+    {
+      "id": "edge:port:param_bus_composition:instr:bus:param_bus_composition:instr:instr",
+      "source": "port:param_bus_composition:instr",
+      "target": "bus:param_bus_composition:instr",
+      "sourceHandle": "port:instr",
+      "targetHandle": "in:instr",
+      "path": "M 168 72 L 192 72 L 360 72 L 384 72"
+    },
+    {
+      "id": "edge:replicate:param_bus_composition:imm_next_concat_in0:n1:xDATA_WIDTH___4:bus:param_bus_composition:imm_next:n0:expr:imm_next_concat_in0",
+      "source": "replicate:param_bus_composition:imm_next_concat_in0:n1:xDATA_WIDTH_-_4",
+      "target": "bus:param_bus_composition:imm_next:n0:expr",
+      "sourceHandle": "port:imm_next_concat_in0",
+      "targetHandle": "in:_7:4_",
+      "path": "M 888 72 L 912 72 L 1080 72 L 1104 72"
+    }
+  ]
+}
