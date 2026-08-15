@@ -66,10 +66,11 @@ export function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durat
   recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
 }
 
-// Median-of-5 sampling: ~22% lower std-error than x3 and rejects up to 2
-// outliers vs 1, which matters for benchmark timings noisy enough that a
-// single sample can show a spurious CI delta.
-const BENCHMARK_SAMPLE_COUNT = 5;
+// Median-of-11 sampling: lower std-error than x5 and rejects up to 5
+// outliers vs 2, which matters for benchmark timings noisy enough that a
+// single sample can show a spurious CI delta. BDD already dominates CI
+// runtime (~20min), so the extra samples' wall-clock cost is cheap here.
+const BENCHMARK_SAMPLE_COUNT = 11;
 
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
