@@ -647,8 +647,8 @@ When('I double-click on the instance node {string}', async function (this: BddWo
 
 When('I double-click on the combinational block for {string}', async function (this: BddWorld, name: string) {
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
-  const node = module.nodes.find((n: any) => n.kind === 'comb' && n.id.includes(`:${name}:`));
-  if (!node?.id) throw new Error(`Could not find comb block for "${name}"`);
+  const node = module.nodes.find((n: any) => (n.kind === 'comb' || n.kind === 'gate') && n.id.includes(`:${name}:`));
+  if (!node?.id) throw new Error(`Could not find comb/gate block for "${name}"`);
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
 });
 
@@ -1341,11 +1341,11 @@ Then('the module dropdown should contain {string}, {string}, {string} in that or
 });
 
 Then('I should see a combinational block', async function (this: BddWorld) {
-  await expect(this.webviewPage.locator('[data-node-kind="comb"]')).toBeVisible();
+  await expect(this.webviewPage.locator('[data-node-kind="comb"], [data-node-kind="gate"]')).toBeVisible();
 });
 
 Then('I should not see a combinational block', async function (this: BddWorld) {
-  await expect(this.webviewPage.locator('[data-node-kind="comb"]')).not.toBeVisible();
+  await expect(this.webviewPage.locator('[data-node-kind="comb"], [data-node-kind="gate"]')).not.toBeVisible();
 });
 
 Then('I should see an inverter node', async function (this: BddWorld) {
@@ -1614,7 +1614,7 @@ Then('there should not be a connection between {string} and {string}', async fun
 Then('there should be a connection between {string} and the combinational block', async function (this: BddWorld, source: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
   const targetId = await this.webviewPage.locator('html').evaluate(() =>
-    document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+    document.querySelector('[data-node-kind="comb"], [data-node-kind="gate"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
   );
   if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb=${targetId}`);
   await checkConnection(this.webviewPage, sourceId, targetId);
@@ -1622,7 +1622,7 @@ Then('there should be a connection between {string} and the combinational block'
 
 Then('there should be a connection between the combinational block and {string}', async function (this: BddWorld, target: string) {
   const sourceId = await this.webviewPage.locator('html').evaluate(() =>
-    document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+    document.querySelector('[data-node-kind="comb"], [data-node-kind="gate"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
   );
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: comb=${sourceId}, ${target}=${targetId}`);
@@ -1631,13 +1631,13 @@ Then('there should be a connection between the combinational block and {string}'
 
 Then('there should be a connection between {string} and the combinational block in the {string} generate region', async function (this: BddWorld, source: string, region: string) {
   const sourceId = await findNodeIdByLabel(this.webviewPage, source);
-  const targetId = await findGenerateRegionNodeIdByKind(this, region, 'comb');
+  const targetId = await findGenerateRegionNodeIdByKind(this, region, ['comb', 'gate']);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb in ${region}=${targetId}`);
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
 Then('there should be a connection between the combinational block in the {string} generate region and {string}', async function (this: BddWorld, region: string, target: string) {
-  const sourceId = await findGenerateRegionNodeIdByKind(this, region, 'comb');
+  const sourceId = await findGenerateRegionNodeIdByKind(this, region, ['comb', 'gate']);
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: comb in ${region}=${sourceId}, ${target}=${targetId}`);
   await checkConnection(this.webviewPage, sourceId, targetId);
@@ -2389,7 +2389,7 @@ async function connectionRoutePath(webviewPage: FrameLocator, source: string, ta
 async function combRoutePath(webviewPage: FrameLocator, source: string): Promise<string> {
   const sourceId = await findNodeIdByLabel(webviewPage, source);
   const targetId = await webviewPage.locator('html').evaluate(() =>
-    document.querySelector('[data-node-kind="comb"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+    document.querySelector('[data-node-kind="comb"], [data-node-kind="gate"]')?.closest('.react-flow__node')?.getAttribute('data-id') ?? null
   );
   if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, comb=${targetId}`);
   const edgeId = await findEdgeIdBetween(webviewPage, sourceId, targetId);
@@ -2616,24 +2616,25 @@ async function generateRegionNodeIds(world: BddWorld, label: string): Promise<st
   }, label);
 }
 
-async function findGenerateRegionNodeIdByKind(world: BddWorld, label: string, kind: string): Promise<string | null> {
+async function findGenerateRegionNodeIdByKind(world: BddWorld, label: string, kind: string | string[]): Promise<string | null> {
   const nodeIds = await generateRegionNodeIds(world, label);
   if (nodeIds.length === 0) return null;
-  return world.webviewPage.locator('html').evaluate((_element, { ids, nodeKind }) => {
+  const kinds = Array.isArray(kind) ? kind : [kind];
+  return world.webviewPage.locator('html').evaluate((_element, { ids, nodeKinds }) => {
     const idSet = new Set(ids);
     const rf = (window as any).reactFlowInstance;
     const flowNode = rf?.getNodes?.().find((node: any) => (
       idSet.has(node.id)
-      && (node.data?.node?.kind === nodeKind || node.data?.kind === nodeKind)
+      && (nodeKinds.includes(node.data?.node?.kind) || nodeKinds.includes(node.data?.kind))
     ));
     if (flowNode) return flowNode.id;
 
     const domNode = Array.from(document.querySelectorAll('.react-flow__node')).find((node) => (
       idSet.has(node.getAttribute('data-id') ?? '')
-      && !!node.querySelector(`[data-node-kind="${nodeKind}"]`)
+      && nodeKinds.some((nodeKind) => !!node.querySelector(`[data-node-kind="${nodeKind}"]`))
     ));
     return domNode?.getAttribute('data-id') ?? null;
-  }, { ids: nodeIds, nodeKind: kind });
+  }, { ids: nodeIds, nodeKinds: kinds });
 }
 
 async function getAllFlowNodePositions(frame: FrameLocator): Promise<Map<string, NodePosition>> {

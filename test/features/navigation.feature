@@ -58,7 +58,7 @@ Feature: Navigation
     When I open the "top" module in SVSCH
     And I double-click on the combinational block for "b"
     Then the editor pane for "top.sv" is opened and focused
-    And the editor should highlight the text "assign b = a & c;"
+    And the editor should highlight the text "a & c"
 
   Scenario: Navigating to inverter nodes
     Given I have the following files in my workspace:
