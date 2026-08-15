@@ -69,10 +69,22 @@ void DesignExtractor::buildEdges(Module& mod) {
 
         for (const auto& alias : mod.pendingArrayAliases) {
             if (alias.targetSignal != signal) continue;
-            for (const auto& n : mod.nodes) {
-                for (const auto& p : n.ports) {
-                    if (p.signal == alias.sourceSignal && (p.direction == "output" || p.direction == "inout")) {
-                        drivers.push_back({n.id, p.name});
+            // If the alias's source is itself a boundary `inout` array (a hub),
+            // its only representative driver is that hub port: internal nodes
+            // that drive it (e.g. the per-element mux outputs' array
+            // composition) already feed the hub through its own edge, so
+            // adding them here too would pair them with this alias's load a
+            // second time — the same net rendered as two overlapping wires.
+            bool sourceIsInoutHub = false;
+            for (const auto& p : mod.ports) {
+                if (p.name == alias.sourceSignal && p.direction == "inout") { sourceIsInoutHub = true; break; }
+            }
+            if (!sourceIsInoutHub) {
+                for (const auto& n : mod.nodes) {
+                    for (const auto& p : n.ports) {
+                        if (p.signal == alias.sourceSignal && (p.direction == "output" || p.direction == "inout")) {
+                            drivers.push_back({n.id, p.name});
+                        }
                     }
                 }
             }
