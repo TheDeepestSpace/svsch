@@ -155,8 +155,12 @@ void DesignExtractor::buildEdges(Module& mod) {
 
     removeUnconnectedLiteralNodes(mod);
     repairResolvedExplicitBusCompositions(mod);
-    repairResolvedBusCompositionSlices(mod);
+    // repairAggregateAssignmentBuses resolves replication output widths (via
+    // repairAggregateReplicationWidths) before repairResolvedBusCompositionSlices
+    // relabels promoted-concat bus inputs, so a symbolic replication nested in a
+    // procedural concatenation isn't still 1-bit wide when its concat sibling is labeled.
     repairAggregateAssignmentBuses(mod);
+    repairResolvedBusCompositionSlices(mod);
     collapseAliasCombNodes(mod);
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
@@ -1474,7 +1478,7 @@ std::string concatSliceLabel(int highBit, int size) {
 
 std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::string& signal) {
     if (signal.empty()) return "";
-    
+
     for (const auto& n : nodes) {
         for (const auto& p : n.ports) {
             if (p.direction == "output" && p.signal == signal && !p.width.empty()) {
@@ -1482,7 +1486,7 @@ std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::strin
             }
         }
     }
-    
+
     for (const auto& n : nodes) {
         for (const auto& p : n.ports) {
             if (p.direction == "output" && p.signal == signal) {
@@ -1491,6 +1495,20 @@ std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::strin
         }
     }
     return "";
+}
+
+// Extracts the normalized bit-width from a signal name that embeds a slice at
+// its tail, e.g. "foo[3:0]", "foo[2]", "foo[1:0]_next".  Returns "" when no
+// such slice is present.
+std::string widthFromSignalSlice(const std::string& signal) {
+    if (signal.empty()) return "";
+    std::regex re(R"(\[(-?\d+)(?::(-?\d+))?\](?:_\w+)?$)");
+    std::smatch m;
+    if (!std::regex_search(signal, m, re)) return "";
+    int hi = std::stoi(m[1].str());
+    int lo = m[2].matched ? std::stoi(m[2].str()) : hi;
+    int size = std::abs(hi - lo) + 1;
+    return widthFromBitSize(size);
 }
 
 void DesignExtractor::repairResolvedBusCompositionSlices(Module& mod) {
@@ -1520,6 +1538,10 @@ void DesignExtractor::repairResolvedBusCompositionSlices(Module& mod) {
                 }
                 if (width.empty() || width == "[0:0]") width = getDeclaredSignalWidth(mod, port->signal);
                 if (width.empty()) width = findNodeOutputWidth(mod.nodes, port->signal);
+                // A slice embedded in the signal name itself (e.g. "instr[3:0]") is a
+                // more reliable width source than the port's own possibly-stale width,
+                // which may still reflect the 1-bit default from initial extraction.
+                if (width.empty()) width = widthFromSignalSlice(port->signal);
                 if (width.empty()) width = port->width;
                 if (width.empty()) width = "[0:0]";
                 

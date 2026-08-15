@@ -254,6 +254,38 @@ describe('parser: concatenation as bus composition', () => {
     expect(fill?.ports.some(p => p.direction === 'input' && p.connectedSignal === "1'b1")).toBe(true);
   });
 
+  it('preserves operand widths for a parameterized replication and a part-select in a procedural concatenation (UHDM)', async () => {
+    const graph = await runParser('uhdm', 'imm_gen.sv', `
+      module imm_gen #(
+        parameter DATA_WIDTH = 8
+      ) (
+        input  logic [11:0]           instr,
+        output logic [DATA_WIDTH-1:0] imm
+      );
+        always_comb begin
+          imm = {{(DATA_WIDTH-4){instr[3]}}, instr[3:0]};
+        end
+      endmodule
+    `);
+    const mod = graph.modules.imm_gen;
+    const bus = mod.nodes.find(n => n.kind === 'bus' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === 'imm_next'));
+    const replicate = mod.nodes.find(n => n.kind === 'replicate');
+
+    expect(bus).toBeDefined();
+    expect(bus?.ports.find(p => p.direction === 'output')).toMatchObject({ width: '[7:0]' });
+
+    expect(replicate).toBeDefined();
+    expect(replicate?.metadata?.repeatCount).toBe(4);
+    expect(replicate?.ports.find(p => p.direction === 'output')?.width).toBe('[3:0]');
+
+    const replicatedOutputSignal = replicate?.ports.find(p => p.direction === 'output')?.connectedSignal;
+    const replicatedInput = bus?.ports.find(p => p.direction === 'input' && p.connectedSignal === replicatedOutputSignal);
+    const sliceInput = bus?.ports.find(p => p.direction === 'input' && p.connectedSignal === 'instr[3:0]');
+
+    expect(replicatedInput).toMatchObject({ label: '[7:4]', width: '[3:0]' });
+    expect(sliceInput).toMatchObject({ label: '[3:0]', width: '[3:0]' });
+  });
+
   it('interprets {a, b} as a bus composition (UHDM)', async () => {
     const graph = await runParser('uhdm', 'bus_concat.sv', fixture('bus_concat.sv'));
     const mod = graph.modules.bus_concat;
