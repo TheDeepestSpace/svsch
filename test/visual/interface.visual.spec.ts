@@ -279,6 +279,10 @@ test.describe('interface visual rendering', () => {
   });
 
   test('renders alternate multi-modport interface arrangements', async ({ page }) => {
+    // Four openFixture() calls each re-sample rendering BENCHMARK_SAMPLE_COUNT
+    // times, so this test needs more than the default per-test timeout.
+    test.setTimeout(180_000);
+
     await openFixture(
       page,
       'interface_modport_arrangements.sv',

@@ -2,7 +2,6 @@ import { test, expect } from 'vscode-test-playwright';
 import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import { writeBenchmark } from '../benchmarkUtils';
 
 const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
 const webviewLogs: string[] = [];
@@ -97,16 +96,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
         if (viewType === 'svsch.diagram') {
           const origPostMessage = panel.webview.postMessage.bind(panel.webview);
           panel.webview.postMessage = (msg: any) => {
-            const now = Date.now();
-            if (msg?.type === 'status' && msg.status === 'rebuilding') {
-              if (!(global as any).__svschRebuildingAt) {
-                (global as any).__svschRebuildingAt = now;
-              }
-            }
             if (msg?.type === 'graph') {
-              if (!(global as any).__svschFirstGraphAt) {
-                (global as any).__svschFirstGraphAt = now;
-              }
               (global as any).__svschModules = msg.modules;
               (global as any).__svschCurrentModule = msg.view?.moduleName;
               (global as any).__svschGraphCount = ((global as any).__svschGraphCount ?? 0) + 1;
@@ -117,9 +107,6 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
                 `[WEBVIEW] Received graph for ${msg.view?.moduleName}: ${nodes} nodes, ` +
                   `${edges} edges`,
               );
-            }
-            if (msg?.type === 'status' && msg.status === 'idle') {
-              (global as any).__svschIdleAt = now;
             }
             return origPostMessage(msg);
           };
@@ -167,7 +154,6 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     so returning it would block until Surelog completes and we'd never
     //     catch the progress notification mid-flight.
     await evaluateInVSCode((vscode) => {
-      (global as any).__svschOpenRequestedAt = Date.now();
       void vscode.commands.executeCommand('svsch.openDiagram');
     });
 
@@ -254,37 +240,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     the primary visual regression artifact for system tests.
     await expect(workbox).toHaveScreenshot('full-window.png');
 
-    // --- 10. Report load timing.
-    const timing = await evaluateInVSCode((vscode) => {
-      void vscode;
-      const openedAt: number = (global as any).__svschOpenRequestedAt ?? 0;
-      const rebuildingAt: number = (global as any).__svschRebuildingAt ?? 0;
-      const firstGraphAt: number = (global as any).__svschFirstGraphAt ?? 0;
-      const idleAt: number = (global as any).__svschIdleAt ?? 0;
-      return { openedAt, rebuildingAt, firstGraphAt, idleAt };
-    });
-
-    const toMs = (a: number, b: number) => (b > 0 && a > 0 ? b - a : -1);
-    const startup = toMs(timing.openedAt, timing.rebuildingAt);
-    const parse = toMs(timing.rebuildingAt, timing.firstGraphAt);
-    const total = toMs(timing.openedAt, timing.firstGraphAt);
-    const settle = toMs(timing.firstGraphAt, timing.idleAt);
-
-    const timingLines = [
-      `[timing] openDiagram → rebuilding status : ${startup >= 0 ? startup + ' ms' : 'n/a'}`,
-      `[timing] rebuilding  → first graph data  : ${parse >= 0 ? parse + ' ms' : 'n/a'}`,
-      `[timing] openDiagram → diagram visible   : ${total >= 0 ? total + ' ms' : 'n/a'} (total)`,
-      `[timing] first graph → idle status       : ${settle >= 0 ? settle + ' ms' : 'n/a'}`,
-    ];
-    for (const line of timingLines) console.log(line);
-    fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
-
-    if (parse >= 0) {
-      const vscodeVersion = process.env.VSCODE_VERSION || 'default';
-      writeBenchmark(path.join(logDir, 'benchmark.json'), `vscode ${vscodeVersion}`, parse);
-    }
-
-    // --- 11. Switch to a different module via the dropdown.
+    // --- 10. Switch to a different module via the dropdown.
     //     We prioritize a complex module to ensure meaningful screenshots.
     const switchedViaHost = await evaluateInVSCode((vscode) => {
       void vscode;
@@ -341,7 +297,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
 
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
   } finally {
-    // --- 12. Collect captured log lines (even on failure).
+    // --- 11. Collect captured log lines (even on failure).
     const logs: string[] = await evaluateInVSCode((vscode) => {
       void vscode;
       return (global as any).__svschLogs ?? [];

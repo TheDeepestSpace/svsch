@@ -70,6 +70,18 @@ export function recordVisualBenchmark(
   recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
 }
 
+// Median-of-11 sampling: lower std-error than x5 and rejects up to 5
+// outliers vs 2, which matters for benchmark timings noisy enough that a
+// single sample can show a spurious CI delta. BDD already dominates CI
+// runtime (~20min), so the extra samples' wall-clock cost is cheap here.
+const BENCHMARK_SAMPLE_COUNT = 11;
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
 // Resolves and records whatever rendering timer is pending for `page` — the
 // precise one from openFixture() if set, else the postView() fallback. Called
 // automatically from expectGraphAndScreenshot(); exported so tests that
@@ -144,7 +156,6 @@ export async function openFixture(
 ): Promise<DiagramViewModel> {
   const view = await buildFixtureView(fixtureName, layoutMode, moduleName);
 
-  await openView(page, view);
   const readySelector =
     layoutMode === 'bus'
       ? '[data-node-kind="bus"]'
@@ -163,12 +174,26 @@ export async function openFixture(
                   : layoutMode === 'generate'
                     ? '.generate-region'
                     : '.react-flow__node';
-  await page.waitForSelector(readySelector, { state: 'attached' });
-  const postedAt = postViewStartedAt.get(page);
-  if (postedAt !== undefined) {
-    pendingDiagramDurationMs.set(page, Date.now() - postedAt);
-    postViewStartedAt.delete(page);
+
+  // Re-open the view BENCHMARK_SAMPLE_COUNT times to get that many rendering
+  // (postView -> DOM attached) samples, but only the final open's DOM sticks
+  // around — the screenshot assertion downstream in expectGraphAndScreenshot()
+  // stays a single call, so this doesn't multiply screenshot cost.
+  const renderDurationsMs: number[] = [];
+  for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+    await openView(page, view);
+    await page.waitForSelector(readySelector, { state: 'attached' });
+    const postedAt = postViewStartedAt.get(page);
+    if (postedAt !== undefined) {
+      renderDurationsMs.push(Date.now() - postedAt);
+    }
   }
+  if (renderDurationsMs.length !== BENCHMARK_SAMPLE_COUNT) {
+    throw new Error(
+      `Expected ${BENCHMARK_SAMPLE_COUNT} rendering samples, got ${renderDurationsMs.length}`,
+    );
+  }
+  pendingDiagramDurationMs.set(page, median(renderDurationsMs));
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -367,9 +392,12 @@ export async function buildFixtureView(
 
     // This is the Surelog/UHDM (C++) parse + elaborate step — the part of
     // diagram generation that doesn't run in JS at all, timed separately from
-    // the ELK layout and React render below.
-    const elaborationStartedAt = Date.now();
-    const graph = await buildDesignGraph({
+    // the ELK layout and React render below. buildDesignGraph() repeats
+    // filesystem discovery and UHDM extraction on every call, so sampling it
+    // BENCHMARK_SAMPLE_COUNT times adds real backend work and CI time — unlike
+    // the rendering samples below, which just re-open the already-elaborated
+    // view.
+    const buildOptions = {
       workspaceRoot: tmpDir,
       projectFolder: '.',
       backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
@@ -377,8 +405,25 @@ export async function buildFixtureView(
       surelogPath,
       backendPath,
       includeExternalDiagnostics: false,
-    });
-    recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
+    };
+    const elaborationDurationsMs: number[] = [];
+    let lastGraph: DesignGraph | undefined;
+    for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+      const elaborationStartedAt = Date.now();
+      const sampledGraph = await buildDesignGraph(buildOptions);
+      if (sampledGraph.rootModules.length === 0) {
+        continue;
+      }
+      elaborationDurationsMs.push(Date.now() - elaborationStartedAt);
+      lastGraph = sampledGraph;
+    }
+    if (!lastGraph) {
+      throw new Error(
+        `buildDesignGraph() failed on all ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}`,
+      );
+    }
+    recordVisualBenchmark('elaboration', median(elaborationDurationsMs));
+    const graph = lastGraph;
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout =

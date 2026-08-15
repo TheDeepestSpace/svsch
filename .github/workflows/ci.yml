@@ -204,6 +204,16 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    permissions:
+      # The benchmark action pushes results to gh-pages on master pushes.
+      # PR comments are posted separately by report_benchmarks below.
+      contents: write
+    concurrency:
+      # Two runs on the same ref (e.g. a retriggered master push) could both
+      # auto-push to gh-pages; serialize per-ref so they don't race (PRs/other
+      # branches never push, so this doesn't cost them any parallelism).
+      group: gh-pages-publish-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -457,17 +467,6 @@ jobs:
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
 
-      # Every matrix version writes its own benchmark.json (test/system/diagram.spec.ts
-      # names the entry "vscode <version>"). Publishing to gh-pages happens once, after
-      # the whole matrix completes, in publish_system_benchmark below — so every version
-      # gets a real baseline instead of only the latest, and only one job ever pushes to
-      # gh-pages (avoiding a race between concurrent matrix jobs).
-      - name: Upload benchmark result (system, ${{ matrix.vscode_version }})
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: benchmark-system-${{ matrix.vscode_version }}
-          path: test-results/system/artifacts/benchmark.json
-
       - name: Upload System Test Artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -477,69 +476,11 @@ jobs:
             playwright-report/system/**
             test/system/__screenshots__/**
 
-  publish_system_benchmark:
-    # Merges the whole matrix's per-version benchmark-system-<version> artifacts into one
-    # file and publishes it to gh-pages history once, after the matrix completes — so every
-    # vscode version gets a real baseline to compare against on later runs (instead of only
-    # the latest version ever getting history), and only one job ever pushes to gh-pages
-    # (avoiding a race between concurrent matrix jobs).
-    #
-    # master-only: this is the only place gh-pages actually gets written (auto-push below is
-    # false off master anyway), so PR runs and pushes to other branches — which execute
-    # PR-controlled test code — never hold this job's contents: write token.
-    needs: [prep, build_ci_image, test_system]
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    container: *container_config
-    permissions:
-      # The benchmark action pushes results to gh-pages on same-repository pushes.
-      contents: write
-    concurrency:
-      # See the matching comment on test_visual: both jobs can auto-push to
-      # gh-pages within the same master run, so serialize them per-ref.
-      group: gh-pages-publish-${{ github.ref }}
-      cancel-in-progress: false
-    steps:
-      - *checkout_step
-
-      - name: Mark workspace as a safe git directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Download per-version system benchmark results
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: benchmark-system-*
-          path: benchmarks
-
-      - name: Merge per-version system benchmark results
-        run: node scripts/merge-system-benchmarks.mjs benchmarks
-
-      - name: Track diagram-generation benchmark (system)
-        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-        with:
-          name: system-diagram-generation-duration
-          tool: customSmallerIsBetter
-          output-file-path: benchmarks/benchmark-system/benchmark.json
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: ${{ github.ref == 'refs/heads/master' }}
-          # PR comments are posted once, combined across suites, by the
-          # report_benchmarks job below instead of per-suite here.
-          comment-always: false
-          comment-on-alert: false
-          fail-on-alert: false
-
   report_benchmarks:
-    # Posts one PR comment covering both diagram-generation benchmark suites
-    # (visual, system), instead of test_visual/test_system each posting their
-    # own. BDD no longer tracks a perf benchmark — see #167 tracking its
-    # re-introduction once the busy-indicator timing artifact is fixed.
-    #
-    # publish_system_benchmark is deliberately not a dependency: it only runs on
-    # push (see above) while this job only runs on pull_request, and it doesn't
-    # produce any artifact this job consumes (the system benchmark is re-merged
-    # from test_system's raw per-version artifacts below).
+    # Posts one PR comment covering diagram-generation benchmark suites
+    # (visual), instead of test_visual posting its own. BDD no longer tracks a
+    # perf benchmark — see #167 tracking its re-introduction once the
+    # busy-indicator timing artifact is fixed.
     needs: [prep, build_ci_image, test_visual, test_system]
     if: >
       github.event_name == 'pull_request' &&
@@ -581,13 +522,9 @@ jobs:
           pattern: benchmark-*
           path: benchmarks
 
-      - name: Merge per-version system benchmark results
-        run: node scripts/merge-system-benchmarks.mjs benchmarks
-
       - name: Post combined benchmark comment
         run: >-
           node scripts/comment-benchmark-summary.mjs
-          system-diagram-generation-duration=benchmarks/benchmark-system/benchmark.json
           visual-elaboration-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-elaboration.json
           visual-rendering-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-rendering.json
         env:
