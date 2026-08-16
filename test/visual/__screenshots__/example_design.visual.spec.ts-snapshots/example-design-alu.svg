@@ -868,12 +868,14 @@ text {
 .hdl-node-mux,
 .hdl-node-select,
 .hdl-node-alu,
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   background: transparent;
   box-shadow: none;
 }
 
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   padding: 0;
 }
 
@@ -1015,7 +1017,8 @@ text {
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus,
-.hdl-node-inverter:focus {
+.hdl-node-inverter:focus,
+.hdl-node-gate:focus {
   outline: none;
 }
 
@@ -1026,7 +1029,9 @@ text {
 .hdl-node-alu>.node-kind,
 .hdl-node-alu>.node-title,
 .hdl-node-inverter>.node-kind,
-.hdl-node-inverter>.node-title {
+.hdl-node-inverter>.node-title,
+.hdl-node-gate>.node-kind,
+.hdl-node-gate>.node-title {
   display: none;
 }
 
@@ -1350,6 +1355,21 @@ text {
   fill: none;
 }
 
+.gate-skin .node-skin-body {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.gate-skin .gate-bubble {
+  fill: none;
+}
+
+.hdl-node-gate .gate-back-curve.svsch-node-shape {
+  fill: none;
+}
+
 .node-skin-selection {
   fill: none;
   opacity: 0;
@@ -1366,7 +1386,9 @@ text {
 .hdl-node-alu:focus .node-skin-selection,
 .hdl-node-alu:focus-visible .node-skin-selection,
 .hdl-node-inverter:focus .node-skin-selection,
-.hdl-node-inverter:focus-visible .node-skin-selection {
+.hdl-node-inverter:focus-visible .node-skin-selection,
+.hdl-node-gate:focus .node-skin-selection,
+.hdl-node-gate:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1886,6 +1908,13 @@ text {
 .hdl-node-inverter .svsch-node-shape,
 .svsch-node-shape.hdl-node-inverter {
   fill: none;
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-gate .svsch-node-shape,
+.svsch-node-shape.hdl-node-gate {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
   stroke: white;
   stroke-linejoin: round;
   stroke-width: 1.5;
@@ -2419,12 +2448,13 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000" data-net-key="alu:alu:result_3_b000:expr:out:result_3_b000" d="M 552 72 L 576 72 L 744 72 L 744 264 L 1176 264 L 1200 264" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001" data-net-key="alu:alu:result_3_b001:expr:out:result_3_b001" d="M 552 192 L 576 192 L 720 192 L 720 288 L 1176 288 L 1200 288" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:comb:alu:result_3_b010:expr:mux:alu:result:alu_op:result:result_3_b010"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:comb:alu:result_3_b010:expr:mux:alu:result:alu_op:result:result_3_b010" data-net-key="comb:alu:result_3_b010:expr:out:result_3_b010" d="M 624 312 L 648 312 L 1176 312 L 1200 312" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:comb:alu:result_3_b011:expr:mux:alu:result:alu_op:result:result_3_b011"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:comb:alu:result_3_b011:expr:mux:alu:result:alu_op:result:result_3_b011" data-net-key="comb:alu:result_3_b011:expr:out:result_3_b011" d="M 624 432 L 648 432 L 912 432 L 912 336 L 1176 336 L 1200 336" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000" data-net-key="alu:alu:result_3_b000:expr:out:result_3_b000" d="M 552 72 L 576 72 L 696 72 L 696 264 L 1176 264 L 1200 264" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001" data-net-key="alu:alu:result_3_b001:expr:out:result_3_b001" d="M 552 192 L 576 192 L 696 192 L 696 288 L 1176 288 L 1200 288" />
+<path class="svsch-edge-overlap-hint" d="M 696 196 L 696 260" data-edge-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001" data-overlap-id="edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001-overlap-2-edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000-2" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:comb:alu:result_3_b100_sel:expr:mux:alu:result_3_b100:ternary:result_3_b100_sel"><path class="svsch-edge" data-edge-id="edge:comb:alu:result_3_b100_sel:expr:mux:alu:result_3_b100:ternary:result_3_b100_sel" data-net-key="comb:alu:result_3_b100_sel:expr:out:result_3_b100_sel" d="M 624 552 L 648 552 L 912 552 L 912 576 L 912 624" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:comb:alu:zero:expr:port:alu:zero:zero"><path class="svsch-edge" data-edge-id="edge:comb:alu:zero:expr:port:alu:zero:zero" data-net-key="comb:alu:zero:expr:out:zero" d="M 1920 408 L 1944 408 L 2112 408 L 2136 408" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:gate:alu:result_3_b010:and:mux:alu:result:alu_op:result:result_3_b010"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:gate:alu:result_3_b010:and:mux:alu:result:alu_op:result:result_3_b010" data-net-key="gate:alu:result_3_b010:and:out:result_3_b010" d="M 552 312 L 576 312 L 1176 312 L 1200 312" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011" data-net-key="gate:alu:result_3_b011:or:out:result_3_b011" d="M 552 432 L 576 432 L 888 432 L 888 336 L 1176 336 L 1200 336" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0" data-net-key="literal:alu:8_b0:8_b0" d="M 624 696 L 648 696 L 744 696 L 744 672 L 816 672 L 840 672" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:alu:8_b1:8_b1:mux:alu:result_3_b100:ternary:8_b1"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:8_b1:8_b1:mux:alu:result_3_b100:ternary:8_b1" data-net-key="literal:alu:8_b1:8_b1" d="M 624 648 L 648 648 L 816 648 L 840 648" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:alu:result_default:_0:mux:alu:result:alu_op:result:result_default"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:result_default:_0:mux:alu:result:alu_op:result:result_default" data-net-key="literal:alu:result_default:_0" d="M 984 744 L 1008 744 L 1104 744 L 1104 384 L 1176 384 L 1200 384" /></g>
@@ -2435,35 +2465,35 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-edge-group" data-edge-id="edge:port:alu:a:alu:alu:result_3_b000:expr:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:alu:alu:result_3_b000:expr:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 48 L 432 48 L 456 48" />
 <circle class="svsch-edge-junction" cx="408" cy="288" r="4.75" data-junction-id="port:alu:a:port:a:408:288" />
 <circle class="svsch-edge-junction" cx="408" cy="168" r="4.75" data-junction-id="port:alu:a:port:a:408:168" />
-<circle class="svsch-edge-junction" cx="408" cy="312" r="4.75" data-junction-id="port:alu:a:port:a:408:312" />
-<circle class="svsch-edge-junction" cx="408" cy="432" r="4.75" data-junction-id="port:alu:a:port:a:408:432" /></g>
+<circle class="svsch-edge-junction" cx="408" cy="408" r="4.75" data-junction-id="port:alu:a:port:a:408:408" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:alu:a:alu:alu:result_3_b001:expr:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:alu:alu:result_3_b001:expr:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 168 L 432 168 L 456 168" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:a:comb:alu:result_3_b010:expr:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:comb:alu:result_3_b010:expr:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 312 L 432 312" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:a:comb:alu:result_3_b011:expr:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:comb:alu:result_3_b011:expr:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 432 L 432 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 552 L 432 552" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:a:gate:alu:result_3_b010:and:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:gate:alu:result_3_b010:and:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 432 288 L 456 288" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:a:gate:alu:result_3_b011:or:a"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:a:gate:alu:result_3_b011:or:a" data-net-key="port:alu:a:port:a" d="M 216 288 L 240 288 L 408 288 L 408 408 L 432 408 L 473.482 408" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:alu:alu_op:mux:alu:result:alu_op:result:alu_op"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:alu_op:mux:alu:result:alu_op:result:alu_op" data-net-key="port:alu:alu_op:port:alu_op" d="M 984 192 L 1008 192 L 1344 192 L 1344 240" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 96 L 432 96 L 456 96" />
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b"><path class="svsch-edge-jump-halo" d="M 408 297 Q 417 288 408 279" style="stroke-width: 12" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 297 Q 417 288 408 279 L 408 96 L 432 96 L 456 96" />
 <path class="svsch-edge-overlap-hint" d="M 408 100 L 408 284" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:alu:alu:result_3_b000:expr:a-2" />
 <path class="svsch-edge-overlap-hint" d="M 408 172 L 408 284" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:alu:alu:result_3_b001:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 308" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b010:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b011:expr:a-2" />
 <path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" />
+<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b000:expr:b-overlap-2-edge:port:alu:a:gate:alu:result_3_b011:or:a-2" />
 <circle class="svsch-edge-junction" cx="408" cy="336" r="4.75" data-junction-id="port:alu:b:port:b:408:336" />
 <circle class="svsch-edge-junction" cx="408" cy="216" r="4.75" data-junction-id="port:alu:b:port:b:408:216" />
 <circle class="svsch-edge-junction" cx="408" cy="456" r="4.75" data-junction-id="port:alu:b:port:b:408:456" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 216 L 432 216 L 456 216" />
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b"><path class="svsch-edge-jump-halo" d="M 408 297 Q 417 288 408 279" style="stroke-width: 12" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 297 Q 417 288 408 279 L 408 216 L 432 216 L 456 216" />
 <path class="svsch-edge-overlap-hint" d="M 408 220 L 408 284" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:alu:alu:result_3_b000:expr:a-2" />
 <path class="svsch-edge-overlap-hint" d="M 408 220 L 408 284" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:alu:alu:result_3_b001:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 308" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b010:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b011:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:comb:alu:result_3_b010:expr:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:comb:alu:result_3_b010:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 432 336" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 456 L 432 456" />
-<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 428" data-edge-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b011:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 452" data-edge-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b011:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" /></g>
+<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" />
+<path class="svsch-edge-overlap-hint" d="M 408 292 L 408 332" data-edge-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b" data-overlap-id="edge:port:alu:b:alu:alu:result_3_b001:expr:b-overlap-2-edge:port:alu:a:gate:alu:result_3_b011:or:a-2" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 576 L 432 576" />
-<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 428" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b011:expr:a-2" />
-<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 548" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" /></g>
+<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 548" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" />
+<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 404" data-edge-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b" data-overlap-id="edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b-overlap-2-edge:port:alu:a:gate:alu:result_3_b011:or:a-2" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:gate:alu:result_3_b010:and:b"><path class="svsch-edge-jump-halo" d="M 399 336 Q 408 327 417 336" style="stroke-width: 12" data-edge-id="edge:port:alu:b:gate:alu:result_3_b010:and:b" data-jump-index="0" />
+<path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:gate:alu:result_3_b010:and:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 399 336 Q 408 327 417 336 L 432 336 L 456 336" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:alu:b:gate:alu:result_3_b011:or:b"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:alu:b:gate:alu:result_3_b011:or:b" data-net-key="port:alu:b:port:b" d="M 216 336 L 240 336 L 408 336 L 408 456 L 432 456 L 473.482 456" />
+<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 452" data-edge-id="edge:port:alu:b:gate:alu:result_3_b011:or:b" data-overlap-id="edge:port:alu:b:gate:alu:result_3_b011:or:b-overlap-2-edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a-2" />
+<path class="svsch-edge-overlap-hint" d="M 408 340 L 408 404" data-edge-id="edge:port:alu:b:gate:alu:result_3_b011:or:b" data-overlap-id="edge:port:alu:b:gate:alu:result_3_b011:or:b-overlap-2-edge:port:alu:a:gate:alu:result_3_b011:or:a-2" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:alu:zero:expr" data-node-kind="comb" transform="translate(1728 360)">
@@ -2481,14 +2511,14 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-node-shape hdl-node-alu node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="18" font-weight="700">-</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:alu:result_3_b010:expr" data-node-kind="comb" transform="translate(432 264)">
-<svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
+<g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:alu:result_3_b010:and" data-node-kind="gate" transform="translate(456 264)">
+<svg class="hdl-node-svg gate-skin" width="96" height="96" aria-hidden="true">
+<path class="svsch-node-shape hdl-node-gate node-skin-body" d="M 0 0 L 48 0 A 48 48 0 0 1 48 96 L 0 96 Z"></path><path class="node-skin-selection" d="M 0 0 L 48 0 A 48 48 0 0 1 48 96 L 0 96 Z"></path>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:alu:result_3_b011:expr" data-node-kind="comb" transform="translate(432 384)">
-<svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="192" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
+<g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:alu:result_3_b011:or" data-node-kind="gate" transform="translate(456 384)">
+<svg class="hdl-node-svg gate-skin" width="96" height="96" aria-hidden="true">
+<path class="svsch-node-shape hdl-node-gate node-skin-body" d="M 0 0 C 17.4820000032 29.095999996799996 17.4820000032 66.9040000032 0 96 C 39.939 93.8050000032 73.161 84.9889999968 96 48 C 73.161 11.011000003199996 39.939 2.194999996799993 0 0 Z"></path><path class="node-skin-selection" d="M 0 0 C 17.4820000032 29.095999996799996 17.4820000032 66.9040000032 0 96 C 39.939 93.8050000032 73.161 84.9889999968 96 48 C 73.161 11.011000003199996 39.939 2.194999996799993 0 0 Z"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:alu:result_3_b100_sel:expr" data-node-kind="comb" transform="translate(432 504)">
