@@ -298,8 +298,6 @@ select {
   line-height: 1;
   pointer-events: auto;
   position: absolute;
-  right: 4px;
-  top: 4px;
   z-index: 11;
 }
 

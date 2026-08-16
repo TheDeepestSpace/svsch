@@ -3,15 +3,33 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot, fitGraphView, paddedAllNodesClip, trackView } from './helper';
+import { expectGraphAndScreenshot as recordAndScreenshot, fitGraphView, paddedAllNodesClip, trackView, recordVisualBenchmark } from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
 import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../../src/webview/arrayStackGeometry';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
+
+// This file predates helper.ts's benchmark instrumentation and keeps its own
+// local openFixture()/postView() rather than the shared ones — so it needs
+// its own copy of the postView -> render-ready timing, wired into the same
+// recordVisualBenchmark() sink. openFixture() below resolves it precisely via
+// its ready selector; this wrapper is the fallback for the ~20 call sites
+// that use postView()/openView() directly with a hand-built view.
+const postViewStartedAt = new WeakMap<Page, number>();
+
+async function expectGraphAndScreenshot(page: Page, name: string, options?: any) {
+  const startedAt = postViewStartedAt.get(page);
+  if (startedAt !== undefined) {
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', Date.now() - startedAt);
+  }
+  return recordAndScreenshot(page, name, options);
+}
 
 async function expectStackedEdgeSegmentsOrthogonal(page: Page): Promise<void> {
   const diagonalSegments = await page.locator('.svsch-edge-stacked, .svsch-edge-stacked-back, .svsch-edge-stacked-front').evaluateAll((paths) => {
@@ -591,7 +609,7 @@ test.describe('mux visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'mux-long-names-webview.png', {
       fullPage: true,
-      maxDiffPixels: 2
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.muxLongNames
     });
   });
 
@@ -631,7 +649,7 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'register-active-low-reset-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
-      maxDiffPixels: 50
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.default
     });
   });
 
@@ -1928,6 +1946,11 @@ async function openFixture(page: Page, fixtureName: string, layoutMode: VisualLa
             ? '[data-node-kind="replicate"]'
           : '[data-node-kind="mux"]';
   await page.waitForSelector(readySelector, { state: 'attached' });
+  const startedAt = postViewStartedAt.get(page);
+  if (startedAt !== undefined) {
+    postViewStartedAt.delete(page);
+    recordVisualBenchmark('rendering', Date.now() - startedAt);
+  }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -2002,6 +2025,7 @@ async function cutLabelPaint(page: Page, nodeId: string, edgeId: string, edgeSel
 
 async function postView(page: Page, view: DiagramViewModel): Promise<void> {
   trackView(page, view);
+  postViewStartedAt.set(page, Date.now());
   await page.evaluate((fixtureView) => {
     window.postMessage({
       type: 'graph',
@@ -2119,6 +2143,7 @@ async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMod
     const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
 
+    const elaborationStartedAt = Date.now();
     const graph = await buildDesignGraph({
       workspaceRoot: tmpDir,
       projectFolder: '.',
@@ -2128,6 +2153,7 @@ async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMod
       backendPath,
       includeExternalDiagnostics: false
     });
+    recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];
     const layout = layoutMode === 'manual'

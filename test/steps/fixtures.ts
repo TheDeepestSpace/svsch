@@ -5,21 +5,14 @@ import type { Page, FrameLocator } from '@playwright/test';
 import { expect } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
 import { buildDesignGraph } from '../../src/parser/backend';
 import {
   buildViewModel,
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
-
-type ScreenshotCompareBox = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -188,7 +181,7 @@ export class BddWorld {
     return screenshot;
   }
 
-  private async _webviewCompareBox(): Promise<ScreenshotCompareBox | null> {
+  private async _webviewCompareBox(): Promise<PngCompareBox | null> {
     const box = await this.workbox.locator('iframe.webview').first().boundingBox().catch(() => null);
     if (!box || box.width < 10 || box.height < 10) return null;
     return {
@@ -218,7 +211,7 @@ export class BddWorld {
     actualBuffer: Buffer,
     actualGraph: any,
     snapshotName: string,
-    compareBox: ScreenshotCompareBox | null = null
+    compareBox: PngCompareBox | null = null
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
@@ -239,41 +232,39 @@ export class BddWorld {
     if (snapshotMissing) {
       assertBaselineCreatable(snapshotPath, updateSnapshots);
     }
-    if (snapshotMissing || updateSnapshots) {
+    if (snapshotMissing) {
       fs.writeFileSync(snapshotPath, actualBuffer);
       return;
     }
 
-    const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
-    const actualImage = PNG.sync.read(actualBuffer);
-    const expectedForCompare = compareBox ? cropPng(expectedImage, compareBox) : expectedImage;
-    const actualForCompare = compareBox ? cropPng(actualImage, compareBox) : actualImage;
-    const { width, height } = expectedForCompare;
-    if (width !== actualForCompare.width || height !== actualForCompare.height) {
-      if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
+    const expectedBuffer = fs.readFileSync(snapshotPath);
+    const comparison = comparePngBuffers(
+      expectedBuffer,
+      actualBuffer,
+      SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+      SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
+      compareBox
+    );
+    if (comparison.matches) return;
+    if (updateSnapshots) {
+      fs.writeFileSync(snapshotPath, actualBuffer);
+      return;
+    }
+
+    if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), expectedBuffer);
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
+    if (comparison.diffBuffer) {
+      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), comparison.diffBuffer);
+    }
+    if (comparison.numDiffPixels === undefined) {
       throw new Error(
-        `Snapshot size mismatch for "${snapshotName}": expected ${width}x${height}, ` +
-        `got ${actualForCompare.width}x${actualForCompare.height}.`
+        `Snapshot size mismatch for "${snapshotName}": `
+        + `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, `
+        + `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`
       );
     }
-    const diff = new PNG({ width, height });
-    const numDiffPixels = pixelmatch(
-      expectedForCompare.data,
-      actualForCompare.data,
-      diff.data,
-      width,
-      height,
-      { threshold: 0.1 }
-    );
-    if (numDiffPixels > 50) {
-      if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), PNG.sync.write(diff));
-      throw new Error(`Snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ.`);
-    }
+    throw new Error(`Snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`);
   }
 
   // -------------------------------------------------------------------------
@@ -351,6 +342,20 @@ export class BddWorld {
     // Give VS Code's file watcher time to detect the change and start rebuilding.
     await this.workbox.waitForTimeout(500);
     // Wait for the busy indicator to appear then disappear (extension is rebuilding).
+    //
+    // The 'visible' wait below times out (10s) on most scenarios instead of
+    // observing a transition — the indicator has usually already flashed and
+    // gone by the time this starts polling. That looked purely wasteful, but
+    // removing it is NOT safe: it also acts as a grace period that lets the
+    // extension-host round trip (command -> status 'rebuilding' -> new view
+    // -> status 'idle') actually complete before the 'hidden' wait below is
+    // allowed to resolve. Dropping it let 'hidden' resolve while a rebuild
+    // was still in flight (indicator not yet flipped to visible), producing
+    // a stale screenshot and a real snapshot-mismatch failure in "Navigating
+    // to connection source" — so the accurate fix here needs a real
+    // completion signal (e.g. a rebuild generation/version the webview
+    // echoes back) rather than trimming this wait, and is left as follow-up
+    // rather than risking more scenarios on an unverified guess.
     await this.webviewPage.locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'visible', timeout: 10_000 })
       .catch(() => {});
@@ -386,6 +391,13 @@ export class BddWorld {
     ready: boolean;
     nodeCount?: number;
     mismatchedModuleNodeIds?: string[];
+    unsettledNodeMeasurements?: Array<{
+      id: string;
+      width?: number;
+      height?: number;
+      expectedWidth?: number;
+      expectedHeight?: number;
+    }>;
     edgeCount?: number;
     edgeElemCount?: number;
     validEdgeCount?: number;
@@ -407,8 +419,35 @@ export class BddWorld {
           return { ready: false, reason: 'moduleName mismatch', nodeCount: nodes.length, mismatchedModuleNodeIds };
         }
 
-        const nodeElems = document.querySelectorAll('.react-flow__node');
+        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
         if (nodeElems.length === 0) return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
+
+        const nodeMap = new Map<string, Element>();
+        for (const el of nodeElems) {
+          const id = el.getAttribute('data-id');
+          if (id) nodeMap.set(id, el);
+        }
+        const unsettledNodeMeasurements = nodes.flatMap((node: any) => {
+          const content = nodeMap.get(node.id)?.querySelector<HTMLElement>('[data-node-id]');
+          const expectedWidth = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-width') ?? '');
+          const expectedHeight = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-height') ?? '');
+          const width = node.measured?.width ?? node.width;
+          const height = node.measured?.height ?? node.height;
+          const settled = content
+            && Number.isFinite(expectedWidth)
+            && Number.isFinite(expectedHeight)
+            && Math.abs(width - expectedWidth) < 0.5
+            && Math.abs(height - expectedHeight) < 0.5;
+          return settled ? [] : [{ id: node.id, width, height, expectedWidth, expectedHeight }];
+        });
+        if (unsettledNodeMeasurements.length > 0) {
+          return {
+            ready: false,
+            reason: 'node dimensions have not settled',
+            nodeCount: nodes.length,
+            unsettledNodeMeasurements,
+          };
+        }
 
         const edges = rf.getEdges();
         if (!edges || edges.length === 0) return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
@@ -506,23 +545,6 @@ export class BddWorld {
     }
   }
 
-}
-
-function cropPng(source: PNG, box: ScreenshotCompareBox): PNG {
-  const x = Math.max(0, Math.min(source.width - 1, box.x));
-  const y = Math.max(0, Math.min(source.height - 1, box.y));
-  const width = Math.max(1, Math.min(source.width - x, box.width));
-  const height = Math.max(1, Math.min(source.height - y, box.height));
-  const cropped = new PNG({ width, height });
-
-  for (let row = 0; row < height; row += 1) {
-    const sourceStart = ((y + row) * source.width + x) * 4;
-    const sourceEnd = sourceStart + width * 4;
-    const targetStart = row * width * 4;
-    source.data.copy(cropped.data, targetStart, sourceStart, sourceEnd);
-  }
-
-  return cropped;
 }
 
 // ---------------------------------------------------------------------------

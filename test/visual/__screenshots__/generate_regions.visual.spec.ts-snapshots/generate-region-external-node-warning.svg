@@ -2439,7 +2439,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="194.5" height="74.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="186" y="10" text-anchor="end">⚠</text>
+<text x="204" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 </g>

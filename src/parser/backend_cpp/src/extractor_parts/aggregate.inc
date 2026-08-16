@@ -339,6 +339,17 @@ void DesignExtractor::collapseAliasCombNodes(Module& mod) {
             }
             if (!in_port || !out_port) continue;
 
+            // A continuous assign to one bit/slice of a packed signal (e.g.
+            // `assign out[0] = a;`) is lowered to an [alias] comb node whose output
+            // signal is that slice ("out[0]"). synthesizeBusCompositionNodes (which
+            // runs after this pass) is what stitches such slices into a single
+            // bus_comp node driving "out" — it needs this node's sliced output port
+            // to still exist when it scans. Don't bypass/delete these: they aren't
+            // dead ends, they're waiting to be picked up by that later pass. This
+            // mirrors the equivalent procedural case, which this loop already skips
+            // outright via the isProcedural check above.
+            if (out_port->signal.find('[') != std::string::npos) continue;
+
             // Copy edges by value BEFORE any push_back (which could reallocate the vector).
             std::vector<Edge> incoming_copy, outgoing_copy;
             for (const auto& e : mod.edges) {
@@ -635,7 +646,6 @@ void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {
 
     for (const auto& n : mod.nodes) {
         if (n.kind == "bus") continue;
-        if (n.kind == "comb" && n.metadata.expression == "[alias]" && !n.metadata.isProcedural) continue;
         for (const auto& p : n.ports) {
             if (p.direction != "output" || p.signal.empty()) continue;
             size_t bracket = p.signal.find('[');
@@ -691,7 +701,13 @@ void DesignExtractor::synthesizeBusCompositionNodes(Module& mod) {
         std::set<std::string> seen_slices;
         for (const auto& driver : drivers) {
             if (!seen_slices.insert(driver.slice).second) continue;
-            std::string port_width = widthFromSignalSlice(driver.slice);
+            // For an unpacked array (e.g. `logic [7:0] a_arr [3:0]`), `[i]` selects a
+            // whole multi-bit element, not a packed bit/slice — widthFromSignalSlice
+            // would wrongly read it as a 1-bit index. Use the declared element width
+            // instead; only fall back to packed-slice parsing for actual bus slices.
+            std::string port_width = mod.arrayDimensions.count(base)
+                ? resolveSignalWidth(mod, base, driver.width)
+                : widthFromSignalSlice(driver.slice);
             if (port_width.empty()) port_width = driver.width;
             comp.ports.push_back({driver.slice, "input", base + driver.slice, port_width, driver.slice});
 

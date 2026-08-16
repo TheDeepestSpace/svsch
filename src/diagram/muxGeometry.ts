@@ -7,11 +7,15 @@ export function muxInputPortCenterY(index: number, count: number, height: number
   return grid * (startUnit + index);
 }
 
+/** Y of the trapezoid's top-right vertex — shared by mux/select/alu skins, whose right edge slopes in from the full height. */
+export function muxRightTopY(height: number): number {
+  const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
+  return (height - rightSideHeight) / 2;
+}
+
 export function muxTopPortSkinEdgeY(index: number, count: number, height: number): number {
   const xFraction = (index + 1) / (count + 1);
-  const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
-  const rightTop = (height - rightSideHeight) / 2;
-  return rightTop * xFraction;
+  return muxRightTopY(height) * xFraction;
 }
 
 export function muxTopPortLabelOffsetY(index: number, count: number, height: number): number {
