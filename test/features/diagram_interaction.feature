@@ -726,6 +726,66 @@ Feature: Diagram Interaction
       | click the "Cut out" button              |
       | press C to cut out the selected blocks  |
 
+  Scenario: Clicking "Cut out" in a mixed block-and-wire selection leaves an unrelated selected wire alone
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic p, input logic b, input logic c, output logic x, output logic q, output logic y, output logic z);
+        leaf u1(.a(a), .y(x));
+        assign q = p;
+        leaf u2(.a(b), .y(y));
+        leaf u3(.a(c), .y(z));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select the blocks "u2" and "u3"
+    And I add the connection between "p" and "q" to the selection
+    Then the connection between "p" and "q" should be shown as selected
+    When I click the "Cut out" button
+    Then I should see 2 cut net labels named "b"
+    And I should see 2 cut net labels named "u2.y"
+    And I should see 2 cut net labels named "c"
+    And I should see 2 cut net labels named "u3.y"
+    And the original connection between "b" and "u2" should be hidden
+    And the original connection between "u2" and "y" should be hidden
+    And the original connection between "c" and "u3" should be hidden
+    And the original connection between "u3" and "z" should be hidden
+    But I should not see cut net labels named "p"
+    And the original connection between "p" and "q" should be restored
+
+  Scenario: Pressing C in a mixed block-and-wire selection also cuts an unrelated selected wire
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic p, input logic b, input logic c, output logic x, output logic q, output logic y, output logic z);
+        leaf u1(.a(a), .y(x));
+        assign q = p;
+        leaf u2(.a(b), .y(y));
+        leaf u3(.a(c), .y(z));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And click and drag the mouse to select the blocks "u2" and "u3"
+    And I add the connection between "p" and "q" to the selection
+    Then the connection between "p" and "q" should be shown as selected
+    When I press C to cut out the selected blocks
+    Then I should see 2 cut net labels named "b"
+    And I should see 2 cut net labels named "u2.y"
+    And I should see 2 cut net labels named "c"
+    And I should see 2 cut net labels named "u3.y"
+    And the original connection between "b" and "u2" should be hidden
+    And the original connection between "u2" and "y" should be hidden
+    And the original connection between "c" and "u3" should be hidden
+    And the original connection between "u3" and "z" should be hidden
+    But I should see 2 cut net labels named "p"
+    And the original connection between "p" and "q" should be hidden
+
   Scenario: The Cut out button is hidden for a block that's already fully cut out
     Given I have a file "top.sv" in my workspace:
       """

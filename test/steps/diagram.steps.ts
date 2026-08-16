@@ -253,6 +253,39 @@ When('I hover the connection between {string} and {string} and press C to cut it
   await waitForLayoutChange(this, before, 'After cut net via C shortcut');
 });
 
+// Ctrl/Cmd-click directly on a wire's path to add it to whatever's already
+// selected, mirroring how a user extends a block marquee with an extra,
+// otherwise-unrelated connection — React Flow only auto-selects edges that
+// touch an already-selected node, so this is the one way to get an edge
+// into a mixed selection without also sweeping up its endpoint nodes.
+// pointer-events on the bridge path is "stroke" (see diagram.css), so a
+// coordinate-based click only lands reliably on a perfectly straight run —
+// dispatch directly on the element instead, the same way the plain hover
+// step above dispatches 'mouseover' rather than moving a real pointer. React
+// Flow's multi-selection state comes from its own window-level keydown/keyup
+// tracking (not the click event's modifier flags), so a real keydown has to
+// bracket the click — and land in a separate render tick — for the edge to
+// be added rather than replacing the selection.
+When('I add the connection between {string} and {string} to the selection', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const isMac = process.platform === 'darwin';
+  const key = isMac ? 'Meta' : 'Control';
+  const modifierProps = isMac ? { metaKey: true } : { ctrlKey: true };
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ctrlKey: key === 'Control', metaKey: key === 'Meta' }));
+  }, key);
+  await this.webviewPage.locator('html').evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await this.webviewPage.locator('html').evaluate((_el, { edgeId, modifierProps }) => {
+    const target = document.querySelector(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge-bridge`);
+    if (!target) throw new Error(`Bridge path not found for edge ${edgeId}`);
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, ...modifierProps }));
+  }, { edgeId, modifierProps });
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+  }, key);
+  await this.takeScreenshot(`Added the connection between ${source} and ${target} to the selection`);
+});
+
 // Reveal a connection's floating Cut/Reroute controls without clicking either —
 // used to check that hovering one wire of a multi-wire selection also reveals
 // every other selected wire's own controls.
