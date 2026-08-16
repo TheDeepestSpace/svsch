@@ -64,6 +64,42 @@ Feature: Diagram Interaction
     And I reset the layout
     Then the port node "a" should be at its original position
 
+  Scenario: Resetting the layout also resets a resized block's size
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic clk, input logic d, output logic q);
+        always_ff @(posedge clk) begin
+          q <= d;
+        end
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "q" block on the right side by 3 grid cells
+    Then the "q" block should have grown on the right side
+    When I reset the layout
+    Then the "q" block should be at its canonical size
+
+  Scenario: Revert Size resets every resized block in the selection
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "u1" block on the right side by 3 grid cells
+    And I resize the "u2" block on the right side by 3 grid cells
+    And click and drag the mouse to select the blocks "u1" and "u2"
+    Then the "Revert Size" button should be visible
+    When I click the "Revert Size" button
+    Then the "u1" block should be at its canonical size
+    And the "u2" block should be at its canonical size
+
   Scenario Outline: Rerouting a single connection without affecting other routes or positions
     Given I have a file "top.sv" in my workspace:
       """
@@ -293,6 +329,22 @@ Feature: Diagram Interaction
     Then the "g_if_one" generate region should have grown on the right side
     When I resize the "g_if_one" generate region on the right side by -30 grid cells
     Then the "g_if_one" generate region should keep 2 grid cells of padding on the right side
+
+  Scenario Outline: Resizing a <block_kind> block
+    Given I have a file "top.sv" in my workspace:
+      """
+      <system_verilog>
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "<block_label>" block on the right side by 3 grid cells
+    Then the "<block_label>" block should have grown on the right side
+
+    Examples:
+      | block_kind       | block_label | system_verilog                                                                                                                                                                             |
+      | register          | y           | module top(input logic clk, input logic a, output logic y); always_ff @(posedge clk) y <= a; endmodule                                                                                     |
+      | instance          | u_leaf      | module leaf(input logic a, output logic y); assign y = a; endmodule module top(input logic a, output logic y); leaf u_leaf(.a(a), .y(y)); endmodule                                         |
+      | stacked register  | y           | module top(input logic clk, input logic a [1:0], output logic y [1:0]); always_ff @(posedge clk) y <= a; endmodule                                                                          |
+      | stacked instance  | u_mux       | module leaf(input logic a, output logic y); assign y = a; endmodule module top(input logic a [1:0], output logic y [1:0]); leaf u_mux [1:0] (.a(a), .y(y)); endmodule                        |
 
   Scenario: Moving the block within an arm expands its boundary appropriately
     Given I have a file "top.sv" in my workspace:
