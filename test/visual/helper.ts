@@ -429,7 +429,8 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     };
     const elaborationDurationsMs: number[] = [];
     let lastGraph: DesignGraph | undefined;
-    for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+    const maxElaborationAttempts = BENCHMARK_SAMPLE_COUNT * 2;
+    for (let attempt = 0; attempt < maxElaborationAttempts && elaborationDurationsMs.length < BENCHMARK_SAMPLE_COUNT; attempt += 1) {
       const elaborationStartedAt = Date.now();
       const sampledGraph = await buildDesignGraph(buildOptions);
       if (sampledGraph.rootModules.length === 0) {
@@ -438,8 +439,10 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
       elaborationDurationsMs.push(Date.now() - elaborationStartedAt);
       lastGraph = sampledGraph;
     }
-    if (!lastGraph) {
-      throw new Error(`buildDesignGraph() failed on all ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}`);
+    if (!lastGraph || elaborationDurationsMs.length !== BENCHMARK_SAMPLE_COUNT) {
+      throw new Error(
+        `Expected ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}, got ${elaborationDurationsMs.length} after ${maxElaborationAttempts} attempts`
+      );
     }
     recordVisualBenchmark('elaboration', trimmedMean(elaborationDurationsMs, BENCHMARK_TRIM_COUNT));
     const graph = lastGraph;
