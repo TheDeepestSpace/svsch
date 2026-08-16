@@ -302,7 +302,12 @@ export function renderDeltaTableMarkdown(rows) {
   const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
   if (withBaseline.length === 0) return null;
 
-  const header = '| | test | baseline | new | Δ (nominal) | Δ (%) |\n|---|---|---:|---:|---:|---:|';
+  // Worst/Best is folded into a bold prefix on the test name (rather than its
+  // own leading column) and the two delta figures share one column — fewer,
+  // wider columns leave the narrow ones (base/new/Δ) real room instead of
+  // getting squeezed down to character-by-character wrapping on narrow
+  // viewports (GitHub mobile in particular).
+  const header = '| test | base | new | Δ |\n|---|---:|---:|---:|';
   const lines = [header];
 
   if (withBaseline.length > 10) {
@@ -311,7 +316,7 @@ export function renderDeltaTableMarkdown(rows) {
     const best = byPct.slice(-5).reverse();
     const formatRow = (label, row) => {
       const sign = row.deltaMs > 0 ? '+' : '';
-      return `| ${label} | ${row.name} | ${row.baseline} | ${row.value} | ${sign}${row.deltaMs} ms | ${sign}${row.deltaPct.toFixed(0)}% |`;
+      return `| **${label}** — ${row.name} | ${row.baseline} | ${row.value} | ${sign}${row.deltaMs} ms (${sign}${row.deltaPct.toFixed(0)}%) |`;
     };
     for (const row of worst) lines.push(formatRow('Worst', row));
     for (const row of best) lines.push(formatRow('Best', row));
@@ -321,7 +326,7 @@ export function renderDeltaTableMarkdown(rows) {
   const avgPct = withBaseline.reduce((sum, row) => sum + row.deltaPct, 0) / withBaseline.length;
   const avgSignNominal = avgNominal > 0 ? '+' : '';
   const avgSignPct = avgPct > 0 ? '+' : '';
-  lines.push(`| Avg | across ${withBaseline.length} test${withBaseline.length === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avgNominal.toFixed(0)} ms | ${avgSignPct}${avgPct.toFixed(1)}% |`);
+  lines.push(`| **Avg** — across ${withBaseline.length} test${withBaseline.length === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avgNominal.toFixed(0)} ms (${avgSignPct}${avgPct.toFixed(1)}%) |`);
 
   return lines.join('\n');
 }
