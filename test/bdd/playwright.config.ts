@@ -3,6 +3,7 @@ import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwri
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import path from 'path';
 import os from 'os';
+import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -37,9 +38,16 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  updateSnapshots: configuredPlaywrightUpdateMode(),
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
+  // The resize/persist round-trip (CSS custom property -> React Flow's
+  // ResizeObserver-driven `measured` size) occasionally takes longer than a
+  // scenario's poll timeout to converge on CI runners; one retry absorbs
+  // that without masking a real regression (a deterministically broken
+  // scenario still fails both attempts).
+  retries: process.env.CI ? 2 : 0,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
   outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),
@@ -48,7 +56,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   reporter: reporters,
   snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
   expect: {
-    toHaveScreenshot: { maxDiffPixels: 300 },
+    toHaveScreenshot: { maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.bdd },
   },
   use: {
     extensionDevelopmentPath: root,

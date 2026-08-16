@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramSizing, nodePortCenterOffset } from '../../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth, nodeWarningIconCenter } from '../../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth, nodeWarningIconCenter, resolvedNodeDimensions } from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
@@ -10,7 +10,7 @@ import {
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
 import { registerPortTop, registerExtraInputPortTop } from '../../diagram/registerGeometry';
-import { muxInputPortCenterY } from '../../diagram/muxGeometry';
+import { gateInputPortCenterY, muxInputPortCenterY } from '../../diagram/muxGeometry';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { interfaceInstanceTopHatY, visualHandleGeometry } from '../../diagram/visualHandleGeometry';
 import {
@@ -29,12 +29,14 @@ import {
 import { ArrayStackSelection } from './shared/skins';
 import { nodeStackIsWide } from '../../ir/edgeStyle';
 import { NetLabelNode } from './NetLabelNode';
+import { InteractionContext, type NodeResizeHandle } from './shared/context';
 import type { HdlFlowNode } from './types';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
 import { LatchNodeSvg } from './latch/LatchNodeSvg';
 import { LiteralNodeSvg } from './literal/LiteralNodeSvg';
 import { ReplicateNodeSvg } from './replicate/ReplicateNodeSvg';
 import { InverterNodeSvg } from './inverter/InverterNodeSvg';
+import { GateNodeSvg } from './gate/GateNodeSvg';
 import { PortNodeSvg } from './port/PortNodeSvg';
 import { CombNodeSvg } from './comb/CombNodeSvg';
 import { LoopNodeSvg } from './loop/LoopNodeSvg';
@@ -47,7 +49,7 @@ import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
 
-export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
+export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.ReactElement {
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
@@ -67,7 +69,13 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
       : []);
   const sideInputs = muxTopPorts.length > 0 ? inputs.filter((port: DiagramPort) => !muxTopPorts.some((topPort) => topPort.id === port.id)) : inputs;
   const portDirection = node.kind === 'port' ? node.ports[0]?.direction ?? 'unknown' : undefined;
-  const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+  const { width: nodeWidth, height: nodeHeight } = resolvedNodeDimensions(node);
+  // Resizable kinds (instance/register) can render larger than their canonical
+  // auto-fit box (diagramNodeDimensions) when a manual resize override is
+  // saved. Content rows that must not reflow as the box grows use this canonical
+  // size instead of nodeWidth/nodeHeight; edge-anchored ports use the resolved size.
+  const isResizable = node.kind === 'register' || node.kind === 'instance';
+  const canonicalSize = isResizable ? diagramNodeDimensions(node) : { width: nodeWidth, height: nodeHeight };
   const parameterRows = instanceParameterRows(node);
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
   const nodeStyle = {
@@ -441,11 +449,14 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (
           <Handle key={port.id} type="target" id={port.id} position={Position.Left}
-            style={{ top: registerExtraInputPortTop(index, nodeHeight, hasRv) + diagramSizing.gridSize / 2 }} />
+            style={{ top: registerExtraInputPortTop(index, canonicalSize.height, hasRv) + diagramSizing.gridSize / 2 }} />
         ))}
         {isArray
           ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+        {node.kind === 'register' && (
+          <NodeResizeControls nodeId={id} />
+        )}
         {warningIcon}
       </button>
     );
@@ -535,6 +546,33 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
         ))}
+        {warningIcon}
+      </button>
+    );
+  }
+
+  if (node.kind === 'gate') {
+    return (
+      <button
+        className={`hdl-node hdl-node-gate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
+        data-node-id={node.id}
+        data-node-kind={node.kind}
+        style={nodeStyle}
+        title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+        onDoubleClick={handleDoubleClick}
+      >
+        <svg className="hdl-node-svg gate-skin" width={nodeWidth} height={nodeHeight} aria-hidden="true">
+          <GateNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+        </svg>
+        {sideInputs.map((port: DiagramPort, index: number) => (
+          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+            style={{ top: gateInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
+        ))}
+        {outputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="source" id={port.id} position={Position.Right}
+            style={{ top: nodeHeight / 2 }} />
+        ))}
+        {isArray && <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
         {warningIcon}
       </button>
     );
@@ -678,8 +716,38 @@ export function HdlNode({ data, selected }: NodeProps<HdlFlowNode>): React.React
       {isArray
         ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
         : <div className="hdl-node-selection-rect" aria-hidden="true" />}
+      {node.kind === 'instance' && (
+        <NodeResizeControls nodeId={id} />
+      )}
       {warningIcon}
     </button>
+  );
+}
+
+const RESIZE_HANDLES: NodeResizeHandle[] = [
+  'top', 'right', 'bottom', 'left',
+  'top-left', 'top-right', 'bottom-right', 'bottom-left'
+];
+
+// Edge/corner grow-only resize hit-zones shared by the instance and register
+// branches above. The drag itself is driven from DiagramApp (main.tsx) — see
+// startNodeResize on InteractionContext. Reverting a resize lives with the
+// other selected-block actions in NodeSelectionToolbar.
+function NodeResizeControls({ nodeId }: {
+  nodeId: string;
+}): React.ReactElement {
+  const { startNodeResize } = useContext(InteractionContext);
+  return (
+    <React.Fragment>
+      {RESIZE_HANDLES.map((handle) => (
+        <div
+          key={handle}
+          className={`nodrag svsch-node-resize-handle svsch-node-resize-${handle}`}
+          onPointerDown={(event) => startNodeResize(event, nodeId, handle)}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ))}
+    </React.Fragment>
   );
 }
 
