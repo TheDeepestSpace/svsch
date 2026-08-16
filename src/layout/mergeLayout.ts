@@ -28,6 +28,7 @@ import {
   inverterGeometryWidth,
   resolvedNodeDimensions,
 } from '../diagram/nodeSizing';
+import { gateInputPortCenterY } from '../diagram/muxGeometry';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
@@ -2017,6 +2018,17 @@ export function elkNodeForDiagramNode(
         portX = 0;
       }
       portY = height / 2;
+    } else if (node.kind === 'gate') {
+      if (port.direction === 'output') {
+        side = 'EAST';
+        portX = width;
+        portY = height / 2;
+      } else {
+        side = 'WEST';
+        portX = 0;
+        const inputIndex = Math.max(0, inputs.indexOf(port));
+        portY = gateInputPortCenterY(inputIndex, inputs.length, height);
+      }
     } else if (node.kind === 'port' || (node.kind === 'interface' && role === 'port')) {
       portY = height / 2;
     } else if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {

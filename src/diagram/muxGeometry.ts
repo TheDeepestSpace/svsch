@@ -8,6 +8,19 @@ export function muxInputPortCenterY(index: number, count: number, height: number
 }
 
 /**
+ * Gate input ports fan out one full grid line apart (matching the ALU's
+ * fixed two-port layout), inset by one grid unit from the body's top/bottom
+ * edge. `gateHeightForInputCount` sizes the body to always fit this spacing,
+ * for any input count.
+ */
+export function gateInputPortCenterY(index: number, count: number, height: number): number {
+  const grid = diagramSizing.gridSize;
+  const spreadCenterY = (i: number): number => grid * (1 + 2 * i);
+  const fits = spreadCenterY(count - 1) + grid <= height;
+  return fits ? spreadCenterY(index) : muxInputPortCenterY(index, count, height);
+}
+
+/**
  * Y of the trapezoid's top-right vertex — shared by mux/select/alu skins,
  * whose right edge slopes in from the full height.
  */

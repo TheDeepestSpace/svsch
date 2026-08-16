@@ -657,6 +657,7 @@ function mergeBusNodesFromSourceGraph(
         (sourceNode.kind === 'comb' ||
           sourceNode.kind === 'alu' ||
           sourceNode.kind === 'inverter' ||
+          sourceNode.kind === 'gate' ||
           sourceNode.kind === 'bus' ||
           sourceNode.kind === 'struct')
       ) {
@@ -667,6 +668,7 @@ function mergeBusNodesFromSourceGraph(
               (n.kind === 'comb' ||
                 n.kind === 'alu' ||
                 n.kind === 'inverter' ||
+                n.kind === 'gate' ||
                 n.kind === 'bus' ||
                 n.kind === 'struct') &&
               n.ports.some((p) => {
@@ -685,12 +687,13 @@ function mergeBusNodesFromSourceGraph(
       if (targetNode) {
         nodeIdMap.set(sourceNode.id, targetNode.id);
         // Merge source info: trust text parser for most nodes, but keep UHDM's
-        // refined ranges for bus/struct/alu compositions.
+        // refined ranges for bus/struct/alu/gate compositions.
         if (
           sourceNode.source &&
           targetNode.kind !== 'bus' &&
           targetNode.kind !== 'struct' &&
-          targetNode.kind !== 'alu'
+          targetNode.kind !== 'alu' &&
+          targetNode.kind !== 'gate'
         ) {
           targetNode.source = {
             ...sourceNode.source,
@@ -1865,7 +1868,10 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
               if (n.kind === 'instance') {
                 portId = stableId('port', p.name);
               } else if (
-                (n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter') &&
+                (n.kind === 'comb' ||
+                  n.kind === 'alu' ||
+                  n.kind === 'inverter' ||
+                  n.kind === 'gate') &&
                 p.direction === 'output'
               ) {
                 portId = stableId('out', p.name);

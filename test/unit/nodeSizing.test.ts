@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { diagramSizing } from '../../src/diagram/constants';
-import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
+import {
+  diagramNodeDimensions,
+  gateGeometryWidth,
+  resolvedNodeDimensions,
+} from '../../src/diagram/nodeSizing';
 import { selectNodeHasVectorOutput, selectPortLabel } from '../../src/diagram/selectLabels';
 import type { DiagramNode, DiagramNodeKind } from '../../src/ir/types';
 
@@ -13,6 +17,7 @@ describe('diagram node sizing', () => {
     ['port', diagramSizing.portWidth],
     ['comb', diagramSizing.nodeWidth],
     ['alu', diagramSizing.muxWidth],
+    ['gate', diagramSizing.muxWidth],
     ['inverter', diagramSizing.gridSize * 2],
     // Bus/struct pipes sit flush with the single-port edge, so they are two
     // grid units narrower than generic nodes.
@@ -364,6 +369,41 @@ describe('diagram node sizing', () => {
     expect(dimensions.height % diagramSizing.gridSize).toBe(0);
   });
 
+  test('keeps a 2-input gate the same footprint as an ALU, and widens for more inputs', () => {
+    const twoInput = diagramNodeDimensions(nodeOfKind('gate'));
+    const alu = diagramNodeDimensions(nodeOfKind('alu'));
+    expect(twoInput).toEqual(alu);
+
+    const fourInput: DiagramNode = {
+      id: 'node:gate4',
+      kind: 'gate',
+      label: '',
+      metadata: { operation: 'and' },
+      ports: [
+        { id: 'in0', name: 'in0', direction: 'input' },
+        { id: 'in1', name: 'in1', direction: 'input' },
+        { id: 'in2', name: 'in2', direction: 'input' },
+        { id: 'in3', name: 'in3', direction: 'input' },
+        { id: 'out', name: 'y', direction: 'output' },
+      ],
+    };
+    const fourInputDimensions = diagramNodeDimensions(fourInput);
+    expect(fourInputDimensions.height).toBeGreaterThan(twoInput.height);
+    expect(fourInputDimensions.height % diagramSizing.gridSize).toBe(0);
+  });
+
+  test('gate geometry width grows for the XOR back-curve and the negation bubble', () => {
+    const and = gateGeometryWidth(false, false);
+    const xor = gateGeometryWidth(true, false);
+    const nand = gateGeometryWidth(false, true);
+    const xnor = gateGeometryWidth(true, true);
+
+    expect(xor).toBeGreaterThan(and);
+    expect(nand).toBeGreaterThan(and);
+    expect(xnor).toBeGreaterThan(xor);
+    expect(xnor).toBeGreaterThan(nand);
+  });
+
   test('keeps inverter dimensions compact and snapped to the grid', () => {
     const dimensions = diagramNodeDimensions(nodeOfKind('inverter'));
 
@@ -506,6 +546,20 @@ function nodeOfKind(kind: DiagramNodeKind, extended = false): DiagramNode {
       ports: [
         { id: 'lhs', name: 'lhs', direction: 'input' },
         { id: 'rhs', name: 'rhs', direction: 'input' },
+        { id: 'out', name: extended ? long : 'y', direction: 'output' },
+      ],
+    };
+  }
+
+  if (kind === 'gate') {
+    return {
+      id: `node:${kind}`,
+      kind,
+      label: '',
+      metadata: { operation: 'and' },
+      ports: [
+        { id: 'in0', name: 'in0', direction: 'input' },
+        { id: 'in1', name: 'in1', direction: 'input' },
         { id: 'out', name: extended ? long : 'y', direction: 'output' },
       ],
     };

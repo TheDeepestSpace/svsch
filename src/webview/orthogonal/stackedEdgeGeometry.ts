@@ -8,6 +8,7 @@ import {
 import { arrayBreakoutPipeCapPivot, arrayCompositionPipeCapPivot } from '../../diagram/busGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import type { PositionedNode } from '../../ir/types';
+import { gateLeftEdgeWireReach } from '../nodes/gate/GateNodeSvg';
 import { makeOrthogonal } from './logic';
 import { HdlPosition } from './types';
 
@@ -202,6 +203,25 @@ export function computeStackedEdgeLayerPoints(
       ),
     ),
   };
+}
+
+/**
+ * Pushes a routed edge's final point past a target gate's concave left edge (OR/NOR/XOR/XNOR)
+ * so it disappears under the node's body fill instead of stopping short of the visible curve.
+ * A no-op for every other target shape/position (`gateLeftEdgeWireReach` returns 0). Both the
+ * webview (OrthogonalEdge) and the CLI/static exporter (svgRenderer) assemble their own raw
+ * `points` array before any array-stack layering, so this is applied there directly rather
+ * than folded into `computeStackedEdgeLayerPoints` — plain (non-stacked) edges never read its
+ * output.
+ */
+export function extendTargetIntoGate(
+  points: OrthogonalPoint[],
+  targetNode: PositionedNode | undefined,
+  targetHdlPosition: HdlPosition,
+): OrthogonalPoint[] {
+  if (!targetNode || targetHdlPosition !== HdlPosition.Left) return points;
+  const inset = gateLeftEdgeWireReach(targetNode, diagramNodeDimensions(targetNode).width);
+  return inset === 0 ? points : shortenStackTarget(points, -inset, targetHdlPosition);
 }
 
 export function shortenStackSource(

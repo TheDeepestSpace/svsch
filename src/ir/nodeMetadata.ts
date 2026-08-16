@@ -8,6 +8,21 @@ export function nodeOperation(node: DiagramNode): string | undefined {
   return node.operation ?? node.metadata?.operation;
 }
 
+/** Gate body shape ('and' | 'or' | 'xor') independent of whether the output is negated. */
+export function gateBodyOperation(node: DiagramNode): 'and' | 'or' | 'xor' {
+  const op = nodeOperation(node);
+  if (op === 'nand') return 'and';
+  if (op === 'nor') return 'or';
+  if (op === 'xnor') return 'xor';
+  if (op === 'and' || op === 'or' || op === 'xor') return op;
+  return 'and';
+}
+
+export function gateIsNegated(node: DiagramNode): boolean {
+  const op = nodeOperation(node);
+  return op === 'nand' || op === 'nor' || op === 'xnor';
+}
+
 export function nodeReason(node: DiagramNode): string | undefined {
   return node.reason ?? node.metadata?.reason;
 }

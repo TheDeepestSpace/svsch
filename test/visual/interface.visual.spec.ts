@@ -522,6 +522,59 @@ test.describe('interface visual rendering', () => {
     });
   });
 
+  test(
+    'renders a gate whose operand is an inverted interface field with a single ' + 'clean driver',
+    async ({ page }) => {
+      // Regression coverage for channel_controller/channel_sink: `assign bus.flush =
+      // bus.valid & ~bus.ready` used to promote a phantom node for the inverted
+      // "bus.ready" operand, which got collapsed back onto the interface as a second,
+      // bogus input port/edge alongside the correctly-wired one — rendering as an
+      // overlapping-wire "multiple drivers" glitch and a false diagnostic.
+      const linkView = await openFixture(
+        page,
+        'interface_modport_arrangements.sv',
+        'auto',
+        'interface_channel_link',
+      );
+      await fitGraphView(page);
+      await expect(
+        page.locator('[data-node-id="instance:interface_channel_link:u_controller"]'),
+      ).toBeVisible();
+      await expect(
+        page.locator('[data-node-id="instance:interface_channel_link:u_sink"]'),
+      ).toBeVisible();
+      // No diagnostic should blame channel_controller/channel_sink for a bogus extra
+      // driver (the workspace can still legitimately flag the interface itself for
+      // having multiple peer instances — that's unrelated to this regression).
+      expect(
+        (linkView.diagnostics ?? []).some(
+          (d) => d.message.includes('channel_controller') || d.message.includes('channel_sink'),
+        ),
+      ).toBe(false);
+      await expectGraphAndScreenshot(page, 'interface-channel-link-top-canvas.png', {
+        clip: await canvasClip(page),
+      });
+
+      const controllerView = await openFixture(
+        page,
+        'interface_modport_arrangements.sv',
+        'auto',
+        'channel_controller',
+      );
+      const inverterId = 'inverter:channel_controller:bus.flush_in1:expr';
+      const gate = page.locator('[data-node-id="gate:channel_controller:bus.flush:and"]');
+      const inverter = page.locator(`[data-node-id="${inverterId}"]`);
+      await expect(gate).toBeVisible();
+      await expect(inverter).toBeVisible();
+      // No overlap-hint markers means every port on this diagram has exactly one driver.
+      await expect(page.locator('.svsch-edge-overlap-hint')).toHaveCount(0);
+      expect(controllerView.nodes.find((node) => node.id === inverterId)?.ports).toHaveLength(2);
+      await expectGraphAndScreenshot(page, 'interface-channel-controller-gate-canvas.png', {
+        clip: await paddedGraphClip(page),
+      });
+    },
+  );
+
   test('renders interface scalar caps without side modports', async ({ page }) => {
     await openFixture(page, 'interface_caps_only.sv', 'auto', 'interface_caps_only');
 

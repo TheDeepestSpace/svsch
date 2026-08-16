@@ -42,6 +42,7 @@ import {
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
+  extendTargetIntoGate,
   promotedStackFanoutPath,
   stableFragmentId,
   stackedLayerEdgeClass,
@@ -55,6 +56,7 @@ import { LatchNodeSvg } from '../webview/nodes/latch/LatchNodeSvg';
 import { LiteralNodeSvg } from '../webview/nodes/literal/LiteralNodeSvg';
 import { ReplicateNodeSvg } from '../webview/nodes/replicate/ReplicateNodeSvg';
 import { InverterNodeSvg } from '../webview/nodes/inverter/InverterNodeSvg';
+import { GateNodeSvg } from '../webview/nodes/gate/GateNodeSvg';
 import { PortNodeSvg } from '../webview/nodes/port/PortNodeSvg';
 import { CombNodeSvg } from '../webview/nodes/comb/CombNodeSvg';
 import { LoopNodeSvg } from '../webview/nodes/loop/LoopNodeSvg';
@@ -357,11 +359,17 @@ function renderEdgeGeometry(
     edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
       ? normalizedOfficialPoints
       : avoidFeedbackObstacles(normalizedOfficialPoints, obstacles, sourcePosition, targetPosition);
-  const points = [{ ...sourcePoint }, ...officialPoints, { ...targetPoint }];
   const forceStraight = edge.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourcePoint.x - targetPoint.x) < 1;
   const targetHdlPosition = forceStraight && isVertical ? HdlPosition.Top : targetPosition;
   const sourceHdlPosition = forceStraight && isVertical ? HdlPosition.Bottom : sourcePosition;
+  // Pushes the final point past a curved-left gate's (OR/NOR/XOR/XNOR) concave edge — see
+  // the matching comment in OrthogonalEdge.tsx and gateLeftEdgeWireReach for why this is safe.
+  const points = extendTargetIntoGate(
+    [{ ...sourcePoint }, ...officialPoints, { ...targetPoint }],
+    target,
+    targetHdlPosition,
+  );
   const sourceInputs = aggregateInputs(source);
   const sourceIsComposition = sourceInputs.length > 1;
   const sourceIsArray =
@@ -1007,6 +1015,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     'hdl-node-svg',
     node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '',
     node.kind === 'inverter' ? 'inverter-skin' : '',
+    node.kind === 'gate' ? 'gate-skin' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -1058,7 +1067,8 @@ function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
     node.kind === 'mux' ||
     node.kind === 'select' ||
     node.kind === 'alu' ||
-    node.kind === 'inverter'
+    node.kind === 'inverter' ||
+    node.kind === 'gate'
   )
     return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
@@ -1194,6 +1204,7 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'literal') return LiteralNodeSvg;
   if (node.kind === 'replicate') return ReplicateNodeSvg;
   if (node.kind === 'inverter') return InverterNodeSvg;
+  if (node.kind === 'gate') return GateNodeSvg;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port'))
     return PortNodeSvg;
   if (node.kind === 'comb') return CombNodeSvg;

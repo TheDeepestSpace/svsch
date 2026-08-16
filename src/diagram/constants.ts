@@ -76,6 +76,17 @@ export function muxHeightForPortRows(portRows: number): number {
   return snapUpToEvenGrid(nodeHeightForPortRows(portRows));
 }
 
+/**
+ * Gate body height needed to fan `inputCount` input ports one full grid line
+ * apart (see `gateInputPortCenterY`), inset by one grid unit from the top/
+ * bottom edge: `grid * (1 + 2 * (inputCount - 1))` for the last port center,
+ * plus one grid of bottom inset.
+ */
+export function gateHeightForInputCount(inputCount: number): number {
+  const count = Math.max(2, inputCount);
+  return diagramGrid.size * 2 * count;
+}
+
 export function combHeightForPortRows(portRows: number): number {
   return Math.max(
     diagramSizing.combMinHeight,

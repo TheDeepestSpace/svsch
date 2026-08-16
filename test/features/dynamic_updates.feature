@@ -20,7 +20,7 @@ Feature: Dynamic Updates
       endmodule
       """
     And I go back to the SVSCH diagram pane
-    Then I should see a combinational block
+    Then I should see a gate block
     And the port node "y" should have moved
 
   Scenario: Adding a block to a diagram with fixed positions
@@ -43,7 +43,7 @@ Feature: Dynamic Updates
       endmodule
       """
     And I go back to the SVSCH diagram pane
-    Then I should see a combinational block
+    Then I should see a gate block
     And the port node "a" should not have moved
     And the port node "y" should not have moved
     And I should see a port node "b"

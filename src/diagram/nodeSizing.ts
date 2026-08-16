@@ -1,5 +1,7 @@
 import type { DiagramNode } from '../ir/types';
 import {
+  gateBodyOperation,
+  gateIsNegated,
   nodeArrayDimension,
   nodeIsArrayNode,
   nodeTypeName,
@@ -11,6 +13,7 @@ import {
 import {
   combHeightForPortRows,
   diagramSizing,
+  gateHeightForInputCount,
   literalHeightForPortRows,
   muxHeightForPortRows,
   nodeHeightForPortRows,
@@ -300,6 +303,10 @@ function nodeHeightForKind(
     return muxHeightForPortRows(2);
   }
 
+  if (node.kind === 'gate') {
+    return gateHeightForInputCount(portRows);
+  }
+
   if (node.kind === 'inverter') {
     return diagramSizing.gridSize * 2;
   }
@@ -371,6 +378,23 @@ export function inverterGeometryWidth(): number {
   const g = diagramSizing.gridSize;
   const bubbleRadius = Math.min(g / 4, g / 6);
   return (g * Math.sqrt(3)) / 2 + 2 + bubbleRadius * 2;
+}
+
+/** Radius of a gate's negated-output bubble (NAND/NOR/XNOR) — matches the inverter's bubble. */
+export const gateBubbleRadius = diagramSizing.gridSize / 6;
+export const gateBubbleGap = 2;
+/** Horizontal gap reserved for XOR/XNOR's extra back curve, left of the OR-shaped body. */
+export const gateXorGap = 5;
+
+/**
+ * Body width a gate needs: base AND/OR/XOR body, plus room for the XOR
+ * back-curve and/or negation bubble.
+ */
+export function gateGeometryWidth(isXor: boolean, negated: boolean): number {
+  const base = diagramSizing.gridSize * 3;
+  const xorExtra = isXor ? gateXorGap : 0;
+  const bubbleExtra = negated ? gateBubbleGap + gateBubbleRadius * 2 : 0;
+  return base + xorExtra + bubbleExtra;
 }
 
 function registerVisibleInputRows(node: DiagramNode): number {
@@ -503,6 +527,15 @@ function nodeWidthForKind(
     return snappedWidth(diagramSizing.muxWidth, diagramSizing.gridSize * 3, snapUpToEvenGrid);
   }
 
+  if (node.kind === 'gate') {
+    const bodyOp = gateBodyOperation(node);
+    return snappedWidth(
+      diagramSizing.muxWidth,
+      gateGeometryWidth(bodyOp === 'xor', gateIsNegated(node)),
+      snapUpToEvenGrid,
+    );
+  }
+
   if (node.kind === 'inverter') {
     return snapUpToEvenGrid(inverterGeometryWidth());
   }
@@ -610,7 +643,12 @@ function visiblePortLabels(
   outputs: DiagramNode['ports'],
   showPortTypes: boolean,
 ): string[] {
-  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop') {
+  if (
+    node.kind === 'comb' ||
+    node.kind === 'inverter' ||
+    node.kind === 'loop' ||
+    node.kind === 'gate'
+  ) {
     return [];
   }
 
@@ -676,6 +714,7 @@ function nodeTitle(node: DiagramNode): string {
     node.kind !== 'comb' &&
     node.kind !== 'alu' &&
     node.kind !== 'inverter' &&
+    node.kind !== 'gate' &&
     node.kind !== 'bus' &&
     node.kind !== 'struct' &&
     node.kind !== 'interface' &&

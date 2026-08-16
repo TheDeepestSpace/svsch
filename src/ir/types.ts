@@ -8,6 +8,7 @@ export type DiagramNodeKind =
   | 'comb'
   | 'alu'
   | 'inverter'
+  | 'gate'
   | 'bus'
   | 'struct'
   | 'interface'
@@ -17,6 +18,9 @@ export type DiagramNodeKind =
   | 'replicate'
   | 'unknown'
   | 'netLabel';
+
+/** Boolean gate node operation — drives which glyph GateNodeSvg draws. */
+export type GateOperation = 'and' | 'or' | 'xor' | 'nand' | 'nor' | 'xnor';
 
 export interface SourceRange {
   file: string;
@@ -204,6 +208,10 @@ export interface AluDiagramNode extends BaseDiagramNode {
 export interface InverterDiagramNode extends BaseDiagramNode {
   kind: 'inverter';
 }
+export interface GateDiagramNode extends BaseDiagramNode {
+  kind: 'gate';
+  operation?: GateOperation | string;
+}
 export interface CombDiagramNode extends BaseDiagramNode {
   kind: 'comb';
 }
@@ -252,6 +260,7 @@ export type DiagramNode =
   | LatchDiagramNode
   | AluDiagramNode
   | InverterDiagramNode
+  | GateDiagramNode
   | CombDiagramNode
   | MuxDiagramNode
   | SelectDiagramNode
