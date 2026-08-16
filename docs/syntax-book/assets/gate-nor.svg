@@ -2454,8 +2454,8 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-edges">
 <g class="svsch-edge-group" data-edge-id="edge:gate:top:y:nor:port:top:y:y"><path class="svsch-edge" data-edge-id="edge:gate:top:y:nor:port:top:y:y" data-net-key="gate:top:y:nor:out:y" d="M 456 72 L 480 72 L 648 72 L 672 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:a:gate:top:y:nor:a"><path class="svsch-edge" data-edge-id="edge:port:top:a:gate:top:y:nor:a" data-net-key="port:top:a:port:a" d="M 144 48 L 168 48 L 336 48 L 360 48" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:b:gate:top:y:nor:b"><path class="svsch-edge" data-edge-id="edge:port:top:b:gate:top:y:nor:b" data-net-key="port:top:b:port:b" d="M 144 96 L 168 96 L 336 96 L 360 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:a:gate:top:y:nor:a"><path class="svsch-edge" data-edge-id="edge:port:top:a:gate:top:y:nor:a" data-net-key="port:top:a:port:a" d="M 144 48 L 168 48 L 336 48 L 375.661 48" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:b:gate:top:y:nor:b"><path class="svsch-edge" data-edge-id="edge:port:top:b:gate:top:y:nor:b" data-net-key="port:top:b:port:b" d="M 144 96 L 168 96 L 336 96 L 375.661 96" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:top:y:nor" data-node-kind="gate" transform="translate(360 24)">
