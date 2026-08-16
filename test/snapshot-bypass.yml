@@ -9,7 +9,112 @@
 # diff pixel count observed, so it cannot be replayed against a later or
 # larger change to the same file.
 ---
-bypass_threshold_restriction: []
+bypass_threshold_restriction:
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-one-wire-in-a-multi-wire-selection-cuts-every-selected-wire-1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-one-wire-in-a-multi-wire-selection-cuts-every-selected-wire-1--03--after-cut-net.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-one-wire-in-a-multi-wire-selection-cuts-every-selected-wire-2--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-out-a-single-selected-block-cuts-every-wire-connected-to-it-1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-out-a-single-selected-block-cuts-every-wire-connected-to-it-1--03--after-clicking-cut-out.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-out-one-block-in-a-multi-block-selection-cuts-every-selected-block-s-wires-1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/cutting-out-one-block-in-a-multi-block-selection-cuts-every-selected-block-s-wires-1--03--after-clicking-cut-out.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/renaming-a-cut-net-that-has-no-declared-name-of-its-own--implicit-wiring--1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/renaming-a-cut-net-that-has-no-declared-name-of-its-own--implicit-wiring--1--03--after-cut-net.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-a-single-connection-without-affecting-other-routes-or-positions-1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-a-single-connection-without-affecting-other-routes-or-positions-1--04--after-adjusting-a----y.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-a-single-connection-without-affecting-other-routes-or-positions-1--05--after-adjusting-b----x.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-a-single-connection-without-affecting-other-routes-or-positions-1--06--after-reroute-single-edge.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-one-wire-in-a-multi-wire-selection-reroutes-every-selected-wire-1--04--after-adjusting-a----x.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-one-wire-in-a-multi-wire-selection-reroutes-every-selected-wire-1--05--after-adjusting-b----y.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/rerouting-one-wire-in-a-multi-wire-selection-reroutes-every-selected-wire-1--07--after-reroute-single-edge.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--01--viewing-module-top.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--02--after-tie-net.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--03--after-tie-net.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--04--after-tie-net.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 166
+    date: 2026-08-16
+    path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--05--after-layout-reset.png
+    diff_pixel_count: 0
+    reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
 # Example entry:
 # bypass_threshold_restriction:
 #   - pr: 1234
