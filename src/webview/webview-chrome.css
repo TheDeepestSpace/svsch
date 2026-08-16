@@ -298,8 +298,6 @@ select {
   line-height: 1;
   pointer-events: auto;
   position: absolute;
-  right: 4px;
-  top: 4px;
   z-index: 11;
 }
 
@@ -373,6 +371,50 @@ select {
 .generate-region-inactive.generate-region-selected {
   opacity: 1;
 }
+
+/* Block resize (instance/register nodes) — invisible hit-zones, same idea as
+   .generate-region-resize-* but sized for a much smaller box. */
+.svsch-node-resize-handle {
+  background: transparent;
+  position: absolute;
+  z-index: 5;
+}
+
+.svsch-node-resize-left,
+.svsch-node-resize-right {
+  cursor: ew-resize;
+  height: 100%;
+  top: 0;
+  width: 8px;
+}
+
+.svsch-node-resize-left { left: -4px; }
+.svsch-node-resize-right { right: -4px; }
+
+.svsch-node-resize-top,
+.svsch-node-resize-bottom {
+  cursor: ns-resize;
+  height: 8px;
+  left: 0;
+  width: 100%;
+}
+
+.svsch-node-resize-top { top: -4px; }
+.svsch-node-resize-bottom { bottom: -4px; }
+
+.svsch-node-resize-top-left,
+.svsch-node-resize-top-right,
+.svsch-node-resize-bottom-left,
+.svsch-node-resize-bottom-right {
+  height: 12px;
+  width: 12px;
+  z-index: 6;
+}
+
+.svsch-node-resize-top-left { top: -6px; left: -6px; cursor: nwse-resize; }
+.svsch-node-resize-top-right { top: -6px; right: -6px; cursor: nesw-resize; }
+.svsch-node-resize-bottom-right { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.svsch-node-resize-bottom-left { bottom: -6px; left: -6px; cursor: nesw-resize; }
 
 .generate-region-active .generate-region-outline {
   border-color: var(--vscode-charts-orange);
@@ -1188,11 +1230,10 @@ select {
   transform: translate(-100%, 8px);
 }
 
-.svsch-selection-relayout-control,
-.svsch-selection-cutout-control {
+.svsch-selection-toolbar button {
   background: var(--vscode-button-secondaryBackground);
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
+  border-radius: 0;
   color: var(--vscode-button-secondaryForeground);
   cursor: pointer;
   font-family: var(--vscode-font-family);
@@ -1204,31 +1245,24 @@ select {
   white-space: nowrap;
 }
 
-/* Merge into a single button group (matching the edge Reroute/Cut controls)
-   whenever both buttons are showing — Auto Layout only renders from 2+
-   selected blocks, so it's always the group's left half when present. Cut
-   out is omitted entirely when there's nothing left to cut, and either
-   control falls back to full rounding when it ends up alone. */
-.svsch-selection-relayout-control {
+/* Merge every available selection action into one function-button group. */
+.svsch-selection-toolbar button:first-child {
   border-radius: 3px 0 0 3px;
-  border-right: none;
 }
 
-.svsch-selection-relayout-control:last-child {
-  border-radius: 3px;
-  border-right: 1px solid var(--vscode-panel-border);
-}
-
-.svsch-selection-cutout-control {
+.svsch-selection-toolbar button:last-child {
   border-radius: 0 3px 3px 0;
 }
 
-.svsch-selection-cutout-control:first-child {
+.svsch-selection-toolbar button:only-child {
   border-radius: 3px;
 }
 
-.svsch-selection-relayout-control:hover,
-.svsch-selection-cutout-control:hover {
+.svsch-selection-toolbar button + button {
+  border-left: none;
+}
+
+.svsch-selection-toolbar button:hover {
   background: var(--vscode-button-secondaryHoverBackground);
 }
 

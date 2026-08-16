@@ -1,6 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
+import { muxRightTopY } from '../../../diagram/muxGeometry';
 import { nodeOperation, nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
@@ -22,7 +23,7 @@ export function AluNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   );
 
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
-  const rightTop = (height - rightSideHeight) / 2;
+  const rightTop = muxRightTopY(height);
   const rightBottom = rightTop + rightSideHeight;
   const notchX = width / 4;
   const midY = height / 2;

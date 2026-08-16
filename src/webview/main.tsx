@@ -19,7 +19,7 @@ import '@xyflow/react/dist/style.css';
 import './diagram.css';
 import './webview-chrome.css';
 import { diagramSizing, normalizeWidth } from '../diagram/constants';
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
@@ -40,7 +40,7 @@ import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import { edgeIsThick } from '../ir/edgeStyle';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
-import { InteractionContext, type SelectionAction } from './nodes/shared/context';
+import { InteractionContext, type NodeResizeHandle, type SelectionAction } from './nodes/shared/context';
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
 
@@ -189,7 +189,7 @@ function DiagramApp(): React.ReactElement {
 
         const label = nodes.find((node) => node.id === labelId);
         if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
-        const ownerSize = diagramNodeDimensions(owner.data.node);
+        const ownerSize = resolvedNodeDimensions(owner.data.node);
         const labelSize = diagramNodeDimensions(label.data.node);
         const ownerBounds = {
           x: change.position.x - diagramSizing.gridSize,
@@ -701,6 +701,99 @@ function DiagramApp(): React.ReactElement {
     [view, handleRouteChange, reactFlow, selectedRegionIds]
   );
 
+  // Grow-only block resize (instance/register nodes) — same custom
+  // pointer-drag pattern as GenerateRegionOverlay's region resize below, just
+  // scoped to one node's size instead of a region's bounds. Lives here rather
+  // than inside HdlNode because a resize can grow the node past its
+  // containing generate-region's current bounds, which needs the same
+  // `regions` state (and `expandRegionsForFlowNodes`) node-drag already uses
+  // for that live auto-grow. HdlNode only renders the handle hit-zones and
+  // calls startNodeResize (via InteractionContext) on pointerdown.
+  const nodeResizeDragRef = useRef<NodeResizeDragState | null>(null);
+
+  const startNodeResize = useCallback((event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+    const canonical = diagramNodeDimensions(node.data.node);
+    const resolved = resolvedNodeDimensions(node.data.node);
+    nodeResizeDragRef.current = {
+      nodeId,
+      handle,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startPosition: { ...node.position },
+      startWidth: resolved.width,
+      startHeight: resolved.height,
+      canonicalWidth: canonical.width,
+      canonicalHeight: canonical.height,
+      startNodes: nodes.map((n) => ({
+        ...n,
+        position: { ...n.position },
+        data: { ...n.data, node: { ...n.data.node } }
+      })),
+      startRegions: regionsRef.current.map((region) => ({ ...region, bounds: { ...region.bounds } }))
+    };
+  }, [nodes]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = nodeResizeDragRef.current;
+      if (!drag) return;
+      const update = applyNodeResizeDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setNodes(update.nodes);
+      setRegions(update.regions);
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      const drag = nodeResizeDragRef.current;
+      if (!drag) return;
+      nodeResizeDragRef.current = null;
+      const update = applyNodeResizeDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setNodes(update.nodes);
+      setRegions(update.regions);
+
+      // A zero-delta drag is just a click on a handle — don't pin the node
+      // (and its size) fixed for a no-op, same rule GenerateRegionOverlay
+      // applies to region resize.
+      const zoom = Math.max(viewport.zoom || 1, 0.01);
+      const dx = snapDelta((event.clientX - drag.startClientX) / zoom);
+      const dy = snapDelta((event.clientY - drag.startClientY) / zoom);
+      if (dx === 0 && dy === 0) return;
+
+      if (!view) return;
+      const positioned = flowNodesToPositioned(update.nodes, new Set([drag.nodeId]));
+      vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: update.regions });
+
+      // React Flow's own dimension tracking (node.measured, read by
+      // OrthogonalEdge for handle geometry) is normally kept in sync by the
+      // updateNodeInternals layout effect above, which re-fires on every one
+      // of the many setNodes calls a multi-step drag produces. Under that
+      // flurry of back-to-back forced updates for the same element, React
+      // Flow's internal store can drop the very last one and leave
+      // node.measured on a stale pre-resize size indefinitely — more likely
+      // the slower a node is to render (e.g. a stacked/array instance with
+      // extra port/parameter layers), which widens the window for calls to
+      // overlap. Requesting one more update once the drag's call flurry has
+      // drained (and the DOM has already settled on its final size) gives
+      // the store an uncontested chance to catch up.
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`.react-flow__node[data-id="${drag.nodeId}"]`);
+        if (el) {
+          updateNodeInternals(new Map([[drag.nodeId, { id: drag.nodeId, nodeElement: el as HTMLDivElement, force: true }]]));
+        }
+      });
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [setNodes, setRegions, view, viewport.zoom, updateNodeInternals]);
+
   const rerouteLayout = useCallback(() => {
     if (!view) {
       return;
@@ -778,7 +871,8 @@ function DiagramApp(): React.ReactElement {
             setSelectionHoverActive,
             pendingSelectionAction,
             setPendingSelectionAction,
-            overlayPortalNode
+            overlayPortalNode,
+            startNodeResize
           }}>
             <LineJumpProvider>
               <ReactFlow<HdlFlowNode, Edge>
@@ -896,6 +990,92 @@ interface RegionDragState {
   // Route waypoints of edges internal to the moved arm, captured at drag start so
   // they can be translated together with the blocks they connect.
   startRoutes: Map<string, Array<{ x: number; y: number }>>;
+}
+
+interface NodeResizeDragState {
+  nodeId: string;
+  handle: NodeResizeHandle;
+  startClientX: number;
+  startClientY: number;
+  startPosition: { x: number; y: number };
+  // Resolved (on-screen) size at drag start — the drag grows/shrinks from here.
+  startWidth: number;
+  startHeight: number;
+  // Grow-only floor — this node's canonical auto-fit size, independent of any
+  // override already in effect at drag start.
+  canonicalWidth: number;
+  canonicalHeight: number;
+  startNodes: HdlFlowNode[];
+  startRegions: PositionedGenerateRegion[];
+}
+
+// Pure geometry step for a node-resize drag: same shape as applyRegionDrag's
+// 'resize' branch, but for exactly one node's position+size instead of a
+// region's bounds. Recomputed from the drag-start snapshot each call (not
+// incrementally) so pointermove and the final pointerup commit agree exactly.
+function applyNodeResizeDrag(
+  drag: NodeResizeDragState,
+  clientX: number,
+  clientY: number,
+  zoom: number
+): { nodes: HdlFlowNode[]; regions: PositionedGenerateRegion[] } {
+  const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
+  const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
+  const { position, width, height } = resizeNodeBounds(drag, dx, dy);
+  const grid = diagramSizing.gridSize;
+
+  const nodes = drag.startNodes.map((node) => {
+    if (node.id !== drag.nodeId) return node;
+    return {
+      ...node,
+      position,
+      data: {
+        ...node.data,
+        node: {
+          ...node.data.node,
+          position,
+          sizeOverride: { width: width / grid, height: height / grid }
+        }
+      }
+    };
+  });
+
+  return {
+    nodes,
+    regions: expandRegionsForFlowNodes(drag.startRegions, nodes)
+  };
+}
+
+function resizeNodeBounds(
+  drag: NodeResizeDragState,
+  dx: number,
+  dy: number
+): { position: { x: number; y: number }; width: number; height: number } {
+  const includesLeft = drag.handle.includes('left');
+  const includesRight = drag.handle.includes('right');
+  const includesTop = drag.handle.includes('top');
+  const includesBottom = drag.handle.includes('bottom');
+
+  let width = drag.startWidth;
+  let height = drag.startHeight;
+  let x = drag.startPosition.x;
+  let y = drag.startPosition.y;
+
+  if (includesRight) {
+    width = Math.max(drag.canonicalWidth, drag.startWidth + dx);
+  } else if (includesLeft) {
+    width = Math.max(drag.canonicalWidth, drag.startWidth - dx);
+    x = drag.startPosition.x + (drag.startWidth - width);
+  }
+
+  if (includesBottom) {
+    height = Math.max(drag.canonicalHeight, drag.startHeight + dy);
+  } else if (includesTop) {
+    height = Math.max(drag.canonicalHeight, drag.startHeight - dy);
+    y = drag.startPosition.y + (drag.startHeight - height);
+  }
+
+  return { position: { x, y }, width, height };
 }
 
 function GenerateRegionOverlay({
@@ -1099,9 +1279,8 @@ function GenerateRegionOverlay({
 }
 
 // Floating toolbar shown above the bounding box of a block selection. "Auto
-// Layout" only makes sense once there's more than one block to re-place, but
-// "Cut out" is useful for a lone block too, so it appears from a single
-// selected block onward — as long as at least one connection remains to cut.
+// Layout" only makes sense once there's more than one block to re-place, while
+// "Revert Size" and "Cut out" can apply to a lone selected block.
 //
 // Auto Layout: releases just the selected blocks (and the routes of any edge
 // touching one of them) back to ELK's auto-layout — using their current
@@ -1151,14 +1330,21 @@ function NodeSelectionToolbar({
     });
   }, [selected, edges]);
 
-  // Nothing to offer: a lone block with every net already cut gets neither
-  // control, so skip rendering the (now empty) toolbar entirely.
-  if (!overlayPortalNode || selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) {
+  const resizedNodeIds = useMemo(
+    () => selected
+      .filter((node) => node.data.node.sizeOverride !== undefined)
+      .map((node) => node.id),
+    [selected]
+  );
+
+  // Skip rendering an empty toolbar.
+  if (!overlayPortalNode || selected.length < 1
+    || (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0)) {
     return null;
   }
 
   const bounds = selected.reduce((acc, node) => {
-    const size = diagramNodeDimensions(node.data.node);
+    const size = resolvedNodeDimensions(node.data.node);
     return {
       x: Math.min(acc.x, node.position.x),
       y: Math.min(acc.y, node.position.y),
@@ -1238,6 +1424,12 @@ function NodeSelectionToolbar({
     vscode.postMessage({ type: 'cutNets', moduleName, edges: diagramEdges, nodes: positioned });
   };
 
+  const handleRevertSize = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (resizedNodeIds.length === 0) return;
+    vscode.postMessage({ type: 'revertNodeSizes', moduleName, nodeIds: resizedNodeIds });
+  };
+
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div
@@ -1255,6 +1447,19 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Auto Layout
+          </button>
+        )}
+        {resizedNodeIds.length > 0 && (
+          <button
+            type="button"
+            className="svsch-selection-revert-size-control"
+            title={resizedNodeIds.length === 1 ? 'Revert the selected block to its canonical size' : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`}
+            onClick={handleRevertSize}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Revert Size
           </button>
         )}
         {cutOutEdges.length > 0 && (
@@ -1394,7 +1599,7 @@ function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion
   for (const nodeId of nodeIds) {
     const node = nodeById.get(nodeId);
     if (!node) continue;
-    const size = diagramNodeDimensions(node.data.node);
+    const size = resolvedNodeDimensions(node.data.node);
     rects.push({ x: node.position.x, y: node.position.y, width: size.width, height: size.height });
   }
   for (const region of regions) {
@@ -1504,7 +1709,7 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
     for (const nodeId of region.nodeIds) {
       const node = nodeById.get(nodeId);
       if (!node) continue;
-      const size = diagramNodeDimensions(node);
+      const size = resolvedNodeDimensions(node);
       contentRects.push(padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }));
     }
     for (const child of childRegionsByParent.get(region.id) ?? []) {

@@ -1,0 +1,30 @@
+name: Check Snapshot Updates
+description: Reject sub-threshold snapshot baseline updates in a pull request
+
+inputs:
+  suite:
+    description: Snapshot suite to check (visual, bdd, or system)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check snapshot updates
+      shell: bash
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        SNAPSHOT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        SNAPSHOT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        SNAPSHOT_SUITE: ${{ inputs.suite }}
+      run: |
+        case "$SNAPSHOT_SUITE" in
+          visual|bdd|system) ;;
+          *)
+            echo "::error::Unsupported snapshot suite: $SNAPSHOT_SUITE"
+            exit 1
+            ;;
+        esac
+
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        git fetch --no-tags --depth=1 origin "$SNAPSHOT_BASE_SHA" "$SNAPSHOT_HEAD_SHA"
+        npm run test:snapshots:check-updates -- "$SNAPSHOT_BASE_SHA" "$SNAPSHOT_SUITE" "$SNAPSHOT_HEAD_SHA"
