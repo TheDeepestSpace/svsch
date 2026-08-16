@@ -6,6 +6,13 @@ export interface SavedNodeLayout {
   y: number;
   stale?: boolean;
   fixed?: boolean;
+  /**
+   * Manual grow-only resize override, in grid units. Only ever set together
+   * with `fixed: true` (see mergeNodePositions) — resizing a node pins its
+   * position the same way generate-region resize pins the region's bounds.
+   */
+  width?: number;
+  height?: number;
 }
 
 export interface SavedEdgeLayout {

@@ -21,6 +21,8 @@ import {
   renameCutNet,
   resetCutLabelPosition,
   revertCutNetLabel,
+  revertNodeSize,
+  revertNodeSizes,
 } from '../../src/layout/mergeLayout';
 import {
   diagramSizing,
@@ -29,7 +31,7 @@ import {
   nodeHeightForPortRows,
   nodePortCenterOffset,
 } from '../../src/diagram/constants';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
@@ -809,6 +811,31 @@ describe('layout merge', () => {
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
+  it('anchors a resized register reset port at the resolved bottom center', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'state',
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' },
+      ],
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' },
+      sizeOverride: { width: 12, height: 8 },
+    };
+
+    const resolved = resolvedNodeDimensions(register);
+    const geometry = elkNodeForDiagramNode(register);
+    const resetPort = geometry.ports.find((port) => port.id === 'register:rst_n');
+
+    expect(geometry.width).toBe(resolved.width);
+    expect(geometry.height).toBe(resolved.height);
+    expect(resetPort).toMatchObject({ x: resolved.width / 2, y: resolved.height });
+    expect(resetPort?.layoutOptions['elk.port.side']).toBe('SOUTH');
+  });
+
   it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
     const register: DiagramNode = {
       id: 'register',
@@ -895,6 +922,141 @@ describe('layout merge', () => {
     expect(merged.modules.top.nodes.a).toEqual({ x: 24, y: 36, fixed: true });
     expect(merged.modules.top.nodes.auto).toBeUndefined(); // auto was not fixed
     expect(merged.modules.top.nodes.b).toBeUndefined(); // b was not fixed
+  });
+
+  it('persists a node size override as grid units alongside its fixed position', () => {
+    const nodes: PositionedNode[] = [
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 120, y: 96 },
+        fixed: true,
+        sizeOverride: { width: 12, height: 8 },
+      },
+    ];
+
+    const merged = mergeNodePositions({ version: 1, modules: {} }, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({
+      x: 120,
+      y: 96,
+      fixed: true,
+      width: 12,
+      height: 8,
+    });
+  });
+
+  it('drops a previously saved size override once the node reports none (revert)', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 120, y: 96, fixed: true, width: 12, height: 8 },
+          },
+        },
+      },
+    };
+    const nodes: PositionedNode[] = [
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 120, y: 96 },
+        fixed: true,
+      },
+    ];
+
+    const merged = mergeNodePositions(layout, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true });
+  });
+
+  it('revertNodeSize clears only the size override, keeping position and fixed', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
+          },
+        },
+      },
+    };
+
+    const reverted = revertNodeSize(layout, 'top', 'u');
+
+    expect(reverted.modules.top.nodes.u).toEqual({ x: 100, y: 100, fixed: true });
+  });
+
+  it('revertNodeSize is a no-op when the node has no saved override', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: { top: { nodes: { u: { x: 100, y: 100, fixed: true } } } },
+    };
+
+    expect(revertNodeSize(layout, 'top', 'u')).toEqual(layout);
+    expect(revertNodeSize(layout, 'top', 'missing')).toEqual(layout);
+    expect(revertNodeSize(layout, 'missing-module', 'u')).toEqual(layout);
+  });
+
+  it('revertNodeSizes clears every selected override and leaves other nodes alone', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u1: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
+            u2: { x: 300, y: 100, fixed: true, width: 10, height: 6 },
+            u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 },
+          },
+        },
+      },
+    };
+
+    const reverted = revertNodeSizes(layout, 'top', ['u1', 'u2']);
+
+    expect(reverted.modules.top.nodes).toEqual({
+      u1: { x: 100, y: 100, fixed: true },
+      u2: { x: 300, y: 100, fixed: true },
+      u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 },
+    });
+  });
+
+  // eslint-disable-next-line max-len
+  it('grows a resized instance past its saved size at view-model build time, floored by canonical size', async () => {
+    const canonical = diagramNodeDimensions({ id: 'u', kind: 'instance', label: 'u', ports: [] });
+    const grid = diagramSizing.gridSize;
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: {
+              x: 0,
+              y: 0,
+              fixed: true,
+              width: canonical.width / grid + 3,
+              height: canonical.height / grid + 2,
+            },
+          },
+        },
+      },
+    };
+
+    const view = await buildViewModel(graph, 'top', layout);
+    const node = view.nodes.find((candidate) => candidate.id === 'u');
+
+    expect(node?.sizeOverride).toEqual({
+      width: canonical.width / grid + 3,
+      height: canonical.height / grid + 2,
+    });
+    const resolved = node && resolvedNodeDimensions(node);
+    expect(resolved?.width).toBe(canonical.width + grid * 3);
+    expect(resolved?.height).toBe(canonical.height + grid * 2);
   });
 
   it('persists edge waypoints and applies them to the view model', async () => {
@@ -1447,6 +1609,40 @@ describe('layout merge', () => {
     // Only the edge touching the released node is cleared for re-routing.
     expect(relayouted.modules.top.edges?.['e-clk-u1']).toBeUndefined();
     expect(relayouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 20, y: 20 }] });
+  });
+
+  it("preserves a resized node's size override when releasing it back to auto-layout", () => {
+    const module = fanoutGraph.modules.top;
+    const seeded: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, width: 96, height: 64, fixed: true },
+            u2: { x: 240, y: 96, fixed: true },
+          },
+        },
+      },
+    };
+
+    // u1 was manually resized before the user clicked "Auto Layout" for it.
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 288, y: 0 }, sizeOverride: { width: 96, height: 64 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
+    ];
+
+    const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
+
+    // u1 is released back to auto-layout, but its resize override survives.
+    expect(relayouted.modules.top.nodes.u1).toEqual({
+      x: 288,
+      y: 0,
+      fixed: false,
+      width: 96,
+      height: 64,
+    });
   });
 
   it('uses shared net keys for ordinary, literal, and cut stub edges', () => {

@@ -179,6 +179,14 @@ export interface BaseDiagramNode {
   arraySize?: number;
   arrayIndexSignal?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
+  /**
+   * Manual grow-only resize override, in grid units (not px — see
+   * resolvedNodeDimensions). Rendered/effective size is always
+   * max(canonical auto-fit size, this override) per axis, so a later
+   * increase in canonical size (more ports, etc.) is never clamped down by
+   * a stale override. Only ever set on `instance`/`register` nodes today.
+   */
+  sizeOverride?: { width: number; height: number };
 
   /** Legacy backend payload. Prefer the typed fields above for new code. */
   metadata?: DiagramNodeMetadata;

@@ -29,6 +29,7 @@ import {
   renameCutNet,
   resetCutLabelPosition,
   revertCutNetLabel,
+  revertNodeSizes,
 } from './layout/mergeLayout';
 import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
@@ -75,6 +76,7 @@ type WebviewMessage =
   | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
+  | { type: 'revertNodeSizes'; moduleName: string; nodeIds: string[] }
   | { type: 'navigateToSource'; source: SourceRange }
   | {
       type: 'navigateToRegion';
@@ -332,6 +334,10 @@ export class DiagramPanel {
     }
     if (message.type === 'resetCutLabelPosition') {
       await this.resetCutLabelPosition(message.moduleName, message.nodeId);
+      return;
+    }
+    if (message.type === 'revertNodeSizes') {
+      await this.revertNodeSizes(message.moduleName, message.nodeIds);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -813,6 +819,18 @@ export class DiagramPanel {
     await this.ensureModuleLayout(store, moduleName);
     this.currentModule = moduleName;
     this.layout = resetCutLabelPosition(this.layout, moduleName, nodeId);
+    await this.persistModuleLayout(store, moduleName);
+    await this.postView();
+  }
+
+  private async revertNodeSizes(moduleName: string, nodeIds: string[]): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    await this.ensureModuleLayout(store, moduleName);
+    this.currentModule = moduleName;
+    this.layout = revertNodeSizes(this.layout, moduleName, nodeIds);
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }

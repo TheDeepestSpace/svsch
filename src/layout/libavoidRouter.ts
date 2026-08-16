@@ -1,4 +1,4 @@
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { edgeNetKey } from '../ir/edgeNet';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import type { DiagramEdge, DiagramNode, PositionedNode } from '../ir/types';
@@ -125,7 +125,7 @@ function libavoidNodeForDiagramNode(
   node: PositionedNode,
   resolveLead: RoutingLeadResolver,
 ): LibavoidNode {
-  const size = diagramNodeDimensions(node);
+  const size = resolvedNodeDimensions(node);
   const leads = node.ports.map((port) => resolveLead(node.id, port.id, true));
   const leadPoints = leads.flatMap((lead) => (lead ? [lead.point] : []));
   const margins = routingObstacleMargins(
@@ -442,7 +442,7 @@ function renderedNodeBounds(node: PositionedNode): {
   width: number;
   height: number;
 } {
-  const size = diagramNodeDimensions(node);
+  const size = resolvedNodeDimensions(node);
   const stackPad = nodeIsArrayNode(node) ? 4 : 0;
   return {
     x: node.position.x - stackPad,

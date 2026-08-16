@@ -26,6 +26,7 @@ import {
   diagramNodeDimensions,
   instanceParameterRows,
   inverterGeometryWidth,
+  resolvedNodeDimensions,
 } from '../diagram/nodeSizing';
 import {
   annotateGenerateRegionWarnings,
@@ -123,6 +124,10 @@ export async function buildViewModel(
     return {
       ...node,
       fixed: saved?.fixed,
+      sizeOverride:
+        saved?.width !== undefined && saved?.height !== undefined
+          ? { width: saved.width, height: saved.height }
+          : undefined,
       position: snapPosition(position, node.kind, structRole(node)),
     };
   });
@@ -676,7 +681,7 @@ function tightBoundsForRegionNodes(
   for (const nodeId of nodeIds) {
     const node = nodeById.get(nodeId);
     if (!node) continue;
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     bounds.x = Math.min(bounds.x, node.position.x);
     bounds.y = Math.min(bounds.y, node.position.y);
     maxX = Math.max(maxX, node.position.x + size.width);
@@ -710,7 +715,7 @@ function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undef
   let maxY = Number.NEGATIVE_INFINITY;
 
   for (const node of nodes) {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     minX = Math.min(minX, node.position.x);
     minY = Math.min(minY, node.position.y);
     maxX = Math.max(maxX, node.position.x + size.width);
@@ -788,7 +793,7 @@ function columnizeFullyCutBoundaryPorts(
     const result = new Map<string, { x: number; y: number }>();
     let y = bodyBounds.y;
     for (const node of nodes) {
-      const size = diagramNodeDimensions(node);
+      const size = resolvedNodeDimensions(node);
       result.set(node.id, snapPosition({ x: anchorX(size.width), y }, node.kind, structRole(node)));
       y += size.height + rowGap;
     }
@@ -1074,7 +1079,7 @@ interface NodeBounds {
 }
 
 function nodeBounds(node: PositionedNode, position = node.position): NodeBounds {
-  const dimensions = diagramNodeDimensions(node);
+  const dimensions = resolvedNodeDimensions(node);
   return { ...position, width: dimensions.width, height: dimensions.height };
 }
 
@@ -1883,7 +1888,7 @@ export function elkNodeForDiagramNode(
   includeLeadMargins = false,
   extraPortMargins?: Map<string, { width: number; height: number }>,
 ): ElkDiagramNode {
-  const { width, height } = diagramNodeDimensions(node);
+  const { width, height } = resolvedNodeDimensions(node);
   const grid = diagramSizing.gridSize;
   const role = structRole(node);
   const visiblePorts =
@@ -2973,7 +2978,7 @@ function routeObstacles(
     if (!position || excludeNodeIds?.has(nodeId)) {
       continue;
     }
-    const dimensions = diagramNodeDimensions(node);
+    const dimensions = resolvedNodeDimensions(node);
     obstacles.push({ ...position, ...dimensions });
   }
   return obstacles;
@@ -3682,6 +3687,13 @@ export function mergeNodePositions(
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
         fixed: true,
+        // `node.sizeOverride` reflects this node's full current resize state
+        // (set, or explicitly absent after a revert) in every caller that
+        // threads a complete node list through here — so it's safe to persist
+        // verbatim rather than fall back to whatever was previously saved.
+        ...(node.sizeOverride
+          ? { width: node.sizeOverride.width, height: node.sizeOverride.height }
+          : {}),
       };
     }
   }
@@ -3691,6 +3703,48 @@ export function mergeNodePositions(
     nodes: mergedNodes,
   };
   return next;
+}
+
+/**
+ * Clears a node's manual resize override (the "revert to canonical" control)
+ * while leaving its saved position/fixed state untouched — resizing and
+ * position-pinning are orthogonal, so reverting size alone must not release
+ * the node back to auto-layout.
+ */
+export function revertNodeSize(
+  layout: SavedLayout,
+  moduleName: string,
+  nodeId: string,
+): SavedLayout {
+  const existing = layout.modules[moduleName];
+  const saved = existing?.nodes[nodeId];
+  if (!existing || !saved || (saved.width === undefined && saved.height === undefined)) {
+    return layout;
+  }
+
+  const { width: _width, height: _height, ...rest } = saved;
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        nodes: { ...existing.nodes, [nodeId]: rest },
+      },
+    },
+  };
+}
+
+/** Clears the manual size override from every selected node in one update. */
+export function revertNodeSizes(
+  layout: SavedLayout,
+  moduleName: string,
+  nodeIds: string[],
+): SavedLayout {
+  return nodeIds.reduce(
+    (nextLayout, nodeId) => revertNodeSize(nextLayout, moduleName, nodeId),
+    layout,
+  );
 }
 
 export function mergeRegionBounds(
@@ -3821,6 +3875,9 @@ export function mergeRelayoutSelection(
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
         fixed: false,
+        ...(node.sizeOverride
+          ? { width: node.sizeOverride.width, height: node.sizeOverride.height }
+          : {}),
       };
       continue;
     }
@@ -3829,6 +3886,9 @@ export function mergeRelayoutSelection(
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
         fixed: true,
+        ...(node.sizeOverride
+          ? { width: node.sizeOverride.width, height: node.sizeOverride.height }
+          : {}),
       };
     }
   }

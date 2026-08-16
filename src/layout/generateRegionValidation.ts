@@ -1,4 +1,4 @@
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import type { PositionedGenerateRegion, PositionedNode } from '../ir/types';
 
 type RegionBounds = PositionedGenerateRegion['bounds'];
@@ -101,7 +101,7 @@ function classifyExternalBlocks(
       const tagged = node.metadata?.generateRegionId;
       const isOwned = owned.has(node.id) || (tagged !== undefined && ownedRegionIds.has(tagged));
       if (isOwned) continue;
-      const size = diagramNodeDimensions(node);
+      const size = resolvedNodeDimensions(node);
       const nodeBounds = {
         x: node.position.x,
         y: node.position.y,
