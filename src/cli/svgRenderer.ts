@@ -25,6 +25,7 @@ import {
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
+  extendTargetIntoGate,
   promotedStackFanoutPath,
   stableFragmentId,
   stackedLayerEdgeClass,
@@ -323,11 +324,13 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const officialPoints = edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
     ? normalizedOfficialPoints
     : avoidFeedbackObstacles(normalizedOfficialPoints, obstacles, sourcePosition, targetPosition);
-  const points = [{ ...sourcePoint }, ...officialPoints, { ...targetPoint }];
   const forceStraight = edge.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourcePoint.x - targetPoint.x) < 1;
   const targetHdlPosition = forceStraight && isVertical ? HdlPosition.Top : targetPosition;
   const sourceHdlPosition = forceStraight && isVertical ? HdlPosition.Bottom : sourcePosition;
+  // Pushes the final point past a curved-left gate's (OR/NOR/XOR/XNOR) concave edge — see
+  // the matching comment in OrthogonalEdge.tsx and gateLeftEdgeWireReach for why this is safe.
+  const points = extendTargetIntoGate([{ ...sourcePoint }, ...officialPoints, { ...targetPoint }], target, targetHdlPosition);
   const sourceInputs = aggregateInputs(source);
   const sourceIsComposition = sourceInputs.length > 1;
   const sourceIsArray = nodeIsArrayNode(source) || (source.kind === 'netLabel' && source.metadata?.cutNet?.isSourceStacked === true);

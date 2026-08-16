@@ -6,7 +6,7 @@ import { nodeIsArrayNode, gateBodyOperation, gateIsNegated } from '../../../ir/n
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import type { DiagramPort } from '../../../ir/types';
+import type { DiagramNode, DiagramPort } from '../../../ir/types';
 
 /** Body path for an AND gate: flat left edge, right side bulges into a D-shaped dome. */
 export function andBodyPath(left: number, right: number, height: number): string {
@@ -15,11 +15,24 @@ export function andBodyPath(left: number, right: number, height: number): string
   return `M ${left} 0 L ${flatRight} 0 A ${domeRadius} ${domeRadius} 0 0 1 ${flatRight} ${height} L ${left} ${height} Z`;
 }
 
+/**
+ * Fraction along the back curve's cubic control points, in [left, right] terms, at which
+ * the concave edge sits. The curve's actual depth never exceeds 75% of this (the bezier's
+ * midpoint reach for two coincident control points), so `gateConcaveEdgeReachX` — built from
+ * this same fraction — is always a safe overshoot past the visible boundary at any height.
+ */
+const gateBackCurveControlXFraction = 0.1821041667;
+
+/** X the back curve's control points sit at — always deeper than the curve's actual visible reach. */
+export function gateConcaveEdgeReachX(left: number, right: number): number {
+  return left + (right - left) * gateBackCurveControlXFraction;
+}
+
 /** Body path for an OR/XOR gate: concave left edge, curved back tapering to a point on the right. */
 export function orBodyPath(left: number, right: number, height: number): string {
   const midY = height / 2;
   const span = right - left;
-  const backCtrlX = left + span * 0.1821041667;
+  const backCtrlX = gateConcaveEdgeReachX(left, right);
   const backCtrl1Y = height * 0.3030833333;
   const backCtrl2Y = height * 0.6969166667;
   const bulgeCtrl1X = left + span * 0.4160312500;
@@ -37,7 +50,7 @@ export function orBodyPath(left: number, right: number, height: number): string 
 
 /** The extra back-curve XOR/XNOR draw just left of the OR body, echoing its concave edge. */
 export function xorBackCurvePath(span: number, height: number): string {
-  const ctrlX = span * 0.1821041667;
+  const ctrlX = gateConcaveEdgeReachX(0, span);
   const ctrl1Y = height * 0.3030833333;
   const ctrl2Y = height * 0.6969166667;
   return `M 0 0 C ${ctrlX} ${ctrl1Y} ${ctrlX} ${ctrl2Y} 0 ${height}`;
@@ -50,6 +63,27 @@ export function xorBackCurvePath(span: number, height: number): string {
  */
 export function xorSelectionPath(right: number, height: number): string {
   return orBodyPath(0, right, height);
+}
+
+/**
+ * How far a wire routed into a gate's left-side input needs to reach to disappear under
+ * the node's body fill. Zero for AND/NAND — their left edge is flat at x=0, flush with the
+ * port, so a wire ending there already meets the visible boundary. OR/NOR/XOR/XNOR's back
+ * curve recedes inward away from x=0 (see `orBodyPath`), so a wire stopping flush at the
+ * port leaves a gap before the curve; nodes render above nets (see main.tsx's Z_INDEX
+ * constants), so routing the endpoint past `gateConcaveEdgeReachX` hides the overshoot
+ * under the fill and closes that gap for every input, regardless of its y position.
+ */
+export function gateLeftEdgeWireReach(node: DiagramNode, width: number): number {
+  if (node.kind !== 'gate') return 0;
+  const bodyOp = gateBodyOperation(node);
+  if (bodyOp === 'and') return 0;
+  const negated = gateIsNegated(node);
+  const isXor = bodyOp === 'xor';
+  const left = isXor ? gateXorGap : 0;
+  const bubbleSpan = negated ? gateBubbleGap + gateBubbleRadius * 2 : 0;
+  const right = width - bubbleSpan;
+  return gateConcaveEdgeReachX(left, right);
 }
 
 export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
