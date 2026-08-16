@@ -70,6 +70,29 @@ cases:
       nodeKinds: [port, gate]
       selectedText: "~(a & b & c)"
 
+  - id: gate-multibit-and
+    title: Multi-bit Boolean AND Gate
+    description: A bitwise AND over multi-bit vectors reuses the same AND gate glyph as the single-bit case; only the connecting wires render thicker to signal the wider width.
+    tags: [gate, logical, multi-bit, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] a,
+          input logic [3:0] b,
+          output logic [3:0] decoded
+        );
+          assign decoded = a & b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a & b"
+
   - id: gate-or
     title: Boolean OR Gate
     description: A bitwise OR operator becomes an OR gate.

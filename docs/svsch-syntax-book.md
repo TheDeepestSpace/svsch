@@ -521,6 +521,23 @@ endmodule
   <img src="syntax-book/assets/gate-nand-nary.svg" alt="N-ary NAND Gate diagram" />
 </p>
 
+### Multi-bit Boolean AND Gate
+
+A bitwise AND over multi-bit vectors reuses the same AND gate glyph as the single-bit case; only the connecting wires render thicker to signal the wider width.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic [3:0] decoded
+);
+  assign decoded = <mark>a &amp; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-multibit-and.svg" alt="Multi-bit Boolean AND Gate diagram" />
+</p>
+
 ### Boolean OR Gate
 
 A bitwise OR operator becomes an OR gate.
