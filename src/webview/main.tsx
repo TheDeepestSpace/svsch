@@ -850,6 +850,29 @@ function DiagramApp(): React.ReactElement {
         nodes: positioned,
         regions: update.regions,
       });
+
+      // React Flow's own dimension tracking (node.measured, read by
+      // OrthogonalEdge for handle geometry) is normally kept in sync by the
+      // updateNodeInternals layout effect above, which re-fires on every one
+      // of the many setNodes calls a multi-step drag produces. Under that
+      // flurry of back-to-back forced updates for the same element, React
+      // Flow's internal store can drop the very last one and leave
+      // node.measured on a stale pre-resize size indefinitely — more likely
+      // the slower a node is to render (e.g. a stacked/array instance with
+      // extra port/parameter layers), which widens the window for calls to
+      // overlap. Requesting one more update once the drag's call flurry has
+      // drained (and the DOM has already settled on its final size) gives
+      // the store an uncontested chance to catch up.
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`.react-flow__node[data-id="${drag.nodeId}"]`);
+        if (el) {
+          updateNodeInternals(
+            new Map([
+              [drag.nodeId, { id: drag.nodeId, nodeElement: el as HTMLDivElement, force: true }],
+            ]),
+          );
+        }
+      });
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -858,7 +881,7 @@ function DiagramApp(): React.ReactElement {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [setNodes, setRegions, view, viewport.zoom]);
+  }, [setNodes, setRegions, view, viewport.zoom, updateNodeInternals]);
 
   const rerouteLayout = useCallback(() => {
     if (!view) {
