@@ -1,4 +1,4 @@
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { edgeNetKey } from '../ir/edgeNet';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import type { DiagramEdge, DiagramNode, PositionedNode } from '../ir/types';
@@ -121,7 +121,7 @@ function isBoundaryInoutNode(node: PositionedNode): boolean {
 }
 
 function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLeadResolver): LibavoidNode {
-  const size = diagramNodeDimensions(node);
+  const size = resolvedNodeDimensions(node);
   const dualSided = isBoundaryInoutNode(node);
   type PinSpec = { port: (typeof node.ports)[number]; role: 'source' | 'target' | undefined };
   const pinSpecs = node.ports.flatMap((port): PinSpec[] => (
@@ -429,7 +429,7 @@ function validateNormalizedRoute(
 }
 
 function renderedNodeBounds(node: PositionedNode): { x: number; y: number; width: number; height: number } {
-  const size = diagramNodeDimensions(node);
+  const size = resolvedNodeDimensions(node);
   const stackPad = nodeIsArrayNode(node) ? 4 : 0;
   return {
     x: node.position.x - stackPad,

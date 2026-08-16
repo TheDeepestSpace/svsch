@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { isInputSidePort } from '../diagram/portDirection';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
@@ -711,7 +711,7 @@ function aggregateInputs(node: PositionedNode): DiagramPort[] {
 
 function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
   return nodes.map((node) => {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     return {
       id: node.id,
       x: node.position.x,
@@ -744,7 +744,7 @@ function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: 
 function renderNode(node: PositionedNode): string;
 function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[]): string;
 function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = []): string {
-  const { width, height } = diagramNodeDimensions(node);
+  const { width, height } = resolvedNodeDimensions(node);
   if (node.kind === 'netLabel') {
     const cutNet = node.metadata?.cutNet;
     const handleSide = (cutNet?.handleSide ?? 'left') as 'left' | 'right' | 'top' | 'bottom';
@@ -1040,7 +1040,7 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: 
   };
 
   for (const node of nodes) {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     includeBounds(bounds, node.position.x, node.position.y);
     includeBounds(bounds, node.position.x + size.width, node.position.y + size.height);
     if (node.warningNote) {

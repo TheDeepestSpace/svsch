@@ -2,7 +2,6 @@ import { test, expect } from 'vscode-test-playwright';
 import type { FrameLocator, Locator, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
-import { writeBenchmark } from '../benchmarkUtils';
 
   const logDir = path.resolve(__dirname, '../../test-results/system/artifacts');
   const webviewLogs: string[] = [];
@@ -91,26 +90,14 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
         if (viewType === 'svsch.diagram') {
           const origPostMessage = panel.webview.postMessage.bind(panel.webview);
           panel.webview.postMessage = (msg: any) => {
-            const now = Date.now();
-            if (msg?.type === 'status' && msg.status === 'rebuilding') {
-              if (!(global as any).__svschRebuildingAt) {
-                (global as any).__svschRebuildingAt = now;
-              }
-            }
             if (msg?.type === 'graph') {
-              if (!(global as any).__svschFirstGraphAt) {
-                (global as any).__svschFirstGraphAt = now;
-              }
               (global as any).__svschModules = msg.modules;
               (global as any).__svschCurrentModule = msg.view?.moduleName;
               (global as any).__svschGraphCount = ((global as any).__svschGraphCount ?? 0) + 1;
-              
+
               const nodes = msg.view?.nodes?.length ?? 0;
               const edges = msg.view?.edges?.length ?? 0;
               captureLine(`[WEBVIEW] Received graph for ${msg.view?.moduleName}: ${nodes} nodes, ${edges} edges`);
-            }
-            if (msg?.type === 'status' && msg.status === 'idle') {
-              (global as any).__svschIdleAt = now;
             }
             return origPostMessage(msg);
           };
@@ -148,7 +135,6 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     so returning it would block until Surelog completes and we'd never
     //     catch the progress notification mid-flight.
     await evaluateInVSCode(vscode => {
-      (global as any).__svschOpenRequestedAt = Date.now();
       void vscode.commands.executeCommand('svsch.openDiagram');
     });
 
@@ -221,37 +207,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     //     the primary visual regression artifact for system tests.
     await expect(workbox).toHaveScreenshot('full-window.png');
 
-    // --- 10. Report load timing.
-    const timing = await evaluateInVSCode(vscode => {
-      void vscode;
-      const openedAt: number = (global as any).__svschOpenRequestedAt ?? 0;
-      const rebuildingAt: number = (global as any).__svschRebuildingAt ?? 0;
-      const firstGraphAt: number = (global as any).__svschFirstGraphAt ?? 0;
-      const idleAt: number = (global as any).__svschIdleAt ?? 0;
-      return { openedAt, rebuildingAt, firstGraphAt, idleAt };
-    });
-
-    const toMs = (a: number, b: number) => b > 0 && a > 0 ? b - a : -1;
-    const startup  = toMs(timing.openedAt, timing.rebuildingAt);
-    const parse    = toMs(timing.rebuildingAt, timing.firstGraphAt);
-    const total    = toMs(timing.openedAt, timing.firstGraphAt);
-    const settle   = toMs(timing.firstGraphAt, timing.idleAt);
-
-    const timingLines = [
-      `[timing] openDiagram → rebuilding status : ${startup  >= 0 ? startup  + ' ms' : 'n/a'}`,
-      `[timing] rebuilding  → first graph data  : ${parse    >= 0 ? parse    + ' ms' : 'n/a'}`,
-      `[timing] openDiagram → diagram visible   : ${total    >= 0 ? total    + ' ms' : 'n/a'} (total)`,
-      `[timing] first graph → idle status       : ${settle   >= 0 ? settle   + ' ms' : 'n/a'}`,
-    ];
-    for (const line of timingLines) console.log(line);
-    fs.writeFileSync(path.join(logDir, 'timing.log'), timingLines.join('\n') + '\n', 'utf8');
-
-    if (parse >= 0) {
-      const vscodeVersion = process.env.VSCODE_VERSION || 'default';
-      writeBenchmark(path.join(logDir, 'benchmark.json'), `vscode ${vscodeVersion}`, parse);
-    }
-
-    // --- 11. Switch to a different module via the dropdown.
+    // --- 10. Switch to a different module via the dropdown.
     //     We prioritize a complex module to ensure meaningful screenshots.
     const switchedViaHost = await evaluateInVSCode(vscode => {
       void vscode;
@@ -300,7 +256,7 @@ test('opens svsch diagram and captures screenshot + output logs', async ({
     await expect(workbox).toHaveScreenshot('full-window-second-module.png');
 
   } finally {
-    // --- 12. Collect captured log lines (even on failure).
+    // --- 11. Collect captured log lines (even on failure).
     const logs: string[] = await evaluateInVSCode(vscode => {
       void vscode;
       return (global as any).__svschLogs ?? [];
@@ -443,12 +399,108 @@ test('hides the block-selection toolbar when only a cut net label is selected', 
   }
 });
 
+const SYSTEM_NODE_RESIZE_CASES = [
+  { kind: 'side', handle: 'right', cellsX: 3, cellsY: 0 },
+  { kind: 'side', handle: 'bottom', cellsX: 0, cellsY: 3 },
+  { kind: 'side', handle: 'left', cellsX: -3, cellsY: 0 },
+  { kind: 'side', handle: 'top', cellsX: 0, cellsY: -3 },
+  { kind: 'corner', handle: 'bottom-right', cellsX: 3, cellsY: 3 },
+  { kind: 'corner', handle: 'top-right', cellsX: 3, cellsY: -3 },
+  { kind: 'corner', handle: 'bottom-left', cellsX: -3, cellsY: 3 },
+  { kind: 'corner', handle: 'top-left', cellsX: -3, cellsY: -3 },
+] as const;
+
+for (const resizeCase of SYSTEM_NODE_RESIZE_CASES) {
+  test(`resizes a register from the ${resizeCase.handle} ${resizeCase.kind} and preserves it after reload`, async ({
+    workbox,
+    evaluateInVSCode,
+  }) => {
+    await clearSystemLayout();
+
+    try {
+      await resizeSystemRegisterAndAssertPersistence(workbox, evaluateInVSCode, resizeCase);
+    } finally {
+      await clearSystemLayout();
+    }
+  });
+}
+
+test('renders a resized node at its grown size when exporting the diagram as SVG', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+  const exportedSvgPath = path.resolve(__dirname, '../register_async_reset.svg');
+  await fs.promises.rm(exportedSvgPath, { force: true });
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
+
+    const nodeId = await findSystemNodeId(webview, 'q', 'register');
+    if (!nodeId) {
+      throw new Error('Could not find register "q"');
+    }
+
+    const canonicalSize = await systemNodeSize(webview, nodeId);
+    await dragSystemNodeResizeHandle(workbox, webview, nodeId, 'bottom-right', 3, 3);
+    const resizedSize = await systemNodeSize(webview, nodeId);
+    await assertSystemRegisterResetPortAnchored(webview, nodeId, resizedSize);
+    await waitForSystemNodeSizePersisted('register_async_reset', nodeId, resizedSize.width / SYSTEM_GRID_SIZE, resizedSize.height / SYSTEM_GRID_SIZE);
+
+    await setSystemSaveDialogTarget(evaluateInVSCode, exportedSvgPath);
+    await webview.locator('button:has-text("Export SVG")').click();
+
+    // The save dialog is intercepted above so this test can focus on the real
+    // export handler, renderer, and file write without automating a native OS
+    // dialog that Playwright cannot inspect.
+    await expect.poll(() => fs.existsSync(exportedSvgPath), { timeout: 10_000 }).toBe(true);
+    const { width, height } = await readExportedNodeSvgSize(exportedSvgPath, nodeId);
+
+    // Locks in the svgRenderer.ts fix: exported markup must reflect the grown
+    // (resolved) size, not the pure canonical auto-fit size.
+    expect(width).toBeGreaterThan(canonicalSize.width);
+    expect(height).toBeGreaterThan(canonicalSize.height);
+    expect(closeTo(width, resizedSize.width)).toBe(true);
+    expect(closeTo(height, resizedSize.height)).toBe(true);
+  } finally {
+    await restoreSystemSaveDialog(evaluateInVSCode).catch(() => {});
+    await fs.promises.rm(exportedSvgPath, { force: true });
+    await clearSystemLayout();
+  }
+});
+
 const SYSTEM_GRID_SIZE = 24;
 const SYSTEM_LAYOUTS_DIR = path.resolve(__dirname, '../.svsch/layouts');
 type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
 
 async function clearSystemLayout(): Promise<void> {
   await fs.promises.rm(SYSTEM_LAYOUTS_DIR, { recursive: true, force: true }).catch(() => {});
+}
+
+async function setSystemSaveDialogTarget(
+  evaluateInVSCode: EvaluateInVSCode,
+  outputPath: string
+): Promise<void> {
+  await evaluateInVSCode((vscode, targetPath) => {
+    if (!(global as any).__svschOriginalShowSaveDialog) {
+      (global as any).__svschOriginalShowSaveDialog = vscode.window.showSaveDialog;
+    }
+    vscode.window.showSaveDialog = async () => vscode.Uri.file(targetPath);
+  }, outputPath);
+}
+
+async function restoreSystemSaveDialog(evaluateInVSCode: EvaluateInVSCode): Promise<void> {
+  await evaluateInVSCode(vscode => {
+    const original = (global as any).__svschOriginalShowSaveDialog;
+    if (!original) return;
+    vscode.window.showSaveDialog = original;
+    delete (global as any).__svschOriginalShowSaveDialog;
+  });
 }
 
 async function openSystemDiagram(
@@ -461,6 +513,136 @@ async function openSystemDiagram(
   await evaluateInVSCode(vscode => vscode.commands.executeCommand('svsch.openDiagram'));
   await workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
   await dismissSystemNotifications(workbox);
+}
+
+// Mirrors the BDD "I close and reopen the diagram" step: actually tears down
+// the SVSCH tab (which disposes the DiagramPanel — see extension.ts's
+// getPanel() — dropping all in-memory graph/layout state), then reopens it,
+// so a resized node coming back correctly can only be explained by the size
+// override having round-tripped through disk, not leftover React state.
+async function closeAndReopenSystemDiagram(
+  workbox: Page,
+  evaluateInVSCode: EvaluateInVSCode
+): Promise<void> {
+  const tab = workbox.locator('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]').first();
+  if (await tab.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await tab.click();
+    await evaluateInVSCode(vscode => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+    await tab.waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {});
+  }
+  await workbox.waitForTimeout(300);
+  await openSystemDiagram(workbox, evaluateInVSCode);
+}
+
+async function resizeSystemRegisterAndAssertPersistence(
+  workbox: Page,
+  evaluateInVSCode: EvaluateInVSCode,
+  resizeCase: (typeof SYSTEM_NODE_RESIZE_CASES)[number]
+): Promise<void> {
+  await openSystemDiagram(workbox, evaluateInVSCode);
+
+  let webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+  await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
+
+  const nodeId = await findSystemNodeId(webview, 'q', 'register');
+  if (!nodeId) {
+    throw new Error('Could not find register "q"');
+  }
+
+  const originalSize = await systemNodeSize(webview, nodeId);
+  const originalPosition = await systemNodePosition(webview, nodeId);
+  await dragSystemNodeResizeHandle(
+    workbox,
+    webview,
+    nodeId,
+    resizeCase.handle,
+    resizeCase.cellsX,
+    resizeCase.cellsY
+  );
+  const resizedSize = await systemNodeSize(webview, nodeId);
+  const resizedPosition = await systemNodePosition(webview, nodeId);
+  await assertSystemRegisterResetPortAnchored(webview, nodeId, resizedSize);
+
+  if (resizeCase.cellsX !== 0) {
+    expect(resizedSize.width - originalSize.width).toBeGreaterThanOrEqual(SYSTEM_GRID_SIZE * 2);
+  } else {
+    expect(closeTo(resizedSize.width, originalSize.width)).toBe(true);
+  }
+  if (resizeCase.cellsY !== 0) {
+    expect(resizedSize.height - originalSize.height).toBeGreaterThanOrEqual(SYSTEM_GRID_SIZE * 2);
+  } else {
+    expect(closeTo(resizedSize.height, originalSize.height)).toBe(true);
+  }
+
+  if (resizeCase.handle.includes('left')) {
+    expect(resizedPosition.x).toBeLessThan(originalPosition.x);
+  } else {
+    expect(closeTo(resizedPosition.x, originalPosition.x)).toBe(true);
+  }
+  if (resizeCase.handle.includes('top')) {
+    expect(resizedPosition.y).toBeLessThan(originalPosition.y);
+  } else {
+    expect(closeTo(resizedPosition.y, originalPosition.y)).toBe(true);
+  }
+
+  await waitForSystemNodeResizePersisted('register_async_reset', nodeId, resizedSize, resizedPosition);
+
+  await closeAndReopenSystemDiagram(workbox, evaluateInVSCode);
+  webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+  await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+  await openSystemModule(workbox, webview, evaluateInVSCode, 'register_async_reset');
+
+  const reopenedNodeId = await findSystemNodeId(webview, 'q', 'register');
+  if (!reopenedNodeId) {
+    throw new Error(`Could not find register "q" after reopening the ${resizeCase.handle} resize case`);
+  }
+  await expect.poll(async () => {
+    const reopenedSize = await systemNodeSize(webview, reopenedNodeId);
+    const reopenedPosition = await systemNodePosition(webview, reopenedNodeId);
+    return closeTo(reopenedSize.width, resizedSize.width)
+      && closeTo(reopenedSize.height, resizedSize.height)
+      && closeTo(reopenedPosition.x, resizedPosition.x)
+      && closeTo(reopenedPosition.y, resizedPosition.y);
+  }, { timeout: 10_000 }).toBe(true);
+  await assertSystemRegisterResetPortAnchored(webview, reopenedNodeId, resizedSize);
+
+  // Lock the final, disk-restored rendering for every resize handle. Keeping
+  // the screenshot after the reopen makes the visual assertion cover both the
+  // direction-specific geometry and its persisted representation.
+  await dismissSystemNotifications(workbox);
+  await webview.locator('.canvas').hover({ position: { x: 8, y: 8 }, force: true });
+  await expect(workbox).toHaveScreenshot(`register-resized-${resizeCase.handle}-after-reload.png`);
+}
+
+async function assertSystemRegisterResetPortAnchored(
+  webview: FrameLocator,
+  nodeId: string,
+  nodeSize: { width: number; height: number }
+): Promise<void> {
+  const node = webview.locator(`.react-flow__node[data-id="${nodeId}"]`);
+  const resetHandle = node.locator('.react-flow__handle-bottom');
+  const resetLabel = node.locator('.svsch-register-reset-label');
+
+  await expect(resetHandle).toHaveCount(1);
+  await expect(resetLabel).toHaveCount(1);
+  const geometry = await node.evaluate((element) => {
+    const handle = element.querySelector<HTMLElement>('.react-flow__handle-bottom');
+    const label = element.querySelector<SVGTextElement>('.svsch-register-reset-label');
+    if (!handle || !label) return null;
+    return {
+      handleLeft: Number.parseFloat(handle.style.left),
+      handleBottom: Number.parseFloat(handle.style.bottom),
+      labelX: Number.parseFloat(label.getAttribute('x') ?? ''),
+      labelY: Number.parseFloat(label.getAttribute('y') ?? ''),
+    };
+  });
+
+  expect(geometry).not.toBeNull();
+  expect(closeTo(geometry!.handleLeft, nodeSize.width / 2)).toBe(true);
+  expect(closeTo(geometry!.handleBottom, 0)).toBe(true);
+  expect(closeTo(geometry!.labelX, nodeSize.width / 2)).toBe(true);
+  expect(closeTo(geometry!.labelY, nodeSize.height - SYSTEM_GRID_SIZE / 2)).toBe(true);
 }
 
 async function installSystemWebviewBridge(
@@ -674,6 +856,17 @@ async function systemZoom(webview: FrameLocator): Promise<number> {
   return webview.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport?.().zoom ?? 1);
 }
 
+// A resizable node's actual rendered box comes from the --svsch-node-width/
+// height custom properties set inline on its .hdl-node button (see HdlNode.tsx),
+// which is unzoomed content-space px — no zoom correction needed, unlike a
+// boundingBox() read.
+async function systemNodeSize(webview: FrameLocator, nodeId: string): Promise<{ width: number; height: number }> {
+  return webview.locator(`.react-flow__node[data-id="${nodeId}"] .hdl-node`).evaluate((element) => {
+    const style = getComputedStyle(element as HTMLElement);
+    return { width: Math.round(parseFloat(style.width)), height: Math.round(parseFloat(style.height)) };
+  });
+}
+
 // The webview sits to the right of VS Code's activity/explorer sidebar, whose
 // width varies across VS Code versions. A node panned near the left edge of
 // the canvas can end up rendered underneath that sidebar, so raw-coordinate
@@ -732,6 +925,53 @@ async function dragSystemNodeByGridCells(
   await expect.poll(async () => {
     const current = await systemNodePosition(webview, nodeId);
     return !closeTo(current.x, before.x) || !closeTo(current.y, before.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+// Drags one of the 8 block-resize hit-zones (see HdlNode.tsx's
+// svsch-node-resize-{handle} divs) by a grid-cell delta, same zoom-aware
+// pattern as dragSystemNodeByGridCells but targeting the tiny handle strip
+// instead of the node body. cellsX/cellsY carry the sign convention
+// resizeNodeBounds (main.tsx) expects — e.g. a negative cellsX grows width
+// via the left handle by moving the pointer left, not by "shrinking".
+async function dragSystemNodeResizeHandle(
+  workbox: Page,
+  webview: FrameLocator,
+  nodeId: string,
+  handle: string,
+  cellsX: number,
+  cellsY: number
+): Promise<void> {
+  const handleLocator = webview.locator(`.react-flow__node[data-id="${nodeId}"] .svsch-node-resize-${handle}`);
+  let box = await handleLocator.boundingBox();
+  if (!box) {
+    throw new Error(`Could not get resize handle box for ${nodeId} ${handle}`);
+  }
+  if (await panSystemFlowClear(webview, [box])) {
+    await workbox.waitForTimeout(100);
+    box = await handleLocator.boundingBox();
+    if (!box) {
+      throw new Error(`Could not get resize handle box for ${nodeId} ${handle}`);
+    }
+  }
+  const before = await systemNodeSize(webview, nodeId);
+  const zoom = await systemZoom(webview);
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  const endX = startX + cellsX * SYSTEM_GRID_SIZE * zoom;
+  const endY = startY + cellsY * SYSTEM_GRID_SIZE * zoom;
+
+  await workbox.mouse.move(startX, startY);
+  await workbox.mouse.down();
+  // A small first move primes react-flow's pointer-capture before the
+  // full-distance move, same as dragSystemNodeByGridCells's multi-step drags.
+  await workbox.mouse.move(startX + Math.sign(cellsX) * 2, startY + Math.sign(cellsY) * 2, { steps: 3 });
+  await workbox.mouse.move(endX, endY, { steps: 12 });
+  await workbox.mouse.up();
+
+  await expect.poll(async () => {
+    const current = await systemNodeSize(webview, nodeId);
+    return !closeTo(current.width, before.width) || !closeTo(current.height, before.height);
   }, { timeout: 10_000 }).toBe(true);
 }
 
@@ -854,6 +1094,53 @@ async function waitForSystemNodePersisted(nodeId: string, position: { x: number;
     const node = layout.modules?.assign_wire?.nodes?.[nodeId];
     return !!node && closeTo(node.x, position.x) && closeTo(node.y, position.y);
   }, { timeout: 10_000 }).toBe(true);
+}
+
+async function waitForSystemNodeSizePersisted(moduleName: string, nodeId: string, gridWidth: number, gridHeight: number): Promise<void> {
+  await expect.poll(async () => {
+    const layout = await readSystemLayout();
+    const node = layout.modules?.[moduleName]?.nodes?.[nodeId];
+    return !!node && closeTo(node.width, gridWidth) && closeTo(node.height, gridHeight);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+async function waitForSystemNodeResizePersisted(
+  moduleName: string,
+  nodeId: string,
+  size: { width: number; height: number },
+  position: { x: number; y: number }
+): Promise<void> {
+  await expect.poll(async () => {
+    const layout = await readSystemLayout();
+    const node = layout.modules?.[moduleName]?.nodes?.[nodeId];
+    return !!node
+      && closeTo(node.width, size.width / SYSTEM_GRID_SIZE)
+      && closeTo(node.height, size.height / SYSTEM_GRID_SIZE)
+      && closeTo(node.x, position.x)
+      && closeTo(node.y, position.y);
+  }, { timeout: 10_000 }).toBe(true);
+}
+
+// Reads a resized node's own <svg width=".." height="..> size back out of an
+// exported diagram SVG (see svgRenderer.ts's renderNode(): the wrapping
+// <g data-node-id="..."> is immediately followed by that nested <svg>). Scans
+// a bounded window after the data-node-id match rather than parsing the whole
+// document — svgo's sortAttrs minify pass can reorder width/height within a
+// tag but never moves them into a different one, so this stays robust to
+// minification.
+async function readExportedNodeSvgSize(svgPath: string, nodeId: string): Promise<{ width: number; height: number }> {
+  const svg = await fs.promises.readFile(svgPath, 'utf8');
+  const markerIndex = svg.indexOf(`data-node-id="${nodeId}"`);
+  if (markerIndex === -1) {
+    throw new Error(`Exported SVG has no node ${nodeId}`);
+  }
+  const snippet = svg.slice(markerIndex, markerIndex + 400);
+  const width = snippet.match(/width="([\d.]+)"/)?.[1];
+  const height = snippet.match(/height="([\d.]+)"/)?.[1];
+  if (!width || !height) {
+    throw new Error(`Could not find node ${nodeId}'s <svg> size in exported markup: ${snippet}`);
+  }
+  return { width: parseFloat(width), height: parseFloat(height) };
 }
 
 function closeTo(a: number, b: number): boolean {
