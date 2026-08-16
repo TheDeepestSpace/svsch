@@ -184,8 +184,12 @@ describe('first-open auto-cuts', () => {
     // each keeping its own dead-end source label near its own driver. But
     // routing *both* of their sink stubs into the real `y` port would stack
     // a redundant, overlapping cut-net-end on top of the same target — so
-    // only the first (g_other's) sink label/stub should survive; neither
-    // edge should be left as a live wire straight into the output port.
+    // only one sink label/stub should survive; neither edge should be left
+    // as a live wire straight into the output port. The `y` port is always
+    // driven by whichever arm is actually active, so the surviving label
+    // must be g_zero's (the active arm), not g_other's (inactive) even
+    // though "g_other-y" sorts first alphabetically — the target itself is
+    // never left undriven, so its cut-net end must never dim.
     const generateArmModule = {
       name: 'top',
       file: 'top.sv',
@@ -241,13 +245,16 @@ describe('first-open auto-cuts', () => {
     expect(byId.has(`cut-label:${firstNetKey}:source`)).toBe(true);
     expect(byId.has(`cut-label:${secondNetKey}:source`)).toBe(true);
 
-    // Only the first cut's sink label/stub lands on the shared `y` port...
-    expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(true);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(true);
+    // Only the active arm's (g_zero's) sink label/stub lands on the shared
+    // `y` port...
+    expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    const sinkLabel = byId.get(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`);
+    expect(sinkLabel?.metadata?.generateActiveState).toBe('active');
 
-    // ...the second, redundant one is skipped entirely.
-    expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(false);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(false);
+    // ...the inactive arm's redundant one is skipped entirely.
+    expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
 
     // Neither arm is left as a live wire straight into the output port.
     expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);

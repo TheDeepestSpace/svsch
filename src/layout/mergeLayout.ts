@@ -840,7 +840,20 @@ function buildNetCutProjection(
   // Deterministic across nets too: which arm's sink label "wins" a shared
   // target shouldn't depend on Map insertion order, so sort net entries by
   // their own first (sorted) edge id, same tie-break used within a net.
+  //
+  // The target port a shared sink dedupes onto is always driven by exactly
+  // one of the mutually exclusive arms — never none of them — so the
+  // surviving label must come from whichever arm is actually elaborated
+  // active, not whichever arm's edge id happens to sort first. An inactive
+  // arm only wins when every arm reaching that target is inactive (dead
+  // code some other pass should be flagging, not this dedupe).
+  const netIsActive = (edges: DiagramEdge[]) => edges.some((edge) => edge.metadata?.generateActiveState !== 'inactive');
   const sortedActiveCuts = [...activeCuts].sort(([, a], [, b]) => {
+    const aActive = netIsActive(a.edges) ? 0 : 1;
+    const bActive = netIsActive(b.edges) ? 0 : 1;
+    if (aActive !== bActive) {
+      return aActive - bActive;
+    }
     const aFirst = [...a.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
     const bFirst = [...b.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
     return aFirst.localeCompare(bFirst);
