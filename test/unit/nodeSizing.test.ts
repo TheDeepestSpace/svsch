@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { diagramSizing } from '../../src/diagram/constants';
-import { diagramNodeDimensions, gateGeometryWidth } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, gateGeometryWidth, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { selectNodeHasVectorOutput, selectPortLabel } from '../../src/diagram/selectLabels';
 import type { DiagramNode, DiagramNodeKind } from '../../src/ir/types';
 
@@ -379,6 +379,37 @@ describe('diagram node sizing', () => {
     expect(dimensions.height).toBe(diagramSizing.portHeight);
     expect(dimensions.width).toBeGreaterThan(diagramSizing.portWidth);
     expect(dimensions.width % diagramSizing.gridSize).toBe(0);
+  });
+});
+
+describe('resolvedNodeDimensions', () => {
+  test('matches the canonical size when no override is saved', () => {
+    const node = nodeOfKind('register');
+    expect(resolvedNodeDimensions(node)).toEqual(diagramNodeDimensions(node));
+  });
+
+  test('grows to fit an override larger than canonical, per axis', () => {
+    const canonical = diagramNodeDimensions(nodeOfKind('register'));
+    const node: DiagramNode = {
+      ...nodeOfKind('register'),
+      sizeOverride: {
+        width: canonical.width / diagramSizing.gridSize + 4,
+        height: canonical.height / diagramSizing.gridSize + 2
+      }
+    };
+
+    const resolved = resolvedNodeDimensions(node);
+    expect(resolved.width).toBe(canonical.width + diagramSizing.gridSize * 4);
+    expect(resolved.height).toBe(canonical.height + diagramSizing.gridSize * 2);
+  });
+
+  test('never shrinks below canonical size, even if the override is stale', () => {
+    const node: DiagramNode = {
+      ...nodeOfKind('register'),
+      sizeOverride: { width: 0, height: 0 }
+    };
+
+    expect(resolvedNodeDimensions(node)).toEqual(diagramNodeDimensions(node));
   });
 });
 

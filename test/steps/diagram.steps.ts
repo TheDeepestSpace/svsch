@@ -573,6 +573,19 @@ When('I resize the {string} generate region on the {word} side by {int} grid cel
   await waitForLayoutChange(this, before, `After resizing ${label} ${side}`);
 });
 
+When('I resize the {string} block on the {word} side by {int} grid cells', async function (this: BddWorld, label: string, side: string, cells: number) {
+  if (!isRegionSide(side)) throw new Error(`Unknown block side: ${side}`);
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  this.notedRegionBounds.set(label, await getNodeBounds(this.webviewPage, id));
+  await dragNodeSideByGridCells(this, id, side, cells);
+  const resizedBounds = await getNodeBounds(this.webviewPage, id);
+  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`, async () => {
+    await waitForFlowNodeSize(this.webviewPage, id, resizedBounds);
+  });
+});
+
 When('I move the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
   const regionNodeIds = await generateRegionNodeIds(this, label);
   if (regionNodeIds.length === 0) throw new Error(`Generate region ${label} has no owned nodes to move`);
@@ -1153,6 +1166,28 @@ Then('the {string} generate region should have grown on the {word} side', async 
   const delta = regionSide(after, side) - regionSide(before, side);
   const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
   expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} block should have grown on the {word} side', async function (this: BddWorld, label: string, side: string) {
+  if (!isRegionSide(side)) throw new Error(`Unknown block side: ${side}`);
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = this.notedRegionBounds.get(label);
+  if (!before) throw new Error(`No noted bounds for block ${label}`);
+  const after = await getNodeBounds(this.webviewPage, id);
+  const delta = regionSide(after, side) - regionSide(before, side);
+  const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
+  expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} block should be at its canonical size', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const moduleName = this.lastViewModel.moduleName;
+  const layout = await readExtensionLayout(this);
+  const node = layout.modules?.[moduleName]?.nodes?.[id];
+  expect(node?.width, `Expected block ${label} to have no persisted size override after reset`).toBeUndefined();
+  expect(node?.height, `Expected block ${label} to have no persisted size override after reset`).toBeUndefined();
 });
 
 Then('the {string} generate region should have expanded on the {word} side while dragging', async function (this: BddWorld, label: string, side: string) {
@@ -2536,10 +2571,16 @@ async function clickEdgeControl(world: BddWorld, edgeId: string, controlClass: s
   await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
 }
 
-async function waitForLayoutChange(world: BddWorld, before: string, screenshotLabel: string): Promise<void> {
+async function waitForLayoutChange(
+  world: BddWorld,
+  before: string,
+  screenshotLabel: string,
+  afterLayoutChange?: () => Promise<void>
+): Promise<void> {
   await expect.poll(async () => JSON.stringify(await readExtensionLayout(world)) !== before, { timeout: 10_000 }).toBe(true);
   world.layout = await readExtensionLayout(world);
   await syncLastViewModel(world, world.lastViewModel?.moduleName);
+  await afterLayoutChange?.();
   await waitForExtensionRenderedView(world, screenshotLabel);
 }
 
@@ -2580,6 +2621,46 @@ function regionSide(bounds: { x: number; y: number; width: number; height: numbe
   return bounds.y + bounds.height;
 }
 
+// Node position comes from React Flow's internal (unzoomed) node.position, and
+// size from the --svsch-node-width/height custom properties HdlNode sets
+// inline (see resolvedNodeDimensions) — both are content-space px, directly
+// comparable to diagramGrid.size deltas, same as getGenerateRegionBounds.
+async function getNodeBounds(webviewPage: FrameLocator, nodeId: string): Promise<{ x: number; y: number; width: number; height: number }> {
+  const position = await getInternalPosition(webviewPage, nodeId);
+  if (!position) throw new Error(`Could not find block ${nodeId} to measure`);
+  const size = await webviewPage.locator(`.react-flow__node[data-id="${nodeId}"] .hdl-node`).evaluate((element) => {
+    const style = (element as HTMLElement).style;
+    return {
+      width: Number.parseFloat(style.getPropertyValue('--svsch-node-width') || '0'),
+      height: Number.parseFloat(style.getPropertyValue('--svsch-node-height') || '0')
+    };
+  });
+  return { x: position.x, y: position.y, ...size };
+}
+
+// The node body gets its persisted size from an inline custom property, while
+// graph snapshots use React Flow's asynchronously measured dimensions. Wait
+// for those two views to agree so a resize snapshot cannot capture the new
+// edge endpoints with the previous node width.
+async function waitForFlowNodeSize(
+  webviewPage: FrameLocator,
+  nodeId: string,
+  expected: { width: number; height: number }
+): Promise<void> {
+  await expect.poll(async () => webviewPage.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((candidate: any) => candidate.id === id);
+    if (!node) return undefined;
+    return {
+      width: Math.round(node.measured?.width ?? node.width ?? 0),
+      height: Math.round(node.measured?.height ?? node.height ?? 0)
+    };
+  }, nodeId), { timeout: 10_000 }).toEqual({
+    width: Math.round(expected.width),
+    height: Math.round(expected.height)
+  });
+}
+
 async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string, side: RegionSide, cells: number): Promise<void> {
   const handle = generateRegionLocator(world.webviewPage, label).locator(`.generate-region-resize-${side}`);
   const box = await handle.boundingBox();
@@ -2611,6 +2692,64 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   if (canvas) {
     await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
   }
+  await world.workbox.waitForTimeout(650);
+}
+
+// A node near the far edge of a large diagram can render right under the
+// MiniMap/Controls overlays after the initial fitView, so real screen clicks
+// on its resize handles would actually hit the overlay instead. Recenter the
+// viewport on the node first so its handles are over open canvas.
+async function centerViewOnNode(world: BddWorld, nodeId: string): Promise<void> {
+  await world.webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((n: any) => n.id === id);
+    if (!rf || !node) return;
+    const width = node.measured?.width ?? node.width ?? 0;
+    const height = node.measured?.height ?? node.height ?? 0;
+    rf.setCenter(node.position.x + width / 2, node.position.y + height / 2, { zoom: 1, duration: 0 });
+  }, nodeId);
+  await waitForViewportTransformToSettle(world.webviewPage);
+}
+
+// Same choreography as dragGenerateRegionSideByGridCells, but for a node's
+// own .svsch-node-resize-* edge handles (full-height/width 8px strips, no
+// dangling-label collision to dodge, so the midpoint is a safe grab point).
+async function dragNodeSideByGridCells(world: BddWorld, nodeId: string, side: RegionSide, cells: number): Promise<void> {
+  await centerViewOnNode(world, nodeId);
+  const handle = world.webviewPage.locator(`.react-flow__node[data-id="${nodeId}"] .svsch-node-resize-${side}`);
+  const box = await handle.boundingBox();
+  if (!box) throw new Error(`Could not find ${side} resize handle for block ${nodeId}`);
+  const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
+  const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
+  const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  const targetX = canvas
+    ? Math.max(canvas.x + 8, Math.min(startX + dx, canvas.x + canvas.width - 8))
+    : startX + dx;
+  const targetY = canvas
+    ? Math.max(canvas.y + 8, Math.min(startY + dy, canvas.y + canvas.height - 8))
+    : startY + dy;
+
+  const before = await getNodeBounds(world.webviewPage, nodeId);
+  await world.workbox.mouse.move(startX, startY);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(targetX, targetY, { steps: 12 });
+  await world.workbox.mouse.up();
+  if (canvas) {
+    await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
+  }
+  // The visual `--svsch-node-width/height` custom property (read by
+  // getNodeBounds) updates synchronously with the drag, but confirm it
+  // actually moved before handing off to waitForLayoutChange's fixed sleep —
+  // a click-only (zero-delta) drag on a heavier diagram shouldn't be
+  // mistaken for one still catching up.
+  await expect.poll(async () => {
+    const after = await getNodeBounds(world.webviewPage, nodeId);
+    return after.width !== before.width || after.height !== before.height;
+  }, { timeout: 10_000 }).toBe(true);
   await world.workbox.waitForTimeout(650);
 }
 
