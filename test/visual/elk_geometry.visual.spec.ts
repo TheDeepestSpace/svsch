@@ -91,6 +91,11 @@ test.describe('elk geometry grid', () => {
   test.use({ viewport: { width: 1700, height: 2200 } });
 
   test('shows elk bounds and port anchors for every node kind', async ({ page }) => {
+    // collectNodes() calls buildFixtureView() once per selection (30+, one
+    // per node kind), each re-sampling elaboration BENCHMARK_SAMPLE_COUNT
+    // times — same reasoning as interface.visual.spec.ts's multi-fixture test.
+    test.setTimeout(240_000);
+
     const collected = await collectNodes();
     const { view, overlay } = buildGridView(collected);
 

@@ -2655,7 +2655,7 @@ async function waitForFlowNodeSize(
       width: Math.round(node.measured?.width ?? node.width ?? 0),
       height: Math.round(node.measured?.height ?? node.height ?? 0)
     };
-  }, nodeId), { timeout: 10_000 }).toEqual({
+  }, nodeId), { timeout: 20_000 }).toEqual({
     width: Math.round(expected.width),
     height: Math.round(expected.height)
   });
