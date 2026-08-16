@@ -824,20 +824,25 @@ function buildNetCutProjection(
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
-  // Mutually exclusive generate arms can each carry an edge to the same
-  // declared target (e.g. two case arms both driving the module's output) —
-  // only one arm is cut, but the other still lands a real, uncut edge on
-  // that same target port. Wiring this cut's sink stub into that port too
-  // would splice a redundant cut-net-end onto the middle of the arm's live
-  // wire, so skip the sink projection wherever the target is already fed.
-  const activeCutKeys = new Set(activeCuts.keys());
-  const liveTargetEndpoints = new Set(
-    designModule.edges
-      .filter((edge) => !activeCutKeys.has(edgeNetKey(edge)))
-      .map((edge) => endpointKey(edge.target, edge.targetPort))
-  );
+  // Mutually exclusive generate arms can each carry their own edge to the
+  // same declared target (e.g. two case arms both driving the module's
+  // output) — every such edge still gets its own cut, same as any other
+  // declared net, so each arm's driver keeps a dead-end source label. But
+  // stacking a sink cut-net-end from every arm onto that one shared target
+  // port adds no extra meaning over a single one, so only the first cut to
+  // reach a given (target, label) pair gets a sink label/stub.
+  const seenSinkTargets = new Set<string>();
 
-  for (const [netKey, { cut, edges: cutEdges }] of activeCuts) {
+  // Deterministic across nets too: which arm's sink label "wins" a shared
+  // target shouldn't depend on Map insertion order, so sort net entries by
+  // their own first (sorted) edge id, same tie-break used within a net.
+  const sortedActiveCuts = [...activeCuts].sort(([, a], [, b]) => {
+    const aFirst = [...a.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    const bFirst = [...b.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    return aFirst.localeCompare(bFirst);
+  });
+
+  for (const [netKey, { cut, edges: cutEdges }] of sortedActiveCuts) {
     const sortedCutEdges = [...cutEdges].sort((a, b) => a.id.localeCompare(b.id));
     const firstEdge = sortedCutEdges[0];
     if (!firstEdge) {
@@ -898,7 +903,8 @@ function buildNetCutProjection(
     }));
 
     for (const edge of sortedCutEdges) {
-      if (liveTargetEndpoints.has(endpointKey(edge.target, edge.targetPort))) {
+      const sinkDedupeKey = `${endpointKey(edge.target, edge.targetPort)}::${cut.label}`;
+      if (seenSinkTargets.has(sinkDedupeKey)) {
         continue;
       }
 
@@ -906,6 +912,7 @@ function buildNetCutProjection(
       if (!targetLead) {
         continue;
       }
+      seenSinkTargets.add(sinkDedupeKey);
 
       const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
       if (cut.deferLabelPlacement) {
@@ -3101,14 +3108,10 @@ export function firstOpenAutoCutEdges(
     const isRegisterControl = edge.targetPort !== undefined
       && registerControlPorts.has(`${edge.target}\0${edge.targetPort}`);
     const isDeclared = Boolean(edge.metadata?.declaredNetName);
-    // Two edges from different (mutually exclusive) generate arms that both
-    // drive the same declared net/port add no semantic distinction as
-    // separate cut ends — key on the declared name so only the first is
-    // auto-cut, instead of stacking a duplicate stub on top of it.
-    const dedupeKey = edge.metadata?.declaredNetName ?? edgeNetKey(edge);
-    if ((isRegisterControl || isDeclared) && !selectedNets.has(dedupeKey)) {
+    const netKey = edgeNetKey(edge);
+    if ((isRegisterControl || isDeclared) && !selectedNets.has(netKey)) {
       selected.push(edge);
-      selectedNets.add(dedupeKey);
+      selectedNets.add(netKey);
     }
   }
   return selected;

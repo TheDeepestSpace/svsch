@@ -141,12 +141,12 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
-  it('auto-cuts only one edge per declared net, even when mutually exclusive generate arms each drive it', () => {
+  it('auto-cuts every declared-net edge, even when mutually exclusive generate arms each drive it', () => {
     // Two generate arms (e.g. `g_other`/`g_zero`) each drive the module's
     // `y` output from their own internal source node — different netKeys
-    // (different source nodes), same declared net. A second cut end for the
-    // same declared net adds no semantic distinction, so only the first
-    // arm's edge should be auto-selected.
+    // (different source nodes), same declared net. Both still get auto-cut;
+    // buildNetCutProjection (see below) is what collapses their sink ends
+    // down to one, not this selection step.
     const generateArmModule = {
       name: 'top',
       file: 'top.sv',
@@ -176,16 +176,16 @@ describe('first-open auto-cuts', () => {
       ]
     };
 
-    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y']);
+    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y', 'g_zero-y']);
   });
 
-  it('does not wire a deduped-away generate arm\'s cut back into the output port that the surviving arm already drives', async () => {
-    // g_other's edge is the one auto-cut (see the test above); g_zero's edge
-    // to the same declared `y` net stays live and uncut. g_other's cut still
-    // needs its own sink label/stub — but routing that stub into the real
-    // `y` port would splice a redundant cut end onto the middle of g_zero's
-    // already-live wire (visually: a wire merging into another wire via a
-    // junction dot right before the output, instead of a clean single wire).
+  it('collapses duplicate sink ends when mutually exclusive generate arms both cut into the same output port', async () => {
+    // Both g_other's and g_zero's edges are auto-cut (see the test above),
+    // each keeping its own dead-end source label near its own driver. But
+    // routing *both* of their sink stubs into the real `y` port would stack
+    // a redundant, overlapping cut-net-end on top of the same target — so
+    // only the first (g_other's) sink label/stub should survive; neither
+    // edge should be left as a live wire straight into the output port.
     const generateArmModule = {
       name: 'top',
       file: 'top.sv',
@@ -220,8 +220,12 @@ describe('first-open auto-cuts', () => {
       { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } }
     ];
 
-    const cutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
-    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', cutEdge, generateArmModule, positioned);
+    const firstCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
+    const secondCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_zero-y')!;
+    const cutLayout = [firstCutEdge, secondCutEdge].reduce(
+      (layout, edge) => mergeNetCut(layout, 'top', edge, generateArmModule, positioned),
+      { version: 1, modules: {} } as SavedLayout
+    );
     const view = await buildViewModel({
       rootModules: ['top'],
       generatedAt: 'now',
@@ -229,19 +233,25 @@ describe('first-open auto-cuts', () => {
       modules: { top: generateArmModule }
     }, 'top', cutLayout);
 
-    const netKey = edgeNetKey(cutEdge);
+    const firstNetKey = edgeNetKey(firstCutEdge);
+    const secondNetKey = edgeNetKey(secondCutEdge);
     const byId = new Map(view.nodes.map((node) => [node.id, node]));
 
-    // Dead-end source label near g_other's own driver: kept.
-    expect(byId.has(`cut-label:${netKey}:source`)).toBe(true);
-    // Sink label/stub that would otherwise splice into the live `y` port: gone.
-    expect(byId.has(`cut-label:${netKey}:sink:${cutEdge.id}`)).toBe(false);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${netKey}:sink:${cutEdge.id}`)).toBe(false);
+    // Each arm keeps its own dead-end source label near its own driver.
+    expect(byId.has(`cut-label:${firstNetKey}:source`)).toBe(true);
+    expect(byId.has(`cut-label:${secondNetKey}:source`)).toBe(true);
 
-    // g_zero's edge still lands directly on the output port, untouched.
-    const survivingEdge = view.edges.find((edge) => edge.id === 'g_zero-y');
-    expect(survivingEdge?.source).toBe('g_zero_driver');
-    expect(survivingEdge?.target).toBe('y');
+    // Only the first cut's sink label/stub lands on the shared `y` port...
+    expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(true);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(true);
+
+    // ...the second, redundant one is skipped entirely.
+    expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(false);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(false);
+
+    // Neither arm is left as a live wire straight into the output port.
+    expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);
+    expect(view.edges.some((edge) => edge.id === 'g_zero-y')).toBe(false);
   });
 
   it('keeps links touching interface nodes whole on first open', () => {
