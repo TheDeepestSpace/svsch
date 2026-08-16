@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeFirstOpenNetCuts, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir/types';
@@ -181,6 +181,51 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
   return view;
 }
 
+const exampleDesignRoot = path.resolve(__dirname, '../../fixtures/example_designs/cpu');
+let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
+
+function exampleDesignGraph(): Promise<DesignGraph> {
+  exampleDesignGraphPromise ??= (async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
+    try {
+      for (const file of fs.readdirSync(exampleDesignRoot)) {
+        if (!file.endsWith('.sv')) continue;
+        fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
+      }
+
+      return await buildGraphFromWorkspace(tmpDir);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  })();
+  return exampleDesignGraphPromise;
+}
+
+export async function buildExampleDesignView(moduleName: string): Promise<DiagramViewModel> {
+  const graph = await exampleDesignGraph();
+  const designModule = graph.modules[moduleName];
+  const emptyLayout: SavedLayout = { version: 1, modules: {} };
+  const layout = designModule
+    ? mergeFirstOpenNetCuts(
+      emptyLayout,
+      moduleName,
+      firstOpenAutoCutEdges(designModule, true),
+      designModule
+    )
+    : emptyLayout;
+  return buildViewModel(graph, moduleName, layout);
+}
+
+export async function openExampleDesignModule(page: Page, moduleName: string): Promise<DiagramViewModel> {
+  const view = await buildExampleDesignView(moduleName);
+
+  await openView(page, view);
+  await page.waitForSelector('.react-flow__node', { state: 'attached' });
+  await waitForViewportTransformToSettle(page);
+  await page.waitForTimeout(100);
+  return view;
+}
+
 export async function openView(page: Page, view: DiagramViewModel): Promise<void> {
   currentPageViews.set(page, view);
   await page.goto('/');
@@ -331,6 +376,24 @@ export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
   }
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
+}
+
+async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGraph> {
+  const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+  const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
+
+  const elaborationStartedAt = Date.now();
+  const graph = await buildDesignGraph({
+    workspaceRoot,
+    projectFolder: '.',
+    backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
+    veriblePath: 'verible-verilog-syntax',
+    surelogPath,
+    backendPath,
+    includeExternalDiagnostics: false
+  });
+  recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
+  return graph;
 }
 
 export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
