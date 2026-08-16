@@ -115,6 +115,22 @@ bypass_threshold_restriction:
     path: test/features/snapshots/resetting-the-layout-reapplies-both-automatic-cut-heuristics-1--05--after-layout-reset.png
     diff_pixel_count: 0
     reason: Scenario outline split added a keyboard-shortcut example; shared setup steps produce a byte-identical rename of the prior single-scenario baseline, no rendering change
+  - pr: 144
+    date: 2026-08-15
+    path: test/visual/__screenshots__/interface.visual.spec.ts-snapshots/interface-multi-modport-instance-canvas-chromium-linux.png
+    diff_pixel_count: 32
+    reason: >-
+      Legitimate re-render from the vpiHierPath fix (commit d15469a9): the
+      phantom overlapping-driver wire for the `x & ~bus.y` pattern no longer
+      renders, shifting a few pixels.
+  - pr: 144
+    date: 2026-08-15
+    path: test/visual/__screenshots__/interface.visual.spec.ts-snapshots/interface-all-left-modports-canvas-chromium-linux.png
+    diff_pixel_count: 10
+    reason: >-
+      Legitimate re-render from the vpiHierPath fix (commit d15469a9): the
+      phantom overlapping-driver wire for the `x & ~bus.y` pattern no longer
+      renders, shifting a few pixels.
 # Example entry:
 # bypass_threshold_restriction:
 #   - pr: 1234

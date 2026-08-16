@@ -10,7 +10,7 @@ import {
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
 import { registerPortTop, registerExtraInputPortTop } from '../../diagram/registerGeometry';
-import { muxInputPortCenterY } from '../../diagram/muxGeometry';
+import { gateInputPortCenterY, muxInputPortCenterY } from '../../diagram/muxGeometry';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { interfaceInstanceTopHatY, visualHandleGeometry } from '../../diagram/visualHandleGeometry';
 import {
@@ -36,6 +36,7 @@ import { LatchNodeSvg } from './latch/LatchNodeSvg';
 import { LiteralNodeSvg } from './literal/LiteralNodeSvg';
 import { ReplicateNodeSvg } from './replicate/ReplicateNodeSvg';
 import { InverterNodeSvg } from './inverter/InverterNodeSvg';
+import { GateNodeSvg } from './gate/GateNodeSvg';
 import { PortNodeSvg } from './port/PortNodeSvg';
 import { CombNodeSvg } from './comb/CombNodeSvg';
 import { LoopNodeSvg } from './loop/LoopNodeSvg';
@@ -545,6 +546,33 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
             style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
         ))}
+        {warningIcon}
+      </button>
+    );
+  }
+
+  if (node.kind === 'gate') {
+    return (
+      <button
+        className={`hdl-node hdl-node-gate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
+        data-node-id={node.id}
+        data-node-kind={node.kind}
+        style={nodeStyle}
+        title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+        onDoubleClick={handleDoubleClick}
+      >
+        <svg className="hdl-node-svg gate-skin" width={nodeWidth} height={nodeHeight} aria-hidden="true">
+          <GateNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
+        </svg>
+        {sideInputs.map((port: DiagramPort, index: number) => (
+          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+            style={{ top: gateInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
+        ))}
+        {outputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="source" id={port.id} position={Position.Right}
+            style={{ top: nodeHeight / 2 }} />
+        ))}
+        {isArray && <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
         {warningIcon}
       </button>
     );

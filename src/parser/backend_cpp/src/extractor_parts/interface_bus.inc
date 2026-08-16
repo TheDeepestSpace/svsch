@@ -664,13 +664,16 @@ void DesignExtractor::synthesizeInterfaceHarnesses(Module& mod) {
 
                 if (port.signal.rfind(base + ".", 0) != 0) continue;
                 std::string field = port.signal.substr(base.size() + 1);
-                std::string dir = "inout";
+                std::string dir;
+                bool field_found = false;
                 for (const auto& candidate : fields) {
                     if (candidate.name == field) {
                         dir = candidate.direction;
+                        field_found = true;
                         break;
                     }
                 }
+                if (!field_found) continue;
 
                 Edge e;
                 e.signal = port.signal;

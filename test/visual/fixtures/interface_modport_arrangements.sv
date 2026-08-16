@@ -206,6 +206,23 @@ module interface_uneven_modport(
   uneven_controller u_controller(.bus(link));
 endmodule
 
+// Exercises channel_source/channel_sink/channel_controller/channel_monitor together:
+// each drives an AND gate whose second operand is an inverted interface field
+// reference (`bus.valid & ~bus.ready`), which regressed with a bogus duplicate
+// gate/inverter input port and a false "multiple diagram drivers" diagnostic.
+module interface_channel_link(
+  input logic clk,
+  input logic rst_n,
+  output logic seen
+);
+  channel_if link(clk, rst_n);
+
+  channel_source u_source(.bus(link));
+  channel_sink u_sink(.bus(link));
+  channel_controller u_controller(.bus(link));
+  channel_monitor u_monitor(.bus(link), .seen(seen));
+endmodule
+
 module interface_consumer_fanout(
   input logic clk,
   input logic rst_n

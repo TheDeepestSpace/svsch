@@ -33,6 +33,7 @@ import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
+  extendTargetIntoGate,
   promotedStackFanoutPath,
   stableFragmentId,
   stackedLayerEdgeClass,
@@ -279,18 +280,6 @@ export function OrthogonalEdge({
     );
   }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
 
-  // Use localPoints if we are dragging, otherwise use officialPoints.
-  // We MUST prepend and append the actual handle coordinates to officialPoints 
-  // because normalizeRoutePoints only returns the path between leads.
-  // The handle coordinates can intentionally live on half-grid shape boundaries
-  // such as the one-grid interface top hat. Snapping them here makes the visible
-  // wire miss the rendered node edge by half a grid.
-  const points = localPoints ?? [
-    { x: sourceX, y: sourceY },
-    ...officialPoints,
-    { x: targetX, y: targetY }
-  ];
-  const rawEdgePath = pathFromPoints(points);
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
   const targetHdlPosition = forceStraight && isVertical
@@ -299,6 +288,26 @@ export function OrthogonalEdge({
   const sourceHdlPosition = forceStraight && isVertical
     ? HdlPosition.Bottom
     : sourcePosition as unknown as HdlPosition;
+
+  // Use localPoints if we are dragging, otherwise use officialPoints.
+  // We MUST prepend and append the actual handle coordinates to officialPoints
+  // because normalizeRoutePoints only returns the path between leads.
+  // The handle coordinates can intentionally live on half-grid shape boundaries
+  // such as the one-grid interface top hat. Snapping them here makes the visible
+  // wire miss the rendered node edge by half a grid.
+  // extendTargetIntoGate then pushes the last point past a curved-left gate's (OR/NOR/
+  // XOR/XNOR) concave edge, so it disappears under the node's fill instead of stopping
+  // short of the visible curve — see gateLeftEdgeWireReach for why this is safe.
+  const points = extendTargetIntoGate(
+    localPoints ?? [
+      { x: sourceX, y: sourceY },
+      ...officialPoints,
+      { x: targetX, y: targetY }
+    ],
+    targetNode,
+    targetHdlPosition
+  );
+  const rawEdgePath = pathFromPoints(points);
   const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
     points,
     sourceHdlPosition,
