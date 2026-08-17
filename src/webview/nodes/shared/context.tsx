@@ -10,6 +10,12 @@ export type NodeResizeHandle =
 export const InteractionContext = React.createContext<{
   hoveredNetKey?: string;
   setHovered: (netKey?: string, immediate?: boolean) => void;
+  // The specific edge instance currently hovered (its Reroute/Cut controls are
+  // visible), distinct from hoveredNetKey — several edges (a fanout) can share
+  // one net key, so only this id unambiguously identifies the r/c shortcut
+  // target for a solo (non-multi-selected) hover.
+  hoveredEdgeId?: string;
+  setHoveredEdgeId: React.Dispatch<React.SetStateAction<string | undefined>>;
   // Set while the pointer is over a selected wire's hover zone, so every other
   // selected wire can reveal its own Cut/Reroute controls too (multi-select
   // batch actions) instead of only the one actually under the cursor.
@@ -32,6 +38,7 @@ export const InteractionContext = React.createContext<{
   startNodeResize: (event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => void;
 }>({
   setHovered: () => {},
+  setHoveredEdgeId: () => {},
   selectionHoverActive: false,
   setSelectionHoverActive: () => {},
   setPendingSelectionAction: () => {},
