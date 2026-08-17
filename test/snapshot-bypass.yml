@@ -131,6 +131,114 @@ bypass_threshold_restriction:
       Legitimate re-render from the vpiHierPath fix (commit d15469a9): the
       phantom overlapping-driver wire for the `x & ~bus.y` pattern no longer
       renders, shifting a few pixels.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/bus_composition.visual.spec.ts-snapshots/array-stack-breakout-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/intersection.visual.spec.ts-snapshots/wire-intersections-crossing-grid-chromium-linux.png
+    diff_pixel_count: 0
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-read-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-enable-register-canvas-chromium-linux.png
+    diff_pixel_count: 49
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-mux-stack-selection-chromium-linux.png
+    diff_pixel_count: 13
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-canvas-chromium-linux.png
+    diff_pixel_count: 30
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-stack-selection-chromium-linux.png
+    diff_pixel_count: 13
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-complete-reset-canvas-chromium-linux.png
+    diff_pixel_count: 33
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-port-register-canvas-chromium-linux.png
+    diff_pixel_count: 26
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-register-node-chromium-linux.png
+    diff_pixel_count: 37
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/cut-net-label-styled-stubs-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-17
+    path: test/visual/__screenshots__/port_array.visual.spec.ts-snapshots/array-input-port-selected-chromium-linux.png
+    diff_pixel_count: 5
+    reason: >-
+      Legitimate re-render from restoring rounded array-stack lead
+      coordinates (commit f5dfacd8): lead endpoints now round to whole
+      pixels instead of landing on the wire's exact fractional trim point,
+      closing the anti-aliased seam.
 # Example entry:
 # bypass_threshold_restriction:
 #   - pr: 1234
