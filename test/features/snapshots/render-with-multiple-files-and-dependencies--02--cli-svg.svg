@@ -1349,8 +1349,8 @@ text {
 }
 
 .gate-skin .node-skin-body {
-  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
-  stroke: white;
+  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-orange);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -1930,15 +1930,15 @@ text {
 }
 .hdl-node-gate .svsch-node-shape,
 .svsch-node-shape.hdl-node-gate {
-  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
-  stroke: white;
+  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-orange);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
 .hdl-node-comparator .svsch-node-shape,
 .svsch-node-shape.hdl-node-comparator {
-  fill: color-mix(in srgb, var(--vscode-charts-blue) 14%, var(--vscode-editor-background));
-  stroke: var(--vscode-charts-blue);
+  fill: color-mix(in srgb, var(--vscode-charts-orange) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-orange);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
