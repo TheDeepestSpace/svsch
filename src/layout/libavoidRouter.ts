@@ -23,7 +23,8 @@ export interface RoutingLeadPoint {
 export type RoutingLeadResolver = (
   nodeId: string,
   portId: string | undefined,
-  includeLeadMargins: boolean
+  includeLeadMargins: boolean,
+  role?: 'source' | 'target'
 ) => RoutingLeadPoint | undefined;
 
 export interface LibavoidRoutingResult {
@@ -86,8 +87,8 @@ async function routeDiagramWithLibavoidExclusive(
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const libavoidNodes = nodes.map((node) => libavoidNodeForDiagramNode(node, resolveLead));
     const libavoidEdges = edges.flatMap((edge): LibavoidEdge[] => {
-      const sourcePort = resolvedPortId(edge.source, edge.sourcePort, nodesById);
-      const targetPort = resolvedPortId(edge.target, edge.targetPort, nodesById);
+      const sourcePort = resolvedPortId(edge.source, edge.sourcePort, nodesById, 'source');
+      const targetPort = resolvedPortId(edge.target, edge.targetPort, nodesById, 'target');
       return sourcePort && targetPort ? [{ edge, sourcePort, targetPort }] : [];
     });
     const rawRoutes = routeRaw(Avoid, libavoidNodes, libavoidEdges);
@@ -112,9 +113,23 @@ async function loadAvoidRuntime(): Promise<any> {
   return avoidRuntimePromise;
 }
 
+// A boundary inout port is driven on one physical side and read on the
+// other (see mergeLayout's endpointId), so it needs two libavoid pins where
+// every other port needs exactly one.
+function isBoundaryInoutNode(node: PositionedNode): boolean {
+  return node.kind === 'port' && node.ports[0]?.direction === 'inout';
+}
+
 function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLeadResolver): LibavoidNode {
   const size = resolvedNodeDimensions(node);
-  const leads = node.ports.map((port) => resolveLead(node.id, port.id, true));
+  const dualSided = isBoundaryInoutNode(node);
+  type PinSpec = { port: (typeof node.ports)[number]; role: 'source' | 'target' | undefined };
+  const pinSpecs = node.ports.flatMap((port): PinSpec[] => (
+    dualSided
+      ? [{ port, role: 'target' }, { port, role: 'source' }]
+      : [{ port, role: undefined }]
+  ));
+  const leads = pinSpecs.map(({ port, role }) => resolveLead(node.id, port.id, true, role));
   const leadPoints = leads.flatMap((lead) => lead ? [lead.point] : []);
   const margins = routingObstacleMargins(node, leads.map((lead) => lead?.side));
   const left = Math.min(node.position.x, ...leadPoints.map((point) => point.x)) - margins.left;
@@ -128,14 +143,14 @@ function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLe
     y: top,
     width: right - left,
     height: bottom - top,
-    ports: node.ports.map((port, index) => {
+    ports: pinSpecs.map(({ port, role }, index) => {
       const lead = leads[index];
       const point = lead?.point ?? {
         x: node.position.x + size.width / 2,
         y: node.position.y + size.height / 2
       };
       return {
-        id: libavoidPortId(node.id, port.id),
+        id: libavoidPortId(node.id, port.id, role),
         x: point.x - left,
         y: point.y - top,
         side: lead?.side ?? 'EAST'
@@ -306,8 +321,8 @@ function validateRoutes(
   for (const item of edges) {
     const netKey = edgeNetKey(item.edge);
     const raw = rawRoutes.get(item.edge.id);
-    const sourceLead = resolveLead(item.edge.source, item.edge.sourcePort, true);
-    const targetLead = resolveLead(item.edge.target, item.edge.targetPort, true);
+    const sourceLead = resolveLead(item.edge.source, item.edge.sourcePort, true, 'source');
+    const targetLead = resolveLead(item.edge.target, item.edge.targetPort, true, 'target');
     if (!raw || !sourceLead || !targetLead) {
       rejectedNets.set(netKey, 'missing route or endpoint');
       continue;
@@ -380,8 +395,8 @@ function normalizeRenderedRoute(
   nodesById: Map<string, DiagramNode>,
   resolveLead: RoutingLeadResolver
 ): Array<{ x: number; y: number }> {
-  const sourceHandle = resolveLead(edge.source, edge.sourcePort, false);
-  const targetHandle = resolveLead(edge.target, edge.targetPort, false);
+  const sourceHandle = resolveLead(edge.source, edge.sourcePort, false, 'source');
+  const targetHandle = resolveLead(edge.target, edge.targetPort, false, 'target');
   if (!sourceHandle || !targetHandle) return route;
   return normalizeRoutePoints(
     { routePoints: route },
@@ -471,14 +486,18 @@ function connEndForJunction(Avoid: any, junction: any, position: any): any {
 function resolvedPortId(
   nodeId: string,
   portId: string | undefined,
-  nodesById: Map<string, DiagramNode>
+  nodesById: Map<string, DiagramNode>,
+  role: 'source' | 'target'
 ): string | undefined {
-  const resolved = portId ?? nodesById.get(nodeId)?.ports[0]?.id;
-  return resolved ? libavoidPortId(nodeId, resolved) : undefined;
+  const node = nodesById.get(nodeId);
+  const resolved = portId ?? node?.ports[0]?.id;
+  if (!resolved) return undefined;
+  const dualSided = node?.kind === 'port' && node.ports[0]?.direction === 'inout';
+  return libavoidPortId(nodeId, resolved, dualSided ? role : undefined);
 }
 
-function libavoidPortId(nodeId: string, portId: string): string {
-  return `${nodeId}::${portId}`;
+function libavoidPortId(nodeId: string, portId: string, role?: 'source' | 'target'): string {
+  return role ? `${nodeId}::${portId}::${role}` : `${nodeId}::${portId}`;
 }
 
 function connectionDirection(side: RoutingPortSide): number {

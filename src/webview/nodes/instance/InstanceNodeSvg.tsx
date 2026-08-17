@@ -8,6 +8,7 @@ import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGe
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -20,9 +21,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
-  );
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
 
   const instanceParameters: InstanceParameter[] =

@@ -7,6 +7,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -17,9 +18,11 @@ export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
     (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
-  );
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') || (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const paramRows = instanceParameterRows(node);
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
@@ -51,10 +54,10 @@ export function CombNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
 
       {/* Array stack leads */}
       {isArray && inputs.map((port: DiagramPort, i: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-${port.id}`}
             side="left"
             width={width}
