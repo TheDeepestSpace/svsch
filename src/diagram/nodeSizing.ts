@@ -32,6 +32,7 @@ import {
   portSkinTopRightVertex,
 } from './interfaceGeometry';
 import { muxRightTopY } from './muxGeometry';
+import { isInputSidePort } from './portDirection';
 
 export interface DiagramNodeDimensions {
   width: number;
@@ -232,10 +233,7 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
       )
     : visiblePorts;
 
-  const inputs = sidePorts.filter(
-    (port) =>
-      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-  );
+  const inputs = sidePorts.filter(isInputSidePort);
   const outputs = sidePorts.filter((port) => port.direction === 'output');
   const topInputCount =
     node.kind === 'mux'
@@ -386,10 +384,8 @@ export const gateBubbleGap = 2;
 /** Horizontal gap reserved for XOR/XNOR's extra back curve, left of the OR-shaped body. */
 export const gateXorGap = 5;
 
-/**
- * Body width a gate needs: base AND/OR/XOR body, plus room for the XOR
- * back-curve and/or negation bubble.
- */
+/** Body width a gate needs: base AND/OR/XOR body, plus room for the XOR back-curve and/or
+ * negation bubble. */
 export function gateGeometryWidth(isXor: boolean, negated: boolean): number {
   const base = diagramSizing.gridSize * 3;
   const xorExtra = isXor ? gateXorGap : 0;
@@ -400,10 +396,7 @@ export function gateGeometryWidth(isXor: boolean, negated: boolean): number {
 function registerVisibleInputRows(node: DiagramNode): number {
   const clockSignal = registerClockSignal(node);
   const resetSignal = registerResetSignal(node);
-  const inputs = node.ports.filter(
-    (port) =>
-      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-  );
+  const inputs = node.ports.filter(isInputSidePort);
   const dPort = inputs.find((port) => port.name === 'D') ?? inputs[0];
   const clockPort =
     inputs.find((port) => port.name === clockSignal) ??

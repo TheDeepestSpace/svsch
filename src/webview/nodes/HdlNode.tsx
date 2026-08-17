@@ -49,6 +49,7 @@ import { AluNodeSvg } from './alu/AluNodeSvg';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { InstanceNodeSvg } from './instance/InstanceNodeSvg';
 import { Tooltip } from '../Tooltip';
+import { isInputSidePort, isInoutPort } from '../../diagram/portDirection';
 
 const vscode = getVscodeApi();
 
@@ -56,8 +57,6 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   const node = data.node;
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
-  const arrayWideClass = nodeStackIsWide(node) ? ' hdl-node-array-wide' : '';
-  const arrayModifierClass = isArray ? ` hdl-node-array${arrayWideClass}` : '';
   const typeName =
     nodeTypeName(node) ?? (node.kind === 'port' ? node.ports[0]?.typeName : undefined);
   const modportName =
@@ -68,10 +67,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       ? (node.instanceParameters ?? node.metadata?.instanceParameters ?? [])
       : [];
 
-  const inputs = node.ports.filter(
-    (port: DiagramPort) =>
-      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-  );
+  const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
   const muxTopPorts =
     node.kind === 'select'
@@ -99,12 +95,10 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     : { width: nodeWidth, height: nodeHeight };
   const parameterRows = instanceParameterRows(node);
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
-  const portWidth =
-    node.kind === 'port' || isInterfacePortNode ? nodeWidth : diagramSizing.portWidth;
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${portWidth}px`,
+    '--svsch-port-width': `${node.kind === 'port' || isInterfacePortNode ? nodeWidth : diagramSizing.portWidth}px`,
   } as React.CSSProperties;
   const warningCenter = nodeWarningIconCenter(node, nodeWidth, nodeHeight);
   const warningIcon = <NodeWarningIcon message={node.warningNote} center={warningCenter} />;
@@ -159,22 +153,18 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   if (node.kind === 'port') {
     const isOutput = portDirection === 'output';
     const isInput = portDirection === 'input';
+    const isInout = portDirection === 'inout';
     const isInterfacePort = Boolean(
       (node.ports[0]?.typeName && node.ports[0]?.modportName !== undefined) ||
       node.ports[0]?.typeName?.endsWith('_if') ||
       node.ports[0]?.typeName?.endsWith('if'),
     );
-    const isSkinnedPort = isInput || isOutput || isInterfacePort;
+    const isSkinnedPort = isInput || isOutput || isInout || isInterfacePort;
     const handlePositionOverride = node.metadata?.handlePosition as Position | undefined;
-    const skinnedClass = isSkinnedPort ? ' hdl-port-skinned' : '';
-    const interfacePortClass = isInterfacePort ? ' hdl-port-interface' : '';
-    const portClassName =
-      `hdl-node hdl-node-port hdl-port-${portDirection}${skinnedClass}` +
-      `${interfacePortClass}${arrayModifierClass}`;
 
     return (
       <button
-        className={portClassName}
+        className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -191,8 +181,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           if (
             event.target instanceof Element &&
             event.target.closest(
-              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, ' +
-                '.svsch-interface-side-label',
+              // eslint-disable-next-line max-len
+              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label',
             )
           ) {
             return;
@@ -209,30 +199,21 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             onNavigateToSource={navigateToSource}
           />
         </svg>
-        {isOutput && (
+        {(isOutput || isInout) && (
           <Handle
             type="target"
             id={node.ports[0]?.id}
             position={handlePositionOverride ?? Position.Left}
           />
         )}
-        {isOutput && (
-          <Handle
-            type="source"
-            id={node.ports[0]?.id}
-            position={handlePositionOverride ?? Position.Left}
-          />
-        )}
-        {!isOutput && (
-          <Handle
-            type="source"
-            id={node.ports[0]?.id}
-            position={handlePositionOverride ?? Position.Right}
-          />
-        )}
+        <Handle
+          type="source"
+          id={node.ports[0]?.id}
+          position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)}
+        />
         {isArray && isSkinnedPort ? (
           <ArrayStackSelection
-            kind={isOutput ? 'output' : 'input'}
+            kind={isOutput ? 'output' : isInout ? 'inout' : 'input'}
             width={nodeWidth}
             height={nodeHeight}
             wide={nodeStackIsWide(node)}
@@ -256,13 +237,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             ? Position.Right
             : Position.Left;
 
-    const interfacePortClassName =
-      `hdl-node hdl-node-port hdl-port-${port?.direction ?? 'unknown'} hdl-port-skinned ` +
-      `hdl-port-interface hdl-interface-node`;
-
     return (
       <button
-        className={interfacePortClassName}
+        className={`hdl-node hdl-node-port hdl-port-${port?.direction ?? 'unknown'} hdl-port-skinned hdl-port-interface hdl-interface-node`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -279,8 +256,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           if (
             event.target instanceof Element &&
             event.target.closest(
-              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, ' +
-                '.svsch-interface-side-label',
+              // eslint-disable-next-line max-len
+              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label',
             )
           ) {
             return;
@@ -362,10 +339,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       interfaceTapCenterById.set(port.id, rightInterfaceCenters[index]),
     );
 
-    const aggregateInputs = sidePorts.filter(
-      (port: DiagramPort) =>
-        port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-    );
+    const aggregateInputs = sidePorts.filter(isInputSidePort);
     const aggregateOutputs = sidePorts.filter((port: DiagramPort) => port.direction === 'output');
 
     const isComposition =
@@ -438,20 +412,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       }
     };
 
-    const busClassName = [
-      'hdl-bus-node',
-      node.kind === 'struct' ? 'hdl-struct-node' : '',
-      isInterface ? 'hdl-interface-node' : '',
-      isInterfaceModport ? 'hdl-interface-modport' : '',
-      isInterfaceInstance ? 'hdl-interface-instance' : '',
-      isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout',
-      isArrayComposition ? 'hdl-bus-array-composition' : '',
-      isArrayBreakout ? 'hdl-bus-array-breakout' : '',
-    ].join(' ');
-
     return (
       <button
-        className={busClassName}
+        className={`hdl-bus-node ${node.kind === 'struct' ? 'hdl-struct-node' : ''} ${isInterface ? 'hdl-interface-node' : ''} ${isInterfaceModport ? 'hdl-interface-modport' : ''} ${isInterfaceInstance ? 'hdl-interface-instance' : ''} ${isComposition ? 'hdl-bus-composition' : 'hdl-bus-breakout'} ${isArrayComposition ? 'hdl-bus-array-composition' : ''} ${isArrayBreakout ? 'hdl-bus-array-breakout' : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={busStyle}
@@ -470,8 +433,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           if (
             event.target instanceof Element &&
             event.target.closest(
-              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, ' +
-                '.svsch-interface-side-label',
+              // eslint-disable-next-line max-len
+              '.bus-tap, .svsch-bus-tap-label, .svsch-interface-field-label, .svsch-interface-side-label',
             )
           ) {
             return;
@@ -496,26 +459,21 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             style={singlePortHandleStyle}
           />
         ) : !isInterfaceModport && !isInterfaceInstance && singlePort ? (
-          <Handle
-            type="target"
-            id={singlePort?.id}
+          <InputPortHandles
+            port={singlePort}
             position={Position.Left}
             style={singlePortHandleStyle}
           />
         ) : null}
         {topPorts.map((port, index) => {
           const handleGeometry = visualHandleGeometry(node, port.id);
-          const topPortLeft =
-            handleGeometry?.offset.x ??
-            interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount);
-
           return (
             <div
               key={port.id}
               className="interface-top-port"
               data-port-id={port.id}
               style={{
-                left: `${topPortLeft}px`,
+                left: `${handleGeometry?.offset.x ?? interfaceTopPortX(nodeWidth, topPorts.length, index, capPortCount)}px`,
                 top: `${handleGeometry?.offset.y ?? interfaceTopHatY}px`,
               }}
             >
@@ -564,17 +522,13 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         })}
         <div className="bus-taps">
           {taps.map((port: DiagramPort, index: number) => {
-            const isRightTap = port.preferredSide === 'right' || port.direction === 'output';
-            const tapSideClass =
-              isInterfaceModport || isInterfaceInstance
-                ? isRightTap
-                  ? 'bus-tap-right'
-                  : 'bus-tap-left'
-                : '';
-
+            const tapPosition =
+              port.preferredSide === 'right' || port.direction === 'output'
+                ? Position.Right
+                : Position.Left;
             return (
               <div
-                className={`bus-tap ${tapSideClass}`}
+                className={`bus-tap ${isInterfaceModport || isInterfaceInstance ? (port.preferredSide === 'right' || port.direction === 'output' ? 'bus-tap-right' : 'bus-tap-left') : ''}`}
                 data-port-id={port.id}
                 key={port.id}
                 style={{ top: `${tapCenters[index] - diagramSizing.gridSize / 2}px` }}
@@ -582,16 +536,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
               >
                 {isInterfaceModport ? (
                   <>
-                    <Handle
-                      type="source"
-                      id={port.id}
-                      position={port.direction === 'output' ? Position.Right : Position.Left}
-                    />
-                    <Handle
-                      type="target"
-                      id={port.id}
-                      position={port.direction === 'output' ? Position.Right : Position.Left}
-                    />
+                    <Handle type="source" id={port.id} position={tapPosition} />
+                    <Handle type="target" id={port.id} position={tapPosition} />
                   </>
                 ) : isInterfaceInstance && port.width === 'interface' ? (
                   <>
@@ -606,8 +552,10 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
                       position={port.preferredSide === 'left' ? Position.Left : Position.Right}
                     />
                   </>
+                ) : isInterfaceInstance && isInoutPort(port) ? (
+                  <InputPortHandles port={port} position={tapPosition} />
                 ) : isInterfaceInstance ? null : isComposition ? (
-                  <Handle type="target" id={port.id} position={Position.Left} />
+                  <InputPortHandles port={port} position={Position.Left} />
                 ) : (
                   <Handle type="source" id={port.id} position={Position.Right} />
                 )}
@@ -644,12 +592,10 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       (port: DiagramPort) => !renderedInputPortIds.has(port.id),
     );
     const SvgComp = node.kind === 'register' ? RegisterNodeSvg : LatchNodeSvg;
-    const registerClassName =
-      `hdl-node hdl-node-${node.kind} hdl-register-node` + arrayModifierClass;
 
     return (
       <button
-        className={registerClassName}
+        className={`hdl-node hdl-node-${node.kind} hdl-register-node${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -670,9 +616,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {dPort && (
-          <Handle
-            type="target"
-            id={dPort.id}
+          <InputPortHandles
+            port={dPort}
             position={Position.Left}
             style={{
               top: registerPortTop('d', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2,
@@ -690,9 +635,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         )}
         {clockPort && (
-          <Handle
-            type="target"
-            id={clockPort.id}
+          <InputPortHandles
+            port={clockPort}
             position={Position.Left}
             style={{
               top:
@@ -701,17 +645,15 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         )}
         {resetPort && (
-          <Handle
-            type="target"
-            id={resetPort.id}
+          <InputPortHandles
+            port={resetPort}
             position={Position.Bottom}
             style={{ left: nodeWidth / 2, bottom: 0, transform: 'translate(-50%, 0)' }}
           />
         )}
         {rvPort && (
-          <Handle
-            type="target"
-            id={rvPort.id}
+          <InputPortHandles
+            port={rvPort}
             position={Position.Left}
             style={{
               top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2,
@@ -719,10 +661,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         )}
         {extraInputPorts.map((port, index) => (
-          <Handle
+          <InputPortHandles
             key={port.id}
-            type="target"
-            id={port.id}
+            port={port}
             position={Position.Left}
             style={{
               top:
@@ -750,7 +691,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   if (node.kind === 'replicate') {
     return (
       <button
-        className={`hdl-node hdl-node-replicate${arrayModifierClass}`}
+        className={`hdl-node hdl-node-replicate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -771,7 +712,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {sideInputs.map((port: DiagramPort) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+          <InputPortHandles key={port.id} port={port} position={Position.Left} />
         ))}
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
@@ -794,7 +735,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   if (node.kind === 'literal') {
     return (
       <button
-        className={`hdl-node hdl-node-literal${arrayModifierClass}`}
+        className={`hdl-node hdl-node-literal${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -861,7 +802,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {sideInputs.slice(0, 1).map((port: DiagramPort) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+          <InputPortHandles key={port.id} port={port} position={Position.Left} />
         ))}
         {outputs.slice(0, 1).map((port: DiagramPort) => (
           <Handle
@@ -939,7 +880,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     const SvgComp = node.kind === 'mux' ? MuxNodeSvg : SelectNodeSvg;
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind}${arrayModifierClass}`}
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -963,10 +904,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           {node.label}
         </div>
         {muxTopPorts.map((port: DiagramPort, index: number) => (
-          <Handle
+          <InputPortHandles
             key={port.id}
-            type="target"
-            id={port.id}
+            port={port}
             position={Position.Top}
             style={{
               left: `${((index + 1) / (muxTopPorts.length + 1)) * nodeWidth}px`,
@@ -977,10 +917,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         ))}
         {sideInputs.map((port: DiagramPort, index: number) => (
-          <Handle
+          <InputPortHandles
             key={port.id}
-            type="target"
-            id={port.id}
+            port={port}
             position={Position.Left}
             style={{ top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) }}
           />
@@ -1011,7 +950,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     const g = diagramSizing.gridSize;
     return (
       <button
-        className={`hdl-node hdl-node-alu${arrayModifierClass}`}
+        className={`hdl-node hdl-node-alu${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -1026,10 +965,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {sideInputs.slice(0, 2).map((port: DiagramPort, index: number) => (
-          <Handle
+          <InputPortHandles
             key={port.id}
-            type="target"
-            id={port.id}
+            port={port}
             position={Position.Left}
             style={{ top: index === 0 ? g : g * 3 }}
           />
@@ -1060,7 +998,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     const SvgComp = node.kind === 'comb' ? CombNodeSvg : LoopNodeSvg;
     return (
       <button
-        className={`hdl-node hdl-node-${node.kind}${arrayModifierClass}`}
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
         data-node-id={node.id}
         data-node-kind={node.kind}
         style={nodeStyle}
@@ -1075,10 +1013,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {sideInputs.map((port: DiagramPort, i: number) => (
-          <Handle
+          <InputPortHandles
             key={port.id}
-            type="target"
-            id={port.id}
+            port={port}
             position={Position.Left}
             style={{ top: nodePortCenterOffset(i) }}
           />
@@ -1108,16 +1045,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   }
 
   // Catch-all: instance and unknown kinds
-  const paramsClass = instanceParameters.length > 0 ? ' hdl-node-has-params' : '';
-  const instanceClassName = `hdl-node hdl-node-${node.kind}${paramsClass}${arrayModifierClass}`;
-  const instanceParamChipsHeight =
-    instanceParameters.length * 16 + Math.max(0, instanceParameters.length - 1) * 2;
-  const instanceParamChipsTop =
-    16 + Math.max(0, (parameterRows * diagramSizing.gridSize - instanceParamChipsHeight) / 2);
-
   return (
     <button
-      className={instanceClassName}
+      className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       data-node-id={node.id}
       data-node-kind={node.kind}
       style={nodeStyle}
@@ -1142,7 +1072,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         <div
           style={{
             position: 'absolute',
-            top: `${instanceParamChipsTop}px`,
+            top: `${16 + Math.max(0, (parameterRows * diagramSizing.gridSize - (instanceParameters.length * 16 + Math.max(0, instanceParameters.length - 1) * 2)) / 2)}px`,
             left: 0,
             right: 0,
           }}
@@ -1151,25 +1081,13 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         </div>
       )}
       {sideInputs.map((port: DiagramPort, i: number) => (
-        <Handle
+        <InputPortHandles
           key={port.id}
-          type="target"
-          id={port.id}
+          port={port}
           position={Position.Left}
           style={{ top: nodePortCenterOffset(i + parameterRows) }}
         />
       ))}
-      {sideInputs
-        .filter((p: DiagramPort) => p.direction === 'inout')
-        .map((port: DiagramPort) => (
-          <Handle
-            key={`inout-${port.id}`}
-            type="source"
-            id={port.id}
-            position={Position.Right}
-            style={{ top: nodePortCenterOffset(sideInputs.indexOf(port) + parameterRows) }}
-          />
-        ))}
       {outputs.map((port: DiagramPort, i: number) => (
         <Handle
           key={port.id}
@@ -1192,6 +1110,23 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       {node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
       {warningIcon}
     </button>
+  );
+}
+
+function InputPortHandles({
+  port,
+  position,
+  style,
+}: {
+  port: DiagramPort;
+  position: Position;
+  style?: React.CSSProperties;
+}): React.ReactElement {
+  return (
+    <>
+      <Handle type="target" id={port.id} position={position} style={style} />
+      {isInoutPort(port) && <Handle type="source" id={port.id} position={position} style={style} />}
+    </>
   );
 }
 

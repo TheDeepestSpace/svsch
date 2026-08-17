@@ -12,6 +12,7 @@ import {
   SvgPortLabel,
 } from '../shared/labels';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function InstanceNodeSvg({
   node,
@@ -30,10 +31,7 @@ export function InstanceNodeSvg({
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) =>
-      p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-  );
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
 
   const instanceParameters: InstanceParameter[] =
@@ -71,13 +69,6 @@ export function InstanceNodeSvg({
       : 26 + contentShiftY,
   );
 
-  const arrayLayerClassName = (layerId: string) =>
-    `svsch-node-shape hdl-node-array-layer hdl-node-array-${layerId} ` +
-    `svsch-array-layer-${layerId}`;
-  const backgroundShapeClassName =
-    `svsch-node-shape` +
-    (isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : '');
-
   const targetStackLeads = (
     <>
       {isArray &&
@@ -107,7 +98,7 @@ export function InstanceNodeSvg({
           .map((layer) => (
             <rect
               key={layer.id}
-              className={arrayLayerClassName(layer.id)}
+              className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
               transform={`translate(${layer.dx}, ${layer.dy})`}
               width={width}
               height={height}
@@ -115,7 +106,7 @@ export function InstanceNodeSvg({
             />
           ))}
       <rect
-        className={backgroundShapeClassName}
+        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={shapeTransform}
         width={width}
         height={height}
@@ -224,7 +215,8 @@ export function InstanceNodeSvg({
         </text>
       ))}
 
-      {/* Array stack leads (source/right; target/left painted before the stack layers) */}
+      {/* Array stack leads (source/right side; */}
+      {/* target/left side painted before the stack layers) */}
       {isArray &&
         outputs.map((port: DiagramPort, i: number) =>
           hasArrayConnection(port.id, 'source') ? (

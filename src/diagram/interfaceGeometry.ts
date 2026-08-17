@@ -105,7 +105,7 @@ export function interfaceSidePortCenters(
   return centers;
 }
 
-export type PortSkinDirection = 'input' | 'output' | 'harness';
+export type PortSkinDirection = 'input' | 'output' | 'inout' | 'harness';
 
 export function portSkinPath(
   direction: PortSkinDirection,
@@ -118,18 +118,13 @@ export function portSkinPath(
   const midY = height / 2;
   const bottom = top + skinHeight;
   if (direction === 'input') {
-    return (
-      `M 0 ${top} H ${width - noseLength} L ${width} ${midY} ` +
-      `L ${width - noseLength} ${bottom} H 0 Z`
-    );
+    return `M 0 ${top} H ${width - noseLength} L ${width} ${midY} L ${width - noseLength} ${bottom} H 0 Z`;
   } else if (direction === 'output') {
     return `M ${noseLength} ${top} H ${width} V ${bottom} H ${noseLength} L 0 ${midY} Z`;
   } else {
-    // Harness: chevrons on both sides
-    return (
-      `M ${noseLength} ${top} H ${width - noseLength} L ${width} ${midY} ` +
-      `L ${width - noseLength} ${bottom} H ${noseLength} L 0 ${midY} Z`
-    );
+    // Inout and interface harnesses both communicate bidirectional flow with
+    // chevrons on both sides; their colors distinguish their semantics.
+    return `M ${noseLength} ${top} H ${width - noseLength} L ${width} ${midY} L ${width - noseLength} ${bottom} H ${noseLength} L 0 ${midY} Z`;
   }
 }
 
@@ -262,8 +257,7 @@ export function interfaceSkinPath({
         hasRightNotches || !hasLeftNotches ? rightNotches : '',
         `L ${rightInnerWall} ${bottomEdgeY}`,
         hasBottomHat
-          ? `L ${rightInnerWall} ${bodyBottom} H ${bottomHatRight} V ${height} ` +
-            `H ${bottomHatLeft} V ${bodyBottom} H ${leftInnerWall}`
+          ? `L ${rightInnerWall} ${bodyBottom} H ${bottomHatRight} V ${height} H ${bottomHatLeft} V ${bodyBottom} H ${leftInnerWall}`
           : `H ${leftInnerWall}`,
         hasLeftNotches || !hasRightNotches ? leftNotches : '',
         `L ${leftInnerWall} ${topEdgeY}`,
@@ -277,8 +271,7 @@ export function interfaceSkinPath({
         hasRightNotches || !hasLeftNotches ? rightNotches : '',
         `L ${rightInnerWall} ${bottomEdgeY}`,
         hasBottomHat
-          ? `L ${rightInnerWall} ${bodyBottom} H ${bottomHatRight} V ${height} ` +
-            `H ${bottomHatLeft} V ${bodyBottom} H ${leftInnerWall}`
+          ? `L ${rightInnerWall} ${bodyBottom} H ${bottomHatRight} V ${height} H ${bottomHatLeft} V ${bodyBottom} H ${leftInnerWall}`
           : `H ${leftInnerWall}`,
         hasLeftNotches || !hasRightNotches ? leftNotches : '',
         'Z',

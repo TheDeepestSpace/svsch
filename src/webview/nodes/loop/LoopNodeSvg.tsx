@@ -7,6 +7,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function LoopNodeSvg({
   node,
@@ -22,10 +23,7 @@ export function LoopNodeSvg({
     (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) =>
-      p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-  );
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const paramRows = instanceParameterRows(node);
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
@@ -42,10 +40,7 @@ export function LoopNodeSvg({
           .map((layer) => (
             <rect
               key={layer.id}
-              className={
-                `svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} ` +
-                `svsch-array-layer-${layer.id}`
-              }
+              className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
               transform={`translate(${layer.dx}, ${layer.dy})`}
               width={width}
               height={height}
@@ -53,10 +48,7 @@ export function LoopNodeSvg({
             />
           ))}
       <rect
-        className={
-          `svsch-node-shape` +
-          `${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`
-        }
+        className={`svsch-node-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={shapeTransform}
         width={width}
         height={height}

@@ -34,6 +34,7 @@ import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import { isInputSidePort } from '../../diagram/portDirection';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
@@ -204,11 +205,7 @@ export function OrthogonalEdge({
   const sourceFlowNode = flowNodes.find((node) => node.id === source);
   const targetFlowNode = flowNodes.find((node) => node.id === target);
   const sourceNode = sourceFlowNode?.data?.node;
-  const sourceInputs =
-    sourceNode?.ports.filter(
-      (p: DiagramPort) =>
-        p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-    ) ?? [];
+  const sourceInputs = sourceNode?.ports.filter(isInputSidePort) ?? [];
   const sourceAggregateInputs = sourceInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const sourceIsComposition = sourceAggregateInputs.length > 1;
   const sourceIsArray = sourceNode
@@ -221,11 +218,7 @@ export function OrthogonalEdge({
     sourceNode.metadata?.aggregateKind === 'array';
 
   const targetNode = targetFlowNode?.data?.node;
-  const targetInputs =
-    targetNode?.ports.filter(
-      (p: DiagramPort) =>
-        p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-    ) ?? [];
+  const targetInputs = targetNode?.ports.filter(isInputSidePort) ?? [];
   const targetAggregateInputs = targetInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const targetIsComposition = targetAggregateInputs.length > 1;
   const targetIsArray = targetNode
@@ -685,32 +678,6 @@ export function OrthogonalEdge({
     }
   };
 
-  const edgeAggregateModifiers =
-    `${isStructAggregate ? ' svsch-edge-struct' : ''}` +
-    `${isInterfaceAggregate ? ' svsch-edge-interface' : ''}` +
-    `${isThickWire ? ' svsch-edge-thick' : ''}`;
-  const edgeClassName = `svsch-edge${edgeAggregateModifiers}`;
-  const stackedEdgeClassName =
-    `svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}` + edgeAggregateModifiers;
-  const thickWireClass = isThickWire ? ' svsch-edge-thick' : '';
-  const stackedBackClassName = `svsch-edge svsch-edge-stacked-back${thickWireClass}`;
-  const stackedFrontClassName = `svsch-edge svsch-edge-stacked-front${thickWireClass}`;
-  const edgeBridgeClassName =
-    `svsch-edge-bridge react-flow__edge-interaction` +
-    `${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}` +
-    `${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}` +
-    `${isThickWire ? ' svsch-edge-bridge-thick' : ''}`;
-  const edgeJunctionClassName =
-    `svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}` +
-    `${isStructAggregate ? ' svsch-edge-junction-struct' : ''}`;
-  const stackedBranchClassName = (layerId: ArrayStackLayerId) =>
-    `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${layerId} ` +
-    `${stackedLayerEdgeClass(layerId)}${isThickWire ? ' svsch-edge-thick' : ''}`;
-  const convergingStackClassName = (layerId: ArrayStackLayerId) =>
-    `svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(layerId)}` +
-    edgeAggregateModifiers;
-  const aliasNamesText = diagramEdge?.metadata?.aliasNames?.join(', ') ?? '';
-
   return (
     <g onMouseEnter={keepEdgeHover} onMouseLeave={releaseEdgeHover}>
       {isInterfaceAggregate && (
@@ -838,7 +805,10 @@ export function OrthogonalEdge({
             <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
           )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className={stackedBackClassName} d={backStackPath} />
+            <path
+              className={`svsch-edge svsch-edge-stacked-back${isThickWire ? ' svsch-edge-thick' : ''}`}
+              d={backStackPath}
+            />
           )}
           {promotedFanout ? (
             <>
@@ -856,7 +826,10 @@ export function OrthogonalEdge({
                   <stop offset="100%" className="svsch-stack-gradient-back-stop" />
                 </linearGradient>
               </defs>
-              <path className={edgeClassName} d={promotedFanout.trunk} />
+              <path
+                className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
+                d={promotedFanout.trunk}
+              />
               <path
                 className="svsch-edge svsch-edge-stacked-breakout"
                 d={promotedFanout.bar}
@@ -865,7 +838,7 @@ export function OrthogonalEdge({
               {promotedFanout.branches.map((branch, index) => (
                 <path
                   key={`${id}-stack-branch-${index}`}
-                  className={stackedBranchClassName(branch.layerId)}
+                  className={`svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${isThickWire ? ' svsch-edge-thick' : ''}`}
                   d={branch.path}
                 />
               ))}
@@ -895,7 +868,7 @@ export function OrthogonalEdge({
               {convergingStackPaths.map((stackPath) => (
                 <path
                   key={`${id}-stack-converge-${stackPath.layerId}`}
-                  className={convergingStackClassName(stackPath.layerId)}
+                  className={`svsch-edge svsch-edge-stacked-converge ${stackedLayerEdgeClass(stackPath.layerId)}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
                   d={stackPath.path}
                   style={{ stroke: `url(#${convergingStackGradientId(stackPath.layerId)})` }}
                 />
@@ -903,12 +876,15 @@ export function OrthogonalEdge({
             </>
           ) : (
             <path
-              className={stackedEdgeClassName}
+              className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
               d={isStacked ? middleStackPath : edgeRender.path}
             />
           )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className={stackedFrontClassName} d={frontStackPath} />
+            <path
+              className={`svsch-edge svsch-edge-stacked-front${isThickWire ? ' svsch-edge-thick' : ''}`}
+              d={frontStackPath}
+            />
           )}
         </>
       ) : (
@@ -919,10 +895,16 @@ export function OrthogonalEdge({
           {isStructAggregate && (
             <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
           )}
-          <path className={edgeClassName} d={edgeRender.path} />
+          <path
+            className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
+            d={edgeRender.path}
+          />
         </>
       )}
-      <path className={edgeBridgeClassName} d={rawEdgePath} />
+      <path
+        className={`svsch-edge-bridge react-flow__edge-interaction${isStructAggregate ? ' svsch-edge-bridge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-bridge-interface' : ''}${isThickWire ? ' svsch-edge-bridge-thick' : ''}`}
+        d={rawEdgePath}
+      />
       {overlapHints.map((hint) => (
         <path key={hint.id} className="svsch-edge-overlap-hint" d={hint.path} style={hint.style} />
       ))}
@@ -950,7 +932,7 @@ export function OrthogonalEdge({
         ) : (
           <circle
             key={`${id}-junction-${junction.id}`}
-            className={edgeJunctionClassName}
+            className={`svsch-edge-junction${isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}${isStructAggregate ? ' svsch-edge-junction-struct' : ''}`}
             cx={junction.x}
             cy={junction.y}
             r={isInterfaceAggregate || isStructAggregate ? 6.5 : 4.75}
@@ -1152,13 +1134,16 @@ export function OrthogonalEdge({
           <div>
             <span className="svsch-edge-label-text">{label}</span>
             {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
-              <Tooltip content={`Also declared as: ${aliasNamesText}`} tone="info">
+              <Tooltip
+                content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`}
+                tone="info"
+              >
                 {(trigger) => (
                   <sup
                     {...trigger}
                     className="hdl-net-label-alias-marker nodrag nopan"
                     role="img"
-                    aria-label={`This net also has these declared aliases: ${aliasNamesText}`}
+                    aria-label={`This net also has these declared aliases: ${diagramEdge.metadata!.aliasNames!.join(', ')}`}
                   >
                     *
                   </sup>

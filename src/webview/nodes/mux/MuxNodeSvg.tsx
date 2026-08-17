@@ -13,6 +13,7 @@ import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGe
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgPortLabel } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function MuxNodeSvg({
   node,
@@ -28,11 +29,13 @@ export function MuxNodeSvg({
     (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') ||
+    (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
   const g = diagramSizing.gridSize;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) =>
-      p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-  );
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
 
   const muxTopPorts: DiagramPort[] = inputs.some((p: DiagramPort) => p.name === 'sel')
@@ -54,10 +57,10 @@ export function MuxNodeSvg({
   const targetLeads = (
     <>
       {muxTopPorts.map((port: DiagramPort, index: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-top-${port.id}`}
             side="top"
             width={width}
@@ -68,10 +71,10 @@ export function MuxNodeSvg({
         ) : null,
       )}
       {sideInputs.map((port: DiagramPort, index: number) =>
-        hasArrayConnection(port.id, 'target') ? (
+        hasInputSideConnection(port) ? (
           <SvgArrayStackLeads
             wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
+            thick={arrayConnectionThick(port.id, inputSideRole(port))}
             key={`lead-left-${port.id}`}
             side="left"
             width={width}
@@ -92,20 +95,14 @@ export function MuxNodeSvg({
           .map((layer) => (
             <path
               key={layer.id}
-              className={
-                `svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} ` +
-                `svsch-array-layer-${layer.id}`
-              }
+              className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
               transform={`translate(${layer.dx}, ${layer.dy})`}
               d={trapPath}
               opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
             />
           ))}
       <path
-        className={
-          `svsch-node-shape hdl-node-mux node-skin-body` +
-          `${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`
-        }
+        className={`svsch-node-shape hdl-node-mux node-skin-body${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={bodyTransform}
         d={trapPath}
       />
@@ -124,10 +121,7 @@ export function MuxNodeSvg({
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
               <line
-                className={
-                  `svsch-mux-select-lead` +
-                  `${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`
-                }
+                className={`svsch-mux-select-lead${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`}
                 x1={Math.round(portX + contentShiftX)}
                 y1={Math.round(g + contentShiftY)}
                 x2={Math.round(portX + contentShiftX)}

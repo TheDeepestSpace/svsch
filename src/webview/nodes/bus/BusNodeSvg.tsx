@@ -26,6 +26,7 @@ import {
   SvgStructFieldAnnotation,
   getSvgStructFieldAnnotation,
 } from '../shared/labels';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function BusNodeSvg({
   node,
@@ -145,13 +146,10 @@ export function BusNodeSvg({
     const titleLabelX = Math.round(typeName ? titleStartX : width / 2);
     const titleTypeX = Math.round(titleStartX + titleLabelWidth + titleGap);
 
-    const skinClassName =
-      `hdl-interface-skin` +
-      `${topPorts.length > 0 ? ' hdl-interface-skin-with-tophat' : ''}` +
-      `${bottomPorts.length > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`;
-
     return (
-      <g className={skinClassName}>
+      <g
+        className={`hdl-interface-skin${topPorts.length > 0 ? ' hdl-interface-skin-with-tophat' : ''}${bottomPorts.length > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`}
+      >
         <path className="hdl-interface-skin-body" d={skinPath} />
         <path className="hdl-interface-skin-selection" d={skinPath} />
         <text
@@ -166,9 +164,7 @@ export function BusNodeSvg({
         {typeName && (
           <>
             <text
-              className={`svsch-type-label svsch-interface-type-label${
-                typeSource ? ' svsch-svg-link' : ''
-              }`}
+              className={`svsch-type-label svsch-interface-type-label${typeSource ? ' svsch-svg-link' : ''}`}
               x={titleTypeX}
               y={titleY}
               dominantBaseline="middle"
@@ -198,14 +194,10 @@ export function BusNodeSvg({
             annotation,
             hideInterfaceSuffix: isInterface,
           });
-          const sideLabelClassName =
-            `svsch-interface-side-label svsch-interface-side-left` +
-            `${port.width === 'interface' ? ' svsch-interface-side-modport-label' : ''}` +
-            `${port.source ? ' svsch-svg-link' : ''}`;
           return (
             <React.Fragment key={port.id}>
               <text
-                className={sideLabelClassName}
+                className={`svsch-interface-side-label svsch-interface-side-left${port.width === 'interface' ? ' svsch-interface-side-modport-label' : ''}${port.source ? ' svsch-svg-link' : ''}`}
                 data-port-id={port.id}
                 x={g * 0.75}
                 y={leftCenters[i]}
@@ -236,14 +228,10 @@ export function BusNodeSvg({
             annotation,
             hideInterfaceSuffix: isInterface,
           });
-          const sideLabelClassName =
-            `svsch-interface-side-label svsch-interface-side-right` +
-            `${port.width === 'interface' ? ' svsch-interface-side-modport-label' : ''}` +
-            `${port.source ? ' svsch-svg-link' : ''}`;
           return (
             <React.Fragment key={port.id}>
               <text
-                className={sideLabelClassName}
+                className={`svsch-interface-side-label svsch-interface-side-right${port.width === 'interface' ? ' svsch-interface-side-modport-label' : ''}${port.source ? ' svsch-svg-link' : ''}`}
                 data-port-id={port.id}
                 x={width - g * 0.75}
                 y={rightCenters[i]}
@@ -302,10 +290,7 @@ export function BusNodeSvg({
   }
 
   const sidePorts: DiagramPort[] = aggregatePorts;
-  const aggregateInputs: DiagramPort[] = sidePorts.filter(
-    (p: DiagramPort) =>
-      p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-  );
+  const aggregateInputs: DiagramPort[] = sidePorts.filter(isInputSidePort);
   const aggregateOutputs: DiagramPort[] = sidePorts.filter(
     (p: DiagramPort) => p.direction === 'output',
   );
@@ -478,8 +463,7 @@ export function BusNodeSvg({
           ? port.preferredSide === 'right' || port.direction === 'output'
           : !isComposition;
         const interfaceFieldClass = isInterface
-          ? ` svsch-interface-field-label ` +
-            `${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}`
+          ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}`
           : '';
         // Tap lines mirror the connected wire's weight: multi-bit (or typedef)
         // ports draw thick, scalars stay thin. Interface/modport fields keep

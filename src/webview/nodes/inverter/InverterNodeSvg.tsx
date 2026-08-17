@@ -6,6 +6,7 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
+import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
 export function InverterNodeSvg({
   node,
@@ -20,7 +21,12 @@ export function InverterNodeSvg({
     (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
-  const inputs = node.ports.filter((p: DiagramPort) => p.direction !== 'output');
+  const hasInputSideConnection = (port: DiagramPort): boolean =>
+    hasArrayConnection(port.id, 'target') ||
+    (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+  const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
+    hasArrayConnection(port.id, 'target') ? 'target' : 'source';
+  const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const g = diagramSizing.gridSize;
   const side = g;
@@ -33,16 +39,13 @@ export function InverterNodeSvg({
   const path = `M 0 ${triTop} L ${bodyRight} ${midY} L 0 ${triBottom} Z`;
   const bubbleCx = bodyRight + bubbleGap + bubbleRadius;
 
-  const arrayLayerClassName = (layerId: string) =>
-    `hdl-node-array-layer hdl-node-array-${layerId} svsch-array-layer-${layerId}`;
-
   return (
     <>
       {isArray &&
         skinLayers.map((layer) => (
           <g
             key={layer.id}
-            className={arrayLayerClassName(layer.id)}
+            className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
             transform={`translate(${layer.dx}, ${layer.dy})`}
             opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
           >
@@ -59,10 +62,10 @@ export function InverterNodeSvg({
       />
 
       {/* Array stack leads */}
-      {isArray && inputs[0] && hasArrayConnection(inputs[0].id, 'target') && (
+      {isArray && inputs[0] && hasInputSideConnection(inputs[0]) && (
         <SvgArrayStackLeads
           wide={stackWide}
-          thick={arrayConnectionThick(inputs[0].id, 'target')}
+          thick={arrayConnectionThick(inputs[0].id, inputSideRole(inputs[0]))}
           side="left"
           width={_width}
           y={height / 2}

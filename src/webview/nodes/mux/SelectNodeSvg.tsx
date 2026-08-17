@@ -13,6 +13,7 @@ import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import type { DiagramPort } from '../../../ir/types';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function SelectNodeSvg({
   node,
@@ -29,10 +30,7 @@ export function SelectNodeSvg({
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
-  const inputs: DiagramPort[] = node.ports.filter(
-    (p: DiagramPort) =>
-      p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-  );
+  const inputs: DiagramPort[] = node.ports.filter(isInputSidePort);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
 
   const muxTopPorts: DiagramPort[] = inputs.filter(
@@ -92,19 +90,14 @@ export function SelectNodeSvg({
           .map((layer) => (
             <path
               key={layer.id}
-              className={
-                `svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} ` +
-                `svsch-array-layer-${layer.id}`
-              }
+              className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
               transform={`translate(${layer.dx}, ${layer.dy})`}
               d={trapPath}
               opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
             />
           ))}
       <path
-        className={`svsch-node-shape hdl-node-select node-skin-body${
-          isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''
-        }`}
+        className={`svsch-node-shape hdl-node-select node-skin-body${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={bodyTransform}
         d={trapPath}
       />
@@ -123,9 +116,7 @@ export function SelectNodeSvg({
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
               <line
-                className={`svsch-mux-select-lead${
-                  portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''
-                }`}
+                className={`svsch-mux-select-lead${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`}
                 x1={Math.round(portX + contentShiftX)}
                 y1={Math.round(g + contentShiftY)}
                 x2={Math.round(portX + contentShiftX)}

@@ -17,6 +17,7 @@ import {
   resolvedNodeDimensions,
 } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
+import { isInputSidePort } from '../diagram/portDirection';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
@@ -184,12 +185,12 @@ function renderDefs(): string {
     '    <stop offset="50%" stop-color="var(--svsch-edge-stacked-middle)" />',
     '    <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />',
     '  </linearGradient>',
-    '  <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10"' +
-      ' patternTransform="rotate(45)">',
+    // eslint-disable-next-line max-len
+    '  <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
     '    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />',
     '  </pattern>',
-    '  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10"' +
-      ' patternTransform="rotate(45)">',
+    // eslint-disable-next-line max-len
+    '  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
     '    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />',
     '  </pattern>',
     '</defs>',
@@ -199,9 +200,6 @@ function renderDefs(): string {
 // Export-only bridge: keep the SVG root transparent and fill small gaps where the
 // webview CSS targets HTML wrappers rather than the pure exported SVG tree.
 export function svgBridgeCss(): string {
-  const errorHighlightFill =
-    'var(--svsch-error-highlight-fill, ' +
-    'color-mix(in srgb, var(--vscode-charts-red) 9%, transparent))';
   return `
 .svsch-diagram { background: none; }
 .svsch-net-label {
@@ -267,13 +265,13 @@ export function svgBridgeCss(): string {
   stroke: var(--vscode-charts-orange);
 }
 .svsch-generate-region-invalid .svsch-generate-region-box {
-  fill: ${errorHighlightFill};
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
   stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
 .svsch-generate-block.svsch-generate-region-invalid .svsch-generate-region-box {
-  fill: ${errorHighlightFill};
+  fill: var(--svsch-error-highlight-fill, color-mix(in srgb, var(--vscode-charts-red) 9%, transparent));
   stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
   stroke-dasharray: 7 5;
   stroke-width: 2;
@@ -299,14 +297,10 @@ function renderGenerateRegion(region: PositionedGenerateRegion): string {
   return [
     `<g class="${escapeAttr(classes)}" data-region-id="${escapeAttr(region.id)}">`,
     region.warningNote ? `<title>${escapeXml(region.warningNote)}</title>` : '',
-    `<rect class="svsch-generate-region-box" x="${formatNumber(region.bounds.x)}" ` +
-      `y="${formatNumber(region.bounds.y)}" width="${formatNumber(region.bounds.width)}" ` +
-      `height="${formatNumber(region.bounds.height)}" />`,
-    `<text class="svsch-generate-region-label" x="${formatNumber(labelX)}" ` +
-      `y="${formatNumber(labelY + 9)}">${escapeXml(region.label)}</text>`,
+    `<rect class="svsch-generate-region-box" x="${formatNumber(region.bounds.x)}" y="${formatNumber(region.bounds.y)}" width="${formatNumber(region.bounds.width)}" height="${formatNumber(region.bounds.height)}" />`,
+    `<text class="svsch-generate-region-label" x="${formatNumber(labelX)}" y="${formatNumber(labelY + 9)}">${escapeXml(region.label)}</text>`,
     region.warningNote
-      ? `<text class="svsch-generate-region-warning" x="${formatNumber(warningX)}" ` +
-        `y="${formatNumber(warningY)}" text-anchor="end">⚠</text>`
+      ? `<text class="svsch-generate-region-warning" x="${formatNumber(warningX)}" y="${formatNumber(warningY)}" text-anchor="end">⚠</text>`
       : '',
     '</g>',
   ]
@@ -325,8 +319,8 @@ function renderEdgeGeometry(
     return undefined;
   }
 
-  const sourcePort = connectionPortGeometry(source, edge.sourcePort);
-  const targetPort = connectionPortGeometry(target, edge.targetPort);
+  const sourcePort = connectionPortGeometry(source, edge.sourcePort, 'source');
+  const targetPort = connectionPortGeometry(target, edge.targetPort, 'target');
   if (!sourcePort || !targetPort) {
     return undefined;
   }
@@ -464,7 +458,8 @@ function sideToHdlPosition(side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'): HdlPositi
 
 function connectionPortGeometry(
   node: PositionedNode,
-  portId?: string,
+  portId: string | undefined,
+  role: 'source' | 'target',
 ): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
   if (node.kind === 'netLabel') {
     const { width, height } = diagramNodeDimensions(node);
@@ -480,7 +475,7 @@ function connectionPortGeometry(
         return { offset: { x: 0, y: height / 2 }, side: 'WEST' };
     }
   }
-  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId);
+  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId, false, role);
 }
 
 function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
@@ -576,10 +571,7 @@ function renderEdge(rendered: RenderedEdge): string {
         )
       : '',
   ].filter(Boolean);
-  return (
-    `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">` +
-    `${content.join('\n')}</g>`
-  );
+  return `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">${content.join('\n')}</g>`;
 }
 
 function renderEdgePaths(rendered: RenderedEdge): string[] {
@@ -661,9 +653,7 @@ function renderPromotedStackFanout(rendered: RenderedEdge, fanout: PromotedStack
   return [
     [
       '<defs>',
-      `<linearGradient id="${escapeAttr(gradientId)}" gradientUnits="userSpaceOnUse" ` +
-        `x1="${formatNumber(fanout.barStart.x)}" y1="${formatNumber(fanout.barStart.y)}" ` +
-        `x2="${formatNumber(fanout.barEnd.x)}" y2="${formatNumber(fanout.barEnd.y)}">`,
+      `<linearGradient id="${escapeAttr(gradientId)}" gradientUnits="userSpaceOnUse" x1="${formatNumber(fanout.barStart.x)}" y1="${formatNumber(fanout.barStart.y)}" x2="${formatNumber(fanout.barEnd.x)}" y2="${formatNumber(fanout.barEnd.y)}">`,
       '<stop offset="0%" class="svsch-stack-gradient-front-stop" />',
       '<stop offset="50%" class="svsch-stack-gradient-middle-stop" />',
       '<stop offset="100%" class="svsch-stack-gradient-back-stop" />',
@@ -689,13 +679,13 @@ function renderPromotedStackFanout(rendered: RenderedEdge, fanout: PromotedStack
       false,
       `stroke: url(#${gradientId})`,
     ),
-    ...fanout.branches.map((branch) => {
-      const branchClass =
-        `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ` +
-        `${stackedLayerEdgeClass(branch.layerId)}` +
-        `${rendered.isThickWire ? ' svsch-edge-thick' : ''}`;
-      return edgePath(rendered, branchClass, branch.path);
-    }),
+    ...fanout.branches.map((branch) =>
+      edgePath(
+        rendered,
+        `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
+        branch.path,
+      ),
+    ),
   ];
 }
 
@@ -706,9 +696,7 @@ function renderConvergingStackPaths(rendered: RenderedEdge): string[] {
       ...rendered.convergingStackPaths.map((stackPath) => {
         const gradientId = convergingStackGradientId(rendered, stackPath.layerId);
         return [
-          `<linearGradient id="${escapeAttr(gradientId)}" gradientUnits="userSpaceOnUse" ` +
-            `x1="${formatNumber(stackPath.start.x)}" y1="${formatNumber(stackPath.start.y)}" ` +
-            `x2="${formatNumber(stackPath.end.x)}" y2="${formatNumber(stackPath.end.y)}">`,
+          `<linearGradient id="${escapeAttr(gradientId)}" gradientUnits="userSpaceOnUse" x1="${formatNumber(stackPath.start.x)}" y1="${formatNumber(stackPath.start.y)}" x2="${formatNumber(stackPath.end.x)}" y2="${formatNumber(stackPath.end.y)}">`,
           `<stop offset="0%" class="${stackedLayerGradientStopClass(stackPath.layerId)}" />`,
           '<stop offset="78%" class="svsch-stack-gradient-regular-stop" />',
           '<stop offset="100%" class="svsch-stack-gradient-regular-stop" />',
@@ -739,21 +727,16 @@ function renderConvergingStackPaths(rendered: RenderedEdge): string[] {
 }
 
 function renderJumpHalos(rendered: RenderedEdge): string[] {
-  return rendered.jumpHalos.map((halo, index) => {
-    const strokeWidth = formatNumber(halo.strokeWidth);
-    return (
-      `<path class="svsch-edge-jump-halo" d="${escapeAttr(halo.path)}" ` +
-      `style="stroke-width: ${strokeWidth}" data-edge-id="${escapeAttr(rendered.edge.id)}" ` +
-      `data-jump-index="${index}" />`
-    );
-  });
+  return rendered.jumpHalos.map(
+    (halo, index) =>
+      `<path class="svsch-edge-jump-halo" d="${escapeAttr(halo.path)}" style="stroke-width: ${formatNumber(halo.strokeWidth)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-jump-index="${index}" />`,
+  );
 }
 
 function renderOverlapHints(rendered: RenderedEdge): string[] {
   return rendered.overlapHints.map(
     (hint) =>
-      `<path class="svsch-edge-overlap-hint" d="${escapeAttr(hint.path)}" ` +
-      `data-edge-id="${escapeAttr(rendered.edge.id)}" data-overlap-id="${escapeAttr(hint.id)}" />`,
+      `<path class="svsch-edge-overlap-hint" d="${escapeAttr(hint.path)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-overlap-id="${escapeAttr(hint.id)}" />`,
   );
 }
 
@@ -777,28 +760,14 @@ function renderNetJunctions(rendered: RenderedEdge): string[] {
             { layer: junctionLayers.middle, opacity: 0.75 },
             { layer: junctionLayers.back, opacity: 0.5 },
           ];
-        })().map(({ layer, opacity }) => {
-          const cx = formatNumber(junction.x + layer.dx);
-          const cy = formatNumber(junction.y + layer.dy);
-          return (
-            `<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="${cx}" ` +
-            `cy="${cy}" r="2.15" style="opacity: ${opacity}" />`
-          );
-        }),
+        })().map(
+          ({ layer, opacity }) =>
+            `<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="${formatNumber(junction.x + layer.dx)}" cy="${formatNumber(junction.y + layer.dy)}" r="2.15" style="opacity: ${opacity}" />`,
+        ),
         '</g>',
       ].join('\n');
     }
-    const junctionClass =
-      `svsch-edge-junction` +
-      `${rendered.isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}` +
-      `${rendered.isStructAggregate ? ' svsch-edge-junction-struct' : ''}`;
-    const isAggregate = rendered.isInterfaceAggregate || rendered.isStructAggregate;
-    const junctionRadius = isAggregate ? '6.5' : '4.75';
-    return (
-      `<circle class="${junctionClass}" cx="${formatNumber(junction.x)}" ` +
-      `cy="${formatNumber(junction.y)}" r="${junctionRadius}" ` +
-      `data-junction-id="${escapeAttr(junction.id)}" />`
-    );
+    return `<circle class="svsch-edge-junction${rendered.isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}${rendered.isStructAggregate ? ' svsch-edge-junction-struct' : ''}" cx="${formatNumber(junction.x)}" cy="${formatNumber(junction.y)}" r="${rendered.isInterfaceAggregate || rendered.isStructAggregate ? '6.5' : '4.75'}" data-junction-id="${escapeAttr(junction.id)}" />`;
   });
 }
 
@@ -873,12 +842,7 @@ function convergingStackGradientId(rendered: RenderedEdge, layerId: ArrayStackLa
 }
 
 function aggregateInputs(node: PositionedNode): DiagramPort[] {
-  return node.ports
-    .filter(
-      (port) =>
-        port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-    )
-    .filter((port) => port.width !== 'interface');
+  return node.ports.filter(isInputSidePort).filter((port) => port.width !== 'interface');
 }
 
 function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
@@ -903,8 +867,7 @@ function renderEdgeLabel(
   const point = pointNearPathStart(points) ?? { x: 0, y: 0 };
   const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
   const aliasMarker = hasAliases
-    ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ` +
-      `${escapeXml(aliasNames!.join(', '))}</title></tspan>`
+    ? `<tspan class="hdl-net-label-alias-marker" dy="-4">*<title>Also declared as: ${escapeXml(aliasNames!.join(', '))}</title></tspan>`
     : '';
   // Unlike the edge path (dimmed per-<path> via edgePath()'s own class list),
   // this text sits outside that per-path styling, so the same inactive-arm
@@ -918,10 +881,7 @@ function renderEdgeLabel(
   // Left-anchored at the lead point (matching the webview) rather than
   // centered on it, so the text grows away from the block the wire just
   // left instead of overlapping back into it.
-  return (
-    `<text class="${escapeAttr(classes)}" x="${formatNumber(point.x)}" ` +
-    `y="${formatNumber(point.y - 6)}" text-anchor="start">${escapeXml(label)}${aliasMarker}</text>`
-  );
+  return `<text class="${escapeAttr(classes)}" x="${formatNumber(point.x)}" y="${formatNumber(point.y - 6)}" text-anchor="start">${escapeXml(label)}${aliasMarker}</text>`;
 }
 
 function renderNode(node: PositionedNode): string;
@@ -982,10 +942,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textX = align === 'end' ? width - textPad : textPad;
     const textAnchor = align === 'end' ? 'end' : 'start';
     const textClass = `svsch-net-label${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`;
-    const textHtml =
-      `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" ` +
-      `y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">` +
-      `${escapeXml(node.label)}</text>`;
+    const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
     const content =
       wirePaths +
@@ -1002,12 +959,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     ]
       .filter(Boolean)
       .join(' ');
-    return (
-      `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" ` +
-      `data-node-kind="${escapeAttr(node.kind)}" ` +
-      `transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">` +
-      `${content}</g>`
-    );
+    return `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
   }
 
   const classes = nodeWrapperClasses(node);
@@ -1021,11 +973,8 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     .join(' ');
   const content = renderNodeComponent(node, width, height, arrayConnections);
   return [
-    `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" ` +
-      `data-node-kind="${escapeAttr(node.kind)}" ` +
-      `transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">`,
-    `<svg class="${escapeAttr(svgClasses)}" width="${formatNumber(width)}" ` +
-      `height="${formatNumber(height)}" aria-hidden="true">`,
+    `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">`,
+    `<svg class="${escapeAttr(svgClasses)}" width="${formatNumber(width)}" height="${formatNumber(height)}" aria-hidden="true">`,
     content,
     '</svg>',
     nodeErrorOutline(node, width, height),
@@ -1042,10 +991,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
 function nodeErrorOutline(node: PositionedNode, width: number, height: number): string {
   if (!node.invalid) return '';
   if (nodeUsesSvgSelectionOutline(node)) return '';
-  return (
-    `<rect class="svsch-node-error-outline" x="-1.25" y="-1.25" ` +
-    `width="${formatNumber(width + 2.5)}" height="${formatNumber(height + 2.5)}" />`
-  );
+  return `<rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="${formatNumber(width + 2.5)}" height="${formatNumber(height + 2.5)}" />`;
 }
 
 function nodeWarningIcon(node: PositionedNode, width: number, height: number): string {
@@ -1225,7 +1171,8 @@ function nodeWrapperClasses(node: PositionedNode): string {
       port?.typeName?.endsWith('_if') ||
       port?.typeName?.endsWith('if'),
     );
-    const isSkinnedPort = direction === 'input' || direction === 'output' || isInterfacePort;
+    const isSkinnedPort =
+      direction === 'input' || direction === 'output' || direction === 'inout' || isInterfacePort;
     return [
       'svsch-node',
       'hdl-node',
@@ -1275,10 +1222,7 @@ function busWrapperClasses(node: PositionedNode): string {
           port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'),
       )
     : aggregatePorts;
-  const aggregateInputs = sidePorts.filter(
-    (port) =>
-      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
-  );
+  const aggregateInputs = sidePorts.filter(isInputSidePort);
   const isComposition =
     node.kind === 'struct'
       ? role === 'composition'

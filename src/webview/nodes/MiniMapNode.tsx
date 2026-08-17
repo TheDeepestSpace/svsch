@@ -12,6 +12,7 @@ import { structRole, nodeTypeName, gateBodyOperation, gateIsNegated } from '../.
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
+import { isInputSidePort } from '../../diagram/portDirection';
 
 export function MiniMapNode({
   id,
@@ -59,9 +60,7 @@ export function MiniMapNode({
       : (node.ports ?? []);
 
     const sidePorts = aggregatePorts;
-    const aggregateInputs = sidePorts.filter(
-      (p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown',
-    );
+    const aggregateInputs = sidePorts.filter(isInputSidePort);
     const aggregateOutputs = sidePorts.filter((p) => p.direction === 'output');
 
     const isComposition = isStruct
@@ -155,13 +154,11 @@ export function MiniMapNode({
   if (node.kind === 'port') {
     const portDirection = node.ports[0]?.direction ?? 'unknown';
     if (portDirection === 'input') {
-      path =
-        `M ${x} ${y} H ${x + width - noseLength} L ${x + width} ${midY} ` +
-        `L ${x + width - noseLength} ${y + height} H ${x} Z`;
+      path = `M ${x} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x} Z`;
     } else if (portDirection === 'output') {
-      path =
-        `M ${x + noseLength} ${y} H ${x + width} V ${y + height} ` +
-        `H ${x + noseLength} L ${x} ${midY} Z`;
+      path = `M ${x + noseLength} ${y} H ${x + width} V ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
+    } else if (portDirection === 'inout') {
+      path = `M ${x + noseLength} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
     }
   } else if (node.kind === 'mux' || node.kind === 'alu') {
     const totalHeight = diagramNodeDimensions(node).height;
@@ -180,10 +177,7 @@ export function MiniMapNode({
       const deltaY = slope * notchX;
       const notchTopY = midY - deltaY;
       const notchBottomY = midY + deltaY;
-      path =
-        `M ${x} ${y} L ${x + width} ${rightTop} V ${rightBottom} ` +
-        `L ${x} ${y + height} V ${notchBottomY} ` +
-        `L ${x + notchX} ${midY} L ${x} ${notchTopY} Z`;
+      path = `M ${x} ${y} L ${x + width} ${rightTop} V ${rightBottom} L ${x} ${y + height} V ${notchBottomY} L ${x + notchX} ${midY} L ${x} ${notchTopY} Z`;
     }
   } else if (node.kind === 'inverter') {
     const side = height / 2;

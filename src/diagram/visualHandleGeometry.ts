@@ -10,6 +10,7 @@ import {
   interfaceTopPortX,
   orderedInterfaceSidePorts,
 } from './interfaceGeometry';
+import { isInputSidePort } from './portDirection';
 
 export type VisualHandleSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 
@@ -48,12 +49,7 @@ function busSingleHandleGeometry(
   port: DiagramPort,
 ): VisualHandleGeometry | undefined {
   const role = structRole(node);
-  const inputs = node.ports.filter(
-    (candidate) =>
-      candidate.direction === 'input' ||
-      candidate.direction === 'inout' ||
-      candidate.direction === 'unknown',
-  );
+  const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((candidate) => candidate.direction === 'output');
   const isComposition = node.kind === 'struct' ? role === 'composition' : inputs.length > 1;
   const singlePort = isComposition ? outputs[0] : inputs[0];

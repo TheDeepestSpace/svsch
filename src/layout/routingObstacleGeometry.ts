@@ -56,9 +56,12 @@ export function routingObstacleMargins(
 
   // A terminal's lead already reserves the connection side. Keep one full
   // grid clear behind the port so returning feedback routes do not hug it.
+  // An inout boundary port has leads on BOTH sides (driven from the left,
+  // read from the right) — neither side is a "dead" back to pad behind.
+  const isDualSided = portSides.includes('WEST') && portSides.includes('EAST');
   return {
-    left: portSides.includes('EAST') ? diagramSizing.gridSize : 0,
-    right: portSides.includes('WEST') ? diagramSizing.gridSize : 0,
+    left: !isDualSided && portSides.includes('EAST') ? diagramSizing.gridSize : 0,
+    right: !isDualSided && portSides.includes('WEST') ? diagramSizing.gridSize : 0,
     ...vertical,
   };
 }

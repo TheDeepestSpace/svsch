@@ -23,6 +23,11 @@ describe('SVG Skin Geometry', () => {
       const path = portSkinPath('harness', 192, 24, 24, 12);
       expect(path).toBe('M 12 0 H 180 L 192 12 L 180 24 H 12 L 0 12 Z');
     });
+
+    it('generates a double-chevron for bidirectional ports', () => {
+      const path = portSkinPath('inout', 192, 24, 24, 12);
+      expect(path).toBe('M 12 0 H 180 L 192 12 L 180 24 H 12 L 0 12 Z');
+    });
   });
 
   describe('interfaceSkinPath', () => {

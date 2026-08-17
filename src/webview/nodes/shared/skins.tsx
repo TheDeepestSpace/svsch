@@ -1,6 +1,10 @@
 import React from 'react';
 import { diagramSizing } from '../../../diagram/constants';
-import { portSkinPath, interfaceSkinPath } from '../../../diagram/interfaceGeometry';
+import {
+  portSkinPath,
+  interfaceSkinPath,
+  type PortSkinDirection,
+} from '../../../diagram/interfaceGeometry';
 import { arrayStackLayer, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 
 export function muxSkinPath(width: number, height: number): string {
@@ -42,7 +46,7 @@ export function PortSkin({
   arrayWide = false,
 }: {
   title: React.ReactNode;
-  direction: 'input' | 'output' | 'harness';
+  direction: PortSkinDirection;
   width: number;
   isArray?: boolean;
   arrayWide?: boolean;
@@ -123,10 +127,7 @@ export function InterfaceSkin({
 
   return (
     <svg
-      className={
-        `hdl-interface-skin${topPortCount > 0 ? ' hdl-interface-skin-with-tophat' : ''}` +
-        `${bottomPortCount > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`
-      }
+      className={`hdl-interface-skin${topPortCount > 0 ? ' hdl-interface-skin-with-tophat' : ''}${bottomPortCount > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`}
       viewBox={`0 0 ${width} ${height}`}
       style={{ overflow: 'visible' }}
       preserveAspectRatio="none"
@@ -192,7 +193,7 @@ export function MuxArrayLayers({
 }
 
 export function arrayStackSelectionPath(
-  kind: 'rect' | 'mux' | 'input' | 'output' | 'harness',
+  kind: 'rect' | 'mux' | PortSkinDirection,
   width: number,
   height: number,
   wide = false,
@@ -215,7 +216,7 @@ export function arrayStackSelectionPath(
     ].join(' ');
   }
 
-  if (kind === 'input' || kind === 'output' || kind === 'harness') {
+  if (kind === 'input' || kind === 'output' || kind === 'inout' || kind === 'harness') {
     const skinHeight = diagramSizing.portSkinHeight;
     const noseLength = diagramSizing.portNoseLength;
     const top = (height - skinHeight) / 2;
@@ -247,7 +248,7 @@ export function arrayStackSelectionPath(
       ].join(' ');
     }
 
-    if (kind === 'harness') {
+    if (kind === 'inout' || kind === 'harness') {
       return [
         `M ${front.dx} ${midY + front.dy}`,
         `L ${noseLength + front.dx} ${top + front.dy}`,
@@ -278,7 +279,7 @@ export function ArrayStackSelection({
   height,
   wide = false,
 }: {
-  kind: 'rect' | 'mux' | 'input' | 'output' | 'harness';
+  kind: 'rect' | 'mux' | PortSkinDirection;
   width: number;
   height: number;
   wide?: boolean;
