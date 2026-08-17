@@ -865,7 +865,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 1188
+        "y": 1164
       },
       "width": 288,
       "height": 24,
@@ -1462,7 +1462,7 @@
       "target": "comparator:register_file:if_sel_n9_in1:n11:expr",
       "sourceHandle": "port:rd_addr",
       "targetHandle": "port:lhs",
-      "path": "M 312 1200 L 336 1200 L 471 1200 Q 480 1191 489 1200 L 528 1200 L 552 1200"
+      "path": "M 312 1176 L 336 1176 L 471 1176 Q 480 1167 489 1176 L 528 1176 L 528 1200 L 552 1200"
     },
     {
       "id": "edge:port:register_file:rd_addr:comparator:register_file:regs_en_sel_in1:n13:expr:rd_addr",
@@ -1470,7 +1470,7 @@
       "target": "comparator:register_file:regs_en_sel_in1:n13:expr",
       "sourceHandle": "port:rd_addr",
       "targetHandle": "port:lhs",
-      "path": "M 312 1200 L 336 1200 L 471 1200 Q 480 1191 489 1200 L 528 1200 L 528 1464 L 552 1464"
+      "path": "M 312 1176 L 336 1176 L 471 1176 Q 480 1167 489 1176 L 528 1176 L 528 1464 L 552 1464"
     },
     {
       "id": "edge:port:register_file:rd_addr:comparator:register_file:regs_en_sel_in1:n15:expr:rd_addr",
@@ -1478,7 +1478,7 @@
       "target": "comparator:register_file:regs_en_sel_in1:n15:expr",
       "sourceHandle": "port:rd_addr",
       "targetHandle": "port:lhs",
-      "path": "M 312 1200 L 336 1200 L 471 1200 Q 480 1191 489 1200 L 528 1200 L 528 1344 L 552 1344"
+      "path": "M 312 1176 L 336 1176 L 471 1176 Q 480 1167 489 1176 L 528 1176 L 528 1344 L 552 1344"
     },
     {
       "id": "edge:port:register_file:rd_addr:mux:register_file:regs_addr:rd_addr:rd_addr",
@@ -1486,7 +1486,7 @@
       "target": "mux:register_file:regs_addr:rd_addr",
       "sourceHandle": "port:rd_addr",
       "targetHandle": "sel",
-      "path": "M 312 1200 L 528 1200 L 528 1152 L 864 1152 L 864 1128 L 2424 1128 L 2424 1320"
+      "path": "M 312 1176 L 528 1176 L 528 1152 L 864 1152 L 864 1128 L 2424 1128 L 2424 1320"
     },
     {
       "id": "edge:port:register_file:reg_write:gate:register_file:if_sel_n9:n10:and:reg_write",

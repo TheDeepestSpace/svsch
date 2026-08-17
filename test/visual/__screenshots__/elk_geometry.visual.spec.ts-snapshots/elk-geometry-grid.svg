@@ -2964,9 +2964,9 @@ path.port-skin-body.port-skin-harness {
 <rect x="432" y="1008" width="144" height="96" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
 <rect x="432" y="996" width="144" height="120" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
 <text x="432" y="988" fill="#a855f7" font-size="13" font-family="monospace">comparator</text>
-<line x1="456" y1="1056" x2="432" y2="1056" stroke="#fb7a1f" stroke-width="1.75" />
-<circle cx="456" cy="1056" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
-<circle cx="432" cy="1056" r="7" fill="#fb7a1f" fill-opacity="0.9" />
+<line x1="456" y1="1032" x2="432" y2="1032" stroke="#fb7a1f" stroke-width="1.75" />
+<circle cx="456" cy="1032" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
+<circle cx="432" cy="1032" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <line x1="456" y1="1080" x2="432" y2="1080" stroke="#fb7a1f" stroke-width="1.75" />
 <circle cx="456" cy="1080" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
 <circle cx="432" cy="1080" r="7" fill="#fb7a1f" fill-opacity="0.9" />
@@ -2976,12 +2976,12 @@ path.port-skin-body.port-skin-harness {
 <rect x="648" y="1008" width="96" height="48" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
 <rect x="648" y="996" width="96" height="72" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
 <text x="648" y="988" fill="#a855f7" font-size="13" font-family="monospace">zext</text>
-<line x1="672" y1="1056" x2="648" y2="1056" stroke="#fb7a1f" stroke-width="1.75" />
-<circle cx="672" cy="1056" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
-<circle cx="648" cy="1056" r="7" fill="#fb7a1f" fill-opacity="0.9" />
-<line x1="720" y1="1056" x2="744" y2="1056" stroke="#fb7a1f" stroke-width="1.75" />
-<circle cx="720" cy="1056" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
-<circle cx="744" cy="1056" r="7" fill="#fb7a1f" fill-opacity="0.9" />
+<line x1="672" y1="1032" x2="648" y2="1032" stroke="#fb7a1f" stroke-width="1.75" />
+<circle cx="672" cy="1032" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
+<circle cx="648" cy="1032" r="7" fill="#fb7a1f" fill-opacity="0.9" />
+<line x1="720" y1="1032" x2="744" y2="1032" stroke="#fb7a1f" stroke-width="1.75" />
+<circle cx="720" cy="1032" r="5" fill="none" stroke="#fb7a1f" stroke-width="2" />
+<circle cx="744" cy="1032" r="7" fill="#fb7a1f" fill-opacity="0.9" />
 <rect x="816" y="1008" width="144" height="120" fill="none" stroke="#ff5f9e" stroke-width="1.5" stroke-dasharray="6 4" />
 <rect x="816" y="1008" width="144" height="132" fill="none" stroke="#a855f7" stroke-width="1.75" stroke-dasharray="7 5" />
 <text x="816" y="1000" fill="#a855f7" font-size="13" font-family="monospace">select</text>

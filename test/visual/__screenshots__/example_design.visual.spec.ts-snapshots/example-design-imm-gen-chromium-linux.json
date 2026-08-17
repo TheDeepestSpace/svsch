@@ -150,7 +150,7 @@
       "type": "hdl",
       "position": {
         "x": 1440,
-        "y": 204
+        "y": 228
       },
       "width": 96,
       "height": 24,
@@ -170,7 +170,7 @@
       "type": "hdl",
       "position": {
         "x": 1752,
-        "y": 96
+        "y": 120
       },
       "width": 192,
       "height": 144,
@@ -215,7 +215,7 @@
       "type": "hdl",
       "position": {
         "x": 2160,
-        "y": 156
+        "y": 180
       },
       "width": 216,
       "height": 24,
@@ -330,7 +330,7 @@
       "type": "hdl",
       "position": {
         "x": 1488,
-        "y": 48
+        "y": 72
       },
       "width": 48,
       "height": 48,
@@ -355,7 +355,7 @@
       "type": "hdl",
       "position": {
         "x": 1488,
-        "y": 120
+        "y": 144
       },
       "width": 48,
       "height": 48,
@@ -408,7 +408,7 @@
       "target": "zext:imm_gen:imm_4_b0100:imm_4_b0100_zext_n16",
       "sourceHandle": "out:imm_4_b0100",
       "targetHandle": "port:in",
-      "path": "M 1248 48 L 1272 48 L 1368 48 L 1368 72 L 1464 72 L 1488 72"
+      "path": "M 1248 48 L 1272 48 L 1368 48 L 1368 96 L 1464 96 L 1488 96"
     },
     {
       "id": "edge:bus:imm_gen:imm_4_b0111:expr:zext:imm_gen:imm_4_b0111:imm_4_b0111_zext_n17:imm_4_b0111",
@@ -416,7 +416,7 @@
       "target": "zext:imm_gen:imm_4_b0111:imm_4_b0111_zext_n17",
       "sourceHandle": "out:imm_4_b0111",
       "targetHandle": "port:in",
-      "path": "M 1248 168 L 1272 168 L 1464 168 L 1464 144 L 1488 144"
+      "path": "M 1248 168 L 1272 168 L 1464 168 L 1488 168"
     },
     {
       "id": "edge:bus:imm_gen:imm_4_b1000:expr:zext:imm_gen:imm_4_b1000:imm_4_b1000_zext_n18:imm_4_b1000",
@@ -456,7 +456,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:_11:8_",
       "targetHandle": "sel",
-      "path": "M 528 144 L 552 144 L 648 144 L 648 105 Q 657 96 648 87 L 648 0 L 1848 0 L 1848 72 L 1848 120"
+      "path": "M 528 144 L 552 144 L 648 144 L 648 105 Q 657 96 648 87 L 648 0 L 1848 0 L 1848 96 L 1848 144"
     },
     {
       "id": "edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:instr_3_",
@@ -488,7 +488,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_default",
       "targetHandle": "in:default",
-      "path": "M 1536 216 L 1560 216 L 1728 216 L 1752 216"
+      "path": "M 1536 240 L 1560 240 L 1728 240 L 1752 240"
     },
     {
       "id": "edge:mux:imm_gen:imm:instr_11:8_:imm:port:imm_gen:imm:imm",
@@ -496,7 +496,7 @@
       "target": "port:imm_gen:imm",
       "sourceHandle": "out",
       "targetHandle": "port:imm",
-      "path": "M 1944 168 L 1968 168 L 2136 168 L 2160 168"
+      "path": "M 1944 192 L 1968 192 L 2136 192 L 2160 192"
     },
     {
       "id": "edge:port:imm_gen:instr:bus:imm_gen:instr:instr",
@@ -536,7 +536,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_4_b0100_zext_n16",
       "targetHandle": "in:4_b0100",
-      "path": "M 1536 72 L 1560 72 L 1656 72 L 1656 144 L 1728 144 L 1752 144"
+      "path": "M 1536 96 L 1560 96 L 1656 96 L 1656 168 L 1728 168 L 1752 168"
     },
     {
       "id": "edge:zext:imm_gen:imm_4_b0111:imm_4_b0111_zext_n17:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0111_zext_n17",
@@ -544,7 +544,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_4_b0111_zext_n17",
       "targetHandle": "in:4_b0111",
-      "path": "M 1536 144 L 1560 144 L 1728 144 L 1728 168 L 1752 168"
+      "path": "M 1536 168 L 1560 168 L 1632 168 L 1632 192 L 1728 192 L 1752 192"
     },
     {
       "id": "edge:zext:imm_gen:imm_4_b1000:imm_4_b1000_zext_n18:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b1000_zext_n18",
@@ -552,7 +552,7 @@
       "target": "mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_4_b1000_zext_n18",
       "targetHandle": "in:4_b1000",
-      "path": "M 1200 288 L 1224 288 L 1344 288 L 1344 192 L 1728 192 L 1752 192"
+      "path": "M 1200 288 L 1224 288 L 1344 288 L 1344 216 L 1728 216 L 1752 216"
     }
   ]
 }
