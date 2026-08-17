@@ -191,8 +191,9 @@ test.describe('interface visual rendering', () => {
 
   test('renders alternate multi-modport interface arrangements', async ({ page }) => {
     // Four openFixture() calls each re-sample rendering BENCHMARK_SAMPLE_COUNT
-    // times, so this test needs more than the default per-test timeout.
-    test.setTimeout(180_000);
+    // times, so this test needs more than the default per-test timeout. Bumped
+    // alongside the sample count (11 -> 21, see helper.ts) to keep headroom.
+    test.setTimeout(420_000);
 
     await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_uneven_modport');
 
@@ -243,6 +244,9 @@ test.describe('interface visual rendering', () => {
   });
 
   test('renders modules with multiple interface modport ports', async ({ page }) => {
+    // Two openFixture() calls re-sample BENCHMARK_SAMPLE_COUNT (21) times each,
+    // exceeding the default per-test timeout.
+    test.setTimeout(240_000);
     await page.setViewportSize({ width: 1400, height: 760 });
     const bridgeTopView = await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_dual_modport_bridge');
     await fitGraphView(page);
@@ -316,6 +320,37 @@ test.describe('interface visual rendering', () => {
     ]));
 
     await expectGraphAndScreenshot(page,'interface-output-wire-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('renders a gate whose operand is an inverted interface field with a single clean driver', async ({ page }) => {
+    // Two openFixture() calls re-sample BENCHMARK_SAMPLE_COUNT (21) times each,
+    // exceeding the default per-test timeout.
+    test.setTimeout(240_000);
+    // Regression coverage for channel_controller/channel_sink: `assign bus.flush =
+    // bus.valid & ~bus.ready` used to promote a phantom node for the inverted
+    // "bus.ready" operand, which got collapsed back onto the interface as a second,
+    // bogus input port/edge alongside the correctly-wired one — rendering as an
+    // overlapping-wire "multiple drivers" glitch and a false diagnostic.
+    const linkView = await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'interface_channel_link');
+    await fitGraphView(page);
+    await expect(page.locator('[data-node-id="instance:interface_channel_link:u_controller"]')).toBeVisible();
+    await expect(page.locator('[data-node-id="instance:interface_channel_link:u_sink"]')).toBeVisible();
+    // No diagnostic should blame channel_controller/channel_sink for a bogus extra
+    // driver (the workspace can still legitimately flag the interface itself for
+    // having multiple peer instances — that's unrelated to this regression).
+    expect((linkView.diagnostics ?? []).some((d) => d.message.includes('channel_controller') || d.message.includes('channel_sink'))).toBe(false);
+    await expectGraphAndScreenshot(page,'interface-channel-link-top-canvas.png', { clip: await canvasClip(page) });
+
+    const controllerView = await openFixture(page, 'interface_modport_arrangements.sv', 'auto', 'channel_controller');
+    const inverterId = 'inverter:channel_controller:bus.flush_in1:expr';
+    const gate = page.locator('[data-node-id="gate:channel_controller:bus.flush:and"]');
+    const inverter = page.locator(`[data-node-id="${inverterId}"]`);
+    await expect(gate).toBeVisible();
+    await expect(inverter).toBeVisible();
+    // No overlap-hint markers means every port on this diagram has exactly one driver.
+    await expect(page.locator('.svsch-edge-overlap-hint')).toHaveCount(0);
+    expect(controllerView.nodes.find((node) => node.id === inverterId)?.ports).toHaveLength(2);
+    await expectGraphAndScreenshot(page,'interface-channel-controller-gate-canvas.png', { clip: await paddedGraphClip(page) });
   });
 
   test('renders interface scalar caps without side modports', async ({ page }) => {

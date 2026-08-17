@@ -1,31 +1,31 @@
 {
   "nodes": [
     {
-      "id": "comb:top:y:expr",
+      "id": "gate:top:y:and",
       "type": "hdl",
       "position": {
         "x": 360,
         "y": 24
       },
-      "width": 192,
+      "width": 96,
       "height": 96,
       "data": {
-        "kind": "comb",
+        "kind": "gate",
         "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
           {
             "id": "out:y",
             "name": "y",
             "direction": "output"
-          },
-          {
-            "id": "port:a",
-            "name": "a",
-            "direction": "input"
-          },
-          {
-            "id": "port:b",
-            "name": "b",
-            "direction": "input"
           }
         ]
       }
@@ -55,7 +55,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 108
+        "y": 84
       },
       "width": 120,
       "height": 24,
@@ -93,28 +93,28 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:top:y:expr:port:top:y:y",
-      "source": "comb:top:y:expr",
+      "id": "edge:gate:top:y:and:port:top:y:y",
+      "source": "gate:top:y:and",
       "target": "port:top:y",
       "sourceHandle": "out:y",
       "targetHandle": "port:y",
-      "path": "M 552 72 L 576 72 L 576 144 L 264 144 L 264 120 L 288 120"
+      "path": "M 456 72 L 480 72 L 480 144 L 264 144 L 264 120 L 288 120"
     },
     {
-      "id": "edge:port:top:a:comb:top:y:expr:a",
+      "id": "edge:port:top:a:gate:top:y:and:a",
       "source": "port:top:a",
-      "target": "comb:top:y:expr",
+      "target": "gate:top:y:and",
       "sourceHandle": "port:a",
-      "targetHandle": "port:a",
-      "path": "M 216 120 L 240 120 L 240 72 L 336 72 L 360 72"
+      "targetHandle": "port:in0",
+      "path": "M 216 120 L 240 120 L 264 120 L 264 48 L 336 48 L 360 48"
     },
     {
-      "id": "edge:port:top:b:comb:top:y:expr:b",
+      "id": "edge:port:top:b:gate:top:y:and:b",
       "source": "port:top:b",
-      "target": "comb:top:y:expr",
+      "target": "gate:top:y:and",
       "sourceHandle": "port:b",
-      "targetHandle": "port:b",
-      "path": "M 144 120 L 168 120 L 192 120 L 192 96 L 233 96 Q 240 89 247 96 L 336 96 L 360 96"
+      "targetHandle": "port:in1",
+      "path": "M 144 96 L 168 96 L 257 96 Q 264 89 271 96 L 336 96 L 360 96"
     }
   ]
 }

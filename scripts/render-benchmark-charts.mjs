@@ -298,9 +298,22 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
 // entries at all). Worst/best breakout is only shown once there are enough
 // entries with a baseline that the two lists don't just repeat each other in
 // reverse order (>10, so a worst-5 and best-5 can't overlap).
-export function renderDeltaTableMarkdown(rows) {
+// Average nominal/pct delta across every row with a baseline, or null when
+// none have one yet (first run establishing a baseline). Shared by the
+// top-of-report summary line and the per-suite delta table's own "Avg" row
+// so the two can never disagree.
+export function computeAverageDelta(rows) {
   const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
   if (withBaseline.length === 0) return null;
+  const avgNominal = withBaseline.reduce((sum, row) => sum + row.deltaMs, 0) / withBaseline.length;
+  const avgPct = withBaseline.reduce((sum, row) => sum + row.deltaPct, 0) / withBaseline.length;
+  return { avgNominal, avgPct, count: withBaseline.length };
+}
+
+export function renderDeltaTableMarkdown(rows) {
+  const avg = computeAverageDelta(rows);
+  if (!avg) return null;
+  const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
 
   const header = '| | test | baseline | new | Δ (nominal) | Δ (%) |\n|---|---|---:|---:|---:|---:|';
   const lines = [header];
@@ -317,11 +330,9 @@ export function renderDeltaTableMarkdown(rows) {
     for (const row of best) lines.push(formatRow('Best', row));
   }
 
-  const avgNominal = withBaseline.reduce((sum, row) => sum + row.deltaMs, 0) / withBaseline.length;
-  const avgPct = withBaseline.reduce((sum, row) => sum + row.deltaPct, 0) / withBaseline.length;
-  const avgSignNominal = avgNominal > 0 ? '+' : '';
-  const avgSignPct = avgPct > 0 ? '+' : '';
-  lines.push(`| Avg | across ${withBaseline.length} test${withBaseline.length === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avgNominal.toFixed(0)} ms | ${avgSignPct}${avgPct.toFixed(1)}% |`);
+  const avgSignNominal = avg.avgNominal > 0 ? '+' : '';
+  const avgSignPct = avg.avgPct > 0 ? '+' : '';
+  lines.push(`| Avg | across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms | ${avgSignPct}${avg.avgPct.toFixed(1)}% |`);
 
   return lines.join('\n');
 }

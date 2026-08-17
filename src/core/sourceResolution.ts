@@ -28,14 +28,23 @@ export function resolveSignalSource(
     return port.source;
   }
 
-  // Try finding an internal node representing this signal
+  // Try finding an internal node representing this signal. Gate nodes carry
+  // an empty label (the C++ extractor always sets it to "") and store the
+  // real signal name on their output port instead, so label matching alone
+  // never resolves them.
   const sourceNode = module.nodes.find(
     (n) =>
-      n.label === edge.signal &&
+      (n.label === edge.signal ||
+        n.ports.some(
+          (port) =>
+            port.direction === 'output' &&
+            (port.name === edge.signal || port.connectedSignal === edge.signal)
+        )) &&
       (n.kind === 'register' ||
         n.kind === 'comb' ||
         n.kind === 'alu' ||
-        n.kind === 'inverter')
+        n.kind === 'inverter' ||
+        n.kind === 'gate')
   );
   if (sourceNode?.source) {
     return sourceNode.source;

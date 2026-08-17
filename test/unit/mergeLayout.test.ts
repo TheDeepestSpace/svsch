@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel } from '../../src/layout/mergeLayout';
+import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize, revertNodeSizes } from '../../src/layout/mergeLayout';
 import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
@@ -139,6 +139,126 @@ describe('first-open auto-cuts', () => {
 
   it('can disable register control cuts without disabling declared nets', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
+  });
+
+  it('auto-cuts every declared-net edge, even when mutually exclusive generate arms each drive it', () => {
+    // Two generate arms (e.g. `g_other`/`g_zero`) each drive the module's
+    // `y` output from their own internal source node — different netKeys
+    // (different source nodes), same declared net. Both still get auto-cut;
+    // buildNetCutProjection (see below) is what collapses their sink ends
+    // down to one, not this selection step.
+    const generateArmModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        {
+          id: 'g_other-y',
+          source: 'g_other_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        {
+          id: 'g_zero-y',
+          source: 'g_zero_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
+        }
+      ]
+    };
+
+    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y', 'g_zero-y']);
+  });
+
+  it('collapses duplicate sink ends when mutually exclusive generate arms both cut into the same output port', async () => {
+    // Both g_other's and g_zero's edges are auto-cut (see the test above),
+    // each keeping its own dead-end source label near its own driver. But
+    // routing *both* of their sink stubs into the real `y` port would stack
+    // a redundant, overlapping cut-net-end on top of the same target — so
+    // only one sink label/stub should survive; neither edge should be left
+    // as a live wire straight into the output port. The `y` port is always
+    // driven by whichever arm is actually active, so the surviving label
+    // must be g_zero's (the active arm), not g_other's (inactive) even
+    // though "g_other-y" sorts first alphabetically — the target itself is
+    // never left undriven, so its cut-net end must never dim.
+    const generateArmModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        {
+          id: 'g_other-y',
+          source: 'g_other_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        {
+          id: 'g_zero-y',
+          source: 'g_zero_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
+        }
+      ]
+    };
+    const positioned: PositionedNode[] = [
+      { ...generateArmModule.nodes[0], position: { x: 0, y: 0 } },
+      { ...generateArmModule.nodes[1], position: { x: 0, y: 96 } },
+      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const firstCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
+    const secondCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_zero-y')!;
+    const cutLayout = [firstCutEdge, secondCutEdge].reduce(
+      (layout, edge) => mergeNetCut(layout, 'top', edge, generateArmModule, positioned),
+      { version: 1, modules: {} } as SavedLayout
+    );
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: generateArmModule }
+    }, 'top', cutLayout);
+
+    const firstNetKey = edgeNetKey(firstCutEdge);
+    const secondNetKey = edgeNetKey(secondCutEdge);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+
+    // Each arm keeps its own dead-end source label near its own driver.
+    expect(byId.has(`cut-label:${firstNetKey}:source`)).toBe(true);
+    expect(byId.has(`cut-label:${secondNetKey}:source`)).toBe(true);
+
+    // Only the active arm's (g_zero's) sink label/stub lands on the shared
+    // `y` port...
+    expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    const sinkLabel = byId.get(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`);
+    expect(sinkLabel?.metadata?.generateActiveState).toBe('active');
+
+    // ...the inactive arm's redundant one is skipped entirely.
+    expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+
+    // Neither arm is left as a live wire straight into the output port.
+    expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);
+    expect(view.edges.some((edge) => edge.id === 'g_zero-y')).toBe(false);
   });
 
   it('keeps links touching interface nodes whole on first open', () => {
@@ -547,6 +667,31 @@ describe('layout merge', () => {
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
+  it('anchors a resized register reset port at the resolved bottom center', () => {
+    const register: DiagramNode = {
+      id: 'register',
+      kind: 'register',
+      label: 'state',
+      ports: [
+        { id: 'd', name: 'D', direction: 'input' },
+        { id: 'clk', name: 'clk', direction: 'input' },
+        { id: 'rst_n', name: 'rst_n', direction: 'input' },
+        { id: 'q', name: 'Q', direction: 'output' }
+      ],
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' },
+      sizeOverride: { width: 12, height: 8 }
+    };
+
+    const resolved = resolvedNodeDimensions(register);
+    const geometry = elkNodeForDiagramNode(register);
+    const resetPort = geometry.ports.find((port) => port.id === 'register:rst_n');
+
+    expect(geometry.width).toBe(resolved.width);
+    expect(geometry.height).toBe(resolved.height);
+    expect(resetPort).toMatchObject({ x: resolved.width / 2, y: resolved.height });
+    expect(resetPort?.layoutOptions['elk.port.side']).toBe('SOUTH');
+  });
+
   it('adds obstacle margins to route-only ELK geometry without moving port anchors', () => {
     const register: DiagramNode = {
       id: 'register',
@@ -633,6 +778,124 @@ describe('layout merge', () => {
     expect(merged.modules.top.nodes.a).toEqual({ x: 24, y: 36, fixed: true });
     expect(merged.modules.top.nodes.auto).toBeUndefined(); // auto was not fixed
     expect(merged.modules.top.nodes.b).toBeUndefined(); // b was not fixed
+  });
+
+  it('persists a node size override as grid units alongside its fixed position', () => {
+    const nodes: PositionedNode[] = [
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 120, y: 96 },
+        fixed: true,
+        sizeOverride: { width: 12, height: 8 }
+      }
+    ];
+
+    const merged = mergeNodePositions({ version: 1, modules: {} }, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true, width: 12, height: 8 });
+  });
+
+  it('drops a previously saved size override once the node reports none (revert)', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 120, y: 96, fixed: true, width: 12, height: 8 }
+          }
+        }
+      }
+    };
+    const nodes: PositionedNode[] = [
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 120, y: 96 }, fixed: true }
+    ];
+
+    const merged = mergeNodePositions(layout, 'top', nodes);
+
+    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true });
+  });
+
+  it('revertNodeSize clears only the size override, keeping position and fixed', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: { x: 100, y: 100, fixed: true, width: 12, height: 8 }
+          }
+        }
+      }
+    };
+
+    const reverted = revertNodeSize(layout, 'top', 'u');
+
+    expect(reverted.modules.top.nodes.u).toEqual({ x: 100, y: 100, fixed: true });
+  });
+
+  it('revertNodeSize is a no-op when the node has no saved override', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: { top: { nodes: { u: { x: 100, y: 100, fixed: true } } } }
+    };
+
+    expect(revertNodeSize(layout, 'top', 'u')).toEqual(layout);
+    expect(revertNodeSize(layout, 'top', 'missing')).toEqual(layout);
+    expect(revertNodeSize(layout, 'missing-module', 'u')).toEqual(layout);
+  });
+
+  it('revertNodeSizes clears every selected override and leaves other nodes alone', () => {
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u1: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
+            u2: { x: 300, y: 100, fixed: true, width: 10, height: 6 },
+            u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
+          }
+        }
+      }
+    };
+
+    const reverted = revertNodeSizes(layout, 'top', ['u1', 'u2']);
+
+    expect(reverted.modules.top.nodes).toEqual({
+      u1: { x: 100, y: 100, fixed: true },
+      u2: { x: 300, y: 100, fixed: true },
+      u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
+    });
+  });
+
+  it('grows a resized instance past its saved size at view-model build time, floored by canonical size', async () => {
+    const canonical = diagramNodeDimensions({ id: 'u', kind: 'instance', label: 'u', ports: [] });
+    const grid = diagramSizing.gridSize;
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            u: {
+              x: 0,
+              y: 0,
+              fixed: true,
+              width: canonical.width / grid + 3,
+              height: canonical.height / grid + 2
+            }
+          }
+        }
+      }
+    };
+
+    const view = await buildViewModel(graph, 'top', layout);
+    const node = view.nodes.find((candidate) => candidate.id === 'u');
+
+    expect(node?.sizeOverride).toEqual({ width: canonical.width / grid + 3, height: canonical.height / grid + 2 });
+    const resolved = node && resolvedNodeDimensions(node);
+    expect(resolved?.width).toBe(canonical.width + grid * 3);
+    expect(resolved?.height).toBe(canonical.height + grid * 2);
   });
 
   it('persists edge waypoints and applies them to the view model', async () => {
@@ -1038,6 +1301,34 @@ describe('layout merge', () => {
     expect(relayouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 20, y: 20 }] });
   });
 
+  it('preserves a resized node\'s size override when releasing it back to auto-layout', () => {
+    const module = fanoutGraph.modules.top;
+    const seeded: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            clk: { x: 0, y: 12, fixed: true },
+            u1: { x: 240, y: 0, width: 96, height: 64, fixed: true },
+            u2: { x: 240, y: 96, fixed: true }
+          }
+        }
+      }
+    };
+
+    // u1 was manually resized before the user clicked "Auto Layout" for it.
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 288, y: 0 }, sizeOverride: { width: 96, height: 64 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
+
+    // u1 is released back to auto-layout, but its resize override survives.
+    expect(relayouted.modules.top.nodes.u1).toEqual({ x: 288, y: 0, fixed: false, width: 96, height: 64 });
+  });
+
   it('uses shared net keys for ordinary, literal, and cut stub edges', () => {
     expect(edgeNetKey({ id: 'e', source: 'n1', sourcePort: 'out', target: 'n2' } as any)).toBe('n1:out');
     expect(edgeNetKey({ id: 'lit', source: 'literal:1', sourcePort: 'out', target: 'n2' } as any)).toBe('literal:1');
@@ -1141,6 +1432,46 @@ describe('layout merge', () => {
       origin: 'declared',
       defaultLabel: 'clk'
     });
+  });
+
+  it('dims a cut end the same way its underlying wire is dimmed on an inactive generate arm', async () => {
+    const module = {
+      ...fanoutGraph.modules.top,
+      edges: [
+        {
+          ...fanoutGraph.modules.top.edges[0],
+          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        fanoutGraph.modules.top.edges[1]
+      ]
+    };
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 240, y: 0 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: module }
+    }, 'top', cutLayout);
+
+    const netKey = edgeNetKey(module.edges[0]);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const sourceLabel = byId.get(`cut-label:${netKey}:source`);
+    const sinkLabel = byId.get(`cut-label:${netKey}:sink:${module.edges[0].id}`);
+    expect(sourceLabel?.metadata?.generateActiveState).toBe('inactive');
+    expect(sourceLabel?.metadata?.generateRegionId).toBe('g_other');
+    expect(sinkLabel?.metadata?.generateActiveState).toBe('inactive');
+    expect(sinkLabel?.metadata?.generateRegionId).toBe('g_other');
+
+    // The other fanout branch (e-clk-u2) is untouched — its own sink label
+    // must not inherit the inactive state from a sibling edge on the net.
+    const otherSinkLabel = byId.get(`cut-label:${netKey}:sink:${module.edges[1].id}`);
+    expect(otherSinkLabel?.metadata?.generateActiveState).toBeUndefined();
   });
 
   it('refuses to rename a declared net but still allows renaming a synthetic one', () => {

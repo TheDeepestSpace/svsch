@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
+import { buildViewModel, firstOpenAutoCutEdges, mergeFirstOpenNetCuts, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import type { DesignGraph, DiagramViewModel, PositionedNode } from '../../src/ir/types';
@@ -26,7 +26,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
   currentPageViews.set(page, view);
 }
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
+export const fixtureRoot = path.resolve(__dirname, '..', 'fixtures');
 
 // Timing: "post message -> DOM attached" duration, analogous to the system
 // suite's rebuild->firstGraph interval. Set when postView() posts the graph.
@@ -66,16 +66,19 @@ export function recordVisualBenchmark(metric: 'elaboration' | 'rendering', durat
   recordNamedBenchmarkSample(samplesFile, name, 'ms', durationMs);
 }
 
-// Median-of-11 sampling: lower std-error than x5 and rejects up to 5
-// outliers vs 2, which matters for benchmark timings noisy enough that a
-// single sample can show a spurious CI delta. BDD already dominates CI
-// runtime (~20min), so the extra samples' wall-clock cost is cheap here.
-const BENCHMARK_SAMPLE_COUNT = 11;
+// Trimmed-mean-of-21 sampling (trim k=4 per side, ~62% kept): a plain median
+// only looks at the single middle rank, so a GC pause or scheduler blip that
+// lands near the middle of the sorted samples still contaminates the result.
+// Averaging the middle 13 of 21 samples resists that while still rejecting
+// outliers at the edges. BDD already dominates CI runtime (~20min), so the
+// extra samples' wall-clock cost is cheap here.
+const BENCHMARK_SAMPLE_COUNT = 21;
+const BENCHMARK_TRIM_COUNT = 4;
 
-function median(values: number[]): number {
+function trimmedMean(values: number[], k: number): number {
   const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  const trimmed = sorted.slice(k, sorted.length - k);
+  return trimmed.reduce((sum, v) => sum + v, 0) / trimmed.length;
 }
 
 // Resolves and records whatever rendering timer is pending for `page` — the
@@ -175,7 +178,52 @@ export async function openFixture(page: Page, fixtureName: string, layoutMode: V
       `Expected ${BENCHMARK_SAMPLE_COUNT} rendering samples, got ${renderDurationsMs.length}`
     );
   }
-  pendingDiagramDurationMs.set(page, median(renderDurationsMs));
+  pendingDiagramDurationMs.set(page, trimmedMean(renderDurationsMs, BENCHMARK_TRIM_COUNT));
+  await waitForViewportTransformToSettle(page);
+  await page.waitForTimeout(100);
+  return view;
+}
+
+const exampleDesignRoot = path.resolve(__dirname, '../../fixtures/example_designs/cpu');
+let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
+
+function exampleDesignGraph(): Promise<DesignGraph> {
+  exampleDesignGraphPromise ??= (async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
+    try {
+      for (const file of fs.readdirSync(exampleDesignRoot)) {
+        if (!file.endsWith('.sv')) continue;
+        fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
+      }
+
+      return await buildGraphFromWorkspace(tmpDir);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  })();
+  return exampleDesignGraphPromise;
+}
+
+export async function buildExampleDesignView(moduleName: string): Promise<DiagramViewModel> {
+  const graph = await exampleDesignGraph();
+  const designModule = graph.modules[moduleName];
+  const emptyLayout: SavedLayout = { version: 1, modules: {} };
+  const layout = designModule
+    ? mergeFirstOpenNetCuts(
+      emptyLayout,
+      moduleName,
+      firstOpenAutoCutEdges(designModule, true),
+      designModule
+    )
+    : emptyLayout;
+  return buildViewModel(graph, moduleName, layout);
+}
+
+export async function openExampleDesignModule(page: Page, moduleName: string): Promise<DiagramViewModel> {
+  const view = await buildExampleDesignView(moduleName);
+
+  await openView(page, view);
+  await page.waitForSelector('.react-flow__node', { state: 'attached' });
   await waitForViewportTransformToSettle(page);
   await page.waitForTimeout(100);
   return view;
@@ -333,6 +381,24 @@ export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
   await page.waitForTimeout(100);
 }
 
+async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGraph> {
+  const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+  const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
+
+  const elaborationStartedAt = Date.now();
+  const graph = await buildDesignGraph({
+    workspaceRoot,
+    projectFolder: '.',
+    backend: (process.env.SVSCH_BACKEND as any) || 'uhdm',
+    veriblePath: 'verible-verilog-syntax',
+    surelogPath,
+    backendPath,
+    includeExternalDiagnostics: false
+  });
+  recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
+  return graph;
+}
+
 export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
   const fixturePath = path.join(fixtureRoot, fixtureName);
   const text = fs.readFileSync(fixturePath, 'utf8');
@@ -363,7 +429,8 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
     };
     const elaborationDurationsMs: number[] = [];
     let lastGraph: DesignGraph | undefined;
-    for (let sample = 0; sample < BENCHMARK_SAMPLE_COUNT; sample += 1) {
+    const maxElaborationAttempts = BENCHMARK_SAMPLE_COUNT * 2;
+    for (let attempt = 0; attempt < maxElaborationAttempts && elaborationDurationsMs.length < BENCHMARK_SAMPLE_COUNT; attempt += 1) {
       const elaborationStartedAt = Date.now();
       const sampledGraph = await buildDesignGraph(buildOptions);
       if (sampledGraph.rootModules.length === 0) {
@@ -372,10 +439,12 @@ export async function buildFixtureView(fixtureName: string, layoutMode: VisualLa
       elaborationDurationsMs.push(Date.now() - elaborationStartedAt);
       lastGraph = sampledGraph;
     }
-    if (!lastGraph) {
-      throw new Error(`buildDesignGraph() failed on all ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}`);
+    if (!lastGraph || elaborationDurationsMs.length !== BENCHMARK_SAMPLE_COUNT) {
+      throw new Error(
+        `Expected ${BENCHMARK_SAMPLE_COUNT} elaboration samples for ${fixtureName}, got ${elaborationDurationsMs.length} after ${maxElaborationAttempts} attempts`
+      );
     }
-    recordVisualBenchmark('elaboration', median(elaborationDurationsMs));
+    recordVisualBenchmark('elaboration', trimmedMean(elaborationDurationsMs, BENCHMARK_TRIM_COUNT));
     const graph = lastGraph;
 
     const moduleName = requestedModuleName ?? graph.rootModules[0];

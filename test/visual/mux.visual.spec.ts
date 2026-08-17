@@ -3,15 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PNG } from 'pngjs';
-import { expectGraphAndScreenshot as recordAndScreenshot, fitGraphView, paddedAllNodesClip, trackView, recordVisualBenchmark } from './helper';
+import { expectGraphAndScreenshot as recordAndScreenshot, fitGraphView, fixtureRoot, paddedAllNodesClip, trackView, recordVisualBenchmark } from './helper';
 import { buildViewModel, mergeNetCut } from '../../src/layout/mergeLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import { diagramSizing } from '../../src/diagram/constants';
 import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../../src/webview/arrayStackGeometry';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
 // This file predates helper.ts's benchmark instrumentation and keeps its own
 // local openFixture()/postView() rather than the shared ones — so it needs
@@ -610,7 +610,7 @@ test.describe('mux visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'mux-long-names-webview.png', {
       fullPage: true,
-      maxDiffPixels: 2
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.muxLongNames
     });
   });
 
@@ -650,7 +650,7 @@ test.describe('register visual rendering', () => {
 
     await expectGraphAndScreenshot(page, 'register-active-low-reset-node.png', {
       clip: await paddedLocatorClip(page, '[data-node-kind="register"]'),
-      maxDiffPixels: 50
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.default
     });
   });
 

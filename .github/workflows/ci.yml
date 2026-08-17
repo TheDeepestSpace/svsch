@@ -220,6 +220,12 @@ jobs:
       - *download_cli_step
       - *fix_perms_step
 
+      - name: Reject sub-threshold visual baseline updates
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: visual
+
       - &pw_version_step
         name: Get Playwright version
         id: playwright-version
@@ -350,6 +356,13 @@ jobs:
       - *download_backend_step
       - *download_cli_step
       - *fix_perms_step
+
+      - name: Reject sub-threshold BDD baseline updates
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: bdd
+
       - *pw_version_step
       - *pw_cache_step
       - *pw_install_step
@@ -421,6 +434,13 @@ jobs:
       - *download_backend_step
       - *download_cli_step
       - *fix_perms_step
+
+      - name: Reject sub-threshold system baseline updates
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/check-snapshot-updates
+        with:
+          suite: system
+
       - *pw_version_step
       - *pw_cache_step
       - *pw_install_step

@@ -1,0 +1,179 @@
+{
+  "nodes": [
+    {
+      "id": "gate:channel_controller:bus.flush:and",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 192
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:bus.flush",
+            "name": "bus.flush",
+            "direction": "output"
+          },
+          {
+            "id": "port:bus.ready",
+            "name": "bus.ready",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface_modport:channel_controller:bus",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 72
+      },
+      "width": 240,
+      "height": 269,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:controller",
+            "name": "controller",
+            "direction": "output"
+          },
+          {
+            "id": "out:clk",
+            "name": "clk",
+            "direction": "output"
+          },
+          {
+            "id": "out:rst_n",
+            "name": "rst_n",
+            "direction": "output"
+          },
+          {
+            "id": "out:valid",
+            "name": "valid",
+            "direction": "output"
+          },
+          {
+            "id": "out:ready",
+            "name": "ready",
+            "direction": "output"
+          },
+          {
+            "id": "in:flush",
+            "name": "flush",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:channel_controller:bus",
+      "type": "hdl",
+      "position": {
+        "x": 528,
+        "y": 36
+      },
+      "width": 264,
+      "height": 24,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:controller",
+            "name": "controller",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:channel_controller:bus.flush_in1:expr",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 240
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:bus.ready",
+            "name": "bus.ready",
+            "direction": "input"
+          },
+          {
+            "id": "out:bus.flush_in1",
+            "name": "bus.flush_in1",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:gate:channel_controller:bus.flush:and:interface_modport:channel_controller:bus:bus.flush",
+      "source": "gate:channel_controller:bus.flush:and",
+      "target": "interface_modport:channel_controller:bus",
+      "sourceHandle": "out:bus.flush",
+      "targetHandle": "in:flush",
+      "path": "M 1080 264 L 1104 264 L 1104 360 L 24 360 L 24 312 L 48 312"
+    },
+    {
+      "id": "edge:interface_modport:channel_controller:bus:gate:channel_controller:bus.flush:and:bus.ready",
+      "source": "interface_modport:channel_controller:bus",
+      "target": "gate:channel_controller:bus.flush:and",
+      "sourceHandle": "out:ready",
+      "targetHandle": "port:bus.ready",
+      "path": "M 288 264 L 312 264 L 600 264 L 600 312 L 960 312 L 984 312"
+    },
+    {
+      "id": "edge:interface_modport:channel_controller:bus:gate:channel_controller:bus.flush:and:bus.valid",
+      "source": "interface_modport:channel_controller:bus",
+      "target": "gate:channel_controller:bus.flush:and",
+      "sourceHandle": "out:valid",
+      "targetHandle": "port:in0",
+      "path": "M 288 216 L 312 216 L 960 216 L 984 216"
+    },
+    {
+      "id": "edge:interface_modport:channel_controller:bus:interface:channel_controller:bus:bus",
+      "source": "interface_modport:channel_controller:bus",
+      "target": "interface:channel_controller:bus",
+      "sourceHandle": "out:controller",
+      "targetHandle": "in:controller",
+      "path": "M 168 69 L 168 48 L 504 48 L 528 48"
+    },
+    {
+      "id": "edge:interface_modport:channel_controller:bus:inverter:channel_controller:bus.flush_in1:expr:bus.ready",
+      "source": "interface_modport:channel_controller:bus",
+      "target": "inverter:channel_controller:bus.flush_in1:expr",
+      "sourceHandle": "out:ready",
+      "targetHandle": "in:bus.ready",
+      "path": "M 288 264 L 312 264 L 600 264 L 624 264"
+    },
+    {
+      "id": "edge:inverter:channel_controller:bus.flush_in1:expr:gate:channel_controller:bus.flush:and:bus.flush_in1",
+      "source": "inverter:channel_controller:bus.flush_in1:expr",
+      "target": "gate:channel_controller:bus.flush:and",
+      "sourceHandle": "out:bus.flush_in1",
+      "targetHandle": "port:in1",
+      "path": "M 654.797 264 L 672 264 L 960 264 L 984 264"
+    }
+  ]
+}

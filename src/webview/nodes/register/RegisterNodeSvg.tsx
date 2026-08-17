@@ -1,6 +1,7 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
+import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
 import { registerPortTop, registerExtraInputPortTop } from '../../../diagram/registerGeometry';
 import {
   registerClockSignal,
@@ -24,6 +25,11 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
   const g = diagramSizing.gridSize;
+  // A resize override can make `width`/`height` (the rendered box) larger than the
+  // node's canonical auto-fit size. Extra input rows stay pinned at their canonical
+  // position so growth remains padding-only, while the bottom reset port and its
+  // label follow the rendered box edge.
+  const canonical = diagramNodeDimensions(node);
 
   const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
   const outputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'output');
@@ -208,7 +214,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* Extra input ports */}
       {extraInputPorts.map((port: DiagramPort, index: number) => {
-        const top = registerExtraInputPortTop(index, height, hasRv);
+        const top = registerExtraInputPortTop(index, canonical.height, hasRv);
         return (
           <text key={port.id} className="svsch-port-label" x={g * 0.75 + contentShiftX} y={top + g / 2 + contentShiftY} dominantBaseline="middle">
             <SvgPortLabel port={port} />
