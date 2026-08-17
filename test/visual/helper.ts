@@ -28,7 +28,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
   currentPageViews.set(page, view);
 }
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
+export const fixtureRoot = path.resolve(__dirname, '..', 'fixtures');
 
 // Timing: "post message -> DOM attached" duration, analogous to the system
 // suite's rebuild->firstGraph interval. Set when postView() posts the graph.

@@ -6,6 +6,7 @@ import { PNG } from 'pngjs';
 import {
   expectGraphAndScreenshot as recordAndScreenshot,
   fitGraphView,
+  fixtureRoot,
   paddedAllNodesClip,
   trackView,
   recordVisualBenchmark,
@@ -20,8 +21,6 @@ import {
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
-
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
 
 // This file predates helper.ts's benchmark instrumentation and keeps its own
 // local openFixture()/postView() rather than the shared ones — so it needs
