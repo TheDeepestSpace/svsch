@@ -347,6 +347,7 @@ function DiagramApp(): React.ReactElement {
     }, { duration: 250 });
   }, [reactFlow, minZoom, maxZoom]);
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
   const [selectionHoverActive, setSelectionHoverActive] = useState(false);
@@ -447,6 +448,7 @@ function DiagramApp(): React.ReactElement {
         setView(view);
         setModules(event.data.modules);
         setHovered(undefined, true);
+        setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
       }
@@ -455,6 +457,106 @@ function DiagramApp(): React.ReactElement {
     vscode.postMessage({ type: 'ready' });
     return () => window.removeEventListener('message', listener);
   }, [setHovered]);
+
+  // r/t/c shortcuts for the Reroute/Cut/Tie controls, plus `c` for the
+  // block-selection toolbar's Cut out button (see their badges next to the
+  // button labels). Each mirrors exactly what clicking the button would
+  // post, so it only fires when the same hover/selection state that reveals
+  // the button is present — never globally, since with nothing hovered or
+  // selected the target would be ambiguous.
+  useEffect(() => {
+    const isCuttable = (edge: Edge): boolean => {
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.repeat) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'r' && key !== 't' && key !== 'c') return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        return;
+      }
+      if (!view) return;
+
+      // `nodes`/`edges` are rebuilt from `view` in a separate effect one render
+      // behind this one, so a new graph message can leave this handler holding a
+      // fresh `view` alongside stale node/edge ids from the previous graph.
+      // Bail until the local state has actually caught up, so a shortcut never
+      // combines a new moduleName with ids that belong to the old graph.
+      const viewNodeIds = new Set(view.nodes.map((node) => node.id));
+      const viewEdgeIds = new Set(view.edges.map((edge) => edge.id));
+      const graphInSync =
+        nodes.length === view.nodes.length &&
+        edges.length === view.edges.length &&
+        nodes.every((node) => node.data.moduleName === view.moduleName && viewNodeIds.has(node.id)) &&
+        edges.every((edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id));
+      if (!graphInSync) return;
+
+      if (key === 't') {
+        const netLabelNode = nodes.find((node) => {
+          const cutNet = node.data.node.metadata?.cutNet;
+          if (!cutNet) return false;
+          return node.selected === true || (hoveredNetKey !== undefined && hoveredNetKey === cutNet.netKey);
+        });
+        const cutNet = netLabelNode?.data.node.metadata?.cutNet;
+        if (!cutNet) return;
+        event.preventDefault();
+        vscode.postMessage({ type: 'tieNet', moduleName: view.moduleName, netKey: cutNet.netKey });
+        return;
+      }
+
+      // Selection wins over hover (matches the batch-Cut/Reroute controls, which
+      // take over the moment more than one cuttable wire is selected); a solo
+      // hover only ever targets the one specific edge under the pointer.
+      const selectedEdges = edges.filter((edge) => edge.selected === true && isCuttable(edge));
+      let targetEdges = selectedEdges.length > 0
+        ? selectedEdges
+        : edges.filter((edge) => edge.id === hoveredEdgeId && isCuttable(edge));
+      // `c` also mirrors the block-selection toolbar's "Cut out" button: with
+      // no wire selected or hovered to disambiguate, fall back to every
+      // cuttable edge touching the selected block(s), if any.
+      if (key === 'c' && targetEdges.length === 0) {
+        targetEdges = cutOutEdgesForSelection(nodes, edges);
+      }
+      if (targetEdges.length === 0) return;
+      event.preventDefault();
+
+      // Matches positionedNodesFromFlowNodes in OrthogonalEdge.tsx: cutting/
+      // rerouting freezes every real block in place, but a net-cut label that's
+      // still tracking its port dynamically must not be forced fixed just
+      // because it happened to be on screen.
+      const positioned = nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
+      }));
+
+      if (key === 'r') {
+        if (targetEdges.length === 1) {
+          vscode.postMessage({ type: 'rerouteEdge', moduleName: view.moduleName, edgeId: targetEdges[0].id, nodes: positioned });
+        } else {
+          vscode.postMessage({ type: 'rerouteEdges', moduleName: view.moduleName, edgeIds: targetEdges.map((edge) => edge.id), nodes: positioned });
+        }
+        return;
+      }
+
+      const diagramEdges = targetEdges
+        .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
+        .filter((edge): edge is DiagramEdge => edge !== undefined);
+      if (diagramEdges.length === 1) {
+        vscode.postMessage({ type: 'cutNet', moduleName: view.moduleName, edge: diagramEdges[0], nodes: positioned });
+      } else {
+        vscode.postMessage({ type: 'cutNets', moduleName: view.moduleName, edges: diagramEdges, nodes: positioned });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, edges, view, hoveredNetKey, hoveredEdgeId]);
 
   useEffect(() => {
     if (!view) {
@@ -867,6 +969,8 @@ function DiagramApp(): React.ReactElement {
           <InteractionContext.Provider value={{
             hoveredNetKey,
             setHovered,
+            hoveredEdgeId,
+            setHoveredEdgeId,
             selectionHoverActive,
             setSelectionHoverActive,
             pendingSelectionAction,
@@ -1278,6 +1382,22 @@ function GenerateRegionOverlay({
   );
 }
 
+// Every non-cut-stub edge touching any selected non-netLabel block — shared
+// by the block-selection toolbar's "Cut out" button and the `c` keyboard
+// shortcut's block-selection fallback, since a cut stub's dangling end can't
+// be cut again.
+function cutOutEdgesForSelection(nodes: HdlFlowNode[], edges: Edge[]): Edge[] {
+  const selectedIds = new Set(
+    nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel').map((node) => node.id)
+  );
+  if (selectedIds.size === 0) return [];
+  return edges.filter((edge) => {
+    if (!selectedIds.has(edge.source) && !selectedIds.has(edge.target)) return false;
+    const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+    return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+  });
+}
+
 // Floating toolbar shown above the bounding box of a block selection. "Auto
 // Layout" only makes sense once there's more than one block to re-place, while
 // "Revert Size" and "Cut out" can apply to a lone selected block.
@@ -1318,17 +1438,9 @@ function NodeSelectionToolbar({
     [nodes]
   );
 
-  // Every non-cut-stub edge touching any selected block — same exclusion
-  // `selectedCuttableEdges` in OrthogonalEdge applies for the wire "Cut"
-  // control, since a cut stub's dangling end can't be cut again.
-  const cutOutEdges = useMemo(() => {
-    const selectedIds = new Set(selected.map((node) => node.id));
-    return edges.filter((edge) => {
-      if (!selectedIds.has(edge.source) && !selectedIds.has(edge.target)) return false;
-      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
-      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
-    });
-  }, [selected, edges]);
+  // Same exclusion `selectedCuttableEdges` in OrthogonalEdge applies for the
+  // wire "Cut" control — see cutOutEdgesForSelection.
+  const cutOutEdges = useMemo(() => cutOutEdgesForSelection(nodes, edges), [nodes, edges]);
 
   const resizedNodeIds = useMemo(
     () => selected
@@ -1473,6 +1585,9 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Cut out
+            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+              <span className="svsch-shortcut-glyph-letter">C</span>
+            </kbd>
           </button>
         )}
       </div>

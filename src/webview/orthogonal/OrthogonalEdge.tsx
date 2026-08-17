@@ -179,6 +179,7 @@ export function OrthogonalEdge({
   const {
     hoveredNetKey,
     setHovered,
+    setHoveredEdgeId,
     selectionHoverActive,
     setSelectionHoverActive,
     pendingSelectionAction,
@@ -465,10 +466,11 @@ export function OrthogonalEdge({
     }
     setIsEdgeHovered(true);
     setHovered(netKey);
+    setHoveredEdgeId(id);
     if (isMultiSelected) {
       setSelectionHoverActive(true);
     }
-  }, [netKey, setHovered, isMultiSelected, setSelectionHoverActive]);
+  }, [id, netKey, setHovered, setHoveredEdgeId, isMultiSelected, setSelectionHoverActive]);
 
   const releaseEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -478,9 +480,13 @@ export function OrthogonalEdge({
     hoverClearTimeoutRef.current = setTimeout(() => {
       setIsEdgeHovered(false);
       setSelectionHoverActive(false);
+      // Only clear the shared hovered-edge id if it's still ours — the pointer
+      // may have already moved onto (and claimed it for) a different edge
+      // during this grace period.
+      setHoveredEdgeId((current?: string) => (current === id ? undefined : current));
       hoverClearTimeoutRef.current = undefined;
     }, 500);
-  }, [setHovered, setSelectionHoverActive]);
+  }, [id, setHovered, setSelectionHoverActive, setHoveredEdgeId]);
 
   React.useEffect(() => () => {
     if (hoverClearTimeoutRef.current) {
@@ -867,6 +873,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Reroute
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">R</span>
+              </kbd>
             </button>
             <button
               type="button"
@@ -900,6 +909,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Cut
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
             </button>
           </div>
         </foreignObject>
