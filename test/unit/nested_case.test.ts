@@ -100,4 +100,30 @@ describe.each(['uhdm'] as const)('nested case statements: %s', (backend) => {
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(2);
   });
+
+  it('does not collide intermediate literal signal names for identical labels in unrelated sibling case statements', async () => {
+    const graph = await runParser(backend, 'nested_case.sv', fixture('nested_case.sv'));
+    const mod = graph.modules.nested_case_literal_collision;
+
+    const muxesInner = muxesSelectedBy(mod, 'sel_inner');
+    expect(muxesInner).toHaveLength(2);
+
+    // Each inner mux's 2'b01 arm should be driven by its own literal node
+    // (4'hA vs 4'hB), not a shared node whichever case was elaborated first.
+    const literalSignals = muxesInner.map((mux) => {
+      const port = mux.ports.find(p => p.label === "2'b01");
+      expect(port).toBeDefined();
+      return port!.connectedSignal;
+    });
+
+    expect(new Set(literalSignals).size).toBe(2);
+
+    const literalLabels = literalSignals.map((signal) => {
+      const node = mod.nodes.find(n => n.kind === 'literal' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === signal));
+      expect(node).toBeDefined();
+      return node!.label;
+    });
+
+    expect(literalLabels.sort()).toEqual(["4'hA", "4'hB"]);
+  });
 });
