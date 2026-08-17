@@ -280,8 +280,9 @@ test.describe('interface visual rendering', () => {
 
   test('renders alternate multi-modport interface arrangements', async ({ page }) => {
     // Four openFixture() calls each re-sample rendering BENCHMARK_SAMPLE_COUNT
-    // times, so this test needs more than the default per-test timeout.
-    test.setTimeout(180_000);
+    // times, so this test needs more than the default per-test timeout. Bumped
+    // alongside the sample count (11 -> 21, see helper.ts) to keep headroom.
+    test.setTimeout(420_000);
 
     await openFixture(
       page,
@@ -407,6 +408,9 @@ test.describe('interface visual rendering', () => {
   });
 
   test('renders modules with multiple interface modport ports', async ({ page }) => {
+    // Two openFixture() calls re-sample BENCHMARK_SAMPLE_COUNT (21) times each,
+    // exceeding the default per-test timeout.
+    test.setTimeout(240_000);
     await page.setViewportSize({ width: 1400, height: 760 });
     const bridgeTopView = await openFixture(
       page,
@@ -525,6 +529,9 @@ test.describe('interface visual rendering', () => {
   test(
     'renders a gate whose operand is an inverted interface field with a single ' + 'clean driver',
     async ({ page }) => {
+      // Two openFixture() calls re-sample BENCHMARK_SAMPLE_COUNT (21) times each,
+      // exceeding the default per-test timeout.
+      test.setTimeout(240_000);
       // Regression coverage for channel_controller/channel_sink: `assign bus.flush =
       // bus.valid & ~bus.ready` used to promote a phantom node for the inverted
       // "bus.ready" operand, which got collapsed back onto the interface as a second,
