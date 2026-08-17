@@ -27,26 +27,6 @@
       "inactive": true
     },
     {
-      "id": "cut-label:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:sink:edge:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:port:top:y:y",
-      "type": "hdl",
-      "position": {
-        "x": 840,
-        "y": 144
-      },
-      "width": 96,
-      "height": 48,
-      "data": {
-        "kind": "netLabel",
-        "ports": [
-          {
-            "id": "cut",
-            "name": "cut",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
       "id": "cut-label:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:source",
       "type": "hdl",
       "position": {
@@ -64,27 +44,8 @@
             "direction": "input"
           }
         ]
-      }
-    },
-    {
-      "id": "cut-label:instance:top:g_case_0.u_case_0:port:y:sink:edge:instance:top:g_case_0.u_case_0:port:top:y:y",
-      "type": "hdl",
-      "position": {
-        "x": 840,
-        "y": 192
       },
-      "width": 96,
-      "height": 48,
-      "data": {
-        "kind": "netLabel",
-        "ports": [
-          {
-            "id": "cut",
-            "name": "cut",
-            "direction": "output"
-          }
-        ]
-      }
+      "inactive": true
     },
     {
       "id": "cut-label:instance:top:g_case_0.u_case_0:port:y:source",
@@ -104,14 +65,15 @@
             "direction": "input"
           }
         ]
-      }
+      },
+      "inactive": true
     },
     {
       "id": "cut-label:instance:top:g_case_1.u_case_1:port:y:sink:edge:instance:top:g_case_1.u_case_1:port:top:y:y",
       "type": "hdl",
       "position": {
         "x": 840,
-        "y": 96
+        "y": 144
       },
       "width": 96,
       "height": 48,
@@ -124,7 +86,8 @@
             "direction": "output"
           }
         ]
-      }
+      },
+      "active": true
     },
     {
       "id": "cut-label:instance:top:g_case_1.u_case_1:port:y:source",
@@ -144,7 +107,8 @@
             "direction": "input"
           }
         ]
-      }
+      },
+      "active": true
     },
     {
       "id": "instance:top:g_case_0.u_case_0",
@@ -281,30 +245,12 @@
   ],
   "edges": [
     {
-      "id": "cut-stub:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:sink:edge:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:port:top:y:y",
-      "source": "cut-label:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:sink:edge:comb:top:generate_region:top:case_default:0:0:2:default__g_case_default_:w:assign:port:top:y:y",
-      "target": "port:top:y",
-      "sourceHandle": "cut",
-      "targetHandle": "port:y",
-      "path": "M 936 168 L 936 168 L 960 168",
-      "inactive": true
-    },
-    {
       "id": "cut-stub:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:source",
       "source": "comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign",
       "target": "cut-label:comb:top:generate-region:top:case-default:0:0:2:default__g_case_default_:w:assign:out:w:source",
       "sourceHandle": "out:w",
       "targetHandle": "cut",
       "path": "M 696 672 L 720 672 L 720 672",
-      "inactive": true
-    },
-    {
-      "id": "cut-stub:instance:top:g_case_0.u_case_0:port:y:sink:edge:instance:top:g_case_0.u_case_0:port:top:y:y",
-      "source": "cut-label:instance:top:g_case_0.u_case_0:port:y:sink:edge:instance:top:g_case_0.u_case_0:port:top:y:y",
-      "target": "port:top:y",
-      "sourceHandle": "cut",
-      "targetHandle": "port:y",
-      "path": "M 936 216 L 936 216 L 936 168 L 960 168",
       "inactive": true
     },
     {
@@ -322,7 +268,7 @@
       "target": "port:top:y",
       "sourceHandle": "cut",
       "targetHandle": "port:y",
-      "path": "M 936 120 L 936 120 L 936 168 L 960 168",
+      "path": "M 936 168 L 936 168 L 960 168",
       "active": true
     },
     {

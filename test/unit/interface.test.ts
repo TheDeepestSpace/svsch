@@ -377,4 +377,45 @@ describe('parser: interfaces and modports', () => {
       })
     ]));
   });
+
+  it('wires a gate whose operand is an inverted interface field to a single clean driver', async () => {
+    // Regression for a false "multiple diagram drivers" diagnostic: `bus.ready` (a
+    // modport field reference) is UHDM's vpiHierPath node type, which getOrPromoteExpr
+    // didn't recognize as a plain signal — it fell through to the generic comb-node
+    // promotion path, minting a phantom node named after the gate's internal
+    // "<out>_in<i>" placeholder instead of resolving to the real "bus.ready" signal.
+    // That placeholder later got collapsed back onto the interface as a second,
+    // wrongly-named input port alongside the correctly-resolved "bus.ready" port.
+    const graph = await runParser('uhdm', 'interface_gate_operand.sv', `
+      interface channel_if(input logic clk, input logic rst_n);
+        logic valid;
+        logic ready;
+        logic flush;
+
+        modport controller(input clk, input rst_n, input valid, input ready, output flush);
+      endinterface
+
+      module channel_controller(channel_if.controller bus);
+        assign bus.flush = bus.valid & ~bus.ready;
+      endmodule
+    `);
+
+    expect(graph.diagnostics.filter((diagnostic) => diagnostic.message.includes('multiple diagram drivers'))).toEqual([]);
+
+    const module = graph.modules.channel_controller;
+    const inverter = module.nodes.find((node) => node.kind === 'inverter');
+    const gate = module.nodes.find((node) => node.kind === 'gate');
+    expect(inverter).toBeDefined();
+    expect(gate).toBeDefined();
+
+    // The inverter's only input should be the real "bus.ready" field — no leftover
+    // placeholder port from the gate's internal per-operand naming.
+    expect(inverter?.ports.filter((port) => port.direction === 'input').map((port) => port.connectedSignal)).toEqual(['bus.ready']);
+
+    // Every input port on the gate should have exactly one driving edge.
+    for (const port of gate?.ports.filter((p) => p.direction === 'input') ?? []) {
+      const drivers = module.edges.filter((edge) => edge.target === gate!.id && edge.targetPort === port.id);
+      expect(drivers, `gate input "${port.name}" (${port.connectedSignal})`).toHaveLength(1);
+    }
+  });
 });

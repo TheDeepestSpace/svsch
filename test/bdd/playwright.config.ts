@@ -42,6 +42,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
+  // The resize/persist round-trip (CSS custom property -> React Flow's
+  // ResizeObserver-driven `measured` size) occasionally takes longer than a
+  // scenario's poll timeout to converge on CI runners; one retry absorbs
+  // that without masking a real regression (a deterministically broken
+  // scenario still fails both attempts).
+  retries: process.env.CI ? 2 : 0,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
   outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),

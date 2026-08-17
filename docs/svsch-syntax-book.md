@@ -508,19 +508,139 @@ endmodule
 
 ### Combinational Expression
 
-A combinational logic assignment expression.
+A combinational logic assignment expression that isn't a specialized shape becomes a generic combinational block.
 
 <pre><code>module top (
   input logic a,
   input logic b,
   output logic decoded
 );
-  <mark>assign decoded = a &amp; b;</mark>
+  <mark>assign decoded = (a == b);</mark>
 endmodule
 </code></pre>
 
 <p align="center">
   <img src="syntax-book/assets/comb-expression.svg" alt="Combinational Expression diagram" />
+</p>
+
+### Boolean AND Gate
+
+A bitwise AND operator becomes an AND gate.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic decoded
+);
+  assign decoded = <mark>a &amp; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-and.svg" alt="Boolean AND Gate diagram" />
+</p>
+
+### N-ary NAND Gate
+
+Negating an AND chain of the same operator fuses into one n-input NAND gate with a negated-output bubble, instead of a separate inverter feeding a chain of 2-input ANDs.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  input logic c,
+  output logic y
+);
+  assign y = <mark>~(a &amp; b &amp; c)</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-nand-nary.svg" alt="N-ary NAND Gate diagram" />
+</p>
+
+### Multi-bit Boolean AND Gate
+
+A bitwise AND over multi-bit vectors reuses the same AND gate glyph as the single-bit case; only the connecting wires render thicker to signal the wider width.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic [3:0] decoded
+);
+  assign decoded = <mark>a &amp; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-multibit-and.svg" alt="Multi-bit Boolean AND Gate diagram" />
+</p>
+
+### Boolean OR Gate
+
+A bitwise OR operator becomes an OR gate.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic decoded
+);
+  assign decoded = <mark>a | b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-or.svg" alt="Boolean OR Gate diagram" />
+</p>
+
+### Boolean XOR Gate
+
+A bitwise XOR operator becomes an XOR gate.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic decoded
+);
+  assign decoded = <mark>a ^ b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-xor.svg" alt="Boolean XOR Gate diagram" />
+</p>
+
+### Boolean NOR Gate
+
+Negating an OR expression fuses into a single NOR gate with a negated-output bubble, instead of a separate inverter feeding an OR gate.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>~(a | b)</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-nor.svg" alt="Boolean NOR Gate diagram" />
+</p>
+
+### Boolean XNOR Gate
+
+A bitwise XNOR operator becomes an XNOR gate with a negated-output bubble.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a ^~ b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-xnor.svg" alt="Boolean XNOR Gate diagram" />
 </p>
 
 ### Arithmetic Addition

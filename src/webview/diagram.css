@@ -225,12 +225,14 @@ text {
 .hdl-node-mux,
 .hdl-node-select,
 .hdl-node-alu,
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   background: transparent;
   box-shadow: none;
 }
 
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   padding: 0;
 }
 
@@ -372,7 +374,8 @@ text {
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus,
-.hdl-node-inverter:focus {
+.hdl-node-inverter:focus,
+.hdl-node-gate:focus {
   outline: none;
 }
 
@@ -383,7 +386,9 @@ text {
 .hdl-node-alu>.node-kind,
 .hdl-node-alu>.node-title,
 .hdl-node-inverter>.node-kind,
-.hdl-node-inverter>.node-title {
+.hdl-node-inverter>.node-title,
+.hdl-node-gate>.node-kind,
+.hdl-node-gate>.node-title {
   display: none;
 }
 
@@ -707,6 +712,21 @@ text {
   fill: none;
 }
 
+.gate-skin .node-skin-body {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.gate-skin .gate-bubble {
+  fill: none;
+}
+
+.hdl-node-gate .gate-back-curve.svsch-node-shape {
+  fill: none;
+}
+
 .node-skin-selection {
   fill: none;
   opacity: 0;
@@ -723,7 +743,9 @@ text {
 .hdl-node-alu:focus .node-skin-selection,
 .hdl-node-alu:focus-visible .node-skin-selection,
 .hdl-node-inverter:focus .node-skin-selection,
-.hdl-node-inverter:focus-visible .node-skin-selection {
+.hdl-node-inverter:focus-visible .node-skin-selection,
+.hdl-node-gate:focus .node-skin-selection,
+.hdl-node-gate:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1243,6 +1265,13 @@ text {
 .hdl-node-inverter .svsch-node-shape,
 .svsch-node-shape.hdl-node-inverter {
   fill: none;
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-gate .svsch-node-shape,
+.svsch-node-shape.hdl-node-gate {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
   stroke: white;
   stroke-linejoin: round;
   stroke-width: 1.5;
