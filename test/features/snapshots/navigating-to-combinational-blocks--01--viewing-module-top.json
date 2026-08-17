@@ -1,31 +1,31 @@
 {
   "nodes": [
     {
-      "id": "gate:top:b:expr",
+      "id": "comb:top:b:expr",
       "type": "hdl",
       "position": {
         "x": 360,
         "y": 24
       },
-      "width": 96,
+      "width": 192,
       "height": 96,
       "data": {
-        "kind": "gate",
+        "kind": "comb",
         "ports": [
           {
-            "id": "port:lhs",
-            "name": "lhs",
-            "direction": "input"
-          },
-          {
-            "id": "port:rhs",
-            "name": "rhs",
-            "direction": "input"
-          },
-          {
-            "id": "port:b",
+            "id": "out:b",
             "name": "b",
             "direction": "output"
+          },
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
           }
         ]
       }
@@ -54,7 +54,7 @@
       "id": "port:top:b",
       "type": "hdl",
       "position": {
-        "x": 672,
+        "x": 768,
         "y": 60
       },
       "width": 120,
@@ -93,27 +93,27 @@
   ],
   "edges": [
     {
-      "id": "edge:gate:top:b:expr:port:top:b:b",
-      "source": "gate:top:b:expr",
+      "id": "edge:comb:top:b:expr:port:top:b:b",
+      "source": "comb:top:b:expr",
       "target": "port:top:b",
-      "sourceHandle": "port:b",
+      "sourceHandle": "out:b",
       "targetHandle": "port:b",
-      "path": "M 456 72 L 480 72 L 648 72 L 672 72"
+      "path": "M 552 72 L 576 72 L 744 72 L 768 72"
     },
     {
-      "id": "edge:port:top:a:gate:top:b:expr:a",
+      "id": "edge:port:top:a:comb:top:b:expr:a",
       "source": "port:top:a",
-      "target": "gate:top:b:expr",
+      "target": "comb:top:b:expr",
       "sourceHandle": "port:a",
-      "targetHandle": "port:lhs",
-      "path": "M 144 72 L 168 72 L 336 72 L 336 48 L 360 48"
+      "targetHandle": "port:a",
+      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     },
     {
-      "id": "edge:port:top:c:gate:top:b:expr:c",
+      "id": "edge:port:top:c:comb:top:b:expr:c",
       "source": "port:top:c",
-      "target": "gate:top:b:expr",
+      "target": "comb:top:b:expr",
       "sourceHandle": "port:c",
-      "targetHandle": "port:rhs",
+      "targetHandle": "port:c",
       "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
     }
   ]

@@ -861,6 +861,7 @@ text {
 }
 
 .hdl-node-inverter,
+.hdl-node-gate,
 .hdl-node-zext {
   padding: 0;
 }
@@ -1344,6 +1345,21 @@ text {
 }
 
 .inverter-skin .inverter-bubble {
+  fill: none;
+}
+
+.gate-skin .node-skin-body {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.gate-skin .gate-bubble {
+  fill: none;
+}
+
+.hdl-node-gate .gate-back-curve.svsch-node-shape {
   fill: none;
 }
 
@@ -1914,8 +1930,8 @@ text {
 }
 .hdl-node-gate .svsch-node-shape,
 .svsch-node-shape.hdl-node-gate {
-  fill: color-mix(in srgb, var(--vscode-charts-green) 14%, var(--vscode-editor-background));
-  stroke: var(--vscode-charts-green);
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
   stroke-linejoin: round;
   stroke-width: 1.5;
 }

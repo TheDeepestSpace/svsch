@@ -1,17 +1,16 @@
 // Renders per-benchmark-suite bar charts (+ a worst/best delta table) as
 // static SVG — no headless browser or charting library, just hand-rolled SVG
 // since the output is a flat image embedded in a GitHub PR comment (no
-// interactivity possible there anyway). Two chart shapes: a "master vs. this
-// run" diff chart (system) and a stacked elaboration+rendering chart
-// (visual) — see renderSuiteChart / renderStackedSuiteChart below.
+// interactivity possible there anyway). Stacked elaboration+rendering chart
+// (visual) — see renderStackedSuiteChart below.
 //
-// Diff chart palette: blue baseline bar, status-good green / status-critical
-// red delta caps, blue-hatched "new" bars for entries with no baseline
-// sample yet. Green/red alone fail the colorblind-separation check for a bar
-// chart, so every delta also carries a direct % label and a positional cue
-// (the cap grows down when faster, up when slower) — never color alone.
 // Stacked chart palette: blue elaboration segment, purple rendering segment,
-// hatched in the same color when that segment has no baseline yet.
+// hatched in the same color when that segment has no baseline yet. Each
+// segment's baseline-vs-current diff is drawn with status-good green /
+// status-critical red caps — green/red alone fail the colorblind-separation
+// check for a bar chart, so every delta also carries a direct % label and a
+// positional cue (the cap grows down when faster, up when slower) — never
+// color alone.
 const COLORS = {
   surface: '#fcfcfb',
   ink: '#0b0b0b',
@@ -35,7 +34,6 @@ const COLORS = {
 const BAR_WIDTH_FRACTION = 0.72;
 const MIN_BAR_WIDTH = 1;
 const PANEL_HEIGHT = 260;
-const PANEL_GAP = 56;
 const LABEL_LINE_HEIGHT = 11;
 const LABEL_AREA_HEIGHT = 210;
 const LEFT_MARGIN = 60;
@@ -117,16 +115,8 @@ function niceStep(maxValue) {
 }
 
 // "New" (no baseline yet) entries are drawn hatched rather than solid — a
-// texture cue rather than relying on color alone — recolored per chart: blue
-// for the system suite's single baseline-diff bar, blue/purple (matching the
-// solid segment they stand in for) on the visual suite's stacked bar.
-const DIFF_LEGEND_ITEMS = [
-  { fill: COLORS.blue, label: 'Baseline (master)' },
-  { fill: COLORS.good, label: 'Faster than baseline' },
-  { fill: COLORS.critical, label: 'Slower than baseline' },
-  { fill: 'url(#newHatch)', label: 'New (no baseline yet)' },
-];
-
+// texture cue rather than relying on color alone — colored to match the
+// solid segment they stand in for on the visual suite's stacked bar.
 const STACKED_LEGEND_ITEMS = [
   { fill: COLORS.blue, label: 'Elaboration' },
   { fill: COLORS.purple, label: 'Rendering' },
@@ -196,47 +186,6 @@ function renderDiffSegment({ x, width, baseY, row, scale, solidFill, hatchFill }
   return { parts, top: Math.max(baselineH, valueH) };
 }
 
-function renderPanel({ label, unit, rows, names, originY, maxValue, barWidth, barPitch, annotate }) {
-  const step = niceStep(maxValue);
-  const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
-  const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
-  const parts = [];
-  const plotWidth = names.length * barPitch;
-
-  parts.push(`<text x="${LEFT_MARGIN - 12}" y="${originY - PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(label)} (${escapeXml(unit)})</text>`);
-
-  // Gridlines + y-axis ticks.
-  for (let tick = 0; tick <= chartMax; tick += step) {
-    const y = originY - tick * scale;
-    parts.push(`<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
-    parts.push(`<text x="${LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
-  }
-  parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
-
-  names.forEach((name, index) => {
-    const row = rows.get(name);
-    if (!row) return;
-    const x = LEFT_MARGIN + index * barPitch + (barPitch - barWidth) / 2;
-
-    const { parts: segParts, top } = renderDiffSegment({ x, width: barWidth, baseY: originY, row, scale, solidFill: COLORS.blue, hatchFill: 'url(#newHatch)' });
-    parts.push(...segParts);
-
-    if (!annotate) return;
-    if (row.isNew) {
-      parts.push(`<text x="${x + barWidth / 2}" y="${originY - top - 6}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">new</text>`);
-      return;
-    }
-    const pct = row.deltaPct;
-    if (pct !== undefined) {
-      const sign = pct > 0 ? '+' : '';
-      const color = pct > 0 ? COLORS.critical : pct < 0 ? COLORS.goodText : COLORS.inkMuted;
-      parts.push(`<text x="${x + barWidth / 2}" y="${originY - top - 6}" font-size="10" text-anchor="middle" fill="${color}" font-family="system-ui, -apple-system, sans-serif">${sign}${pct.toFixed(0)}%</text>`);
-    }
-  });
-
-  return parts.join('\n');
-}
-
 // Rotated 90°: each wrapped line is its own vertical strip of text that reads
 // top-to-bottom, growing away from the axis; earlier lines sit closer to the
 // bar they label so short labels stay tight against it.
@@ -252,51 +201,6 @@ function renderXLabels(names, originY, barPitch) {
     });
   });
   return parts.join('\n');
-}
-
-// suiteTitle: chart headline. metrics: [{ label, unit, entries, baselineByName, emphasize? }],
-// sharing one x-axis (`names`, the ordered union of every metric's entry
-// names so every test that has *any* data gets a labeled column, even if a
-// lighter-weight metric like elaboration doesn't cover it). showLabels turns
-// off x-axis names and per-bar value text — for suites with too many entries
-// to label legibly, showing every bar (however thin) beats showing a legible
-// label on a truncated subset of them.
-export function renderSuiteChart({ suiteTitle, metrics, showLabels = true }) {
-  const metricRows = metrics.map((metric) => ({
-    ...metric,
-    rowsByName: new Map(computeDeltaRows(metric.entries, metric.baselineByName).map((row) => [row.name, row])),
-  }));
-  const names = [...new Set(metricRows.flatMap((metric) => metric.entries.map((entry) => entry.name)))];
-
-  const width = Math.max(legendWidth(24, DIFF_LEGEND_ITEMS), estimateTextWidth(suiteTitle, 18) + 48);
-  const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
-  const barWidth = Math.max(MIN_BAR_WIDTH, barPitch * BAR_WIDTH_FRACTION);
-  const panelCount = metricRows.length;
-  const chartAreaHeight = panelCount * PANEL_HEIGHT + (panelCount - 1) * PANEL_GAP;
-  const labelAreaHeight = showLabels ? LABEL_AREA_HEIGHT : 0;
-  const height = TOP_MARGIN + chartAreaHeight + labelAreaHeight + 24;
-
-  const panels = [];
-  metricRows.forEach((metric, index) => {
-    const originY = TOP_MARGIN + PANEL_HEIGHT + index * (PANEL_HEIGHT + PANEL_GAP);
-    const maxValue = Math.max(1, ...metric.entries.map((e) => Math.max(e.value, metric.baselineByName.get(e.name) ?? 0)));
-    panels.push(renderPanel({ label: metric.label, unit: metric.unit ?? 'ms', rows: metric.rowsByName, names, originY, maxValue, barWidth, barPitch, annotate: showLabels }));
-  });
-  const lastOriginY = TOP_MARGIN + panelCount * PANEL_HEIGHT + (panelCount - 1) * PANEL_GAP;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
-  <defs>
-    <pattern id="newHatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <rect width="8" height="8" fill="${COLORS.blue}" />
-      <line x1="0" y1="0" x2="0" y2="8" stroke="${COLORS.surface}" stroke-width="3" />
-    </pattern>
-  </defs>
-  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
-  <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(suiteTitle)}</text>
-  ${renderLegend(24, 52, DIFF_LEGEND_ITEMS)}
-  ${panels.join('\n')}
-  ${showLabels ? renderXLabels(names, lastOriginY, barPitch) : ''}
-</svg>`;
 }
 
 // Shared by renderStackedSuiteChart and the CSV export (comment-benchmark-summary.mjs)
@@ -316,10 +220,10 @@ export function computeStackedData(metrics) {
 // stacked on top (purple), so the bar height reads as total diagram-open
 // time. Sorted fastest-to-slowest by current-run total (not by name) so the
 // shape of the distribution is visible left-to-right. Each segment carries
-// its own baseline-vs-current diff (renderDiffSegment) — a green/red cap the
-// same as the system suite's chart — so a slowdown in just one half (e.g.
-// rendering regresses while elaboration doesn't) is still visible rather
-// than being averaged away into the combined bar height. A segment with no
+// its own baseline-vs-current diff (renderDiffSegment) — a green/red cap —
+// so a slowdown in just one half (e.g. rendering regresses while elaboration
+// doesn't) is still visible rather than being averaged away into the
+// combined bar height. A segment with no
 // baseline yet (first time this test's elaboration/rendering ran) is hatched
 // instead of solid, in the same color as its solid counterpart — a test can
 // gain a baseline for one half before the other, so "new" is tracked per
@@ -394,9 +298,22 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
 // entries at all). Worst/best breakout is only shown once there are enough
 // entries with a baseline that the two lists don't just repeat each other in
 // reverse order (>10, so a worst-5 and best-5 can't overlap).
-export function renderDeltaTableMarkdown(rows) {
+// Average nominal/pct delta across every row with a baseline, or null when
+// none have one yet (first run establishing a baseline). Shared by the
+// top-of-report summary line and the per-suite delta table's own "Avg" row
+// so the two can never disagree.
+export function computeAverageDelta(rows) {
   const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
   if (withBaseline.length === 0) return null;
+  const avgNominal = withBaseline.reduce((sum, row) => sum + row.deltaMs, 0) / withBaseline.length;
+  const avgPct = withBaseline.reduce((sum, row) => sum + row.deltaPct, 0) / withBaseline.length;
+  return { avgNominal, avgPct, count: withBaseline.length };
+}
+
+export function renderDeltaTableMarkdown(rows) {
+  const avg = computeAverageDelta(rows);
+  if (!avg) return null;
+  const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
 
   const header = '| | test | baseline | new | Δ (nominal) | Δ (%) |\n|---|---|---:|---:|---:|---:|';
   const lines = [header];
@@ -413,11 +330,9 @@ export function renderDeltaTableMarkdown(rows) {
     for (const row of best) lines.push(formatRow('Best', row));
   }
 
-  const avgNominal = withBaseline.reduce((sum, row) => sum + row.deltaMs, 0) / withBaseline.length;
-  const avgPct = withBaseline.reduce((sum, row) => sum + row.deltaPct, 0) / withBaseline.length;
-  const avgSignNominal = avgNominal > 0 ? '+' : '';
-  const avgSignPct = avgPct > 0 ? '+' : '';
-  lines.push(`| Avg | across ${withBaseline.length} test${withBaseline.length === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avgNominal.toFixed(0)} ms | ${avgSignPct}${avgPct.toFixed(1)}% |`);
+  const avgSignNominal = avg.avgNominal > 0 ? '+' : '';
+  const avgSignPct = avg.avgPct > 0 ? '+' : '';
+  lines.push(`| Avg | across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms | ${avgSignPct}${avg.avgPct.toFixed(1)}% |`);
 
   return lines.join('\n');
 }

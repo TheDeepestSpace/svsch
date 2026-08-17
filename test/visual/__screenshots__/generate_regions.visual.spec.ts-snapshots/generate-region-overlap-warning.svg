@@ -877,6 +877,7 @@ text {
 }
 
 .hdl-node-inverter,
+.hdl-node-gate,
 .hdl-node-zext {
   padding: 0;
 }
@@ -1360,6 +1361,21 @@ text {
 }
 
 .inverter-skin .inverter-bubble {
+  fill: none;
+}
+
+.gate-skin .node-skin-body {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.gate-skin .gate-bubble {
+  fill: none;
+}
+
+.hdl-node-gate .gate-back-curve.svsch-node-shape {
   fill: none;
 }
 
@@ -1930,8 +1946,8 @@ text {
 }
 .hdl-node-gate .svsch-node-shape,
 .svsch-node-shape.hdl-node-gate {
-  fill: color-mix(in srgb, var(--vscode-charts-green) 14%, var(--vscode-editor-background));
-  stroke: var(--vscode-charts-green);
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -2499,7 +2515,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="194.5" height="74.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="186" y="10" text-anchor="end">⚠</text>
+<text x="204" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb svsch-node-invalid" data-node-id="node:warn:b" data-node-kind="comb" transform="translate(120 80)">
@@ -2509,7 +2525,7 @@ path.port-skin-body.port-skin-harness {
 <rect class="svsch-node-error-outline" x="-1.25" y="-1.25" width="194.5" height="74.5" />
 <g class="svsch-node-warning" aria-label="this block does not belong to a generate arm block">
 <title>this block does not belong to a generate arm block</title>
-<text x="186" y="10" text-anchor="end">⚠</text>
+<text x="204" y="-12" text-anchor="middle">⚠</text>
 </g>
 </g>
 </g>

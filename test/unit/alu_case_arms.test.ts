@@ -27,14 +27,16 @@ describe.each(['uhdm'] as const)('ALU-style case arms: %s', (backend) => {
     expect(aluNodes.some((n) => n.metadata?.operation === '+')).toBe(true);
     expect(aluNodes.some((n) => n.metadata?.operation === '-')).toBe(true);
 
-    // &, |, and && each get a dedicated gate node.
+    // &, |, and && each get a dedicated gate node. Bitwise `&` and logical `&&`
+    // both render as the same AND glyph (metadata.operation "and"); they're told
+    // apart below by output width, since only the logical one reduces to 1 bit.
     expect(gateNodes).toHaveLength(3);
-    expect(gateNodes.some((n) => n.metadata?.operation === '&')).toBe(true);
-    expect(gateNodes.some((n) => n.metadata?.operation === '|')).toBe(true);
-    expect(gateNodes.some((n) => n.metadata?.operation === '&&')).toBe(true);
+    const andGateNodes = gateNodes.filter((n) => n.metadata?.operation === 'and');
+    expect(andGateNodes).toHaveLength(2);
+    expect(gateNodes.some((n) => n.metadata?.operation === 'or')).toBe(true);
 
     // && reduces to a single bit regardless of operand width, same as a comparator.
-    const logicalGateNode = gateNodes.find((n) => n.metadata?.operation === '&&');
+    const logicalGateNode = andGateNodes.find((n) => n.ports.find((p) => p.direction === 'output')?.width === '[0:0]');
     const logicalGateOutput = logicalGateNode?.ports.find((p) => p.direction === 'output');
     expect(logicalGateOutput?.width).toBe('[0:0]');
 

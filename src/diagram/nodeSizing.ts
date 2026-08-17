@@ -1,8 +1,9 @@
 import type { DiagramNode } from '../ir/types';
-import { nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
+import { gateBodyOperation, gateIsNegated, nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import {
   combHeightForPortRows,
   diagramSizing,
+  gateHeightForInputCount,
   literalHeightForPortRows,
   muxHeightForPortRows,
   nodeHeightForPortRows,
@@ -12,11 +13,146 @@ import {
 } from './constants';
 import { selectPortLabel } from './selectLabels';
 import { isBusComposition } from './busGeometry';
-import { interfaceTopHatHeight, orderedInterfaceSidePorts } from './interfaceGeometry';
+import {
+  distributedInterfaceSideCenters,
+  interfaceSkinPath,
+  interfaceTopHatHeight,
+  orderedInterfaceSidePorts,
+  portSkinDirection,
+  portSkinTopRightVertex
+} from './interfaceGeometry';
+import { muxRightTopY } from './muxGeometry';
 
 export interface DiagramNodeDimensions {
   width: number;
   height: number;
+}
+
+/**
+ * The size a node actually renders/occupies at: the canonical auto-fit size
+ * (diagramNodeDimensions), grown per axis to fit a manual resize override if
+ * one is saved. Never shrinks below canonical, even if the override is
+ * stale (e.g. canonical grew after the override was saved) — see
+ * `sizeOverride` on BaseDiagramNode. Every consumer that needs a node's true
+ * on-screen/routing footprint (ELK sizing, obstacle bounds, region
+ * auto-grow, collision checks) should use this instead of
+ * diagramNodeDimensions; diagramNodeDimensions itself stays the pure
+ * canonical calculation, since resize logic needs that as its grow-only
+ * floor independent of any current override.
+ */
+export function resolvedNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
+  const canonical = diagramNodeDimensions(node);
+  const override = node.sizeOverride;
+  if (!override) return canonical;
+  const grid = diagramSizing.gridSize;
+  return {
+    width: Math.max(canonical.width, override.width * grid),
+    height: Math.max(canonical.height, override.height * grid)
+  };
+}
+
+export interface NodeOutlineVertex {
+  x: number;
+  y: number;
+}
+
+export interface NodeWarningIconCenter {
+  x: number;
+  y: number;
+}
+
+const arrayBadgeFontSize = 10;
+const arrayBadgeStartOffset = 3;
+const monospaceCharacterWidth = 0.62;
+
+/**
+ * The node outline's right-most vertex (ties broken by smallest y, i.e. the
+ * top-most of the right-most points). Rectangular skins have it at the
+ * bbox corner; mux/select/alu slope their right edge in from the top, so
+ * their true corner sits below y=0; the inverter's true corner is its output
+ * bubble, offset from the bbox and vertically centred; port skins (and
+ * interface ports, which reuse the port skin) come to a nose point or a
+ * vertical edge short of the top-right corner.
+ */
+export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu') {
+    return { x: width, y: muxRightTopY(height) };
+  }
+  if (node.kind === 'inverter') {
+    return { x: inverterGeometryWidth(), y: height / 2 };
+  }
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return portSkinTopRightVertex(portSkinDirection(node.ports[0]), width, height);
+  }
+  if (node.kind === 'interface' && structRole(node) !== 'modport') {
+    return interfaceInstanceTopRightVertex(node, width, height);
+  }
+  return { x: width, y: 0 };
+}
+
+/**
+ * Centers the warning half a grid outside the outline. Array dimension badges
+ * occupy that same top-right space on the skins that render them, so those
+ * warnings move far enough right to clear the complete badge text.
+ */
+export function nodeWarningIconCenter(node: DiagramNode, width: number, height: number): NodeWarningIconCenter {
+  const vertex = nodeOutlineTopRightVertex(node, width, height);
+  const halfGrid = diagramSizing.gridSize / 2;
+  let x = vertex.x + halfGrid;
+  const arrayDimension = renderedArrayDimensionBadge(node);
+
+  if (arrayDimension) {
+    const badgeRight = width
+      + arrayBadgeStartOffset
+      + arrayDimension.length * arrayBadgeFontSize * monospaceCharacterWidth;
+    x = Math.max(x, badgeRight + halfGrid);
+  }
+
+  return { x, y: vertex.y - halfGrid };
+}
+
+function renderedArrayDimensionBadge(node: DiagramNode): string | undefined {
+  if (!nodeIsArrayNode(node)) return undefined;
+  const dimension = nodeArrayDimension(node);
+  if (!dimension) return undefined;
+
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
+    return dimension;
+  }
+  if (node.kind === 'register' || node.kind === 'latch' || node.kind === 'replicate' || node.kind === 'literal') {
+    return dimension;
+  }
+  if (node.kind === 'instance' || node.kind === 'module' || node.kind === 'unknown') {
+    return dimension;
+  }
+  return undefined;
+}
+
+// Mirrors the port/side-notch geometry BusNodeSvg feeds into interfaceSkinPath,
+// so the warning icon lands on the chevron outline's actual right-most vertex
+// instead of the (possibly notch-shorted or hat-narrowed) bbox corner.
+function interfaceInstanceTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+  const grid = diagramSizing.gridSize;
+  const visible = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'));
+  const topPorts = visible.filter((port) => port.direction === 'input' && port.width !== 'interface');
+  const bottomPorts = visible.filter((port) => port.direction === 'output' && port.width !== 'interface');
+  const sidePorts = visible.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'));
+  const ordered = orderedInterfaceSidePorts(sidePorts);
+  const topHatH = interfaceTopHatHeight(topPorts.length > 0);
+  const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
+  const shiftY = diagramSizing.interfaceInstanceShiftY;
+  const unshiftedH = Math.max(grid, height - shiftY);
+  const leftCenters = distributedInterfaceSideCenters(ordered.left.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
+  const rightCenters = distributedInterfaceSideCenters(ordered.right.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
+
+  return interfaceSkinPath({
+    width,
+    height,
+    leftCenters,
+    rightCenters,
+    topPortCount: topPorts.length,
+    bottomPortCount: bottomPorts.length
+  }).topRightVertex;
 }
 
 export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
@@ -87,8 +223,12 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
     return muxHeightForPortRows(portRows);
   }
 
-  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return muxHeightForPortRows(2);
+  }
+
+  if (node.kind === 'gate') {
+    return gateHeightForInputCount(portRows);
   }
 
   if (node.kind === 'inverter' || node.kind === 'zext') {
@@ -148,6 +288,20 @@ export function inverterGeometryWidth(): number {
   const g = diagramSizing.gridSize;
   const bubbleRadius = Math.min(g / 4, g / 6);
   return g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
+}
+
+/** Radius of a gate's negated-output bubble (NAND/NOR/XNOR) — matches the inverter's bubble. */
+export const gateBubbleRadius = diagramSizing.gridSize / 6;
+export const gateBubbleGap = 2;
+/** Horizontal gap reserved for XOR/XNOR's extra back curve, left of the OR-shaped body. */
+export const gateXorGap = 5;
+
+/** Body width a gate needs: base AND/OR/XOR body, plus room for the XOR back-curve and/or negation bubble. */
+export function gateGeometryWidth(isXor: boolean, negated: boolean): number {
+  const base = diagramSizing.gridSize * 3;
+  const xorExtra = isXor ? gateXorGap : 0;
+  const bubbleExtra = negated ? gateBubbleGap + gateBubbleRadius * 2 : 0;
+  return base + xorExtra + bubbleExtra;
 }
 
 function registerVisibleInputRows(node: DiagramNode): number {
@@ -243,10 +397,19 @@ function nodeWidthForKind(
     );
   }
 
-  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return snappedWidth(
       diagramSizing.muxWidth,
       diagramSizing.gridSize * 3,
+      snapUpToEvenGrid
+    );
+  }
+
+  if (node.kind === 'gate') {
+    const bodyOp = gateBodyOperation(node);
+    return snappedWidth(
+      diagramSizing.muxWidth,
+      gateGeometryWidth(bodyOp === 'xor', gateIsNegated(node)),
       snapUpToEvenGrid
     );
   }
@@ -350,11 +513,11 @@ function visiblePortLabels(
   outputs: DiagramNode['ports'],
   showPortTypes: boolean
 ): string[] {
-  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop' || node.kind === 'zext') {
+  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop' || node.kind === 'gate' || node.kind === 'zext') {
     return [];
   }
 
-  if (node.kind === 'alu' || node.kind === 'gate' || node.kind === 'comparator') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return outputs.map((port) => portLabel(port, true, showPortTypes));
   }
 

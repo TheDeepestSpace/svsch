@@ -7,8 +7,8 @@ import { execFile, exec } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
+import { comparePngBuffers } from '../pngSnapshotComparison';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
@@ -244,6 +244,48 @@ When('I hover the connection between {string} and {string} and click its Cut con
   await cutNetByClickingControl(this, source, target);
 });
 
+// Keyboard equivalent — the `c` shortcut mirrors exactly what clicking the
+// Cut control posts (see main.tsx) when a single edge is hovered.
+When('I hover the connection between {string} and {string} and press C to cut it', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await hoverEdgeAndPressShortcutKey(this, edgeId, 'c');
+  await waitForLayoutChange(this, before, 'After cut net via C shortcut');
+});
+
+// Ctrl/Cmd-click directly on a wire's path to add it to whatever's already
+// selected, mirroring how a user extends a block marquee with an extra,
+// otherwise-unrelated connection — React Flow only auto-selects edges that
+// touch an already-selected node, so this is the one way to get an edge
+// into a mixed selection without also sweeping up its endpoint nodes.
+// pointer-events on the bridge path is "stroke" (see diagram.css), so a
+// coordinate-based click only lands reliably on a perfectly straight run —
+// dispatch directly on the element instead, the same way the plain hover
+// step above dispatches 'mouseover' rather than moving a real pointer. React
+// Flow's multi-selection state comes from its own window-level keydown/keyup
+// tracking (not the click event's modifier flags), so a real keydown has to
+// bracket the click — and land in a separate render tick — for the edge to
+// be added rather than replacing the selection.
+When('I add the connection between {string} and {string} to the selection', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const isMac = process.platform === 'darwin';
+  const key = isMac ? 'Meta' : 'Control';
+  const modifierProps = isMac ? { metaKey: true } : { ctrlKey: true };
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ctrlKey: key === 'Control', metaKey: key === 'Meta' }));
+  }, key);
+  await this.webviewPage.locator('html').evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await this.webviewPage.locator('html').evaluate((_el, { edgeId, modifierProps }) => {
+    const target = document.querySelector(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge-bridge`);
+    if (!target) throw new Error(`Bridge path not found for edge ${edgeId}`);
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, ...modifierProps }));
+  }, { edgeId, modifierProps });
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+  }, key);
+  await this.takeScreenshot(`Added the connection between ${source} and ${target} to the selection`);
+});
+
 // Reveal a connection's floating Cut/Reroute controls without clicking either —
 // used to check that hovering one wire of a multi-wire selection also reveals
 // every other selected wire's own controls.
@@ -270,6 +312,21 @@ When('I hover the connection between {string} and {string} and click its Reroute
   await waitForLayoutChange(this, before, 'After reroute single edge');
 });
 
+// Keyboard equivalent of the step above — the `r` shortcut mirrors exactly
+// what clicking the Reroute control posts (see main.tsx), so this exercises
+// the same outcome via `hoveredEdgeId` instead of a button click.
+When('I hover the connection between {string} and {string} and press R to reroute it', async function (this: BddWorld, source: string, target: string) {
+  await this.recordPortPositions();
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(this.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await hoverEdgeAndPressShortcutKey(this, edgeId, 'r');
+  await waitForLayoutChange(this, before, 'After reroute single edge via R shortcut');
+});
+
 When('I rename the cut net {string} to {string}', async function (this: BddWorld, currentLabel: string, nextLabel: string) {
   const labelNode = cutNetLabelNodes(this.webviewPage, currentLabel).first();
   await expect(labelNode).toBeVisible();
@@ -283,26 +340,19 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
   await waitForLayoutChange(this, before, 'After rename cut net');
 });
 
-When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
-  const labelNodes = cutNetLabelNodes(this.webviewPage, label);
-  await expect(labelNodes.first()).toBeVisible();
-  const before = JSON.stringify(await readExtensionLayout(this));
-  // Fanout labels can overlap after auto-layout, so use the first label whose
-  // hover action is reachable instead of assuming the first DOM node is clear.
-  let tied = false;
-  for (let index = 0; index < await labelNodes.count(); index += 1) {
-    const labelNode = labelNodes.nth(index);
-    await labelNode.hover({ force: true });
-    const tieButton = labelNode.locator('.hdl-net-label-tie');
-    if (await tieButton.isVisible()) {
-      await tieButton.focus();
-      await tieButton.press('Enter');
-      tied = true;
-      break;
-    }
-  }
-  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
-  await waitForLayoutChange(this, before, 'After tie net');
+When('I tie back the cut net {string} by clicking its Tie control', async function (this: BddWorld, label: string) {
+  await tieBackCutNet(this, label, async (tieButton) => {
+    await tieButton.focus();
+    await tieButton.press('Enter');
+  });
+});
+
+// Keyboard equivalent — the `t` shortcut mirrors exactly what clicking the
+// Tie control posts (see main.tsx) for a hovered cut net label.
+When('I tie back the cut net {string} by pressing T', async function (this: BddWorld, label: string) {
+  await tieBackCutNet(this, label, async () => {
+    await pressGlobalShortcutKey(this, 't');
+  });
 });
 
 When('I tie back every cut net', async function (this: BddWorld) {
@@ -573,6 +623,19 @@ When('I resize the {string} generate region on the {word} side by {int} grid cel
   await waitForLayoutChange(this, before, `After resizing ${label} ${side}`);
 });
 
+When('I resize the {string} block on the {word} side by {int} grid cells', async function (this: BddWorld, label: string, side: string, cells: number) {
+  if (!isRegionSide(side)) throw new Error(`Unknown block side: ${side}`);
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  this.notedRegionBounds.set(label, await getNodeBounds(this.webviewPage, id));
+  await dragNodeSideByGridCells(this, id, side, cells);
+  const resizedBounds = await getNodeBounds(this.webviewPage, id);
+  await waitForLayoutChange(this, before, `After resizing ${label} ${side}`, async () => {
+    await waitForFlowNodeSize(this.webviewPage, id, resizedBounds);
+  });
+});
+
 When('I move the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
   const regionNodeIds = await generateRegionNodeIds(this, label);
   if (regionNodeIds.length === 0) throw new Error(`Generate region ${label} has no owned nodes to move`);
@@ -649,6 +712,13 @@ When('I double-click on the combinational block for {string}', async function (t
   const module = this.lastGraph.modules[this.lastViewModel.moduleName];
   const node = module.nodes.find((n: any) => (n.kind === 'comb' || n.kind === 'gate') && n.id.includes(`:${name}:`));
   if (!node?.id) throw new Error(`Could not find comb/gate block for "${name}"`);
+  await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
+});
+
+When('I double-click on the gate block for {string}', async function (this: BddWorld, name: string) {
+  const module = this.lastGraph.modules[this.lastViewModel.moduleName];
+  const node = module.nodes.find((n: any) => n.kind === 'gate' && n.id.includes(`:${name}:`));
+  if (!node?.id) throw new Error(`Could not find gate block for "${name}"`);
   await this.webviewPage.locator(`.react-flow__node[data-id="${node.id}"]`).dblclick({ force: true });
 });
 
@@ -878,6 +948,18 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await expect(button).toBeVisible();
   await button.click();
   await waitForLayoutChange(this, before, `After clicking ${label}`);
+});
+
+// Keyboard equivalent of clicking the block-selection toolbar's "Cut out"
+// button — the `c` shortcut falls back to cutting every wire touching the
+// selected block(s) whenever no wire is itself hovered or selected (see
+// cutOutEdgesForSelection in main.tsx).
+When('I press C to cut out the selected blocks', async function (this: BddWorld) {
+  const before = JSON.stringify(await readExtensionLayout(this));
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' });
+  await expect(button).toBeVisible();
+  await pressGlobalShortcutKey(this, 'c');
+  await waitForLayoutChange(this, before, 'After pressing C to cut out the selection');
 });
 
 When('I note the position of the block {string}', async function (this: BddWorld, label: string) {
@@ -1148,6 +1230,28 @@ Then('the {string} generate region should have grown on the {word} side', async 
   expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
 });
 
+Then('the {string} block should have grown on the {word} side', async function (this: BddWorld, label: string, side: string) {
+  if (!isRegionSide(side)) throw new Error(`Unknown block side: ${side}`);
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const before = this.notedRegionBounds.get(label);
+  if (!before) throw new Error(`No noted bounds for block ${label}`);
+  const after = await getNodeBounds(this.webviewPage, id);
+  const delta = regionSide(after, side) - regionSide(before, side);
+  const expectedSign = side === 'right' || side === 'bottom' ? 1 : -1;
+  expect(delta * expectedSign).toBeGreaterThanOrEqual(diagramGrid.size);
+});
+
+Then('the {string} block should be at its canonical size', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  const moduleName = this.lastViewModel.moduleName;
+  const layout = await readExtensionLayout(this);
+  const node = layout.modules?.[moduleName]?.nodes?.[id];
+  expect(node?.width, `Expected block ${label} to have no persisted size override after reset`).toBeUndefined();
+  expect(node?.height, `Expected block ${label} to have no persisted size override after reset`).toBeUndefined();
+});
+
 Then('the {string} generate region should have expanded on the {word} side while dragging', async function (this: BddWorld, label: string, side: string) {
   if (!this.pendingNodeDrag) throw new Error('No block is currently being dragged');
   if (!isRegionSide(side)) throw new Error(`Unknown generate region side: ${side}`);
@@ -1358,6 +1462,10 @@ Then('I should not see an inverter node', async function (this: BddWorld) {
 
 Then('I should see an ALU block', async function (this: BddWorld) {
   await expect(this.webviewPage.locator('[data-node-kind="alu"]')).toBeVisible();
+});
+
+Then('I should see a gate block', async function (this: BddWorld) {
+  await expect(this.webviewPage.locator('[data-node-kind="gate"]')).toBeVisible();
 });
 
 Then('I should see a register node {string}', async function (this: BddWorld, name: string) {
@@ -1690,6 +1798,28 @@ Then('there should be a connection between the ALU block and {string}', async fu
   );
   const targetId = await findNodeIdByLabel(this.webviewPage, target);
   if (!sourceId || !targetId) throw new Error(`Nodes not found: alu=${sourceId}, ${target}=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between {string} and the gate block', async function (this: BddWorld, source: string) {
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const gates = this.webviewPage.locator('[data-node-kind="gate"]');
+  await expect(gates).toHaveCount(1);
+  const targetId = await gates.evaluate((gate) =>
+    gate.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, gate=${targetId}`);
+  await checkConnection(this.webviewPage, sourceId, targetId);
+});
+
+Then('there should be a connection between the gate block and {string}', async function (this: BddWorld, target: string) {
+  const gates = this.webviewPage.locator('[data-node-kind="gate"]');
+  await expect(gates).toHaveCount(1);
+  const sourceId = await gates.evaluate((gate) =>
+    gate.closest('.react-flow__node')?.getAttribute('data-id') ?? null
+  );
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: gate=${sourceId}, ${target}=${targetId}`);
   await checkConnection(this.webviewPage, sourceId, targetId);
 });
 
@@ -2129,23 +2259,39 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  const updateSnapshots = shouldUpdateSnapshots(world);
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, pngBuffer);
     return;
   }
-  const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
-  const actualImage = PNG.sync.read(pngBuffer);
-  const { width, height } = expectedImage;
-  const diff = new PNG({ width, height });
-  const numDiffPixels = pixelmatch(expectedImage.data, actualImage.data, diff.data, width, height, { threshold: 0.1 });
-  if (numDiffPixels > 100) {
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
-    fs.mkdirSync(resultsDir, { recursive: true });
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
-    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), PNG.sync.write(diff));
-    throw new Error(`CLI PNG snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ.`);
+  const expectedBuffer = fs.readFileSync(snapshotPath);
+  const comparison = comparePngBuffers(
+    expectedBuffer,
+    pngBuffer,
+    SNAPSHOT_THRESHOLDS.pixelmatch.cli,
+    SNAPSHOT_THRESHOLDS.pixelmatch.threshold
+  );
+  if (comparison.matches) return;
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, pngBuffer);
+    return;
   }
+
+  const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+  fs.mkdirSync(resultsDir, { recursive: true });
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), expectedBuffer);
+  fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
+  if (comparison.diffBuffer) {
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), comparison.diffBuffer);
+  }
+  if (comparison.numDiffPixels === undefined) {
+    throw new Error(
+      `CLI PNG snapshot size mismatch for "${snapshotName}": `
+      + `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, `
+      + `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`
+    );
+  }
+  throw new Error(`CLI PNG snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`);
 }
 
 async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
@@ -2157,11 +2303,17 @@ async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
   const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
   if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
   const snapshotPath = path.join(snapshotsDir, `${snapshotName}.svg`);
-  if (!fs.existsSync(snapshotPath) || shouldUpdateSnapshots(world)) {
+  const updateSnapshots = shouldUpdateSnapshots(world);
+  if (!fs.existsSync(snapshotPath)) {
     fs.writeFileSync(snapshotPath, svgContent, 'utf8');
     return;
   }
   const expected = fs.readFileSync(snapshotPath, 'utf8');
+  if (expected === svgContent) return;
+  if (updateSnapshots) {
+    fs.writeFileSync(snapshotPath, svgContent, 'utf8');
+    return;
+  }
   if (expected !== svgContent) {
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
     fs.mkdirSync(resultsDir, { recursive: true });
@@ -2481,10 +2633,80 @@ async function clickEdgeControl(world: BddWorld, edgeId: string, controlClass: s
   await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
 }
 
-async function waitForLayoutChange(world: BddWorld, before: string, screenshotLabel: string): Promise<void> {
+// Fires a real `keydown` on the webview's own `window` — the r/t/c shortcuts
+// are wired to a window-level listener (see main.tsx), not to any specific
+// focused element, so a synthetic event dispatched there is equivalent to
+// the user actually pressing the key.
+async function pressGlobalShortcutKey(world: BddWorld, key: string): Promise<void> {
+  await world.webviewPage.locator('body').evaluate((_body, shortcutKey) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: shortcutKey, bubbles: true, cancelable: true }));
+  }, key);
+}
+
+// Keyboard counterpart to clickEdgeControl: reveal the connection's controls
+// by hovering it (which also sets `hoveredEdgeId`, the state the `r`/`c`
+// shortcuts key off of for a lone hovered edge), then fire the shortcut
+// instead of clicking a button.
+async function hoverEdgeAndPressShortcutKey(world: BddWorld, edgeId: string, key: string): Promise<void> {
+  // Move the real (Playwright-controlled) cursor off whatever it was last
+  // resting on — e.g. a wire a previous drag interaction ended on top of —
+  // before dispatching the synthetic hover below. Otherwise the browser's own
+  // hit-testing can re-fire a genuine mouseover for that stale position once
+  // the DOM shifts (a re-render, a highlight style change, ...), clobbering
+  // `hoveredEdgeId` back to the wrong edge right as the shortcut key fires.
+  await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
+  const edgeLocator = world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  await expect(edgeLocator.locator('.svsch-edge-connection-controls')).toBeVisible({ timeout: 5_000 });
+  await pressGlobalShortcutKey(world, key);
+  // A plain hover-away isn't enough to guarantee a clean screenshot: it
+  // clears hover, but any node still `selected` from an earlier drag (e.g.
+  // the port a wire's endpoint was moved through) stays selected and keeps
+  // rendering its highlight border. Click an empty stretch of the pane —
+  // same corner "I double-click on an empty area of the canvas" uses — to
+  // deterministically clear both hover and selection before any caller
+  // screenshots the result, instead of racing a timing-sensitive clear.
+  const pane = world.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox();
+  if (box) {
+    await pane.click({ position: { x: box.width - 16, y: 16 }, force: true });
+  }
+}
+
+// Shared by the click- and keyboard-triggered "tie back" steps: finds a cut
+// net's first reachable label (fanout labels can overlap after auto-layout)
+// and hovers it, then hands off to `trigger` to actually commit the tie —
+// either a real click on the Tie control or the `t` keyboard shortcut, which
+// keys off the same hover state (see main.tsx).
+async function tieBackCutNet(world: BddWorld, label: string, trigger: (tieButton: ReturnType<FrameLocator['locator']>) => Promise<void>): Promise<void> {
+  const labelNodes = cutNetLabelNodes(world.webviewPage, label);
+  await expect(labelNodes.first()).toBeVisible();
+  const before = JSON.stringify(await readExtensionLayout(world));
+  let tied = false;
+  for (let index = 0; index < await labelNodes.count(); index += 1) {
+    const labelNode = labelNodes.nth(index);
+    await labelNode.hover({ force: true });
+    const tieButton = labelNode.locator('.hdl-net-label-tie');
+    if (await tieButton.isVisible()) {
+      await trigger(tieButton);
+      tied = true;
+      break;
+    }
+  }
+  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
+  await waitForLayoutChange(world, before, 'After tie net');
+}
+
+async function waitForLayoutChange(
+  world: BddWorld,
+  before: string,
+  screenshotLabel: string,
+  afterLayoutChange?: () => Promise<void>
+): Promise<void> {
   await expect.poll(async () => JSON.stringify(await readExtensionLayout(world)) !== before, { timeout: 10_000 }).toBe(true);
   world.layout = await readExtensionLayout(world);
   await syncLastViewModel(world, world.lastViewModel?.moduleName);
+  await afterLayoutChange?.();
   await waitForExtensionRenderedView(world, screenshotLabel);
 }
 
@@ -2525,6 +2747,46 @@ function regionSide(bounds: { x: number; y: number; width: number; height: numbe
   return bounds.y + bounds.height;
 }
 
+// Node position comes from React Flow's internal (unzoomed) node.position, and
+// size from the --svsch-node-width/height custom properties HdlNode sets
+// inline (see resolvedNodeDimensions) — both are content-space px, directly
+// comparable to diagramGrid.size deltas, same as getGenerateRegionBounds.
+async function getNodeBounds(webviewPage: FrameLocator, nodeId: string): Promise<{ x: number; y: number; width: number; height: number }> {
+  const position = await getInternalPosition(webviewPage, nodeId);
+  if (!position) throw new Error(`Could not find block ${nodeId} to measure`);
+  const size = await webviewPage.locator(`.react-flow__node[data-id="${nodeId}"] .hdl-node`).evaluate((element) => {
+    const style = (element as HTMLElement).style;
+    return {
+      width: Number.parseFloat(style.getPropertyValue('--svsch-node-width') || '0'),
+      height: Number.parseFloat(style.getPropertyValue('--svsch-node-height') || '0')
+    };
+  });
+  return { x: position.x, y: position.y, ...size };
+}
+
+// The node body gets its persisted size from an inline custom property, while
+// graph snapshots use React Flow's asynchronously measured dimensions. Wait
+// for those two views to agree so a resize snapshot cannot capture the new
+// edge endpoints with the previous node width.
+async function waitForFlowNodeSize(
+  webviewPage: FrameLocator,
+  nodeId: string,
+  expected: { width: number; height: number }
+): Promise<void> {
+  await expect.poll(async () => webviewPage.locator('html').evaluate((_element, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((candidate: any) => candidate.id === id);
+    if (!node) return undefined;
+    return {
+      width: Math.round(node.measured?.width ?? node.width ?? 0),
+      height: Math.round(node.measured?.height ?? node.height ?? 0)
+    };
+  }, nodeId), { timeout: 20_000 }).toEqual({
+    width: Math.round(expected.width),
+    height: Math.round(expected.height)
+  });
+}
+
 async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string, side: RegionSide, cells: number): Promise<void> {
   const handle = generateRegionLocator(world.webviewPage, label).locator(`.generate-region-resize-${side}`);
   const box = await handle.boundingBox();
@@ -2556,6 +2818,64 @@ async function dragGenerateRegionSideByGridCells(world: BddWorld, label: string,
   if (canvas) {
     await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
   }
+  await world.workbox.waitForTimeout(650);
+}
+
+// A node near the far edge of a large diagram can render right under the
+// MiniMap/Controls overlays after the initial fitView, so real screen clicks
+// on its resize handles would actually hit the overlay instead. Recenter the
+// viewport on the node first so its handles are over open canvas.
+async function centerViewOnNode(world: BddWorld, nodeId: string): Promise<void> {
+  await world.webviewPage.locator('html').evaluate((_, id) => {
+    const rf = (window as any).reactFlowInstance;
+    const node = rf?.getNodes().find((n: any) => n.id === id);
+    if (!rf || !node) return;
+    const width = node.measured?.width ?? node.width ?? 0;
+    const height = node.measured?.height ?? node.height ?? 0;
+    rf.setCenter(node.position.x + width / 2, node.position.y + height / 2, { zoom: 1, duration: 0 });
+  }, nodeId);
+  await waitForViewportTransformToSettle(world.webviewPage);
+}
+
+// Same choreography as dragGenerateRegionSideByGridCells, but for a node's
+// own .svsch-node-resize-* edge handles (full-height/width 8px strips, no
+// dangling-label collision to dodge, so the midpoint is a safe grab point).
+async function dragNodeSideByGridCells(world: BddWorld, nodeId: string, side: RegionSide, cells: number): Promise<void> {
+  await centerViewOnNode(world, nodeId);
+  const handle = world.webviewPage.locator(`.react-flow__node[data-id="${nodeId}"] .svsch-node-resize-${side}`);
+  const box = await handle.boundingBox();
+  if (!box) throw new Error(`Could not find ${side} resize handle for block ${nodeId}`);
+  const zoom = await world.webviewPage.locator('html').evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
+  const dx = (side === 'left' || side === 'right') ? cells * diagramGrid.size * zoom : 0;
+  const dy = (side === 'top' || side === 'bottom') ? cells * diagramGrid.size * zoom : 0;
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  const canvas = await world.webviewPage.locator('.canvas').boundingBox();
+  const targetX = canvas
+    ? Math.max(canvas.x + 8, Math.min(startX + dx, canvas.x + canvas.width - 8))
+    : startX + dx;
+  const targetY = canvas
+    ? Math.max(canvas.y + 8, Math.min(startY + dy, canvas.y + canvas.height - 8))
+    : startY + dy;
+
+  const before = await getNodeBounds(world.webviewPage, nodeId);
+  await world.workbox.mouse.move(startX, startY);
+  await world.workbox.mouse.down();
+  await world.workbox.mouse.move(startX + Math.sign(dx || 1) * 2, startY + Math.sign(dy || 1) * 2, { steps: 3 });
+  await world.workbox.mouse.move(targetX, targetY, { steps: 12 });
+  await world.workbox.mouse.up();
+  if (canvas) {
+    await world.workbox.mouse.move(canvas.x + 16, canvas.y + 16);
+  }
+  // The visual `--svsch-node-width/height` custom property (read by
+  // getNodeBounds) updates synchronously with the drag, but confirm it
+  // actually moved before handing off to waitForLayoutChange's fixed sleep —
+  // a click-only (zero-delta) drag on a heavier diagram shouldn't be
+  // mistaken for one still catching up.
+  await expect.poll(async () => {
+    const after = await getNodeBounds(world.webviewPage, nodeId);
+    return after.width !== before.width || after.height !== before.height;
+  }, { timeout: 10_000 }).toBe(true);
   await world.workbox.waitForTimeout(650);
 }
 
