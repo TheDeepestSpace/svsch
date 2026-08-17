@@ -1,6 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test';
 import type { DiagramViewModel } from '../../src/ir/types';
-import { expectGraphAndScreenshot, openFixture, openView, paddedAllNodesClip, paddedGraphClip } from './helper';
+import { expectGraphAndScreenshot, fitGraphView, openFixture, openView, paddedAllNodesClip, paddedGraphClip } from './helper';
 
 test.describe('inout port rendering', () => {
   test('renders boundary and instance inout ports as bidirectional', async ({ page }) => {
@@ -65,6 +65,26 @@ test.describe('inout port rendering', () => {
     expect(view.edges.filter((edge) => edge.target === 'port:inout_mux_array:a' || edge.source === 'port:inout_mux_array:a')).toHaveLength(2);
 
     await expectGraphAndScreenshot(page, 'inout-mux-array-canvas.png', { clip: await paddedGraphClip(page) });
+  });
+
+  test('routes an unpacked-array boundary inout port as a single hub edge, not a duplicate from the array composition', async ({ page }) => {
+    const view = await openFixture(page, 'inout_array_alias.sv', 'auto', 'inout_array_alias');
+    await fitGraphView(page, 0.2);
+    const boundary = page.locator('[data-node-id="port:inout_array_alias:a"]');
+
+    await expect(boundary).toHaveClass(/hdl-port-inout/);
+    await expectDualHandle(boundary, 'port:a', { target: 'left', source: 'right' });
+
+    // Regression coverage for the array-composition alias bug (see
+    // InoutArrayAliasProducesSingleEdgeIntoReader in test_main.cpp): the
+    // per-element mux drives should combine through the boundary port hub,
+    // not pair a second time directly with `y` via the array-composition
+    // node — which used to render as two overlapping wires.
+    const edgesIntoY = view.edges.filter((edge) => edge.target === 'port:inout_array_alias:y');
+    expect(edgesIntoY).toHaveLength(1);
+    expect(edgesIntoY[0]?.source).toBe('port:inout_array_alias:a');
+
+    await expectGraphAndScreenshot(page, 'inout-array-alias-canvas.png', { clip: await paddedAllNodesClip(page) });
   });
 });
 
