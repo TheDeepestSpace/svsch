@@ -507,7 +507,10 @@ const ERROR_BLOCK_VARIANTS: ErrorBlockVariant[] = [
   { key: 'mux', kind: 'mux', label: 'mux', ports: [port('mux', 'sel', 'input'), port('mux', 'a', 'input'), port('mux', 'b', 'input'), port('mux', 'y', 'output')] },
   { key: 'select', kind: 'select', label: 'select', ports: [port('select', 's', 'input'), port('select', 'in', 'input'), port('select', 'y', 'output')] },
   { key: 'alu', kind: 'alu', label: 'alu', operation: '+', ports: defaultPorts('alu') },
+  { key: 'gate', kind: 'gate', label: 'gate', operation: 'and', ports: defaultPorts('gate') },
+  { key: 'comparator', kind: 'comparator', label: 'cmp', operation: '==', ports: defaultPorts('comparator') },
   { key: 'inverter', kind: 'inverter', label: 'inv', ports: [port('inverter', 'a', 'input'), port('inverter', 'y', 'output')] },
+  { key: 'zext', kind: 'zext', label: 'zext', ports: [port('zext', 'in', 'input'), port('zext', 'out', 'output')] },
   { key: 'literal', kind: 'literal', label: "1'b1", ports: [port('literal', 'y', 'output')] },
   {
     key: 'replicate',
