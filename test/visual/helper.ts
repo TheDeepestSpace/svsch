@@ -27,7 +27,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
 }
 
 const fixtureRoot = path.resolve(__dirname, 'fixtures');
-console.error(`[DEBUG-FIXTUREROOT] pid=${process.pid} __dirname=${__dirname} fixtureRoot=${fixtureRoot} exists=${fs.existsSync(fixtureRoot)}`);
+console.error(`[DEBUG-FIXTUREROOT-v2] pid=${process.pid} __dirname=${__dirname} fixtureRoot=${fixtureRoot} exists=${fs.existsSync(fixtureRoot)}`);
 
 // Timing: "post message -> DOM attached" duration, analogous to the system
 // suite's rebuild->firstGraph interval. Set when postView() posts the graph.
