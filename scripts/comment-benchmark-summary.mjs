@@ -7,6 +7,7 @@ import {
   renderDeltaTableMarkdown,
   renderStackedCsv,
   computeDeltaRows,
+  computeAverageDelta,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
@@ -212,6 +213,22 @@ for (const [key, group] of chartGroups) {
 }
 const chartCommitSha = publishFiles(contentByFilename);
 
+// A one-line "how'd it move" per tracked metric, surfaced right after the
+// report header — so the headline number is visible without expanding any
+// suite's collapsed delta table first. Same order as METRIC_META.
+const summaryLines = [];
+for (const [, group] of chartGroups) {
+  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+  for (const metric of metrics) {
+    const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+    const avg = computeAverageDelta(rows);
+    if (!avg) continue;
+    const signMs = avg.avgNominal > 0 ? '+' : '';
+    const signPct = avg.avgPct > 0 ? '+' : '';
+    summaryLines.push(`- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`);
+  }
+}
+
 const sections = [];
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
@@ -252,6 +269,7 @@ const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
 const body = [
   startTag,
   `# Diagram generation benchmark — ${GITHUB_SHA.slice(0, 7)}`,
+  ...(summaryLines.length ? [summaryLines.join('\n')] : []),
   '',
   ...sections,
   '',
