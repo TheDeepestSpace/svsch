@@ -32,28 +32,31 @@ export function SvgArrayStackLeads({
     >
       {arrayStackLeadLayersFor(wide).map((layer) => {
         const trim = arrayStackLayerTrim(layer.id, wide);
-        // Deliberately unrounded — this must land exactly where the routed
-        // wire's own layer begins (computeStackedEdgeLayerPoints in
-        // stackedEdgeGeometry.ts uses the same unrounded arrayStackLayerTrim).
-        // Rounding either side independently reintroduces the sub-pixel
-        // overlap/gap this geometry exists to avoid, since `wide` mode's 1.5x
-        // lane scale makes trims fractional (e.g. 4.5, 13.5).
+        // Rounded to whole pixels deliberately. `wide` mode's 1.5x lane scale
+        // makes trims fractional (e.g. 4.5, 13.5), and computeStackedEdgeLayerPoints
+        // (the routed wire's own trim math) never rounds — so a lead that matched
+        // it exactly would land on a fractional coordinate. That looks correct on
+        // paper, but two separately-anti-aliased <path> elements meeting at a
+        // fractional pixel render as a visible blended seam (a thin gap or
+        // discoloration), which reads worse than the sub-pixel overlap rounding
+        // produces here. Round each endpoint so the lead's stroke fully covers up
+        // to the wire's start — a solid, if not mathematically exact, join.
         const shapeX = (side === 'top' || side === 'bottom')
-          ? (x ?? width / 2) + layer.dx
+          ? Math.round((x ?? width / 2) + layer.dx)
           : side === 'left'
-            ? layer.dx
-            : width + layer.dx;
-        const shapeY = y + layer.dy;
-        const leadX = (side === 'top' || side === 'bottom')
+            ? Math.round(layer.dx)
+            : Math.round(width + layer.dx);
+        const shapeY = Math.round(y + layer.dy);
+        const leadX = Math.round((side === 'top' || side === 'bottom')
           ? shapeX
           : side === 'left'
             ? shapeX - trim
-            : shapeX + trim;
-        const leadY = side === 'top'
+            : shapeX + trim);
+        const leadY = Math.round(side === 'top'
           ? shapeY - trim
           : side === 'bottom'
             ? shapeY + trim
-            : shapeY;
+            : shapeY);
         return (
           <path
             key={layer.id}
