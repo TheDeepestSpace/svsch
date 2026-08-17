@@ -1509,7 +1509,15 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
 
         std::string label_ref = labels[0];
         std::map<std::string, std::string> branch_outputs;
-        for (const auto& target : targets) branch_outputs[target] = target + "_" + sanitize(label_ref);
+        for (const auto& target : targets) {
+            // Scope the branch name by the full nesting path (the caller's own desired
+            // output for this target), not just this item's own label. Otherwise identical
+            // case-item labels in unrelated sibling case statements (e.g. two nested
+            // `case`s that both have a `2'b01` item) synthesize the same intermediate
+            // signal name and collide - see issue #226.
+            std::string path_prefix = desired_outputs.count(target) ? desired_outputs.at(target) : target;
+            branch_outputs[target] = path_prefix + "_" + sanitize(label_ref);
+        }
         item_results[item] = lowerStatement(vpi_handle(vpiStmt, item), mod, is_clocked, branch_outputs, source_handle, current_drivers);
     }
 
