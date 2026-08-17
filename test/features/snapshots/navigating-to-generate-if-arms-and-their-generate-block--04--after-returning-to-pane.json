@@ -18,7 +18,8 @@
             "direction": "output"
           }
         ]
-      }
+      },
+      "active": true
     },
     {
       "id": "cut-label:instance:top:g_other.u_other:port:y:source",
@@ -38,27 +39,8 @@
             "direction": "input"
           }
         ]
-      }
-    },
-    {
-      "id": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "type": "hdl",
-      "position": {
-        "x": 840,
-        "y": 192
       },
-      "width": 96,
-      "height": 48,
-      "data": {
-        "kind": "netLabel",
-        "ports": [
-          {
-            "id": "cut",
-            "name": "cut",
-            "direction": "output"
-          }
-        ]
-      }
+      "active": true
     },
     {
       "id": "cut-label:instance:top:g_zero.u_zero:port:y:source",
@@ -78,7 +60,8 @@
             "direction": "input"
           }
         ]
-      }
+      },
+      "inactive": true
     },
     {
       "id": "instance:top:g_other.u_other",
@@ -211,15 +194,6 @@
       "targetHandle": "cut",
       "path": "M 696 432 L 720 432 L 720 432",
       "active": true
-    },
-    {
-      "id": "cut-stub:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "source": "cut-label:instance:top:g_zero.u_zero:port:y:sink:edge:instance:top:g_zero.u_zero:port:top:y:y",
-      "target": "port:top:y",
-      "sourceHandle": "cut",
-      "targetHandle": "port:y",
-      "path": "M 936 216 L 936 216 L 936 168 L 960 168",
-      "inactive": true
     },
     {
       "id": "cut-stub:instance:top:g_zero.u_zero:port:y:source",

@@ -211,6 +211,126 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
+  it('auto-cuts every declared-net edge, even when mutually exclusive generate arms each drive it', () => {
+    // Two generate arms (e.g. `g_other`/`g_zero`) each drive the module's
+    // `y` output from their own internal source node — different netKeys
+    // (different source nodes), same declared net. Both still get auto-cut;
+    // buildNetCutProjection (see below) is what collapses their sink ends
+    // down to one, not this selection step.
+    const generateArmModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        {
+          id: 'g_other-y',
+          source: 'g_other_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        {
+          id: 'g_zero-y',
+          source: 'g_zero_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
+        }
+      ]
+    };
+
+    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y', 'g_zero-y']);
+  });
+
+  it('collapses duplicate sink ends when mutually exclusive generate arms both cut into the same output port', async () => {
+    // Both g_other's and g_zero's edges are auto-cut (see the test above),
+    // each keeping its own dead-end source label near its own driver. But
+    // routing *both* of their sink stubs into the real `y` port would stack
+    // a redundant, overlapping cut-net-end on top of the same target — so
+    // only one sink label/stub should survive; neither edge should be left
+    // as a live wire straight into the output port. The `y` port is always
+    // driven by whichever arm is actually active, so the surviving label
+    // must be g_zero's (the active arm), not g_other's (inactive) even
+    // though "g_other-y" sorts first alphabetically — the target itself is
+    // never left undriven, so its cut-net end must never dim.
+    const generateArmModule = {
+      name: 'top',
+      file: 'top.sv',
+      ports: [],
+      nodes: [
+        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
+        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+      ],
+      edges: [
+        {
+          id: 'g_other-y',
+          source: 'g_other_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        {
+          id: 'g_zero-y',
+          source: 'g_zero_driver',
+          sourcePort: 'out',
+          target: 'y',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
+        }
+      ]
+    };
+    const positioned: PositionedNode[] = [
+      { ...generateArmModule.nodes[0], position: { x: 0, y: 0 } },
+      { ...generateArmModule.nodes[1], position: { x: 0, y: 96 } },
+      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const firstCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
+    const secondCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_zero-y')!;
+    const cutLayout = [firstCutEdge, secondCutEdge].reduce(
+      (layout, edge) => mergeNetCut(layout, 'top', edge, generateArmModule, positioned),
+      { version: 1, modules: {} } as SavedLayout
+    );
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: generateArmModule }
+    }, 'top', cutLayout);
+
+    const firstNetKey = edgeNetKey(firstCutEdge);
+    const secondNetKey = edgeNetKey(secondCutEdge);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+
+    // Each arm keeps its own dead-end source label near its own driver.
+    expect(byId.has(`cut-label:${firstNetKey}:source`)).toBe(true);
+    expect(byId.has(`cut-label:${secondNetKey}:source`)).toBe(true);
+
+    // Only the active arm's (g_zero's) sink label/stub lands on the shared
+    // `y` port...
+    expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    const sinkLabel = byId.get(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`);
+    expect(sinkLabel?.metadata?.generateActiveState).toBe('active');
+
+    // ...the inactive arm's redundant one is skipped entirely.
+    expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+
+    // Neither arm is left as a live wire straight into the output port.
+    expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);
+    expect(view.edges.some((edge) => edge.id === 'g_zero-y')).toBe(false);
+  });
+
   it('keeps links touching interface nodes whole on first open', () => {
     const interfaceModule = {
       name: 'top',
@@ -1778,6 +1898,46 @@ describe('layout merge', () => {
       });
     },
   );
+
+  it('dims a cut end the same way its underlying wire is dimmed on an inactive generate arm', async () => {
+    const module = {
+      ...fanoutGraph.modules.top,
+      edges: [
+        {
+          ...fanoutGraph.modules.top.edges[0],
+          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' }
+        },
+        fanoutGraph.modules.top.edges[1]
+      ]
+    };
+    const positioned: PositionedNode[] = [
+      { ...module.nodes[0], position: { x: 0, y: 12 } },
+      { ...module.nodes[1], position: { x: 240, y: 0 } },
+      { ...module.nodes[2], position: { x: 240, y: 96 } }
+    ];
+
+    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    const view = await buildViewModel({
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: { top: module }
+    }, 'top', cutLayout);
+
+    const netKey = edgeNetKey(module.edges[0]);
+    const byId = new Map(view.nodes.map((node) => [node.id, node]));
+    const sourceLabel = byId.get(`cut-label:${netKey}:source`);
+    const sinkLabel = byId.get(`cut-label:${netKey}:sink:${module.edges[0].id}`);
+    expect(sourceLabel?.metadata?.generateActiveState).toBe('inactive');
+    expect(sourceLabel?.metadata?.generateRegionId).toBe('g_other');
+    expect(sinkLabel?.metadata?.generateActiveState).toBe('inactive');
+    expect(sinkLabel?.metadata?.generateRegionId).toBe('g_other');
+
+    // The other fanout branch (e-clk-u2) is untouched — its own sink label
+    // must not inherit the inactive state from a sibling edge on the net.
+    const otherSinkLabel = byId.get(`cut-label:${netKey}:sink:${module.edges[1].id}`);
+    expect(otherSinkLabel?.metadata?.generateActiveState).toBeUndefined();
+  });
 
   it('refuses to rename a declared net but still allows renaming a synthetic one', () => {
     const layout: SavedLayout = {

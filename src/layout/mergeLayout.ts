@@ -941,7 +941,38 @@ function buildNetCutProjection(
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
-  for (const [netKey, { cut, edges: cutEdges }] of activeCuts) {
+  // Mutually exclusive generate arms can each carry their own edge to the
+  // same declared target (e.g. two case arms both driving the module's
+  // output) — every such edge still gets its own cut, same as any other
+  // declared net, so each arm's driver keeps a dead-end source label. But
+  // stacking a sink cut-net-end from every arm onto that one shared target
+  // port adds no extra meaning over a single one, so only the first cut to
+  // reach a given (target, label) pair gets a sink label/stub.
+  const seenSinkTargets = new Set<string>();
+
+  // Deterministic across nets too: which arm's sink label "wins" a shared
+  // target shouldn't depend on Map insertion order, so sort net entries by
+  // their own first (sorted) edge id, same tie-break used within a net.
+  //
+  // The target port a shared sink dedupes onto is always driven by exactly
+  // one of the mutually exclusive arms — never none of them — so the
+  // surviving label must come from whichever arm is actually elaborated
+  // active, not whichever arm's edge id happens to sort first. An inactive
+  // arm only wins when every arm reaching that target is inactive (dead
+  // code some other pass should be flagging, not this dedupe).
+  const netIsActive = (edges: DiagramEdge[]) => edges.some((edge) => edge.metadata?.generateActiveState !== 'inactive');
+  const sortedActiveCuts = [...activeCuts].sort(([, a], [, b]) => {
+    const aActive = netIsActive(a.edges) ? 0 : 1;
+    const bActive = netIsActive(b.edges) ? 0 : 1;
+    if (aActive !== bActive) {
+      return aActive - bActive;
+    }
+    const aFirst = [...a.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    const bFirst = [...b.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    return aFirst.localeCompare(bFirst);
+  });
+
+  for (const [netKey, { cut, edges: cutEdges }] of sortedActiveCuts) {
     const sortedCutEdges = [...cutEdges].sort((a, b) => a.id.localeCompare(b.id));
     const firstEdge = sortedCutEdges[0];
     if (!firstEdge) {
@@ -988,6 +1019,7 @@ function buildNetCutProjection(
       },
       moduleLayout,
       labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label),
+      firstEdge,
     );
     nodes.push(sourceLabelNode);
     endpointByLabelId.set(sourceLabelId, endpointKey(cut.source.nodeId, cut.source.portId));
@@ -1008,10 +1040,16 @@ function buildNetCutProjection(
     );
 
     for (const edge of sortedCutEdges) {
+      const sinkDedupeKey = `${endpointKey(edge.target, edge.targetPort)}::${cut.label}`;
+      if (seenSinkTargets.has(sinkDedupeKey)) {
+        continue;
+      }
+
       const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
       if (!targetLead) {
         continue;
       }
+      seenSinkTargets.add(sinkDedupeKey);
 
       const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
       if (cut.deferLabelPlacement) {
@@ -1036,6 +1074,7 @@ function buildNetCutProjection(
         },
         moduleLayout,
         labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label),
+        edge,
       );
       nodes.push(sinkLabelNode);
       endpointByLabelId.set(sinkLabelId, endpointKey(edge.target, edge.targetPort));
@@ -1226,6 +1265,7 @@ function makeCutLabelNode(
   cutNet: NonNullable<DiagramNode['metadata']>['cutNet'],
   moduleLayout: SavedModuleLayout,
   fallbackPosition: { x: number; y: number },
+  template: DiagramEdge,
 ): PositionedNode {
   const saved = moduleLayout.nodes[id];
   // Only a *pinned* (fixed) save wins over the geometry-derived fallback — a
@@ -1247,7 +1287,14 @@ function makeCutLabelNode(
         direction: cutNet?.role === 'source' ? 'input' : 'output',
       },
     ],
-    metadata: { cutNet },
+    metadata: {
+      cutNet,
+      // A cut end on a wire that lives inside an inactive generate arm must
+      // dim the same way the rest of that route does — otherwise the stub
+      // label is the one piece of the wire left at full opacity.
+      generateActiveState: template.metadata?.generateActiveState,
+      generateRegionId: template.metadata?.generateRegionId
+    },
     position,
     fixed: saved?.fixed,
   };
