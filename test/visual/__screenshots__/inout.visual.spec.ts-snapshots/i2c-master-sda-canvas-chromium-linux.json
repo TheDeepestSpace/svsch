@@ -1,56 +1,121 @@
 {
   "nodes": [
     {
-      "id": "comb:i2c_master_sda_example:if_sel_n1:n2:expr",
+      "id": "comparator:i2c_master_sda_example:if_sel_n1:n2:expr",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 24
+        "x": 384,
+        "y": 144
       },
-      "width": 192,
-      "height": 72,
+      "width": 96,
+      "height": 96,
       "data": {
-        "kind": "comb",
+        "kind": "comparator",
         "ports": [
           {
-            "id": "out:if_sel_n1",
-            "name": "if_sel_n1",
-            "direction": "output"
+            "id": "port:lhs",
+            "name": "lhs",
+            "direction": "input"
           },
           {
-            "id": "port:sda_mode",
-            "name": "sda_mode",
+            "id": "port:rhs",
+            "name": "rhs",
             "direction": "input"
+          },
+          {
+            "id": "port:if_sel_n1",
+            "name": "if_sel_n1",
+            "direction": "output"
           }
         ]
       }
     },
     {
-      "id": "comb:i2c_master_sda_example:sda_sel:expr",
+      "id": "comparator:i2c_master_sda_example:sda_sel_in0:expr",
       "type": "hdl",
       "position": {
         "x": 384,
-        "y": 96
+        "y": 24
       },
-      "width": 192,
+      "width": 96,
       "height": 96,
       "data": {
-        "kind": "comb",
+        "kind": "comparator",
         "ports": [
+          {
+            "id": "port:lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:sda_sel_in0",
+            "name": "sda_sel_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comparator:i2c_master_sda_example:sda_sel_in1:expr",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 264
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "comparator",
+        "ports": [
+          {
+            "id": "port:lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:sda_sel_in1",
+            "name": "sda_sel_in1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:i2c_master_sda_example:sda_sel:and",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 240
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
           {
             "id": "out:sda_sel",
             "name": "sda_sel",
             "direction": "output"
-          },
-          {
-            "id": "port:sda_mode",
-            "name": "sda_mode",
-            "direction": "input"
-          },
-          {
-            "id": "port:bit_to_send",
-            "name": "bit_to_send",
-            "direction": "input"
           }
         ]
       }
@@ -59,8 +124,8 @@
       "id": "literal:i2c_master_sda_example:1_b0:1_b0",
       "type": "hdl",
       "position": {
-        "x": 528,
-        "y": 228
+        "x": 120,
+        "y": 348
       },
       "width": 48,
       "height": 24,
@@ -76,11 +141,31 @@
       }
     },
     {
+      "id": "literal:i2c_master_sda_example:1_b1:1_b1",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 108
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:1_b1",
+            "name": "1'b1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
       "id": "literal:i2c_master_sda_example:1_bz:1_bz",
       "type": "hdl",
       "position": {
-        "x": 528,
-        "y": 276
+        "x": 744,
+        "y": 372
       },
       "width": 48,
       "height": 24,
@@ -99,8 +184,8 @@
       "id": "mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next",
       "type": "hdl",
       "position": {
-        "x": 1608,
-        "y": 168
+        "x": 1728,
+        "y": 312
       },
       "width": 96,
       "height": 96,
@@ -134,8 +219,8 @@
       "id": "mux:i2c_master_sda_example:sda:ternary",
       "type": "hdl",
       "position": {
-        "x": 840,
-        "y": 168
+        "x": 1008,
+        "y": 312
       },
       "width": 96,
       "height": 96,
@@ -169,8 +254,8 @@
       "id": "port:i2c_master_sda_example:ack_received",
       "type": "hdl",
       "position": {
-        "x": 1608,
-        "y": 300
+        "x": 1728,
+        "y": 444
       },
       "width": 144,
       "height": 24,
@@ -190,7 +275,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 156
+        "y": 300
       },
       "width": 144,
       "height": 24,
@@ -209,8 +294,8 @@
       "id": "port:i2c_master_sda_example:clk",
       "type": "hdl",
       "position": {
-        "x": 864,
-        "y": 324
+        "x": 984,
+        "y": 468
       },
       "width": 120,
       "height": 24,
@@ -229,8 +314,8 @@
       "id": "port:i2c_master_sda_example:sda",
       "type": "hdl",
       "position": {
-        "x": 1248,
-        "y": 204
+        "x": 1368,
+        "y": 348
       },
       "width": 120,
       "height": 24,
@@ -269,8 +354,8 @@
       "id": "reg:i2c_master_sda_example:ack_received",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 264
+        "x": 1320,
+        "y": 408
       },
       "width": 192,
       "height": 96,
@@ -298,20 +383,52 @@
   ],
   "edges": [
     {
-      "id": "edge:comb:i2c_master_sda_example:if_sel_n1:n2:expr:mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next:if_sel_n1",
-      "source": "comb:i2c_master_sda_example:if_sel_n1:n2:expr",
+      "id": "edge:comparator:i2c_master_sda_example:if_sel_n1:n2:expr:mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next:if_sel_n1",
+      "source": "comparator:i2c_master_sda_example:if_sel_n1:n2:expr",
       "target": "mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next",
-      "sourceHandle": "out:if_sel_n1",
+      "sourceHandle": "port:if_sel_n1",
       "targetHandle": "sel",
-      "path": "M 984 72 L 1008 72 L 1656 72 L 1656 144 L 1656 192"
+      "path": "M 480 192 L 504 192 L 1776 192 L 1776 288 L 1776 336"
     },
     {
-      "id": "edge:comb:i2c_master_sda_example:sda_sel:expr:mux:i2c_master_sda_example:sda:ternary:sda_sel",
-      "source": "comb:i2c_master_sda_example:sda_sel:expr",
+      "id": "edge:comparator:i2c_master_sda_example:sda_sel_in0:expr:gate:i2c_master_sda_example:sda_sel:and:sda_sel_in0",
+      "source": "comparator:i2c_master_sda_example:sda_sel_in0:expr",
+      "target": "gate:i2c_master_sda_example:sda_sel:and",
+      "sourceHandle": "port:sda_sel_in0",
+      "targetHandle": "port:in0",
+      "path": "M 480 72 L 504 72 L 600 72 L 600 185 Q 607 192 600 199 L 600 264 L 672 264 L 696 264"
+    },
+    {
+      "id": "edge:comparator:i2c_master_sda_example:sda_sel_in1:expr:gate:i2c_master_sda_example:sda_sel:and:sda_sel_in1",
+      "source": "comparator:i2c_master_sda_example:sda_sel_in1:expr",
+      "target": "gate:i2c_master_sda_example:sda_sel:and",
+      "sourceHandle": "port:sda_sel_in1",
+      "targetHandle": "port:in1",
+      "path": "M 480 312 L 504 312 L 672 312 L 696 312"
+    },
+    {
+      "id": "edge:gate:i2c_master_sda_example:sda_sel:and:mux:i2c_master_sda_example:sda:ternary:sda_sel",
+      "source": "gate:i2c_master_sda_example:sda_sel:and",
       "target": "mux:i2c_master_sda_example:sda:ternary",
       "sourceHandle": "out:sda_sel",
       "targetHandle": "sel",
-      "path": "M 576 144 L 600 144 L 888 144 L 888 192"
+      "path": "M 792 288 L 816 288 L 1056 288 L 1056 336"
+    },
+    {
+      "id": "edge:literal:i2c_master_sda_example:1_b0:1_b0:comparator:i2c_master_sda_example:if_sel_n1:n2:expr:1_b0",
+      "source": "literal:i2c_master_sda_example:1_b0:1_b0",
+      "target": "comparator:i2c_master_sda_example:if_sel_n1:n2:expr",
+      "sourceHandle": "port:1_b0",
+      "targetHandle": "port:rhs",
+      "path": "M 168 360 L 192 360 L 360 360 L 360 216 L 384 216"
+    },
+    {
+      "id": "edge:literal:i2c_master_sda_example:1_b0:1_b0:comparator:i2c_master_sda_example:sda_sel_in1:expr:1_b0",
+      "source": "literal:i2c_master_sda_example:1_b0:1_b0",
+      "target": "comparator:i2c_master_sda_example:sda_sel_in1:expr",
+      "sourceHandle": "port:1_b0",
+      "targetHandle": "port:rhs",
+      "path": "M 168 360 L 192 360 L 360 360 L 360 336 L 384 336"
     },
     {
       "id": "edge:literal:i2c_master_sda_example:1_b0:1_b0:mux:i2c_master_sda_example:sda:ternary:1_b0",
@@ -319,7 +436,15 @@
       "target": "mux:i2c_master_sda_example:sda:ternary",
       "sourceHandle": "port:1_b0",
       "targetHandle": "in:true",
-      "path": "M 576 240 L 600 240 L 696 240 L 696 216 L 816 216 L 840 216"
+      "path": "M 168 360 L 192 360 L 360 360 L 360 384 L 624 384 L 624 360 L 984 360 L 1008 360"
+    },
+    {
+      "id": "edge:literal:i2c_master_sda_example:1_b1:1_b1:comparator:i2c_master_sda_example:sda_sel_in0:expr:1_b1",
+      "source": "literal:i2c_master_sda_example:1_b1:1_b1",
+      "target": "comparator:i2c_master_sda_example:sda_sel_in0:expr",
+      "sourceHandle": "port:1_b1",
+      "targetHandle": "port:rhs",
+      "path": "M 168 120 L 192 120 L 288 120 L 288 96 L 360 96 L 384 96"
     },
     {
       "id": "edge:literal:i2c_master_sda_example:1_bz:1_bz:mux:i2c_master_sda_example:sda:ternary:1_bz",
@@ -327,7 +452,7 @@
       "target": "mux:i2c_master_sda_example:sda:ternary",
       "sourceHandle": "port:1_bz",
       "targetHandle": "in:false",
-      "path": "M 576 288 L 600 288 L 720 288 L 720 240 L 816 240 L 840 240"
+      "path": "M 792 384 L 816 384 L 984 384 L 1008 384"
     },
     {
       "id": "edge:mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next:reg:i2c_master_sda_example:ack_received:ack_received_next",
@@ -335,7 +460,7 @@
       "target": "reg:i2c_master_sda_example:ack_received",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1704 216 L 1728 216 L 1728 288 L 1440 288 L 1440 240 L 1176 240 L 1176 312 L 1200 312"
+      "path": "M 1824 360 L 1848 360 L 1848 432 L 1560 432 L 1560 384 L 1296 384 L 1296 456 L 1320 456"
     },
     {
       "id": "edge:mux:i2c_master_sda_example:sda:ternary:port:i2c_master_sda_example:sda:sda",
@@ -343,15 +468,15 @@
       "target": "port:i2c_master_sda_example:sda",
       "sourceHandle": "out",
       "targetHandle": "port:sda",
-      "path": "M 936 216 L 960 216 L 1224 216 L 1248 216"
+      "path": "M 1104 360 L 1128 360 L 1344 360 L 1368 360"
     },
     {
-      "id": "edge:port:i2c_master_sda_example:bit_to_send:comb:i2c_master_sda_example:sda_sel:expr:bit_to_send",
+      "id": "edge:port:i2c_master_sda_example:bit_to_send:comparator:i2c_master_sda_example:sda_sel_in1:expr:bit_to_send",
       "source": "port:i2c_master_sda_example:bit_to_send",
-      "target": "comb:i2c_master_sda_example:sda_sel:expr",
+      "target": "comparator:i2c_master_sda_example:sda_sel_in1:expr",
       "sourceHandle": "port:bit_to_send",
-      "targetHandle": "port:bit_to_send",
-      "path": "M 168 168 L 192 168 L 360 168 L 384 168"
+      "targetHandle": "port:lhs",
+      "path": "M 168 312 L 192 312 L 360 312 L 360 288 L 384 288"
     },
     {
       "id": "edge:port:i2c_master_sda_example:clk:reg:i2c_master_sda_example:ack_received:clk",
@@ -359,23 +484,23 @@
       "target": "reg:i2c_master_sda_example:ack_received",
       "sourceHandle": "port:clk",
       "targetHandle": "clk",
-      "path": "M 984 336 L 1008 336 L 1176 336 L 1200 336"
+      "path": "M 1104 480 L 1128 480 L 1296 480 L 1320 480"
     },
     {
-      "id": "edge:port:i2c_master_sda_example:sda_mode:comb:i2c_master_sda_example:if_sel_n1:n2:expr:sda_mode",
+      "id": "edge:port:i2c_master_sda_example:sda_mode:comparator:i2c_master_sda_example:if_sel_n1:n2:expr:sda_mode",
       "source": "port:i2c_master_sda_example:sda_mode",
-      "target": "comb:i2c_master_sda_example:if_sel_n1:n2:expr",
+      "target": "comparator:i2c_master_sda_example:if_sel_n1:n2:expr",
       "sourceHandle": "port:sda_mode",
-      "targetHandle": "port:sda_mode",
-      "path": "M 168 72 L 192 72 L 768 72 L 792 72"
+      "targetHandle": "port:lhs",
+      "path": "M 168 72 L 192 72 L 360 72 L 360 168 L 384 168"
     },
     {
-      "id": "edge:port:i2c_master_sda_example:sda_mode:comb:i2c_master_sda_example:sda_sel:expr:sda_mode",
+      "id": "edge:port:i2c_master_sda_example:sda_mode:comparator:i2c_master_sda_example:sda_sel_in0:expr:sda_mode",
       "source": "port:i2c_master_sda_example:sda_mode",
-      "target": "comb:i2c_master_sda_example:sda_sel:expr",
+      "target": "comparator:i2c_master_sda_example:sda_sel_in0:expr",
       "sourceHandle": "port:sda_mode",
-      "targetHandle": "port:sda_mode",
-      "path": "M 168 72 L 192 72 L 360 72 L 360 144 L 384 144"
+      "targetHandle": "port:lhs",
+      "path": "M 168 72 L 192 72 L 360 72 L 360 48 L 384 48"
     },
     {
       "id": "edge:port:i2c_master_sda_example:sda:mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next:sda",
@@ -383,7 +508,7 @@
       "target": "mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next",
       "sourceHandle": "port:sda",
       "targetHandle": "in:true",
-      "path": "M 1368 216 L 1392 216 L 1584 216 L 1608 216"
+      "path": "M 1488 360 L 1512 360 L 1704 360 L 1728 360"
     },
     {
       "id": "edge:reg:i2c_master_sda_example:ack_received:mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next:ack_received",
@@ -391,7 +516,7 @@
       "target": "mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 1392 312 L 1416 312 L 1584 312 L 1584 295 Q 1591 288 1584 281 L 1584 240 L 1608 240"
+      "path": "M 1512 456 L 1536 456 L 1704 456 L 1704 439 Q 1711 432 1704 425 L 1704 384 L 1728 384"
     },
     {
       "id": "edge:reg:i2c_master_sda_example:ack_received:port:i2c_master_sda_example:ack_received:ack_received",
@@ -399,7 +524,7 @@
       "target": "port:i2c_master_sda_example:ack_received",
       "sourceHandle": "q",
       "targetHandle": "port:ack_received",
-      "path": "M 1392 312 L 1416 312 L 1584 312 L 1608 312"
+      "path": "M 1512 456 L 1536 456 L 1704 456 L 1728 456"
     }
   ]
 }
