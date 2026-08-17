@@ -74,7 +74,7 @@ export function interfaceSidePortCenters(sidePorts: DiagramPort[], height: numbe
   return centers;
 }
 
-export type PortSkinDirection = 'input' | 'output' | 'harness';
+export type PortSkinDirection = 'input' | 'output' | 'inout' | 'harness';
 
 export function portSkinPath(direction: PortSkinDirection, width: number, height: number, skinHeight: number, noseLength: number): string {
   const top = (height - skinHeight) / 2;
@@ -85,7 +85,8 @@ export function portSkinPath(direction: PortSkinDirection, width: number, height
   } else if (direction === 'output') {
     return `M ${noseLength} ${top} H ${width} V ${bottom} H ${noseLength} L 0 ${midY} Z`;
   } else {
-    // Harness: chevrons on both sides
+    // Inout and interface harnesses both communicate bidirectional flow with
+    // chevrons on both sides; their colors distinguish their semantics.
     return `M ${noseLength} ${top} H ${width - noseLength} L ${width} ${midY} L ${width - noseLength} ${bottom} H ${noseLength} L 0 ${midY} Z`;
   }
 }

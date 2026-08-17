@@ -12,6 +12,7 @@ import { structRole, nodeTypeName, gateBodyOperation, gateIsNegated } from '../.
 import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
+import { isInputSidePort } from '../../diagram/portDirection';
 
 export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
   const nodes = useNodes<HdlFlowNode>();
@@ -42,9 +43,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       : (node.ports ?? []);
 
     const sidePorts = aggregatePorts;
-    const aggregateInputs = sidePorts.filter(
-      (p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
-    );
+    const aggregateInputs = sidePorts.filter(isInputSidePort);
     const aggregateOutputs = sidePorts.filter(
       (p) => p.direction === 'output'
     );
@@ -141,6 +140,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       path = `M ${x} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x} Z`;
     } else if (portDirection === 'output') {
       path = `M ${x + noseLength} ${y} H ${x + width} V ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
+    } else if (portDirection === 'inout') {
+      path = `M ${x + noseLength} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
     }
   } else if (node.kind === 'mux' || node.kind === 'alu') {
     const totalHeight = diagramNodeDimensions(node).height;

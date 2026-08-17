@@ -26,8 +26,7 @@ export function trackView(page: Page, view: DiagramViewModel): void {
   currentPageViews.set(page, view);
 }
 
-const fixtureRoot = path.resolve(__dirname, 'fixtures');
-console.error(`[DEBUG-FIXTUREROOT-v2] pid=${process.pid} __dirname=${__dirname} fixtureRoot=${fixtureRoot} exists=${fs.existsSync(fixtureRoot)}`);
+export const fixtureRoot = path.resolve(__dirname, '..', 'fixtures');
 
 // Timing: "post message -> DOM attached" duration, analogous to the system
 // suite's rebuild->firstGraph interval. Set when postView() posts the graph.
@@ -402,7 +401,6 @@ async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGra
 
 export async function buildFixtureView(fixtureName: string, layoutMode: VisualLayoutMode, requestedModuleName?: string): Promise<DiagramViewModel> {
   const fixturePath = path.join(fixtureRoot, fixtureName);
-  console.error(`[DEBUG-FIXTUREPATH] pid=${process.pid} fixtureName=${fixtureName} fixturePath=${fixturePath} exists=${fs.existsSync(fixturePath)} dirListing=${fs.existsSync(fixtureRoot) ? fs.readdirSync(fixtureRoot).length : 'N/A'}`);
   const text = fs.readFileSync(fixturePath, 'utf8');
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-visual-'));
