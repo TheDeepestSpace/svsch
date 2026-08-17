@@ -1578,7 +1578,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
   it('correctly represents bus breakouts without extraneous direct connections (UHDM)', async () => {
     if (backend !== 'uhdm') return;
 
-    const graph = await runParser(backend, 'bus_three_taps.sv', fixture('../visual/fixtures/bus_three_taps.sv'));
+    const graph = await runParser(backend, 'bus_three_taps.sv', fixture('bus_three_taps.sv'));
     const top = graph.modules.bus_three_taps;
 
     const busNode = top.nodes.find(n => n.kind === 'bus' && n.label === 'instr');

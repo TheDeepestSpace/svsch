@@ -30,6 +30,7 @@ import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import { isInputSidePort } from '../../diagram/portDirection';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
@@ -197,14 +198,14 @@ export function OrthogonalEdge({
   const sourceFlowNode = flowNodes.find((node) => node.id === source);
   const targetFlowNode = flowNodes.find((node) => node.id === target);
   const sourceNode = sourceFlowNode?.data?.node;
-  const sourceInputs = sourceNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const sourceInputs = sourceNode?.ports.filter(isInputSidePort) ?? [];
   const sourceAggregateInputs = sourceInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const sourceIsComposition = sourceAggregateInputs.length > 1;
   const sourceIsArray = sourceNode ? (nodeIsArrayNode(sourceNode) || (sourceNode.kind === 'netLabel' && sourceNode.metadata?.cutNet?.isSourceStacked)) : false;
   const sourceIsArrayComposition = sourceNode?.kind === 'bus' && sourceIsComposition && sourceNode.metadata?.aggregateKind === 'array';
 
   const targetNode = targetFlowNode?.data?.node;
-  const targetInputs = targetNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const targetInputs = targetNode?.ports.filter(isInputSidePort) ?? [];
   const targetAggregateInputs = targetInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const targetIsComposition = targetAggregateInputs.length > 1;
   const targetIsArray = targetNode ? (nodeIsArrayNode(targetNode) || (targetNode.kind === 'netLabel' && targetNode.metadata?.cutNet?.isSourceStacked)) : false;

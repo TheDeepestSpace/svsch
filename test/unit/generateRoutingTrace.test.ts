@@ -119,7 +119,7 @@ describe('compound generate routing trace', () => {
 
   it('keeps Libavoid routes with shared collinear segments without ELK fallback routes', async () => {
     const fixture = fs.readFileSync(
-      path.join(__dirname, '..', 'visual', 'fixtures', 'generate_arm_multi_block.sv'),
+      path.join(__dirname, '..', 'fixtures', 'generate_arm_multi_block.sv'),
       'utf8'
     );
     const graph = await runParser('uhdm', 'generate_arm_multi_block.sv', fixture);

@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "instance:inout_ports:u_leaf",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 24
+      },
+      "width": 288,
+      "height": 120,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:io",
+            "name": "io",
+            "direction": "inout"
+          },
+          {
+            "id": "port:output_enable",
+            "name": "output_enable",
+            "direction": "input"
+          },
+          {
+            "id": "port:drive_data",
+            "name": "drive_data",
+            "direction": "input"
+          },
+          {
+            "id": "port:sampled_data",
+            "name": "sampled_data",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:drive_data",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 132
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:drive_data",
+            "name": "drive_data",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:external_bus",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 36
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:external_bus",
+            "name": "external_bus",
+            "direction": "inout"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:output_enable",
+      "type": "hdl",
+      "position": {
+        "x": 72,
+        "y": 84
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:output_enable",
+            "name": "output_enable",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:inout_ports:sampled_data",
+      "type": "hdl",
+      "position": {
+        "x": 960,
+        "y": 60
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sampled_data",
+            "name": "sampled_data",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:inout_ports:u_leaf:port:inout_ports:sampled_data:sampled_data",
+      "source": "instance:inout_ports:u_leaf",
+      "target": "port:inout_ports:sampled_data",
+      "sourceHandle": "port:sampled_data",
+      "targetHandle": "port:sampled_data",
+      "path": "M 744 72 L 768 72 L 936 72 L 960 72"
+    },
+    {
+      "id": "edge:port:inout_ports:drive_data:instance:inout_ports:u_leaf:drive_data",
+      "source": "port:inout_ports:drive_data",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:drive_data",
+      "targetHandle": "port:drive_data",
+      "path": "M 240 144 L 264 144 L 360 144 L 360 120 L 432 120 L 456 120"
+    },
+    {
+      "id": "edge:port:inout_ports:external_bus:instance:inout_ports:u_leaf:external_bus",
+      "source": "port:inout_ports:external_bus",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:external_bus",
+      "targetHandle": "port:io",
+      "path": "M 240 48 L 264 48 L 360 48 L 360 72 L 432 72 L 456 72"
+    },
+    {
+      "id": "edge:port:inout_ports:output_enable:instance:inout_ports:u_leaf:output_enable",
+      "source": "port:inout_ports:output_enable",
+      "target": "instance:inout_ports:u_leaf",
+      "sourceHandle": "port:output_enable",
+      "targetHandle": "port:output_enable",
+      "path": "M 240 96 L 264 96 L 432 96 L 456 96"
+    }
+  ]
+}
