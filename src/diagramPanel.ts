@@ -3,13 +3,26 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
-import type { DesignGraph, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
+import type { DesignGraph, DesignModule, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
 import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSizes } from './layout/mergeLayout';
-import { LayoutStore, type SavedLayout } from './storage/layoutStore';
+import { LayoutStore, type SavedExpandedInstanceLayout, type SavedLayout, type SavedNodeLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
 import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
+import { nodeIsArrayNode } from './ir/nodeMetadata';
+
+/** Sent to the webview in response to `requestExpandInstance`, and (ids only,
+ * see `expandedInstanceIds` on the `graph` message) proactively fetched by the
+ * webview for any instance the module layout already had flagged expanded —
+ * see the `expanded` field on SavedModuleLayout for why the flag and the
+ * actual child IR/snapshot are split like this. */
+export interface ExpandInstancePayload {
+  instanceId: string;
+  childModuleName: string;
+  module: DesignModule;
+  savedLayout?: SavedExpandedInstanceLayout;
+}
 
 type WebviewMessage =
   | { type: 'ready' }
@@ -31,6 +44,18 @@ type WebviewMessage =
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
   | { type: 'revertNodeSizes'; moduleName: string; nodeIds: string[] }
+  | { type: 'requestExpandInstance'; moduleName: string; instanceId: string; topLevel: boolean }
+  | { type: 'collapseInstance'; moduleName: string; instanceId: string; topLevel: boolean }
+  | {
+      type: 'saveExpandedInstanceLayout';
+      moduleName: string;
+      instanceId: string;
+      childModuleName: string;
+      nodes: Record<string, SavedNodeLayout>;
+      bounds?: { x: number; y: number; width: number; height: number };
+      fixed?: boolean;
+      instanceOrigin?: { x: number; y: number };
+    }
   | { type: 'navigateToSource'; source: SourceRange }
   | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
@@ -175,6 +200,15 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
+    // Every instance this module currently has flagged expanded also has its
+    // own saved splice snapshot (see SavedModuleLayout.expanded /
+    // SavedExpandedInstanceLayout) — "Reset Layout" should clear those too,
+    // not just leave them as orphaned files a future re-expand of the same
+    // instance would silently pick back up.
+    const moduleLayout = this.layout.modules[this.currentModule] ?? await store.readModuleLayout(this.currentModule);
+    const expandedInstanceIds = Object.keys(moduleLayout.expanded ?? {});
+    await Promise.all(expandedInstanceIds.map((instanceId) => store.resetExpandedInstanceLayout(this.currentModule!, instanceId)));
+
     await store.resetModuleLayout(this.currentModule);
     const { [this.currentModule]: _removed, ...remainingModules } = this.layout.modules;
     this.layout = { version: 1, modules: remainingModules };
@@ -274,6 +308,26 @@ export class DiagramPanel {
     }
     if (message.type === 'revertNodeSizes') {
       await this.revertNodeSizes(message.moduleName, message.nodeIds);
+      return;
+    }
+    if (message.type === 'requestExpandInstance') {
+      await this.requestExpandInstance(message.moduleName, message.instanceId, message.topLevel);
+      return;
+    }
+    if (message.type === 'collapseInstance') {
+      await this.collapseInstance(message.moduleName, message.instanceId, message.topLevel);
+      return;
+    }
+    if (message.type === 'saveExpandedInstanceLayout') {
+      await this.saveExpandedInstanceLayout(
+        message.moduleName,
+        message.instanceId,
+        message.childModuleName,
+        message.nodes,
+        message.bounds,
+        message.fixed,
+        message.instanceOrigin
+      );
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -681,6 +735,85 @@ export class DiagramPanel {
     await this.postView();
   }
 
+  // Graph-splicing itself (ELK layout, boundary-port synthesis, drag-sync)
+  // happens entirely client-side in the webview (see webview/expand) — the
+  // host's job is only to hand over the child module's own IR/graph (the
+  // same data `openModule` already uses) plus any previously-saved splice
+  // snapshot for this specific instance, and to persist the `expanded` flag
+  // so a reopened module knows to re-request this on load.
+  private async requestExpandInstance(moduleName: string, instanceId: string, topLevel: boolean): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule || !this.panel) {
+      return;
+    }
+    const instanceNode = designModule.nodes.find((node) => node.id === instanceId);
+    if (!instanceNode || instanceNode.kind !== 'instance' || !instanceNode.moduleName) {
+      return;
+    }
+    // Array-of-instances nodes are excluded from v1 (see issue #232 decision
+    // 7) — the toolbar already hides the action for these, but a stale
+    // request from an already-open webview should still be refused.
+    if (nodeIsArrayNode(instanceNode)) {
+      return;
+    }
+    const childModuleName = instanceNode.moduleName;
+    let childModule = this.graph?.modules[childModuleName];
+    if (childModule && isListOnlyPlaceholder(childModule)) {
+      await this.loadModule(childModuleName);
+      childModule = this.graph?.modules[childModuleName];
+    }
+    if (!childModule || !this.panel) {
+      return;
+    }
+
+    // The `expanded` flag (used to auto-re-expand on module open) belongs to
+    // whichever module is opened *directly* — a nested Expand (inside an
+    // already-expanded instance) must not flag the intermediate child module
+    // itself, or opening that module standalone later would incorrectly
+    // auto-expand it too. Nested splices still get their own saved layout
+    // snapshot either way (see readExpandedInstanceLayout below), just not
+    // the auto-restore-on-open flag.
+    if (topLevel) {
+      await this.ensureModuleLayout(store, moduleName);
+      this.layout = setInstanceExpanded(this.layout, moduleName, instanceId, true);
+      await this.persistModuleLayout(store, moduleName);
+    }
+
+    const savedLayout = await store.readExpandedInstanceLayout(moduleName, instanceId);
+    const payload: ExpandInstancePayload = { instanceId, childModuleName, module: childModule, savedLayout };
+    await this.panel.webview.postMessage({ type: 'expandInstanceData', moduleName, payload });
+  }
+
+  private async collapseInstance(moduleName: string, instanceId: string, topLevel: boolean): Promise<void> {
+    if (!topLevel) {
+      return;
+    }
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = setInstanceExpanded(this.layout, moduleName, instanceId, false);
+    await this.persistModuleLayout(store, moduleName);
+  }
+
+  private async saveExpandedInstanceLayout(
+    moduleName: string,
+    instanceId: string,
+    childModuleName: string,
+    nodes: Record<string, SavedNodeLayout>,
+    bounds?: { x: number; y: number; width: number; height: number },
+    fixed?: boolean,
+    instanceOrigin?: { x: number; y: number }
+  ): Promise<void> {
+    const store = this.getStore();
+    if (!store) {
+      return;
+    }
+    await store.writeExpandedInstanceLayout(moduleName, instanceId, { childModuleName, nodes, bounds, fixed, instanceOrigin });
+  }
+
   private postView(): Promise<void> {
     const pending = this.postViewQueue.then(() => this.postViewNow());
     this.postViewQueue = pending.catch(() => {});
@@ -728,10 +861,13 @@ export class DiagramPanel {
     if (!isCurrentView()) {
       return;
     }
+    const expanded = this.layout.modules[moduleName]?.expanded;
+    const expandedInstanceIds = expanded ? Object.keys(expanded).filter((id) => expanded[id]) : [];
     await panel.webview.postMessage({
       type: 'graph',
       view,
-      modules: Object.keys(graph.modules)
+      modules: Object.keys(graph.modules),
+      expandedInstanceIds
     });
   }
 
@@ -778,6 +914,20 @@ export class DiagramPanel {
 
 function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+}
+
+function setInstanceExpanded(layout: SavedLayout, moduleName: string, instanceId: string, isExpanded: boolean): SavedLayout {
+  const moduleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  const expanded = { ...(moduleLayout.expanded ?? {}) };
+  if (isExpanded) {
+    expanded[instanceId] = true;
+  } else {
+    delete expanded[instanceId];
+  }
+  return {
+    version: 1,
+    modules: { ...layout.modules, [moduleName]: { ...moduleLayout, expanded } }
+  };
 }
 
 function centroidOfPositions(nodes: Array<{ position: { x: number; y: number } }>): { x: number; y: number } | undefined {

@@ -1,4 +1,4 @@
-export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'gate' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown' | 'netLabel';
+export type DiagramNodeKind = 'module' | 'instance' | 'mux' | 'select' | 'register' | 'port' | 'comb' | 'alu' | 'inverter' | 'gate' | 'bus' | 'struct' | 'interface' | 'literal' | 'latch' | 'loop' | 'replicate' | 'unknown' | 'netLabel' | 'boundaryPort';
 
 /** Boolean gate node operation — drives which glyph GateNodeSvg draws. */
 export type GateOperation = 'and' | 'or' | 'xor' | 'nand' | 'nor' | 'xnor';
@@ -100,6 +100,20 @@ export interface DiagramNodeMetadata {
   generateRegionId?: string;
   generateActiveState?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
+  /**
+   * Present only on `kind: 'boundaryPort'` nodes synthesized client-side when
+   * splicing an expanded instance's child module in place (see "Expand" in
+   * NodeSelectionToolbar / webview/expand). `outerSide` is which side of the
+   * node faces away from the expanded region's interior (where the parent's
+   * pre-existing wire keeps landing, unchanged); the opposite side faces the
+   * spliced-in internal nodes.
+   */
+  boundaryPort?: {
+    instanceId: string;
+    childModuleName: string;
+    childPortId: string;
+    outerSide: 'left' | 'right';
+  };
   cutNet?: {
     netKey: string;
     role: 'source' | 'sink';
@@ -192,6 +206,7 @@ export interface LoopDiagramNode extends BaseDiagramNode { kind: 'loop'; }
 export interface UnknownDiagramNode extends BaseDiagramNode { kind: 'unknown'; }
 export interface ModuleDiagramNode extends BaseDiagramNode { kind: 'module'; }
 export interface NetLabelDiagramNode extends BaseDiagramNode { kind: 'netLabel'; }
+export interface BoundaryPortDiagramNode extends BaseDiagramNode { kind: 'boundaryPort'; }
 
 export type DiagramNode =
   | RegisterDiagramNode
@@ -213,6 +228,7 @@ export type DiagramNode =
   | UnknownDiagramNode
   | ModuleDiagramNode
   | NetLabelDiagramNode
+  | BoundaryPortDiagramNode
  ;
 
 export interface DiagramEdgeMetadata {
@@ -289,6 +305,19 @@ export interface GenerateRegion {
   warnings?: string[];
   // True for the synthesized wrapper region around a whole if/case expression's arms.
   isGenerateBlock?: boolean;
+  /**
+   * Client-only (`kind: 'expand'`): identifies this as a synthesized "expand
+   * instance in place" region rather than a real SV generate region. Never
+   * set by the extractor/server — the webview splices these into the same
+   * `regions` array/overlay/drag-sync machinery as real generate regions
+   * (see webview/expand) purely to reuse that already-working code, and
+   * strips them back out before sending `regions` to the extension host.
+   */
+  expandedInstance?: {
+    instanceId: string;
+    childModuleName: string;
+    parentModuleName: string;
+  };
 }
 
 export interface PositionedGenerateRegion extends GenerateRegion {

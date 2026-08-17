@@ -969,6 +969,60 @@ text {
   left: 50%;
 }
 
+/* Boundary-port node ("Expand instance in place", issue #232) — label-only
+   with a wire stub on both edges (signal passes through), same sizing/handle
+   convention as .hdl-net-label above rather than a real port "skin". */
+.hdl-boundary-port {
+  align-items: center;
+  color: var(--vscode-editor-foreground);
+  display: flex;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  height: var(--svsch-node-height);
+  justify-content: center;
+  overflow: visible;
+  position: relative;
+  width: var(--svsch-node-width);
+}
+
+.hdl-boundary-port-text {
+  background: var(--vscode-editor-background);
+  padding: 0 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hdl-boundary-port-selected .hdl-boundary-port-text {
+  color: var(--vscode-focusBorder);
+}
+
+.hdl-boundary-port-wire-svg {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+}
+
+.hdl-boundary-port .react-flow__handle {
+  background: transparent;
+  border: 0;
+  height: 0;
+  min-height: 0;
+  min-width: 0;
+  pointer-events: all;
+  width: 0;
+}
+
+.hdl-boundary-port .react-flow__handle-left {
+  left: 0;
+  top: 50%;
+}
+
+.hdl-boundary-port .react-flow__handle-right {
+  right: 0;
+  top: 50%;
+}
+
 .hdl-node-inverter>.react-flow__handle-left,
 .hdl-node-inverter>.react-flow__handle-right {
   background: transparent;

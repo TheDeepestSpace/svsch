@@ -81,8 +81,43 @@ export interface SavedModuleLayout {
   edges?: Record<string, SavedEdgeLayout>;
   regions?: Record<string, SavedRegionLayout>;
   viewport?: SavedViewport;
+  /**
+   * Which of this module's instance nodes currently have "Expand" toggled on
+   * (see NodeSelectionToolbar), keyed by instance node id. Read on open so a
+   * previously-expanded instance re-expands automatically. The actual spliced
+   * content layout is a *separate* per-instance snapshot (see
+   * SavedExpandedInstanceLayout / readExpandedInstanceLayout) — not stored
+   * here and not the same saved state as the child module's own standalone
+   * layout, since boundary port positions differ between the two contexts.
+   */
   expanded?: Record<string, boolean>;
   netCuts?: Record<string, SavedNetCut>;
+}
+
+/**
+ * Per-instance snapshot of an expanded instance's spliced-in content —
+ * separate from both the parent module's own SavedModuleLayout and the child
+ * module's own standalone SavedModuleLayout (see `expanded` above for why).
+ * Node ids are the child module's own local node ids (not the namespaced ids
+ * the webview uses while an instance is expanded), so a snapshot can be
+ * re-applied even if the parent's other node ids have since changed, and
+ * stays reusable if the same module is expanded again elsewhere.
+ */
+export interface SavedExpandedInstanceLayout {
+  childModuleName: string;
+  nodes: Record<string, SavedNodeLayout>;
+  bounds?: { x: number; y: number; width: number; height: number };
+  fixed?: boolean;
+  /**
+   * The instance node's own absolute canvas position at the moment this
+   * snapshot was saved. On restore, if the instance now sits somewhere else
+   * (e.g. the parent module was re-laid-out while this instance was
+   * collapsed), every saved position/bounds is rigidly translated by the
+   * same delta as the instance itself moved, so the spliced content still
+   * lands anchored to the instance's current ports instead of wherever it
+   * used to be.
+   */
+  instanceOrigin?: { x: number; y: number };
 }
 
 /**
@@ -123,6 +158,65 @@ export class LayoutStore {
 
   private modulePath(moduleName: string): string {
     return path.join(this.layoutsDir, `${encodeURIComponent(moduleName)}.json`);
+  }
+
+  private expandedInstancePath(parentModuleName: string, instanceId: string): string {
+    return path.join(
+      this.layoutsDir,
+      'expanded',
+      `${encodeURIComponent(parentModuleName)}__${encodeURIComponent(instanceId)}.json`
+    );
+  }
+
+  /**
+   * Reads the saved splice snapshot for one expanded instance (keyed by the
+   * parent module + that specific instance's node id — see
+   * SavedExpandedInstanceLayout). Returns undefined if this instance has
+   * never been expanded before (the caller falls back to a fresh ELK
+   * auto-layout, same as the module's own first-open path).
+   */
+  async readExpandedInstanceLayout(parentModuleName: string, instanceId: string): Promise<SavedExpandedInstanceLayout | undefined> {
+    const filePath = this.expandedInstancePath(parentModuleName, instanceId);
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as Partial<SavedExpandedInstanceLayout>;
+      if (!parsed.childModuleName) return undefined;
+      return { ...parsed, childModuleName: parsed.childModuleName, nodes: parsed.nodes ?? {} };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.warn(`Unable to read SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+      }
+      return undefined;
+    }
+  }
+
+  /**
+   * Writes (immediately, not debounced — these are far rarer than ordinary
+   * node drags) the splice snapshot for one expanded instance.
+   */
+  async writeExpandedInstanceLayout(parentModuleName: string, instanceId: string, layout: SavedExpandedInstanceLayout): Promise<void> {
+    const filePath = this.expandedInstancePath(parentModuleName, instanceId);
+    const tmpPath = `${filePath}.tmp`;
+    try {
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      const content = `${JSON.stringify(layout, null, 2)}\n`;
+      await fs.writeFile(tmpPath, content, 'utf8');
+      await fs.rename(tmpPath, filePath);
+    } catch (error) {
+      console.error(`Failed to write SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+      await fs.unlink(tmpPath).catch(() => {});
+    }
+  }
+
+  /** Deletes a single instance's saved splice snapshot (used when Collapse discards it, e.g. via "Reset Layout"). */
+  async resetExpandedInstanceLayout(parentModuleName: string, instanceId: string): Promise<void> {
+    try {
+      await fs.unlink(this.expandedInstancePath(parentModuleName, instanceId));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error(`Failed to reset SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+      }
+    }
   }
 
   async hasModuleLayout(moduleName: string): Promise<boolean> {

@@ -187,7 +187,7 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
 }
 
 function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount: number, portRows: number): number {
-  if (node.kind === 'netLabel') {
+  if (node.kind === 'netLabel' || node.kind === 'boundaryPort') {
     return diagramSizing.gridSize * 2;
   }
 
@@ -349,6 +349,16 @@ function nodeWidthForKind(
     return snappedWidth(
       diagramSizing.gridSize * 4,
       measureText(node.label) + diagramSizing.gridSize / 2
+    );
+  }
+
+  if (node.kind === 'boundaryPort') {
+    // Wider than a netLabel's minimum: a boundary port has wire stubs on
+    // both edges (signal flows through) rather than just one, so the label
+    // needs clearance from both sides instead of only the handle side.
+    return snappedWidth(
+      diagramSizing.gridSize * 4,
+      measureText(node.label) + diagramSizing.gridSize
     );
   }
 

@@ -366,6 +366,38 @@ select {
   opacity: 0.75;
 }
 
+/* "Expand instance in place" (issue #232) reuses the generate-region overlay/
+   drag-sync machinery wholesale (see PositionedGenerateRegion.expandedInstance
+   in ir/types.ts) but reads as a distinct kind of frame — blue rather than
+   the generate-region orange — since it isn't SV conditional-compilation
+   structure, just an unfolded instance. */
+.generate-region-expand .generate-region-outline {
+  border-color: var(--vscode-charts-blue);
+  border-style: dashed;
+}
+
+.generate-region-expand.generate-region-selected:not(.generate-region-invalid) .generate-region-outline {
+  border-style: solid;
+}
+
+.generate-region-collapse {
+  background: transparent;
+  border: 0;
+  color: color-mix(in srgb, var(--vscode-editor-foreground) 90%, var(--vscode-descriptionForeground));
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  pointer-events: auto;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+
+.generate-region-collapse:hover {
+  color: var(--vscode-errorForeground, var(--vscode-editor-foreground));
+}
+
 /* Selection brightness must not depend on the arm's active state — the inactive
    dimming would fade the selection border with it, so selection lifts it. */
 .generate-region-inactive.generate-region-selected {

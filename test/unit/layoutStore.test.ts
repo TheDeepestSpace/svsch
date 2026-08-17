@@ -85,4 +85,54 @@ describe('LayoutStore', () => {
   it('resetModuleLayout on a module with no saved file is a no-op', async () => {
     await expect(store.resetModuleLayout('never_saved')).resolves.toBeUndefined();
   });
+
+  describe('expanded instance layout ("Expand" — issue #232)', () => {
+    it('returns undefined for an instance that was never expanded', async () => {
+      expect(await store.readExpandedInstanceLayout('top', 'u0')).toBeUndefined();
+    });
+
+    it('persists and reads back a per-instance snapshot separately from the child module\'s own standalone layout', async () => {
+      await store.writeExpandedInstanceLayout('top', 'u0', {
+        childModuleName: 'adder',
+        nodes: { reg1: { x: 100, y: 200, fixed: true } },
+        bounds: { x: 0, y: 0, width: 240, height: 120 },
+        fixed: true,
+        instanceOrigin: { x: 10, y: 20 }
+      });
+
+      const snapshot = await store.readExpandedInstanceLayout('top', 'u0');
+      expect(snapshot).toEqual({
+        childModuleName: 'adder',
+        nodes: { reg1: { x: 100, y: 200, fixed: true } },
+        bounds: { x: 0, y: 0, width: 240, height: 120 },
+        fixed: true,
+        instanceOrigin: { x: 10, y: 20 }
+      });
+
+      // Never touches the child module's own per-module layout file.
+      expect(await store.readModuleLayout('adder')).toEqual({ nodes: {} });
+    });
+
+    it('scopes snapshots per instance, not per child module — two instances of the same module get independent snapshots', async () => {
+      await store.writeExpandedInstanceLayout('top', 'u0', { childModuleName: 'adder', nodes: { r: { x: 1, y: 1 } } });
+      await store.writeExpandedInstanceLayout('top', 'u1', { childModuleName: 'adder', nodes: { r: { x: 2, y: 2 } } });
+
+      expect((await store.readExpandedInstanceLayout('top', 'u0'))?.nodes.r.x).toBe(1);
+      expect((await store.readExpandedInstanceLayout('top', 'u1'))?.nodes.r.x).toBe(2);
+    });
+
+    it('resets only the targeted instance snapshot', async () => {
+      await store.writeExpandedInstanceLayout('top', 'u0', { childModuleName: 'adder', nodes: {} });
+      await store.writeExpandedInstanceLayout('top', 'u1', { childModuleName: 'adder', nodes: {} });
+
+      await store.resetExpandedInstanceLayout('top', 'u0');
+
+      expect(await store.readExpandedInstanceLayout('top', 'u0')).toBeUndefined();
+      expect(await store.readExpandedInstanceLayout('top', 'u1')).toBeDefined();
+    });
+
+    it('resetExpandedInstanceLayout on an instance with no saved snapshot is a no-op', async () => {
+      await expect(store.resetExpandedInstanceLayout('top', 'never_expanded')).resolves.toBeUndefined();
+    });
+  });
 });

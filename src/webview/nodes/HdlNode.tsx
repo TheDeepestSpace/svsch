@@ -29,6 +29,7 @@ import {
 import { ArrayStackSelection } from './shared/skins';
 import { nodeStackIsWide } from '../../ir/edgeStyle';
 import { NetLabelNode } from './NetLabelNode';
+import { BoundaryPortNode } from './BoundaryPortNode';
 import { InteractionContext, type NodeResizeHandle } from './shared/context';
 import type { HdlFlowNode } from './types';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
@@ -98,6 +99,19 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           '--svsch-node-height': `${nodeHeight}px`,
           '--svsch-instance-param-height': `${diagramSizing.gridSize * parameterRows}px`,
           '--svsch-port-width': `${diagramSizing.portWidth}px`
+        } as React.CSSProperties}
+      />
+    );
+  }
+
+  if (node.kind === 'boundaryPort') {
+    return (
+      <BoundaryPortNode
+        node={node}
+        selected={selected}
+        style={{
+          '--svsch-node-width': `${nodeWidth}px`,
+          '--svsch-node-height': `${nodeHeight}px`
         } as React.CSSProperties}
       />
     );

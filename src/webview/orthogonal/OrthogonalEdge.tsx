@@ -31,6 +31,7 @@ import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
+import { isExpandNamespacedId } from '../expand/splice';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
@@ -144,6 +145,13 @@ function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
       if (!diagramNode || !node.position) {
         return undefined;
       }
+      // Spliced-in "Expand instance in place" content (issue #232, ids
+      // prefixed `expand:`) isn't part of the extension host's module IR —
+      // never send it back in a nodes payload (main.tsx's stripExpandSplices
+      // does the same at its own message-sending sites).
+      if (isExpandNamespacedId(diagramNode.id)) {
+        return undefined;
+      }
       return {
         ...diagramNode,
         position: node.position,
@@ -233,6 +241,7 @@ export function OrthogonalEdge({
       edge.selected === true
       && edge.data?.edge !== undefined
       && edge.data.edge.metadata?.cutStub === undefined
+      && !isExpandNamespacedId(edge.id)
     )),
     [flowEdges]
   );
@@ -448,7 +457,13 @@ export function OrthogonalEdge({
   // selected wire's controls, so the user can see (and act on) the whole batch.
   // Cut stubs are excluded from multi-select batching (they can't be cut again),
   // so they only ever show their own solo Reroute control on direct hover.
-  const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub
+  // Edges spliced in by "Expand instance in place" (issue #232, ids prefixed
+  // `expand:` — see webview/expand/splice.ts) aren't part of the extension
+  // host's module IR at all; Reroute/Cut aren't supported on them in v1, so
+  // don't even offer the controls (see also positionedNodesFromFlowNodes's
+  // filter below, which protects the node payload the same way).
+  const isExpandSplicedEdge = diagramEdge !== undefined && isExpandNamespacedId(diagramEdge.id);
+  const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub && !isExpandSplicedEdge
     && (isEdgeHovered || (isMultiSelected && selectionHoverActive));
   const showCutStubResetButton = isCutStub && diagramEdge !== undefined && edgeData?.moduleName !== undefined
     && cutLabelNodeId !== undefined && isEdgeHovered;
