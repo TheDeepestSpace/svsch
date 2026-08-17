@@ -353,6 +353,24 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
+      - name: Upload benchmark result (visual)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: benchmark-visual
+          path: |
+            test-results/visual/artifacts/benchmark-elaboration.json
+            test-results/visual/artifacts/benchmark-rendering.json
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/visual/**
+            playwright-report/**
+            test/visual/__screenshots__/**
+
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
@@ -537,16 +555,21 @@ jobs:
           fi
 
       - name: Download benchmark results
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: benchmark-*
           path: benchmarks
+          # v8 only nests results under a per-artifact subdirectory when more
+          # than one artifact matches the pattern (unlike v4.3.0, which always
+          # nested). Merge explicitly so the layout stays stable regardless of
+          # how many benchmark-* artifacts exist.
+          merge-multiple: true
 
       - name: Post combined benchmark comment
         run: >-
           node scripts/comment-benchmark-summary.mjs
-          visual-elaboration-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-elaboration.json
-          visual-rendering-diagram-generation-duration=benchmarks/benchmark-visual/benchmark-rendering.json
+          visual-elaboration-diagram-generation-duration=benchmarks/benchmark-elaboration.json
+          visual-rendering-diagram-generation-duration=benchmarks/benchmark-rendering.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
