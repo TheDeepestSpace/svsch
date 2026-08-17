@@ -86,6 +86,43 @@ endmodule
   <img src="syntax-book/assets/port-array-output.svg" alt="Array Output Port diagram" />
 </p>
 
+### Inout Port
+
+An inout port declaration defines a bidirectional module boundary signal, driven or read from either side.
+
+<pre><code>module top (
+  input logic drive_enable,
+  inout wire <mark>a</mark>,
+  output logic y
+);
+  assign a = drive_enable ? 1&#39;b1 : 1&#39;bz;
+  assign y = a;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/port-inout.svg" alt="Inout Port diagram" />
+</p>
+
+### Array Inout Port
+
+An inout port declaration defining an array of bidirectional signal vectors.
+
+<pre><code>module top (
+  input logic [7:0] drive_enable [0:1],
+  inout wire [7:0] <mark>a</mark> [0:1],
+  output logic [7:0] y [0:1]
+);
+  assign a[0] = drive_enable[0] ? 8&#39;hff : 8&#39;hzz;
+  assign a[1] = drive_enable[1] ? 8&#39;hff : 8&#39;hzz;
+  assign y = a;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/port-inout-array.svg" alt="Array Inout Port diagram" />
+</p>
+
 ## Modules & Hierarchy
 
 ### Submodule Instance

@@ -48,6 +48,7 @@ import { ZextNodeSvg } from './zext/ZextNodeSvg';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { InstanceNodeSvg } from './instance/InstanceNodeSvg';
 import { Tooltip } from '../Tooltip';
+import { isInputSidePort, isInoutPort } from '../../diagram/portDirection';
 
 const vscode = getVscodeApi();
 
@@ -62,7 +63,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   const nodeRole = structRole(node);
   const instanceParameters = node.kind === 'instance' ? (node.instanceParameters ?? node.metadata?.instanceParameters ?? []) : [];
 
-  const inputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = node.ports.filter(isInputSidePort);
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
   const muxTopPorts = node.kind === 'select'
     ? inputs.filter((port: DiagramPort) => port.name === 's' || port.name === 'sel' || port.name === 'width')
@@ -130,8 +131,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   if (node.kind === 'port') {
     const isOutput = portDirection === 'output';
     const isInput = portDirection === 'input';
+    const isInout = portDirection === 'inout';
     const isInterfacePort = Boolean(node.ports[0]?.typeName && node.ports[0]?.modportName !== undefined || node.ports[0]?.typeName?.endsWith('_if') || node.ports[0]?.typeName?.endsWith('if'));
-    const isSkinnedPort = isInput || isOutput || isInterfacePort;
+    const isSkinnedPort = isInput || isOutput || isInout || isInterfacePort;
     const handlePositionOverride = node.metadata?.handlePosition as Position | undefined;
 
     return (
@@ -158,11 +160,10 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             onNavigateToSource={navigateToSource}
           />
         </svg>
-        {isOutput && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
-        {isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
-        {!isOutput && <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Right} />}
+        {(isOutput || isInout) && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
+        <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)} />
         {isArray && isSkinnedPort
-          ? <ArrayStackSelection kind={isOutput ? 'output' : 'input'} width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
+          ? <ArrayStackSelection kind={isOutput ? 'output' : isInout ? 'inout' : 'input'} width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
           : isSkinnedPort
             ? null
             : <div className="hdl-node-selection-rect" aria-hidden="true" />}
@@ -242,7 +243,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
     leftSidePorts.forEach((port, index) => interfaceTapCenterById.set(port.id, leftInterfaceCenters[index]));
     rightSidePorts.forEach((port, index) => interfaceTapCenterById.set(port.id, rightInterfaceCenters[index]));
 
-    const aggregateInputs = sidePorts.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+    const aggregateInputs = sidePorts.filter(isInputSidePort);
     const aggregateOutputs = sidePorts.filter((port: DiagramPort) => port.direction === 'output');
 
     const isComposition = node.kind === 'struct'
@@ -321,7 +322,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         {!isInterfaceModport && !isInterfaceInstance && isComposition && singlePort ? (
           <Handle type="source" id={singlePort?.id} position={Position.Right} style={singlePortHandleStyle} />
         ) : !isInterfaceModport && !isInterfaceInstance && singlePort ? (
-          <Handle type="target" id={singlePort?.id} position={Position.Left} style={singlePortHandleStyle} />
+          <InputPortHandles port={singlePort} position={Position.Left} style={singlePortHandleStyle} />
         ) : null}
         {topPorts.map((port, index) => {
           const handleGeometry = visualHandleGeometry(node, port.id);
@@ -372,31 +373,36 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           );
         })}
         <div className="bus-taps">
-          {taps.map((port: DiagramPort, index: number) => (
-            <div
-              className={`bus-tap ${isInterfaceModport || isInterfaceInstance ? (port.preferredSide === 'right' || port.direction === 'output' ? 'bus-tap-right' : 'bus-tap-left') : ''}`}
-              data-port-id={port.id}
-              key={port.id}
-              style={{ top: `${tapCenters[index] - diagramSizing.gridSize / 2}px` }}
-              onDoubleClick={(event) => navigatePortSource(event, port)}
-            >
-              {isInterfaceModport ? (
-                <>
-                  <Handle type="source" id={port.id} position={port.direction === 'output' ? Position.Right : Position.Left} />
-                  <Handle type="target" id={port.id} position={port.direction === 'output' ? Position.Right : Position.Left} />
-                </>
-              ) : isInterfaceInstance && port.width === 'interface' ? (
-                <>
-                  <Handle type="source" id={port.direction === 'input' ? `in:${port.name}` : `out:${port.name}`} position={port.preferredSide === 'left' ? Position.Left : Position.Right} />
-                  <Handle type="target" id={port.direction === 'input' ? `in:${port.name}` : `out:${port.name}`} position={port.preferredSide === 'left' ? Position.Left : Position.Right} />
-                </>
-              ) : isInterfaceInstance ? null : isComposition ? (
-                <Handle type="target" id={port.id} position={Position.Left} />
-              ) : (
-                <Handle type="source" id={port.id} position={Position.Right} />
-              )}
-            </div>
-          ))}
+          {taps.map((port: DiagramPort, index: number) => {
+            const tapPosition = port.preferredSide === 'right' || port.direction === 'output' ? Position.Right : Position.Left;
+            return (
+              <div
+                className={`bus-tap ${isInterfaceModport || isInterfaceInstance ? (port.preferredSide === 'right' || port.direction === 'output' ? 'bus-tap-right' : 'bus-tap-left') : ''}`}
+                data-port-id={port.id}
+                key={port.id}
+                style={{ top: `${tapCenters[index] - diagramSizing.gridSize / 2}px` }}
+                onDoubleClick={(event) => navigatePortSource(event, port)}
+              >
+                {isInterfaceModport ? (
+                  <>
+                    <Handle type="source" id={port.id} position={tapPosition} />
+                    <Handle type="target" id={port.id} position={tapPosition} />
+                  </>
+                ) : isInterfaceInstance && port.width === 'interface' ? (
+                  <>
+                    <Handle type="source" id={port.direction === 'input' ? `in:${port.name}` : `out:${port.name}`} position={port.preferredSide === 'left' ? Position.Left : Position.Right} />
+                    <Handle type="target" id={port.direction === 'input' ? `in:${port.name}` : `out:${port.name}`} position={port.preferredSide === 'left' ? Position.Left : Position.Right} />
+                  </>
+                ) : isInterfaceInstance && isInoutPort(port) ? (
+                  <InputPortHandles port={port} position={tapPosition} />
+                ) : isInterfaceInstance ? null : isComposition ? (
+                  <InputPortHandles port={port} position={Position.Left} />
+                ) : (
+                  <Handle type="source" id={port.id} position={Position.Right} />
+                )}
+              </div>
+            );
+          })}
         </div>
         {isInterfaceInstance ? null : <div className="hdl-node-selection-rect" aria-hidden="true" />}
         {warningIcon}
@@ -439,18 +445,18 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             onNavigateToSource={navigateToSource}
           />
         </svg>
-        {dPort && <Handle type="target" id={dPort.id} position={Position.Left}
+        {dPort && <InputPortHandles port={dPort} position={Position.Left}
           style={{ top: registerPortTop('d', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {qPort && <Handle type="source" id={qPort.id} position={Position.Right}
           style={{ top: registerPortTop('q', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
-        {clockPort && <Handle type="target" id={clockPort.id} position={Position.Left}
+        {clockPort && <InputPortHandles port={clockPort} position={Position.Left}
           style={{ top: registerPortTop('clock', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
-        {resetPort && <Handle type="target" id={resetPort.id} position={Position.Bottom}
+        {resetPort && <InputPortHandles port={resetPort} position={Position.Bottom}
           style={{ left: nodeWidth / 2, bottom: 0, transform: 'translate(-50%, 0)' }} />}
-        {rvPort && <Handle type="target" id={rvPort.id} position={Position.Left}
+        {rvPort && <InputPortHandles port={rvPort} position={Position.Left}
           style={{ top: registerPortTop('rv', nodeHeight, hasReset, hasRv) + diagramSizing.gridSize / 2 }} />}
         {extraInputPorts.map((port, index) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+          <InputPortHandles key={port.id} port={port} position={Position.Left}
             style={{ top: registerExtraInputPortTop(index, canonicalSize.height, hasRv) + diagramSizing.gridSize / 2 }} />
         ))}
         {isArray
@@ -484,7 +490,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           />
         </svg>
         {sideInputs.map((port: DiagramPort) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+          <InputPortHandles key={port.id} port={port} position={Position.Left} />
         ))}
         {outputs.map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
@@ -542,7 +548,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           <InverterNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
         {sideInputs.slice(0, 1).map((port: DiagramPort) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+          <InputPortHandles key={port.id} port={port} position={Position.Left} />
         ))}
         {outputs.slice(0, 1).map((port: DiagramPort) => (
           <Handle key={port.id} type="source" id={port.id} position={Position.Right}
@@ -596,7 +602,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         {/* Hidden label for test findNodeIdByLabel compatibility */}
         <div className="node-title" style={{ display: 'none' }}>{node.label}</div>
         {muxTopPorts.map((port: DiagramPort, index: number) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Top}
+          <InputPortHandles key={port.id} port={port} position={Position.Top}
             style={{
               left: `${((index + 1) / (muxTopPorts.length + 1)) * nodeWidth}px`,
               top: diagramSizing.gridSize,  // matches original .mux-select-port { top: var(--svsch-grid) }
@@ -604,7 +610,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             }} />
         ))}
         {sideInputs.map((port: DiagramPort, index: number) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+          <InputPortHandles key={port.id} port={port} position={Position.Left}
             style={{ top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
         ))}
         {outputs.slice(0, 1).map((port: DiagramPort) => (
@@ -631,7 +637,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           <AluNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
         {sideInputs.slice(0, 2).map((port: DiagramPort, index: number) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+          <InputPortHandles key={port.id} port={port} position={Position.Left}
             style={{ top: (index === 0 ? g : g * 3) }} />
         ))}
         {outputs.slice(0, 1).map((port: DiagramPort) => (
@@ -710,7 +716,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
           <SvgComp node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />
         </svg>
         {sideInputs.map((port: DiagramPort, i: number) => (
-          <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+          <InputPortHandles key={port.id} port={port} position={Position.Left}
             style={{ top: nodePortCenterOffset(i) }} />
         ))}
         {outputs.map((port: DiagramPort, i: number) => (
@@ -756,12 +762,8 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         </div>
       )}
       {sideInputs.map((port: DiagramPort, i: number) => (
-        <Handle key={port.id} type="target" id={port.id} position={Position.Left}
+        <InputPortHandles key={port.id} port={port} position={Position.Left}
           style={{ top: nodePortCenterOffset(i + parameterRows) }} />
-      ))}
-      {sideInputs.filter((p: DiagramPort) => p.direction === 'inout').map((port: DiagramPort) => (
-        <Handle key={`inout-${port.id}`} type="source" id={port.id} position={Position.Right}
-          style={{ top: nodePortCenterOffset(sideInputs.indexOf(port) + parameterRows) }} />
       ))}
       {outputs.map((port: DiagramPort, i: number) => (
         <Handle key={port.id} type="source" id={port.id} position={Position.Right}
@@ -775,6 +777,23 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       )}
       {warningIcon}
     </button>
+  );
+}
+
+function InputPortHandles({
+  port,
+  position,
+  style
+}: {
+  port: DiagramPort;
+  position: Position;
+  style?: React.CSSProperties;
+}): React.ReactElement {
+  return (
+    <>
+      <Handle type="target" id={port.id} position={position} style={style} />
+      {isInoutPort(port) && <Handle type="source" id={port.id} position={position} style={style} />}
+    </>
   );
 }
 
