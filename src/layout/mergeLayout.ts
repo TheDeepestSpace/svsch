@@ -1834,7 +1834,7 @@ export function elkNodeForDiagramNode(
         const sideInputIndex = allInputs.filter(p => !topPorts.some(tp => tp.id === p.id)).indexOf(port);
         portY = height / 2;
       }
-    } else if (node.kind === 'alu') {
+    } else if (node.kind === 'alu' || node.kind === 'comparator') {
       if (port.direction === 'output') {
         side = 'EAST';
         portX = width;
@@ -1845,6 +1845,10 @@ export function elkNodeForDiagramNode(
         const inputIndex = Math.max(0, inputs.indexOf(port));
         portY = inputIndex === 0 ? grid : grid * 3;
       }
+    } else if (node.kind === 'zext') {
+      side = port.direction === 'output' ? 'EAST' : 'WEST';
+      portX = side === 'EAST' ? width : 0;
+      portY = height / 2;
     } else if (node.kind === 'inverter') {
       if (port.direction === 'output') {
         side = 'EAST';
