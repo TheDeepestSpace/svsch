@@ -244,6 +244,48 @@ When('I hover the connection between {string} and {string} and click its Cut con
   await cutNetByClickingControl(this, source, target);
 });
 
+// Keyboard equivalent — the `c` shortcut mirrors exactly what clicking the
+// Cut control posts (see main.tsx) when a single edge is hovered.
+When('I hover the connection between {string} and {string} and press C to cut it', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await hoverEdgeAndPressShortcutKey(this, edgeId, 'c');
+  await waitForLayoutChange(this, before, 'After cut net via C shortcut');
+});
+
+// Ctrl/Cmd-click directly on a wire's path to add it to whatever's already
+// selected, mirroring how a user extends a block marquee with an extra,
+// otherwise-unrelated connection — React Flow only auto-selects edges that
+// touch an already-selected node, so this is the one way to get an edge
+// into a mixed selection without also sweeping up its endpoint nodes.
+// pointer-events on the bridge path is "stroke" (see diagram.css), so a
+// coordinate-based click only lands reliably on a perfectly straight run —
+// dispatch directly on the element instead, the same way the plain hover
+// step above dispatches 'mouseover' rather than moving a real pointer. React
+// Flow's multi-selection state comes from its own window-level keydown/keyup
+// tracking (not the click event's modifier flags), so a real keydown has to
+// bracket the click — and land in a separate render tick — for the edge to
+// be added rather than replacing the selection.
+When('I add the connection between {string} and {string} to the selection', async function (this: BddWorld, source: string, target: string) {
+  const edgeId = await edgeIdBetweenLabels(this.webviewPage, source, target);
+  const isMac = process.platform === 'darwin';
+  const key = isMac ? 'Meta' : 'Control';
+  const modifierProps = isMac ? { metaKey: true } : { ctrlKey: true };
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ctrlKey: key === 'Control', metaKey: key === 'Meta' }));
+  }, key);
+  await this.webviewPage.locator('html').evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await this.webviewPage.locator('html').evaluate((_el, { edgeId, modifierProps }) => {
+    const target = document.querySelector(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge-bridge`);
+    if (!target) throw new Error(`Bridge path not found for edge ${edgeId}`);
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, ...modifierProps }));
+  }, { edgeId, modifierProps });
+  await this.webviewPage.locator('html').evaluate((_el, key) => {
+    window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+  }, key);
+  await this.takeScreenshot(`Added the connection between ${source} and ${target} to the selection`);
+});
+
 // Reveal a connection's floating Cut/Reroute controls without clicking either —
 // used to check that hovering one wire of a multi-wire selection also reveals
 // every other selected wire's own controls.
@@ -270,6 +312,21 @@ When('I hover the connection between {string} and {string} and click its Reroute
   await waitForLayoutChange(this, before, 'After reroute single edge');
 });
 
+// Keyboard equivalent of the step above — the `r` shortcut mirrors exactly
+// what clicking the Reroute control posts (see main.tsx), so this exercises
+// the same outcome via `hoveredEdgeId` instead of a button click.
+When('I hover the connection between {string} and {string} and press R to reroute it', async function (this: BddWorld, source: string, target: string) {
+  await this.recordPortPositions();
+  const sourceId = await findNodeIdByLabel(this.webviewPage, source);
+  const targetId = await findNodeIdByLabel(this.webviewPage, target);
+  if (!sourceId || !targetId) throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId = await findEdgeIdBetween(this.webviewPage, sourceId, targetId);
+  if (!edgeId) throw new Error(`Could not find original edge between ${sourceId} and ${targetId}`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await hoverEdgeAndPressShortcutKey(this, edgeId, 'r');
+  await waitForLayoutChange(this, before, 'After reroute single edge via R shortcut');
+});
+
 When('I rename the cut net {string} to {string}', async function (this: BddWorld, currentLabel: string, nextLabel: string) {
   const labelNode = cutNetLabelNodes(this.webviewPage, currentLabel).first();
   await expect(labelNode).toBeVisible();
@@ -283,26 +340,19 @@ When('I rename the cut net {string} to {string}', async function (this: BddWorld
   await waitForLayoutChange(this, before, 'After rename cut net');
 });
 
-When('I tie back the cut net {string}', async function (this: BddWorld, label: string) {
-  const labelNodes = cutNetLabelNodes(this.webviewPage, label);
-  await expect(labelNodes.first()).toBeVisible();
-  const before = JSON.stringify(await readExtensionLayout(this));
-  // Fanout labels can overlap after auto-layout, so use the first label whose
-  // hover action is reachable instead of assuming the first DOM node is clear.
-  let tied = false;
-  for (let index = 0; index < await labelNodes.count(); index += 1) {
-    const labelNode = labelNodes.nth(index);
-    await labelNode.hover({ force: true });
-    const tieButton = labelNode.locator('.hdl-net-label-tie');
-    if (await tieButton.isVisible()) {
-      await tieButton.focus();
-      await tieButton.press('Enter');
-      tied = true;
-      break;
-    }
-  }
-  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
-  await waitForLayoutChange(this, before, 'After tie net');
+When('I tie back the cut net {string} by clicking its Tie control', async function (this: BddWorld, label: string) {
+  await tieBackCutNet(this, label, async (tieButton) => {
+    await tieButton.focus();
+    await tieButton.press('Enter');
+  });
+});
+
+// Keyboard equivalent — the `t` shortcut mirrors exactly what clicking the
+// Tie control posts (see main.tsx) for a hovered cut net label.
+When('I tie back the cut net {string} by pressing T', async function (this: BddWorld, label: string) {
+  await tieBackCutNet(this, label, async () => {
+    await pressGlobalShortcutKey(this, 't');
+  });
 });
 
 When('I tie back every cut net', async function (this: BddWorld) {
@@ -898,6 +948,18 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await expect(button).toBeVisible();
   await button.click();
   await waitForLayoutChange(this, before, `After clicking ${label}`);
+});
+
+// Keyboard equivalent of clicking the block-selection toolbar's "Cut out"
+// button — the `c` shortcut falls back to cutting every wire touching the
+// selected block(s) whenever no wire is itself hovered or selected (see
+// cutOutEdgesForSelection in main.tsx).
+When('I press C to cut out the selected blocks', async function (this: BddWorld) {
+  const before = JSON.stringify(await readExtensionLayout(this));
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Cut out' });
+  await expect(button).toBeVisible();
+  await pressGlobalShortcutKey(this, 'c');
+  await waitForLayoutChange(this, before, 'After pressing C to cut out the selection');
 });
 
 When('I note the position of the block {string}', async function (this: BddWorld, label: string) {
@@ -2569,6 +2631,70 @@ async function clickEdgeControl(world: BddWorld, edgeId: string, controlClass: s
   await control.click();
   // Move mouse away to clear hover states so the edge isn't highlighted in the screenshot
   await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
+}
+
+// Fires a real `keydown` on the webview's own `window` — the r/t/c shortcuts
+// are wired to a window-level listener (see main.tsx), not to any specific
+// focused element, so a synthetic event dispatched there is equivalent to
+// the user actually pressing the key.
+async function pressGlobalShortcutKey(world: BddWorld, key: string): Promise<void> {
+  await world.webviewPage.locator('body').evaluate((_body, shortcutKey) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: shortcutKey, bubbles: true, cancelable: true }));
+  }, key);
+}
+
+// Keyboard counterpart to clickEdgeControl: reveal the connection's controls
+// by hovering it (which also sets `hoveredEdgeId`, the state the `r`/`c`
+// shortcuts key off of for a lone hovered edge), then fire the shortcut
+// instead of clicking a button.
+async function hoverEdgeAndPressShortcutKey(world: BddWorld, edgeId: string, key: string): Promise<void> {
+  // Move the real (Playwright-controlled) cursor off whatever it was last
+  // resting on — e.g. a wire a previous drag interaction ended on top of —
+  // before dispatching the synthetic hover below. Otherwise the browser's own
+  // hit-testing can re-fire a genuine mouseover for that stale position once
+  // the DOM shifts (a re-render, a highlight style change, ...), clobbering
+  // `hoveredEdgeId` back to the wrong edge right as the shortcut key fires.
+  await world.webviewPage.locator('body').hover({ position: { x: 100, y: 100 }, force: true });
+  const edgeLocator = world.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+  await edgeLocator.locator('path.svsch-edge-bridge').dispatchEvent('mouseover');
+  await expect(edgeLocator.locator('.svsch-edge-connection-controls')).toBeVisible({ timeout: 5_000 });
+  await pressGlobalShortcutKey(world, key);
+  // A plain hover-away isn't enough to guarantee a clean screenshot: it
+  // clears hover, but any node still `selected` from an earlier drag (e.g.
+  // the port a wire's endpoint was moved through) stays selected and keeps
+  // rendering its highlight border. Click an empty stretch of the pane —
+  // same corner "I double-click on an empty area of the canvas" uses — to
+  // deterministically clear both hover and selection before any caller
+  // screenshots the result, instead of racing a timing-sensitive clear.
+  const pane = world.webviewPage.locator('.react-flow__pane');
+  const box = await pane.boundingBox();
+  if (box) {
+    await pane.click({ position: { x: box.width - 16, y: 16 }, force: true });
+  }
+}
+
+// Shared by the click- and keyboard-triggered "tie back" steps: finds a cut
+// net's first reachable label (fanout labels can overlap after auto-layout)
+// and hovers it, then hands off to `trigger` to actually commit the tie —
+// either a real click on the Tie control or the `t` keyboard shortcut, which
+// keys off the same hover state (see main.tsx).
+async function tieBackCutNet(world: BddWorld, label: string, trigger: (tieButton: ReturnType<FrameLocator['locator']>) => Promise<void>): Promise<void> {
+  const labelNodes = cutNetLabelNodes(world.webviewPage, label);
+  await expect(labelNodes.first()).toBeVisible();
+  const before = JSON.stringify(await readExtensionLayout(world));
+  let tied = false;
+  for (let index = 0; index < await labelNodes.count(); index += 1) {
+    const labelNode = labelNodes.nth(index);
+    await labelNode.hover({ force: true });
+    const tieButton = labelNode.locator('.hdl-net-label-tie');
+    if (await tieButton.isVisible()) {
+      await trigger(tieButton);
+      tied = true;
+      break;
+    }
+  }
+  expect(tied, `No reachable Tie control found for cut net "${label}"`).toBe(true);
+  await waitForLayoutChange(world, before, 'After tie net');
 }
 
 async function waitForLayoutChange(
