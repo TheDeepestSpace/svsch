@@ -211,7 +211,7 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
-  it('auto-cuts every declared-net edge, even when mutually exclusive generate arms each drive it', () => {
+  it('auto-cuts every declared-net edge across mutually exclusive generate arms', () => {
     // Two generate arms (e.g. `g_other`/`g_zero`) each drive the module's
     // `y` output from their own internal source node — different netKeys
     // (different source nodes), same declared net. Both still get auto-cut;
@@ -222,9 +222,24 @@ describe('first-open auto-cuts', () => {
       file: 'top.sv',
       ports: [],
       nodes: [
-        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+        {
+          id: 'g_other_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'g_zero_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'y',
+          kind: 'port' as const,
+          label: 'y',
+          ports: [{ id: 'p', name: 'y', direction: 'output' as const }],
+        },
       ],
       edges: [
         {
@@ -233,7 +248,11 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_other',
+            generateActiveState: 'inactive',
+          },
         },
         {
           id: 'g_zero-y',
@@ -241,15 +260,22 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
-        }
-      ]
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_zero',
+            generateActiveState: 'active',
+          },
+        },
+      ],
     };
 
-    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y', 'g_zero-y']);
+    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual([
+      'g_other-y',
+      'g_zero-y',
+    ]);
   });
 
-  it('collapses duplicate sink ends when mutually exclusive generate arms both cut into the same output port', async () => {
+  it('collapses duplicate sink ends across mutually exclusive generate arms', async () => {
     // Both g_other's and g_zero's edges are auto-cut (see the test above),
     // each keeping its own dead-end source label near its own driver. But
     // routing *both* of their sink stubs into the real `y` port would stack
@@ -265,9 +291,24 @@ describe('first-open auto-cuts', () => {
       file: 'top.sv',
       ports: [],
       nodes: [
-        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+        {
+          id: 'g_other_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'g_zero_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'y',
+          kind: 'port' as const,
+          label: 'y',
+          ports: [{ id: 'p', name: 'y', direction: 'output' as const }],
+        },
       ],
       edges: [
         {
@@ -276,7 +317,11 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_other',
+            generateActiveState: 'inactive',
+          },
         },
         {
           id: 'g_zero-y',
@@ -284,28 +329,36 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
-        }
-      ]
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_zero',
+            generateActiveState: 'active',
+          },
+        },
+      ],
     };
     const positioned: PositionedNode[] = [
       { ...generateArmModule.nodes[0], position: { x: 0, y: 0 } },
       { ...generateArmModule.nodes[1], position: { x: 0, y: 96 } },
-      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } }
+      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } },
     ];
 
     const firstCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
     const secondCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_zero-y')!;
     const cutLayout = [firstCutEdge, secondCutEdge].reduce(
       (layout, edge) => mergeNetCut(layout, 'top', edge, generateArmModule, positioned),
-      { version: 1, modules: {} } as SavedLayout
+      { version: 1, modules: {} } as SavedLayout,
     );
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: generateArmModule }
-    }, 'top', cutLayout);
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: { top: generateArmModule },
+      },
+      'top',
+      cutLayout,
+    );
 
     const firstNetKey = edgeNetKey(firstCutEdge);
     const secondNetKey = edgeNetKey(secondCutEdge);
@@ -318,13 +371,17 @@ describe('first-open auto-cuts', () => {
     // Only the active arm's (g_zero's) sink label/stub lands on the shared
     // `y` port...
     expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    expect(
+      view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`),
+    ).toBe(true);
     const sinkLabel = byId.get(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`);
     expect(sinkLabel?.metadata?.generateActiveState).toBe('active');
 
     // ...the inactive arm's redundant one is skipped entirely.
     expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+    expect(
+      view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`),
+    ).toBe(false);
 
     // Neither arm is left as a live wire straight into the output port.
     expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);
@@ -1899,30 +1956,40 @@ describe('layout merge', () => {
     },
   );
 
-  it('dims a cut end the same way its underlying wire is dimmed on an inactive generate arm', async () => {
+  it('dims a cut end the same way as its wire on an inactive generate arm', async () => {
     const module = {
       ...fanoutGraph.modules.top,
       edges: [
         {
           ...fanoutGraph.modules.top.edges[0],
-          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' },
         },
-        fanoutGraph.modules.top.edges[1]
-      ]
+        fanoutGraph.modules.top.edges[1],
+      ],
     };
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 240, y: 0 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
     ];
 
-    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: module }
-    }, 'top', cutLayout);
+    const cutLayout = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      module.edges[0],
+      module,
+      positioned,
+    );
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: { top: module },
+      },
+      'top',
+      cutLayout,
+    );
 
     const netKey = edgeNetKey(module.edges[0]);
     const byId = new Map(view.nodes.map((node) => [node.id, node]));

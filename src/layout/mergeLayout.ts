@@ -960,7 +960,8 @@ function buildNetCutProjection(
   // active, not whichever arm's edge id happens to sort first. An inactive
   // arm only wins when every arm reaching that target is inactive (dead
   // code some other pass should be flagging, not this dedupe).
-  const netIsActive = (edges: DiagramEdge[]) => edges.some((edge) => edge.metadata?.generateActiveState !== 'inactive');
+  const netIsActive = (edges: DiagramEdge[]) =>
+    edges.some((edge) => edge.metadata?.generateActiveState !== 'inactive');
   const sortedActiveCuts = [...activeCuts].sort(([, a], [, b]) => {
     const aActive = netIsActive(a.edges) ? 0 : 1;
     const bActive = netIsActive(b.edges) ? 0 : 1;
@@ -1293,7 +1294,7 @@ function makeCutLabelNode(
       // dim the same way the rest of that route does — otherwise the stub
       // label is the one piece of the wire left at full opacity.
       generateActiveState: template.metadata?.generateActiveState,
-      generateRegionId: template.metadata?.generateRegionId
+      generateRegionId: template.metadata?.generateRegionId,
     },
     position,
     fixed: saved?.fixed,
