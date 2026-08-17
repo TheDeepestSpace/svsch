@@ -91,6 +91,63 @@ TEST(ExtractorTest, BusBreakoutOutputsExpectedNodes) {
     EXPECT_TRUE(found_edge_bus_to_b);
 }
 
+// A boundary `inout` port that is itself an unpacked array (e.g. `inout wire
+// [7:0] a [0:1]`) is a hub: per-element muxes drive it on one side, and
+// `assign y = a;` reads the whole array back out on the other. Before the
+// fix, the array-composition node that combines the per-element drives into
+// the whole-array value ALSO paired directly with `y` (via the whole-array
+// alias mechanism), producing a second edge that overlapped the one
+// correctly routed through the boundary port.
+TEST(ExtractorTest, InoutArrayAliasProducesSingleEdgeIntoReader) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_uhdm_dir_inout_array_alias/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/inout_array_alias.sv";
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_uhdm_dir_inout_array_alias";
+        int ret = std::system(command.c_str());
+        if (ret != 0 || !fs::exists(uhdm_path)) {
+            GTEST_SKIP() << "Surelog not available or failed";
+        }
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& candidate : result["modules"]) {
+        if (candidate["name"] == "inout_array_alias") {
+            mod = &candidate;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    int edges_into_y = 0;
+    bool found_hub_to_y = false;
+    bool found_bus_comp_to_y = false;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["target"] != "self" || edge["targetPort"] != "y") continue;
+        edges_into_y += 1;
+        if (edge["source"] == "self" && edge["sourcePort"] == "a") found_hub_to_y = true;
+        if (edge["source"] == "bus_comp:inout_array_alias:a") found_bus_comp_to_y = true;
+    }
+
+    EXPECT_EQ(edges_into_y, 1) << result.dump(2);
+    EXPECT_TRUE(found_hub_to_y);
+    EXPECT_FALSE(found_bus_comp_to_y);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

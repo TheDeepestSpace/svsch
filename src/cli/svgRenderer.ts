@@ -5,6 +5,7 @@ import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
 import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
+import { isInputSidePort } from '../diagram/portDirection';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
@@ -291,8 +292,8 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     return undefined;
   }
 
-  const sourcePort = connectionPortGeometry(source, edge.sourcePort);
-  const targetPort = connectionPortGeometry(target, edge.targetPort);
+  const sourcePort = connectionPortGeometry(source, edge.sourcePort, 'source');
+  const targetPort = connectionPortGeometry(target, edge.targetPort, 'target');
   if (!sourcePort || !targetPort) {
     return undefined;
   }
@@ -413,7 +414,7 @@ function sideToHdlPosition(side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'): HdlPositi
   return HdlPosition.Bottom;
 }
 
-function connectionPortGeometry(node: PositionedNode, portId?: string): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
+function connectionPortGeometry(node: PositionedNode, portId: string | undefined, role: 'source' | 'target'): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
   if (node.kind === 'netLabel') {
     const { width, height } = diagramNodeDimensions(node);
     const handleSide = node.metadata?.cutNet?.handleSide ?? 'left';
@@ -424,7 +425,7 @@ function connectionPortGeometry(node: PositionedNode, portId?: string): { offset
       default:       return { offset: { x: 0,          y: height / 2 }, side: 'WEST'  };
     }
   }
-  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId);
+  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId, false, role);
 }
 
 function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
@@ -708,7 +709,7 @@ function convergingStackGradientId(rendered: RenderedEdge, layerId: ArrayStackLa
 
 function aggregateInputs(node: PositionedNode): DiagramPort[] {
   return node.ports
-    .filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown')
+    .filter(isInputSidePort)
     .filter((port) => port.width !== 'interface');
 }
 
@@ -967,7 +968,7 @@ function nodeWrapperClasses(node: PositionedNode): string {
       || port?.typeName?.endsWith('_if')
       || port?.typeName?.endsWith('if')
     );
-    const isSkinnedPort = direction === 'input' || direction === 'output' || isInterfacePort;
+    const isSkinnedPort = direction === 'input' || direction === 'output' || direction === 'inout' || isInterfacePort;
     return [
       'svsch-node',
       'hdl-node',
@@ -1009,7 +1010,7 @@ function busWrapperClasses(node: PositionedNode): string {
   const sidePorts = isInterfaceInstance
     ? aggregatePorts.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'))
     : aggregatePorts;
-  const aggregateInputs = sidePorts.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const aggregateInputs = sidePorts.filter(isInputSidePort);
   const isComposition = node.kind === 'struct'
     ? role === 'composition'
     : isInterface
