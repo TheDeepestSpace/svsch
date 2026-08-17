@@ -655,20 +655,36 @@ std::string DesignExtractor::promoteComparatorExpr(vpiHandle expr, Module& mod, 
         }
     }
 
-    std::string lhs_signal;
-    if (isLiteralExpr(operands[0])) {
-        lhs_signal = getLiteralLabel(operands[0]);
-        ensureLiteralNode(operands[0], mod, lhs_signal, getWidth(operands[0]), expr, lhs_signal);
-    } else {
-        lhs_signal = getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+    bool lhs_is_literal = isLiteralExpr(operands[0]);
+    std::string lhs_signal = lhs_is_literal
+        ? getLiteralLabel(operands[0])
+        : getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+
+    bool rhs_is_literal = isLiteralExpr(operands[1]);
+    std::string rhs_signal = rhs_is_literal
+        ? getLiteralLabel(operands[1])
+        : getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+
+    // An unsized literal (e.g. '0, '1) has no self-determined width, so when
+    // it's compared against an operand with a known width, adopt that width
+    // instead of leaving it empty (which would render the connecting wire as
+    // 1-bit thin regardless of the comparator's actual operand width).
+    std::string lhs_width = getDeclaredSignalWidth(mod, lhs_signal);
+    if (lhs_width.empty()) lhs_width = getWidth(operands[0]);
+    std::string rhs_width = getDeclaredSignalWidth(mod, rhs_signal);
+    if (rhs_width.empty()) rhs_width = getWidth(operands[1]);
+    if (lhs_width.empty() && lhs_is_literal && !rhs_width.empty()) {
+        lhs_width = rhs_width;
+    }
+    if (rhs_width.empty() && rhs_is_literal && !lhs_width.empty()) {
+        rhs_width = lhs_width;
     }
 
-    std::string rhs_signal;
-    if (isLiteralExpr(operands[1])) {
-        rhs_signal = getLiteralLabel(operands[1]);
-        ensureLiteralNode(operands[1], mod, rhs_signal, getWidth(operands[1]), expr, rhs_signal);
-    } else {
-        rhs_signal = getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+    if (lhs_is_literal) {
+        ensureLiteralNode(operands[0], mod, lhs_signal, lhs_width, expr, lhs_signal);
+    }
+    if (rhs_is_literal) {
+        ensureLiteralNode(operands[1], mod, rhs_signal, rhs_width, expr, rhs_signal);
     }
 
     std::string expr_str = getExprText(expr);
@@ -683,8 +699,8 @@ std::string DesignExtractor::promoteComparatorExpr(vpiHandle expr, Module& mod, 
     n.metadata.operation = comparatorOperationSymbol(expr);
     n.metadata.isProcedural = is_procedural;
     n.metadata.parameterRefs = collectParameterRefs(expr, mod);
-    n.ports.push_back({"lhs", "input", lhs_signal, getWidth(operands[0]), "lhs"});
-    n.ports.push_back({"rhs", "input", rhs_signal, getWidth(operands[1]), "rhs"});
+    n.ports.push_back({"lhs", "input", lhs_signal, lhs_width, "lhs"});
+    n.ports.push_back({"rhs", "input", rhs_signal, rhs_width, "rhs"});
 
     // A comparison always yields a single bit, regardless of operand width.
     // Use an explicit "[0:0]" (rather than an empty string) so downstream

@@ -2502,7 +2502,7 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge svsch-edge-thick" data-edge-id="edge:gate:alu:result_3_b010:and:mux:alu:result:alu_op:result:result_3_b010" data-net-key="gate:alu:result_3_b010:and:out:result_3_b010" d="M 528 432 L 552 432 L 639 432 Q 648 423 657 432 L 1080 432 L 1104 432" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011"><path class="svsch-edge-jump-halo" d="M 639 456 Q 648 447 657 456" style="stroke-width: 12" data-edge-id="edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011" data-jump-index="0" />
 <path class="svsch-edge svsch-edge-thick" data-edge-id="edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011" data-net-key="gate:alu:result_3_b011:or:out:result_3_b011" d="M 528 552 L 552 552 L 624 552 L 624 456 L 639 456 Q 648 447 657 456 L 1080 456 L 1104 456" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:literal:alu:_0:_0:comparator:alu:zero:expr:_0"><path class="svsch-edge" data-edge-id="edge:literal:alu:_0:_0:comparator:alu:zero:expr:_0" data-net-key="literal:alu:_0:_0" d="M 888 648 L 912 648 L 1080 648 L 1080 624 L 1632 624 L 1656 624" />
+<g class="svsch-edge-group" data-edge-id="edge:literal:alu:_0:_0:comparator:alu:zero:expr:_0"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:_0:_0:comparator:alu:zero:expr:_0" data-net-key="literal:alu:_0:_0" d="M 888 648 L 912 648 L 1080 648 L 1080 624 L 1632 624 L 1656 624" />
 <circle class="svsch-edge-junction" cx="1080" cy="624" r="4.75" data-junction-id="literal:alu:_0:_0:1080:624" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:alu:_0:_0:mux:alu:result:alu_op:result:result_default"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:_0:_0:mux:alu:result:alu_op:result:result_default" data-net-key="literal:alu:_0:_0" d="M 888 648 L 912 648 L 1080 648 L 1080 504 L 1104 504" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0" data-net-key="literal:alu:8_b0:8_b0" d="M 528 696 L 552 696 L 648 696 L 648 576 L 720 576 L 744 576" /></g>
@@ -2548,14 +2548,14 @@ path.port-skin-body.port-skin-harness {
 <path class="svsch-edge-overlap-hint" d="M 408 340 L 408 524" data-edge-id="edge:port:alu:b:gate:alu:result_3_b011:or:b" data-overlap-id="edge:port:alu:b:gate:alu:result_3_b011:or:b-overlap-2-edge:port:alu:a:gate:alu:result_3_b011:or:a-2" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:alu:_0:_0" data-node-kind="literal" transform="translate(840 636)">
-<svg class="hdl-node-svg" width="48" height="24" aria-hidden="true">
-<rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="47" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="24" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>&#x27;0</tspan></text>
+<g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:alu:_0:_0" data-node-kind="literal" transform="translate(792 636)">
+<svg class="hdl-node-svg" width="96" height="24" aria-hidden="true">
+<rect class="svsch-node-shape svsch-literal-shape" x="0.5" y="0.5" width="95" height="23"></rect><text class="svsch-node-title svsch-literal-content" x="48" y="12" text-anchor="middle" dominant-baseline="middle"><tspan>&#x27;0</tspan><tspan dx="4">[7:0]</tspan></text>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:alu:zero:expr" data-node-kind="comparator" transform="translate(1656 552)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">zero</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">==</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-alu" data-node-id="alu:alu:result_3_b000:expr" data-node-kind="alu" transform="translate(432 24)">
@@ -2580,7 +2580,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:alu:result_3_b100_sel:expr" data-node-kind="comparator" transform="translate(432 264)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">result_3_b100_sel</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">&lt;</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:alu:8_b1:8_b1" data-node-kind="literal" transform="translate(432 636)">

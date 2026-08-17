@@ -2527,7 +2527,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:i2c_master_sda_example:sda_sel_in0:expr" data-node-kind="comparator" transform="translate(384 24)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">sda_sel_in0</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">==</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-literal" data-node-id="literal:i2c_master_sda_example:1_b0:1_b0" data-node-kind="literal" transform="translate(120 348)">
@@ -2537,7 +2537,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:i2c_master_sda_example:sda_sel_in1:expr" data-node-kind="comparator" transform="translate(384 264)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">sda_sel_in1</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">==</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-gate" data-node-id="gate:i2c_master_sda_example:sda_sel:and" data-node-kind="gate" transform="translate(696 240)">
@@ -2557,7 +2557,7 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:i2c_master_sda_example:if_sel_n1:n2:expr" data-node-kind="comparator" transform="translate(384 144)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs</text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">if_sel_n1</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">==</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:i2c_master_sda_example:ack_received:if_sel_n1:ack_received_next" data-node-kind="mux" transform="translate(1728 312)">

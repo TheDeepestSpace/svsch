@@ -2608,12 +2608,12 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-comparator" data-node-id="comparator:alu_case_arms:result_3_b100:expr" data-node-kind="comparator" transform="translate(456 1008)">
 <svg class="hdl-node-svg" width="96" height="96" aria-hidden="true">
-<rect class="svsch-node-shape" width="96" height="96"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">lhs<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">rhs<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="84" y="48" text-anchor="end" dominant-baseline="middle">result_3_b100</text>
+<path class="svsch-node-shape hdl-node-comparator node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z"></path><text class="svsch-alu-operation" x="62" y="48" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="700">&lt;</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 V 54 L 24 48 L 0 42 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-zext" data-node-id="zext:alu_case_arms:result_3_b100:result_3_b100_zext_n0" data-node-kind="zext" transform="translate(672 1008)">
 <svg class="hdl-node-svg" width="48" height="48" aria-hidden="true">
-<rect class="svsch-node-shape" width="48" height="48"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">in</text><text class="svsch-port-label" x="36" y="48" text-anchor="end" dominant-baseline="middle">result_3_b100_zext_n0<tspan class="svsch-port-type-suffix">[]</tspan></text>
+<path class="svsch-node-shape hdl-node-zext node-skin-body" d="M 0 18 L 48 0 L 48 48 L 0 30 Z"></path><text class="svsch-alu-operation" x="29" y="24" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700">0</text><path class="node-skin-selection" d="M 0 18 L 48 0 L 48 48 L 0 30 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-select" data-node-id="select:var_bit_select:bus[sel]" data-node-kind="select" transform="translate(840 1032)">

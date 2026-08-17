@@ -47,6 +47,8 @@ import { LoopNodeSvg } from '../webview/nodes/loop/LoopNodeSvg';
 import { MuxNodeSvg } from '../webview/nodes/mux/MuxNodeSvg';
 import { SelectNodeSvg } from '../webview/nodes/mux/SelectNodeSvg';
 import { AluNodeSvg } from '../webview/nodes/alu/AluNodeSvg';
+import { ComparatorNodeSvg } from '../webview/nodes/comparator/ComparatorNodeSvg';
+import { ZextNodeSvg } from '../webview/nodes/zext/ZextNodeSvg';
 import { BusNodeSvg } from '../webview/nodes/bus/BusNodeSvg';
 import { InstanceNodeSvg } from '../webview/nodes/instance/InstanceNodeSvg';
 import { NetLabelWirePaths } from '../webview/nodes/shared/NetLabelWire';
@@ -831,7 +833,7 @@ function nodeWarningIcon(node: PositionedNode, width: number, height: number): s
 function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
   if (nodeIsArrayNode(node)) return false;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return true;
-  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter' || node.kind === 'gate') return true;
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter' || node.kind === 'gate' || node.kind === 'comparator' || node.kind === 'zext') return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
 }
 
@@ -955,6 +957,8 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'mux') return MuxNodeSvg;
   if (node.kind === 'select') return SelectNodeSvg;
   if (node.kind === 'alu') return AluNodeSvg;
+  if (node.kind === 'comparator') return ComparatorNodeSvg;
+  if (node.kind === 'zext') return ZextNodeSvg;
   if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') return BusNodeSvg;
   return InstanceNodeSvg;
 }

@@ -2571,17 +2571,17 @@ path.port-skin-body.port-skin-harness {
 </g>
 <g class="svsch-node hdl-node hdl-node-zext" data-node-id="zext:imm_gen:imm_4_b0100:imm_4_b0100_zext_n16" data-node-kind="zext" transform="translate(1488 48)">
 <svg class="hdl-node-svg" width="48" height="48" aria-hidden="true">
-<rect class="svsch-node-shape" width="48" height="48"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="36" y="48" text-anchor="end" dominant-baseline="middle">imm_4_b0100_zext_n16<tspan class="svsch-port-type-suffix">[]</tspan></text>
+<path class="svsch-node-shape hdl-node-zext node-skin-body" d="M 0 18 L 48 0 L 48 48 L 0 30 Z"></path><text class="svsch-alu-operation" x="29" y="24" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700">0</text><path class="node-skin-selection" d="M 0 18 L 48 0 L 48 48 L 0 30 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-zext" data-node-id="zext:imm_gen:imm_4_b0111:imm_4_b0111_zext_n17" data-node-kind="zext" transform="translate(1488 120)">
 <svg class="hdl-node-svg" width="48" height="48" aria-hidden="true">
-<rect class="svsch-node-shape" width="48" height="48"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="36" y="48" text-anchor="end" dominant-baseline="middle">imm_4_b0111_zext_n17<tspan class="svsch-port-type-suffix">[]</tspan></text>
+<path class="svsch-node-shape hdl-node-zext node-skin-body" d="M 0 18 L 48 0 L 48 48 L 0 30 Z"></path><text class="svsch-alu-operation" x="29" y="24" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700">0</text><path class="node-skin-selection" d="M 0 18 L 48 0 L 48 48 L 0 30 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-zext" data-node-id="zext:imm_gen:imm_4_b1000:imm_4_b1000_zext_n18" data-node-kind="zext" transform="translate(1152 264)">
 <svg class="hdl-node-svg" width="48" height="48" aria-hidden="true">
-<rect class="svsch-node-shape" width="48" height="48"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle"></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="36" y="48" text-anchor="end" dominant-baseline="middle">imm_4_b1000_zext_n18<tspan class="svsch-port-type-suffix">[]</tspan></text>
+<path class="svsch-node-shape hdl-node-zext node-skin-body" d="M 0 18 L 48 0 L 48 48 L 0 30 Z"></path><text class="svsch-alu-operation" x="29" y="24" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="700">0</text><path class="node-skin-selection" d="M 0 18 L 48 0 L 48 48 L 0 30 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:imm_gen:imm:instr_11:8_:imm" data-node-kind="mux" transform="translate(1752 96)">

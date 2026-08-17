@@ -184,10 +184,10 @@
       "id": "literal:alu:_0:_0",
       "type": "hdl",
       "position": {
-        "x": 840,
+        "x": 792,
         "y": 636
       },
-      "width": 48,
+      "width": 96,
       "height": 24,
       "data": {
         "kind": "literal",
