@@ -563,11 +563,11 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
         }
         
         // Special matching for combinational/bus/struct blocks if no label match
-        if (!targetNode && (sourceNode.kind === 'comb' || sourceNode.kind === 'alu' || sourceNode.kind === 'inverter' || sourceNode.kind === 'bus' || sourceNode.kind === 'struct')) {
+        if (!targetNode && (sourceNode.kind === 'comb' || sourceNode.kind === 'alu' || sourceNode.kind === 'inverter' || sourceNode.kind === 'gate' || sourceNode.kind === 'bus' || sourceNode.kind === 'struct')) {
             const sourceOutput = sourceNode.ports.find(p => p.direction === 'output')?.name;
             if (sourceOutput) {
-                targetNode = targetModule.nodes.find(n => 
-                    (n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter' || n.kind === 'bus' || n.kind === 'struct') &&
+                targetNode = targetModule.nodes.find(n =>
+                    (n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter' || n.kind === 'gate' || n.kind === 'bus' || n.kind === 'struct') &&
                     n.ports.some(p => {
                         if (p.direction !== 'output') return false;
                         if (p.name === sourceOutput) return true;
@@ -582,9 +582,9 @@ function mergeBusNodesFromSourceGraph(graph: DesignGraph, workspaceRoot: string,
         
         if (targetNode) {
             nodeIdMap.set(sourceNode.id, targetNode.id);
-            // Merge source info: trust text parser for most nodes, but keep UHDM's 
-            // refined ranges for bus/struct/alu compositions.
-            if (sourceNode.source && targetNode.kind !== 'bus' && targetNode.kind !== 'struct' && targetNode.kind !== 'alu') {
+            // Merge source info: trust text parser for most nodes, but keep UHDM's
+            // refined ranges for bus/struct/alu/gate compositions.
+            if (sourceNode.source && targetNode.kind !== 'bus' && targetNode.kind !== 'struct' && targetNode.kind !== 'alu' && targetNode.kind !== 'gate') {
                 targetNode.source = {
                     ...sourceNode.source,
                     file: path.relative(workspaceRoot, sourceNode.source.file)
@@ -1559,7 +1559,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                         let portId = p.name;
                         if (n.kind === 'instance') {
                             portId = stableId('port', p.name);
-                        } else if ((n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter') && p.direction === 'output') {
+                        } else if ((n.kind === 'comb' || n.kind === 'alu' || n.kind === 'inverter' || n.kind === 'gate') && p.direction === 'output') {
                             portId = stableId('out', p.name);
                         } else if (n.kind === 'alu') {
                             portId = p.name;

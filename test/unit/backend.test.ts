@@ -279,12 +279,13 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     expect(regChain.nodes.some((node) => node.id === 'reg:reg_chain:a_q')).toBe(true);
     expect(regChain.nodes.some((node) => node.id === 'reg:reg_chain:b_q')).toBe(true);
-    const comb = regChain.nodes.find((node) => node.kind === 'comb' && node.id.includes(backend === 'uhdm' ? 'b_q_next' : 'c_and_d'));
+    const comb = regChain.nodes.find((node) => node.kind === 'gate' && node.id.includes(backend === 'uhdm' ? 'b_q_next' : 'c_and_d'));
     expect(comb?.label).toBe('');
+    expect(comb?.metadata?.operation).toBe('and');
     if (backend === 'uhdm') {
-      expect(comb?.ports.map((port) => port.name).sort()).toEqual(['a_q', 'b_q_next', 'c', 'd']);
+      expect(comb?.ports.map((port) => port.connectedSignal).sort()).toEqual(['a_q', 'b_q_next', 'c', 'd']);
     } else {
-      expect(comb?.ports.map((port) => port.name).sort()).toEqual(['a_q', 'b_q', 'c', 'd']);
+      expect(comb?.ports.map((port) => port.connectedSignal).sort()).toEqual(['a_q', 'b_q', 'c', 'd']);
     }
     expect(regChain.edges.some((edge) => edge.source === 'reg:reg_chain:a_q' && edge.target === comb?.id && edge.signal === 'a_q')).toBe(true);
     expect(regChain.edges.some((edge) => edge.source === 'port:reg_chain:c' && edge.target === comb?.id && edge.signal === 'c')).toBe(true);
@@ -476,30 +477,38 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       && (edge.signal === 'a' || edge.signal === 'y')
     ))).toBe(true);
 
-    const andBlock = assignAnd.nodes.find((node) => node.kind === 'comb');
+    const andBlock = assignAnd.nodes.find((node) => node.kind === 'gate');
     expect(andBlock?.label).toBe('');
-    expect(andBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'b', 'y']);
+    expect(andBlock?.metadata?.operation).toBe('and');
+    expect(andBlock?.ports.map((port) => port.connectedSignal).sort()).toEqual(['a', 'b', 'y']);
     expect(assignAnd.edges.some((edge) => edge.source === 'port:assign_and:a' && edge.target === andBlock?.id)).toBe(true);
     expect(assignAnd.edges.some((edge) => edge.source === 'port:assign_and:b' && edge.target === andBlock?.id)).toBe(true);
     expect(assignAnd.edges.some((edge) => edge.source === andBlock?.id && edge.target === 'port:assign_and:y')).toBe(true);
 
-    const constBlock = assignConstExpr.nodes.find((node) => node.kind === 'comb');
+    // `a | '0` is a 2-input OR gate now, not a comb blob.
+    const constBlock = assignConstExpr.nodes.find((node) => node.kind === 'gate');
     expect(constBlock?.label).toBe('');
-    if (backend === 'uhdm') {
-        expect(constBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'y']);
-    } else {
-        expect(constBlock?.ports.map((port) => port.name).sort()).toEqual(['\'0', 'a', 'y']);
-    }
+    expect(constBlock?.metadata?.operation).toBe('or');
+    expect(constBlock?.ports.map((port) => port.connectedSignal).sort()).toEqual(['\'0', 'a', 'y']);
     expect(assignConstExpr.edges.some((edge) => edge.source === 'port:assign_const_expr:a' && edge.target === constBlock?.id)).toBe(true);
     expect(assignConstExpr.edges.some((edge) => edge.source === constBlock?.id && edge.target === 'port:assign_const_expr:y')).toBe(true);
 
-    const chainBlocks = assignCombChain.nodes.filter((node) => node.kind === 'comb');
-    const midBlock = chainBlocks.find((node) => node.ports.some((port) => port.direction === 'output' && port.name === 'mid'));
-    const yBlock = chainBlocks.find((node) => node.ports.some((port) => port.direction === 'output' && port.name === 'y'));
-    expect(chainBlocks).toHaveLength(2);
-    expect(midBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'b', 'mid']);
-    expect(yBlock?.ports.map((port) => port.name).sort()).toEqual(['a', 'c', 'mid', 'y']);
+    // `y = mid | a & c` parses as `mid | (a & c)` (`&` binds tighter than `|`),
+    // two different operators, so this is 3 gates: AND(a,b)->mid, AND(a,c) (an
+    // anonymous leaf), and OR(mid, that AND)->y — never a single flattened node.
+    const chainGates = assignCombChain.nodes.filter((node) => node.kind === 'gate');
+    const midBlock = chainGates.find((node) => node.ports.some((port) => port.direction === 'output' && port.name === 'mid'));
+    const yBlock = chainGates.find((node) => node.metadata?.operation === 'or');
+    const acBlock = chainGates.find((node) => node !== midBlock && node !== yBlock);
+    expect(chainGates).toHaveLength(3);
+    expect(midBlock?.metadata?.operation).toBe('and');
+    expect(midBlock?.ports.map((port) => port.connectedSignal).sort()).toEqual(['a', 'b', 'mid']);
+    expect(acBlock?.metadata?.operation).toBe('and');
+    expect(acBlock?.ports.filter((port) => port.direction === 'input').map((port) => port.connectedSignal).sort()).toEqual(['a', 'c']);
+    expect(yBlock?.ports.map((port) => port.connectedSignal)).toContain('mid');
+    expect(yBlock?.ports.map((port) => port.connectedSignal)).toContain('y');
     expect(assignCombChain.edges.some((edge) => edge.source === midBlock?.id && edge.target === yBlock?.id && edge.signal === 'mid')).toBe(true);
+    expect(assignCombChain.edges.some((edge) => edge.source === acBlock?.id && edge.target === yBlock?.id)).toBe(true);
   });
 
   it('promotes ternary expressions to recursively connected muxes', async () => {
@@ -707,7 +716,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(chain.nodes.filter((node) => node.kind === 'comb')).toHaveLength(1);
   });
 
-  it('keeps non-arithmetic subexpressions as combs feeding ALU nodes', async () => {
+  it('keeps non-arithmetic subexpressions as gate nodes feeding ALU nodes', async () => {
     const graph = await runParser(backend, [{ file: 'alu_complex.sv', text: `
       module alu_with_comb(input logic a, input logic b, input logic c, output logic y);
         assign y = a + (b | c);
@@ -716,9 +725,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     const withComb = graph.modules.alu_with_comb;
     const alu = withComb.nodes.find((node) => node.kind === 'alu');
-    const comb = withComb.nodes.find((node) => node.kind === 'comb');
+    const comb = withComb.nodes.find((node) => node.kind === 'gate');
     expect(withComb.nodes.filter((node) => node.kind === 'alu')).toHaveLength(1);
-    expect(withComb.nodes.filter((node) => node.kind === 'comb')).toHaveLength(1);
+    expect(withComb.nodes.filter((node) => node.kind === 'gate')).toHaveLength(1);
+    expect(comb?.metadata?.operation).toBe('or');
     expect(withComb.edges.some((edge) => edge.source === 'port:alu_with_comb:a' && edge.target === alu?.id && edge.targetPort === 'lhs')).toBe(true);
     expect(withComb.edges.some((edge) => edge.source === comb?.id && edge.target === alu?.id && edge.targetPort === 'rhs')).toBe(true);
     expect(withComb.edges.some((edge) => edge.source === 'port:alu_with_comb:b' && edge.target === comb?.id)).toBe(true);
@@ -892,11 +902,12 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const mod = graph.modules.fsm_complex_latch;
     const latch = mod.nodes.find(n => n.kind === 'latch' && n.label === 'q');
     const mux = mod.nodes.find(n => n.kind === 'mux');
-    const comb = mod.nodes.find(n => n.kind === 'comb');
-    
+    const comb = mod.nodes.find(n => n.kind === 'gate');
+
     expect(latch).toBeDefined();
     expect(mux).toBeDefined();
     expect(comb).toBeDefined();
+    expect(comb?.metadata?.operation).toBe('and');
     expect(mod.edges.some(e => e.source === mux?.id && e.target === latch?.id)).toBe(true);
     expect(mod.edges.some(e => e.source === comb?.id && e.target === mux?.id && e.targetPort === 'sel')).toBe(true);
   });
@@ -1016,12 +1027,16 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const graph = await runParser(backend, 'mux_selector_expr.sv', fixture('mux_selector_expr.sv'));
     const muxSelectorExpr = graph.modules.mux_selector_expr;
     const mux = muxSelectorExpr.nodes.find((node) => node.kind === 'mux');
-    const selectorComb = muxSelectorExpr.nodes.find((node) => node.kind === 'comb');
+    const selectorComb = muxSelectorExpr.nodes.find((node) => (
+      node.kind === 'gate'
+      && ['sel', 'sidekick'].every((signal) => node.ports.some((port) => port.direction === 'input' && port.connectedSignal === signal))
+    ));
 
     expect(mux).toBeDefined();
     if (backend === 'uhdm') {
-      // UHDM might use 'expr' if decompile is not clean or if it's promoted differently
+      // `sel & sidekick` now promotes to a 2-input AND gate node rather than a comb blob.
       expect(selectorComb).toBeDefined();
+      expect(selectorComb?.metadata?.operation).toBe('and');
     } else {
       expect(selectorComb?.metadata?.expression).toBe('sel & sidekick');
       expect(selectorComb?.ports.map((port) => port.name).sort()).toEqual(['s', 'sel', 'sidekick'].sort());
@@ -1054,7 +1069,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const instrPort = busSlices.nodes.find((node) => node.id === 'port:bus_slices:instr');
     const bus = busSlices.nodes.find((node) => node.kind === 'bus' && node.label === 'instr');
     const decodedComb = busSlices.nodes.find((node) => (
-      node.kind === 'comb'
+      node.kind === 'gate'
       && node.ports.some((port) => port.direction === 'output' && port.name === 'decoded')
     ));
     const mux = busSlices.nodes.find((node) => node.kind === 'mux');
@@ -1063,7 +1078,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(bus?.ports.find((port) => port.direction === 'input')?.width).toBe('[31:0]');
     expect(bus?.ports.find((port) => port.name === 'instr[14:12]')?.label).toBe('[14:12]');
     expect(bus?.ports.find((port) => port.name === 'instr[14:12]')?.width).toBe('[2:0]');
-    expect(bus?.ports.find((port) => port.name === 'instr[6:0]')?.width).toBe('[6:0]');
+    expect(bus?.ports.find((port) => port.name.endsWith('[6:0]'))?.width).toBe('[6:0]');
     expect(bus?.ports.find((port) => port.name.endsWith('[30]'))?.width).toBe('[0:0]');
     expect(busSlices.nodes.find((node) => node.id === 'reg:bus_slices:funct3_q')?.metadata?.width).toBe('[2:0]');
     
@@ -1085,7 +1100,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       && edge.width === '[2:0]'
     ))).toBe(true);
 
-    const instrSixToZeroTaps = bus?.ports.filter((port) => port.direction === 'output' && port.name === 'instr[6:0]');
+    const instrSixToZeroTaps = bus?.ports.filter((port) => port.direction === 'output' && port.name.endsWith('[6:0]'));
     expect(instrSixToZeroTaps).toHaveLength(1);
     
     expect(busSlices.nodes.some((node) => node.kind === 'bus' && node.label === 'expr')).toBe(false);
@@ -1433,16 +1448,18 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(funct3_q?.source?.endLine).toBe(13);
     expect(funct3_q?.source?.endColumn).toBe(5);
 
-    // Check comb block from assign: line 15
+    // Check gate node from assign: line 15
     const decodedComb = busSlices.nodes.find((node) => (
-      node.kind === 'comb' && node.ports.some(p => p.name === 'decoded' && p.direction === 'output')
+      node.kind === 'gate' && node.ports.some(p => p.name === 'decoded' && p.direction === 'output')
     ));
     expect(decodedComb?.source).toBeDefined();
     expect(decodedComb?.source?.file).toBe('bus_slices.sv');
     expect(decodedComb?.source?.startLine).toBe(15);
-    expect(decodedComb?.source?.startColumn).toBe(2);
+    // Gate nodes get a refined source range narrowed to just the expression
+    // ("instr[6:0] & a"), like ALU/inverter nodes — not the whole `assign` statement.
+    expect(decodedComb?.source?.startColumn).toBe(19);
     expect(decodedComb?.source?.endLine).toBe(15);
-    expect(decodedComb?.source?.endColumn).toBe(34);
+    expect(decodedComb?.source?.endColumn).toBe(33);
 
     // Check mux from case: lines 18-21
     const mux = busSlices.nodes.find((node) => node.kind === 'mux');
@@ -1649,9 +1666,10 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     // 1. Check complex selector
     const muxY = mod.nodes.find(n => n.kind === 'mux' && n.id.includes(':y:'));
     expect(muxY).toBeDefined();
-    // Should have a comb block for (sel & sidekick)
-    const selComb = mod.nodes.find(n => n.kind === 'comb' && n.id.includes('y_sel'));
+    // Should have a gate node for (sel & sidekick)
+    const selComb = mod.nodes.find(n => n.kind === 'gate' && n.id.includes('y_sel'));
     expect(selComb).toBeDefined();
+    expect(selComb?.metadata?.operation).toBe('and');
     expect(mod.edges.some(e => e.source === selComb?.id && e.target === muxY?.id && e.targetPort === 'sel')).toBe(true);
 
     // 2. Check complex RHS in case branch
@@ -1763,7 +1781,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         endmodule
       `);
       const top = graph.modules.top;
-      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      const combNode = top.nodes.find((n) => n.kind === 'gate');
       expect(combNode).toBeDefined();
 
       const outEdge = top.edges.find((e) => e.source === combNode?.id);
@@ -1783,7 +1801,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         endmodule
       `);
       const top = graph.modules.top;
-      const combNode = top.nodes.find((n) => n.kind === 'comb');
+      const combNode = top.nodes.find((n) => n.kind === 'gate');
       expect(combNode).toBeDefined();
 
       // 'a' and 'b' are ports — they name the module's boundary, not a net
@@ -2034,11 +2052,12 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       const rhsPort = alu.ports.find(p => p.name === 'rhs');
       expect(rhsPort).toBeDefined();
       
-      const combNode = aluWithComb.nodes.find(n => 
-        n.kind === 'comb' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === rhsPort?.connectedSignal)
+      const combNode = aluWithComb.nodes.find(n =>
+        n.kind === 'gate' && n.ports.some(p => p.direction === 'output' && p.connectedSignal === rhsPort?.connectedSignal)
       );
       expect(combNode).toBeDefined();
       expect(combNode?.metadata.expression?.replace(/\s+/g, '')).toBe('b|c');
+      expect(combNode?.metadata.operation).toBe('or');
       
       // Verify source range is refined
       expect(alu.source).toBeDefined();
@@ -2201,6 +2220,253 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       if (dim !== undefined) {
         expect(dim).toMatch(/\[0:\d+\]/);
       }
+    });
+
+    let instanceArrayGraphPromise: ReturnType<typeof runParser> | undefined;
+    function instanceArrayGraph() {
+      instanceArrayGraphPromise ??= runParser(backend, 'instance_array.sv', fixture('instance_array.sv'));
+      return instanceArrayGraphPromise;
+    }
+
+    it('collapses a [MSB:LSB] multi-instance instantiation into a single stacked instance node', async () => {
+      const graph = await instanceArrayGraph();
+      const mod = graph.modules.instance_array_top;
+      expect(mod).toBeDefined();
+
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes.length).toBe(1);
+
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
+      expect(arrayInstance.instanceOf).toBe('mux2');
+      expect(arrayInstance.isArrayNode ?? arrayInstance.metadata?.isArrayNode).toBe(true);
+      expect(arrayInstance.arraySize ?? arrayInstance.metadata?.arraySize).toBe(4);
+      expect(arrayInstance.arrayDimension ?? arrayInstance.metadata?.arrayDimension).toBe('[3:0]');
+
+      // The submodule body is elaborated once, not once per array element.
+      expect(Object.keys(graph.modules).sort()).toEqual(['instance_array_top', 'mux2']);
+    });
+
+    it('broadcasts a scalar port connection to every element of an instance array', async () => {
+      const graph = await instanceArrayGraph();
+      const mod = graph.modules.instance_array_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+
+      // A single shared scalar wire ("sel"), not one element-indexed signal per array slot.
+      const selPort = arrayInstance?.ports.find((p) => p.name === 'sel');
+      expect(selPort?.connectedSignal).toBe('sel');
+
+      expect(mod.edges.some((e) => (
+        e.source === 'port:instance_array_top:sel' && e.sourcePort === 'port:sel'
+        && e.target === arrayInstance?.id && e.targetPort === 'port:sel'
+      ))).toBe(true);
+    });
+
+    it('connects a matching-size unpacked array port element-wise as a stacked edge', async () => {
+      const graph = await instanceArrayGraph();
+      const mod = graph.modules.instance_array_top;
+      const arrayInstance = mod.nodes.find((n) => n.kind === 'instance');
+      expect(arrayInstance).toBeDefined();
+
+      // The array-typed actuals ("a_arr"/"y_arr"), not a single element's indexed name.
+      const aPort = arrayInstance?.ports.find((p) => p.name === 'a');
+      const yPort = arrayInstance?.ports.find((p) => p.name === 'y');
+      expect(aPort?.connectedSignal).toBe('a_arr');
+      expect(yPort?.connectedSignal).toBe('y_arr');
+
+      expect(mod.edges.some((e) => (
+        e.target === arrayInstance?.id && e.targetPort === 'port:a' && e.signal === 'a_arr' && e.isStacked
+      ))).toBe(true);
+      expect(mod.edges.some((e) => (
+        e.source === arrayInstance?.id && e.sourcePort === 'port:y' && e.signal === 'y_arr' && e.isStacked
+      ))).toBe(true);
+    });
+
+    it('composes the per-element y_arr reads back into the y_bus output port', async () => {
+      const graph = await instanceArrayGraph();
+      const mod = graph.modules.instance_array_top;
+
+      // "assign y_bus[i] = y_arr[i]" reads a scalar out of the stacked instance's
+      // array output on each of the 4 lines; those reads must recompose into a
+      // single driver for the y_bus output port, not leave it unconnected.
+      const compNode = mod.nodes.find((n) => n.id === 'bus_comp:instance_array_top:y_bus');
+      expect(compNode).toBeDefined();
+      for (let i = 0; i < 4; i++) {
+        expect(mod.edges.some((e) => (
+          e.target === compNode?.id && e.signal === `y_bus[${i}]`
+        ))).toBe(true);
+      }
+      expect(mod.edges.some((e) => (
+        e.source === compNode?.id && e.target === 'port:instance_array_top:y_bus' && e.signal === 'y_bus'
+      ))).toBe(true);
+    });
+
+    it('keeps the declared element width when composing a bus from multi-bit unpacked-array elements', async () => {
+      const graph = await runParser(backend, [{ file: 'wide_reg_array.sv', text: `
+        module reg8 (
+            input  logic [7:0] d,
+            output logic [7:0] q
+        );
+            assign q = d;
+        endmodule
+
+        module wide_reg_array_top (
+            input  logic clk,
+            input  logic [7:0] d0,
+            input  logic [7:0] d1,
+            input  logic [7:0] d2,
+            input  logic [7:0] d3,
+            output logic [7:0] q_arr [3:0]
+        );
+            logic [7:0] arr [3:0];
+
+            always_ff @(posedge clk) begin
+                arr[0] <= d0;
+                arr[1] <= d1;
+                arr[2] <= d2;
+                arr[3] <= d3;
+            end
+
+            reg8 u_reg [3:0] (
+                .d (arr),
+                .q (q_arr)
+            );
+        endmodule
+      ` }]);
+      const mod = graph.modules.wide_reg_array_top;
+      expect(mod).toBeDefined();
+
+      // "arr" is `logic [7:0] arr [3:0]`: each constant-index register write
+      // ("arr[i] <= di;") drives a full 8-bit element, not a single packed bit.
+      // Since arr is also read whole (the "u_reg" array's ".d" port), a bus_comp
+      // node must be synthesized from those 4 element drivers — and each must
+      // keep its declared 8-bit element width, not collapse to 1 bit the way a
+      // packed-bus bit-index slice would.
+      const compNode = mod?.nodes.find((n) => n.id === 'bus_comp:wide_reg_array_top:arr');
+      expect(compNode).toBeDefined();
+
+      const inputs = compNode?.ports.filter((p) => p.direction === 'input') || [];
+      expect(inputs.length).toBe(4);
+      for (const p of inputs) {
+        expect(p.width).toBe('[7:0]');
+      }
+    });
+
+    it('preserves element-wise stacked connections for a reversed [0:MSB] array range', async () => {
+      const graph = await runParser(backend, [{ file: 'instance_array_reversed.sv', text: `
+        module mux2 (
+            input  logic sel,
+            input  logic a,
+            input  logic b,
+            output logic y
+        );
+            assign y = sel ? b : a;
+        endmodule
+
+        module instance_array_reversed_top (
+            input  logic sel,
+            input  logic [3:0] a_bus,
+            input  logic [3:0] b_bus,
+            output logic [3:0] y_bus
+        );
+            logic a_arr [0:3];
+            logic b_arr [0:3];
+            logic y_arr [0:3];
+
+            assign a_arr[0] = a_bus[0];
+            assign a_arr[1] = a_bus[1];
+            assign a_arr[2] = a_bus[2];
+            assign a_arr[3] = a_bus[3];
+
+            assign b_arr[0] = b_bus[0];
+            assign b_arr[1] = b_bus[1];
+            assign b_arr[2] = b_bus[2];
+            assign b_arr[3] = b_bus[3];
+
+            mux2 u_mux [0:3] (
+                .sel (sel),
+                .a   (a_arr),
+                .b   (b_arr),
+                .y   (y_arr)
+            );
+
+            assign y_bus[0] = y_arr[0];
+            assign y_bus[1] = y_arr[1];
+            assign y_bus[2] = y_arr[2];
+            assign y_bus[3] = y_arr[3];
+        endmodule
+      ` }]);
+      const mod = graph.modules.instance_array_reversed_top;
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes).toHaveLength(1);
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
+      expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
+      expect(arrayInstance?.arrayDimension ?? arrayInstance?.metadata?.arrayDimension).toBe('[0:3]');
+
+      expect(arrayInstance?.ports.find((p) => p.name === 'a')?.connectedSignal).toBe('a_arr');
+      expect(arrayInstance?.ports.find((p) => p.name === 'y')?.connectedSignal).toBe('y_arr');
+      expect(mod.edges.some((e) => (
+        e.target === arrayInstance?.id && e.targetPort === 'port:a' && e.signal === 'a_arr' && e.isStacked
+      ))).toBe(true);
+    });
+
+    it('falls back to the parsed element count when the array range bound is parameterized', async () => {
+      const graph = await runParser(backend, [{ file: 'instance_array_param.sv', text: `
+        module mux2 (
+            input  logic sel,
+            input  logic a,
+            input  logic b,
+            output logic y
+        );
+            assign y = sel ? b : a;
+        endmodule
+
+        module instance_array_param_top (
+            input  logic sel,
+            input  logic [3:0] a_bus,
+            input  logic [3:0] b_bus,
+            output logic [3:0] y_bus
+        );
+            localparam N = 4;
+            logic a_arr [3:0];
+            logic b_arr [3:0];
+            logic y_arr [3:0];
+
+            assign a_arr[0] = a_bus[0];
+            assign a_arr[1] = a_bus[1];
+            assign a_arr[2] = a_bus[2];
+            assign a_arr[3] = a_bus[3];
+
+            assign b_arr[0] = b_bus[0];
+            assign b_arr[1] = b_bus[1];
+            assign b_arr[2] = b_bus[2];
+            assign b_arr[3] = b_bus[3];
+
+            mux2 u_mux [N-1:0] (
+                .sel (sel),
+                .a   (a_arr),
+                .b   (b_arr),
+                .y   (y_arr)
+            );
+
+            assign y_bus[0] = y_arr[0];
+            assign y_bus[1] = y_arr[1];
+            assign y_bus[2] = y_arr[2];
+            assign y_bus[3] = y_arr[3];
+        endmodule
+      ` }]);
+      const mod = graph.modules.instance_array_param_top;
+      const instanceNodes = mod.nodes.filter((n) => n.kind === 'instance');
+      expect(instanceNodes).toHaveLength(1);
+      const arrayInstance = instanceNodes[0];
+      expect(arrayInstance.label).toBe('u_mux');
+      // The bound expression doesn't decompile to constant text, so arraySize falls back
+      // to the number of elaborated elements instead of throwing or miscounting.
+      expect(arrayInstance?.arraySize ?? arrayInstance?.metadata?.arraySize).toBe(4);
+      expect(arrayInstance?.ports.find((p) => p.name === 'a')?.connectedSignal).toBe('a_arr');
+      expect(arrayInstance?.ports.find((p) => p.name === 'y')?.connectedSignal).toBe('y_arr');
     });
 
     it('emits a single stacked addr mux for variable-index writes', async () => {
