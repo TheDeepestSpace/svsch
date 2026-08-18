@@ -142,88 +142,7 @@ bypass_threshold_restriction:
       closing the anti-aliased seam.
   - pr: 179
     date: 2026-08-17
-    path: test/visual/__screenshots__/intersection.visual.spec.ts-snapshots/wire-intersections-crossing-grid-chromium-linux.png
-    diff_pixel_count: 0
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
     path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-read-canvas-chromium-linux.png
-    diff_pixel_count: 0
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-enable-register-canvas-chromium-linux.png
-    diff_pixel_count: 49
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-mux-stack-selection-chromium-linux.png
-    diff_pixel_count: 13
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-canvas-chromium-linux.png
-    diff_pixel_count: 30
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-stack-selection-chromium-linux.png
-    diff_pixel_count: 13
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-complete-reset-canvas-chromium-linux.png
-    diff_pixel_count: 33
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-port-register-canvas-chromium-linux.png
-    diff_pixel_count: 26
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-register-node-chromium-linux.png
-    diff_pixel_count: 37
-    reason: >-
-      Legitimate re-render from restoring rounded array-stack lead
-      coordinates (commit f5dfacd8): lead endpoints now round to whole
-      pixels instead of landing on the wire's exact fractional trim point,
-      closing the anti-aliased seam.
-  - pr: 179
-    date: 2026-08-17
-    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/cut-net-label-styled-stubs-canvas-chromium-linux.png
     diff_pixel_count: 0
     reason: >-
       Legitimate re-render from restoring rounded array-stack lead
@@ -239,6 +158,138 @@ bypass_threshold_restriction:
       coordinates (commit f5dfacd8): lead endpoints now round to whole
       pixels instead of landing on the wire's exact fractional trim point,
       closing the anti-aliased seam.
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/bus_composition.visual.spec.ts-snapshots/array-stack-breakout-1bit-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: &array_stack_seam_reason >-
+      Legitimate re-render from the array-stack lead seam fix (commits
+      f19d947b, f5dfacd8, 4404a453): lead endpoints and lane trims were
+      adjusted to close visible anti-aliased seams between overlapping
+      array-stack wires, shifting a few pixels on shared geometry. Diff
+      count refreshed 2026-08-18 after a from-scratch baseline
+      regeneration surfaced sub-threshold drift that earlier
+      --update-snapshots=changed runs had silently skipped.
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/example_design.visual.spec.ts-snapshots/example-design-data-mem-chromium-linux.png
+    diff_pixel_count: 21
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/example_design.visual.spec.ts-snapshots/example-design-register-file-chromium-linux.png
+    diff_pixel_count: 49
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/generate-region-external-node-warning-chromium-linux.png
+    diff_pixel_count: 119
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/generate-region-selected-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/inout.visual.spec.ts-snapshots/inout-array-alias-canvas-chromium-linux.png
+    diff_pixel_count: 2
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/instance_array.visual.spec.ts-snapshots/instance-array-stacked-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/interface.visual.spec.ts-snapshots/interface-patterned-edge-canvas-chromium-linux.png
+    diff_pixel_count: 36
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-enable-register-canvas-chromium-linux.png
+    diff_pixel_count: 10
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-mux-stack-selection-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-address-write-register-stack-selection-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-complete-reset-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-multi-index-write-reset-descending-canvas-chromium-linux.png
+    diff_pixel_count: 20
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-multi-index-write-reset-nonzero-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-multi-index-write-reset-sorts-first-canvas-chromium-linux.png
+    diff_pixel_count: 20
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-port-register-canvas-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-register-canvas-chromium-linux.png
+    diff_pixel_count: 17
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/array-register-node-chromium-linux.png
+    diff_pixel_count: 0
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/cut-net-label-register-reset-after-move-chromium-linux.png
+    diff_pixel_count: 12
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/cut-net-label-styled-stubs-canvas-chromium-linux.png
+    diff_pixel_count: 2
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/mux-long-names-webview-chromium-linux.png
+    diff_pixel_count: 2
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/mux-three-inputs-canvas-chromium-linux.png
+    diff_pixel_count: 1
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/mux.visual.spec.ts-snapshots/replication-block-canvas-chromium-linux.png
+    diff_pixel_count: 12
+    reason: *array_stack_seam_reason
+  - pr: 179
+    date: 2026-08-18
+    path: test/visual/__screenshots__/port_array.visual.spec.ts-snapshots/array-output-port-selected-chromium-linux.png
+    diff_pixel_count: 7
+    reason: *array_stack_seam_reason
 # Example entry:
 # bypass_threshold_restriction:
 #   - pr: 1234
