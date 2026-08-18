@@ -436,7 +436,15 @@ test.describe('Syntax Book Generation & Verification', () => {
           
           let customCss = extensionCss;
           if (targetNode) {
-            customCss += `\n/* Dim everything except target node */\n.svsch-edges { opacity: 0.3; }\n.svsch-node { opacity: 0.3; }\n.svsch-node[data-node-id="${targetNode.id}"] { opacity: 1 !important; }\n`;
+            // Array-stack leads are the node's own SVG content (drawn by
+            // *NodeSvg components, not by OrthogonalEdge), so the blanket
+            // `.svsch-node[data-node-id=...] { opacity: 1 }` below would
+            // otherwise keep the target's lead stubs at full brightness
+            // while the routed wire they join into stays dimmed — a visible
+            // seam right where they're supposed to read as one continuous
+            // line. Leads are visually part of the wire, so dim them back
+            // down to the same opacity as the rest of the (dimmed) net.
+            customCss += `\n/* Dim everything except target node */\n.svsch-edges { opacity: 0.3; }\n.svsch-node { opacity: 0.3; }\n.svsch-node[data-node-id="${targetNode.id}"] { opacity: 1 !important; }\n.svsch-node[data-node-id="${targetNode.id}"] .svsch-array-stack-lead { opacity: 0.3; }\n`;
           }
 
           const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss: customCss, theme: 'dark' });
