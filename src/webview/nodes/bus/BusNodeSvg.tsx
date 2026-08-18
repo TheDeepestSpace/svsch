@@ -22,6 +22,7 @@ import { busTapPortCenterY } from '../../../diagram/busGeometry';
 import type { DiagramPort, SourceRange } from '../../../ir/types';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgPortLabel, portDisplayLabel, SvgStructFieldAnnotation, getSvgStructFieldAnnotation } from '../shared/labels';
+import { isInputSidePort } from '../../../diagram/portDirection';
 
 export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
@@ -230,9 +231,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   }
 
   const sidePorts: DiagramPort[] = aggregatePorts;
-  const aggregateInputs: DiagramPort[] = sidePorts.filter(
-    (p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
-  );
+  const aggregateInputs: DiagramPort[] = sidePorts.filter(isInputSidePort);
   const aggregateOutputs: DiagramPort[] = sidePorts.filter(
     (p: DiagramPort) => p.direction === 'output'
   );

@@ -1,0 +1,334 @@
+{
+  "nodes": [
+    {
+      "id": "literal:nested_case_literal_collision:out_2_b00_2_b01:4_hA",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 132
+      },
+      "width": 96,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:out_2_b00_2_b01",
+            "name": "out_2_b00_2_b01",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:nested_case_literal_collision:out_2_b00_default:4_h0",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 324
+      },
+      "width": 96,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:out_2_b00_default",
+            "name": "out_2_b00_default",
+            "direction": "output"
+          },
+          {
+            "id": "port:out_2_b01_default",
+            "name": "out_2_b01_default",
+            "direction": "output"
+          },
+          {
+            "id": "port:out_default",
+            "name": "out_default",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:nested_case_literal_collision:out_2_b01_2_b01:4_hB",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 276
+      },
+      "width": 96,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:out_2_b01_2_b01",
+            "name": "out_2_b01_2_b01",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 96
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b01",
+            "name": "2'b01",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 240
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b01",
+            "name": "2'b01",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 216
+      },
+      "width": 144,
+      "height": 144,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b00",
+            "name": "2'b00",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b01",
+            "name": "2'b01",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:nested_case_literal_collision:out",
+      "type": "hdl",
+      "position": {
+        "x": 1128,
+        "y": 276
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:nested_case_literal_collision:sel_inner",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 180
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel_inner",
+            "name": "sel_inner",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:nested_case_literal_collision:sel_outer",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 36
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sel_outer",
+            "name": "sel_outer",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:nested_case_literal_collision:out_2_b00_2_b01:4_hA:mux:nested_case_literal_collision:out:sel_inner:out_2_b00:out_2_b00_2_b01",
+      "source": "literal:nested_case_literal_collision:out_2_b00_2_b01:4_hA",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
+      "sourceHandle": "port:out_2_b00_2_b01",
+      "targetHandle": "in:2_b01",
+      "path": "M 192 144 L 216 144 L 384 144 L 408 144"
+    },
+    {
+      "id": "edge:literal:nested_case_literal_collision:out_2_b00_default:4_h0:mux:nested_case_literal_collision:out:sel_inner:out_2_b00:out_2_b00_default",
+      "source": "literal:nested_case_literal_collision:out_2_b00_default:4_h0",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
+      "sourceHandle": "port:out_2_b00_default",
+      "targetHandle": "in:default",
+      "path": "M 192 336 L 216 336 L 384 336 L 384 168 L 408 168"
+    },
+    {
+      "id": "edge:literal:nested_case_literal_collision:out_2_b00_default:4_h0:mux:nested_case_literal_collision:out:sel_inner:out_2_b01:out_2_b01_default",
+      "source": "literal:nested_case_literal_collision:out_2_b00_default:4_h0",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
+      "sourceHandle": "port:out_2_b01_default",
+      "targetHandle": "in:default",
+      "path": "M 192 336 L 216 336 L 384 336 L 384 312 L 408 312"
+    },
+    {
+      "id": "edge:literal:nested_case_literal_collision:out_2_b00_default:4_h0:mux:nested_case_literal_collision:out:sel_outer:out:out_default",
+      "source": "literal:nested_case_literal_collision:out_2_b00_default:4_h0",
+      "target": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "sourceHandle": "port:out_default",
+      "targetHandle": "in:default",
+      "path": "M 192 336 L 216 336 L 384 336 L 384 360 L 672 360 L 672 312 L 744 312 L 768 312"
+    },
+    {
+      "id": "edge:literal:nested_case_literal_collision:out_2_b01_2_b01:4_hB:mux:nested_case_literal_collision:out:sel_inner:out_2_b01:out_2_b01_2_b01",
+      "source": "literal:nested_case_literal_collision:out_2_b01_2_b01:4_hB",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
+      "sourceHandle": "port:out_2_b01_2_b01",
+      "targetHandle": "in:2_b01",
+      "path": "M 192 288 L 216 288 L 384 288 L 408 288"
+    },
+    {
+      "id": "edge:mux:nested_case_literal_collision:out:sel_inner:out_2_b00:mux:nested_case_literal_collision:out:sel_outer:out:out_2_b00",
+      "source": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
+      "target": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "sourceHandle": "out",
+      "targetHandle": "in:2_b00",
+      "path": "M 552 144 L 576 144 L 672 144 L 672 264 L 744 264 L 768 264"
+    },
+    {
+      "id": "edge:mux:nested_case_literal_collision:out:sel_inner:out_2_b01:mux:nested_case_literal_collision:out:sel_outer:out:out_2_b01",
+      "source": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
+      "target": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "sourceHandle": "out",
+      "targetHandle": "in:2_b01",
+      "path": "M 552 288 L 576 288 L 744 288 L 768 288"
+    },
+    {
+      "id": "edge:mux:nested_case_literal_collision:out:sel_outer:out:port:nested_case_literal_collision:out:out",
+      "source": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "target": "port:nested_case_literal_collision:out",
+      "sourceHandle": "out",
+      "targetHandle": "port:out",
+      "path": "M 912 288 L 936 288 L 1104 288 L 1128 288"
+    },
+    {
+      "id": "edge:port:nested_case_literal_collision:sel_inner:mux:nested_case_literal_collision:out:sel_inner:out_2_b00:sel_inner",
+      "source": "port:nested_case_literal_collision:sel_inner",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b00",
+      "sourceHandle": "port:sel_inner",
+      "targetHandle": "sel",
+      "path": "M 192 192 L 216 192 L 360 192 L 360 153 Q 369 144 360 135 L 360 72 L 480 72 L 480 120"
+    },
+    {
+      "id": "edge:port:nested_case_literal_collision:sel_inner:mux:nested_case_literal_collision:out:sel_inner:out_2_b01:sel_inner",
+      "source": "port:nested_case_literal_collision:sel_inner",
+      "target": "mux:nested_case_literal_collision:out:sel_inner:out_2_b01",
+      "sourceHandle": "port:sel_inner",
+      "targetHandle": "sel",
+      "path": "M 192 192 L 216 192 L 360 192 L 360 216 L 375 216 Q 384 207 393 216 L 480 216 L 480 264"
+    },
+    {
+      "id": "edge:port:nested_case_literal_collision:sel_outer:mux:nested_case_literal_collision:out:sel_outer:out:sel_outer",
+      "source": "port:nested_case_literal_collision:sel_outer",
+      "target": "mux:nested_case_literal_collision:out:sel_outer:out",
+      "sourceHandle": "port:sel_outer",
+      "targetHandle": "sel",
+      "path": "M 552 48 L 576 48 L 840 48 L 840 192 L 840 240"
+    }
+  ]
+}

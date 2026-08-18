@@ -5,21 +5,14 @@ import type { Page, FrameLocator } from '@playwright/test';
 import { expect } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
 import { buildDesignGraph } from '../../src/parser/backend';
 import {
   buildViewModel,
   mergeNodePositions,
 } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
-
-type ScreenshotCompareBox = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -188,7 +181,7 @@ export class BddWorld {
     return screenshot;
   }
 
-  private async _webviewCompareBox(): Promise<ScreenshotCompareBox | null> {
+  private async _webviewCompareBox(): Promise<PngCompareBox | null> {
     const box = await this.workbox.locator('iframe.webview').first().boundingBox().catch(() => null);
     if (!box || box.width < 10 || box.height < 10) return null;
     return {
@@ -218,7 +211,7 @@ export class BddWorld {
     actualBuffer: Buffer,
     actualGraph: any,
     snapshotName: string,
-    compareBox: ScreenshotCompareBox | null = null
+    compareBox: PngCompareBox | null = null
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
@@ -239,41 +232,39 @@ export class BddWorld {
     if (snapshotMissing) {
       assertBaselineCreatable(snapshotPath, updateSnapshots);
     }
-    if (snapshotMissing || updateSnapshots) {
+    if (snapshotMissing) {
       fs.writeFileSync(snapshotPath, actualBuffer);
       return;
     }
 
-    const expectedImage = PNG.sync.read(fs.readFileSync(snapshotPath));
-    const actualImage = PNG.sync.read(actualBuffer);
-    const expectedForCompare = compareBox ? cropPng(expectedImage, compareBox) : expectedImage;
-    const actualForCompare = compareBox ? cropPng(actualImage, compareBox) : actualImage;
-    const { width, height } = expectedForCompare;
-    if (width !== actualForCompare.width || height !== actualForCompare.height) {
-      if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
+    const expectedBuffer = fs.readFileSync(snapshotPath);
+    const comparison = comparePngBuffers(
+      expectedBuffer,
+      actualBuffer,
+      SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+      SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
+      compareBox
+    );
+    if (comparison.matches) return;
+    if (updateSnapshots) {
+      fs.writeFileSync(snapshotPath, actualBuffer);
+      return;
+    }
+
+    if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), expectedBuffer);
+    fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
+    if (comparison.diffBuffer) {
+      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), comparison.diffBuffer);
+    }
+    if (comparison.numDiffPixels === undefined) {
       throw new Error(
-        `Snapshot size mismatch for "${snapshotName}": expected ${width}x${height}, ` +
-        `got ${actualForCompare.width}x${actualForCompare.height}.`
+        `Snapshot size mismatch for "${snapshotName}": `
+        + `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, `
+        + `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`
       );
     }
-    const diff = new PNG({ width, height });
-    const numDiffPixels = pixelmatch(
-      expectedForCompare.data,
-      actualForCompare.data,
-      diff.data,
-      width,
-      height,
-      { threshold: 0.1 }
-    );
-    if (numDiffPixels > 50) {
-      if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), fs.readFileSync(snapshotPath));
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), actualBuffer);
-      fs.writeFileSync(path.join(resultsDir, `${snapshotName}-diff.png`), PNG.sync.write(diff));
-      throw new Error(`Snapshot mismatch for "${snapshotName}": ${numDiffPixels} pixels differ.`);
-    }
+    throw new Error(`Snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`);
   }
 
   // -------------------------------------------------------------------------
@@ -554,23 +545,6 @@ export class BddWorld {
     }
   }
 
-}
-
-function cropPng(source: PNG, box: ScreenshotCompareBox): PNG {
-  const x = Math.max(0, Math.min(source.width - 1, box.x));
-  const y = Math.max(0, Math.min(source.height - 1, box.y));
-  const width = Math.max(1, Math.min(source.width - x, box.width));
-  const height = Math.max(1, Math.min(source.height - y, box.height));
-  const cropped = new PNG({ width, height });
-
-  for (let row = 0; row < height; row += 1) {
-    const sourceStart = ((y + row) * source.width + x) * 4;
-    const sourceEnd = sourceStart + width * 4;
-    const targetStart = row * width * 4;
-    source.data.copy(cropped.data, targetStart, sourceStart, sourceEnd);
-  }
-
-  return cropped;
 }
 
 // ---------------------------------------------------------------------------

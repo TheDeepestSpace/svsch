@@ -8,9 +8,11 @@ import {
   interfaceTopHatHeight,
   orderedInterfaceSidePorts
 } from '../../diagram/interfaceGeometry';
-import { structRole, nodeTypeName } from '../../ir/nodeMetadata';
+import { structRole, nodeTypeName, gateBodyOperation, gateIsNegated } from '../../ir/nodeMetadata';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
+import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
+import { isInputSidePort } from '../../diagram/portDirection';
 
 export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
   const nodes = useNodes<HdlFlowNode>();
@@ -41,9 +43,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       : (node.ports ?? []);
 
     const sidePorts = aggregatePorts;
-    const aggregateInputs = sidePorts.filter(
-      (p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown'
-    );
+    const aggregateInputs = sidePorts.filter(isInputSidePort);
     const aggregateOutputs = sidePorts.filter(
       (p) => p.direction === 'output'
     );
@@ -140,6 +140,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       path = `M ${x} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x} Z`;
     } else if (portDirection === 'output') {
       path = `M ${x + noseLength} ${y} H ${x + width} V ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
+    } else if (portDirection === 'inout') {
+      path = `M ${x + noseLength} ${y} H ${x + width - noseLength} L ${x + width} ${midY} L ${x + width - noseLength} ${y + height} H ${x + noseLength} L ${x} ${midY} Z`;
     }
   } else if (node.kind === 'mux' || node.kind === 'alu') {
     const totalHeight = diagramNodeDimensions(node).height;
@@ -176,6 +178,59 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${bubbleRadius * 2} 0`,
       `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${-bubbleRadius * 2} 0`
     ].join(' ');
+  } else if (node.kind === 'gate') {
+    const bodyOp = gateBodyOperation(node);
+    const negated = gateIsNegated(node);
+    const isXor = bodyOp === 'xor';
+
+    // Sized relative to the minimap box (not the node's real pixel geometry) so the
+    // negation bubble and XOR back-curve stay legible even when heavily zoomed out.
+    const bubbleRadius = negated ? Math.min(width / 12, height / 6) : 0;
+    const xorGap = isXor ? Math.min(width / 10, height / 6) : 0;
+
+    const left = xorGap;
+    const right = width - bubbleRadius * 2;
+    const gateMidY = height / 2;
+    const bodyPath = bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
+    const bubbleCx = right + bubbleRadius;
+
+    return (
+      <g transform={`translate(${x}, ${y})`}>
+        {isXor && (
+          <path
+            d={xorBackCurvePath(right - left, height)}
+            className={className}
+            data-minimap-node-id={id}
+            data-minimap-node-kind={node.kind}
+            fill="none"
+            stroke={color}
+            strokeOpacity={0.4}
+          />
+        )}
+        <path
+          d={bodyPath}
+          className={className}
+          data-minimap-node-id={id}
+          data-minimap-node-kind={node.kind}
+          fill={color}
+          stroke={color}
+          strokeOpacity={0.4}
+        />
+        {negated && (
+          <circle
+            cx={bubbleCx}
+            cy={gateMidY}
+            r={bubbleRadius}
+            className={className}
+            data-minimap-node-id={id}
+            data-minimap-node-kind={node.kind}
+            fill={color}
+            stroke={color}
+            strokeOpacity={0.4}
+          />
+        )}
+      </g>
+    );
   } else if (node.kind === 'interface') {
     const role = structRole(node);
     const isInterfaceInstance = role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');

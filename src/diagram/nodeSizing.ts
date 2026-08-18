@@ -1,8 +1,9 @@
 import type { DiagramNode } from '../ir/types';
-import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
+import { gateBodyOperation, gateIsNegated, nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeWidth, registerClockSignal, registerResetSignal, structRole } from '../ir/nodeMetadata';
 import {
   combHeightForPortRows,
   diagramSizing,
+  gateHeightForInputCount,
   literalHeightForPortRows,
   muxHeightForPortRows,
   nodeHeightForPortRows,
@@ -21,10 +22,34 @@ import {
   portSkinTopRightVertex
 } from './interfaceGeometry';
 import { muxRightTopY } from './muxGeometry';
+import { isInputSidePort } from './portDirection';
 
 export interface DiagramNodeDimensions {
   width: number;
   height: number;
+}
+
+/**
+ * The size a node actually renders/occupies at: the canonical auto-fit size
+ * (diagramNodeDimensions), grown per axis to fit a manual resize override if
+ * one is saved. Never shrinks below canonical, even if the override is
+ * stale (e.g. canonical grew after the override was saved) — see
+ * `sizeOverride` on BaseDiagramNode. Every consumer that needs a node's true
+ * on-screen/routing footprint (ELK sizing, obstacle bounds, region
+ * auto-grow, collision checks) should use this instead of
+ * diagramNodeDimensions; diagramNodeDimensions itself stays the pure
+ * canonical calculation, since resize logic needs that as its grow-only
+ * floor independent of any current override.
+ */
+export function resolvedNodeDimensions(node: DiagramNode): DiagramNodeDimensions {
+  const canonical = diagramNodeDimensions(node);
+  const override = node.sizeOverride;
+  if (!override) return canonical;
+  const grid = diagramSizing.gridSize;
+  return {
+    width: Math.max(canonical.width, override.width * grid),
+    height: Math.max(canonical.height, override.height * grid)
+  };
 }
 
 export interface NodeOutlineVertex {
@@ -144,7 +169,7 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
     ? visiblePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'))
     : visiblePorts;
 
-  const inputs = sidePorts.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = sidePorts.filter(isInputSidePort);
   const outputs = sidePorts.filter((port) => port.direction === 'output');
   const topInputCount = node.kind === 'mux'
     ? 1
@@ -201,6 +226,10 @@ function nodeHeightForKind(node: DiagramNode, inputsCount: number, outputsCount:
 
   if (node.kind === 'alu') {
     return muxHeightForPortRows(2);
+  }
+
+  if (node.kind === 'gate') {
+    return gateHeightForInputCount(portRows);
   }
 
   if (node.kind === 'inverter') {
@@ -262,10 +291,24 @@ export function inverterGeometryWidth(): number {
   return g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
 }
 
+/** Radius of a gate's negated-output bubble (NAND/NOR/XNOR) — matches the inverter's bubble. */
+export const gateBubbleRadius = diagramSizing.gridSize / 6;
+export const gateBubbleGap = 2;
+/** Horizontal gap reserved for XOR/XNOR's extra back curve, left of the OR-shaped body. */
+export const gateXorGap = 5;
+
+/** Body width a gate needs: base AND/OR/XOR body, plus room for the XOR back-curve and/or negation bubble. */
+export function gateGeometryWidth(isXor: boolean, negated: boolean): number {
+  const base = diagramSizing.gridSize * 3;
+  const xorExtra = isXor ? gateXorGap : 0;
+  const bubbleExtra = negated ? gateBubbleGap + gateBubbleRadius * 2 : 0;
+  return base + xorExtra + bubbleExtra;
+}
+
 function registerVisibleInputRows(node: DiagramNode): number {
   const clockSignal = registerClockSignal(node);
   const resetSignal = registerResetSignal(node);
-  const inputs = node.ports.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = node.ports.filter(isInputSidePort);
   const dPort = inputs.find((port) => port.name === 'D') ?? inputs[0];
   const clockPort = inputs.find((port) => port.name === clockSignal)
     ?? inputs.find((port) => port.name !== 'D' && port.name !== resetSignal);
@@ -363,6 +406,15 @@ function nodeWidthForKind(
     );
   }
 
+  if (node.kind === 'gate') {
+    const bodyOp = gateBodyOperation(node);
+    return snappedWidth(
+      diagramSizing.muxWidth,
+      gateGeometryWidth(bodyOp === 'xor', gateIsNegated(node)),
+      snapUpToEvenGrid
+    );
+  }
+
   if (node.kind === 'inverter') {
     return snapUpToEvenGrid(inverterGeometryWidth());
   }
@@ -454,7 +506,7 @@ function visiblePortLabels(
   outputs: DiagramNode['ports'],
   showPortTypes: boolean
 ): string[] {
-  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop') {
+  if (node.kind === 'comb' || node.kind === 'inverter' || node.kind === 'loop' || node.kind === 'gate') {
     return [];
   }
 
@@ -502,7 +554,7 @@ function nodeTitle(node: DiagramNode): string {
   const typeName = nodeTypeName(node);
   const base = node.label;
   const suffix = typeName || width;
-  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
+  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'gate' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
 }
 
 function portNodeLabel(node: DiagramNode): string {

@@ -1,0 +1,3574 @@
+{
+  "nodes": [
+    {
+      "id": "gate_nor_10",
+      "type": "hdl",
+      "position": {
+        "x": 676,
+        "y": 864
+      },
+      "width": 96,
+      "height": 480,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "in5",
+            "name": "in5",
+            "direction": "input"
+          },
+          {
+            "id": "in6",
+            "name": "in6",
+            "direction": "input"
+          },
+          {
+            "id": "in7",
+            "name": "in7",
+            "direction": "input"
+          },
+          {
+            "id": "in8",
+            "name": "in8",
+            "direction": "input"
+          },
+          {
+            "id": "in9",
+            "name": "in9",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src0",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 876
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src1",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 924
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src2",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 972
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src3",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1020
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src4",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1068
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src5",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1116
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i5",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src6",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1164
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i6",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src7",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1212
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i7",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src8",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1260
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i8",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_10_src9",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 1308
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor10i9",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_2",
+      "type": "hdl",
+      "position": {
+        "x": 676,
+        "y": 0
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_2_src0",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 12
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor2i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_2_src1",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor2i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_3",
+      "type": "hdl",
+      "position": {
+        "x": 676,
+        "y": 144
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_3_src0",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor3i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_3_src1",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor3i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_3_src2",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor3i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_4",
+      "type": "hdl",
+      "position": {
+        "x": 676,
+        "y": 336
+      },
+      "width": 96,
+      "height": 192,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_4_src0",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor4i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_4_src1",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor4i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_4_src2",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor4i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_4_src3",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor4i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5",
+      "type": "hdl",
+      "position": {
+        "x": 676,
+        "y": 576
+      },
+      "width": 96,
+      "height": 240,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5_src0",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor5i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5_src1",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 636
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor5i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5_src2",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 684
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor5i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5_src3",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 732
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor5i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_nor_5_src4",
+      "type": "hdl",
+      "position": {
+        "x": 416,
+        "y": 780
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "nor5i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10",
+      "type": "hdl",
+      "position": {
+        "x": 260,
+        "y": 864
+      },
+      "width": 96,
+      "height": 480,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "in5",
+            "name": "in5",
+            "direction": "input"
+          },
+          {
+            "id": "in6",
+            "name": "in6",
+            "direction": "input"
+          },
+          {
+            "id": "in7",
+            "name": "in7",
+            "direction": "input"
+          },
+          {
+            "id": "in8",
+            "name": "in8",
+            "direction": "input"
+          },
+          {
+            "id": "in9",
+            "name": "in9",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src0",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 876
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src1",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 924
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src2",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 972
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src3",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1020
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src4",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1068
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src5",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1116
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i5",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src6",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1164
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i6",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src7",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1212
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i7",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src8",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1260
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i8",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_10_src9",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 1308
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or10i9",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_2",
+      "type": "hdl",
+      "position": {
+        "x": 260,
+        "y": 0
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_2_src0",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 12
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or2i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_2_src1",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or2i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_3",
+      "type": "hdl",
+      "position": {
+        "x": 260,
+        "y": 144
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_3_src0",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or3i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_3_src1",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or3i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_3_src2",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or3i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_4",
+      "type": "hdl",
+      "position": {
+        "x": 260,
+        "y": 336
+      },
+      "width": 96,
+      "height": 192,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_4_src0",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or4i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_4_src1",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or4i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_4_src2",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or4i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_4_src3",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or4i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5",
+      "type": "hdl",
+      "position": {
+        "x": 260,
+        "y": 576
+      },
+      "width": 96,
+      "height": 240,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5_src0",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or5i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5_src1",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 636
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or5i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5_src2",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 684
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or5i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5_src3",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 732
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or5i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_or_5_src4",
+      "type": "hdl",
+      "position": {
+        "x": 0,
+        "y": 780
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "or5i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10",
+      "type": "hdl",
+      "position": {
+        "x": 1508,
+        "y": 864
+      },
+      "width": 96,
+      "height": 480,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "in5",
+            "name": "in5",
+            "direction": "input"
+          },
+          {
+            "id": "in6",
+            "name": "in6",
+            "direction": "input"
+          },
+          {
+            "id": "in7",
+            "name": "in7",
+            "direction": "input"
+          },
+          {
+            "id": "in8",
+            "name": "in8",
+            "direction": "input"
+          },
+          {
+            "id": "in9",
+            "name": "in9",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src0",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 876
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src1",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 924
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src2",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 972
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src3",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1020
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src4",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1068
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src5",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1116
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i5",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src6",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1164
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i6",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src7",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1212
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i7",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src8",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1260
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i8",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_10_src9",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 1308
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor10i9",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_2",
+      "type": "hdl",
+      "position": {
+        "x": 1508,
+        "y": 0
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_2_src0",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 12
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor2i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_2_src1",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor2i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_3",
+      "type": "hdl",
+      "position": {
+        "x": 1508,
+        "y": 144
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_3_src0",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor3i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_3_src1",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor3i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_3_src2",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor3i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_4",
+      "type": "hdl",
+      "position": {
+        "x": 1508,
+        "y": 336
+      },
+      "width": 96,
+      "height": 192,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_4_src0",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor4i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_4_src1",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor4i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_4_src2",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor4i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_4_src3",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor4i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5",
+      "type": "hdl",
+      "position": {
+        "x": 1508,
+        "y": 576
+      },
+      "width": 96,
+      "height": 240,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5_src0",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor5i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5_src1",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 636
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor5i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5_src2",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 684
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor5i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5_src3",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 732
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor5i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xnor_5_src4",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 780
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xnor5i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10",
+      "type": "hdl",
+      "position": {
+        "x": 1092,
+        "y": 864
+      },
+      "width": 96,
+      "height": 480,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "in5",
+            "name": "in5",
+            "direction": "input"
+          },
+          {
+            "id": "in6",
+            "name": "in6",
+            "direction": "input"
+          },
+          {
+            "id": "in7",
+            "name": "in7",
+            "direction": "input"
+          },
+          {
+            "id": "in8",
+            "name": "in8",
+            "direction": "input"
+          },
+          {
+            "id": "in9",
+            "name": "in9",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src0",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 876
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src1",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 924
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src2",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 972
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src3",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1020
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src4",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1068
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i4",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src5",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1116
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i5",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src6",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1164
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i6",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src7",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1212
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i7",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src8",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1260
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i8",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_10_src9",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 1308
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor10i9",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_2",
+      "type": "hdl",
+      "position": {
+        "x": 1092,
+        "y": 0
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_2_src0",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 12
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor2i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_2_src1",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor2i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_3",
+      "type": "hdl",
+      "position": {
+        "x": 1092,
+        "y": 144
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_3_src0",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor3i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_3_src1",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor3i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_3_src2",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor3i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_4",
+      "type": "hdl",
+      "position": {
+        "x": 1092,
+        "y": 336
+      },
+      "width": 96,
+      "height": 192,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_4_src0",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor4i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_4_src1",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor4i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_4_src2",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor4i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_4_src3",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor4i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5",
+      "type": "hdl",
+      "position": {
+        "x": 1092,
+        "y": 576
+      },
+      "width": 96,
+      "height": 240,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "in4",
+            "name": "in4",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5_src0",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor5i0",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5_src1",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 636
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor5i1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5_src2",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 684
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor5i2",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5_src3",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 732
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor5i3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate_xor_5_src4",
+      "type": "hdl",
+      "position": {
+        "x": 832,
+        "y": 780
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "p",
+            "name": "xor5i4",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "gate_nor_10_src0_edge",
+      "source": "gate_nor_10_src0",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 536 888 L 552 888 L 648 888 L 691.661 888"
+    },
+    {
+      "id": "gate_nor_10_src1_edge",
+      "source": "gate_nor_10_src1",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 536 936 L 552 936 L 648 936 L 691.661 936"
+    },
+    {
+      "id": "gate_nor_10_src2_edge",
+      "source": "gate_nor_10_src2",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 536 984 L 552 984 L 648 984 L 691.661 984"
+    },
+    {
+      "id": "gate_nor_10_src3_edge",
+      "source": "gate_nor_10_src3",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 536 1032 L 552 1032 L 648 1032 L 691.661 1032"
+    },
+    {
+      "id": "gate_nor_10_src4_edge",
+      "source": "gate_nor_10_src4",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 536 1080 L 552 1080 L 648 1080 L 691.661 1080"
+    },
+    {
+      "id": "gate_nor_10_src5_edge",
+      "source": "gate_nor_10_src5",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in5",
+      "path": "M 536 1128 L 552 1128 L 648 1128 L 691.661 1128"
+    },
+    {
+      "id": "gate_nor_10_src6_edge",
+      "source": "gate_nor_10_src6",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in6",
+      "path": "M 536 1176 L 552 1176 L 648 1176 L 691.661 1176"
+    },
+    {
+      "id": "gate_nor_10_src7_edge",
+      "source": "gate_nor_10_src7",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in7",
+      "path": "M 536 1224 L 552 1224 L 648 1224 L 691.661 1224"
+    },
+    {
+      "id": "gate_nor_10_src8_edge",
+      "source": "gate_nor_10_src8",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in8",
+      "path": "M 536 1272 L 552 1272 L 648 1272 L 691.661 1272"
+    },
+    {
+      "id": "gate_nor_10_src9_edge",
+      "source": "gate_nor_10_src9",
+      "target": "gate_nor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in9",
+      "path": "M 536 1320 L 552 1320 L 648 1320 L 691.661 1320"
+    },
+    {
+      "id": "gate_nor_2_src0_edge",
+      "source": "gate_nor_2_src0",
+      "target": "gate_nor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 536 24 L 552 24 L 648 24 L 691.661 24"
+    },
+    {
+      "id": "gate_nor_2_src1_edge",
+      "source": "gate_nor_2_src1",
+      "target": "gate_nor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 536 72 L 552 72 L 648 72 L 691.661 72"
+    },
+    {
+      "id": "gate_nor_3_src0_edge",
+      "source": "gate_nor_3_src0",
+      "target": "gate_nor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 536 168 L 552 168 L 648 168 L 691.661 168"
+    },
+    {
+      "id": "gate_nor_3_src1_edge",
+      "source": "gate_nor_3_src1",
+      "target": "gate_nor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 536 216 L 552 216 L 648 216 L 691.661 216"
+    },
+    {
+      "id": "gate_nor_3_src2_edge",
+      "source": "gate_nor_3_src2",
+      "target": "gate_nor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 536 264 L 552 264 L 648 264 L 691.661 264"
+    },
+    {
+      "id": "gate_nor_4_src0_edge",
+      "source": "gate_nor_4_src0",
+      "target": "gate_nor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 536 360 L 552 360 L 648 360 L 691.661 360"
+    },
+    {
+      "id": "gate_nor_4_src1_edge",
+      "source": "gate_nor_4_src1",
+      "target": "gate_nor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 536 408 L 552 408 L 648 408 L 691.661 408"
+    },
+    {
+      "id": "gate_nor_4_src2_edge",
+      "source": "gate_nor_4_src2",
+      "target": "gate_nor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 536 456 L 552 456 L 648 456 L 691.661 456"
+    },
+    {
+      "id": "gate_nor_4_src3_edge",
+      "source": "gate_nor_4_src3",
+      "target": "gate_nor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 536 504 L 552 504 L 648 504 L 691.661 504"
+    },
+    {
+      "id": "gate_nor_5_src0_edge",
+      "source": "gate_nor_5_src0",
+      "target": "gate_nor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 536 600 L 552 600 L 648 600 L 691.661 600"
+    },
+    {
+      "id": "gate_nor_5_src1_edge",
+      "source": "gate_nor_5_src1",
+      "target": "gate_nor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 536 648 L 552 648 L 648 648 L 691.661 648"
+    },
+    {
+      "id": "gate_nor_5_src2_edge",
+      "source": "gate_nor_5_src2",
+      "target": "gate_nor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 536 696 L 552 696 L 648 696 L 691.661 696"
+    },
+    {
+      "id": "gate_nor_5_src3_edge",
+      "source": "gate_nor_5_src3",
+      "target": "gate_nor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 536 744 L 552 744 L 648 744 L 691.661 744"
+    },
+    {
+      "id": "gate_nor_5_src4_edge",
+      "source": "gate_nor_5_src4",
+      "target": "gate_nor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 536 792 L 552 792 L 648 792 L 691.661 792"
+    },
+    {
+      "id": "gate_or_10_src0_edge",
+      "source": "gate_or_10_src0",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 120 888 L 144 888 L 240 888 L 277.482 888"
+    },
+    {
+      "id": "gate_or_10_src1_edge",
+      "source": "gate_or_10_src1",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 120 936 L 144 936 L 240 936 L 277.482 936"
+    },
+    {
+      "id": "gate_or_10_src2_edge",
+      "source": "gate_or_10_src2",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 120 984 L 144 984 L 240 984 L 277.482 984"
+    },
+    {
+      "id": "gate_or_10_src3_edge",
+      "source": "gate_or_10_src3",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 120 1032 L 144 1032 L 240 1032 L 277.482 1032"
+    },
+    {
+      "id": "gate_or_10_src4_edge",
+      "source": "gate_or_10_src4",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 120 1080 L 144 1080 L 240 1080 L 277.482 1080"
+    },
+    {
+      "id": "gate_or_10_src5_edge",
+      "source": "gate_or_10_src5",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in5",
+      "path": "M 120 1128 L 144 1128 L 240 1128 L 277.482 1128"
+    },
+    {
+      "id": "gate_or_10_src6_edge",
+      "source": "gate_or_10_src6",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in6",
+      "path": "M 120 1176 L 144 1176 L 240 1176 L 277.482 1176"
+    },
+    {
+      "id": "gate_or_10_src7_edge",
+      "source": "gate_or_10_src7",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in7",
+      "path": "M 120 1224 L 144 1224 L 240 1224 L 277.482 1224"
+    },
+    {
+      "id": "gate_or_10_src8_edge",
+      "source": "gate_or_10_src8",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in8",
+      "path": "M 120 1272 L 144 1272 L 240 1272 L 277.482 1272"
+    },
+    {
+      "id": "gate_or_10_src9_edge",
+      "source": "gate_or_10_src9",
+      "target": "gate_or_10",
+      "sourceHandle": "p",
+      "targetHandle": "in9",
+      "path": "M 120 1320 L 144 1320 L 240 1320 L 277.482 1320"
+    },
+    {
+      "id": "gate_or_2_src0_edge",
+      "source": "gate_or_2_src0",
+      "target": "gate_or_2",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 120 24 L 144 24 L 240 24 L 277.482 24"
+    },
+    {
+      "id": "gate_or_2_src1_edge",
+      "source": "gate_or_2_src1",
+      "target": "gate_or_2",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 120 72 L 144 72 L 240 72 L 277.482 72"
+    },
+    {
+      "id": "gate_or_3_src0_edge",
+      "source": "gate_or_3_src0",
+      "target": "gate_or_3",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 120 168 L 144 168 L 240 168 L 277.482 168"
+    },
+    {
+      "id": "gate_or_3_src1_edge",
+      "source": "gate_or_3_src1",
+      "target": "gate_or_3",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 120 216 L 144 216 L 240 216 L 277.482 216"
+    },
+    {
+      "id": "gate_or_3_src2_edge",
+      "source": "gate_or_3_src2",
+      "target": "gate_or_3",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 120 264 L 144 264 L 240 264 L 277.482 264"
+    },
+    {
+      "id": "gate_or_4_src0_edge",
+      "source": "gate_or_4_src0",
+      "target": "gate_or_4",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 120 360 L 144 360 L 240 360 L 277.482 360"
+    },
+    {
+      "id": "gate_or_4_src1_edge",
+      "source": "gate_or_4_src1",
+      "target": "gate_or_4",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 120 408 L 144 408 L 240 408 L 277.482 408"
+    },
+    {
+      "id": "gate_or_4_src2_edge",
+      "source": "gate_or_4_src2",
+      "target": "gate_or_4",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 120 456 L 144 456 L 240 456 L 277.482 456"
+    },
+    {
+      "id": "gate_or_4_src3_edge",
+      "source": "gate_or_4_src3",
+      "target": "gate_or_4",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 120 504 L 144 504 L 240 504 L 277.482 504"
+    },
+    {
+      "id": "gate_or_5_src0_edge",
+      "source": "gate_or_5_src0",
+      "target": "gate_or_5",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 120 600 L 144 600 L 240 600 L 277.482 600"
+    },
+    {
+      "id": "gate_or_5_src1_edge",
+      "source": "gate_or_5_src1",
+      "target": "gate_or_5",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 120 648 L 144 648 L 240 648 L 277.482 648"
+    },
+    {
+      "id": "gate_or_5_src2_edge",
+      "source": "gate_or_5_src2",
+      "target": "gate_or_5",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 120 696 L 144 696 L 240 696 L 277.482 696"
+    },
+    {
+      "id": "gate_or_5_src3_edge",
+      "source": "gate_or_5_src3",
+      "target": "gate_or_5",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 120 744 L 144 744 L 240 744 L 277.482 744"
+    },
+    {
+      "id": "gate_or_5_src4_edge",
+      "source": "gate_or_5_src4",
+      "target": "gate_or_5",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 120 792 L 144 792 L 240 792 L 277.482 792"
+    },
+    {
+      "id": "gate_xnor_10_src0_edge",
+      "source": "gate_xnor_10_src0",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 1368 888 L 1392 888 L 1488 888 L 1527.75 888"
+    },
+    {
+      "id": "gate_xnor_10_src1_edge",
+      "source": "gate_xnor_10_src1",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 1368 936 L 1392 936 L 1488 936 L 1527.75 936"
+    },
+    {
+      "id": "gate_xnor_10_src2_edge",
+      "source": "gate_xnor_10_src2",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 1368 984 L 1392 984 L 1488 984 L 1527.75 984"
+    },
+    {
+      "id": "gate_xnor_10_src3_edge",
+      "source": "gate_xnor_10_src3",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 1368 1032 L 1392 1032 L 1488 1032 L 1527.75 1032"
+    },
+    {
+      "id": "gate_xnor_10_src4_edge",
+      "source": "gate_xnor_10_src4",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 1368 1080 L 1392 1080 L 1488 1080 L 1527.75 1080"
+    },
+    {
+      "id": "gate_xnor_10_src5_edge",
+      "source": "gate_xnor_10_src5",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in5",
+      "path": "M 1368 1128 L 1392 1128 L 1488 1128 L 1527.75 1128"
+    },
+    {
+      "id": "gate_xnor_10_src6_edge",
+      "source": "gate_xnor_10_src6",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in6",
+      "path": "M 1368 1176 L 1392 1176 L 1488 1176 L 1527.75 1176"
+    },
+    {
+      "id": "gate_xnor_10_src7_edge",
+      "source": "gate_xnor_10_src7",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in7",
+      "path": "M 1368 1224 L 1392 1224 L 1488 1224 L 1527.75 1224"
+    },
+    {
+      "id": "gate_xnor_10_src8_edge",
+      "source": "gate_xnor_10_src8",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in8",
+      "path": "M 1368 1272 L 1392 1272 L 1488 1272 L 1527.75 1272"
+    },
+    {
+      "id": "gate_xnor_10_src9_edge",
+      "source": "gate_xnor_10_src9",
+      "target": "gate_xnor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in9",
+      "path": "M 1368 1320 L 1392 1320 L 1488 1320 L 1527.75 1320"
+    },
+    {
+      "id": "gate_xnor_2_src0_edge",
+      "source": "gate_xnor_2_src0",
+      "target": "gate_xnor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 1368 24 L 1392 24 L 1488 24 L 1527.75 24"
+    },
+    {
+      "id": "gate_xnor_2_src1_edge",
+      "source": "gate_xnor_2_src1",
+      "target": "gate_xnor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 1368 72 L 1392 72 L 1488 72 L 1527.75 72"
+    },
+    {
+      "id": "gate_xnor_3_src0_edge",
+      "source": "gate_xnor_3_src0",
+      "target": "gate_xnor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 1368 168 L 1392 168 L 1488 168 L 1527.75 168"
+    },
+    {
+      "id": "gate_xnor_3_src1_edge",
+      "source": "gate_xnor_3_src1",
+      "target": "gate_xnor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 1368 216 L 1392 216 L 1488 216 L 1527.75 216"
+    },
+    {
+      "id": "gate_xnor_3_src2_edge",
+      "source": "gate_xnor_3_src2",
+      "target": "gate_xnor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 1368 264 L 1392 264 L 1488 264 L 1527.75 264"
+    },
+    {
+      "id": "gate_xnor_4_src0_edge",
+      "source": "gate_xnor_4_src0",
+      "target": "gate_xnor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 1368 360 L 1392 360 L 1488 360 L 1527.75 360"
+    },
+    {
+      "id": "gate_xnor_4_src1_edge",
+      "source": "gate_xnor_4_src1",
+      "target": "gate_xnor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 1368 408 L 1392 408 L 1488 408 L 1527.75 408"
+    },
+    {
+      "id": "gate_xnor_4_src2_edge",
+      "source": "gate_xnor_4_src2",
+      "target": "gate_xnor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 1368 456 L 1392 456 L 1488 456 L 1527.75 456"
+    },
+    {
+      "id": "gate_xnor_4_src3_edge",
+      "source": "gate_xnor_4_src3",
+      "target": "gate_xnor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 1368 504 L 1392 504 L 1488 504 L 1527.75 504"
+    },
+    {
+      "id": "gate_xnor_5_src0_edge",
+      "source": "gate_xnor_5_src0",
+      "target": "gate_xnor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 1368 600 L 1392 600 L 1488 600 L 1527.75 600"
+    },
+    {
+      "id": "gate_xnor_5_src1_edge",
+      "source": "gate_xnor_5_src1",
+      "target": "gate_xnor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 1368 648 L 1392 648 L 1488 648 L 1527.75 648"
+    },
+    {
+      "id": "gate_xnor_5_src2_edge",
+      "source": "gate_xnor_5_src2",
+      "target": "gate_xnor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 1368 696 L 1392 696 L 1488 696 L 1527.75 696"
+    },
+    {
+      "id": "gate_xnor_5_src3_edge",
+      "source": "gate_xnor_5_src3",
+      "target": "gate_xnor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 1368 744 L 1392 744 L 1488 744 L 1527.75 744"
+    },
+    {
+      "id": "gate_xnor_5_src4_edge",
+      "source": "gate_xnor_5_src4",
+      "target": "gate_xnor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 1368 792 L 1392 792 L 1488 792 L 1527.75 792"
+    },
+    {
+      "id": "gate_xor_10_src0_edge",
+      "source": "gate_xor_10_src0",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 952 888 L 984 888 L 1080 888 L 1113.571 888"
+    },
+    {
+      "id": "gate_xor_10_src1_edge",
+      "source": "gate_xor_10_src1",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 952 936 L 984 936 L 1080 936 L 1113.571 936"
+    },
+    {
+      "id": "gate_xor_10_src2_edge",
+      "source": "gate_xor_10_src2",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 952 984 L 984 984 L 1080 984 L 1113.571 984"
+    },
+    {
+      "id": "gate_xor_10_src3_edge",
+      "source": "gate_xor_10_src3",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 952 1032 L 984 1032 L 1080 1032 L 1113.571 1032"
+    },
+    {
+      "id": "gate_xor_10_src4_edge",
+      "source": "gate_xor_10_src4",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 952 1080 L 984 1080 L 1080 1080 L 1113.571 1080"
+    },
+    {
+      "id": "gate_xor_10_src5_edge",
+      "source": "gate_xor_10_src5",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in5",
+      "path": "M 952 1128 L 984 1128 L 1080 1128 L 1113.571 1128"
+    },
+    {
+      "id": "gate_xor_10_src6_edge",
+      "source": "gate_xor_10_src6",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in6",
+      "path": "M 952 1176 L 984 1176 L 1080 1176 L 1113.571 1176"
+    },
+    {
+      "id": "gate_xor_10_src7_edge",
+      "source": "gate_xor_10_src7",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in7",
+      "path": "M 952 1224 L 984 1224 L 1080 1224 L 1113.571 1224"
+    },
+    {
+      "id": "gate_xor_10_src8_edge",
+      "source": "gate_xor_10_src8",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in8",
+      "path": "M 952 1272 L 984 1272 L 1080 1272 L 1113.571 1272"
+    },
+    {
+      "id": "gate_xor_10_src9_edge",
+      "source": "gate_xor_10_src9",
+      "target": "gate_xor_10",
+      "sourceHandle": "p",
+      "targetHandle": "in9",
+      "path": "M 952 1320 L 984 1320 L 1080 1320 L 1113.571 1320"
+    },
+    {
+      "id": "gate_xor_2_src0_edge",
+      "source": "gate_xor_2_src0",
+      "target": "gate_xor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 952 24 L 984 24 L 1080 24 L 1113.571 24"
+    },
+    {
+      "id": "gate_xor_2_src1_edge",
+      "source": "gate_xor_2_src1",
+      "target": "gate_xor_2",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 952 72 L 984 72 L 1080 72 L 1113.571 72"
+    },
+    {
+      "id": "gate_xor_3_src0_edge",
+      "source": "gate_xor_3_src0",
+      "target": "gate_xor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 952 168 L 984 168 L 1080 168 L 1113.571 168"
+    },
+    {
+      "id": "gate_xor_3_src1_edge",
+      "source": "gate_xor_3_src1",
+      "target": "gate_xor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 952 216 L 984 216 L 1080 216 L 1113.571 216"
+    },
+    {
+      "id": "gate_xor_3_src2_edge",
+      "source": "gate_xor_3_src2",
+      "target": "gate_xor_3",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 952 264 L 984 264 L 1080 264 L 1113.571 264"
+    },
+    {
+      "id": "gate_xor_4_src0_edge",
+      "source": "gate_xor_4_src0",
+      "target": "gate_xor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 952 360 L 984 360 L 1080 360 L 1113.571 360"
+    },
+    {
+      "id": "gate_xor_4_src1_edge",
+      "source": "gate_xor_4_src1",
+      "target": "gate_xor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 952 408 L 984 408 L 1080 408 L 1113.571 408"
+    },
+    {
+      "id": "gate_xor_4_src2_edge",
+      "source": "gate_xor_4_src2",
+      "target": "gate_xor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 952 456 L 984 456 L 1080 456 L 1113.571 456"
+    },
+    {
+      "id": "gate_xor_4_src3_edge",
+      "source": "gate_xor_4_src3",
+      "target": "gate_xor_4",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 952 504 L 984 504 L 1080 504 L 1113.571 504"
+    },
+    {
+      "id": "gate_xor_5_src0_edge",
+      "source": "gate_xor_5_src0",
+      "target": "gate_xor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in0",
+      "path": "M 952 600 L 984 600 L 1080 600 L 1113.571 600"
+    },
+    {
+      "id": "gate_xor_5_src1_edge",
+      "source": "gate_xor_5_src1",
+      "target": "gate_xor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in1",
+      "path": "M 952 648 L 984 648 L 1080 648 L 1113.571 648"
+    },
+    {
+      "id": "gate_xor_5_src2_edge",
+      "source": "gate_xor_5_src2",
+      "target": "gate_xor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in2",
+      "path": "M 952 696 L 984 696 L 1080 696 L 1113.571 696"
+    },
+    {
+      "id": "gate_xor_5_src3_edge",
+      "source": "gate_xor_5_src3",
+      "target": "gate_xor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in3",
+      "path": "M 952 744 L 984 744 L 1080 744 L 1113.571 744"
+    },
+    {
+      "id": "gate_xor_5_src4_edge",
+      "source": "gate_xor_5_src4",
+      "target": "gate_xor_5",
+      "sourceHandle": "p",
+      "targetHandle": "in4",
+      "path": "M 952 792 L 984 792 L 1080 792 L 1113.571 792"
+    }
+  ]
+}

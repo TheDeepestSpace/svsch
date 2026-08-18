@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwright';
 import path from 'path';
+import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -15,6 +16,7 @@ if (process.env.SVSCH_TEST_STATUS_FILE) {
 }
 
 export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
+  updateSnapshots: configuredPlaywrightUpdateMode(),
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
@@ -29,13 +31,13 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
       // versions/electron builds. 2500 was previously found to be high
       // enough to silently mask a missing toolbar label (2195px diff) — a
       // real regression that shipped without any snapshot update.
-      maxDiffPixels: 500,
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
     },
   },
   use: {
     extensionDevelopmentPath: root,
     // VSCode workspace: ./test/ already has .vscode/settings.json configuring
-    // svsch.projectFolder = visual/fixtures and suppressing noisy popups.
+    // svsch.projectFolder = fixtures and suppressing noisy popups.
     baseDir: path.join(root, 'test'),
     deviceScaleFactor: 1,
     // Pin to Electron 30 era. VSCode 1.121 uses Electron 35+ which

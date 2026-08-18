@@ -30,9 +30,11 @@ import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
+import { isInputSidePort } from '../../diagram/portDirection';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
+  extendTargetIntoGate,
   promotedStackFanoutPath,
   stableFragmentId,
   stackedLayerEdgeClass,
@@ -178,6 +180,7 @@ export function OrthogonalEdge({
   const {
     hoveredNetKey,
     setHovered,
+    setHoveredEdgeId,
     selectionHoverActive,
     setSelectionHoverActive,
     pendingSelectionAction,
@@ -195,14 +198,14 @@ export function OrthogonalEdge({
   const sourceFlowNode = flowNodes.find((node) => node.id === source);
   const targetFlowNode = flowNodes.find((node) => node.id === target);
   const sourceNode = sourceFlowNode?.data?.node;
-  const sourceInputs = sourceNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const sourceInputs = sourceNode?.ports.filter(isInputSidePort) ?? [];
   const sourceAggregateInputs = sourceInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const sourceIsComposition = sourceAggregateInputs.length > 1;
   const sourceIsArray = sourceNode ? (nodeIsArrayNode(sourceNode) || (sourceNode.kind === 'netLabel' && sourceNode.metadata?.cutNet?.isSourceStacked)) : false;
   const sourceIsArrayComposition = sourceNode?.kind === 'bus' && sourceIsComposition && sourceNode.metadata?.aggregateKind === 'array';
 
   const targetNode = targetFlowNode?.data?.node;
-  const targetInputs = targetNode?.ports.filter((p: DiagramPort) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown') ?? [];
+  const targetInputs = targetNode?.ports.filter(isInputSidePort) ?? [];
   const targetAggregateInputs = targetInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const targetIsComposition = targetAggregateInputs.length > 1;
   const targetIsArray = targetNode ? (nodeIsArrayNode(targetNode) || (targetNode.kind === 'netLabel' && targetNode.metadata?.cutNet?.isSourceStacked)) : false;
@@ -278,18 +281,6 @@ export function OrthogonalEdge({
     );
   }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
 
-  // Use localPoints if we are dragging, otherwise use officialPoints.
-  // We MUST prepend and append the actual handle coordinates to officialPoints 
-  // because normalizeRoutePoints only returns the path between leads.
-  // The handle coordinates can intentionally live on half-grid shape boundaries
-  // such as the one-grid interface top hat. Snapping them here makes the visible
-  // wire miss the rendered node edge by half a grid.
-  const points = localPoints ?? [
-    { x: sourceX, y: sourceY },
-    ...officialPoints,
-    { x: targetX, y: targetY }
-  ];
-  const rawEdgePath = pathFromPoints(points);
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
   const targetHdlPosition = forceStraight && isVertical
@@ -298,6 +289,26 @@ export function OrthogonalEdge({
   const sourceHdlPosition = forceStraight && isVertical
     ? HdlPosition.Bottom
     : sourcePosition as unknown as HdlPosition;
+
+  // Use localPoints if we are dragging, otherwise use officialPoints.
+  // We MUST prepend and append the actual handle coordinates to officialPoints
+  // because normalizeRoutePoints only returns the path between leads.
+  // The handle coordinates can intentionally live on half-grid shape boundaries
+  // such as the one-grid interface top hat. Snapping them here makes the visible
+  // wire miss the rendered node edge by half a grid.
+  // extendTargetIntoGate then pushes the last point past a curved-left gate's (OR/NOR/
+  // XOR/XNOR) concave edge, so it disappears under the node's fill instead of stopping
+  // short of the visible curve — see gateLeftEdgeWireReach for why this is safe.
+  const points = extendTargetIntoGate(
+    localPoints ?? [
+      { x: sourceX, y: sourceY },
+      ...officialPoints,
+      { x: targetX, y: targetY }
+    ],
+    targetNode,
+    targetHdlPosition
+  );
+  const rawEdgePath = pathFromPoints(points);
   const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
     points,
     sourceHdlPosition,
@@ -456,10 +467,11 @@ export function OrthogonalEdge({
     }
     setIsEdgeHovered(true);
     setHovered(netKey);
+    setHoveredEdgeId(id);
     if (isMultiSelected) {
       setSelectionHoverActive(true);
     }
-  }, [netKey, setHovered, isMultiSelected, setSelectionHoverActive]);
+  }, [id, netKey, setHovered, setHoveredEdgeId, isMultiSelected, setSelectionHoverActive]);
 
   const releaseEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -469,9 +481,13 @@ export function OrthogonalEdge({
     hoverClearTimeoutRef.current = setTimeout(() => {
       setIsEdgeHovered(false);
       setSelectionHoverActive(false);
+      // Only clear the shared hovered-edge id if it's still ours — the pointer
+      // may have already moved onto (and claimed it for) a different edge
+      // during this grace period.
+      setHoveredEdgeId((current?: string) => (current === id ? undefined : current));
       hoverClearTimeoutRef.current = undefined;
     }, 500);
-  }, [setHovered, setSelectionHoverActive]);
+  }, [id, setHovered, setSelectionHoverActive, setHoveredEdgeId]);
 
   React.useEffect(() => () => {
     if (hoverClearTimeoutRef.current) {
@@ -858,6 +874,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Reroute
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">R</span>
+              </kbd>
             </button>
             <button
               type="button"
@@ -891,6 +910,9 @@ export function OrthogonalEdge({
               onMouseLeave={() => setPendingSelectionAction(undefined)}
             >
               Cut
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
             </button>
           </div>
         </foreignObject>

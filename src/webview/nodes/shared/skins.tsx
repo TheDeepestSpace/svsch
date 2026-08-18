@@ -1,6 +1,6 @@
 import React from 'react';
 import { diagramSizing } from '../../../diagram/constants';
-import { portSkinPath, interfaceSkinPath } from '../../../diagram/interfaceGeometry';
+import { portSkinPath, interfaceSkinPath, type PortSkinDirection } from '../../../diagram/interfaceGeometry';
 import { arrayStackLayer, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 
 export function muxSkinPath(width: number, height: number): string {
@@ -18,7 +18,7 @@ export function OutputPortSkin({ title, width, isArray = false }: { title: React
   return <PortSkin title={title} direction="output" width={width} isArray={isArray} />;
 }
 
-export function PortSkin({ title, direction, width, isArray = false, arrayWide = false }: { title: React.ReactNode; direction: 'input' | 'output' | 'harness'; width: number; isArray?: boolean; arrayWide?: boolean }): React.ReactElement {
+export function PortSkin({ title, direction, width, isArray = false, arrayWide = false }: { title: React.ReactNode; direction: PortSkinDirection; width: number; isArray?: boolean; arrayWide?: boolean }): React.ReactElement {
   const height = diagramSizing.portHeight;
   const skinHeight = diagramSizing.portSkinHeight;
   const noseLength = diagramSizing.portNoseLength;
@@ -135,7 +135,7 @@ export function MuxArrayLayers({ width, height }: { width: number; height: numbe
   );
 }
 
-export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output' | 'harness', width: number, height: number, wide = false): string {
+export function arrayStackSelectionPath(kind: 'rect' | 'mux' | PortSkinDirection, width: number, height: number, wide = false): string {
   const front = arrayStackLayer('front', wide);
   const back = arrayStackLayer('back', wide);
 
@@ -154,7 +154,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
     ].join(' ');
   }
 
-  if (kind === 'input' || kind === 'output' || kind === 'harness') {
+  if (kind === 'input' || kind === 'output' || kind === 'inout' || kind === 'harness') {
     const skinHeight = diagramSizing.portSkinHeight;
     const noseLength = diagramSizing.portNoseLength;
     const top = (height - skinHeight) / 2;
@@ -186,7 +186,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
       ].join(' ');
     }
 
-    if (kind === 'harness') {
+    if (kind === 'inout' || kind === 'harness') {
       return [
         `M ${front.dx} ${midY + front.dy}`,
         `L ${noseLength + front.dx} ${top + front.dy}`,
@@ -211,7 +211,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
   ].join(' ');
 }
 
-export function ArrayStackSelection({ kind, width, height, wide = false }: { kind: 'rect' | 'mux' | 'input' | 'output' | 'harness'; width: number; height: number; wide?: boolean }): React.ReactElement {
+export function ArrayStackSelection({ kind, width, height, wide = false }: { kind: 'rect' | 'mux' | PortSkinDirection; width: number; height: number; wide?: boolean }): React.ReactElement {
   return (
     <svg
       className="hdl-node-array-selection-skin"

@@ -1,0 +1,92 @@
+{
+  "nodes": [
+    {
+      "id": "port:instr_mem:addr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 216,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:addr",
+            "name": "addr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:instr_mem:instr",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 108
+      },
+      "width": 240,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:instr",
+            "name": "instr",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "select:instr_mem:mem[addr]",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 72
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "select",
+        "ports": [
+          {
+            "id": "port:sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:port:instr_mem:addr:select:instr_mem:mem_addr_:addr",
+      "source": "port:instr_mem:addr",
+      "target": "select:instr_mem:mem[addr]",
+      "sourceHandle": "port:addr",
+      "targetHandle": "port:sel",
+      "path": "M 240 48 L 264 48 L 504 48 L 504 96"
+    },
+    {
+      "id": "edge:select:instr_mem:mem_addr_:port:instr_mem:instr:instr",
+      "source": "select:instr_mem:mem[addr]",
+      "target": "port:instr_mem:instr",
+      "sourceHandle": "port:out",
+      "targetHandle": "port:instr",
+      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
+    }
+  ]
+}

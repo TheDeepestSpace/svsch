@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
+import { isInputSidePort } from '../diagram/portDirection';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
 import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
@@ -25,6 +26,7 @@ import {
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
+  extendTargetIntoGate,
   promotedStackFanoutPath,
   stableFragmentId,
   stackedLayerEdgeClass,
@@ -38,6 +40,7 @@ import { LatchNodeSvg } from '../webview/nodes/latch/LatchNodeSvg';
 import { LiteralNodeSvg } from '../webview/nodes/literal/LiteralNodeSvg';
 import { ReplicateNodeSvg } from '../webview/nodes/replicate/ReplicateNodeSvg';
 import { InverterNodeSvg } from '../webview/nodes/inverter/InverterNodeSvg';
+import { GateNodeSvg } from '../webview/nodes/gate/GateNodeSvg';
 import { PortNodeSvg } from '../webview/nodes/port/PortNodeSvg';
 import { CombNodeSvg } from '../webview/nodes/comb/CombNodeSvg';
 import { LoopNodeSvg } from '../webview/nodes/loop/LoopNodeSvg';
@@ -289,8 +292,8 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     return undefined;
   }
 
-  const sourcePort = connectionPortGeometry(source, edge.sourcePort);
-  const targetPort = connectionPortGeometry(target, edge.targetPort);
+  const sourcePort = connectionPortGeometry(source, edge.sourcePort, 'source');
+  const targetPort = connectionPortGeometry(target, edge.targetPort, 'target');
   if (!sourcePort || !targetPort) {
     return undefined;
   }
@@ -322,11 +325,13 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const officialPoints = edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
     ? normalizedOfficialPoints
     : avoidFeedbackObstacles(normalizedOfficialPoints, obstacles, sourcePosition, targetPosition);
-  const points = [{ ...sourcePoint }, ...officialPoints, { ...targetPoint }];
   const forceStraight = edge.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourcePoint.x - targetPoint.x) < 1;
   const targetHdlPosition = forceStraight && isVertical ? HdlPosition.Top : targetPosition;
   const sourceHdlPosition = forceStraight && isVertical ? HdlPosition.Bottom : sourcePosition;
+  // Pushes the final point past a curved-left gate's (OR/NOR/XOR/XNOR) concave edge — see
+  // the matching comment in OrthogonalEdge.tsx and gateLeftEdgeWireReach for why this is safe.
+  const points = extendTargetIntoGate([{ ...sourcePoint }, ...officialPoints, { ...targetPoint }], target, targetHdlPosition);
   const sourceInputs = aggregateInputs(source);
   const sourceIsComposition = sourceInputs.length > 1;
   const sourceIsArray = nodeIsArrayNode(source) || (source.kind === 'netLabel' && source.metadata?.cutNet?.isSourceStacked === true);
@@ -409,7 +414,7 @@ function sideToHdlPosition(side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'): HdlPositi
   return HdlPosition.Bottom;
 }
 
-function connectionPortGeometry(node: PositionedNode, portId?: string): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
+function connectionPortGeometry(node: PositionedNode, portId: string | undefined, role: 'source' | 'target'): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
   if (node.kind === 'netLabel') {
     const { width, height } = diagramNodeDimensions(node);
     const handleSide = node.metadata?.cutNet?.handleSide ?? 'left';
@@ -420,7 +425,7 @@ function connectionPortGeometry(node: PositionedNode, portId?: string): { offset
       default:       return { offset: { x: 0,          y: height / 2 }, side: 'WEST'  };
     }
   }
-  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId);
+  return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId, false, role);
 }
 
 function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
@@ -704,13 +709,13 @@ function convergingStackGradientId(rendered: RenderedEdge, layerId: ArrayStackLa
 
 function aggregateInputs(node: PositionedNode): DiagramPort[] {
   return node.ports
-    .filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown')
+    .filter(isInputSidePort)
     .filter((port) => port.width !== 'interface');
 }
 
 function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
   return nodes.map((node) => {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     return {
       id: node.id,
       x: node.position.x,
@@ -743,7 +748,7 @@ function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: 
 function renderNode(node: PositionedNode): string;
 function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[]): string;
 function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = []): string {
-  const { width, height } = diagramNodeDimensions(node);
+  const { width, height } = resolvedNodeDimensions(node);
   if (node.kind === 'netLabel') {
     const cutNet = node.metadata?.cutNet;
     const handleSide = (cutNet?.handleSide ?? 'left') as 'left' | 'right' | 'top' | 'bottom';
@@ -788,7 +793,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
   }
 
   const classes = nodeWrapperClasses(node);
-  const svgClasses = ['hdl-node-svg', node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '', node.kind === 'inverter' ? 'inverter-skin' : '']
+  const svgClasses = ['hdl-node-svg', node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '', node.kind === 'inverter' ? 'inverter-skin' : '', node.kind === 'gate' ? 'gate-skin' : '']
     .filter(Boolean)
     .join(' ');
   const content = renderNodeComponent(node, width, height, arrayConnections);
@@ -826,7 +831,7 @@ function nodeWarningIcon(node: PositionedNode, width: number, height: number): s
 function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
   if (nodeIsArrayNode(node)) return false;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return true;
-  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter') return true;
+  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter' || node.kind === 'gate') return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
 }
 
@@ -943,6 +948,7 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'literal') return LiteralNodeSvg;
   if (node.kind === 'replicate') return ReplicateNodeSvg;
   if (node.kind === 'inverter') return InverterNodeSvg;
+  if (node.kind === 'gate') return GateNodeSvg;
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return PortNodeSvg;
   if (node.kind === 'comb') return CombNodeSvg;
   if (node.kind === 'loop') return LoopNodeSvg;
@@ -962,7 +968,7 @@ function nodeWrapperClasses(node: PositionedNode): string {
       || port?.typeName?.endsWith('_if')
       || port?.typeName?.endsWith('if')
     );
-    const isSkinnedPort = direction === 'input' || direction === 'output' || isInterfacePort;
+    const isSkinnedPort = direction === 'input' || direction === 'output' || direction === 'inout' || isInterfacePort;
     return [
       'svsch-node',
       'hdl-node',
@@ -1004,7 +1010,7 @@ function busWrapperClasses(node: PositionedNode): string {
   const sidePorts = isInterfaceInstance
     ? aggregatePorts.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'))
     : aggregatePorts;
-  const aggregateInputs = sidePorts.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const aggregateInputs = sidePorts.filter(isInputSidePort);
   const isComposition = node.kind === 'struct'
     ? role === 'composition'
     : isInterface
@@ -1039,7 +1045,7 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: 
   };
 
   for (const node of nodes) {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     includeBounds(bounds, node.position.x, node.position.y);
     includeBounds(bounds, node.position.x + size.width, node.position.y + size.height);
     if (node.warningNote) {

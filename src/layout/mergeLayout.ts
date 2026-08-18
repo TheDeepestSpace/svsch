@@ -5,7 +5,8 @@ import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
 import { ARRAY_STACK_LANE_OFFSET, ARRAY_STACK_WIDE_LANE_OFFSET } from '../webview/arrayStackGeometry';
 import type { SavedLayout, SavedModuleLayout, SavedNetCut } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth } from '../diagram/nodeSizing';
+import { diagramNodeDimensions, instanceParameterRows, inverterGeometryWidth, resolvedNodeDimensions } from '../diagram/nodeSizing';
+import { gateInputPortCenterY, muxInputPortCenterY } from '../diagram/muxGeometry';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
@@ -19,6 +20,7 @@ import {
 } from '../diagram/interfaceGeometry';
 import { routeDiagramWithLibavoid } from './libavoidRouter';
 import { routingObstacleMargins } from './routingObstacleGeometry';
+import { isInputSidePort } from '../diagram/portDirection';
 
 interface AutoLayoutResult {
   positions: Map<string, { x: number; y: number }>;
@@ -90,13 +92,16 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     const elk = elkLayout.positions.get(node.id);
     const fallback = defaultPosition(index, node.kind);
 
-    const position = (saved?.fixed) 
+    const position = (saved?.fixed)
       ? { x: saved.x, y: saved.y }
       : (elk ?? (saved ? { x: saved.x, y: saved.y } : fallback));
 
     return {
       ...node,
       fixed: saved?.fixed,
+      sizeOverride: saved?.width !== undefined && saved?.height !== undefined
+        ? { width: saved.width, height: saved.height }
+        : undefined,
       position: snapPosition(position, node.kind, structRole(node))
     };
   });
@@ -136,12 +141,13 @@ export async function buildViewModel(graph: DesignGraph, moduleName: string, lay
     // in their otherwise-clear corridor.
     [...positionedWithWarnings, ...cutProjection.nodes],
     candidates,
-    (nodeId, portId, includeLeadMargins) => renderedLeadPoint(
+    (nodeId, portId, includeLeadMargins, role) => renderedLeadPoint(
       nodeId,
       portId,
       routingNodesById,
       routingNodePositions,
-      includeLeadMargins
+      includeLeadMargins,
+      role
     )
   );
   const edgeLabels = assignEdgeNetLabels(routedDesignEdges, nodesById);
@@ -586,7 +592,7 @@ function tightBoundsForRegionNodes(nodeIds: string[], nodeById: Map<string, Posi
   for (const nodeId of nodeIds) {
     const node = nodeById.get(nodeId);
     if (!node) continue;
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     bounds.x = Math.min(bounds.x, node.position.x);
     bounds.y = Math.min(bounds.y, node.position.y);
     maxX = Math.max(maxX, node.position.x + size.width);
@@ -620,7 +626,7 @@ function boundsForPositionedNodes(nodes: PositionedNode[]): RegionBounds | undef
   let maxY = Number.NEGATIVE_INFINITY;
 
   for (const node of nodes) {
-    const size = diagramNodeDimensions(node);
+    const size = resolvedNodeDimensions(node);
     minX = Math.min(minX, node.position.x);
     minY = Math.min(minY, node.position.y);
     maxX = Math.max(maxX, node.position.x + size.width);
@@ -691,7 +697,7 @@ function columnizeFullyCutBoundaryPorts(
     const result = new Map<string, { x: number; y: number }>();
     let y = bodyBounds.y;
     for (const node of nodes) {
-      const size = diagramNodeDimensions(node);
+      const size = resolvedNodeDimensions(node);
       result.set(node.id, snapPosition({ x: anchorX(size.width), y }, node.kind, structRole(node)));
       y += size.height + rowGap;
     }
@@ -824,7 +830,38 @@ function buildNetCutProjection(
   const nodesById = new Map<string, DiagramNode>(positionedNodes.map((node) => [node.id, node]));
   const nodePositions = new Map(positionedNodes.map((node) => [node.id, node.position]));
 
-  for (const [netKey, { cut, edges: cutEdges }] of activeCuts) {
+  // Mutually exclusive generate arms can each carry their own edge to the
+  // same declared target (e.g. two case arms both driving the module's
+  // output) — every such edge still gets its own cut, same as any other
+  // declared net, so each arm's driver keeps a dead-end source label. But
+  // stacking a sink cut-net-end from every arm onto that one shared target
+  // port adds no extra meaning over a single one, so only the first cut to
+  // reach a given (target, label) pair gets a sink label/stub.
+  const seenSinkTargets = new Set<string>();
+
+  // Deterministic across nets too: which arm's sink label "wins" a shared
+  // target shouldn't depend on Map insertion order, so sort net entries by
+  // their own first (sorted) edge id, same tie-break used within a net.
+  //
+  // The target port a shared sink dedupes onto is always driven by exactly
+  // one of the mutually exclusive arms — never none of them — so the
+  // surviving label must come from whichever arm is actually elaborated
+  // active, not whichever arm's edge id happens to sort first. An inactive
+  // arm only wins when every arm reaching that target is inactive (dead
+  // code some other pass should be flagging, not this dedupe).
+  const netIsActive = (edges: DiagramEdge[]) => edges.some((edge) => edge.metadata?.generateActiveState !== 'inactive');
+  const sortedActiveCuts = [...activeCuts].sort(([, a], [, b]) => {
+    const aActive = netIsActive(a.edges) ? 0 : 1;
+    const bActive = netIsActive(b.edges) ? 0 : 1;
+    if (aActive !== bActive) {
+      return aActive - bActive;
+    }
+    const aFirst = [...a.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    const bFirst = [...b.edges].sort((x, y) => x.id.localeCompare(y.id))[0]?.id ?? '';
+    return aFirst.localeCompare(bFirst);
+  });
+
+  for (const [netKey, { cut, edges: cutEdges }] of sortedActiveCuts) {
     const sortedCutEdges = [...cutEdges].sort((a, b) => a.id.localeCompare(b.id));
     const firstEdge = sortedCutEdges[0];
     if (!firstEdge) {
@@ -835,7 +872,7 @@ function buildNetCutProjection(
     // typed something else into renders differently.
     const isRenamed = cut.defaultLabel !== undefined && cut.label !== cut.defaultLabel;
 
-    const sourceLead = renderedLeadPoint(cut.source.nodeId, cut.source.portId, nodesById, nodePositions);
+    const sourceLead = renderedLeadPoint(cut.source.nodeId, cut.source.portId, nodesById, nodePositions, true, 'source');
     if (!sourceLead) {
       continue;
     }
@@ -865,7 +902,8 @@ function buildNetCutProjection(
         aliasNames: visibleAliasNames(firstEdge.metadata?.aliasNames, firstEdge, nodesById)
       },
       moduleLayout,
-      labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label)
+      labelPositionForHandlePoint(sourceLead.point, sourceHandleSide, cut.label),
+      firstEdge
     );
     nodes.push(sourceLabelNode);
     endpointByLabelId.set(sourceLabelId, endpointKey(cut.source.nodeId, cut.source.portId));
@@ -884,10 +922,16 @@ function buildNetCutProjection(
     }));
 
     for (const edge of sortedCutEdges) {
-      const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+      const sinkDedupeKey = `${endpointKey(edge.target, edge.targetPort)}::${cut.label}`;
+      if (seenSinkTargets.has(sinkDedupeKey)) {
+        continue;
+      }
+
+      const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, true, 'target');
       if (!targetLead) {
         continue;
       }
+      seenSinkTargets.add(sinkDedupeKey);
 
       const sinkLabelId = cutLabelNodeId(netKey, 'sink', edge.id);
       if (cut.deferLabelPlacement) {
@@ -911,7 +955,8 @@ function buildNetCutProjection(
           aliasNames: visibleAliasNames(edge.metadata?.aliasNames, edge, nodesById)
         },
         moduleLayout,
-        labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label)
+        labelPositionForHandlePoint(targetLead.point, sinkHandleSide, cut.label),
+        edge
       );
       nodes.push(sinkLabelNode);
       endpointByLabelId.set(sinkLabelId, endpointKey(edge.target, edge.targetPort));
@@ -954,7 +999,7 @@ interface NodeBounds {
 }
 
 function nodeBounds(node: PositionedNode, position = node.position): NodeBounds {
-  const dimensions = diagramNodeDimensions(node);
+  const dimensions = resolvedNodeDimensions(node);
   return { ...position, width: dimensions.width, height: dimensions.height };
 }
 
@@ -1096,7 +1141,8 @@ function makeCutLabelNode(
   moduleName: string,
   cutNet: NonNullable<DiagramNode['metadata']>['cutNet'],
   moduleLayout: SavedModuleLayout,
-  fallbackPosition: { x: number; y: number }
+  fallbackPosition: { x: number; y: number },
+  template: DiagramEdge
 ): PositionedNode {
   const saved = moduleLayout.nodes[id];
   // Only a *pinned* (fixed) save wins over the geometry-derived fallback — a
@@ -1120,7 +1166,14 @@ function makeCutLabelNode(
         direction: cutNet?.role === 'source' ? 'input' : 'output'
       }
     ],
-    metadata: { cutNet },
+    metadata: {
+      cutNet,
+      // A cut end on a wire that lives inside an inactive generate arm must
+      // dim the same way the rest of that route does — otherwise the stub
+      // label is the one piece of the wire left at full opacity.
+      generateActiveState: template.metadata?.generateActiveState,
+      generateRegionId: template.metadata?.generateRegionId
+    },
     position,
     fixed: saved?.fixed
   };
@@ -1257,6 +1310,7 @@ async function autoLayoutMissingNodes(
   const regionBounds = new Map<string, RegionBounds>();
   const routePositions = new Map<string, { x: number; y: number }>();
   const nodeIds = new Set(nodes.map((node) => node.id));
+  const elkEdgeNodesById = new Map(nodes.map((node) => [node.id, node]));
   if (nodes.length === 0 && generateRegions.length === 0) {
     return { positions, routes, regionBounds };
   }
@@ -1276,7 +1330,7 @@ async function autoLayoutMissingNodes(
           useSavedPosition: true,
           extraPortMargins: netCutMargins.get(node.id)
         })),
-      edges: buildNodePlacementElkEdges(edges, nodeIds)
+      edges: buildNodePlacementElkEdges(edges, nodeIds, elkEdgeNodesById)
     });
 
     if (useCompoundGenerateLayout) {
@@ -1335,7 +1389,7 @@ async function autoLayoutMissingNodes(
         id: 'root',
         layoutOptions: routeLayoutOptions,
         children: routeChildren,
-        edges: buildRoutingElkEdges(edges, nodeIds)
+        edges: buildRoutingElkEdges(edges, nodeIds, elkEdgeNodesById)
       });
     } catch {
       // Hyperedge routing can fail in FIXED-position mode for some fan-out topologies
@@ -1345,12 +1399,12 @@ async function autoLayoutMissingNodes(
         id: 'root',
         layoutOptions: routeLayoutOptions,
         children: routeChildren,
-        edges: buildNodePlacementElkEdges(edges, nodeIds)
+        edges: buildNodePlacementElkEdges(edges, nodeIds, elkEdgeNodesById)
       });
     }
 
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
-    const projectedRoutes = projectElkRoutes(routeGraph.edges ?? [], edges);
+    const projectedRoutes = projectElkRoutes(routeGraph.edges ?? [], edges, nodesById);
     for (const [edgeId, route] of projectedRoutes) {
       if (!moduleLayout.edges?.[edgeId]?.routePoints) {
         const edge = edges.find((candidate) => candidate.id === edgeId);
@@ -1632,7 +1686,7 @@ function generateRegionDepth(region: GenerateRegion, regionById: Map<string, Gen
 }
 
 function isSourceBoundaryPortNode(node: DiagramNode): boolean {
-  return node.kind === 'port' && node.ports.some((port) => port.direction !== 'output');
+  return node.kind === 'port' && node.ports.some(isInputSidePort);
 }
 
 function isSinkBoundaryPortNode(node: DiagramNode): boolean {
@@ -1691,16 +1745,16 @@ export function elkNodeForDiagramNode(
   includeLeadMargins = false,
   extraPortMargins?: Map<string, { width: number; height: number }>
 ): ElkDiagramNode {
-  const { width, height } = diagramNodeDimensions(node);
+  const { width, height } = resolvedNodeDimensions(node);
   const grid = diagramSizing.gridSize;
   const role = structRole(node);
   const visiblePorts = node.kind === 'interface'
     ? node.ports.filter((port) => port.width !== 'interface' || role === 'modport' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'))
     : node.ports;
-  const inputs = visiblePorts.filter((port) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = visiblePorts.filter(isInputSidePort);
   const outputs = visiblePorts.filter((port) => port.direction === 'output');
 
-  const portGeometry = visiblePorts.map((port, index) => {
+  const portGeometry = visiblePorts.flatMap((port, index) => {
     let side: ElkPortSide = port.direction === 'output' ? 'EAST' : 'WEST';
     if (node.kind === 'port') {
       side = port.direction === 'output' ? 'WEST' : 'EAST';
@@ -1733,7 +1787,7 @@ export function elkNodeForDiagramNode(
     } else if (node.kind === 'register') {
       const clockSignal = registerClockSignal(node);
       const resetSignal = registerResetSignal(node);
-      const inputs = node.ports.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');
+      const inputs = node.ports.filter(isInputSidePort);
       const isReset = port.name === 'R' || port.name === resetSignal;
       const isClock = port.name === clockSignal || (!isReset && port.name !== 'D' && port.name !== 'Q' && port.name !== 'RV' && inputs.indexOf(port) === 1);
       const isRv = port.name === 'RV';
@@ -1752,7 +1806,7 @@ export function elkNodeForDiagramNode(
         portY = height;
       }
     } else if (node.kind === 'mux') {
-      const inputs = node.ports.filter(p => p.direction !== 'output');
+      const inputs = node.ports.filter(isInputSidePort);
       const isSelect = port.id === inputs[0]?.id;
       if (isSelect) {
         side = 'NORTH';
@@ -1767,7 +1821,7 @@ export function elkNodeForDiagramNode(
         portY = grid * (startUnit + sideInputIndex);
       }
     } else if (node.kind === 'select') {
-      const allInputs = node.ports.filter(p => p.direction !== 'output');
+      const allInputs = node.ports.filter(isInputSidePort);
       const topPorts = allInputs.filter((p) => p.name === 's' || p.name === 'sel' || p.name === 'width');
       const portIndex = topPorts.indexOf(port);
       if (portIndex >= 0) {
@@ -1800,6 +1854,17 @@ export function elkNodeForDiagramNode(
         portX = 0;
       }
       portY = height / 2;
+    } else if (node.kind === 'gate') {
+      if (port.direction === 'output') {
+        side = 'EAST';
+        portX = width;
+        portY = height / 2;
+      } else {
+        side = 'WEST';
+        portX = 0;
+        const inputIndex = Math.max(0, inputs.indexOf(port));
+        portY = gateInputPortCenterY(inputIndex, inputs.length, height);
+      }
     } else if (node.kind === 'port' || (node.kind === 'interface' && role === 'port')) {
       portY = height / 2;
     } else if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {
@@ -1829,7 +1894,7 @@ export function elkNodeForDiagramNode(
         const sidePorts = isInterfaceInstance
           ? visiblePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'))
           : visiblePorts;
-        const sideInputs = sidePorts.filter((p) => p.direction === 'input' || p.direction === 'inout' || p.direction === 'unknown');
+        const sideInputs = sidePorts.filter(isInputSidePort);
         const sideOutputs = sidePorts.filter((p) => p.direction === 'output');
 
         const isComposition = node.kind === 'struct'
@@ -1906,18 +1971,26 @@ export function elkNodeForDiagramNode(
       portY = genericNodePortTop(node) + grid * Math.max(0, sidePorts.indexOf(port)) + grid / 2;
     }
 
-    return {
-      id: endpointId(node.id, port.id),
-      side,
+    const base = {
       leadLength: includeLeadMargins ? leadOverride ?? elkLeadLengthForPort(side, port.id) : 0,
       index,
-      x: portX,
       y: portY,
       // The footprint of a net-cut label reserved on this port, if any — see
       // netCutPortMargins. Only ever set when includeLeadMargins is true;
       // extraPortMargins itself is only ever passed for the layout passes.
       cutLabelSize: includeLeadMargins ? extraPortMargins?.get(port.id) : undefined
     };
+
+    // A boundary inout port gets two ELK ports instead of one: the driven
+    // side (WEST/left) and the read side (EAST/right) — see endpointId.
+    if (node.kind === 'port' && port.direction === 'inout') {
+      return [
+        { ...base, id: endpointId(node.id, port.id, node, 'target'), side: 'WEST' as ElkPortSide, x: 0 },
+        { ...base, id: endpointId(node.id, port.id, node, 'source'), side: 'EAST' as ElkPortSide, x: width }
+      ];
+    }
+
+    return [{ ...base, id: endpointId(node.id, port.id), side, x: portX }];
   });
 
   const arrayLayerPad = nodeIsArrayNode(node) ? (nodeStackIsWide(node) ? ARRAY_STACK_WIDE_LANE_OFFSET : ARRAY_STACK_LANE_OFFSET) : 0;
@@ -2059,8 +2132,10 @@ function alignSimpleLeafNodes(
       continue;
     }
 
+    const peerRole: 'source' | 'target' = isSource ? 'target' : 'source';
+    const ownRole: 'source' | 'target' = isSource ? 'source' : 'target';
     const peerPortId = isSource ? edge.targetPort : edge.sourcePort;
-    if (!canAlignSimpleLeafToPeer(peer, peerPortId)) {
+    if (!canAlignSimpleLeafToPeer(peer, peerPortId, peerRole)) {
       continue;
     }
 
@@ -2071,18 +2146,18 @@ function alignSimpleLeafNodes(
     }
 
     const ownPortId = isSource ? edge.sourcePort : edge.targetPort;
-    const ownOffset = renderedPortOffset(node, ownPortId);
-    const peerOffset = renderedPortOffset(peer, peerPortId);
+    const ownOffset = renderedPortOffset(node, ownPortId, ownRole);
+    const peerOffset = renderedPortOffset(peer, peerPortId, peerRole);
     if (!ownOffset || !peerOffset) {
       continue;
     }
 
     const peerElkNode = elkNodeForDiagramNode(peer, false);
-    const peerElkPort = peerElkNode.ports.find((candidate) => candidate.id === endpointId(peer.id, peerPortId));
+    const peerElkPort = peerElkNode.ports.find((candidate) => candidate.id === endpointId(peer.id, peerPortId, peer, peerRole));
     const peerSide = peerElkPort?.properties['org.eclipse.elk.port.side'];
     if ((peerSide === 'NORTH' || peerSide === 'SOUTH') && node.kind === 'port') {
       const ownElkNode = elkNodeForDiagramNode(node, false);
-      const ownElkPort = ownElkNode.ports.find((candidate) => candidate.id === endpointId(node.id, ownPortId));
+      const ownElkPort = ownElkNode.ports.find((candidate) => candidate.id === endpointId(node.id, ownPortId, node, ownRole));
       const ownSide = ownElkPort?.properties['org.eclipse.elk.port.side'];
       const ownLeadOffset = ownSide === 'EAST'
         ? diagramSizing.edgeLeadLength
@@ -2111,9 +2186,9 @@ function alignSimpleLeafNodes(
   }
 }
 
-function canAlignSimpleLeafToPeer(node: DiagramNode, portId?: string): boolean {
+function canAlignSimpleLeafToPeer(node: DiagramNode, portId: string | undefined, role: 'source' | 'target'): boolean {
   const elkNode = elkNodeForDiagramNode(node, false);
-  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
+  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId, node, role));
   const side = port?.properties['org.eclipse.elk.port.side'] as ElkPortSide | undefined;
   if (!side || (side !== 'WEST' && side !== 'EAST')) {
     return false;
@@ -2202,10 +2277,11 @@ function genericNodePortTop(node: DiagramNode): number {
 export function renderedPortGeometry(
   node: DiagramNode,
   portId?: string,
-  includeLeadMargins = false
+  includeLeadMargins = false,
+  role: 'source' | 'target' = 'target'
 ): { offset: { x: number; y: number }; side: ElkPortSide } | undefined {
   const elkNode = elkNodeForDiagramNode(node, includeLeadMargins);
-  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
+  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId, node, role));
   if (!port || port.x === undefined || port.y === undefined) {
     return undefined;
   }
@@ -2218,9 +2294,9 @@ export function renderedPortGeometry(
   };
 }
 
-export function renderedPortOffset(node: DiagramNode, portId?: string): { x: number; y: number } | undefined {
+export function renderedPortOffset(node: DiagramNode, portId?: string, role: 'source' | 'target' = 'target'): { x: number; y: number } | undefined {
   const elkNode = elkNodeForDiagramNode(node, false);
-  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId));
+  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(node.id, portId, node, role));
   if (!port || port.x === undefined || port.y === undefined) {
     return undefined;
   }
@@ -2233,8 +2309,8 @@ function routeWithRenderedLeads(
   nodesById: Map<string, DiagramNode>,
   nodePositions: Map<string, { x: number; y: number }>
 ): Array<{ x: number; y: number }> {
-  const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions);
-  const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+  const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, true, 'source');
+  const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, true, 'target');
   if (!sourceLead || !targetLead) {
     return route;
   }
@@ -2246,8 +2322,8 @@ function routeWithRenderedLeads(
     || (targetNode?.kind === 'port' && (sourceLead.side === 'NORTH' || sourceLead.side === 'SOUTH'))
   );
   if (isSimpleVerticalFeed) {
-    const sourceHandle = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, false);
-    const targetHandle = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, false);
+    const sourceHandle = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, false, 'source');
+    const targetHandle = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, false, 'target');
     if (sourceHandle && targetHandle) {
       const candidate = directLeadRoute(insetVerticalBoundaryLead(sourceHandle, sourceNode?.kind === 'port'), insetVerticalBoundaryLead(targetHandle, targetNode?.kind === 'port'));
       // Only take the shortcut when the drop is monotonic (the wire approaches
@@ -2374,8 +2450,8 @@ function directRenderedLeadRoute(
   nodesById: Map<string, DiagramNode>,
   nodePositions: Map<string, { x: number; y: number }>
 ): Array<{ x: number; y: number }> | undefined {
-  const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions);
-  const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+  const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, true, 'source');
+  const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, true, 'target');
   if (!sourceLead || !targetLead) {
     return undefined;
   }
@@ -2467,8 +2543,8 @@ function repairSourceStems(
 ): void {
   for (const edge of edges) {
     const route = routes.get(edge.id);
-    const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions);
-    const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions);
+    const sourceLead = renderedLeadPoint(edge.source, edge.sourcePort, nodesById, nodePositions, true, 'source');
+    const targetLead = renderedLeadPoint(edge.target, edge.targetPort, nodesById, nodePositions, true, 'target');
     if (!route || !sourceLead || !targetLead) {
       continue;
     }
@@ -2614,7 +2690,7 @@ function routeObstacles(
     if (!position || excludeNodeIds?.has(nodeId)) {
       continue;
     }
-    const dimensions = diagramNodeDimensions(node);
+    const dimensions = resolvedNodeDimensions(node);
     obstacles.push({ ...position, ...dimensions });
   }
   return obstacles;
@@ -2650,7 +2726,8 @@ export function renderedLeadPoint(
   portId: string | undefined,
   nodesById: Map<string, DiagramNode>,
   nodePositions: Map<string, { x: number; y: number }>,
-  includeLeadMargins = true
+  includeLeadMargins = true,
+  role: 'source' | 'target' = 'target'
 ): { point: { x: number; y: number }; side: ElkPortSide } | undefined {
   const node = nodesById.get(nodeId);
   const position = nodePositions.get(nodeId);
@@ -2659,7 +2736,7 @@ export function renderedLeadPoint(
   }
 
   const elkNode = elkNodeForDiagramNode(node, includeLeadMargins);
-  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(nodeId, portId));
+  const port = elkNode.ports.find((candidate) => candidate.id === endpointId(nodeId, portId, node, role));
   if (!port || port.x === undefined || port.y === undefined) {
     return undefined;
   }
@@ -2729,25 +2806,35 @@ function removeRedundantRoutePoints(points: Array<{ x: number; y: number }>): Ar
   });
 }
 
-function endpointId(nodeId: string, portId?: string): string {
-  return endpointKey(nodeId, portId);
+// A boundary `port` node's `inout` direction exposes two independent attach
+// points on its hexagonal skin (see PortNodeSvg): driving edges land on the
+// left notch, edges reading the net leave from the right point. Every other
+// node/port keeps its single base id — only this one case needs a second ELK
+// port, so the suffix is opt-in via `node` + `role` rather than baked into
+// every caller.
+function endpointId(nodeId: string, portId: string | undefined, node?: DiagramNode, role?: 'source' | 'target'): string {
+  const base = endpointKey(nodeId, portId);
+  if (role && node?.kind === 'port' && node.ports[0]?.direction === 'inout') {
+    return `${base}::${role === 'target' ? 'in' : 'out'}`;
+  }
+  return base;
 }
 
 function netKey(edge: DiagramEdge): string {
   return edgeNetKey(edge);
 }
 
-function buildNodePlacementElkEdges(edges: DiagramEdge[], nodeIds: Set<string>): Array<{ id: string; sources: string[]; targets: string[] }> {
+function buildNodePlacementElkEdges(edges: DiagramEdge[], nodeIds: Set<string>, nodesById: Map<string, DiagramNode>): Array<{ id: string; sources: string[]; targets: string[] }> {
   return edges
     .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
     .map((edge) => ({
       id: edge.id,
-      sources: [endpointId(edge.source, edge.sourcePort)],
-      targets: [endpointId(edge.target, edge.targetPort)]
+      sources: [endpointId(edge.source, edge.sourcePort, nodesById.get(edge.source), 'source')],
+      targets: [endpointId(edge.target, edge.targetPort, nodesById.get(edge.target), 'target')]
     }));
 }
 
-function buildRoutingElkEdges(edges: DiagramEdge[], nodeIds: Set<string>): Array<{ id: string; sources: string[]; targets: string[] }> {
+function buildRoutingElkEdges(edges: DiagramEdge[], nodeIds: Set<string>, nodesById: Map<string, DiagramNode>): Array<{ id: string; sources: string[]; targets: string[] }> {
   const validEdges = edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target));
   const byNet = new Map<string, DiagramEdge[]>();
   for (const edge of validEdges) {
@@ -2761,15 +2848,15 @@ function buildRoutingElkEdges(edges: DiagramEdge[], nodeIds: Set<string>): Array
     if (netEdges.length > 1) {
       elkEdges.push({
         id: `net:${key}`,
-        sources: [endpointId(netEdges[0].source, netEdges[0].sourcePort)],
-        targets: netEdges.map((edge) => endpointId(edge.target, edge.targetPort))
+        sources: [endpointId(netEdges[0].source, netEdges[0].sourcePort, nodesById.get(netEdges[0].source), 'source')],
+        targets: netEdges.map((edge) => endpointId(edge.target, edge.targetPort, nodesById.get(edge.target), 'target'))
       });
     } else {
       const edge = netEdges[0];
       elkEdges.push({
         id: edge.id,
-        sources: [endpointId(edge.source, edge.sourcePort)],
-        targets: [endpointId(edge.target, edge.targetPort)]
+        sources: [endpointId(edge.source, edge.sourcePort, nodesById.get(edge.source), 'source')],
+        targets: [endpointId(edge.target, edge.targetPort, nodesById.get(edge.target), 'target')]
       });
     }
   }
@@ -2873,7 +2960,8 @@ function pointsEqual(a: { x: number; y: number }, b: { x: number; y: number }): 
 
 export function projectElkRoutes(
   elkEdges: ElkEdgeWithSections[],
-  diagramEdges: DiagramEdge[]
+  diagramEdges: DiagramEdge[],
+  nodesById?: Map<string, DiagramNode>
 ): Map<string, Array<{ x: number; y: number }>> {
   const byNet = new Map<string, DiagramEdge[]>();
   for (const edge of diagramEdges) {
@@ -2893,8 +2981,8 @@ export function projectElkRoutes(
       : diagramEdges.filter((edge) => edge.id === elkEdge.id);
 
     for (const edge of candidates) {
-      const source = endpointId(edge.source, edge.sourcePort);
-      const target = endpointId(edge.target, edge.targetPort);
+      const source = endpointId(edge.source, edge.sourcePort, nodesById?.get(edge.source), 'source');
+      const target = endpointId(edge.target, edge.targetPort, nodesById?.get(edge.target), 'target');
       const route = stitchSections(elkEdge.sections, source, target);
       if (route && route.length >= 2) {
         routes.set(edge.id, route);
@@ -3257,7 +3345,12 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
     if (isFixed) {
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
-        fixed: true
+        fixed: true,
+        // `node.sizeOverride` reflects this node's full current resize state
+        // (set, or explicitly absent after a revert) in every caller that
+        // threads a complete node list through here — so it's safe to persist
+        // verbatim rather than fall back to whatever was previously saved.
+        ...(node.sizeOverride ? { width: node.sizeOverride.width, height: node.sizeOverride.height } : {})
       };
     }
   }
@@ -3267,6 +3360,40 @@ export function mergeNodePositions(layout: SavedLayout, moduleName: string, node
     nodes: mergedNodes
   };
   return next;
+}
+
+/**
+ * Clears a node's manual resize override (the "revert to canonical" control)
+ * while leaving its saved position/fixed state untouched — resizing and
+ * position-pinning are orthogonal, so reverting size alone must not release
+ * the node back to auto-layout.
+ */
+export function revertNodeSize(layout: SavedLayout, moduleName: string, nodeId: string): SavedLayout {
+  const existing = layout.modules[moduleName];
+  const saved = existing?.nodes[nodeId];
+  if (!existing || !saved || (saved.width === undefined && saved.height === undefined)) {
+    return layout;
+  }
+
+  const { width: _width, height: _height, ...rest } = saved;
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: {
+        ...existing,
+        nodes: { ...existing.nodes, [nodeId]: rest }
+      }
+    }
+  };
+}
+
+/** Clears the manual size override from every selected node in one update. */
+export function revertNodeSizes(layout: SavedLayout, moduleName: string, nodeIds: string[]): SavedLayout {
+  return nodeIds.reduce(
+    (nextLayout, nodeId) => revertNodeSize(nextLayout, moduleName, nodeId),
+    layout
+  );
 }
 
 export function mergeRegionBounds(layout: SavedLayout, moduleName: string, regions: PositionedGenerateRegion[]): SavedLayout {
@@ -3378,7 +3505,8 @@ export function mergeRelayoutSelection(
     if (released.has(node.id)) {
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
-        fixed: false
+        fixed: false,
+        ...(node.sizeOverride ? { width: node.sizeOverride.width, height: node.sizeOverride.height } : {})
       };
       continue;
     }
@@ -3386,7 +3514,8 @@ export function mergeRelayoutSelection(
     if (isFixed) {
       mergedNodes[node.id] = {
         ...snapPosition(node.position, node.kind, structRole(node)),
-        fixed: true
+        fixed: true,
+        ...(node.sizeOverride ? { width: node.sizeOverride.width, height: node.sizeOverride.height } : {})
       };
     }
   }

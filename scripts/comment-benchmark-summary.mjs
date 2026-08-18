@@ -3,21 +3,20 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  renderSuiteChart,
   renderStackedSuiteChart,
   renderDeltaTableMarkdown,
   renderStackedCsv,
   computeDeltaRows,
+  computeAverageDelta,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
-// Charts with few enough entries to label legibly (vscode-version columns for
-// system) keep x-axis names and per-bar delta text. visual (one column per
-// spec file/test) can run into the dozens, so its chart drops labels in
-// favor of showing every bar, however thin — it also gets a full CSV (both
-// elaboration and rendering values, plus their sum) so the exact numbers
-// aren't lost along with the labels.
-const CHART_KEYS_WITH_LABELS = new Set(['system']);
+// visual (one column per spec file/test) can run into the dozens of entries,
+// so its chart drops x-axis labels and per-bar delta text in favor of showing
+// every bar, however thin — it also gets a full CSV (both elaboration and
+// rendering values, plus their sum) so the exact numbers aren't lost along
+// with the labels.
+const CHART_KEYS_WITH_LABELS = new Set();
 const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
 // One review comment covering every diagram-generation benchmark suite, with
@@ -45,10 +44,8 @@ if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
 
 // Which chart each benchmark suite belongs to, and how it's labeled there.
 // visual's two suites share one stacked chart (elaboration segment drawn
-// first since that's the Surelog/UHDM C++ path); system gets its own
-// single-panel chart.
+// first since that's the Surelog/UHDM C++ path).
 const METRIC_META = {
-  'system-diagram-generation-duration': { chartKey: 'system', chartTitle: 'System suite performance statistics', label: 'Duration', order: 0 },
   'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
   'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Rendering — webview paint', order: 1 },
 };
@@ -157,9 +154,7 @@ const csvFilenamesByKey = new Map();
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
   const showLabels = CHART_KEYS_WITH_LABELS.has(key);
-  const svg = key === 'visual'
-    ? renderStackedSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`, metrics, showLabels })
-    : renderSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run`, metrics, showLabels });
+  const svg = renderStackedSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`, metrics, showLabels });
   contentByFilename.set(`${key}.svg`, svg);
 
   if (CHART_KEYS_WITH_CSV.has(key)) {
@@ -173,6 +168,22 @@ for (const [key, group] of chartGroups) {
   }
 }
 const chartCommitSha = publishFiles(contentByFilename);
+
+// A one-line "how'd it move" per tracked metric, surfaced right after the
+// report header — so the headline number is visible without expanding any
+// suite's collapsed delta table first. Same order as METRIC_META.
+const summaryLines = [];
+for (const [, group] of chartGroups) {
+  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+  for (const metric of metrics) {
+    const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+    const avg = computeAverageDelta(rows);
+    if (!avg) continue;
+    const signMs = avg.avgNominal > 0 ? '+' : '';
+    const signPct = avg.avgPct > 0 ? '+' : '';
+    summaryLines.push(`- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`);
+  }
+}
 
 const sections = [];
 for (const [key, group] of chartGroups) {
@@ -207,6 +218,7 @@ const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
 const body = [
   startTag,
   `# Diagram generation benchmark — ${GITHUB_SHA.slice(0, 7)}`,
+  ...(summaryLines.length ? [summaryLines.join('\n')] : []),
   '',
   ...sections,
   '',

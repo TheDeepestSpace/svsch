@@ -18,7 +18,8 @@
             "direction": "output"
           }
         ]
-      }
+      },
+      "active": true
     },
     {
       "id": "cut-label:instance:top:g_if_on.u_if:port:y:source",
@@ -38,7 +39,8 @@
             "direction": "input"
           }
         ]
-      }
+      },
+      "active": true
     },
     {
       "id": "instance:top:g_case_def.u_case_def",
