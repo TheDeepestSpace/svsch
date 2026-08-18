@@ -1,4 +1,5 @@
 import type { Edge } from '@xyflow/react';
+import { diagramSizing } from '../../diagram/constants';
 import type { DiagramEdge, DiagramPort, PositionedGenerateRegion, PositionedNode } from '../../ir/types';
 import type { HdlFlowNode } from '../nodes/types';
 import type { RouteChange } from '../orthogonal';
@@ -30,6 +31,14 @@ export interface ActiveSplice extends SpliceResult {
   topLevel: boolean;
   /** The instance's position at the moment this splice's node positions were computed — diffed against its current position on every reattachment to rigidly translate the whole splice if the instance has since moved. */
   anchorInstancePosition: { x: number; y: number };
+  /**
+   * The instance node's own `sizeOverride` (usually undefined) as it arrived
+   * in the last server view, captured by applyActiveSplices right before the
+   * expanded size is written over it — persistence paths restore this so the
+   * expanded size never leaks into the host's saved layout as a manual
+   * resize (see main.tsx's stripExpandSplices).
+   */
+  baseSizeOverride?: { width: number; height: number };
 }
 
 function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
@@ -63,19 +72,31 @@ function toFlowEdge(edge: DiagramEdge, moduleName: string, onRouteChange: (chang
   } as Edge;
 }
 
-// Turns an expanded instance's own flow node into a dimmed backdrop rather
-// than dropping it: still the real node (parameters, port labels, outline
-// and all — nothing about its own rendering changes) and still draggable/
-// selectable (dragging it is exactly what re-anchors the splice above via
-// applyActiveSplices's dx/dy translation, and selecting it is what surfaces
-// the "Collapse" control in NodeSelectionToolbar), just faded behind
-// everything else so its outline still reads as "this is a module instance"
-// without competing with the unfolded content on top of it.
-function dimAsExpandGhost(node: HdlFlowNode): HdlFlowNode {
+// Turns an expanded instance's own flow node into the expanded frame itself:
+// grown (via a grow-only sizeOverride, in grid units) to the splice's
+// computed expandedSize so its body fully contains the unfolded child
+// diagram, and dimmed — still the real node (parameters, port labels,
+// outline and all) and still draggable/selectable (dragging it carries the
+// spliced content with it — see main.tsx's onNodesChange — and selecting it
+// is what surfaces the "Collapse" control in NodeSelectionToolbar). There is
+// no separate region outline: the node's own border is the boundary of the
+// expanded content.
+function dimAsExpandGhost(node: HdlFlowNode, splice: ActiveSplice): HdlFlowNode {
+  const grid = diagramSizing.gridSize;
   return {
     ...node,
     zIndex: EXPAND_GHOST_Z_INDEX,
-    className: [node.className, EXPAND_GHOST_CLASS].filter(Boolean).join(' ')
+    className: [node.className, EXPAND_GHOST_CLASS].filter(Boolean).join(' '),
+    data: {
+      ...node.data,
+      node: {
+        ...node.data.node,
+        sizeOverride: {
+          width: Math.ceil(splice.expandedSize.width / grid),
+          height: Math.ceil(splice.expandedSize.height / grid)
+        }
+      }
+    }
   };
 }
 
@@ -162,8 +183,12 @@ export function applyActiveSplices(
       };
     });
 
+    // The base node carries the instance's true persisted sizeOverride (if
+    // any) — remember it before the expanded size is written over it, so
+    // persistence paths can restore it (see ActiveSplice.baseSizeOverride).
+    splice.baseSizeOverride = instanceNode.data.node.sizeOverride;
     nodes = [
-      ...nodes.map((node) => (node.id === splice.flowInstanceId ? dimAsExpandGhost(node) : node)),
+      ...nodes.map((node) => (node.id === splice.flowInstanceId ? dimAsExpandGhost(node, splice) : node)),
       ...translatedNodes.map((n) => toFlowNode(n, moduleName))
     ];
     edges = [...edges, ...splice.edges.map((edge) => toFlowEdge(edge, moduleName, onRouteChange))];
@@ -203,7 +228,18 @@ export function syncSpliceCache(
     }
     splices.set(namespace, {
       ...splice,
-      region,
+      // Expand-region bounds are defined as exactly the expanded node's rect
+      // (see splice.ts) — recompute from the instance's live position rather
+      // than trusting the regions array, which node-drags don't update.
+      region: {
+        ...region,
+        bounds: {
+          x: instanceNode.position.x,
+          y: instanceNode.position.y,
+          width: splice.expandedSize.width,
+          height: splice.expandedSize.height
+        }
+      },
       nodes: updatedNodes,
       anchorInstancePosition: { ...instanceNode.position }
     });

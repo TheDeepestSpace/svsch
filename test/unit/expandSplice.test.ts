@@ -70,10 +70,69 @@ describe('spliceExpandedInstance', () => {
     expect(clkNode.metadata?.boundaryPort?.outerSide).toBe('left');
     expect(clkNode.position.x).toBe(instancePosition.x);
     // Output port -> boundary node's outer (right) edge sits at the
-    // instance's right edge.
+    // *expanded* node's right border (the node itself grows to contain the
+    // spliced diagram — its border is the frame).
     expect(sumNode.metadata?.boundaryPort?.outerSide).toBe('right');
     expect(sumNode.position.x + diagramNodeDimensions(sumNode).width)
-      .toBe(instancePosition.x + instanceSize.width);
+      .toBe(instancePosition.x + result.expandedSize.width);
+  });
+
+  it('grows the instance node to contain the spliced diagram with label clearances on every side', async () => {
+    const result = await spliceExpandedInstance(baseInput());
+
+    // Grow-only: never smaller than the instance's pre-expand size.
+    expect(result.expandedSize.width).toBeGreaterThanOrEqual(instanceSize.width);
+    expect(result.expandedSize.height).toBeGreaterThanOrEqual(instanceSize.height);
+    // Snapped to the grid.
+    expect(result.expandedSize.width % 24).toBe(0);
+    expect(result.expandedSize.height % 24).toBe(0);
+
+    const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'))!;
+    const regSize = diagramNodeDimensions(reg);
+    const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
+    const inputWidths = boundaryNodes
+      .filter((n) => n.metadata?.boundaryPort?.outerSide === 'left')
+      .map((n) => diagramNodeDimensions(n).width);
+    const outputWidths = boundaryNodes
+      .filter((n) => n.metadata?.boundaryPort?.outerSide === 'right')
+      .map((n) => diagramNodeDimensions(n).width);
+
+    // The internal diagram sits fully inside the expanded node, clear of the
+    // port-label columns on both sides and below the header row.
+    expect(reg.position.x).toBeGreaterThanOrEqual(instancePosition.x + Math.max(...inputWidths));
+    expect(reg.position.x + regSize.width)
+      .toBeLessThanOrEqual(instancePosition.x + result.expandedSize.width - Math.max(...outputWidths));
+    expect(reg.position.y).toBeGreaterThanOrEqual(instancePosition.y + 48); // below header text
+    expect(reg.position.y + regSize.height)
+      .toBeLessThanOrEqual(instancePosition.y + result.expandedSize.height);
+  });
+
+  it('still widens the node enough to separate the boundary label columns when the child has no internal nodes at all', async () => {
+    // e.g. `assign y = a` — every child node is a port, so the spliced
+    // content is just the two boundary columns and a pass-through wire.
+    const passThrough: DesignModule = {
+      name: 'wirey',
+      file: 'wirey.sv',
+      ports: [aPort, sumPort],
+      nodes: [
+        { id: 'port:a', kind: 'port', label: 'a', ports: [aPort] },
+        { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] }
+      ],
+      edges: [{ id: 'e-a-sum', source: 'port:a', target: 'port:sum', sourcePort: 'p:a', targetPort: 'p:sum' }]
+    };
+    const result = await spliceExpandedInstance({
+      ...baseInput(),
+      instancePorts: [aPort, sumPort],
+      childModule: passThrough
+    });
+
+    const left = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'left')!;
+    const right = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'right')!;
+    const gap = right.position.x - (left.position.x + diagramNodeDimensions(left).width);
+    // Room for the pass-through wire's Z-route between the two label columns
+    // (a lead leaving each inner handle) — otherwise it degenerates into a
+    // wrap-around loop.
+    expect(gap).toBeGreaterThan(48);
   });
 
   it('lays out the child\'s internal (non-port) nodes via elkjs, namespaced under the instance', async () => {
@@ -107,15 +166,21 @@ describe('spliceExpandedInstance', () => {
     expect(sumEdge?.targetPort).toBe('inner');
   });
 
-  it('produces a region shaped like the rest of the region overlay machinery, sized to contain every spliced node', async () => {
+  it('produces a region shaped like the rest of the region overlay machinery, with bounds exactly the expanded node\'s rect', async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     expect(result.region.id).toBe(expandRegionId('u0'));
     expect(result.region.kind).toBe('expand');
     expect(result.region.expandedInstance).toEqual({ instanceId: 'u0', childModuleName: 'adder', parentModuleName: 'top' });
     expect(new Set(result.region.nodeIds)).toEqual(new Set(result.nodes.map((n) => n.id)));
-    expect(result.region.bounds.width).toBeGreaterThan(0);
-    expect(result.region.bounds.height).toBeGreaterThan(0);
+    // The region is never rendered as its own frame — the expanded node is
+    // the frame, so the region's bounds are exactly the node's rect.
+    expect(result.region.bounds).toEqual({
+      x: instancePosition.x,
+      y: instancePosition.y,
+      width: result.expandedSize.width,
+      height: result.expandedSize.height
+    });
   });
 
   it('round-trips through toSavedLayout keyed by the child module\'s own (unnamespaced) node ids, boundary nodes excluded', async () => {

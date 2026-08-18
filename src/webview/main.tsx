@@ -272,7 +272,40 @@ function DiagramApp(): React.ReactElement {
       }
     }
 
-    onNodesChangeRaw([...adjusted, ...followers.values()]);
+    // Dragging an expanded instance's dimmed node carries its entire spliced
+    // subtree with it — the node's own border IS the expanded frame (there's
+    // no separate region outline to drag), so moving it must move the
+    // unfolded content live, not just re-anchor it after the drop. Processed
+    // as a queue because a carried member can itself be a (nested) expanded
+    // instance whose own members then need the same delta.
+    const spliceFollowers = new Map<string, any>();
+    const carryQueue = [...adjusted];
+    while (carryQueue.length > 0) {
+      const change = carryQueue.shift();
+      if (change.type !== 'position' || !change.position) continue;
+      const splice = [...spliceMapRef.current.values()].find((s) => s.flowInstanceId === change.id);
+      if (!splice) continue;
+      const owner = nodes.find((node) => node.id === change.id);
+      if (!owner) continue;
+      const dx = change.position.x - owner.position.x;
+      const dy = change.position.y - owner.position.y;
+      if (dx === 0 && dy === 0) continue;
+      for (const memberId of splice.region.nodeIds) {
+        if (changedIds.has(memberId) || spliceFollowers.has(memberId)) continue;
+        const member = nodes.find((node) => node.id === memberId);
+        if (!member) continue;
+        const memberChange = {
+          type: 'position',
+          id: memberId,
+          position: { x: member.position.x + dx, y: member.position.y + dy },
+          dragging: change.dragging
+        };
+        spliceFollowers.set(memberId, memberChange);
+        carryQueue.push(memberChange);
+      }
+    }
+
+    onNodesChangeRaw([...adjusted, ...followers.values(), ...spliceFollowers.values()]);
   }, [nodes, onNodesChangeRaw]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
@@ -302,6 +335,9 @@ function DiagramApp(): React.ReactElement {
       height: userSelectionRect.height / zoom
     };
     const inside = new Set(regions
+      // Expand regions render no frame of their own (the expanded instance's
+      // node is the frame) — a marquee selects that node instead.
+      .filter((region) => region.kind !== 'expand')
       .filter((region) => (
         region.bounds.x >= rect.x &&
         region.bounds.y >= rect.y &&
@@ -482,7 +518,7 @@ function DiagramApp(): React.ReactElement {
         type: 'edgeRoutesChanged',
         moduleName: view.moduleName,
         changes,
-        nodes: stripExpandSplices(flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))))
+        nodes: stripExpandSplices(flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))), spliceMapRef.current)
       });
     }
   }, [reactFlow, setEdges, view]);
@@ -726,7 +762,7 @@ function DiagramApp(): React.ReactElement {
         ...node.data.node,
         position: node.position,
         fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-      })));
+      })), spliceMapRef.current);
 
       if (key === 'r') {
         if (targetEdges.length === 1) {
@@ -992,7 +1028,7 @@ function DiagramApp(): React.ReactElement {
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName: view.moduleName,
-        nodes: stripExpandSplices(positioned),
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
         regions: stripExpandRegions(expandedRegions)
       });
       if (spliceMapRef.current.size > 0) {
@@ -1079,7 +1115,7 @@ function DiagramApp(): React.ReactElement {
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName: view.moduleName,
-        nodes: stripExpandSplices(positioned),
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
         regions: stripExpandRegions(update.regions)
       });
       if (spliceMapRef.current.size > 0) {
@@ -1126,7 +1162,7 @@ function DiagramApp(): React.ReactElement {
       // that's still tracking its port dynamically must not be forced fixed
       // just because it happened to be on screen.
       fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-    })));
+    })), spliceMapRef.current);
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
@@ -1263,7 +1299,6 @@ function DiagramApp(): React.ReactElement {
                     onRouteChange={handleRouteChange}
                     selectedRegionIds={selectedRegionIds}
                     selectRegion={selectRegion}
-                    onCollapseInstance={handleCollapseRegion}
                     spliceMapRef={spliceMapRef}
                   />
                 </ViewportPortal>
@@ -1417,7 +1452,6 @@ function GenerateRegionOverlay({
   onRouteChange,
   selectedRegionIds,
   selectRegion,
-  onCollapseInstance,
   spliceMapRef
 }: {
   moduleName: string;
@@ -1430,8 +1464,6 @@ function GenerateRegionOverlay({
   onRouteChange: (changes: RouteChange[], commit: boolean) => void;
   selectedRegionIds: Set<string>;
   selectRegion: (regionId: string) => void;
-  /** Collapses an "Expand instance in place" region (see issue #232) — a no-op for a real generate region id. */
-  onCollapseInstance: (regionId: string) => void;
   spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
@@ -1452,6 +1484,25 @@ function GenerateRegionOverlay({
     const affectedNodeIds = kind === 'move'
       ? nodeIdsForRegions(affectedRegionIds, regions)
       : new Set<string>();
+    // A moved region may contain an expanded instance's dimmed node — carry
+    // that instance's entire spliced subtree along (its expand region has no
+    // rendered frame of its own; the node is the frame). Fixpoint loop:
+    // a carried member can itself be a nested expanded instance.
+    if (kind === 'move') {
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const splice of spliceMapRef.current.values()) {
+          if (!affectedNodeIds.has(splice.flowInstanceId)) continue;
+          for (const memberId of splice.region.nodeIds) {
+            if (!affectedNodeIds.has(memberId)) {
+              affectedNodeIds.add(memberId);
+              grew = true;
+            }
+          }
+        }
+      }
+    }
     const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
     if (kind === 'move') {
       for (const edge of edges) {
@@ -1527,7 +1578,7 @@ function GenerateRegionOverlay({
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName,
-        nodes: stripExpandSplices(positioned),
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
         regions: stripExpandRegions(fixedRegions)
       });
       applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, true);
@@ -1546,6 +1597,11 @@ function GenerateRegionOverlay({
   return (
     <div className="generate-region-layer">
       {[...regions]
+        // An "Expand instance in place" region is pure machinery (membership
+        // for drag-carry and nesting) — the expanded instance's own enlarged
+        // node is its visible frame, so it never renders an outline, label,
+        // or resize handles of its own (see expandOverlay's dimAsExpandGhost).
+        .filter((region) => region.kind !== 'expand')
         .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
         .map((region) => (
         <div
@@ -1553,7 +1609,6 @@ function GenerateRegionOverlay({
           className={[
             'generate-region',
             region.isGenerateBlock ? 'generate-block' : '',
-            region.kind === 'expand' ? 'generate-region-expand' : '',
             region.activeState === 'active' ? 'generate-region-active' : '',
             region.activeState === 'inactive' ? 'generate-region-inactive' : '',
             region.invalid ? 'generate-region-invalid' : '',
@@ -1590,10 +1645,6 @@ function GenerateRegionOverlay({
             onPointerDown={(event) => startDrag(event, region, 'move')}
             onClick={(event) => event.stopPropagation()}
             onDoubleClick={() => {
-              if (region.kind === 'expand') {
-                onCollapseInstance(region.id);
-                return;
-              }
               const msg = {
                 type: 'navigateToRegion',
                 region: {
@@ -1606,7 +1657,7 @@ function GenerateRegionOverlay({
               console.log('NAVIGATE:', JSON.stringify(msg));
               vscode.postMessage(msg);
             }}
-            title={region.kind === 'expand' ? `${region.label} (double-click to collapse)` : region.label}
+            title={region.label}
           >
             {region.label}
           </button>
@@ -1688,33 +1739,46 @@ function NodeSelectionToolbar({
 
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
-  // whose actions only make sense for actual block selections. Spliced-in
-  // expand content is excluded the same way — see cutOutEdgesForSelection.
-  // An already-expanded instance's own node stays in `nodes` as a dimmed
-  // backdrop (see expandOverlay's dimAsExpandGhost) rather than being
-  // dropped, precisely so it's still selectable here — clicking it is how
-  // the "Collapse" control below gets surfaced.
-  const selected = useMemo(
-    () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id)),
+  // whose actions only make sense for actual block selections.
+  const selectedBlocks = useMemo(
+    () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel'),
     [nodes]
+  );
+  // Spliced-in expand content (see webview/expand) isn't real module IR the
+  // extension host knows about — every action except Expand/Collapse only
+  // applies to genuine blocks of the currently open module, so those actions
+  // work off this narrowed set (see cutOutEdgesForSelection for the same
+  // rule on the wire side).
+  const selected = useMemo(
+    () => selectedBlocks.filter((node) => !isExpandNamespacedId(node.id)),
+    [selectedBlocks]
   );
 
   // Same exclusion `selectedCuttableEdges` in OrthogonalEdge applies for the
   // wire "Cut" control — see cutOutEdgesForSelection.
   const cutOutEdges = useMemo(() => cutOutEdgesForSelection(nodes, edges), [nodes, edges]);
 
+  // An expanded instance's node carries the splice's computed expanded size
+  // as an injected sizeOverride (see expandOverlay's dimAsExpandGhost) —
+  // that's not a manual resize, so it must not surface "Revert Size".
   const resizedNodeIds = useMemo(
-    () => selected
-      .filter((node) => node.data.node.sizeOverride !== undefined)
-      .map((node) => node.id),
-    [selected]
+    () => {
+      const ghostIds = new Set([...spliceMapRef.current.values()].map((splice) => splice.flowInstanceId));
+      return selected
+        .filter((node) => node.data.node.sizeOverride !== undefined && !ghostIds.has(node.id))
+        .map((node) => node.id);
+    },
+    [selected, spliceMapRef]
   );
 
   // "Expand instance in place" (issue #232 decision 8): only for a single
   // selected instance node, never a multi-select — and not for
   // array-of-instances nodes (decision 7; #169 tracks that separately).
-  const singleInstance = selected.length === 1 && selected[0].data.node.kind === 'instance' && !nodeIsArrayNode(selected[0].data.node)
-    ? selected[0]
+  // Computed over the full block selection (not the `selected` narrowing):
+  // an instance living inside an already-expanded splice is itself
+  // expand/collapse-able (decision 3 — recursive, no depth cap).
+  const singleInstance = selectedBlocks.length === 1 && selectedBlocks[0].data.node.kind === 'instance' && !nodeIsArrayNode(selectedBlocks[0].data.node)
+    ? selectedBlocks[0]
     : undefined;
 
   // If the selected instance is already expanded, its splice is keyed by
@@ -1727,12 +1791,13 @@ function NodeSelectionToolbar({
   const expandableInstance = activeSplice ? undefined : singleInstance;
 
   // Skip rendering an empty toolbar.
-  if (!overlayPortalNode || selected.length < 1
-    || (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0 && !expandableInstance && !activeSplice)) {
+  if (!overlayPortalNode || selectedBlocks.length < 1
+    || (selectedBlocks.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0 && !expandableInstance && !activeSplice)
+    || (selected.length < 1 && !expandableInstance && !activeSplice)) {
     return null;
   }
 
-  const bounds = selected.reduce((acc, node) => {
+  const bounds = (selected.length > 0 ? selected : selectedBlocks).reduce((acc, node) => {
     const size = resolvedNodeDimensions(node.data.node);
     return {
       x: Math.min(acc.x, node.position.x),
@@ -1784,7 +1849,7 @@ function NodeSelectionToolbar({
       type: 'relayoutSelection',
       moduleName,
       nodeIds: [...selectedIds],
-      nodes: stripExpandSplices(positioned)
+      nodes: stripExpandSplices(positioned, spliceMapRef.current)
     });
   };
 
@@ -1805,7 +1870,7 @@ function NodeSelectionToolbar({
       ...node.data.node,
       position: node.position,
       fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-    })));
+    })), spliceMapRef.current);
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
       return;
@@ -2073,8 +2138,19 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
 // edgeRoutesChanged, ...) must strip them first; spliced content instead
 // gets its own dedicated `saveExpandedInstanceLayout` message (see
 // persistActiveSplices).
-function stripExpandSplices(nodes: PositionedNode[]): PositionedNode[] {
-  return nodes.filter((node) => !isExpandNamespacedId(node.id));
+function stripExpandSplices(nodes: PositionedNode[], splices: Map<string, ActiveSplice>): PositionedNode[] {
+  const ghostOverrides = new Map(
+    [...splices.values()].map((splice) => [splice.flowInstanceId, splice.baseSizeOverride] as const)
+  );
+  return nodes
+    .filter((node) => !isExpandNamespacedId(node.id))
+    .map((node) => (
+      // An expanded instance's node carries the splice's computed expanded
+      // size as an injected sizeOverride (see expandOverlay's
+      // dimAsExpandGhost) — restore the instance's own persisted override so
+      // the expansion never saves as a manual resize.
+      ghostOverrides.has(node.id) ? { ...node, sizeOverride: ghostOverrides.get(node.id) } : node
+    ));
 }
 
 function stripExpandRegions(regions: PositionedGenerateRegion[]): PositionedGenerateRegion[] {

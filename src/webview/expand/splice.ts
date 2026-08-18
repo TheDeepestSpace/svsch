@@ -6,7 +6,7 @@ import type {
   PositionedGenerateRegion,
   PositionedNode
 } from '../../ir/types';
-import { diagramSizing, nodePortCenterOffset } from '../../diagram/constants';
+import { diagramSizing, nodePortCenterOffset, snapUpToGrid } from '../../diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
 
@@ -98,16 +98,33 @@ export interface SpliceResult {
   region: PositionedGenerateRegion;
   nodes: PositionedNode[];
   edges: DiagramEdge[];
+  /**
+   * The size the instance's own node must grow to so its body fully contains
+   * the spliced-in child diagram plus the label clearances (port-label
+   * columns on the left/right, header + parameter rows on top) — the node
+   * itself becomes the expanded frame (there is no separate visible outline).
+   * Applied to the dimmed instance node as a grow-only `sizeOverride`; the
+   * region's bounds are exactly this rect.
+   */
+  expandedSize: { width: number; height: number };
   /** child-module-local node id -> namespaced boundary node id, for rewiring the parent's edges that used to terminate on the instance itself. */
   boundaryNodeIdByChildPortName: Map<string, string>;
   /** Snapshot suitable for persisting via `saveExpandedInstanceLayout` (keyed by the child module's own local node ids, not namespaced). */
   toSavedLayout(nodes: PositionedNode[], bounds: PositionedGenerateRegion['bounds'], fixed: boolean, instanceOrigin: { x: number; y: number }): SavedExpandedInstanceLayout;
 }
 
-const REGION_INSET = diagramSizing.gridSize * 2;
-const REGION_MIN_WIDTH = diagramSizing.gridSize * 8;
-const REGION_MIN_HEIGHT = diagramSizing.gridSize * 5;
-const BOUNDARY_COLUMN_GAP = diagramSizing.gridSize * 3;
+/**
+ * Horizontal clearance between a boundary port's label column and the child
+ * diagram spliced inside the expanded node. Must comfortably exceed twice
+ * OrthogonalEdge's lead length (one lead leaving the boundary's inner handle,
+ * one entering the target node), or the default Z-route degenerates into a
+ * wrap-around loop for every port-to-node stub.
+ */
+const LABEL_COLUMN_GAP = diagramSizing.gridSize * 3;
+/** Vertical clearance between the node's header text/parameter rows and the diagram. */
+const HEADER_GAP = diagramSizing.gridSize;
+/** Body inset used for a side with no ports at all, and below the diagram. */
+const CONTENT_INSET = diagramSizing.gridSize * 2;
 
 async function loadElk(): Promise<any> {
   const elkModule = await import('elkjs/lib/elk.bundled.js');
@@ -198,17 +215,14 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   const inputs = instancePorts.filter(isInputSidePort);
   const outputs = instancePorts.filter((port) => port.direction === 'output');
 
-  const boundaryNodes: PositionedNode[] = [];
-  const boundaryNodeIdByChildPortName = new Map<string, string>();
-
-  const placeBoundaryColumn = (ports: DiagramPort[], side: 'left' | 'right') => {
-    ports.forEach((port, index) => {
+  // Boundary nodes are built (unpositioned) before anything is placed: their
+  // label widths determine how much horizontal clearance the expanded node
+  // needs on each side so the spliced diagram — and the wire stubs feeding
+  // it — never strikes through a port label.
+  const buildBoundaryColumn = (ports: DiagramPort[], side: 'left' | 'right') =>
+    ports.flatMap((port, index) => {
       const childPortNode = childPortNodesByName.get(port.name);
-      if (!childPortNode) return; // defensive: instance/module port lists should always agree by name
-
-      const anchorX = side === 'left' ? instancePosition.x : instancePosition.x + instanceSize.width;
-      const anchorY = instancePosition.y + nodePortCenterOffset(index + instanceParamRows);
-
+      if (!childPortNode) return []; // defensive: instance/module port lists should always agree by name
       const boundaryNode: DiagramNode = {
         id: childPortNode.id,
         kind: 'boundaryPort',
@@ -224,19 +238,21 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
           }
         }
       };
-      const { width, height } = diagramNodeDimensions(boundaryNode);
-      const position = side === 'left'
-        ? { x: anchorX, y: anchorY - height / 2 }
-        : { x: anchorX - width, y: anchorY - height / 2 };
-
-      const namespacedNodeId = namespacedId(namespace, childPortNode.id);
-      boundaryNodes.push({ ...boundaryNode, id: namespacedNodeId, position });
-      boundaryNodeIdByChildPortName.set(port.name, namespacedNodeId);
+      return [{ node: boundaryNode, port, index, side, size: diagramNodeDimensions(boundaryNode) }];
     });
-  };
 
-  placeBoundaryColumn(inputs, 'left');
-  placeBoundaryColumn(outputs, 'right');
+  const inputColumn = buildBoundaryColumn(inputs, 'left');
+  const outputColumn = buildBoundaryColumn(outputs, 'right');
+
+  // Padding between the node border and the spliced diagram: horizontally
+  // the widest port-label column on that side plus a gap (so a stub's
+  // vertical jog happens past the labels), vertically the node's own header
+  // text and parameter rows.
+  const columnPad = (column: typeof inputColumn) =>
+    column.length > 0 ? Math.max(...column.map((entry) => entry.size.width)) + LABEL_COLUMN_GAP : CONTENT_INSET;
+  const padLeft = columnPad(inputColumn);
+  const padRight = columnPad(outputColumn);
+  const padTop = snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize) + HEADER_GAP;
 
   const internalNodes = childModule.nodes.filter((node) => node.kind !== 'port');
 
@@ -264,13 +280,11 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       .filter((rect): rect is { x: number; y: number; width: number; height: number } => rect !== undefined);
     const elkBounds = unionBounds(elkRects) ?? { x: 0, y: 0, width: 0, height: 0 };
 
-    const leftAnchorX = instancePosition.x;
-    const avgAnchorY = boundaryNodes.length > 0
-      ? boundaryNodes.reduce((sum, n) => sum + n.position.y + diagramNodeDimensions(n).height / 2, 0) / boundaryNodes.length
-      : instancePosition.y + instanceSize.height / 2;
-
-    const translateX = leftAnchorX + instanceSize.width + BOUNDARY_COLUMN_GAP - elkBounds.x;
-    const translateY = avgAnchorY - (elkBounds.y + elkBounds.height / 2);
+    // Place the child diagram inside the (about-to-be-expanded) node body:
+    // its top-left corner lands one label-column in from the left border and
+    // just below the header/parameter rows.
+    const translateX = instancePosition.x + padLeft - elkBounds.x;
+    const translateY = instancePosition.y + padTop - elkBounds.y;
 
     // Fallback for any node ELK didn't return a position for (most commonly
     // every node at once, if the dynamic import of elkjs itself failed —
@@ -287,6 +301,50 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     id: namespacedId(namespace, node.id),
     position: internalPositions.get(node.id) ?? { x: instancePosition.x, y: instancePosition.y }
   }));
+
+  // The size the instance's own node grows to — the user's mental model is
+  // "the dashed outline is the side of the outer node now": the placed
+  // diagram's extents plus the label paddings, snapped up to the grid, and
+  // never smaller than the instance's pre-expand size (grow-only, matching
+  // sizeOverride semantics).
+  const contentRects = internalPositionedNodes.map((node) => {
+    const size = resolvedNodeDimensions(node);
+    return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
+  });
+  const content = unionBounds(contentRects);
+  const expandedSize = {
+    width: Math.max(
+      instanceSize.width,
+      // Even with no internal nodes at all (a pure port-to-port child, e.g.
+      // `assign y = a`), the two boundary label columns still need enough
+      // width between them for a pass-through wire's Z-route — otherwise
+      // the columns abut and every such wire degenerates into a loop.
+      snapUpToGrid(padLeft + padRight),
+      content ? snapUpToGrid(content.x + content.width + padRight - instancePosition.x) : 0
+    ),
+    height: Math.max(
+      instanceSize.height,
+      content ? snapUpToGrid(content.y + content.height + CONTENT_INSET - instancePosition.y) : 0
+    )
+  };
+
+  const boundaryNodes: PositionedNode[] = [];
+  const boundaryNodeIdByChildPortName = new Map<string, string>();
+  for (const { node, port, index, side, size } of [...inputColumn, ...outputColumn]) {
+    // Each boundary node's outer handle sits exactly on the expanded node's
+    // border at the port's own row: the left border doesn't move, so an
+    // input's pre-existing external wire needs no route change at all; an
+    // output's border (and its wire endpoint with it) moves right with the
+    // expanded width.
+    const anchorX = side === 'left' ? instancePosition.x : instancePosition.x + expandedSize.width;
+    const anchorY = instancePosition.y + nodePortCenterOffset(index + instanceParamRows);
+    const position = side === 'left'
+      ? { x: anchorX, y: anchorY - size.height / 2 }
+      : { x: anchorX - size.width, y: anchorY - size.height / 2 };
+    const namespacedNodeId = namespacedId(namespace, node.id);
+    boundaryNodes.push({ ...node, id: namespacedNodeId, position });
+    boundaryNodeIdByChildPortName.set(port.name, namespacedNodeId);
+  }
 
   const allNodes = [...boundaryNodes, ...internalPositionedNodes];
 
@@ -314,21 +372,14 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     };
   });
 
-  const padded = allNodes.map((node) => {
-    const size = resolvedNodeDimensions(node);
-    return { x: node.position.x - REGION_INSET, y: node.position.y - REGION_INSET, width: size.width + REGION_INSET * 2, height: size.height + REGION_INSET * 2 };
-  });
-  const content = unionBounds(padded) ?? {
+  // The region is pure machinery now (drag-sync membership, nesting,
+  // persistence) — it's never rendered as its own frame. Its bounds are
+  // exactly the expanded node's rect.
+  const bounds = {
     x: instancePosition.x,
     y: instancePosition.y,
-    width: Math.max(REGION_MIN_WIDTH, instanceSize.width),
-    height: Math.max(REGION_MIN_HEIGHT, instanceSize.height)
-  };
-  const bounds = {
-    x: snap(content.x),
-    y: snap(content.y),
-    width: Math.max(REGION_MIN_WIDTH, snap(content.width)),
-    height: Math.max(REGION_MIN_HEIGHT, snap(content.height))
+    width: expandedSize.width,
+    height: expandedSize.height
   };
 
   const region: PositionedGenerateRegion = {
@@ -350,6 +401,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     region,
     nodes: allNodes,
     edges,
+    expandedSize,
     boundaryNodeIdByChildPortName,
     toSavedLayout(nodes, saveBounds, fixed, instanceOrigin) {
       const nodesById: Record<string, SavedNodeLayout> = {};

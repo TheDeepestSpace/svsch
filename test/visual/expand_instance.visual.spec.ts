@@ -78,9 +78,16 @@ test.describe('expand instance in place visual', () => {
     const instance = page.locator('[data-node-kind="instance"]');
     await expect(instance).toHaveCount(1);
     const instanceId = await instance.getAttribute('data-node-id');
-    const box = await instance.boundingBox();
-    if (!box || !instanceId) throw new Error('Could not locate the "u1" instance node');
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    const collapsedBox = await instance.boundingBox();
+    if (!collapsedBox || !instanceId) throw new Error('Could not locate the "u1" instance node');
+    // Layout (offset) size is independent of the canvas zoom, unlike
+    // boundingBox — captured for the size-revert check after Collapse, which
+    // runs at a different zoom level than this point.
+    const collapsedLayoutSize = await instance.evaluate((el) => ({
+      width: (el as HTMLElement).offsetWidth,
+      height: (el as HTMLElement).offsetHeight
+    }));
+    await page.mouse.click(collapsedBox.x + collapsedBox.width / 2, collapsedBox.y + collapsedBox.height / 2);
 
     const expandButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Expand' });
     await expect(expandButton).toBeVisible();
@@ -111,29 +118,45 @@ test.describe('expand instance in place visual', () => {
 
     await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
-    await expect(page.locator('.generate-region-expand')).toHaveCount(1);
-    // The instance's own node stays on screen as a dimmed backdrop behind its
-    // spliced-in contents, not removed — see expandOverlay's dimAsExpandGhost.
-    // The dimming class lands on react-flow's own node wrapper (`data-id`),
-    // one level up from the `data-node-id` element our components render.
+    // The expanded instance's own node IS the frame: dimmed and grown so its
+    // body contains the whole spliced-in child diagram — there is no
+    // separate region outline rendered at all (see expandOverlay's
+    // dimAsExpandGhost). The dimming class lands on react-flow's own node
+    // wrapper (`data-id`), one level up from the `data-node-id` element our
+    // components render.
+    await expect(page.locator('.generate-region-expand')).toHaveCount(0);
     const ghostInstance = page.locator(`[data-node-id="${instanceId}"]`);
     const ghostInstanceWrapper = page.locator(`.react-flow__node[data-id="${instanceId}"]`);
     await expect(ghostInstance).toHaveCount(1);
     await expect(ghostInstanceWrapper).toHaveClass(/hdl-node-expand-ghost/);
+    const expandedBox = await ghostInstance.boundingBox();
+    if (!expandedBox) throw new Error('Could not locate the expanded "u1" instance node');
+    expect(expandedBox.width).toBeGreaterThan(collapsedBox.width);
+    expect(expandedBox.height).toBeGreaterThan(collapsedBox.height);
+    // Every spliced-in internal node sits fully inside the expanded node's body.
+    for (const spliced of await page.locator('[data-node-id^="expand:"]').all()) {
+      const kind = await spliced.getAttribute('data-node-kind');
+      if (kind === 'boundaryPort') continue; // sits astride the border by design
+      const splicedBox = await spliced.boundingBox();
+      if (!splicedBox) continue;
+      expect(splicedBox.x).toBeGreaterThanOrEqual(expandedBox.x);
+      expect(splicedBox.y).toBeGreaterThanOrEqual(expandedBox.y);
+      expect(splicedBox.x + splicedBox.width).toBeLessThanOrEqual(expandedBox.x + expandedBox.width);
+      expect(splicedBox.y + splicedBox.height).toBeLessThanOrEqual(expandedBox.y + expandedBox.height);
+    }
 
     await fitGraphView(page, 0.2);
     await expectGraphAndScreenshot(page, 'expand-instance-in-place.png');
 
-    // Re-selecting the (still-present, dimmed) instance node surfaces a
-    // "Collapse" control in the same selection toolbar "Expand" used. Click
-    // inside its header strip, offset from the top-left corner rather than
-    // dead-center or right on the corner: the boundary port columns sit
-    // directly on top of the ghost at its port rows (by design — they're
-    // anchored to the instance's own port positions) and its corner/edge
-    // resize handles sit right at its border, so either a center click or a
-    // corner click risks landing on something other than the ghost's own
-    // body. The node header strip, comfortably inset from both, is always
-    // clear.
+    // Re-selecting the (still-present, dimmed and enlarged) instance node
+    // surfaces a "Collapse" control in the same selection toolbar "Expand"
+    // used. Click inside its header strip, offset from the top-left corner
+    // rather than dead-center or right on the corner: the spliced-in child
+    // diagram now sits on top of the node's body (by design — the node is
+    // the frame) and its corner/edge resize handles sit right at its border,
+    // so either a center click or a corner click risks landing on something
+    // other than the node's own body. The node header strip, comfortably
+    // inset from both, is always clear.
     const ghostBox = await ghostInstance.boundingBox();
     if (!ghostBox) throw new Error('Could not locate the dimmed "u1" instance node');
     await page.mouse.click(ghostBox.x + 30, ghostBox.y + 15);
@@ -142,8 +165,13 @@ test.describe('expand instance in place visual', () => {
     await collapseButton.click();
 
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(0);
-    await expect(page.locator('.generate-region-expand')).toHaveCount(0);
     await expect(ghostInstance).toHaveCount(1);
     await expect(ghostInstanceWrapper).not.toHaveClass(/hdl-node-expand-ghost/);
+    // Collapsing reverts the node to its original (pre-expand) size — the
+    // expanded size is splice state, never persisted as a manual resize.
+    await expect.poll(() => ghostInstance.evaluate((el) => ({
+      width: (el as HTMLElement).offsetWidth,
+      height: (el as HTMLElement).offsetHeight
+    }))).toEqual(collapsedLayoutSize);
   });
 });
