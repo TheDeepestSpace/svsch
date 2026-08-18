@@ -459,6 +459,58 @@ describe('parser: concatenation as bus composition', () => {
     },
   );
 
+  // eslint-disable-next-line max-len
+  it('preserves operand widths for a parameterized replication and a part-select in a procedural concatenation (UHDM)', async () => {
+    const graph = await runParser(
+      'uhdm',
+      'imm_gen.sv',
+      `
+      module imm_gen #(
+        parameter DATA_WIDTH = 8
+      ) (
+        input  logic [11:0]           instr,
+        output logic [DATA_WIDTH-1:0] imm
+      );
+        always_comb begin
+          imm = {{(DATA_WIDTH-4){instr[3]}}, instr[3:0]};
+        end
+      endmodule
+    `,
+    );
+    const mod = graph.modules.imm_gen;
+    const bus = mod.nodes.find(
+      (n) =>
+        n.kind === 'bus' &&
+        n.ports.some((p) => p.direction === 'output' && p.connectedSignal === 'imm'),
+    );
+    const replicate = mod.nodes.find((n) => n.kind === 'replicate');
+
+    // The always_comb body is a single unconditional concat assignment, so the
+    // promoted bus-composition node drives "imm" directly — no wrapping "comb"
+    // alias node should be synthesized around it.
+    expect(mod.nodes.some((n) => n.kind === 'comb')).toBe(false);
+
+    expect(bus).toBeDefined();
+    expect(bus?.ports.find((p) => p.direction === 'output')).toMatchObject({ width: '[7:0]' });
+
+    expect(replicate).toBeDefined();
+    expect(replicate?.metadata?.repeatCount).toBe(4);
+    expect(replicate?.ports.find((p) => p.direction === 'output')?.width).toBe('[3:0]');
+
+    const replicatedOutputSignal = replicate?.ports.find(
+      (p) => p.direction === 'output',
+    )?.connectedSignal;
+    const replicatedInput = bus?.ports.find(
+      (p) => p.direction === 'input' && p.connectedSignal === replicatedOutputSignal,
+    );
+    const sliceInput = bus?.ports.find(
+      (p) => p.direction === 'input' && p.connectedSignal === 'instr[3:0]',
+    );
+
+    expect(replicatedInput).toMatchObject({ label: '[7:4]', width: '[3:0]' });
+    expect(sliceInput).toMatchObject({ label: '[3:0]', width: '[3:0]' });
+  });
+
   it('interprets {a, b} as a bus composition (UHDM)', async () => {
     const graph = await runParser('uhdm', 'bus_concat.sv', fixture('bus_concat.sv'));
     const mod = graph.modules.bus_concat;
@@ -641,6 +693,45 @@ describe('parser: concatenation as bus composition', () => {
           e.source === 'port:top:bus_in' && e.target === bus?.id && e.targetPort === 'in:bus_in',
       ),
     ).toBe(true);
+  });
+
+  // eslint-disable-next-line max-len
+  it('preserves tap widths for a procedural bus breakout with separate statements (UHDM)', async () => {
+    const graph = await runParser(
+      'uhdm',
+      'param_bus_breakout_procedural.sv',
+      `
+      module param_bus_breakout #(
+        parameter DATA_WIDTH = 8
+      )(
+        input  logic [DATA_WIDTH-1:0] data_i,
+        output logic [3:0]            hi_o,
+        output logic [3:0]            lo_o
+      );
+        always_comb begin
+          hi_o = data_i[7:4];
+          lo_o = data_i[3:0];
+        end
+      endmodule
+    `,
+    );
+    const mod = graph.modules.param_bus_breakout;
+    const bus = mod.nodes.find((n) => n.kind === 'bus' && n.label === 'data_i');
+
+    expect(bus).toBeDefined();
+    expect(bus?.ports.find((p) => p.label === '[7:4]')).toMatchObject({ width: '[3:0]' });
+    expect(bus?.ports.find((p) => p.label === '[3:0]')).toMatchObject({ width: '[3:0]' });
+
+    const busToHi = mod.edges.find((e) => e.source === bus?.id && e.signal === 'data_i[7:4]');
+    const busToLo = mod.edges.find((e) => e.source === bus?.id && e.signal === 'data_i[3:0]');
+    expect(busToHi).toMatchObject({
+      width: '[3:0]',
+      metadata: expect.objectContaining({ thick: true }),
+    });
+    expect(busToLo).toMatchObject({
+      width: '[3:0]',
+      metadata: expect.objectContaining({ thick: true }),
+    });
   });
 
   it('interprets {a, b} for structs as a bus composition (UHDM)', async () => {

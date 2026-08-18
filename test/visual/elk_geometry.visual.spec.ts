@@ -162,24 +162,43 @@ test.describe('elk geometry grid', () => {
         ),
       ) + margin;
     await page.waitForFunction(() => Boolean((window as any).reactFlowInstance));
-    await page.evaluate(
-      async (bounds) => {
-        const viewport = { width: window.innerWidth, height: window.innerHeight };
-        const zoom = Math.min(
-          viewport.width / (bounds.maxX - bounds.minX),
-          viewport.height / (bounds.maxY - bounds.minY),
-          1,
-        );
-        await (window as any).reactFlowInstance.setViewport({
-          x: (viewport.width - (bounds.maxX - bounds.minX) * zoom) / 2 - bounds.minX * zoom,
-          y: (viewport.height - (bounds.maxY - bounds.minY) * zoom) / 2 - bounds.minY * zoom,
-          zoom,
-        });
-      },
-      { minX, minY, maxX, maxY },
-    );
+    const applyOwnViewport = () =>
+      page.evaluate(
+        async (bounds) => {
+          const viewport = { width: window.innerWidth, height: window.innerHeight };
+          const zoom = Math.min(
+            viewport.width / (bounds.maxX - bounds.minX),
+            viewport.height / (bounds.maxY - bounds.minY),
+            1,
+          );
+          await (window as any).reactFlowInstance.setViewport({
+            x: (viewport.width - (bounds.maxX - bounds.minX) * zoom) / 2 - bounds.minX * zoom,
+            y: (viewport.height - (bounds.maxY - bounds.minY) * zoom) / 2 - bounds.minY * zoom,
+            zoom,
+          });
+        },
+        { minX, minY, maxX, maxY },
+      );
+    await applyOwnViewport();
     await injectOverlay(page, overlay);
     await waitForViewportTransformToSettle(page);
+
+    // The webview's own one-shot auto-fit (main.tsx's `setTimeout(fitView, 0)`
+    // once all nodes have mounted) can still land after the settle-check above
+    // under CPU contention, silently overwriting our fit with a differently
+    // clamped zoom (see the comment above). It only ever fires once per view,
+    // so reapply our own fit and re-settle until two consecutive rounds agree
+    // — that proves nothing external changed the viewport in between.
+    let lastTransform = '';
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await applyOwnViewport();
+      await waitForViewportTransformToSettle(page);
+      const transform = await page
+        .locator('.react-flow__viewport')
+        .evaluate((el) => getComputedStyle(el).transform);
+      if (transform === lastTransform) break;
+      lastTransform = transform;
+    }
     await page.waitForTimeout(100);
     recordPendingRenderDuration(page);
 
