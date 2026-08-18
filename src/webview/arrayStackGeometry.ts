@@ -3,7 +3,6 @@ import { diagramSizing } from '../diagram/constants';
 export const ARRAY_STACK_LANE_OFFSET = 4;
 /** Multi-bit array stacks spread wider (0.25 grid) so the thicker lines keep clear gaps. */
 export const ARRAY_STACK_WIDE_LANE_OFFSET = diagramSizing.gridSize * 0.25;
-export const ARRAY_STACK_LEAD_EDGE_GAP = 1.5;
 
 export interface ArrayStackLayer {
   id: ArrayStackLayerId;
@@ -64,4 +63,30 @@ export function arrayStackSkinLayersFor(wide: boolean): ArrayStackLayer[] {
 
 export function arrayStackLayerTrim(layerId: ArrayStackLayerId, wide = false): number {
   return diagramSizing.gridSize * arrayStackLayer(layerId, wide).trimUnits;
+}
+
+export type ArrayStackSide = 'left' | 'right' | 'top' | 'bottom';
+
+const ARRAY_STACK_MIRROR_LAYER: Record<ArrayStackLayerId, ArrayStackLayerId> = {
+  front: 'back',
+  middle: 'middle',
+  back: 'front'
+};
+
+/**
+ * Trim (lead length / wire setback) for a layer's junction on a given node side.
+ *
+ * A lane's junction with its routed wire must land OUTSIDE every sibling
+ * layer's skin, or the skins (painted after the edge layer) slice visibly
+ * across the wire. The clearance each lane needs depends on which layer is
+ * outermost on that side: on left/top the front layer (dx/dy = -offset) is
+ * outermost, so the natural front<middle<back trims already clear; on
+ * right/bottom the ordering inverts — the front lane must cross the middle
+ * and back skins to exit — so the trims are mirrored (front↔back) to keep
+ * every junction just past the outermost skin edge, exactly symmetric with
+ * the opposite side.
+ */
+export function arrayStackLayerSideTrim(layerId: ArrayStackLayerId, side: ArrayStackSide, wide = false): number {
+  const effectiveLayer = side === 'right' || side === 'bottom' ? ARRAY_STACK_MIRROR_LAYER[layerId] : layerId;
+  return arrayStackLayerTrim(effectiveLayer, wide);
 }
