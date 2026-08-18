@@ -1,0 +1,217 @@
+{
+  "nodes": [
+    {
+      "id": "expand:instance:top:u1::port:leaf:a",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 72
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::port:leaf:clk",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 48
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::port:leaf:y",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 48
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::reg:leaf:y",
+      "type": "hdl",
+      "position": {
+        "x": 624,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 108
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:u1:port:top:y:y",
+      "source": "expand:instance:top:u1::port:leaf:y",
+      "target": "port:top:y",
+      "sourceHandle": "outer",
+      "targetHandle": "port:y",
+      "path": "M 648 96 L 672 96 L 720 96 L 720 72 L 744 72 L 768 72"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:u1:a",
+      "source": "port:top:a",
+      "target": "expand:instance:top:u1::port:leaf:a",
+      "sourceHandle": "port:a",
+      "targetHandle": "outer",
+      "path": "M 144 120 L 168 120 L 336 120 L 360 120"
+    },
+    {
+      "id": "edge:port:top:clk:instance:top:u1:clk",
+      "source": "port:top:clk",
+      "target": "expand:instance:top:u1::port:leaf:clk",
+      "sourceHandle": "port:clk",
+      "targetHandle": "outer",
+      "path": "M 144 72 L 168 72 L 264 72 L 264 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:port:leaf:a:reg:leaf:y:a",
+      "source": "expand:instance:top:u1::port:leaf:a",
+      "target": "expand:instance:top:u1::reg:leaf:y",
+      "sourceHandle": "inner",
+      "targetHandle": "d",
+      "path": "M 552 120 L 576 120 L 600 120 L 600 72 L 624 72"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:port:leaf:clk:reg:leaf:y:clk",
+      "source": "expand:instance:top:u1::port:leaf:clk",
+      "target": "expand:instance:top:u1::reg:leaf:y",
+      "sourceHandle": "inner",
+      "targetHandle": "clk",
+      "path": "M 552 96 L 576 96 L 600 96 L 624 96"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:reg:leaf:y:port:leaf:y:y",
+      "source": "expand:instance:top:u1::reg:leaf:y",
+      "target": "expand:instance:top:u1::port:leaf:y",
+      "sourceHandle": "q",
+      "targetHandle": "inner",
+      "path": "M 720 72 L 744 72 L 768 72 L 768 192 L 432 192 L 432 96 L 456 96"
+    }
+  ],
+  "regions": [
+    {
+      "id": "expand:region::instance:top:u1",
+      "kind": "expand",
+      "label": "u1 : leaf",
+      "bounds": {
+        "x": 312,
+        "y": -24,
+        "width": 456,
+        "height": 192
+      }
+    }
+  ]
+}

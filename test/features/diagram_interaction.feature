@@ -859,6 +859,61 @@ Feature: Diagram Interaction
     And I click the Reroute control on the cut net label attached to "x"
     Then the cut net label attached to "x" should be at its noted position
 
+  Scenario: Expanding an instance in place inlines its child module, and Collapse restores it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    Then the "Expand" button should be visible
+    When I click the "Expand" button
+    Then I should see a boundary port node named "a"
+    And I should see a boundary port node named "y"
+    And I should not see an instance node "u1"
+    When I collapse the expanded instance "u1"
+    Then I should not see a boundary port node named "a"
+    And I should see an instance node "u1" of module "leaf"
+
+  Scenario: An expanded instance stays expanded across a diagram reload
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "a"
+    When I close and reopen the diagram
+    Then I should see a boundary port node named "a"
+
+  Scenario: The Expand button is not offered for a stacked instance array
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a [1:0], output logic y [1:0]);
+        leaf u_mux [1:0] (.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u_mux"
+    Then the "Expand" button should not be visible
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually

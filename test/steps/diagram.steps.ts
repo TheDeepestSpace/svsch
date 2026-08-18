@@ -950,6 +950,17 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await waitForLayoutChange(this, before, `After clicking ${label}`);
 });
 
+// Collapses an "Expand instance in place" region (issue #232) via its
+// dedicated "x" control (main.tsx's .generate-region-collapse) — distinct
+// from double-clicking the region title, which collapses it too but is
+// covered separately.
+When('I collapse the expanded instance {string}', async function (this: BddWorld, instanceLabel: string) {
+  const before = JSON.stringify(await readExtensionLayout(this));
+  const region = generateRegionLocator(this.webviewPage, instanceLabel);
+  await region.locator('.generate-region-collapse').click();
+  await waitForLayoutChange(this, before, `After collapsing ${instanceLabel}`);
+});
+
 // Keyboard equivalent of clicking the block-selection toolbar's "Cut out"
 // button — the `c` shortcut falls back to cutting every wire touching the
 // selected block(s) whenever no wire is itself hovered or selected (see
@@ -1380,6 +1391,28 @@ Then('I should see an instance node {string} of module {string}', async function
   const locator = this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`);
   await expect(locator).toBeVisible();
   await expect(locator).toContainText(moduleName);
+});
+
+Then('I should not see an instance node {string}', async function (this: BddWorld, instanceName: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, instanceName, 'instance');
+  if (id) {
+    await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveCount(0);
+  }
+});
+
+// "Expand instance in place" (issue #232) replaces an instance's own node
+// with `kind: 'boundaryPort'` standins for its child module's ports (see
+// BoundaryPortNode.tsx) once expanded.
+Then('I should see a boundary port node named {string}', async function (this: BddWorld, label: string) {
+  await expect(
+    this.webviewPage.locator('[data-node-kind="boundaryPort"] .hdl-boundary-port-text', { hasText: exactText(label) })
+  ).toBeVisible();
+});
+
+Then('I should not see a boundary port node named {string}', async function (this: BddWorld, label: string) {
+  await expect(
+    this.webviewPage.locator('[data-node-kind="boundaryPort"] .hdl-boundary-port-text', { hasText: exactText(label) })
+  ).toHaveCount(0);
 });
 
 Then('the instance node {string} should show parameter {string} as {string}', async function (this: BddWorld, instanceName: string, parameterName: string, value: string) {
