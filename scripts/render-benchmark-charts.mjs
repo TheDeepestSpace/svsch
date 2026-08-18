@@ -385,7 +385,13 @@ export function renderDeltaTableMarkdown(rows) {
   if (!avg) return null;
   const withBaseline = rows.filter((row) => !row.isNew && row.deltaPct !== undefined);
 
-  const header = '| | test | baseline | new | Δ (nominal) | Δ (%) |\n|---|---|---:|---:|---:|---:|';
+  // Worst/Best is folded into a bold prefix on the test name (rather than its
+  // own leading column), the two delta figures share one column, and base/new
+  // now share a column too ("174 → 240") — three data columns next to the
+  // wide test column leaves each one real room instead of getting squeezed
+  // down to character-by-character wrapping on narrow viewports (GitHub
+  // mobile in particular).
+  const header = '| test | base → new | Δ |\n|---|---:|---:|';
   const lines = [header];
 
   if (withBaseline.length > 10) {
@@ -394,7 +400,7 @@ export function renderDeltaTableMarkdown(rows) {
     const best = byPct.slice(-5).reverse();
     const formatRow = (label, row) => {
       const sign = row.deltaMs > 0 ? '+' : '';
-      return `| ${label} | ${escapeMarkdownCell(row.name)} | ${row.baseline} | ${row.value} | ${sign}${row.deltaMs} ms | ${sign}${row.deltaPct.toFixed(0)}% |`;
+      return `| **${label}** — ${escapeMarkdownCell(row.name)} | ${row.baseline} → ${row.value} | ${sign}${row.deltaMs} ms (${sign}${row.deltaPct.toFixed(0)}%) |`;
     };
     for (const row of worst) lines.push(formatRow('Worst', row));
     for (const row of best) lines.push(formatRow('Best', row));
@@ -402,7 +408,7 @@ export function renderDeltaTableMarkdown(rows) {
 
   const avgSignNominal = avg.avgNominal > 0 ? '+' : '';
   const avgSignPct = avg.avgPct > 0 ? '+' : '';
-  lines.push(`| Avg | across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms | ${avgSignPct}${avg.avgPct.toFixed(1)}% |`);
+  lines.push(`| **Avg** — across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms (${avgSignPct}${avg.avgPct.toFixed(1)}%) |`);
 
   return lines.join('\n');
 }
