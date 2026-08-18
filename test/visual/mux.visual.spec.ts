@@ -197,7 +197,8 @@ async function expectArrayStackEdgeLayerCoordinates(page: Page, edgeId: string, 
     .sort((a, b) => (a.start?.y ?? 0) - (b.start?.y ?? 0));
   expect(bySourceLead).toHaveLength(3);
   // Each lead's far endpoint should land exactly where its own layer's wire
-  // begins (same trim formula on both sides) — not some shared boundary —
+  // begins (same side-aware trim formula on both sides; right/bottom mirror
+  // front↔back so every junction clears the outermost sibling skin) —
   // so the lead and wire form one continuous line with no visible seam.
   expect(bySourceLead[0].start?.x).toBeCloseTo(bySourceLayer[0].start!.x, -1);
   expect(Math.abs((bySourceLead[0].end?.x ?? 0) - geometry.source.front!.right)).toBeLessThan(8);

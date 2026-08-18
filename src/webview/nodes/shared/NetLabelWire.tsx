@@ -2,7 +2,7 @@ import React from 'react';
 import { Position } from '@xyflow/react';
 import { diagramSizing } from '../../../diagram/constants';
 import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
-import { arrayStackLayer, arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import { arrayStackLayer, arrayStackLeadLayersFor, arrayStackLayerSideTrim } from '../../arrayStackGeometry';
 import type { PositionedNode } from '../../../ir/types';
 
 export function ArrayStackLeads({
@@ -31,7 +31,7 @@ export function ArrayStackLeads({
       focusable="false"
     >
       {arrayStackLeadLayersFor(wide).map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id, wide);
+        const trim = arrayStackLayerSideTrim(layer.id, side, wide);
         const shapeX = (side === 'top' || side === 'bottom')
           ? (x ?? width / 2) + layer.dx
           : side === 'left'

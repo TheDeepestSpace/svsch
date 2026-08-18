@@ -73,7 +73,7 @@
       "target": "port:top:y",
       "sourceHandle": "port:y",
       "targetHandle": "port:y",
-      "path": "M 565 76 L 763 76"
+      "path": "M 559 76 L 763 76"
     },
     {
       "id": "edge:port:top:a:instance:top:u_mux:a",
@@ -81,7 +81,7 @@
       "target": "instance:top:u_mux",
       "sourceHandle": "port:a",
       "targetHandle": "port:a",
-      "path": "M 157 76 L 355 76"
+      "path": "M 151 76 L 355 76"
     }
   ]
 }

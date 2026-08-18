@@ -424,7 +424,7 @@
       "target": "mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 589 532 L 595 532"
+      "path": "M 583 532 L 595 532"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_addr:ram",
@@ -432,7 +432,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:default",
-      "path": "M 997 532 L 1003 532"
+      "path": "M 991 532 L 1003 532"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
@@ -440,7 +440,7 @@
       "target": "mux:data_mem:ram_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:in",
-      "path": "M 1036 157 L 1012 148 L 1012 220 L 964 220 L 984 220"
+      "path": "M 1036 151 L 1012 148 L 1012 220 L 964 220 L 984 220"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:select:data_mem:ram_addr_:ram",
@@ -448,7 +448,7 @@
       "target": "select:data_mem:ram[addr]",
       "sourceHandle": "cut",
       "targetHandle": "port:in",
-      "path": "M 1045 364 L 1056 364"
+      "path": "M 1039 364 L 1056 364"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:source",
@@ -456,7 +456,7 @@
       "target": "cut-label:reg:data_mem:ram:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 1573 508 L 1579 508"
+      "path": "M 1567 508 L 1579 508"
     },
     {
       "id": "edge:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mux:data_mem:ram_addr:ram_addr__next",
@@ -464,7 +464,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "out",
       "targetHandle": "in:8_b0",
-      "path": "M 709 508 L 1003 508"
+      "path": "M 703 508 L 1003 508"
     },
     {
       "id": "edge:mux:data_mem:ram_addr:reg:data_mem:ram:ram_next",
@@ -472,7 +472,7 @@
       "target": "reg:data_mem:ram",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1165 508 L 1459 508"
+      "path": "M 1159 508 L 1459 508"
     },
     {
       "id": "edge:mux:data_mem:ram_read_addr:port:data_mem:read_data:read_data",

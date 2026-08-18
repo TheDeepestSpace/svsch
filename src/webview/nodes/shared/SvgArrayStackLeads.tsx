@@ -1,5 +1,5 @@
 import React from 'react';
-import { arrayStackLeadLayersFor, arrayStackLayerTrim } from '../../arrayStackGeometry';
+import { arrayStackLeadLayersFor, arrayStackLayerSideTrim } from '../../arrayStackGeometry';
 
 export function SvgArrayStackLeads({
   side,
@@ -31,7 +31,7 @@ export function SvgArrayStackLeads({
       aria-hidden="true"
     >
       {arrayStackLeadLayersFor(wide).map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id, wide);
+        const trim = arrayStackLayerSideTrim(layer.id, side, wide);
         // Rounded to whole pixels deliberately. `wide` mode's 1.5x lane scale
         // makes trims fractional (e.g. 4.5, 13.5), and computeStackedEdgeLayerPoints
         // (the routed wire's own trim math) never rounds — so a lead that matched

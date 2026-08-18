@@ -131,7 +131,7 @@
       "target": "reg:array_complete_reset:arr",
       "sourceHandle": "port:in_data",
       "targetHandle": "d",
-      "path": "M 211.5 78 L 400.5 78"
+      "path": "M 202.5 78 L 400.5 78"
     },
     {
       "id": "edge:port:array_complete_reset:rst:reg:array_complete_reset:arr:rst",
@@ -147,7 +147,7 @@
       "target": "port:array_complete_reset:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 571.5 78 L 760.5 78"
+      "path": "M 562.5 78 L 760.5 78"
     }
   ]
 }
