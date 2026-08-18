@@ -520,7 +520,7 @@
       "target": "target:stacked",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 541 436 L 595 436"
+      "path": "M 535 436 L 595 436"
     },
     {
       "id": "cut-stub:styled:stacked:source",
@@ -528,7 +528,7 @@
       "target": "cut-label:styled:stacked:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 133 436 L 163 436"
+      "path": "M 127 436 L 163 436"
     },
     {
       "id": "cut-stub:styled:struct:sink",
@@ -568,7 +568,7 @@
       "target": "target:wstacked",
       "sourceHandle": "cut",
       "targetHandle": "p",
-      "path": "M 547.5 510 L 592.5 510"
+      "path": "M 538.5 510 L 592.5 510"
     },
     {
       "id": "cut-stub:styled:wstacked:source",
@@ -576,7 +576,7 @@
       "target": "cut-label:styled:wstacked:source",
       "sourceHandle": "p",
       "targetHandle": "cut",
-      "path": "M 163.5 510 L 160.5 510"
+      "path": "M 154.5 510 L 160.5 510"
     }
   ]
 }

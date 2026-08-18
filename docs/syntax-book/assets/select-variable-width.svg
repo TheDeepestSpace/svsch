@@ -2339,6 +2339,7 @@ path.port-skin-body.port-skin-harness {
 .svsch-edges { opacity: 0.3; }
 .svsch-node { opacity: 0.3; }
 .svsch-node[data-node-id="select:top:bus[sel * 8+:8]"] { opacity: 1 !important; }
+.svsch-node[data-node-id="select:top:bus[sel * 8+:8]"] .svsch-array-stack-lead { opacity: 0.3; }
 
 :root {
   --vscode-editor-background: #1e1e1e;

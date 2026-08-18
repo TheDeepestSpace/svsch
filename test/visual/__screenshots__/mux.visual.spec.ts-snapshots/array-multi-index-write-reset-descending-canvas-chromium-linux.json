@@ -158,7 +158,7 @@
       "target": "reg:array_multi_index_write_reset_descending:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 571.5 150 L 760.5 150"
+      "path": "M 562.5 150 L 760.5 150"
     },
     {
       "id": "edge:port:array_multi_index_write_reset_descending:address:mux:array_multi_index_write_reset_descending:storage_addr:address",
@@ -198,7 +198,7 @@
       "target": "mux:array_multi_index_write_reset_descending:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 979.5 150 L 990 150 L 990 270 L 390 270 L 390 174 L 400.5 174"
+      "path": "M 970.5 150 L 990 150 L 990 270 L 390 270 L 390 174 L 400.5 174"
     }
   ]
 }
