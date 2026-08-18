@@ -2781,6 +2781,29 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outputEdge?.isStacked).toBeFalsy();
     });
 
+    it('emits a single read path for a continuous variable-index read of a locally written memory', async () => {
+      const graph = await runParser(backend, 'array_local_read_write.sv', fixture('array_local_read_write.sv'));
+      const mod = graph.modules.array_local_read_write;
+      expect(mod).toBeDefined();
+
+      // One scalar read mux, and no parallel select node duplicating the same read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
+      expect(mod.nodes.some((n) => n.kind === 'select')).toBe(false);
+
+      const readMux = readMuxes[0];
+      expect(readMux.isArrayNode ?? readMux.metadata?.isArrayNode).toBeFalsy();
+      expect(readMux.ports.find((p) => p.name === 'in')?.connectedSignal).toBe('ram');
+      expect(readMux.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('addr');
+      expect(readMux.ports.find((p) => p.name === 'out')?.connectedSignal).toBe('read_data');
+
+      // The read mux is the only driver of the output port.
+      const outputPort = mod.nodes.find((n) => n.id === 'port:array_local_read_write:read_data');
+      const outputDrivers = mod.edges.filter((e) => e.target === outputPort?.id);
+      expect(outputDrivers).toHaveLength(1);
+      expect(outputDrivers[0].source).toBe(readMux.id);
+    });
+
     it('marks edges between stacked nodes as isStacked', async () => {
       const graph = await arrayRegisterGraph();
       const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];
