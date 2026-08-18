@@ -421,6 +421,22 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
         ? repeat_expr
         : (repeat_count > 0 ? std::to_string(repeat_count) : repeat_expr);
 
+    // UHDM doesn't always fold a parameterized repeat-count expression (e.g.
+    // "DATA_WIDTH-4") to a constant when the replication is nested inside a
+    // procedural concatenation operand. Resolve it ourselves from already-known
+    // parameter values now (width math only — repeat_label/id_label above keep
+    // showing the symbolic expression), rather than leaving it to the later
+    // repairAggregateReplicationWidths pass: callers such as lowerCaseStatement
+    // read this node's output width immediately (to decide whether a zext is
+    // needed) and would otherwise see a stale 1-bit width and insert a spurious
+    // zext that a later width repair can't retract.
+    int width_repeat_count = repeat_count;
+    if (width_repeat_count <= 0 && !repeat_expr.empty()) {
+        if (auto resolved = evalReplicationCountExpr(repeat_expr, generateParameterValues(mod))) {
+            if (*resolved > 0) width_repeat_count = *resolved;
+        }
+    }
+
     std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
     std::string node_id = sanitizeId("replicate:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":x" + id_label);
     if (!is_procedural) {
@@ -477,7 +493,7 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
         int body_width_size = bitSizeFromWidth(body_width);
         body_size += body_width_size > 0 ? body_width_size : expressionBitSize(body);
     }
-    int total_size = body_size * std::max(1, repeat_count);
+    int total_size = body_size * std::max(1, width_repeat_count);
     std::string width = getWidth(expr);
     if (total_size > bitSizeFromWidth(width)) {
         width = total_size > 1 ? "[" + std::to_string(total_size - 1) + ":0]" : "[0:0]";
