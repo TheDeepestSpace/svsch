@@ -1,6 +1,5 @@
 import React from 'react';
 import { Position } from '@xyflow/react';
-import { diagramSizing } from '../../../diagram/constants';
 import { diagramNodeDimensions } from '../../../diagram/nodeSizing';
 import {
   arrayStackLayer,

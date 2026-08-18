@@ -80,7 +80,7 @@ export type ArrayStackSide = 'left' | 'right' | 'top' | 'bottom';
 const ARRAY_STACK_MIRROR_LAYER: Record<ArrayStackLayerId, ArrayStackLayerId> = {
   front: 'back',
   middle: 'middle',
-  back: 'front'
+  back: 'front',
 };
 
 /**
@@ -96,7 +96,12 @@ const ARRAY_STACK_MIRROR_LAYER: Record<ArrayStackLayerId, ArrayStackLayerId> = {
  * every junction just past the outermost skin edge, exactly symmetric with
  * the opposite side.
  */
-export function arrayStackLayerSideTrim(layerId: ArrayStackLayerId, side: ArrayStackSide, wide = false): number {
-  const effectiveLayer = side === 'right' || side === 'bottom' ? ARRAY_STACK_MIRROR_LAYER[layerId] : layerId;
+export function arrayStackLayerSideTrim(
+  layerId: ArrayStackLayerId,
+  side: ArrayStackSide,
+  wide = false,
+): number {
+  const effectiveLayer =
+    side === 'right' || side === 'bottom' ? ARRAY_STACK_MIRROR_LAYER[layerId] : layerId;
   return arrayStackLayerTrim(effectiveLayer, wide);
 }
