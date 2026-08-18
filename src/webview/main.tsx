@@ -46,7 +46,7 @@ import { InteractionContext, type NodeResizeHandle, type SelectionAction } from 
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
 import { childNamespace, isExpandNamespacedId, namespacedId, spliceExpandedInstance, type SavedExpandedInstanceLayout, type SpliceInput } from './expand/splice';
-import { applyActiveSplices, removeSpliceAndDescendants, syncSpliceCache, type ActiveSplice } from './expand/expandOverlay';
+import { applyActiveSplices, EXPAND_GHOST_CLASS, removeSpliceAndDescendants, syncSpliceCache, type ActiveSplice } from './expand/expandOverlay';
 
 interface GraphMessage {
   type: 'graph';
@@ -446,7 +446,13 @@ function DiagramApp(): React.ReactElement {
           dynamicExternalIds.delete(node.id);
         }
         const base = generateStateClass(node.data.node.metadata?.generateActiveState, 'generate-node');
-        const className = [base, wantInvalid ? 'svsch-node-invalid' : ''].filter(Boolean).join(' ') || undefined;
+        // Preserve the "Expand instance in place" dimming class (see
+        // expandOverlay's dimAsExpandGhost) — this effect otherwise rebuilds
+        // className from scratch and would silently strip it every time
+        // regions/nodes change.
+        const isExpandGhost = node.className?.split(' ').includes(EXPAND_GHOST_CLASS) ?? false;
+        const className = [base, wantInvalid ? 'svsch-node-invalid' : '', isExpandGhost ? EXPAND_GHOST_CLASS : '']
+          .filter(Boolean).join(' ') || undefined;
         const invalid = wantInvalid || undefined;
         const dataNode = (node.data.node.invalid === invalid && node.data.node.warningNote === warningNote)
           ? node.data.node
@@ -1278,6 +1284,8 @@ function DiagramApp(): React.ReactElement {
                   edges={edges}
                   pendingReselectIdsRef={pendingReselectIdsRef}
                   onExpandInstance={requestExpand}
+                  onCollapseInstance={handleCollapseRegion}
+                  spliceMapRef={spliceMapRef}
                 />
                 <MiniMap
                   pannable
@@ -1602,21 +1610,6 @@ function GenerateRegionOverlay({
           >
             {region.label}
           </button>
-          {region.kind === 'expand' && (
-            <button
-              type="button"
-              className="generate-region-collapse"
-              aria-label={`Collapse ${region.label}`}
-              title="Collapse"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onCollapseInstance(region.id);
-              }}
-            >
-              ×
-            </button>
-          )}
           {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
             <button
               key={side}
@@ -1678,13 +1671,18 @@ function NodeSelectionToolbar({
   nodes,
   edges,
   pendingReselectIdsRef,
-  onExpandInstance
+  onExpandInstance,
+  onCollapseInstance,
+  spliceMapRef
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
   onExpandInstance: (instanceNode: HdlFlowNode) => void;
+  /** Collapses an "Expand instance in place" region (see issue #232) — a no-op for a real generate region id. */
+  onCollapseInstance: (regionId: string) => void;
+  spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const { overlayPortalNode } = useContext(InteractionContext);
 
@@ -1692,6 +1690,10 @@ function NodeSelectionToolbar({
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
   // whose actions only make sense for actual block selections. Spliced-in
   // expand content is excluded the same way — see cutOutEdgesForSelection.
+  // An already-expanded instance's own node stays in `nodes` as a dimmed
+  // backdrop (see expandOverlay's dimAsExpandGhost) rather than being
+  // dropped, precisely so it's still selectable here — clicking it is how
+  // the "Collapse" control below gets surfaced.
   const selected = useMemo(
     () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id)),
     [nodes]
@@ -1711,13 +1713,22 @@ function NodeSelectionToolbar({
   // "Expand instance in place" (issue #232 decision 8): only for a single
   // selected instance node, never a multi-select — and not for
   // array-of-instances nodes (decision 7; #169 tracks that separately).
-  const expandableInstance = selected.length === 1 && selected[0].data.node.kind === 'instance' && !nodeIsArrayNode(selected[0].data.node)
+  const singleInstance = selected.length === 1 && selected[0].data.node.kind === 'instance' && !nodeIsArrayNode(selected[0].data.node)
     ? selected[0]
     : undefined;
 
+  // If the selected instance is already expanded, its splice is keyed by
+  // this node's own id (the top-level case) or by the enclosing splice's
+  // namespaced id (nested) — either way `flowInstanceId` is exactly this
+  // node's id in the current `nodes` array (see ActiveSplice's doc).
+  const activeSplice = singleInstance
+    ? [...spliceMapRef.current.values()].find((splice) => splice.flowInstanceId === singleInstance.id)
+    : undefined;
+  const expandableInstance = activeSplice ? undefined : singleInstance;
+
   // Skip rendering an empty toolbar.
   if (!overlayPortalNode || selected.length < 1
-    || (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0 && !expandableInstance)) {
+    || (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0 && !expandableInstance && !activeSplice)) {
     return null;
   }
 
@@ -1870,6 +1881,22 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Expand
+          </button>
+        )}
+        {activeSplice && (
+          <button
+            type="button"
+            className="svsch-selection-collapse-control"
+            title="Collapse this instance's unfolded diagram"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCollapseInstance(activeSplice.region.id);
+            }}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Collapse
           </button>
         )}
       </div>

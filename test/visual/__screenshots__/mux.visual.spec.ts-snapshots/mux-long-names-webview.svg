@@ -791,6 +791,23 @@ text {
   opacity: 1;
 }
 
+/* "Expand instance in place" (issue #232): the expanded instance's own node
+   stays on screen as a dimmed backdrop — full outline, parameters, port
+   labels and all — behind the unfolded content spliced on top of it (see
+   expandOverlay's dimAsExpandGhost). Same lift-on-select convention as
+   .generate-node-inactive above: selecting the ghost (to reveal the
+   "Collapse" control) restores full brightness rather than fading the
+   selection outline along with the rest of it. */
+.hdl-node-expand-ghost .hdl-node {
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+
+.react-flow__node.selected.hdl-node-expand-ghost .hdl-node {
+  filter: none;
+  opacity: 0.75;
+}
+
 .hdl-node-has-params {
   grid-template-rows: 16px var(--svsch-instance-param-height) calc(var(--svsch-node-header-height) - 16px) 1fr;
 }

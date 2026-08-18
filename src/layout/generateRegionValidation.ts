@@ -81,6 +81,13 @@ function classifyExternalBlocks(
   const regionIds = new Set<string>();
   const nodeIds = new Set<string>();
   for (const region of regions) {
+    // "Expand instance in place" (issue #232) regions are a client-only
+    // splice overlay, not a real SV generate arm (see
+    // PositionedGenerateRegion.expandedInstance's doc) — their dimmed
+    // "ghost" instance node (see expandOverlay's dimAsExpandGhost)
+    // intentionally sits inside the region's own bounds, so the generic
+    // "block overlaps an arm it doesn't belong to" check doesn't apply here.
+    if (region.kind === 'expand') continue;
     const owned = new Set(descendantNodeIds(region, regions));
     const ownedRegionIds = descendantRegionIdSet(region, regions);
     for (const node of nodes) {

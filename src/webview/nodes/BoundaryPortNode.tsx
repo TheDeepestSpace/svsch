@@ -34,6 +34,7 @@ export function BoundaryPortNode({
       data-node-id={node.id}
       data-node-kind={node.kind}
       title={`${node.label} (${boundary?.childModuleName ?? ''})`}
+      style={style}
     >
       {/* Both a source and target Handle at each id: the node is a pass-through,
           not a real source/sink, and (like an inout port elsewhere in this

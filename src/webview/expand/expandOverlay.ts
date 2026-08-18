@@ -6,6 +6,19 @@ import { isExpandNamespacedId, type SpliceResult } from './splice';
 
 export { isExpandNamespacedId };
 
+// Spliced boundary/internal nodes render above edges (matching every other
+// block node's zIndex in main.tsx's BLOCK_NODE_Z_INDEX) so an edge routed
+// through a boundary port's handle passes visually *underneath* its label
+// rather than striking through it — mirrors how any ordinary node's ports
+// already occlude the wires terminating on them. The dimmed instance "ghost"
+// (see applyActiveSplices) sits below edges instead, purely as a translucent
+// backdrop that never competes with real content for paint order.
+const SPLICE_NODE_Z_INDEX = 2;
+const EXPAND_GHOST_Z_INDEX = 0;
+
+/** CSS class marking an expanded instance's own node as a dimmed backdrop — see applyActiveSplices. */
+export const EXPAND_GHOST_CLASS = 'hdl-node-expand-ghost';
+
 /** One currently-expanded instance's live overlay state, cached independently of the server-driven `view` so it survives unrelated view refreshes (see main.tsx's spliceMapRef). */
 export interface ActiveSplice extends SpliceResult {
   namespace: string;
@@ -24,6 +37,7 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
     id: node.id,
     type: 'hdl',
     position: node.position,
+    zIndex: SPLICE_NODE_Z_INDEX,
     data: { node, moduleName, arrayConnections: [] }
   };
 }
@@ -49,19 +63,38 @@ function toFlowEdge(edge: DiagramEdge, moduleName: string, onRouteChange: (chang
   } as Edge;
 }
 
+// Turns an expanded instance's own flow node into a dimmed backdrop rather
+// than dropping it: still the real node (parameters, port labels, outline
+// and all — nothing about its own rendering changes) and still draggable/
+// selectable (dragging it is exactly what re-anchors the splice above via
+// applyActiveSplices's dx/dy translation, and selecting it is what surfaces
+// the "Collapse" control in NodeSelectionToolbar), just faded behind
+// everything else so its outline still reads as "this is a module instance"
+// without competing with the unfolded content on top of it.
+function dimAsExpandGhost(node: HdlFlowNode): HdlFlowNode {
+  return {
+    ...node,
+    zIndex: EXPAND_GHOST_Z_INDEX,
+    className: [node.className, EXPAND_GHOST_CLASS].filter(Boolean).join(' ')
+  };
+}
+
 function portNameById(ports: DiagramPort[]): Map<string, string> {
   return new Map(ports.map((port) => [port.id, port.name]));
 }
 
 /**
  * Merges every active "Expand" splice on top of an already-built base
- * nodes/edges/regions set: hides each expanded instance's own node, splices
- * in its boundary+internal nodes/edges, rewires whichever base edges used to
- * terminate on the instance so they land on the matching boundary node
- * instead (clearing their route so it re-derives from the new geometry —
- * see splice.ts's module doc for why no explicit route is needed at all),
- * and appends the splice's region (reusing the exact same `regions`
- * array/overlay/drag-sync GenerateRegionOverlay already provides — see
+ * nodes/edges/regions set: dims each expanded instance's own node into a
+ * translucent backdrop (still its full self — parameters, port labels,
+ * outline — just faded and pushed behind everything else, see
+ * EXPAND_GHOST_CLASS/EXPAND_GHOST_Z_INDEX), splices in its boundary+internal
+ * nodes/edges, rewires whichever base edges used to terminate on the
+ * instance so they land on the matching boundary node instead (clearing
+ * their route so it re-derives from the new geometry — see splice.ts's
+ * module doc for why no explicit route is needed at all), and appends the
+ * splice's region (reusing the exact same `regions` array/overlay/drag-sync
+ * GenerateRegionOverlay already provides — see
  * PositionedGenerateRegion.expandedInstance in ir/types.ts for why).
  *
  * Applied both (a) every time a fresh server `view` rebuilds the base
@@ -129,7 +162,10 @@ export function applyActiveSplices(
       };
     });
 
-    nodes = [...nodes.filter((node) => node.id !== splice.flowInstanceId), ...translatedNodes.map((n) => toFlowNode(n, moduleName))];
+    nodes = [
+      ...nodes.map((node) => (node.id === splice.flowInstanceId ? dimAsExpandGhost(node) : node)),
+      ...translatedNodes.map((n) => toFlowNode(n, moduleName))
+    ];
     edges = [...edges, ...splice.edges.map((edge) => toFlowEdge(edge, moduleName, onRouteChange))];
     extraRegions.push(region);
   }

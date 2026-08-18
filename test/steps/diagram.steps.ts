@@ -950,14 +950,28 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await waitForLayoutChange(this, before, `After clicking ${label}`);
 });
 
-// Collapses an "Expand instance in place" region (issue #232) via its
-// dedicated "x" control (main.tsx's .generate-region-collapse) — distinct
-// from double-clicking the region title, which collapses it too but is
-// covered separately.
+// Collapses an "Expand instance in place" region (issue #232) by selecting
+// its own (dimmed-backdrop) instance node and clicking the "Collapse"
+// control that surfaces in the selection toolbar — the same toolbar
+// "Expand" appears in, and the mirror image of "I click to select the block"
+// + "I click the {string} button" — distinct from double-clicking the region
+// title, which collapses it too but is covered separately.
 When('I collapse the expanded instance {string}', async function (this: BddWorld, instanceLabel: string) {
   const before = JSON.stringify(await readExtensionLayout(this));
-  const region = generateRegionLocator(this.webviewPage, instanceLabel);
-  await region.locator('.generate-region-collapse').click();
+  const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+  if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${instanceLabel}`);
+  // Click inside the header strip, offset from the top-left corner: the
+  // boundary port columns sit directly on top of the dimmed instance at its
+  // port rows (by design — see dimAsExpandGhost) and its resize handles sit
+  // right at its border, so a center or corner click risks landing on
+  // something other than the ghost's own body. The header strip, inset from
+  // both, is always clear.
+  await this.workbox.mouse.click(box.x + 30, box.y + 15);
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Collapse' });
+  await expect(button).toBeVisible();
+  await button.click();
   await waitForLayoutChange(this, before, `After collapsing ${instanceLabel}`);
 });
 
@@ -1398,6 +1412,16 @@ Then('I should not see an instance node {string}', async function (this: BddWorl
   if (id) {
     await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveCount(0);
   }
+});
+
+// An expanded instance's own node stays on screen as a dimmed backdrop
+// behind its spliced-in contents (see expandOverlay's dimAsExpandGhost),
+// rather than being removed — distinct from the plain "should not see an
+// instance node" check above, which asserts real absence from the DOM.
+Then('I should see a dimmed instance node {string}', async function (this: BddWorld, instanceName: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, instanceName, 'instance');
+  if (!id) throw new Error(`Could not find instance node "${instanceName}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(/hdl-node-expand-ghost/);
 });
 
 // "Expand instance in place" (issue #232) replaces an instance's own node

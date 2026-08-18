@@ -112,16 +112,38 @@ test.describe('expand instance in place visual', () => {
     await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
     await expect(page.locator('.generate-region-expand')).toHaveCount(1);
-    // The instance's own node is replaced by its spliced-in contents, not
-    // just overlaid on top of it.
-    await expect(page.locator(`[data-node-id="${instanceId}"]`)).toHaveCount(0);
+    // The instance's own node stays on screen as a dimmed backdrop behind its
+    // spliced-in contents, not removed — see expandOverlay's dimAsExpandGhost.
+    // The dimming class lands on react-flow's own node wrapper (`data-id`),
+    // one level up from the `data-node-id` element our components render.
+    const ghostInstance = page.locator(`[data-node-id="${instanceId}"]`);
+    const ghostInstanceWrapper = page.locator(`.react-flow__node[data-id="${instanceId}"]`);
+    await expect(ghostInstance).toHaveCount(1);
+    await expect(ghostInstanceWrapper).toHaveClass(/hdl-node-expand-ghost/);
 
     await fitGraphView(page, 0.2);
     await expectGraphAndScreenshot(page, 'expand-instance-in-place.png');
 
-    await page.locator('.generate-region-collapse').click();
+    // Re-selecting the (still-present, dimmed) instance node surfaces a
+    // "Collapse" control in the same selection toolbar "Expand" used. Click
+    // inside its header strip, offset from the top-left corner rather than
+    // dead-center or right on the corner: the boundary port columns sit
+    // directly on top of the ghost at its port rows (by design — they're
+    // anchored to the instance's own port positions) and its corner/edge
+    // resize handles sit right at its border, so either a center click or a
+    // corner click risks landing on something other than the ghost's own
+    // body. The node header strip, comfortably inset from both, is always
+    // clear.
+    const ghostBox = await ghostInstance.boundingBox();
+    if (!ghostBox) throw new Error('Could not locate the dimmed "u1" instance node');
+    await page.mouse.click(ghostBox.x + 30, ghostBox.y + 15);
+    const collapseButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Collapse' });
+    await expect(collapseButton).toBeVisible();
+    await collapseButton.click();
+
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(0);
     await expect(page.locator('.generate-region-expand')).toHaveCount(0);
-    await expect(page.locator(`[data-node-id="${instanceId}"]`)).toHaveCount(1);
+    await expect(ghostInstance).toHaveCount(1);
+    await expect(ghostInstanceWrapper).not.toHaveClass(/hdl-node-expand-ghost/);
   });
 });

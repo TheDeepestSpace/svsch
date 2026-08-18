@@ -876,7 +876,7 @@ Feature: Diagram Interaction
     When I click the "Expand" button
     Then I should see a boundary port node named "a"
     And I should see a boundary port node named "y"
-    And I should not see an instance node "u1"
+    And I should see a dimmed instance node "u1"
     When I collapse the expanded instance "u1"
     Then I should not see a boundary port node named "a"
     And I should see an instance node "u1" of module "leaf"
