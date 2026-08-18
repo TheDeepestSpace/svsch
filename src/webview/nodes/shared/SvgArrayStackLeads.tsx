@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  arrayStackLayer,
-  ARRAY_STACK_LEAD_EDGE_GAP,
-  arrayStackLeadLayersFor,
-  arrayStackLayerTrim,
-} from '../../arrayStackGeometry';
+import { arrayStackLeadLayersFor, arrayStackLayerSideTrim } from '../../arrayStackGeometry';
 
 export function SvgArrayStackLeads({
   side,
@@ -30,15 +25,22 @@ export function SvgArrayStackLeads({
    */
   thick?: boolean;
 }): React.ReactElement {
-  const leadsRole = trimSink ? 'target' : 'source';
-  const groupClassName =
-    `svsch-array-stack-leads svsch-array-stack-leads-${leadsRole} ` +
-    `svsch-array-stack-leads-${side}`;
-
   return (
-    <g className={groupClassName} aria-hidden="true">
+    <g
+      className={`svsch-array-stack-leads svsch-array-stack-leads-${trimSink ? 'target' : 'source'} svsch-array-stack-leads-${side}`}
+      aria-hidden="true"
+    >
       {arrayStackLeadLayersFor(wide).map((layer) => {
-        const trim = arrayStackLayerTrim(layer.id, wide);
+        const trim = arrayStackLayerSideTrim(layer.id, side, wide);
+        // Rounded to whole pixels deliberately. `wide` mode's 1.5x lane scale
+        // makes trims fractional (e.g. 4.5, 13.5), and computeStackedEdgeLayerPoints
+        // (the routed wire's own trim math) never rounds — so a lead that matched
+        // it exactly would land on a fractional coordinate. That looks correct on
+        // paper, but two separately-anti-aliased <path> elements meeting at a
+        // fractional pixel render as a visible blended seam (a thin gap or
+        // discoloration), which reads worse than the sub-pixel overlap rounding
+        // produces here. Round each endpoint so the lead's stroke fully covers up
+        // to the wire's start — a solid, if not mathematically exact, join.
         const shapeX =
           side === 'top' || side === 'bottom'
             ? Math.round((x ?? width / 2) + layer.dx)
@@ -46,40 +48,21 @@ export function SvgArrayStackLeads({
               ? Math.round(layer.dx)
               : Math.round(width + layer.dx);
         const shapeY = Math.round(y + layer.dy);
-        const endY = Math.round(
-          side === 'top' && trimSink ? shapeY - ARRAY_STACK_LEAD_EDGE_GAP : shapeY,
-        );
-        const sourceRightExitX = Math.round(
-          width + arrayStackLayer('back', wide).dx + ARRAY_STACK_LEAD_EDGE_GAP,
-        );
-        const bottomExitY = Math.round(
-          y + arrayStackLayer('back', wide).dy + ARRAY_STACK_LEAD_EDGE_GAP,
-        );
         const leadX = Math.round(
           side === 'top' || side === 'bottom'
             ? shapeX
             : side === 'left'
               ? shapeX - trim
-              : trimSink
-                ? shapeX + trim
-                : Math.max(shapeX + trim, sourceRightExitX),
+              : shapeX + trim,
         );
         const leadY = Math.round(
-          side === 'top'
-            ? endY - trim
-            : side === 'bottom'
-              ? Math.max(endY + trim, bottomExitY)
-              : shapeY,
+          side === 'top' ? shapeY - trim : side === 'bottom' ? shapeY + trim : shapeY,
         );
         return (
           <path
             key={layer.id}
-            className={
-              `svsch-array-stack-lead svsch-array-stack-lead-${layer.id} ` +
-              `svsch-array-stack-lead-${leadsRole}-${side}` +
-              `${thick ? ' svsch-array-stack-lead-thick' : ''}`
-            }
-            d={`M ${leadX} ${leadY} L ${shapeX} ${endY}`}
+            className={`svsch-array-stack-lead svsch-array-stack-lead-${layer.id} svsch-array-stack-lead-${trimSink ? 'target' : 'source'}-${side}${thick ? ' svsch-array-stack-lead-thick' : ''}`}
+            d={`M ${leadX} ${leadY} L ${shapeX} ${shapeY}`}
           />
         );
       })}

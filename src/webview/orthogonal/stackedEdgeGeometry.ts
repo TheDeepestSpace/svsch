@@ -2,8 +2,9 @@ import { pathFromPoints, type OrthogonalPoint } from '../../core/pathUtils';
 import {
   arrayStackLayer,
   arrayStackLeadLayersFor,
-  arrayStackLayerTrim,
+  arrayStackLayerSideTrim,
   type ArrayStackLayerId,
+  type ArrayStackSide,
 } from '../arrayStackGeometry';
 import { arrayBreakoutPipeCapPivot, arrayCompositionPipeCapPivot } from '../../diagram/busGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
@@ -29,6 +30,13 @@ export interface ConvergingStackPath {
 
 export function offsetPoints(points: OrthogonalPoint[], dx: number, dy: number): OrthogonalPoint[] {
   return points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
+}
+
+function sideForPosition(position: HdlPosition): ArrayStackSide {
+  if (position === HdlPosition.Left) return 'left';
+  if (position === HdlPosition.Right) return 'right';
+  if (position === HdlPosition.Top) return 'top';
+  return 'bottom';
 }
 
 export function shortenStackTarget(
@@ -170,7 +178,7 @@ export function computeStackedEdgeLayerPoints(
       targetIsArrayBreakout
         ? arrayBreakoutCapTrim
         : targetIsArray
-          ? arrayStackLayerTrim(layerId, isThickWire)
+          ? arrayStackLayerSideTrim(layerId, sideForPosition(targetHdlPosition), isThickWire)
           : 0,
       targetHdlPosition,
     );
@@ -181,7 +189,7 @@ export function computeStackedEdgeLayerPoints(
       sourceIsArray
         ? sourceIsArrayComposition
           ? arrayCompositionCapTrim
-          : arrayStackLayerTrim(layerId, isThickWire)
+          : arrayStackLayerSideTrim(layerId, sideForPosition(sourceHdlPosition), isThickWire)
         : 0,
       sourceHdlPosition,
     );
@@ -310,7 +318,7 @@ export function convergingStackPath(
       ),
       targetPosition,
     ),
-    arrayStackLayerTrim(layerId, wide),
+    arrayStackLayerSideTrim(layerId, sideForPosition(sourcePosition), wide),
     sourcePosition,
   );
   const start = layerPoints[0];
@@ -353,7 +361,7 @@ export function promotedStackFanoutPath(
     (layer) =>
       shortenStackTarget(
         [{ x: target.x + layer.dx, y: target.y + layer.dy }],
-        arrayStackLayerTrim(layer.id, wide),
+        arrayStackLayerSideTrim(layer.id, sideForPosition(targetPosition), wide),
         targetPosition,
       )[0],
   );

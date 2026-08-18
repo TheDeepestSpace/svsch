@@ -208,7 +208,7 @@
       "target": "reg:array_address_write_enable_register:storage",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1291.5 150 L 1302 150 L 1302 222 L 606 222 L 606 174 L 342 174 L 342 246 L 352.5 246"
+      "path": "M 1282.5 150 L 1302 150 L 1302 222 L 606 222 L 606 174 L 342 174 L 342 246 L 352.5 246"
     },
     {
       "id": "edge:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:mux:array_address_write_enable_register:storage_addr:storage_address__next",
@@ -216,7 +216,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "out",
       "targetHandle": "in:2_b0",
-      "path": "M 907.5 150 L 1120.5 150"
+      "path": "M 898.5 150 L 1120.5 150"
     },
     {
       "id": "edge:port:array_address_write_enable_register:address:mux:array_address_write_enable_register:storage_addr:address",
@@ -256,7 +256,7 @@
       "target": "mux:array_address_write_enable_register:storage_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 571.5 246 L 750 246 L 750 222 L 1014 222 L 1014 228 Q 1026 216 1014 204 L 1014 174 L 1120.5 174"
+      "path": "M 562.5 246 L 750 246 L 750 222 L 1014 222 L 1014 228 Q 1026 216 1014 204 L 1014 174 L 1120.5 174"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next:storage",
@@ -264,7 +264,7 @@
       "target": "mux:array_address_write_enable_register:storage_address_:write_en:storage_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 571.5 246 L 750 246 L 750 228 Q 762 216 750 204 L 750 174 L 784.5 174"
+      "path": "M 562.5 246 L 750 246 L 750 228 Q 762 216 750 204 L 750 174 L 784.5 174"
     },
     {
       "id": "edge:reg:array_address_write_enable_register:storage:port:array_address_write_enable_register:out_data:out_data",
@@ -272,7 +272,7 @@
       "target": "port:array_address_write_enable_register:out_data",
       "sourceHandle": "q",
       "targetHandle": "port:out_data",
-      "path": "M 571.5 246 L 760.5 246"
+      "path": "M 562.5 246 L 760.5 246"
     }
   ]
 }

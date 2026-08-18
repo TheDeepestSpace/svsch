@@ -225,7 +225,9 @@ for (const [, group] of chartGroups) {
     if (!avg) continue;
     const signMs = avg.avgNominal > 0 ? '+' : '';
     const signPct = avg.avgPct > 0 ? '+' : '';
-    summaryLines.push(`- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`);
+    summaryLines.push(
+      `- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`,
+    );
   }
 }
 
@@ -282,17 +284,27 @@ const headers = {
   'Content-Type': 'application/json',
   'X-GitHub-Api-Version': '2022-11-28',
 };
+// GitHub's REST layer resolves the PR through its GraphQL node under the
+// hood, and that lookup can 404 for a few seconds right after the PR was
+// pushed to — even though the PR itself, and that exact node id, are fine.
+// Retry that specific transient shape instead of failing the whole job.
+const isTransientNodeLookupFailure = (status, text) =>
+  status === 404 && /Could not resolve to a node with the global id/.test(text);
 const request = async (method, apiPath, requestBody) => {
-  const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
-    method,
-    headers,
-    body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS),
-  });
-  if (!response.ok) {
-    throw new Error(`${method} ${apiPath} failed (${response.status}): ${await response.text()}`);
+  for (let attempt = 1; ; attempt += 1) {
+    const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
+      method,
+      headers,
+      body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS),
+    });
+    if (response.ok) return response.json();
+    const text = await response.text();
+    if (attempt >= 4 || !isTransientNodeLookupFailure(response.status, text)) {
+      throw new Error(`${method} ${apiPath} failed (${response.status}): ${text}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
   }
-  return response.json();
 };
 
 const reviews = [];
