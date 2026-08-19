@@ -1667,6 +1667,42 @@ text {
   height: 1.5px;
 }
 
+/* Wire-style variants mirroring the edge classes so the lead reads as a stub
+   of the wire it continues: 4.5px matches .svsch-edge-thick, and the 8px
+   striped bands recreate .svsch-edge-struct / .svsch-edge-interface's
+   pattern strokes (2px stripes on a 10px 45° period over the same dimmed
+   -bg backing color) with a CSS gradient, since the lead is a span, not an
+   SVG path that could reference the shared <pattern> defs. */
+.hdl-boundary-port-lead-thick {
+  height: 4.5px;
+}
+
+.hdl-boundary-port-lead-struct,
+.hdl-boundary-port-lead-interface {
+  background-color: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+  height: 8px;
+}
+
+.hdl-boundary-port-lead-struct {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--vscode-editor-foreground) 0,
+    var(--vscode-editor-foreground) 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
+.hdl-boundary-port-lead-interface {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground)) 0,
+    color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground)) 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
 .hdl-boundary-port-selected .hdl-boundary-port-lead {
   background: var(--vscode-focusBorder);
 }
