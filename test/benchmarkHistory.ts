@@ -20,15 +20,15 @@ export const BENCHMARK_HISTORY_HEADER = HEADER_LINES.join('\n') + '\n';
 function validateEntry(entry: unknown, index: number): BenchmarkHistoryEntry {
   const candidate = entry as Partial<BenchmarkHistoryEntry> | null;
   if (
-    !candidate
-    || typeof candidate.sha !== 'string'
-    || typeof candidate.date !== 'string'
-    || typeof candidate.elaborationAvgMs !== 'number'
-    || typeof candidate.renderingAvgMs !== 'number'
+    !candidate ||
+    typeof candidate.sha !== 'string' ||
+    typeof candidate.date !== 'string' ||
+    typeof candidate.elaborationAvgMs !== 'number' ||
+    typeof candidate.renderingAvgMs !== 'number'
   ) {
     throw new Error(
-      `${BENCHMARK_HISTORY_PATH}[${index}] must set sha (string), date (string), `
-      + 'elaborationAvgMs (number), and renderingAvgMs (number).'
+      `${BENCHMARK_HISTORY_PATH}[${index}] must set sha (string), date (string), ` +
+        'elaborationAvgMs (number), and renderingAvgMs (number).',
     );
   }
   return candidate as BenchmarkHistoryEntry;
@@ -57,7 +57,7 @@ export function serializeBenchmarkHistory(entries: BenchmarkHistoryEntry[]): str
 // always adds after every existing one.
 export function appendBenchmarkHistoryEntry(
   existingYamlText: string,
-  entry: BenchmarkHistoryEntry
+  entry: BenchmarkHistoryEntry,
 ): string {
   const entries = parseBenchmarkHistory(existingYamlText);
   entries.push(entry);

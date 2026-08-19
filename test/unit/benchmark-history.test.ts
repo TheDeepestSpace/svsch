@@ -58,7 +58,7 @@ describe('appendBenchmarkHistoryEntry', () => {
 });
 
 describe('computeRunAverageMs', () => {
-  it('rounds the mean of a run\'s per-test values', () => {
+  it("rounds the mean of a run's per-test values", () => {
     expect(computeRunAverageMs([{ value: 100 }, { value: 101 }, { value: 102 }])).toBe(101);
   });
 
@@ -83,28 +83,51 @@ describe('benchmarkHistoryChanged', () => {
   });
 
   it('is true when the history file is added or deleted', () => {
-    expect(benchmarkHistoryChanged(nameStatus('A', 'test/visual/benchmark-history.yaml'))).toBe(true);
-    expect(benchmarkHistoryChanged(nameStatus('D', 'test/visual/benchmark-history.yaml'))).toBe(true);
+    expect(benchmarkHistoryChanged(nameStatus('A', 'test/visual/benchmark-history.yaml'))).toBe(
+      true,
+    );
+    expect(benchmarkHistoryChanged(nameStatus('D', 'test/visual/benchmark-history.yaml'))).toBe(
+      true,
+    );
   });
 
   it('is true when the history file is one side of a rename', () => {
-    const output = nameStatus('R100', 'test/visual/benchmark-history.yaml', 'test/visual/benchmark-history-old.yaml');
+    const output = nameStatus(
+      'R100',
+      'test/visual/benchmark-history.yaml',
+      'test/visual/benchmark-history-old.yaml',
+    );
     expect(benchmarkHistoryChanged(output)).toBe(true);
   });
 });
 
 describe('computeHistoryTrendData', () => {
   it('appends the current run as a marked preview point after history, oldest first', () => {
-    const points = computeHistoryTrendData([entryA, entryB], { elaborationAvgMs: 100, renderingAvgMs: 70 });
+    const points = computeHistoryTrendData([entryA, entryB], {
+      elaborationAvgMs: 100,
+      renderingAvgMs: 70,
+    });
     expect(points).toEqual([
-      { label: entryA.sha.slice(0, 7), elaborationAvgMs: entryA.elaborationAvgMs, renderingAvgMs: entryA.renderingAvgMs, isCurrent: false },
-      { label: entryB.sha.slice(0, 7), elaborationAvgMs: entryB.elaborationAvgMs, renderingAvgMs: entryB.renderingAvgMs, isCurrent: false },
+      {
+        label: entryA.sha.slice(0, 7),
+        elaborationAvgMs: entryA.elaborationAvgMs,
+        renderingAvgMs: entryA.renderingAvgMs,
+        isCurrent: false,
+      },
+      {
+        label: entryB.sha.slice(0, 7),
+        elaborationAvgMs: entryB.elaborationAvgMs,
+        renderingAvgMs: entryB.renderingAvgMs,
+        isCurrent: false,
+      },
       { label: 'this PR', elaborationAvgMs: 100, renderingAvgMs: 70, isCurrent: true },
     ]);
   });
 
   it('produces just the preview point when there is no history yet', () => {
     const points = computeHistoryTrendData([], { elaborationAvgMs: 50, renderingAvgMs: 40 });
-    expect(points).toEqual([{ label: 'this PR', elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true }]);
+    expect(points).toEqual([
+      { label: 'this PR', elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
+    ]);
   });
 });
