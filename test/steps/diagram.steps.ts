@@ -682,6 +682,21 @@ When('I move the expanded instance {string} by \\({int}, {int}\\) grid cells', a
   await waitForLayoutChange(this, before, `After moving expanded instance ${instanceLabel}`);
 });
 
+// A node inside an expanded instance's spliced content persists through a
+// separate per-instance snapshot (LayoutStore.writeExpandedInstanceLayout,
+// under .svsch/layouts/expanded/<parent>__<instance>.json), not the parent
+// module's own layout file — so this can't reuse "I move the block ... grid
+// cells", which waits for the parent module's own layout file to change
+// (see waitForLayoutChange/readExtensionLayout). dragNodeByGridCells already
+// polls the live React Flow position to convergence, which is what the
+// bounds/position assertions read too, so that's enough to wait on here.
+When('I move the node {string} inside the expanded instance by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find node "${label}"`);
+  await dragNodeByGridCells(this, id, cellsX, cellsY);
+  await waitForExtensionRenderedView(this, `After moving ${label}`);
+});
+
 When('I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, block: string, region: string, cellsX: number, cellsY: number) {
   this.notedRegionBounds.set(region, await getGenerateRegionBounds(this.webviewPage, region));
   await beginDraggingNodeByGridCells(this, block, cellsX, cellsY);
@@ -963,6 +978,24 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await waitForLayoutChange(this, before, `After clicking ${label}`);
 });
 
+// A *nested* expand (expanding an instance that already lives inside another
+// expanded instance's spliced content) doesn't touch the top-level module's
+// own layout file the way a top-level expand does — see
+// SavedModuleLayout.expanded's docs on why a nested expand is deliberately
+// not tracked there. Only its content snapshot persists, under
+// .svsch/layouts/expanded/, which readExtensionLayout doesn't scan — so this
+// waits on the live DOM (the instance gaining its dimmed-ghost class, see
+// dimAsExpandGhost) instead of a layout-file diff.
+When('I click the "Expand" button to nest-expand {string}', async function (this: BddWorld, instanceLabel: string) {
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Expand' });
+  await expect(button).toBeVisible();
+  await button.click();
+  const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+  if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(/hdl-node-expand-ghost/);
+  await waitForExtensionRenderedView(this, `After expanding ${instanceLabel}`);
+});
+
 // Collapses an "Expand instance in place" region (issue #232) by selecting
 // its own (dimmed-backdrop) instance node and clicking the "Collapse"
 // control that surfaces in the selection toolbar — the same toolbar
@@ -986,6 +1019,24 @@ When('I collapse the expanded instance {string}', async function (this: BddWorld
   await expect(button).toBeVisible();
   await button.click();
   await waitForLayoutChange(this, before, `After collapsing ${instanceLabel}`);
+});
+
+// Nested counterpart to "I collapse the expanded instance" above — same
+// reasoning as "I click the Expand button to nest-expand": collapsing an
+// instance nested inside another expanded instance doesn't touch the
+// top-level module's own layout file, so wait on the live DOM (the ghost
+// class disappearing) rather than a layout-file diff.
+When('I collapse the nested expanded instance {string}', async function (this: BddWorld, instanceLabel: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+  if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
+  const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+  if (!box) throw new Error(`Could not get bounding box for ${instanceLabel}`);
+  await this.workbox.mouse.click(box.x + 30, box.y + 15);
+  const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: 'Collapse' });
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).not.toHaveClass(/hdl-node-expand-ghost/);
+  await waitForExtensionRenderedView(this, `After collapsing ${instanceLabel}`);
 });
 
 // Keyboard equivalent of clicking the block-selection toolbar's "Cut out"
