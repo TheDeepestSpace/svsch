@@ -12,7 +12,7 @@ import type { PositionedNode } from '../../../ir/types';
 export function NodeWarningIcon({
   node,
   width,
-  height
+  height,
 }: {
   node: PositionedNode;
   width: number;
@@ -25,19 +25,13 @@ export function NodeWarningIcon({
   const style: React.CSSProperties = {
     left: center.x,
     top: center.y,
-    transform: 'translate(-50%, -50%)'
+    transform: 'translate(-50%, -50%)',
   };
 
   return (
     <Tooltip content={message}>
       {(trigger) => (
-        <span
-          {...trigger}
-          className="node-warning"
-          role="img"
-          aria-label={message}
-          style={style}
-        >
+        <span {...trigger} className="node-warning" role="img" aria-label={message} style={style}>
           ⚠
         </span>
       )}

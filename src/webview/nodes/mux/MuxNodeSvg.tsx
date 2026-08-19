@@ -4,7 +4,6 @@ import {
   muxInputPortCenterY,
   muxRightTopY,
   muxTopPortSkinEdgeY,
-  muxTopPortLabelOffsetY,
   muxTopPortLeadLengthY,
 } from '../../../diagram/muxGeometry';
 import { diagramSizing, normalizeWidth } from '../../../diagram/constants';
@@ -13,11 +12,19 @@ import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgPortLabel } from '../shared/labels';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
-export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+export function MuxNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const stackLayers = arrayStackLayersFor(stackWide);
@@ -27,7 +34,8 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     sharedArrayConnectionThick(arrayConnections, portId, role);
   const hasInputSideConnection = (port: DiagramPort): boolean =>
-    hasArrayConnection(port.id, 'target') || (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
+    hasArrayConnection(port.id, 'target') ||
+    (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
   const inputSideRole = (port: DiagramPort): 'source' | 'target' =>
     hasArrayConnection(port.id, 'target') ? 'target' : 'source';
   const g = diagramSizing.gridSize;
@@ -38,7 +46,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
     ? inputs.filter((p: DiagramPort) => p.name === 'sel').slice(0, 1)
     : inputs.slice(0, 1);
   const sideInputs: DiagramPort[] = inputs.filter(
-    (p: DiagramPort) => !muxTopPorts.some((tp: DiagramPort) => tp.id === p.id)
+    (p: DiagramPort) => !muxTopPorts.some((tp: DiagramPort) => tp.id === p.id),
   );
 
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
@@ -60,11 +68,11 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
             key={`lead-top-${port.id}`}
             side="top"
             width={width}
-            x={width * (index + 1) / (muxTopPorts.length + 1)}
+            x={(width * (index + 1)) / (muxTopPorts.length + 1)}
             y={muxTopPortSkinEdgeY(index, muxTopPorts.length, height)}
             trimSink
           />
-        ) : null
+        ) : null,
       )}
       {sideInputs.map((port: DiagramPort, index: number) =>
         hasInputSideConnection(port) ? (
@@ -77,7 +85,7 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
             y={muxInputPortCenterY(index, sideInputs.length, height)}
             trimSink
           />
-        ) : null
+        ) : null,
       )}
     </>
   );
@@ -85,15 +93,18 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
   return (
     <>
       {targetLeads}
-      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
-        <path
-          key={layer.id}
-          className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          d={trapPath}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
+      {isArray &&
+        skinLayers
+          .filter((layer) => layer.id !== 'front')
+          .map((layer) => (
+            <path
+              key={layer.id}
+              className={`svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
+              transform={`translate(${layer.dx}, ${layer.dy})`}
+              d={trapPath}
+              opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+            />
+          ))}
       <path
         className={`svsch-node-shape hdl-node-mux node-skin-body${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={bodyTransform}
@@ -101,10 +112,11 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
       />
 
       {muxTopPorts.map((port: DiagramPort, index: number) => {
-        const portX = Math.round(width * (index + 1) / (muxTopPorts.length + 1));
-        const leadLen = (normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24)
-          ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
-          : 0;
+        const portX = Math.round((width * (index + 1)) / (muxTopPorts.length + 1));
+        const leadLen =
+          normalizeWidth(port.width) || (port.connectedSignal?.length ?? 0) > 24
+            ? muxTopPortLeadLengthY(index, muxTopPorts.length, height)
+            : 0;
         const skinEdgeY = muxTopPortSkinEdgeY(index, muxTopPorts.length, height);
         // Label is always one grid unit below the slope at portX (skinEdgeY + g),
         // keeping a consistent visual gap from the trapezoid edge regardless of size.
@@ -112,7 +124,13 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
         return (
           <g key={port.id} className="svsch-mux-select-port">
             {leadLen > 0 && (
-              <line className={`svsch-mux-select-lead${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`} x1={Math.round(portX + contentShiftX)} y1={Math.round(g + contentShiftY)} x2={Math.round(portX + contentShiftX)} y2={Math.round(skinEdgeY + contentShiftY)} />
+              <line
+                className={`svsch-mux-select-lead${portSuggestsThickWire(port) ? ' svsch-mux-select-lead-thick' : ''}`}
+                x1={Math.round(portX + contentShiftX)}
+                y1={Math.round(g + contentShiftY)}
+                x2={Math.round(portX + contentShiftX)}
+                y2={Math.round(skinEdgeY + contentShiftY)}
+              />
             )}
             <text
               className="svsch-port-label"
@@ -153,9 +171,17 @@ export function MuxNodeSvg({ node, width, height, arrayConnections }: NodeSvgPro
 
       {/* Array stack leads */}
       {outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(outputs[0].id, 'source')}
+          side="right"
+          width={width}
+          y={height / 2}
+        />
       )}
-      {!isArray && <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />}
+      {!isArray && (
+        <path className="node-skin-selection" d={trapPath} style={{ strokeLinejoin: 'round' }} />
+      )}
     </>
   );
 }

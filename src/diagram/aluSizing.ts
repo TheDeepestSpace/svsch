@@ -3,9 +3,5 @@ import { snappedWidth, type NodeSizingStrategy } from './nodeSizingCommon';
 
 export const aluSizing: NodeSizingStrategy = {
   height: () => muxHeightForPortRows(2),
-  width: () => snappedWidth(
-    diagramSizing.muxWidth,
-    diagramSizing.gridSize * 3,
-    snapUpToEvenGrid
-  )
+  width: () => snappedWidth(diagramSizing.muxWidth, diagramSizing.gridSize * 3, snapUpToEvenGrid),
 };

@@ -17,10 +17,13 @@ export function InverterNode({ data }: { data: HdlNodeData }): React.ReactElemen
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
-  const sideInputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const sideInputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
   const invOutputOffset = nodeWidth - inverterGeometryWidth();
 
@@ -32,17 +35,33 @@ export function InverterNode({ data }: { data: HdlNodeData }): React.ReactElemen
       style={nodeStyle}
       className="hdl-node hdl-node-inverter"
       svgClassName="inverter-skin"
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : node.kind
+      }
       onDoubleClick={() => handleNodeDoubleClick(node)}
-      svg={<InverterNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />}
+      svg={
+        <InverterNodeSvg
+          node={node}
+          width={nodeWidth}
+          height={nodeHeight}
+          arrayConnections={arrayConnections}
+        />
+      }
       handles={
         <>
           {sideInputs.slice(0, 1).map((port: DiagramPort) => (
             <InputPortHandles key={port.id} port={port} position={Position.Left} />
           ))}
           {outputs.slice(0, 1).map((port: DiagramPort) => (
-            <Handle key={port.id} type="source" id={port.id} position={Position.Right}
-              style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined} />
+            <Handle
+              key={port.id}
+              type="source"
+              id={port.id}
+              position={Position.Right}
+              style={invOutputOffset > 0 ? { right: `${invOutputOffset}px` } : undefined}
+            />
           ))}
         </>
       }

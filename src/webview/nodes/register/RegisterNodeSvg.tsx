@@ -17,11 +17,24 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
-import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  SvgParameterizedText,
+  SvgParameterizedTextUnderlines,
+  SvgPortLabel,
+} from '../shared/labels';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
-export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function RegisterNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
@@ -33,8 +46,12 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   // label follow the rendered box edge.
   const canonical = diagramNodeDimensions(node);
 
-  const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
-  const outputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'output');
+  const inputs: DiagramPort[] = (node.ports ?? []).filter(
+    (p: DiagramPort) => p.direction === 'input',
+  );
+  const outputs: DiagramPort[] = (node.ports ?? []).filter(
+    (p: DiagramPort) => p.direction === 'output',
+  );
 
   const clockSignal = registerClockSignal(node);
   const resetSignal = registerResetSignal(node);
@@ -51,7 +68,7 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const rvPort = inputs.find((p: DiagramPort) => p.name === 'RV');
   const hasRv = Boolean(rvPort);
   const renderedInputPortIds = new Set(
-    [dPort?.id, clockPort?.id, resetPort?.id, rvPort?.id].filter(Boolean)
+    [dPort?.id, clockPort?.id, resetPort?.id, rvPort?.id].filter(Boolean),
   );
   const extraInputPorts = inputs.filter((p: DiagramPort) => !renderedInputPortIds.has(p.id));
 
@@ -79,7 +96,9 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const suffixFontSize = typeName ? typeFontSize : titleFontSize;
   const suffixStartX = titleX + labelWidth + suffixGap;
   const suffixWidth = hasTitleSuffix
-    ? (typeName ? typeLinkWidth(suffixText, suffixFontSize) : monoTextWidth(suffixText, suffixFontSize))
+    ? typeName
+      ? typeLinkWidth(suffixText, suffixFontSize)
+      : monoTextWidth(suffixText, suffixFontSize)
     : 0;
   const underlineY = titleY + typeFontSize * 0.62;
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
@@ -104,10 +123,24 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   const targetStackLeads = (
     <>
       {isArray && dPort && hasArrayConnection(dPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(dPort.id, 'target')} side="left" width={width} y={dTop + g / 2} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(dPort.id, 'target')}
+          side="left"
+          width={width}
+          y={dTop + g / 2}
+          trimSink
+        />
       )}
       {isArray && clockPort && hasArrayConnection(clockPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(clockPort.id, 'target')} side="left" width={width} y={clkTop + g / 2} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(clockPort.id, 'target')}
+          side="left"
+          width={width}
+          y={clkTop + g / 2}
+          trimSink
+        />
       )}
     </>
   );
@@ -115,11 +148,31 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
   return (
     <>
       {targetStackLeads}
-      <ArrayStackSkinRect isArray={isArray} skinLayers={skinLayers} shapeTransform={shapeTransform} width={width} height={height} />
+      <ArrayStackSkinRect
+        isArray={isArray}
+        skinLayers={skinLayers}
+        shapeTransform={shapeTransform}
+        width={width}
+        height={height}
+      />
 
       {/* Kind + title in header */}
-      <text className="svsch-node-kind" x={10 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">REGISTER</text>
-      <text className="svsch-node-title" x={titleX + contentShiftX} y={titleY + contentShiftY} textAnchor="start" dominantBaseline="middle">
+      <text
+        className="svsch-node-kind"
+        x={10 + contentShiftX}
+        y={14 + contentShiftY}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
+        REGISTER
+      </text>
+      <text
+        className="svsch-node-title"
+        x={titleX + contentShiftX}
+        y={titleY + contentShiftY}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
@@ -134,7 +187,11 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
           </tspan>
         ) : widthSuffix ? (
           <tspan className="svsch-register-width-suffix" dx={suffixGap}>
-            <SvgParameterizedText text={widthSuffix} refs={qPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+            <SvgParameterizedText
+              text={widthSuffix}
+              refs={qPort?.parameterRefs}
+              onNavigateToSource={onNavigateToSource}
+            />
           </tspan>
         ) : null}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
@@ -162,14 +219,25 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* D port label (left side) */}
       {dPort && (
-        <text className="svsch-port-label" x={g / 2 + contentShiftX} y={dTop + g / 2 + contentShiftY} dominantBaseline="middle">
+        <text
+          className="svsch-port-label"
+          x={g / 2 + contentShiftX}
+          y={dTop + g / 2 + contentShiftY}
+          dominantBaseline="middle"
+        >
           <SvgPortLabel port={dPort} />
         </text>
       )}
 
       {/* Q port label (right side) */}
       {qPort && (
-        <text className="svsch-port-label" x={width - g / 2 + contentShiftX} y={qTop + g / 2 + contentShiftY} textAnchor="end" dominantBaseline="middle">
+        <text
+          className="svsch-port-label"
+          x={width - g / 2 + contentShiftX}
+          y={qTop + g / 2 + contentShiftY}
+          textAnchor="end"
+          dominantBaseline="middle"
+        >
           <SvgPortLabel port={qPort} />
         </text>
       )}
@@ -177,7 +245,15 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
         <g className="svsch-register-clock-port">
-          <svg x={contentShiftX} y={clkTop + g / 2 - 6 + contentShiftY} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+          <svg
+            x={contentShiftX}
+            y={clkTop + g / 2 - 6 + contentShiftY}
+            width={12}
+            height={12}
+            viewBox="0 0 12 12"
+            className="register-clock-glyph"
+            aria-hidden={true}
+          >
             <path d="M 1 1.5 L 9 6 L 1 10.5" />
           </svg>
         </g>
@@ -186,7 +262,13 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
       {/* Reset label: centered at bottom, if present */}
       {resetPort && (
         <g className="svsch-register-reset-port">
-          <text className="svsch-port-label svsch-register-reset-label" x={width / 2 + contentShiftX} y={rstTop + g / 2 + contentShiftY} textAnchor="middle" dominantBaseline="middle">
+          <text
+            className="svsch-port-label svsch-register-reset-label"
+            x={width / 2 + contentShiftX}
+            y={rstTop + g / 2 + contentShiftY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+          >
             {resetActiveLow ? 'R̅' : 'R'}
           </text>
         </g>
@@ -194,14 +276,27 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* RV port */}
       {rvPort && (
-        <text className="svsch-port-label" x={g / 2 + contentShiftX} y={rvTop + g / 2 + contentShiftY} dominantBaseline="middle">RV</text>
+        <text
+          className="svsch-port-label"
+          x={g / 2 + contentShiftX}
+          y={rvTop + g / 2 + contentShiftY}
+          dominantBaseline="middle"
+        >
+          RV
+        </text>
       )}
 
       {/* Extra input ports */}
       {extraInputPorts.map((port: DiagramPort, index: number) => {
         const top = registerExtraInputPortTop(index, canonical.height, hasRv);
         return (
-          <text key={port.id} className="svsch-port-label" x={g * 0.75 + contentShiftX} y={top + g / 2 + contentShiftY} dominantBaseline="middle">
+          <text
+            key={port.id}
+            className="svsch-port-label"
+            x={g * 0.75 + contentShiftX}
+            y={top + g / 2 + contentShiftY}
+            dominantBaseline="middle"
+          >
             <SvgPortLabel port={port} />
           </text>
         );
@@ -216,10 +311,23 @@ export function RegisterNodeSvg({ node, width, height, arrayConnections, onNavig
 
       {/* Array stack leads */}
       {isArray && resetPort && hasArrayConnection(resetPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(resetPort.id, 'target')} side="bottom" width={width} y={rstTop + g} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(resetPort.id, 'target')}
+          side="bottom"
+          width={width}
+          y={rstTop + g}
+          trimSink
+        />
       )}
       {isArray && qPort && hasArrayConnection(qPort.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(qPort.id, 'source')} side="right" width={width} y={qTop + g / 2} />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(qPort.id, 'source')}
+          side="right"
+          width={width}
+          y={qTop + g / 2}
+        />
       )}
     </>
   );

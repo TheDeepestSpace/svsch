@@ -33,19 +33,30 @@ export function instanceParameterRows(node: DiagramNode): number {
 export function inverterGeometryWidth(): number {
   const g = diagramSizing.gridSize;
   const bubbleRadius = Math.min(g / 4, g / 6);
-  return g * Math.sqrt(3) / 2 + 2 + bubbleRadius * 2;
+  return (g * Math.sqrt(3)) / 2 + 2 + bubbleRadius * 2;
 }
 
 export function nodeTitle(node: DiagramNode): string {
   const metadataWidth = normalizeWidth(nodeWidth(node));
-  const outputWidth = node.kind === 'register' || node.kind === 'latch' || node.kind === 'literal'
-    ? normalizeWidth(node.ports.find((port) => port.direction === 'output')?.width)
-    : undefined;
+  const outputWidth =
+    node.kind === 'register' || node.kind === 'latch' || node.kind === 'literal'
+      ? normalizeWidth(node.ports.find((port) => port.direction === 'output')?.width)
+      : undefined;
   const width = metadataWidth ?? outputWidth;
   const typeName = nodeTypeName(node);
   const base = node.label;
   const suffix = typeName || width;
-  return suffix && node.kind !== 'comb' && node.kind !== 'alu' && node.kind !== 'inverter' && node.kind !== 'gate' && node.kind !== 'bus' && node.kind !== 'struct' && node.kind !== 'interface' && node.kind !== 'replicate' ? `${base} ${suffix}` : base;
+  return suffix &&
+    node.kind !== 'comb' &&
+    node.kind !== 'alu' &&
+    node.kind !== 'inverter' &&
+    node.kind !== 'gate' &&
+    node.kind !== 'bus' &&
+    node.kind !== 'struct' &&
+    node.kind !== 'interface' &&
+    node.kind !== 'replicate'
+    ? `${base} ${suffix}`
+    : base;
 }
 
 export function portNodeLabel(node: DiagramNode): string {
@@ -55,11 +66,17 @@ export function portNodeLabel(node: DiagramNode): string {
   }
   const width = normalizeWidth(port.widthExpression ?? port.width);
   const typeName = port.typeName;
-  const suffix = typeName && port.modportName ? `${typeName}.${port.modportName}` : typeName || width;
+  const suffix =
+    typeName && port.modportName ? `${typeName}.${port.modportName}` : typeName || width;
   return suffix ? `${node.label} ${suffix}` : node.label;
 }
 
-export function portLabel(port: DiagramPort, showWidth: boolean, showType: boolean = true, collapseWidth: boolean = false): string {
+export function portLabel(
+  port: DiagramPort,
+  showWidth: boolean,
+  showType: boolean = true,
+  collapseWidth: boolean = false,
+): string {
   const label = port.label ?? port.name;
   const width = normalizeWidth(port.widthExpression ?? port.width);
   const displayWidth = collapseWidth && width ? '[]' : width;
@@ -84,7 +101,12 @@ export function portLabel(port: DiagramPort, showWidth: boolean, showType: boole
 
 export function sideLabelWidth(node: DiagramNode, ports: DiagramPort[]): number {
   const showPortTypes = node.kind !== 'instance';
-  return Math.max(0, ...ports.map((port) => measureText(portLabel(port, true, showPortTypes, node.kind === 'instance'))));
+  return Math.max(
+    0,
+    ...ports.map((port) =>
+      measureText(portLabel(port, true, showPortTypes, node.kind === 'instance')),
+    ),
+  );
 }
 
 export function measureText(text: string): number {

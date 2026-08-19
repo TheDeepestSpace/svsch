@@ -7,7 +7,7 @@ import {
   nodeTypeName,
   nodeTypeSource,
   nodeModportName,
-  nodeModportSource
+  nodeModportSource,
 } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide, portSuggestsThickWire } from '../../../ir/edgeStyle';
 import {
@@ -15,20 +15,34 @@ import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
   interfaceTopPortX,
-  orderedInterfaceSidePorts
+  orderedInterfaceSidePorts,
 } from '../../../diagram/interfaceGeometry';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { busTapPortCenterY, isBusComposition } from '../../../diagram/busGeometry';
 import type { DiagramPort, SourceRange } from '../../../ir/types';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
-import { SvgPortLabel, portDisplayLabel, SvgStructFieldAnnotation, getSvgStructFieldAnnotation } from '../shared/labels';
+import {
+  SvgPortLabel,
+  portDisplayLabel,
+  SvgStructFieldAnnotation,
+  getSvgStructFieldAnnotation,
+} from '../shared/labels';
 import { isInputSidePort } from '../../../diagram/portDirection';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 
-export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function BusNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
-  const skinLayers = arrayStackSkinLayersFor(stackWide);
+  const _skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
@@ -42,7 +56,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     y: number,
     fontSize: number,
     className: string,
-    anchor: 'start' | 'middle' | 'end' = 'start'
+    anchor: 'start' | 'middle' | 'end' = 'start',
   ) => {
     const w = linkTextWidth(text, fontSize);
     const x1 = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
@@ -79,27 +93,44 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
 
   // Interface instance: render using interfaceSkinPath (chevron shape)
   if (isInterfaceInstance) {
-    const topPorts = aggregatePorts.filter((p: DiagramPort) => p.direction === 'input' && p.width !== 'interface');
-    const bottomPorts = aggregatePorts.filter((p: DiagramPort) => p.direction === 'output' && p.width !== 'interface');
-    const sidePorts = aggregatePorts.filter((p: DiagramPort) => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'));
+    const topPorts = aggregatePorts.filter(
+      (p: DiagramPort) => p.direction === 'input' && p.width !== 'interface',
+    );
+    const bottomPorts = aggregatePorts.filter(
+      (p: DiagramPort) => p.direction === 'output' && p.width !== 'interface',
+    );
+    const sidePorts = aggregatePorts.filter(
+      (p: DiagramPort) =>
+        p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'),
+    );
     const orderedSide = orderedInterfaceSidePorts(sidePorts);
     const topHatH = interfaceTopHatHeight(topPorts.length > 0);
     const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
     const shiftY = diagramSizing.interfaceInstanceShiftY;
     const unshiftedH = Math.max(g, height - shiftY);
-    const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
-    const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedH, topHatH, bottomHatH).map(c => c + shiftY);
+    const leftCenters = distributedInterfaceSideCenters(
+      orderedSide.left.length,
+      unshiftedH,
+      topHatH,
+      bottomHatH,
+    ).map((c) => c + shiftY);
+    const rightCenters = distributedInterfaceSideCenters(
+      orderedSide.right.length,
+      unshiftedH,
+      topHatH,
+      bottomHatH,
+    ).map((c) => c + shiftY);
     const allCenters = [...leftCenters, ...rightCenters];
-    const titleY = Math.round(allCenters.length > 0
-      ? (Math.min(...allCenters) + Math.max(...allCenters)) / 2
-      : height / 2);
+    const titleY = Math.round(
+      allCenters.length > 0 ? (Math.min(...allCenters) + Math.max(...allCenters)) / 2 : height / 2,
+    );
 
     const {
       path: skinPath,
       topHatTop,
       topHatHeight,
       bottomHatTop,
-      bottomHatHeight
+      bottomHatHeight,
     } = interfaceSkinPath({
       width,
       height,
@@ -122,7 +153,9 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
     const titleTypeX = Math.round(titleStartX + titleLabelWidth + titleGap);
 
     return (
-      <g className={`hdl-interface-skin${topPorts.length > 0 ? ' hdl-interface-skin-with-tophat' : ''}${bottomPorts.length > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`}>
+      <g
+        className={`hdl-interface-skin${topPorts.length > 0 ? ' hdl-interface-skin-with-tophat' : ''}${bottomPorts.length > 0 ? ' hdl-interface-skin-with-bottomhat' : ''}`}
+      >
         <path className="hdl-interface-skin-body" d={skinPath} />
         <path className="hdl-interface-skin-selection" d={skinPath} />
         <text
@@ -148,14 +181,25 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
             >
               {typeName}
             </text>
-            {typeSource && dottedUnderline('title-type-underline', typeName, titleTypeX, titleY, typeFontSize, 'svsch-interface-type-link-underline')}
+            {typeSource &&
+              dottedUnderline(
+                'title-type-underline',
+                typeName,
+                titleTypeX,
+                titleY,
+                typeFontSize,
+                'svsch-interface-type-link-underline',
+              )}
           </>
         )}
         {/* Side port labels */}
         {orderedSide.left.map((port: DiagramPort, i: number) => {
           const isStructBreakout = port.width !== 'interface';
           const annotation = isStructBreakout ? getSvgStructFieldAnnotation(node, port) : undefined;
-          const displayLabel = portDisplayLabel(port, { annotation, hideInterfaceSuffix: isInterface });
+          const displayLabel = portDisplayLabel(port, {
+            annotation,
+            hideInterfaceSuffix: isInterface,
+          });
           return (
             <React.Fragment key={port.id}>
               <text
@@ -171,14 +215,25 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
                 <SvgPortLabel port={port} hideInterfaceSuffix={isInterface} />
                 {isStructBreakout && <SvgStructFieldAnnotation node={node} port={port} />}
               </text>
-              {port.source && dottedUnderline(`side-left-underline-${port.id}`, displayLabel, g * 0.75, leftCenters[i], 12, 'svsch-interface-side-link-underline')}
+              {port.source &&
+                dottedUnderline(
+                  `side-left-underline-${port.id}`,
+                  displayLabel,
+                  g * 0.75,
+                  leftCenters[i],
+                  12,
+                  'svsch-interface-side-link-underline',
+                )}
             </React.Fragment>
           );
         })}
         {orderedSide.right.map((port: DiagramPort, i: number) => {
           const isStructBreakout = port.width !== 'interface';
           const annotation = isStructBreakout ? getSvgStructFieldAnnotation(node, port) : undefined;
-          const displayLabel = portDisplayLabel(port, { annotation, hideInterfaceSuffix: isInterface });
+          const displayLabel = portDisplayLabel(port, {
+            annotation,
+            hideInterfaceSuffix: isInterface,
+          });
           return (
             <React.Fragment key={port.id}>
               <text
@@ -195,7 +250,16 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
                 <SvgPortLabel port={port} hideInterfaceSuffix={isInterface} />
                 {isStructBreakout && <SvgStructFieldAnnotation node={node} port={port} />}
               </text>
-              {port.source && dottedUnderline(`side-right-underline-${port.id}`, displayLabel, width - g * 0.75, rightCenters[i], 12, 'svsch-interface-side-link-underline', 'end')}
+              {port.source &&
+                dottedUnderline(
+                  `side-right-underline-${port.id}`,
+                  displayLabel,
+                  width - g * 0.75,
+                  rightCenters[i],
+                  12,
+                  'svsch-interface-side-link-underline',
+                  'end',
+                )}
             </React.Fragment>
           );
         })}
@@ -234,7 +298,7 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
   const sidePorts: DiagramPort[] = aggregatePorts;
   const aggregateInputs: DiagramPort[] = sidePorts.filter(isInputSidePort);
   const aggregateOutputs: DiagramPort[] = sidePorts.filter(
-    (p: DiagramPort) => p.direction === 'output'
+    (p: DiagramPort) => p.direction === 'output',
   );
 
   const isComposition = isBusComposition(node, role);
@@ -249,10 +313,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         : aggregateOutputs;
 
   const tapCenters = taps.map((_: DiagramPort, i: number) =>
-    busTapPortCenterY(i, isInterfaceModport ? 2 : 1)
+    busTapPortCenterY(i, isInterfaceModport ? 2 : 1),
   );
 
-  const kindLabel =
+  const _kindLabel =
     node.kind === 'struct'
       ? 'STRUCT'
       : node.kind === 'bus'
@@ -262,15 +326,14 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           : 'INTERFACE';
 
   if (taps.length === 0) {
-    return (
-      <>
-      </>
-    );
+    return <></>;
   }
 
   const isModuleInterfaceModport = isInterfaceModport && node.label !== nodeTypeName(node);
   const pipeY = isModuleInterfaceModport ? 0 : tapCenters[0] - g / 2;
-  const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
+  const pipeH = isModuleInterfaceModport
+    ? tapCenters[tapCenters.length - 1] + g / 2
+    : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
   // Interface modport: pipe is centered (matching original CSS left:50% translateX(-50%))
   // Bus breakout: pipe flush with the left edge. Bus composition: pipe flush
   // with the right edge. Array aggregates keep half a grid for the diagonal
@@ -280,8 +343,10 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       ? width - g * 0.5 - 3
       : g * 0.5 - 3
     : isInterfaceModport
-    ? Math.round(width / 2) - 3
-    : isComposition ? width - (node.kind === 'struct' ? 8 : 6) : 0;
+      ? Math.round(width / 2) - 3
+      : isComposition
+        ? width - (node.kind === 'struct' ? 8 : 6)
+        : 0;
 
   // Struct trunks match the 8px striped struct wire band.
   const pipeWidth = node.kind === 'struct' ? 8 : 6;
@@ -302,7 +367,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
 
   const modportName = isInterfaceModport ? nodeModportName(node) : undefined;
   const modportSource = isInterfaceModport ? nodeModportSource(node) : undefined;
-  const shouldShowModportHeader = isInterfaceModport && modportName && node.label === nodeTypeName(node);
+  const shouldShowModportHeader =
+    isInterfaceModport && modportName && node.label === nodeTypeName(node);
 
   return (
     <>
@@ -334,15 +400,42 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         // dimmed underlay below the foreground stripe pattern.
         <>
           <defs>
-            <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+            <pattern
+              id="svsch-struct-stripes"
+              patternUnits="userSpaceOnUse"
+              width="10"
+              height="10"
+              patternTransform="rotate(45)"
+            >
               <line className="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
             </pattern>
           </defs>
-          <rect className="svsch-bus-pipe-struct-bg" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
-          <rect className="svsch-bus-pipe-struct" x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+          <rect
+            className="svsch-bus-pipe-struct-bg"
+            x={pipeX}
+            y={pipeY}
+            width={pipeWidth}
+            height={pipeH}
+            rx={3}
+          />
+          <rect
+            className="svsch-bus-pipe-struct"
+            x={pipeX}
+            y={pipeY}
+            width={pipeWidth}
+            height={pipeH}
+            rx={3}
+          />
         </>
       ) : (
-        <rect className={`svsch-bus-pipe${isArrayAggregate ? ' svsch-bus-pipe-array' : ''}`} x={pipeX} y={pipeY} width={pipeWidth} height={pipeH} rx={3} />
+        <rect
+          className={`svsch-bus-pipe${isArrayAggregate ? ' svsch-bus-pipe-array' : ''}`}
+          x={pipeX}
+          y={pipeY}
+          width={pipeWidth}
+          height={pipeH}
+          rx={3}
+        />
       )}
       {isArrayAggregate && (
         <rect
@@ -358,7 +451,8 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
       )}
       {taps.map((port: DiagramPort, i: number) => {
         const cy = tapCenters[i];
-        const isStructBreakout = node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface');
+        const isStructBreakout =
+          node.kind === 'struct' || (node.kind === 'interface' && port.width !== 'interface');
         const annotation = isStructBreakout ? getSvgStructFieldAnnotation(node, port) : undefined;
         // Aggregate taps already encode slice/range text in their labels.
         const showCollapsedDesignator = false;
@@ -366,14 +460,17 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
           annotation,
           showWidth: showCollapsedDesignator,
           collapseWidth: showCollapsedDesignator,
-          hideInterfaceSuffix: isInterface
+          hideInterfaceSuffix: isInterface,
         });
-        const labelMaskWidth = Math.round(Math.max(20, monoTextWidth(displayLabel, 12) + labelMaskPaddingX * 2));
+        const labelMaskWidth = Math.round(
+          Math.max(20, monoTextWidth(displayLabel, 12) + labelMaskPaddingX * 2),
+        );
         const leftLabelX = pipeX - labelGapFromPipeEdge;
         const rightLabelX = pipeX + pipeWidth + labelGapFromPipeEdge;
-        // For interface modport: outputs go right, inputs go left (mirrors original bus-tap-right/left CSS)
+        // For interface modport: outputs go right, inputs go left
+        // (mirrors original bus-tap-right/left CSS)
         const tapGoesRight = isInterfaceModport
-          ? (port.preferredSide === 'right' || port.direction === 'output')
+          ? port.preferredSide === 'right' || port.direction === 'output'
           : !isComposition;
         const interfaceFieldClass = isInterface
           ? ` svsch-interface-field-label ${tapGoesRight ? 'svsch-interface-field-right' : 'svsch-interface-field-left'}`
@@ -385,8 +482,20 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         return !tapGoesRight ? (
           // Left tap: line from left edge to pipe, label left of pipe (text-anchor end)
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className={`svsch-bus-tap-line${tapThickClass}`} x1={0} y1={cy} x2={pipeX} y2={cy} />
-            <rect x={Math.round(leftLabelX + labelMaskPaddingX - labelMaskWidth)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
+            <line
+              className={`svsch-bus-tap-line${tapThickClass}`}
+              x1={0}
+              y1={cy}
+              x2={pipeX}
+              y2={cy}
+            />
+            <rect
+              x={Math.round(leftLabelX + labelMaskPaddingX - labelMaskWidth)}
+              y={cy - 8}
+              width={labelMaskWidth}
+              height={16}
+              fill="var(--vscode-editor-background)"
+            />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
@@ -410,8 +519,20 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         ) : (
           // Right tap: line from pipe to right edge, label right of pipe
           <g key={port.id} className="svsch-bus-tap" data-port-id={port.id}>
-            <line className={`svsch-bus-tap-line${tapThickClass}`} x1={pipeX + pipeWidth} y1={cy} x2={width} y2={cy} />
-            <rect x={Math.round(rightLabelX - labelMaskPaddingX)} y={cy - 8} width={labelMaskWidth} height={16} fill="var(--vscode-editor-background)" />
+            <line
+              className={`svsch-bus-tap-line${tapThickClass}`}
+              x1={pipeX + pipeWidth}
+              y1={cy}
+              x2={width}
+              y2={cy}
+            />
+            <rect
+              x={Math.round(rightLabelX - labelMaskPaddingX)}
+              y={cy - 8}
+              width={labelMaskWidth}
+              height={16}
+              fill="var(--vscode-editor-background)"
+            />
             <text
               className={`svsch-bus-tap-label${interfaceFieldClass}`}
               data-port-id={port.id}
@@ -434,16 +555,32 @@ export function BusNodeSvg({ node, width, height, arrayConnections, onNavigateTo
         );
       })}
       {/* Array leads for bus breakout/composition */}
-      {isArray && taps.map((port: DiagramPort, i: number) => {
-        const cy = tapCenters[i];
-        return isComposition
-          ? hasArrayConnection(port.id, 'target')
-            ? <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'target')} key={`lead-${port.id}`} side="left" width={width} y={cy} trimSink />
-            : null
-          : hasArrayConnection(port.id, 'source')
-            ? <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={`lead-${port.id}`} side="right" width={width} y={cy} />
-            : null;
-      })}
+      {isArray &&
+        taps.map((port: DiagramPort, i: number) => {
+          const cy = tapCenters[i];
+          return isComposition ? (
+            hasArrayConnection(port.id, 'target') ? (
+              <SvgArrayStackLeads
+                wide={stackWide}
+                thick={arrayConnectionThick(port.id, 'target')}
+                key={`lead-${port.id}`}
+                side="left"
+                width={width}
+                y={cy}
+                trimSink
+              />
+            ) : null
+          ) : hasArrayConnection(port.id, 'source') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'source')}
+              key={`lead-${port.id}`}
+              side="right"
+              width={width}
+              y={cy}
+            />
+          ) : null;
+        })}
     </>
   );
 }

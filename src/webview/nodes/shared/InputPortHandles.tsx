@@ -12,7 +12,7 @@ import { isInoutPort } from '../../../diagram/portDirection';
 export function InputPortHandles({
   port,
   position,
-  style
+  style,
 }: {
   port: DiagramPort;
   position: Position;

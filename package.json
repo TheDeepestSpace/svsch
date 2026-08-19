@@ -110,14 +110,18 @@
     "package": "SURELOG_AUTO_INSTALL=1 npm run compile && npx vsce package",
     "release": "SURELOG_AUTO_INSTALL=1 npm run compile && npx changeset publish",
     "watch": "node scripts/copy-diagram-css.js --watch & vite build --watch & tsc -watch -p tsconfig.extension.json",
-    "lint": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
+    "lint": "npm run lint:tsc && npm run lint:eslint",
+    "lint:tsc": "tsc --noEmit -p tsconfig.extension.json && tsc --noEmit -p tsconfig.webview.json && tsc --noEmit -p tsconfig.cli.json",
+    "lint:eslint": "eslint 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
+    "format": "prettier --write 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
     "test": "vitest run",
     "test:backend": "node scripts/run-backend-tests.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots=changed",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
-    "prepare": "node scripts/install-surelog.js || true && patch-package",
+    "prepare": "node scripts/install-surelog.js || true && patch-package && node scripts/setup-eslint-ts-shim.js",
     "test:bdd": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts",
     "test:bdd:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts --update-snapshots=changed",
     "test:bdd:headed": "scripts/start-vnc.sh",
@@ -141,7 +145,8 @@
     "svgo": "^4.0.2"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
+    "@changesets/cli": "^3.0.0",
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "1.62.0",
     "@types/diff": "^8.0.0",
     "@types/js-yaml": "^4.0.9",
@@ -154,6 +159,11 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vscode/vsce": "^3.2.1",
     "diff": "^9.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.5.0",
     "js-yaml": "^5.2.1",
     "jsdom": "^30.0.0",
     "multiple-cucumber-html-reporter": "^4.0.0",
@@ -161,9 +171,12 @@
     "pixelmatch": "^7.1.0",
     "playwright-bdd": "^9.0.0",
     "pngjs": "^7.0.0",
+    "prettier": "^3.9.6",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.4",
     "typescript": "^7.0.2",
+    "typescript-eslint": "^8.67.0",
+    "typescript-eslint-ts-compat": "npm:typescript@6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.0",
     "vscode-test-playwright": "^0.0.1-beta2"
@@ -184,6 +197,9 @@
     },
     "read-yaml-file": {
       "js-yaml": "^3.15.1"
+    },
+    "typescript-eslint": {
+      "typescript": "$typescript"
     }
   }
 }

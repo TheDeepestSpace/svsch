@@ -3,5 +3,5 @@ import { inverterGeometryWidth, type NodeSizingStrategy } from './nodeSizingComm
 
 export const inverterSizing: NodeSizingStrategy = {
   height: () => diagramSizing.gridSize * 2,
-  width: () => snapUpToEvenGrid(inverterGeometryWidth())
+  width: () => snapUpToEvenGrid(inverterGeometryWidth()),
 };

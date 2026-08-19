@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  buildLineJumpPath,
-  buildLineJumpRender,
-  defaultLineJumpOptions,
-  getEdgeOverlapHints
-} from './geometry';
+import { buildLineJumpRender, defaultLineJumpOptions, getEdgeOverlapHints } from './geometry';
 import type { LineJumpOptions, LineJumpRender, OverlapHint, PolylineEdgeGeometry } from './types';
 
 interface LineJumpContextValue {
@@ -25,18 +20,20 @@ function geometrySignature(geometry: PolylineEdgeGeometry): string {
     netKey: geometry.netKey,
     sourceHandlePoint: geometry.sourceHandlePoint,
     targetHandlePoint: geometry.targetHandlePoint,
-    points: geometry.points
+    points: geometry.points,
   });
 }
 
 export function LineJumpProvider({
   children,
-  options
+  options,
 }: {
   children: React.ReactNode;
   options?: LineJumpOptions;
 }): React.ReactElement {
-  const [geometryMap, setGeometryMap] = React.useState<Map<string, PolylineEdgeGeometry>>(() => new Map());
+  const [geometryMap, setGeometryMap] = React.useState<Map<string, PolylineEdgeGeometry>>(
+    () => new Map(),
+  );
   const signaturesRef = React.useRef<Map<string, string>>(new Map());
 
   const registerGeometry = React.useCallback((geometry: PolylineEdgeGeometry) => {
@@ -51,7 +48,7 @@ export function LineJumpProvider({
       const next = new Map(current);
       next.set(geometry.edgeId, {
         ...geometry,
-        points: geometry.points.map((point) => ({ ...point }))
+        points: geometry.points.map((point) => ({ ...point })),
       });
       return next;
     });
@@ -69,18 +66,24 @@ export function LineJumpProvider({
     });
   }, []);
 
-  const getRegisteredGeometry = React.useCallback((edgeId: string) => geometryMap.get(edgeId), [geometryMap]);
+  const getRegisteredGeometry = React.useCallback(
+    (edgeId: string) => geometryMap.get(edgeId),
+    [geometryMap],
+  );
 
-  const value = React.useMemo<LineJumpContextValue>(() => ({
-    geometries: Array.from(geometryMap.values()),
-    getRegisteredGeometry,
-    registerGeometry,
-    unregisterGeometry,
-    options: {
-      ...defaultLineJumpOptions,
-      ...options
-    }
-  }), [geometryMap, getRegisteredGeometry, options, registerGeometry, unregisterGeometry]);
+  const value = React.useMemo<LineJumpContextValue>(
+    () => ({
+      geometries: Array.from(geometryMap.values()),
+      getRegisteredGeometry,
+      registerGeometry,
+      unregisterGeometry,
+      options: {
+        ...defaultLineJumpOptions,
+        ...options,
+      },
+    }),
+    [geometryMap, getRegisteredGeometry, options, registerGeometry, unregisterGeometry],
+  );
 
   return <LineJumpContext.Provider value={value}>{children}</LineJumpContext.Provider>;
 }
@@ -107,47 +110,44 @@ function useRegisterGeometry(geometry: PolylineEdgeGeometry): LineJumpContextVal
   return context;
 }
 
-export function useLineJumpPath(
-  geometry: PolylineEdgeGeometry,
-  options?: LineJumpOptions
-): string {
+export function useLineJumpPath(geometry: PolylineEdgeGeometry, options?: LineJumpOptions): string {
   return useLineJumpRender(geometry, options).path;
 }
 
 export function useLineJumpRender(
   geometry: PolylineEdgeGeometry,
-  options?: LineJumpOptions
+  options?: LineJumpOptions,
 ): LineJumpRender {
   const context = useRegisterGeometry(geometry);
   const registeredGeometry = context?.getRegisteredGeometry(geometry.edgeId);
   const renderGeometry = registeredGeometry ?? geometry;
   const mergedOptions = {
     ...(context?.options ?? defaultLineJumpOptions),
-    ...options
+    ...options,
   };
   const geometries = context?.geometries ?? [geometry];
 
   return React.useMemo(
     () => buildLineJumpRender(renderGeometry, geometries, mergedOptions),
-    [geometrySignature(renderGeometry), geometries, JSON.stringify(mergedOptions)]
+    [geometrySignature(renderGeometry), geometries, JSON.stringify(mergedOptions)],
   );
 }
 
 export function useEdgeOverlapHints(
   geometry: PolylineEdgeGeometry,
-  options?: LineJumpOptions
+  options?: LineJumpOptions,
 ): OverlapHint[] {
   const context = useRegisterGeometry(geometry);
   const registeredGeometry = context?.getRegisteredGeometry(geometry.edgeId);
   const renderGeometry = registeredGeometry ?? geometry;
   const mergedOptions = {
     ...(context?.options ?? defaultLineJumpOptions),
-    ...options
+    ...options,
   };
   const geometries = context?.geometries ?? [geometry];
 
   return React.useMemo(
     () => getEdgeOverlapHints(renderGeometry, geometries, mergedOptions),
-    [geometrySignature(renderGeometry), geometries, JSON.stringify(mergedOptions)]
+    [geometrySignature(renderGeometry), geometries, JSON.stringify(mergedOptions)],
   );
 }

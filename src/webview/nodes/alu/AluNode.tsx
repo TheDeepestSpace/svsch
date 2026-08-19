@@ -22,12 +22,15 @@ export function AluNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
   const g = diagramSizing.gridSize;
   const inputTops = aluInputPortTops(g);
 
-  const sideInputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const sideInputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
 
   return (
@@ -38,22 +41,47 @@ export function AluNode({ data }: { data: HdlNodeData }): React.ReactElement {
       style={nodeStyle}
       className={`hdl-node hdl-node-alu${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       onDoubleClick={() => handleNodeDoubleClick(node)}
-      svg={<AluNodeSvg node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />}
+      svg={
+        <AluNodeSvg
+          node={node}
+          width={nodeWidth}
+          height={nodeHeight}
+          arrayConnections={arrayConnections}
+        />
+      }
       handles={
         <>
           {sideInputs.slice(0, 2).map((port: DiagramPort, index: number) => (
-            <InputPortHandles key={port.id} port={port} position={Position.Left}
-              style={{ top: inputTops[index] }} />
+            <InputPortHandles
+              key={port.id}
+              port={port}
+              position={Position.Left}
+              style={{ top: inputTops[index] }}
+            />
           ))}
           {outputs.slice(0, 1).map((port: DiagramPort) => (
-            <Handle key={port.id} type="source" id={port.id} position={Position.Right}
-              style={{ top: nodeHeight / 2 }} />
+            <Handle
+              key={port.id}
+              type="source"
+              id={port.id}
+              position={Position.Right}
+              style={{ top: nodeHeight / 2 }}
+            />
           ))}
         </>
       }
       // Non-array ALUs get their selection outline from AluNodeSvg's own
       // node-skin-selection path; only the array-stack case needs this overlay.
-      selection={isArray && <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
+      selection={
+        isArray && (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        )
+      }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />
   );

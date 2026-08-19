@@ -20,7 +20,7 @@ export function LiteralNode({ data }: { data: HdlNodeData }): React.ReactElement
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
@@ -32,7 +32,11 @@ export function LiteralNode({ data }: { data: HdlNodeData }): React.ReactElement
       height={nodeHeight}
       style={nodeStyle}
       className={`hdl-node hdl-node-literal${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : node.kind
+      }
       onDoubleClick={() => handleNodeDoubleClick(node)}
       svg={
         <LiteralNodeSvg
@@ -47,9 +51,16 @@ export function LiteralNode({ data }: { data: HdlNodeData }): React.ReactElement
         <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
       ))}
       selection={
-        isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />
+        isArray ? (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        ) : (
+          <div className="hdl-node-selection-rect" aria-hidden="true" />
+        )
       }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />

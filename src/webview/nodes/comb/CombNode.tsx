@@ -22,10 +22,13 @@ export function CombNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
-  const sideInputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const sideInputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
   const SvgComp = node.kind === 'comb' ? CombNodeSvg : LoopNodeSvg;
 
@@ -37,23 +40,46 @@ export function CombNode({ data }: { data: HdlNodeData }): React.ReactElement {
       style={nodeStyle}
       className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       onDoubleClick={() => handleNodeDoubleClick(node)}
-      svg={<SvgComp node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />}
+      svg={
+        <SvgComp
+          node={node}
+          width={nodeWidth}
+          height={nodeHeight}
+          arrayConnections={arrayConnections}
+        />
+      }
       handles={
         <>
           {sideInputs.map((port: DiagramPort, i: number) => (
-            <InputPortHandles key={port.id} port={port} position={Position.Left}
-              style={{ top: nodePortCenterOffset(i) }} />
+            <InputPortHandles
+              key={port.id}
+              port={port}
+              position={Position.Left}
+              style={{ top: nodePortCenterOffset(i) }}
+            />
           ))}
           {outputs.map((port: DiagramPort, i: number) => (
-            <Handle key={port.id} type="source" id={port.id} position={Position.Right}
-              style={{ top: nodePortCenterOffset(i) }} />
+            <Handle
+              key={port.id}
+              type="source"
+              id={port.id}
+              position={Position.Right}
+              style={{ top: nodePortCenterOffset(i) }}
+            />
           ))}
         </>
       }
       selection={
-        isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />
+        isArray ? (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        ) : (
+          <div className="hdl-node-selection-rect" aria-hidden="true" />
+        )
       }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />

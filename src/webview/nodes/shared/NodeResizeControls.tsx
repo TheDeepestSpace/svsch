@@ -2,8 +2,14 @@ import React, { useContext } from 'react';
 import { InteractionContext, type NodeResizeHandle } from './context';
 
 const RESIZE_HANDLES: NodeResizeHandle[] = [
-  'top', 'right', 'bottom', 'left',
-  'top-left', 'top-right', 'bottom-right', 'bottom-left'
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'top-left',
+  'top-right',
+  'bottom-right',
+  'bottom-left',
 ];
 
 /**
@@ -13,9 +19,7 @@ const RESIZE_HANDLES: NodeResizeHandle[] = [
  * startNodeResize on InteractionContext. Reverting a resize lives with the
  * other selected-block actions in NodeSelectionToolbar.
  */
-export function NodeResizeControls({ nodeId }: {
-  nodeId: string;
-}): React.ReactElement {
+export function NodeResizeControls({ nodeId }: { nodeId: string }): React.ReactElement {
   const { startNodeResize } = useContext(InteractionContext);
   return (
     <React.Fragment>

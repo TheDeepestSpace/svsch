@@ -7,7 +7,7 @@ import {
   interfaceTopHatHeight,
   orderedInterfaceSidePorts,
   portSkinDirection,
-  portSkinTopRightVertex
+  portSkinTopRightVertex,
 } from './interfaceGeometry';
 import { muxRightTopY } from './muxGeometry';
 import { isInputSidePort } from './portDirection';
@@ -24,7 +24,11 @@ import { literalSizing } from './literalSizing';
 import { gateSizing } from './gateSizing';
 import { defaultSizing } from './defaultSizing';
 import { inverterGeometryWidth } from './nodeSizingCommon';
-import type { DiagramNodeDimensions, NodeSizingContext, NodeSizingStrategy } from './nodeSizingCommon';
+import type {
+  DiagramNodeDimensions,
+  NodeSizingContext,
+  NodeSizingStrategy,
+} from './nodeSizingCommon';
 
 export type { DiagramNodeDimensions } from './nodeSizingCommon';
 export { instanceParameterRows, inverterGeometryWidth } from './nodeSizingCommon';
@@ -48,7 +52,7 @@ const sizingStrategies: Partial<Record<DiagramNode['kind'], NodeSizingStrategy>>
   register: registerSizing,
   comb: combSizing,
   replicate: replicateSizing,
-  literal: literalSizing
+  literal: literalSizing,
 };
 
 /**
@@ -70,7 +74,7 @@ export function resolvedNodeDimensions(node: DiagramNode): DiagramNodeDimensions
   const grid = diagramSizing.gridSize;
   return {
     width: Math.max(canonical.width, override.width * grid),
-    height: Math.max(canonical.height, override.height * grid)
+    height: Math.max(canonical.height, override.height * grid),
   };
 }
 
@@ -97,7 +101,11 @@ const monospaceCharacterWidth = 0.62;
  * interface ports, which reuse the port skin) come to a nose point or a
  * vertical edge short of the top-right corner.
  */
-export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+export function nodeOutlineTopRightVertex(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeOutlineVertex {
   if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu') {
     return { x: width, y: muxRightTopY(height) };
   }
@@ -118,16 +126,21 @@ export function nodeOutlineTopRightVertex(node: DiagramNode, width: number, heig
  * occupy that same top-right space on the skins that render them, so those
  * warnings move far enough right to clear the complete badge text.
  */
-export function nodeWarningIconCenter(node: DiagramNode, width: number, height: number): NodeWarningIconCenter {
+export function nodeWarningIconCenter(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeWarningIconCenter {
   const vertex = nodeOutlineTopRightVertex(node, width, height);
   const halfGrid = diagramSizing.gridSize / 2;
   let x = vertex.x + halfGrid;
   const arrayDimension = renderedArrayDimensionBadge(node);
 
   if (arrayDimension) {
-    const badgeRight = width
-      + arrayBadgeStartOffset
-      + arrayDimension.length * arrayBadgeFontSize * monospaceCharacterWidth;
+    const badgeRight =
+      width +
+      arrayBadgeStartOffset +
+      arrayDimension.length * arrayBadgeFontSize * monospaceCharacterWidth;
     x = Math.max(x, badgeRight + halfGrid);
   }
 
@@ -142,7 +155,12 @@ function renderedArrayDimensionBadge(node: DiagramNode): string | undefined {
   if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) {
     return dimension;
   }
-  if (node.kind === 'register' || node.kind === 'latch' || node.kind === 'replicate' || node.kind === 'literal') {
+  if (
+    node.kind === 'register' ||
+    node.kind === 'latch' ||
+    node.kind === 'replicate' ||
+    node.kind === 'literal'
+  ) {
     return dimension;
   }
   if (node.kind === 'instance' || node.kind === 'module' || node.kind === 'unknown') {
@@ -154,19 +172,46 @@ function renderedArrayDimensionBadge(node: DiagramNode): string | undefined {
 // Mirrors the port/side-notch geometry BusNodeSvg feeds into interfaceSkinPath,
 // so the warning icon lands on the chevron outline's actual right-most vertex
 // instead of the (possibly notch-shorted or hat-narrowed) bbox corner.
-function interfaceInstanceTopRightVertex(node: DiagramNode, width: number, height: number): NodeOutlineVertex {
+function interfaceInstanceTopRightVertex(
+  node: DiagramNode,
+  width: number,
+  height: number,
+): NodeOutlineVertex {
   const grid = diagramSizing.gridSize;
-  const visible = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'));
-  const topPorts = visible.filter((port) => port.direction === 'input' && port.width !== 'interface');
-  const bottomPorts = visible.filter((port) => port.direction === 'output' && port.width !== 'interface');
-  const sidePorts = visible.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'));
+  const visible = node.ports.filter(
+    (port) =>
+      port.width !== 'interface' ||
+      port.preferredSide ||
+      port.id.endsWith(':left') ||
+      port.id.endsWith(':right'),
+  );
+  const topPorts = visible.filter(
+    (port) => port.direction === 'input' && port.width !== 'interface',
+  );
+  const bottomPorts = visible.filter(
+    (port) => port.direction === 'output' && port.width !== 'interface',
+  );
+  const sidePorts = visible.filter(
+    (port) =>
+      port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'),
+  );
   const ordered = orderedInterfaceSidePorts(sidePorts);
   const topHatH = interfaceTopHatHeight(topPorts.length > 0);
   const bottomHatH = interfaceTopHatHeight(bottomPorts.length > 0);
   const shiftY = diagramSizing.interfaceInstanceShiftY;
   const unshiftedH = Math.max(grid, height - shiftY);
-  const leftCenters = distributedInterfaceSideCenters(ordered.left.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
-  const rightCenters = distributedInterfaceSideCenters(ordered.right.length, unshiftedH, topHatH, bottomHatH).map((c) => c + shiftY);
+  const leftCenters = distributedInterfaceSideCenters(
+    ordered.left.length,
+    unshiftedH,
+    topHatH,
+    bottomHatH,
+  ).map((c) => c + shiftY);
+  const rightCenters = distributedInterfaceSideCenters(
+    ordered.right.length,
+    unshiftedH,
+    topHatH,
+    bottomHatH,
+  ).map((c) => c + shiftY);
 
   return interfaceSkinPath({
     width,
@@ -174,7 +219,7 @@ function interfaceInstanceTopRightVertex(node: DiagramNode, width: number, heigh
     leftCenters,
     rightCenters,
     topPortCount: topPorts.length,
-    bottomPortCount: bottomPorts.length
+    bottomPortCount: bottomPorts.length,
   }).topRightVertex;
 }
 
@@ -183,21 +228,34 @@ export function diagramNodeDimensions(node: DiagramNode): DiagramNodeDimensions 
   const strategy = sizingStrategies[node.kind] ?? defaultSizing;
   return {
     width: strategy.width(node, ctx),
-    height: strategy.height(node, ctx)
+    height: strategy.height(node, ctx),
   };
 }
 
 function nodeSizingContext(node: DiagramNode): NodeSizingContext {
   const role = structRole(node);
   const isInterfaceInstance = node.kind === 'interface' && role !== 'modport' && role !== 'port';
-  const visiblePorts = node.kind === 'interface'
-    ? node.ports.filter((port) => port.width !== 'interface' || port.preferredSide || port.id.endsWith(':left') || port.id.endsWith(':right'))
-    : node.ports;
+  const visiblePorts =
+    node.kind === 'interface'
+      ? node.ports.filter(
+          (port) =>
+            port.width !== 'interface' ||
+            port.preferredSide ||
+            port.id.endsWith(':left') ||
+            port.id.endsWith(':right'),
+        )
+      : node.ports;
 
-  const topPorts = isInterfaceInstance ? visiblePorts.filter(p => p.direction === 'input' && p.width !== 'interface') : [];
-  const bottomPorts = isInterfaceInstance ? visiblePorts.filter(p => p.direction === 'output' && p.width !== 'interface') : [];
+  const topPorts = isInterfaceInstance
+    ? visiblePorts.filter((p) => p.direction === 'input' && p.width !== 'interface')
+    : [];
+  const bottomPorts = isInterfaceInstance
+    ? visiblePorts.filter((p) => p.direction === 'output' && p.width !== 'interface')
+    : [];
   const sidePorts = isInterfaceInstance
-    ? visiblePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'))
+    ? visiblePorts.filter(
+        (p) => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'),
+      )
     : visiblePorts;
 
   const inputs = sidePorts.filter(isInputSidePort);
@@ -205,11 +263,13 @@ function nodeSizingContext(node: DiagramNode): NodeSizingContext {
 
   // Mux/select reserve their first N inputs as a top row (select lines); the
   // rest sit in the side rows every kind's port-row math is based on.
-  const topInputCount = node.kind === 'mux'
-    ? 1
-    : node.kind === 'select'
-      ? inputs.filter((port) => port.name === 's' || port.name === 'sel' || port.name === 'width').length
-      : 0;
+  const topInputCount =
+    node.kind === 'mux'
+      ? 1
+      : node.kind === 'select'
+        ? inputs.filter((port) => port.name === 's' || port.name === 'sel' || port.name === 'width')
+            .length
+        : 0;
   const sideInputs = topInputCount > 0 ? inputs.slice(topInputCount) : inputs;
   const portRows = Math.max(sideInputs.length, outputs.length);
 
@@ -220,6 +280,6 @@ function nodeSizingContext(node: DiagramNode): NodeSizingContext {
     bottomPorts,
     inputsCount: inputs.length,
     outputsCount: outputs.length,
-    portRows
+    portRows,
   };
 }

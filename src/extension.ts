@@ -36,12 +36,14 @@ export function activate(context: vscode.ExtensionContext): void {
       const folder = await vscode.window.showInputBox({
         title: 'SVSCH: Set Project Folder',
         prompt: 'Workspace-relative folder containing SystemVerilog/Verilog files',
-        value: vscode.workspace.getConfiguration('svsch').get<string>('projectFolder') || 'src'
+        value: vscode.workspace.getConfiguration('svsch').get<string>('projectFolder') || 'src',
       });
       if (folder === undefined) {
         return;
       }
-      await vscode.workspace.getConfiguration('svsch').update('projectFolder', folder, vscode.ConfigurationTarget.Workspace);
+      await vscode.workspace
+        .getConfiguration('svsch')
+        .update('projectFolder', folder, vscode.ConfigurationTarget.Workspace);
       await getPanel().rebuild();
     }),
     vscode.commands.registerCommand('svsch.rebuildDiagram', async () => {
@@ -49,7 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('svsch.resetLayout', async () => {
       await getPanel().resetLayoutForCurrentModule();
-    })
+    }),
   );
 }
 

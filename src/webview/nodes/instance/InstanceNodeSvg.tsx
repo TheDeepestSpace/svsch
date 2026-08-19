@@ -7,12 +7,25 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
-import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  SvgParameterizedText,
+  SvgParameterizedTextUnderlines,
+  SvgPortLabel,
+} from '../shared/labels';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort, InstanceParameter } from '../../../ir/types';
 import { isInputSidePort } from '../../../diagram/portDirection';
 
-export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function InstanceNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const stackLayers = arrayStackLayersFor(stackWide);
@@ -33,8 +46,7 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   const paramRows = instanceParameterRows(node);
 
   // Module name shown as kind label, instance label as title
-  const kindLabel =
-    node.kind === 'instance' && node.instanceOf ? node.instanceOf : node.label;
+  const kindLabel = node.kind === 'instance' && node.instanceOf ? node.instanceOf : node.label;
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
   const contentShiftY = isArray ? stackLayers.front.dy : 0;
   const shapeTransform = isArray
@@ -46,40 +58,58 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
   const chipHeight = 16;
   const chipGap = 2;
   const chipPaddingX = 4;
-  const chipStackHeight = instanceParameters.length > 0
-    ? instanceParameters.length * chipHeight + Math.max(0, instanceParameters.length - 1) * chipGap
-    : 0;
+  const chipStackHeight =
+    instanceParameters.length > 0
+      ? instanceParameters.length * chipHeight +
+        Math.max(0, instanceParameters.length - 1) * chipGap
+      : 0;
   const chipStackTop = 16 + Math.max(0, (paramRows * g - chipStackHeight) / 2);
-  const chipTextY = (index: number) => Math.round(chipStackTop + index * (chipHeight + chipGap) + chipHeight / 2 + contentShiftY);
+  const chipTextY = (index: number) =>
+    Math.round(chipStackTop + index * (chipHeight + chipGap) + chipHeight / 2 + contentShiftY);
   const chipY = (index: number) => chipTextY(index) - chipHeight / 2;
   const chipX = 12 + contentShiftX;
-  const titleY = Math.round(paramRows > 0
-    ? 16 + g * paramRows + (diagramSizing.nodeHeaderHeight - 16) / 2 + contentShiftY
-    : 26 + contentShiftY);
+  const titleY = Math.round(
+    paramRows > 0
+      ? 16 + g * paramRows + (diagramSizing.nodeHeaderHeight - 16) / 2 + contentShiftY
+      : 26 + contentShiftY,
+  );
 
   const targetStackLeads = (
     <>
-      {isArray && inputs.map((port: DiagramPort, i: number) =>
-        hasArrayConnection(port.id, 'target') ? (
-          <SvgArrayStackLeads
-            wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'target')}
-            key={`lead-${port.id}`}
-            side="left"
-            width={width}
-            y={nodePortCenterOffset(i + paramRows)}
-            trimSink
-          />
-        ) : null
-      )}
+      {isArray &&
+        inputs.map((port: DiagramPort, i: number) =>
+          hasArrayConnection(port.id, 'target') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'target')}
+              key={`lead-${port.id}`}
+              side="left"
+              width={width}
+              y={nodePortCenterOffset(i + paramRows)}
+              trimSink
+            />
+          ) : null,
+        )}
     </>
   );
 
   return (
     <>
       {targetStackLeads}
-      <ArrayStackSkinRect isArray={isArray} skinLayers={skinLayers} shapeTransform={shapeTransform} width={width} height={height} />
-      <text className="svsch-node-kind" x={12 + contentShiftX} y={14 + contentShiftY} textAnchor="start" dominantBaseline="middle">
+      <ArrayStackSkinRect
+        isArray={isArray}
+        skinLayers={skinLayers}
+        shapeTransform={shapeTransform}
+        width={width}
+        height={height}
+      />
+      <text
+        className="svsch-node-kind"
+        x={12 + contentShiftX}
+        y={14 + contentShiftY}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
         {kindLabel}
       </text>
       {isArray && arrayDim && (
@@ -117,7 +147,11 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
                 <>
                   <tspan className="svsch-instance-param-equals">=</tspan>
                   <tspan className="svsch-instance-param-value">
-                    <SvgParameterizedText text={value} refs={param.parameterRefs} onNavigateToSource={onNavigateToSource} />
+                    <SvgParameterizedText
+                      text={value}
+                      refs={param.parameterRefs}
+                      onNavigateToSource={onNavigateToSource}
+                    />
                   </tspan>
                 </>
               )}
@@ -137,7 +171,13 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
         );
       })}
 
-      <text className="svsch-node-title" x={12 + contentShiftX} y={titleY} textAnchor="start" dominantBaseline="middle">
+      <text
+        className="svsch-node-title"
+        x={12 + contentShiftX}
+        y={titleY}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
         {node.label}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
       </text>
@@ -167,19 +207,21 @@ export function InstanceNodeSvg({ node, width, height, arrayConnections, onNavig
         </text>
       ))}
 
-      {/* Array stack leads (source/right side; target/left side painted before the stack layers) */}
-      {isArray && outputs.map((port: DiagramPort, i: number) =>
-        hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads
-            wide={stackWide}
-            thick={arrayConnectionThick(port.id, 'source')}
-            key={`lead-${port.id}`}
-            side="right"
-            width={width}
-            y={nodePortCenterOffset(i + paramRows)}
-          />
-        ) : null
-      )}
+      {/* Array stack leads (source/right side; target/left side painted before
+          the stack layers) */}
+      {isArray &&
+        outputs.map((port: DiagramPort, i: number) =>
+          hasArrayConnection(port.id, 'source') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'source')}
+              key={`lead-${port.id}`}
+              side="right"
+              width={width}
+              y={nodePortCenterOffset(i + paramRows)}
+            />
+          ) : null,
+        )}
     </>
   );
 }

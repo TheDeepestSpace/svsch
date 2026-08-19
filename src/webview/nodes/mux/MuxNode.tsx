@@ -23,15 +23,26 @@ export function MuxNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
-  const inputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const inputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
-  const muxTopPorts = node.kind === 'select'
-    ? inputs.filter((port: DiagramPort) => port.name === 's' || port.name === 'sel' || port.name === 'width')
-    : (inputs.some((port: DiagramPort) => port.name === 'sel') ? inputs.filter((port: DiagramPort) => port.name === 'sel').slice(0, 1) : inputs.slice(0, 1));
-  const sideInputs = muxTopPorts.length > 0 ? inputs.filter((port: DiagramPort) => !muxTopPorts.some((topPort) => topPort.id === port.id)) : inputs;
+  const muxTopPorts =
+    node.kind === 'select'
+      ? inputs.filter(
+          (port: DiagramPort) => port.name === 's' || port.name === 'sel' || port.name === 'width',
+        )
+      : inputs.some((port: DiagramPort) => port.name === 'sel')
+        ? inputs.filter((port: DiagramPort) => port.name === 'sel').slice(0, 1)
+        : inputs.slice(0, 1);
+  const sideInputs =
+    muxTopPorts.length > 0
+      ? inputs.filter((port: DiagramPort) => !muxTopPorts.some((topPort) => topPort.id === port.id))
+      : inputs;
   const SvgComp = node.kind === 'mux' ? MuxNodeSvg : SelectNodeSvg;
 
   return (
@@ -43,32 +54,64 @@ export function MuxNode({ data }: { data: HdlNodeData }): React.ReactElement {
       className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
       svgClassName="mux-skin"
       onDoubleClick={() => handleNodeDoubleClick(node)}
-      svg={<SvgComp node={node} width={nodeWidth} height={nodeHeight} arrayConnections={arrayConnections} />}
+      svg={
+        <SvgComp
+          node={node}
+          width={nodeWidth}
+          height={nodeHeight}
+          arrayConnections={arrayConnections}
+        />
+      }
       extraContent={
         // Hidden label for test findNodeIdByLabel compatibility
-        <div className="node-title" style={{ display: 'none' }}>{node.label}</div>
+        <div className="node-title" style={{ display: 'none' }}>
+          {node.label}
+        </div>
       }
       handles={
         <>
           {muxTopPorts.map((port: DiagramPort, index: number) => (
-            <InputPortHandles key={port.id} port={port} position={Position.Top}
+            <InputPortHandles
+              key={port.id}
+              port={port}
+              position={Position.Top}
               style={{
                 left: `${((index + 1) / (muxTopPorts.length + 1)) * nodeWidth}px`,
-                top: diagramSizing.gridSize,  // matches original .mux-select-port { top: var(--svsch-grid) }
+                // matches original .mux-select-port { top: var(--svsch-grid) }
+                top: diagramSizing.gridSize,
                 transform: 'translateX(-50%)',
-              }} />
+              }}
+            />
           ))}
           {sideInputs.map((port: DiagramPort, index: number) => (
-            <InputPortHandles key={port.id} port={port} position={Position.Left}
-              style={{ top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) }} />
+            <InputPortHandles
+              key={port.id}
+              port={port}
+              position={Position.Left}
+              style={{ top: muxInputPortCenterY(index, sideInputs.length, nodeHeight) }}
+            />
           ))}
           {outputs.slice(0, 1).map((port: DiagramPort) => (
-            <Handle key={port.id} type="source" id={port.id} position={Position.Right}
-              style={{ top: nodeHeight / 2 }} />
+            <Handle
+              key={port.id}
+              type="source"
+              id={port.id}
+              position={Position.Right}
+              style={{ top: nodeHeight / 2 }}
+            />
           ))}
         </>
       }
-      selection={isArray && <ArrayStackSelection kind="mux" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />}
+      selection={
+        isArray && (
+          <ArrayStackSelection
+            kind="mux"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        )
+      }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />
   );

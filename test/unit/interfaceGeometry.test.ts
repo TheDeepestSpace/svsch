@@ -7,7 +7,7 @@ import {
   interfaceTopHatHeight,
   interfaceTopHatTop,
   interfaceTopPortX,
-  orderedInterfaceSidePorts
+  orderedInterfaceSidePorts,
 } from '../../src/diagram/interfaceGeometry';
 import { diagramNodeDimensions, nodeOutlineTopRightVertex } from '../../src/diagram/nodeSizing';
 import { interfaceInstanceTopHatY } from '../../src/diagram/visualHandleGeometry';
@@ -19,7 +19,7 @@ describe('interface instance geometry', () => {
       port('monitor', 'right', 30),
       port('controller', 'left', 40),
       port('producer', 'left', 10),
-      port('consumer', 'right', 20)
+      port('consumer', 'right', 20),
     ];
 
     const ordered = orderedInterfaceSidePorts(ports);
@@ -32,7 +32,11 @@ describe('interface instance geometry', () => {
     const width = diagramSizing.gridSize * 8;
     const topHat = interfaceTopHatBounds(width, 2);
     const topXs = [interfaceTopPortX(width, 2, 0), interfaceTopPortX(width, 2, 1)];
-    const sideCenters = distributedInterfaceSideCenters(2, diagramSizing.gridSize * 8, interfaceTopHatHeight(true));
+    const sideCenters = distributedInterfaceSideCenters(
+      2,
+      diagramSizing.gridSize * 8,
+      interfaceTopHatHeight(true),
+    );
 
     expect(topHat.width).toBeGreaterThanOrEqual(diagramSizing.gridSize * 4);
     expect(topXs[0]).toBeGreaterThan(topHat.left);
@@ -40,7 +44,9 @@ describe('interface instance geometry', () => {
     expect(topXs[1] - topXs[0]).toBeGreaterThanOrEqual(diagramSizing.gridSize);
     expect(sideCenters[1] - sideCenters[0]).toBe(diagramSizing.gridSize * 2);
     expect(sideCenters.every((center) => center % (diagramSizing.gridSize / 2) === 0)).toBe(true);
-    expect(interfaceTopHatTop(sideCenters, interfaceTopHatHeight(true))).toBe(sideCenters[0] - diagramSizing.gridSize * 1.5);
+    expect(interfaceTopHatTop(sideCenters, interfaceTopHatHeight(true))).toBe(
+      sideCenters[0] - diagramSizing.gridSize * 1.5,
+    );
   });
 
   it('uses the same cap width for top and bottom interface ports', () => {
@@ -69,7 +75,12 @@ describe('interface instance geometry', () => {
     const grid = diagramSizing.gridSize;
     // Content-derived height: corridor + hat + rows + bottom cap.
     const height = grid * 6;
-    const sideCenters = distributedInterfaceSideCenters(2, height, interfaceTopHatHeight(true), interfaceTopHatHeight(true));
+    const sideCenters = distributedInterfaceSideCenters(
+      2,
+      height,
+      interfaceTopHatHeight(true),
+      interfaceTopHatHeight(true),
+    );
 
     expect(sideCenters).toEqual([grid * 2.5, grid * 4.5]);
     expect(sideCenters[1] + grid / 2 + interfaceTopHatHeight(true)).toBe(height);
@@ -77,7 +88,12 @@ describe('interface instance geometry', () => {
 
   it('biases a single side modport down against the bottom cap', () => {
     const grid = diagramSizing.gridSize;
-    const sideCenters = distributedInterfaceSideCenters(1, grid * 4, interfaceTopHatHeight(true), interfaceTopHatHeight(true));
+    const sideCenters = distributedInterfaceSideCenters(
+      1,
+      grid * 4,
+      interfaceTopHatHeight(true),
+      interfaceTopHatHeight(true),
+    );
 
     expect(sideCenters).toEqual([grid * 2.5]);
     expect(sideCenters[0] + grid / 2).toBe(grid * 3);
@@ -87,7 +103,7 @@ describe('interface instance geometry', () => {
     const grid = diagramSizing.gridSize;
     const shiftY = grid; // 24px
     const rawCenters = [84, 132];
-    const shiftedCenters = rawCenters.map(c => c + shiftY);
+    const shiftedCenters = rawCenters.map((c) => c + shiftY);
     const topHatHeight = grid;
     const topHatTop = interfaceTopHatTop(shiftedCenters, topHatHeight);
 
@@ -105,8 +121,8 @@ describe('interface instance geometry', () => {
       metadata: { role: 'breakout', typeName: 'caps_only_if' },
       ports: [
         { id: 'clk', name: 'clk', direction: 'input' },
-        { id: 'done', name: 'done', direction: 'output' }
-      ]
+        { id: 'done', name: 'done', direction: 'output' },
+      ],
     };
     const { width, height } = diagramNodeDimensions(node);
     const rendered = interfaceSkinPath({
@@ -115,7 +131,7 @@ describe('interface instance geometry', () => {
       leftCenters: [],
       rightCenters: [],
       topPortCount: 1,
-      bottomPortCount: 1
+      bottomPortCount: 1,
     });
 
     expect(interfaceInstanceTopHatY(node, height)).toBe(rendered.topHatTop);
@@ -132,6 +148,6 @@ function port(name: string, preferredSide: 'left' | 'right', startLine: number):
     direction: preferredSide === 'left' ? 'input' : 'output',
     width: 'interface',
     preferredSide,
-    modportSource: { file: 'fixture.sv', startLine }
+    modportSource: { file: 'fixture.sv', startLine },
   };
 }

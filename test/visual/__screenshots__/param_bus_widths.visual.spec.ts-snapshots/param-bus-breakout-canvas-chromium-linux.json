@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "bus:param_bus_breakout:data_i",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 24
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:data_i",
+            "name": "data_i",
+            "direction": "input"
+          },
+          {
+            "id": "out:data_i_7:4_",
+            "name": "data_i[7:4]",
+            "direction": "output"
+          },
+          {
+            "id": "out:data_i_3:0_",
+            "name": "data_i[3:0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_bus_breakout:data_i",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 240,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:data_i",
+            "name": "data_i",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_bus_breakout:hi_o",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:hi_o",
+            "name": "hi_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_bus_breakout:lo_o",
+      "type": "hdl",
+      "position": {
+        "x": 840,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:lo_o",
+            "name": "lo_o",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:param_bus_breakout:data_i:port:param_bus_breakout:hi_o:hi_o",
+      "source": "bus:param_bus_breakout:data_i",
+      "target": "port:param_bus_breakout:hi_o",
+      "sourceHandle": "out:data_i_7:4_",
+      "targetHandle": "port:hi_o",
+      "path": "M 624 48 L 648 48 L 816 48 L 840 48"
+    },
+    {
+      "id": "edge:bus:param_bus_breakout:data_i:port:param_bus_breakout:lo_o:lo_o",
+      "source": "bus:param_bus_breakout:data_i",
+      "target": "port:param_bus_breakout:lo_o",
+      "sourceHandle": "out:data_i_3:0_",
+      "targetHandle": "port:lo_o",
+      "path": "M 624 96 L 648 96 L 816 96 L 840 96"
+    },
+    {
+      "id": "edge:port:param_bus_breakout:data_i:bus:param_bus_breakout:data_i:data_i",
+      "source": "port:param_bus_breakout:data_i",
+      "target": "bus:param_bus_breakout:data_i",
+      "sourceHandle": "port:data_i",
+      "targetHandle": "in:data_i",
+      "path": "M 264 48 L 288 48 L 456 48 L 480 48"
+    }
+  ]
+}

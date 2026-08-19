@@ -1,16 +1,30 @@
 import type { DiagramNode, DiagramPort } from '../ir/types';
 import { selectPortLabel } from './selectLabels';
 import { diagramSizing, muxHeightForPortRows, snapUpToEvenGrid } from './constants';
-import { measureText, portLabel, snappedWidth, type NodeSizingContext, type NodeSizingStrategy } from './nodeSizingCommon';
+import {
+  measureText,
+  portLabel,
+  snappedWidth,
+  type NodeSizingContext,
+  type NodeSizingStrategy,
+} from './nodeSizingCommon';
 
 function muxPortLabel(node: DiagramNode, port: DiagramPort, collapseWidth: boolean): string {
-  return node.kind === 'select' ? selectPortLabel(node, port) : portLabel(port, true, true, collapseWidth);
+  return node.kind === 'select'
+    ? selectPortLabel(node, port)
+    : portLabel(port, true, true, collapseWidth);
 }
 
 function muxWidth(node: DiagramNode, ctx: NodeSizingContext): number {
   const isSelect = node.kind === 'select';
-  const inputLabelWidth = Math.max(0, ...ctx.sideInputs.map((port) => measureText(muxPortLabel(node, port, !isSelect))));
-  const outputLabelWidth = Math.max(0, ...ctx.outputs.slice(0, 1).map((port) => measureText(muxPortLabel(node, port, !isSelect))));
+  const inputLabelWidth = Math.max(
+    0,
+    ...ctx.sideInputs.map((port) => measureText(muxPortLabel(node, port, !isSelect))),
+  );
+  const outputLabelWidth = Math.max(
+    0,
+    ...ctx.outputs.slice(0, 1).map((port) => measureText(muxPortLabel(node, port, !isSelect))),
+  );
   const labelBasedWidth = inputLabelWidth + outputLabelWidth + diagramSizing.muxHorizontalPadding;
 
   // When there are many inputs the mux is tall, the slanted top/bottom edges cut into the label
@@ -32,16 +46,21 @@ function muxWidth(node: DiagramNode, ctx: NodeSizingContext): number {
       const bindingGap = Math.min(topGap, bottomCenterGap);
       if (bindingGap > 0) {
         const cssTypeSuffixMargin = 2;
-        const labelRightEdge = diagramSizing.muxHorizontalPadding / 2 + inputLabelWidth + cssTypeSuffixMargin;
-        slopeMinWidth = rightTop * labelRightEdge / bindingGap;
+        const labelRightEdge =
+          diagramSizing.muxHorizontalPadding / 2 + inputLabelWidth + cssTypeSuffixMargin;
+        slopeMinWidth = (rightTop * labelRightEdge) / bindingGap;
       }
     }
   }
 
-  return snappedWidth(diagramSizing.muxWidth, Math.max(labelBasedWidth, slopeMinWidth), snapUpToEvenGrid);
+  return snappedWidth(
+    diagramSizing.muxWidth,
+    Math.max(labelBasedWidth, slopeMinWidth),
+    snapUpToEvenGrid,
+  );
 }
 
 export const muxSizing: NodeSizingStrategy = {
   height: (_node, ctx) => muxHeightForPortRows(ctx.portRows),
-  width: muxWidth
+  width: muxWidth,
 };

@@ -16,19 +16,36 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
-import { SvgParameterizedText, SvgParameterizedTextUnderlines, SvgPortLabel } from '../shared/labels';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  SvgParameterizedText,
+  SvgParameterizedTextUnderlines,
+  SvgPortLabel,
+} from '../shared/labels';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
-export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function LatchNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
     sharedArrayConnectionThick(arrayConnections, portId, role);
   const g = diagramSizing.gridSize;
 
-  const inputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'input');
-  const outputs: DiagramPort[] = (node.ports ?? []).filter((p: DiagramPort) => p.direction === 'output');
+  const inputs: DiagramPort[] = (node.ports ?? []).filter(
+    (p: DiagramPort) => p.direction === 'input',
+  );
+  const outputs: DiagramPort[] = (node.ports ?? []).filter(
+    (p: DiagramPort) => p.direction === 'output',
+  );
 
   const clockSignal = registerClockSignal(node);
   const resetSignal = registerResetSignal(node);
@@ -45,7 +62,7 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
   const rvPort = inputs.find((p: DiagramPort) => p.name === 'RV');
   const hasRv = Boolean(rvPort);
   const renderedInputPortIds = new Set(
-    [dPort?.id, clockPort?.id, resetPort?.id, rvPort?.id].filter(Boolean)
+    [dPort?.id, clockPort?.id, resetPort?.id, rvPort?.id].filter(Boolean),
   );
   const extraInputPorts = inputs.filter((p: DiagramPort) => !renderedInputPortIds.has(p.id));
 
@@ -73,7 +90,9 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
   const suffixFontSize = typeName ? typeFontSize : titleFontSize;
   const suffixStartX = titleX + labelWidth + suffixGap;
   const suffixWidth = hasTitleSuffix
-    ? (typeName ? typeLinkWidth(suffixText, suffixFontSize) : monoTextWidth(suffixText, suffixFontSize))
+    ? typeName
+      ? typeLinkWidth(suffixText, suffixFontSize)
+      : monoTextWidth(suffixText, suffixFontSize)
     : 0;
   const underlineY = titleY + typeFontSize * 0.62;
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
@@ -98,11 +117,31 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
 
   return (
     <>
-      <ArrayStackSkinRect isArray={isArray} skinLayers={skinLayers} shapeTransform={shapeTransform} width={width} height={height} />
+      <ArrayStackSkinRect
+        isArray={isArray}
+        skinLayers={skinLayers}
+        shapeTransform={shapeTransform}
+        width={width}
+        height={height}
+      />
 
       {/* Kind + title in header */}
-      <text className="svsch-node-kind" x={Math.round(10 + contentShiftX)} y={Math.round(14 + contentShiftY)} textAnchor="start" dominantBaseline="middle">LATCH</text>
-      <text className="svsch-node-title" x={Math.round(titleX + contentShiftX)} y={Math.round(titleY + contentShiftY)} textAnchor="start" dominantBaseline="middle">
+      <text
+        className="svsch-node-kind"
+        x={Math.round(10 + contentShiftX)}
+        y={Math.round(14 + contentShiftY)}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
+        LATCH
+      </text>
+      <text
+        className="svsch-node-title"
+        x={Math.round(titleX + contentShiftX)}
+        y={Math.round(titleY + contentShiftY)}
+        textAnchor="start"
+        dominantBaseline="middle"
+      >
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
@@ -117,7 +156,11 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
           </tspan>
         ) : widthSuffix ? (
           <tspan className="svsch-register-width-suffix" dx={suffixGap}>
-            <SvgParameterizedText text={widthSuffix} refs={qPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+            <SvgParameterizedText
+              text={widthSuffix}
+              refs={qPort?.parameterRefs}
+              onNavigateToSource={onNavigateToSource}
+            />
           </tspan>
         ) : null}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
@@ -145,14 +188,25 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
 
       {/* D port label (left side) */}
       {dPort && (
-        <text className="svsch-port-label" x={Math.round(g / 2 + contentShiftX)} y={Math.round(dTop + g / 2 + contentShiftY)} dominantBaseline="middle">
+        <text
+          className="svsch-port-label"
+          x={Math.round(g / 2 + contentShiftX)}
+          y={Math.round(dTop + g / 2 + contentShiftY)}
+          dominantBaseline="middle"
+        >
           <SvgPortLabel port={dPort} />
         </text>
       )}
 
       {/* Q port label (right side) */}
       {qPort && (
-        <text className="svsch-port-label" x={Math.round(width - g / 2 + contentShiftX)} y={Math.round(qTop + g / 2 + contentShiftY)} textAnchor="end" dominantBaseline="middle">
+        <text
+          className="svsch-port-label"
+          x={Math.round(width - g / 2 + contentShiftX)}
+          y={Math.round(qTop + g / 2 + contentShiftY)}
+          textAnchor="end"
+          dominantBaseline="middle"
+        >
           <SvgPortLabel port={qPort} />
         </text>
       )}
@@ -160,7 +214,15 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
       {/* Clock glyph: triangle chevron, left side */}
       {clockPort && (
         <g className="svsch-register-clock-port">
-          <svg x={Math.round(contentShiftX)} y={Math.round(clkTop + g / 2 - 6 + contentShiftY)} width={12} height={12} viewBox="0 0 12 12" className="register-clock-glyph" aria-hidden={true}>
+          <svg
+            x={Math.round(contentShiftX)}
+            y={Math.round(clkTop + g / 2 - 6 + contentShiftY)}
+            width={12}
+            height={12}
+            viewBox="0 0 12 12"
+            className="register-clock-glyph"
+            aria-hidden={true}
+          >
             <path d="M 1 1.5 L 9 6 L 1 10.5" />
           </svg>
         </g>
@@ -169,7 +231,13 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
       {/* Reset label: centered at bottom, if present */}
       {resetPort && (
         <g className="svsch-register-reset-port">
-          <text className="svsch-port-label svsch-register-reset-label" x={Math.round(width / 2 + contentShiftX)} y={Math.round(rstTop + g / 2 + contentShiftY)} textAnchor="middle" dominantBaseline="middle">
+          <text
+            className="svsch-port-label svsch-register-reset-label"
+            x={Math.round(width / 2 + contentShiftX)}
+            y={Math.round(rstTop + g / 2 + contentShiftY)}
+            textAnchor="middle"
+            dominantBaseline="middle"
+          >
             {resetActiveLow ? 'R̅' : 'R'}
           </text>
         </g>
@@ -177,14 +245,27 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
 
       {/* RV port */}
       {rvPort && (
-        <text className="svsch-port-label" x={Math.round(g / 2 + contentShiftX)} y={Math.round(rvTop + g / 2 + contentShiftY)} dominantBaseline="middle">RV</text>
+        <text
+          className="svsch-port-label"
+          x={Math.round(g / 2 + contentShiftX)}
+          y={Math.round(rvTop + g / 2 + contentShiftY)}
+          dominantBaseline="middle"
+        >
+          RV
+        </text>
       )}
 
       {/* Extra input ports */}
       {extraInputPorts.map((port: DiagramPort, index: number) => {
         const top = registerExtraInputPortTop(index, height, hasRv);
         return (
-          <text key={port.id} className="svsch-port-label" x={Math.round(g * 0.75 + contentShiftX)} y={Math.round(top + g / 2 + contentShiftY)} dominantBaseline="middle">
+          <text
+            key={port.id}
+            className="svsch-port-label"
+            x={Math.round(g * 0.75 + contentShiftX)}
+            y={Math.round(top + g / 2 + contentShiftY)}
+            dominantBaseline="middle"
+          >
             <SvgPortLabel port={port} />
           </text>
         );
@@ -192,23 +273,55 @@ export function LatchNodeSvg({ node, width, height, arrayConnections, onNavigate
 
       {/* Array badge */}
       {isArray && arrayDim && (
-        <text className="svsch-node-kind svsch-array-badge" x={Math.round(width + 3)} y={-4} textAnchor="start">
+        <text
+          className="svsch-node-kind svsch-array-badge"
+          x={Math.round(width + 3)}
+          y={-4}
+          textAnchor="start"
+        >
           {arrayDim}
         </text>
       )}
 
       {/* Array stack leads */}
       {isArray && dPort && hasArrayConnection(dPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(dPort.id, 'target')} side="left" width={width} y={Math.round(dTop + g / 2)} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(dPort.id, 'target')}
+          side="left"
+          width={width}
+          y={Math.round(dTop + g / 2)}
+          trimSink
+        />
       )}
       {isArray && clockPort && hasArrayConnection(clockPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(clockPort.id, 'target')} side="left" width={width} y={Math.round(clkTop + g / 2)} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(clockPort.id, 'target')}
+          side="left"
+          width={width}
+          y={Math.round(clkTop + g / 2)}
+          trimSink
+        />
       )}
       {isArray && resetPort && hasArrayConnection(resetPort.id, 'target') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(resetPort.id, 'target')} side="bottom" width={width} y={Math.round(rstTop + g)} trimSink />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(resetPort.id, 'target')}
+          side="bottom"
+          width={width}
+          y={Math.round(rstTop + g)}
+          trimSink
+        />
       )}
       {isArray && qPort && hasArrayConnection(qPort.id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(qPort.id, 'source')} side="right" width={width} y={Math.round(qTop + g / 2)} />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(qPort.id, 'source')}
+          side="right"
+          width={width}
+          y={Math.round(qTop + g / 2)}
+        />
       )}
     </>
   );

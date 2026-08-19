@@ -7,7 +7,12 @@ import type { PositionedNode } from '../../../ir/types';
 import { ArrayStackSelection } from '../shared/skins';
 import { HdlNodeBase } from '../shared/HdlNodeBase';
 import { NodeWarningIcon } from '../shared/NodeWarningIcon';
-import { handleNodeDoubleClick, navigateToSource, stopIfBusTapDescendant, isInterfacePortLike } from '../shared/navigation';
+import {
+  handleNodeDoubleClick,
+  navigateToSource,
+  stopIfBusTapDescendant,
+  isInterfacePortLike,
+} from '../shared/navigation';
 import type { HdlNodeData } from '../types';
 import { PortNodeSvg } from './PortNodeSvg';
 
@@ -19,7 +24,7 @@ export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${nodeWidth}px`
+    '--svsch-port-width': `${nodeWidth}px`,
   } as React.CSSProperties;
 
   const portDirection = node.ports[0]?.direction ?? 'unknown';
@@ -37,7 +42,11 @@ export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
       height={nodeHeight}
       style={nodeStyle}
       className={`hdl-node hdl-node-port hdl-port-${portDirection}${isSkinnedPort ? ' hdl-port-skinned' : ''}${isInterfacePort ? ' hdl-port-interface' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'port'}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : 'port'
+      }
       onDoubleClick={(event) => stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node))}
       svg={
         <PortNodeSvg
@@ -50,16 +59,31 @@ export function PortNode({ data }: { data: HdlNodeData }): React.ReactElement {
       }
       handles={
         <>
-          {(isOutput || isInout) && <Handle type="target" id={node.ports[0]?.id} position={handlePositionOverride ?? Position.Left} />}
-          <Handle type="source" id={node.ports[0]?.id} position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)} />
+          {(isOutput || isInout) && (
+            <Handle
+              type="target"
+              id={node.ports[0]?.id}
+              position={handlePositionOverride ?? Position.Left}
+            />
+          )}
+          <Handle
+            type="source"
+            id={node.ports[0]?.id}
+            position={handlePositionOverride ?? (isOutput ? Position.Left : Position.Right)}
+          />
         </>
       }
       selection={
-        isArray && isSkinnedPort
-          ? <ArrayStackSelection kind={isOutput ? 'output' : isInout ? 'inout' : 'input'} width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : isSkinnedPort
-            ? null
-            : <div className="hdl-node-selection-rect" aria-hidden="true" />
+        isArray && isSkinnedPort ? (
+          <ArrayStackSelection
+            kind={isOutput ? 'output' : isInout ? 'inout' : 'input'}
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        ) : isSkinnedPort ? null : (
+          <div className="hdl-node-selection-rect" aria-hidden="true" />
+        )
       }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />
@@ -73,17 +97,18 @@ export function InterfacePortNode({ data }: { data: HdlNodeData }): React.ReactE
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${nodeWidth}px`
+    '--svsch-port-width': `${nodeWidth}px`,
   } as React.CSSProperties;
 
   const port = node.ports[0];
-  const handlePosition = port?.preferredSide === 'left'
-    ? Position.Left
-    : port?.preferredSide === 'right'
-      ? Position.Right
-      : port?.direction === 'output'
+  const handlePosition =
+    port?.preferredSide === 'left'
+      ? Position.Left
+      : port?.preferredSide === 'right'
         ? Position.Right
-        : Position.Left;
+        : port?.direction === 'output'
+          ? Position.Right
+          : Position.Left;
 
   return (
     <HdlNodeBase
@@ -92,7 +117,11 @@ export function InterfacePortNode({ data }: { data: HdlNodeData }): React.ReactE
       height={nodeHeight}
       style={nodeStyle}
       className={`hdl-node hdl-node-port hdl-port-${port?.direction ?? 'unknown'} hdl-port-skinned hdl-port-interface hdl-interface-node`}
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : 'interface port'}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : 'interface port'
+      }
       onDoubleClick={(event) => stopIfBusTapDescendant(event, () => handleNodeDoubleClick(node))}
       svg={
         <PortNodeSvg

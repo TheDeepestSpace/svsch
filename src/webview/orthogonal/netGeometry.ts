@@ -71,7 +71,7 @@ function segmentsFor(geometry: PolylineEdgeGeometry): Segment[] {
       minX: Math.min(start.x, end.x),
       maxX: Math.max(start.x, end.x),
       minY: Math.min(start.y, end.y),
-      maxY: Math.max(start.y, end.y)
+      maxY: Math.max(start.y, end.y),
     });
   }
   return segments;
@@ -79,13 +79,17 @@ function segmentsFor(geometry: PolylineEdgeGeometry): Segment[] {
 
 function pointOnSegmentInterior(point: OrthogonalPoint, segment: Segment): boolean {
   if (segment.orientation === 'horizontal') {
-    return Math.abs(point.y - segment.start.y) <= EPSILON
-      && point.x > segment.minX + EPSILON
-      && point.x < segment.maxX - EPSILON;
+    return (
+      Math.abs(point.y - segment.start.y) <= EPSILON &&
+      point.x > segment.minX + EPSILON &&
+      point.x < segment.maxX - EPSILON
+    );
   }
-  return Math.abs(point.x - segment.start.x) <= EPSILON
-    && point.y > segment.minY + EPSILON
-    && point.y < segment.maxY - EPSILON;
+  return (
+    Math.abs(point.x - segment.start.x) <= EPSILON &&
+    point.y > segment.minY + EPSILON &&
+    point.y < segment.maxY - EPSILON
+  );
 }
 
 function overlaps(a: Segment, b: Segment): boolean {
@@ -94,12 +98,10 @@ function overlaps(a: Segment, b: Segment): boolean {
   }
   if (a.orientation === 'horizontal') {
     const overlapLen = Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX);
-    return Math.abs(a.start.y - b.start.y) <= ALIGN_EPSILON
-      && overlapLen > -EPSILON;
+    return Math.abs(a.start.y - b.start.y) <= ALIGN_EPSILON && overlapLen > -EPSILON;
   }
   const overlapLen = Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY);
-  return Math.abs(a.start.x - b.start.x) <= ALIGN_EPSILON
-    && overlapLen > -EPSILON;
+  return Math.abs(a.start.x - b.start.x) <= ALIGN_EPSILON && overlapLen > -EPSILON;
 }
 
 function isEditableSegment(segment: Segment, geometry: PolylineEdgeGeometry): boolean {
@@ -123,12 +125,19 @@ export function findNetJunctions(geometries: PolylineEdgeGeometry[]): NetJunctio
       continue;
     }
     const segments = netGeometries.flatMap(segmentsFor);
-    const endpoints = new Map<string, { point: OrthogonalPoint; edgeIds: Set<string>; directions: Set<string> }>();
+    const endpoints = new Map<
+      string,
+      { point: OrthogonalPoint; edgeIds: Set<string>; directions: Set<string> }
+    >();
 
     for (const geometry of netGeometries) {
       geometry.points.forEach((point, index) => {
         const key = pointKey(point);
-        const existing = endpoints.get(key) ?? { point, edgeIds: new Set<string>(), directions: new Set<string>() };
+        const existing = endpoints.get(key) ?? {
+          point,
+          edgeIds: new Set<string>(),
+          directions: new Set<string>(),
+        };
         existing.edgeIds.add(geometry.edgeId);
         const previous = geometry.points[index - 1];
         const next = geometry.points[index + 1];
@@ -154,19 +163,29 @@ export function findNetJunctions(geometries: PolylineEdgeGeometry[]): NetJunctio
         }
         const h = a.orientation === 'horizontal' ? a : b;
         const v = a.orientation === 'vertical' ? a : b;
-        if (v.start.x > h.minX + EPSILON && v.start.x < h.maxX - EPSILON
-            && h.start.y > v.minY + EPSILON && h.start.y < v.maxY - EPSILON) {
+        if (
+          v.start.x > h.minX + EPSILON &&
+          v.start.x < h.maxX - EPSILON &&
+          h.start.y > v.minY + EPSILON &&
+          h.start.y < v.maxY - EPSILON
+        ) {
           const point = { x: v.start.x, y: h.start.y };
           const key = pointKey(point);
           if (!endpoints.has(key)) {
-            endpoints.set(key, { point, edgeIds: new Set<string>(), directions: new Set<string>(['left', 'right', 'up', 'down']) });
+            endpoints.set(key, {
+              point,
+              edgeIds: new Set<string>(),
+              directions: new Set<string>(['left', 'right', 'up', 'down']),
+            });
           }
         }
       }
     }
 
     for (const { point, edgeIds, directions } of endpoints.values()) {
-      const interiorCarriers = segments.filter((segment) => !edgeIds.has(segment.edgeId) && pointOnSegmentInterior(point, segment));
+      const interiorCarriers = segments.filter(
+        (segment) => !edgeIds.has(segment.edgeId) && pointOnSegmentInterior(point, segment),
+      );
       for (const carrier of interiorCarriers) {
         if (carrier.orientation === 'horizontal') {
           directions.add('left');
@@ -181,7 +200,7 @@ export function findNetJunctions(geometries: PolylineEdgeGeometry[]): NetJunctio
         junctions.set(`${netKey}:${pointKey(point)}`, {
           id: `${netKey}:${pointKey(point)}`,
           x: point.x,
-          y: point.y
+          y: point.y,
         });
       }
     }
@@ -194,7 +213,7 @@ export function moveSharedNetSegments(
   geometries: PolylineEdgeGeometry[],
   draggedEdgeId: string,
   segmentIndex: number,
-  pointer: OrthogonalPoint
+  pointer: OrthogonalPoint,
 ): SharedNetMoveResult {
   const dragged = geometries.find((geometry) => geometry.edgeId === draggedEdgeId);
   if (!dragged) {
@@ -219,8 +238,12 @@ export function moveSharedNetSegments(
 
       // Different net: only if FULL overlap
       if (segment.orientation === draggedSegment.orientation) {
-        const startMatch = pointsEqual(segment.start, draggedSegment.start) || pointsEqual(segment.start, draggedSegment.end);
-        const endMatch = pointsEqual(segment.end, draggedSegment.start) || pointsEqual(segment.end, draggedSegment.end);
+        const startMatch =
+          pointsEqual(segment.start, draggedSegment.start) ||
+          pointsEqual(segment.start, draggedSegment.end);
+        const endMatch =
+          pointsEqual(segment.end, draggedSegment.start) ||
+          pointsEqual(segment.end, draggedSegment.end);
         return startMatch && endMatch;
       }
 

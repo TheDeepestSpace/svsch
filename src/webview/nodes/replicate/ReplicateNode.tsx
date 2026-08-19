@@ -21,10 +21,13 @@ export function ReplicateNode({ data }: { data: HdlNodeData }): React.ReactEleme
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
-  const sideInputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const sideInputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
 
   return (
@@ -34,7 +37,11 @@ export function ReplicateNode({ data }: { data: HdlNodeData }): React.ReactEleme
       height={nodeHeight}
       style={nodeStyle}
       className={`hdl-node hdl-node-replicate${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : node.kind
+      }
       onDoubleClick={() => handleNodeDoubleClick(node)}
       svg={
         <ReplicateNodeSvg
@@ -56,9 +63,16 @@ export function ReplicateNode({ data }: { data: HdlNodeData }): React.ReactEleme
         </>
       }
       selection={
-        isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />
+        isArray ? (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        ) : (
+          <div className="hdl-node-selection-rect" aria-hidden="true" />
+        )
       }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />

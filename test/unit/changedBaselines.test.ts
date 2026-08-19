@@ -23,7 +23,7 @@ describe('parseChangedBaselines', () => {
     const output = nameStatus(
       'R087',
       'test/visual/__screenshots__/old.spec.ts-snapshots/example.png',
-      'test/visual/__screenshots__/renamed.spec.ts-snapshots/example.png'
+      'test/visual/__screenshots__/renamed.spec.ts-snapshots/example.png',
     );
     expect(parseChangedBaselines(output)).toEqual({
       pairs: [
@@ -41,7 +41,7 @@ describe('parseChangedBaselines', () => {
       'D',
       'test/visual/__screenshots__/old.spec.ts-snapshots/example.png',
       'A',
-      'test/visual/__screenshots__/renamed.spec.ts-snapshots/example.png'
+      'test/visual/__screenshots__/renamed.spec.ts-snapshots/example.png',
     );
     expect(parseChangedBaselines(output)).toEqual({
       pairs: [
@@ -59,12 +59,12 @@ describe('parseChangedBaselines', () => {
       'D',
       'test/visual/__screenshots__/old.spec.ts-snapshots/a.png',
       'A',
-      'test/visual/__screenshots__/new.spec.ts-snapshots/b.png'
+      'test/visual/__screenshots__/new.spec.ts-snapshots/b.png',
     );
     expect(parseChangedBaselines(output)).toEqual({ pairs: [], ambiguous: [] });
   });
 
-  it('reports ambiguity instead of pairing by index when a basename has multiple candidates', () => {
+  it('reports ambiguity instead of index-pairing when a basename has multiple candidates', () => {
     const output = nameStatus(
       'D',
       'test/visual/__screenshots__/a.spec.ts-snapshots/foo.png',
@@ -73,7 +73,7 @@ describe('parseChangedBaselines', () => {
       'A',
       'test/visual/__screenshots__/c.spec.ts-snapshots/foo.png',
       'A',
-      'test/visual/__screenshots__/d.spec.ts-snapshots/foo.png'
+      'test/visual/__screenshots__/d.spec.ts-snapshots/foo.png',
     );
     expect(parseChangedBaselines(output)).toEqual({
       pairs: [],
@@ -103,7 +103,7 @@ describe('parseChangedBaselines', () => {
       'A',
       'README.md',
       'M',
-      'docs/guide.md'
+      'docs/guide.md',
     );
     expect(parseChangedBaselines(output)).toEqual({
       pairs: [

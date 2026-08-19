@@ -27,12 +27,18 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
   const nodeStyle = {
     '--svsch-node-width': `${nodeWidth}px`,
     '--svsch-node-height': `${nodeHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`
+    '--svsch-port-width': `${diagramSizing.portWidth}px`,
   } as React.CSSProperties;
 
-  const instanceParameters = node.kind === 'instance' ? (node.instanceParameters ?? node.metadata?.instanceParameters ?? []) : [];
+  const instanceParameters =
+    node.kind === 'instance'
+      ? (node.instanceParameters ?? node.metadata?.instanceParameters ?? [])
+      : [];
   const parameterRows = instanceParameterRows(node);
-  const sideInputs = node.ports.filter((port: DiagramPort) => port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown');
+  const sideInputs = node.ports.filter(
+    (port: DiagramPort) =>
+      port.direction === 'input' || port.direction === 'inout' || port.direction === 'unknown',
+  );
   const outputs = node.ports.filter((port: DiagramPort) => port.direction === 'output');
 
   return (
@@ -42,7 +48,11 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
       height={nodeHeight}
       style={nodeStyle}
       className={`hdl-node hdl-node-${node.kind}${instanceParameters.length > 0 ? ' hdl-node-has-params' : ''}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
-      title={node.source ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}` : node.kind}
+      title={
+        node.source
+          ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+          : node.kind
+      }
       onDoubleClick={() => handleNodeDoubleClick(node)}
       svg={
         <InstanceNodeSvg
@@ -56,12 +66,14 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
       extraContent={
         // HTML instance parameter chips — needed for test ".instance-parameter-chip" selectors
         instanceParameters.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: `${16 + Math.max(0, (parameterRows * diagramSizing.gridSize - (instanceParameters.length * 16 + Math.max(0, instanceParameters.length - 1) * 2)) / 2)}px`,
-            left: 0,
-            right: 0
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: `${16 + Math.max(0, (parameterRows * diagramSizing.gridSize - (instanceParameters.length * 16 + Math.max(0, instanceParameters.length - 1) * 2)) / 2)}px`,
+              left: 0,
+              right: 0,
+            }}
+          >
             <InstanceParameterList parameters={instanceParameters} />
           </div>
         )
@@ -69,19 +81,35 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
       handles={
         <>
           {sideInputs.map((port: DiagramPort, i: number) => (
-            <InputPortHandles key={port.id} port={port} position={Position.Left}
-              style={{ top: nodePortCenterOffset(i + parameterRows) }} />
+            <InputPortHandles
+              key={port.id}
+              port={port}
+              position={Position.Left}
+              style={{ top: nodePortCenterOffset(i + parameterRows) }}
+            />
           ))}
           {outputs.map((port: DiagramPort, i: number) => (
-            <Handle key={port.id} type="source" id={port.id} position={Position.Right}
-              style={{ top: nodePortCenterOffset(i + parameterRows) }} />
+            <Handle
+              key={port.id}
+              type="source"
+              id={port.id}
+              position={Position.Right}
+              style={{ top: nodePortCenterOffset(i + parameterRows) }}
+            />
           ))}
         </>
       }
       selection={
-        isArray
-          ? <ArrayStackSelection kind="rect" width={nodeWidth} height={nodeHeight} wide={nodeStackIsWide(node)} />
-          : <div className="hdl-node-selection-rect" aria-hidden="true" />
+        isArray ? (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        ) : (
+          <div className="hdl-node-selection-rect" aria-hidden="true" />
+        )
       }
       resizeControls={node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}

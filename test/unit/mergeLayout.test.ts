@@ -1,7 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
-import { buildViewModel, defaultNetCutLabel, elkNodeForDiagramNode, elkRoutingNodeForDiagramNode, enforceMinimumBlockGaps, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSize, revertNodeSizes } from '../../src/layout/mergeLayout';
-import { diagramSizing, ioPortCenterOffset, muxHeightForPortRows, nodeHeightForPortRows, nodePortCenterOffset } from '../../src/diagram/constants';
+import {
+  buildViewModel,
+  defaultNetCutLabel,
+  elkNodeForDiagramNode,
+  elkRoutingNodeForDiagramNode,
+  enforceMinimumBlockGaps,
+  firstOpenAutoCutEdges,
+  mergeEdgeRoutePoints,
+  mergeEdgeWaypoint,
+  mergeFirstOpenNetCuts,
+  mergeNetCut,
+  mergeNetCuts,
+  mergeNodePositions,
+  mergeRegionBounds,
+  mergeRelayoutSelection,
+  mergeRerouteEdges,
+  mergeRerouteLayout,
+  removeNetCut,
+  renameCutNet,
+  resetCutLabelPosition,
+  revertCutNetLabel,
+  revertNodeSize,
+  revertNodeSizes,
+} from '../../src/layout/mergeLayout';
+import {
+  diagramSizing,
+  ioPortCenterOffset,
+  muxHeightForPortRows,
+  nodeHeightForPortRows,
+  nodePortCenterOffset,
+} from '../../src/diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
@@ -14,7 +43,7 @@ function boundsOf(node: PositionedNode): { x: number; y: number; width: number; 
 
 function boxesOverlap(
   a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number }
+  b: { x: number; y: number; width: number; height: number },
 ): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
@@ -28,15 +57,13 @@ const graph: DesignGraph = {
       name: 'top',
       file: 'top.sv',
       ports: [],
-      edges: [
-        { id: 'e-a-u', source: 'a', target: 'u' }
-      ],
+      edges: [{ id: 'e-a-u', source: 'a', target: 'u' }],
       nodes: [
         { id: 'a', kind: 'port', label: 'a', ports: [] },
-        { id: 'u', kind: 'instance', label: 'u', ports: [] }
-      ]
-    }
-  }
+        { id: 'u', kind: 'instance', label: 'u', ports: [] },
+      ],
+    },
+  },
 };
 
 const fanoutGraph: DesignGraph = {
@@ -53,27 +80,41 @@ const fanoutGraph: DesignGraph = {
           id: 'clk',
           kind: 'port',
           label: 'clk',
-          ports: [{ id: 'p', name: 'clk', direction: 'input' }]
+          ports: [{ id: 'p', name: 'clk', direction: 'input' }],
         },
         {
           id: 'u1',
           kind: 'instance',
           label: 'u1',
-          ports: [{ id: 'in', name: 'in', direction: 'input' }]
+          ports: [{ id: 'in', name: 'in', direction: 'input' }],
         },
         {
           id: 'u2',
           kind: 'instance',
           label: 'u2',
-          ports: [{ id: 'in', name: 'in', direction: 'input' }]
-        }
+          ports: [{ id: 'in', name: 'in', direction: 'input' }],
+        },
       ],
       edges: [
-        { id: 'e-clk-u1', source: 'clk', sourcePort: 'p', target: 'u1', targetPort: 'in', signal: 'clk' },
-        { id: 'e-clk-u2', source: 'clk', sourcePort: 'p', target: 'u2', targetPort: 'in', signal: 'clk' }
-      ]
-    }
-  }
+        {
+          id: 'e-clk-u1',
+          source: 'clk',
+          sourcePort: 'p',
+          target: 'u1',
+          targetPort: 'in',
+          signal: 'clk',
+        },
+        {
+          id: 'e-clk-u2',
+          source: 'clk',
+          sourcePort: 'p',
+          target: 'u2',
+          targetPort: 'in',
+          signal: 'clk',
+        },
+      ],
+    },
+  },
 };
 
 const twoNetGraph: DesignGraph = {
@@ -89,14 +130,14 @@ const twoNetGraph: DesignGraph = {
         { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'output' }] },
         { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'output' }] },
         { id: 'x', kind: 'port', label: 'x', ports: [{ id: 'p', name: 'x', direction: 'input' }] },
-        { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'input' }] }
+        { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'input' }] },
       ],
       edges: [
         { id: 'e-a-x', source: 'a', sourcePort: 'p', target: 'x', targetPort: 'p' },
-        { id: 'e-b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' }
-      ]
-    }
-  }
+        { id: 'e-b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' },
+      ],
+    },
+  },
 };
 
 describe('first-open auto-cuts', () => {
@@ -105,7 +146,12 @@ describe('first-open auto-cuts', () => {
     file: 'top.sv',
     ports: [],
     nodes: [
-      { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'out', name: 'src', direction: 'output' as const }] },
+      {
+        id: 'src',
+        kind: 'port' as const,
+        label: 'src',
+        ports: [{ id: 'out', name: 'src', direction: 'output' as const }],
+      },
       {
         id: 'reg',
         kind: 'register' as const,
@@ -115,25 +161,49 @@ describe('first-open auto-cuts', () => {
         ports: [
           { id: 'd', name: 'D', direction: 'input' as const },
           { id: 'clock-pin', name: 'clk', direction: 'input' as const },
-          { id: 'reset-pin', name: 'rst_n', direction: 'input' as const }
-        ]
+          { id: 'reset-pin', name: 'rst_n', direction: 'input' as const },
+        ],
       },
-      { id: 'sink', kind: 'instance' as const, label: 'sink', ports: [{ id: 'in', name: 'in', direction: 'input' as const }] }
+      {
+        id: 'sink',
+        kind: 'instance' as const,
+        label: 'sink',
+        ports: [{ id: 'in', name: 'in', direction: 'input' as const }],
+      },
     ],
     edges: [
-      { id: 'clock', source: 'clock-src', sourcePort: 'out', target: 'reg', targetPort: 'clock-pin' },
-      { id: 'reset', source: 'reset-src', sourcePort: 'out', target: 'reg', targetPort: 'reset-pin' },
+      {
+        id: 'clock',
+        source: 'clock-src',
+        sourcePort: 'out',
+        target: 'reg',
+        targetPort: 'clock-pin',
+      },
+      {
+        id: 'reset',
+        source: 'reset-src',
+        sourcePort: 'out',
+        target: 'reg',
+        targetPort: 'reset-pin',
+      },
       { id: 'data', source: 'src', sourcePort: 'out', target: 'reg', targetPort: 'd' },
-      { id: 'declared', source: 'named-src', sourcePort: 'out', target: 'sink', targetPort: 'in', metadata: { declaredNetName: 'named_wire' } },
-      { id: 'inline', source: 'reg', sourcePort: 'd', target: 'sink', targetPort: 'in' }
-    ]
+      {
+        id: 'declared',
+        source: 'named-src',
+        sourcePort: 'out',
+        target: 'sink',
+        targetPort: 'in',
+        metadata: { declaredNetName: 'named_wire' },
+      },
+      { id: 'inline', source: 'reg', sourcePort: 'd', target: 'sink', targetPort: 'in' },
+    ],
   };
 
   it('selects register control nets and declared-name nets', () => {
     expect(firstOpenAutoCutEdges(module, true).map((edge) => edge.id)).toEqual([
       'clock',
       'reset',
-      'declared'
+      'declared',
     ]);
   });
 
@@ -141,7 +211,7 @@ describe('first-open auto-cuts', () => {
     expect(firstOpenAutoCutEdges(module, false).map((edge) => edge.id)).toEqual(['declared']);
   });
 
-  it('auto-cuts every declared-net edge, even when mutually exclusive generate arms each drive it', () => {
+  it('auto-cuts every declared-net edge across mutually exclusive generate arms', () => {
     // Two generate arms (e.g. `g_other`/`g_zero`) each drive the module's
     // `y` output from their own internal source node — different netKeys
     // (different source nodes), same declared net. Both still get auto-cut;
@@ -152,9 +222,24 @@ describe('first-open auto-cuts', () => {
       file: 'top.sv',
       ports: [],
       nodes: [
-        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+        {
+          id: 'g_other_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'g_zero_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'y',
+          kind: 'port' as const,
+          label: 'y',
+          ports: [{ id: 'p', name: 'y', direction: 'output' as const }],
+        },
       ],
       edges: [
         {
@@ -163,7 +248,11 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_other',
+            generateActiveState: 'inactive',
+          },
         },
         {
           id: 'g_zero-y',
@@ -171,15 +260,22 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
-        }
-      ]
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_zero',
+            generateActiveState: 'active',
+          },
+        },
+      ],
     };
 
-    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual(['g_other-y', 'g_zero-y']);
+    expect(firstOpenAutoCutEdges(generateArmModule, true).map((edge) => edge.id)).toEqual([
+      'g_other-y',
+      'g_zero-y',
+    ]);
   });
 
-  it('collapses duplicate sink ends when mutually exclusive generate arms both cut into the same output port', async () => {
+  it('collapses duplicate sink ends across mutually exclusive generate arms', async () => {
     // Both g_other's and g_zero's edges are auto-cut (see the test above),
     // each keeping its own dead-end source label near its own driver. But
     // routing *both* of their sink stubs into the real `y` port would stack
@@ -195,9 +291,24 @@ describe('first-open auto-cuts', () => {
       file: 'top.sv',
       ports: [],
       nodes: [
-        { id: 'g_other_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'g_zero_driver', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
+        {
+          id: 'g_other_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'g_zero_driver',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
+        {
+          id: 'y',
+          kind: 'port' as const,
+          label: 'y',
+          ports: [{ id: 'p', name: 'y', direction: 'output' as const }],
+        },
       ],
       edges: [
         {
@@ -206,7 +317,11 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_other',
+            generateActiveState: 'inactive',
+          },
         },
         {
           id: 'g_zero-y',
@@ -214,28 +329,36 @@ describe('first-open auto-cuts', () => {
           sourcePort: 'out',
           target: 'y',
           targetPort: 'p',
-          metadata: { declaredNetName: 'y', generateRegionId: 'g_zero', generateActiveState: 'active' }
-        }
-      ]
+          metadata: {
+            declaredNetName: 'y',
+            generateRegionId: 'g_zero',
+            generateActiveState: 'active',
+          },
+        },
+      ],
     };
     const positioned: PositionedNode[] = [
       { ...generateArmModule.nodes[0], position: { x: 0, y: 0 } },
       { ...generateArmModule.nodes[1], position: { x: 0, y: 96 } },
-      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } }
+      { ...generateArmModule.nodes[2], position: { x: 240, y: 96 } },
     ];
 
     const firstCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_other-y')!;
     const secondCutEdge = generateArmModule.edges.find((edge) => edge.id === 'g_zero-y')!;
     const cutLayout = [firstCutEdge, secondCutEdge].reduce(
       (layout, edge) => mergeNetCut(layout, 'top', edge, generateArmModule, positioned),
-      { version: 1, modules: {} } as SavedLayout
+      { version: 1, modules: {} } as SavedLayout,
     );
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: generateArmModule }
-    }, 'top', cutLayout);
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: { top: generateArmModule },
+      },
+      'top',
+      cutLayout,
+    );
 
     const firstNetKey = edgeNetKey(firstCutEdge);
     const secondNetKey = edgeNetKey(secondCutEdge);
@@ -248,13 +371,17 @@ describe('first-open auto-cuts', () => {
     // Only the active arm's (g_zero's) sink label/stub lands on the shared
     // `y` port...
     expect(byId.has(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`)).toBe(true);
+    expect(
+      view.edges.some((edge) => edge.id === `cut-stub:${secondNetKey}:sink:${secondCutEdge.id}`),
+    ).toBe(true);
     const sinkLabel = byId.get(`cut-label:${secondNetKey}:sink:${secondCutEdge.id}`);
     expect(sinkLabel?.metadata?.generateActiveState).toBe('active');
 
     // ...the inactive arm's redundant one is skipped entirely.
     expect(byId.has(`cut-label:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
-    expect(view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`)).toBe(false);
+    expect(
+      view.edges.some((edge) => edge.id === `cut-stub:${firstNetKey}:sink:${firstCutEdge.id}`),
+    ).toBe(false);
 
     // Neither arm is left as a live wire straight into the output port.
     expect(view.edges.some((edge) => edge.id === 'g_other-y')).toBe(false);
@@ -267,224 +394,408 @@ describe('first-open auto-cuts', () => {
       file: 'top.sv',
       ports: [],
       nodes: [
-        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' as const }] },
-        { id: 'link', kind: 'interface' as const, label: 'link', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
-        { id: 'consumer', kind: 'instance' as const, label: 'consumer', ports: [{ id: 'bus', name: 'bus', direction: 'input' as const }] },
-        { id: 'src', kind: 'port' as const, label: 'src', ports: [{ id: 'p', name: 'src', direction: 'input' as const }] },
-        { id: 'sink', kind: 'port' as const, label: 'sink', ports: [{ id: 'p', name: 'sink', direction: 'output' as const }] }
+        {
+          id: 'clk',
+          kind: 'port' as const,
+          label: 'clk',
+          ports: [{ id: 'p', name: 'clk', direction: 'input' as const }],
+        },
+        {
+          id: 'link',
+          kind: 'interface' as const,
+          label: 'link',
+          ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }],
+        },
+        {
+          id: 'consumer',
+          kind: 'instance' as const,
+          label: 'consumer',
+          ports: [{ id: 'bus', name: 'bus', direction: 'input' as const }],
+        },
+        {
+          id: 'src',
+          kind: 'port' as const,
+          label: 'src',
+          ports: [{ id: 'p', name: 'src', direction: 'input' as const }],
+        },
+        {
+          id: 'sink',
+          kind: 'port' as const,
+          label: 'sink',
+          ports: [{ id: 'p', name: 'sink', direction: 'output' as const }],
+        },
       ],
       edges: [
-        { id: 'clk-link', source: 'clk', sourcePort: 'p', target: 'link', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
-        { id: 'link-consumer', source: 'link', sourcePort: 'clk', target: 'consumer', targetPort: 'bus', metadata: { declaredNetName: 'link' } },
-        { id: 'ordinary', source: 'src', sourcePort: 'p', target: 'sink', targetPort: 'p', metadata: { declaredNetName: 'ordinary' } }
-      ]
-    };
-
-    expect(firstOpenAutoCutEdges(interfaceModule, true).map((edge) => edge.id)).toEqual(['ordinary']);
-  });
-
-  it('columnizes a top-level port that lost every edge to a first-open cut, flanking the rest of the design', async () => {
-    const designModule = {
-      name: 'top',
-      file: 'top.sv',
-      ports: [],
-      nodes: [
-        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
-        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
+        {
+          id: 'clk-link',
+          source: 'clk',
+          sourcePort: 'p',
+          target: 'link',
+          targetPort: 'clk',
+          metadata: { declaredNetName: 'clk' },
+        },
+        {
+          id: 'link-consumer',
+          source: 'link',
+          sourcePort: 'clk',
+          target: 'consumer',
+          targetPort: 'bus',
+          metadata: { declaredNetName: 'link' },
+        },
+        {
+          id: 'ordinary',
+          source: 'src',
+          sourcePort: 'p',
+          target: 'sink',
+          targetPort: 'p',
+          metadata: { declaredNetName: 'ordinary' },
+        },
       ],
-      edges: [
-        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
-      ]
     };
-    const cutLayout = mergeFirstOpenNetCuts(
-      { version: 1, modules: {} },
-      'top',
-      designModule.edges,
-      designModule
-    );
-    expect(cutLayout.modules.top.nodes).toEqual({});
 
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: designModule }
-    }, 'top', cutLayout);
-    const byId = new Map(view.nodes.map((node) => [node.id, node]));
-    const source = byId.get('a')!;
-    const target = byId.get('u')!;
-    const sourceLabel = byId.get('cut-label:a:out:source')!;
-    const sinkLabel = byId.get('cut-label:a:out:sink:a-u')!;
-    const sourceBounds = boundsOf(source);
-    const targetBounds = boundsOf(target);
-    const sourceLabelBounds = boundsOf(sourceLabel);
-    const sinkLabelBounds = boundsOf(sinkLabel);
-
-    // 'a' is the only node in the design apart from 'u', so 'u' alone forms
-    // the "body" the disconnected input port is columnized against. Port
-    // nodes snap to the half-grid row (y ≡ gridSize/2 mod gridSize).
-    expect(sourceBounds.y % diagramSizing.gridSize).toBe(diagramSizing.gridSize / 2);
-    expect(sourceBounds.x + sourceBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
-    expect(sourceBounds.x + sourceBounds.width).toBeLessThan(sourceLabelBounds.x);
-    expect(sourceLabelBounds.x + sourceLabelBounds.width).toBeLessThan(sinkLabelBounds.x);
-    expect(sinkLabelBounds.x + sinkLabelBounds.width).toBeLessThan(targetBounds.x);
+    expect(firstOpenAutoCutEdges(interfaceModule, true).map((edge) => edge.id)).toEqual([
+      'ordinary',
+    ]);
   });
 
-  it('stacks multiple disconnected ports on the same side top-to-bottom and sorts input/output into opposite columns', async () => {
-    const designModule = {
-      name: 'top',
-      file: 'top.sv',
-      ports: [],
-      nodes: [
-        { id: 'clk', kind: 'port' as const, label: 'clk', ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }] },
-        { id: 'rst_n', kind: 'port' as const, label: 'rst_n', ports: [{ id: 'rst_n', name: 'rst_n', direction: 'input' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'y', name: 'y', direction: 'output' as const }] },
-        { id: 'u', kind: 'instance' as const, label: 'u', ports: [
-          { id: 'clk', name: 'clk', direction: 'input' as const },
-          { id: 'rst_n', name: 'rst_n', direction: 'input' as const },
-          { id: 'y', name: 'y', direction: 'output' as const }
-        ] }
-      ],
-      edges: [
-        { id: 'clk-u', source: 'clk', sourcePort: 'clk', target: 'u', targetPort: 'clk', metadata: { declaredNetName: 'clk' } },
-        { id: 'rst-u', source: 'rst_n', sourcePort: 'rst_n', target: 'u', targetPort: 'rst_n', metadata: { declaredNetName: 'rst_n' } },
-        { id: 'u-y', source: 'u', sourcePort: 'y', target: 'y', targetPort: 'y', metadata: { declaredNetName: 'y' } }
-      ]
-    };
-    const cutLayout = mergeFirstOpenNetCuts(
-      { version: 1, modules: {} },
-      'top',
-      designModule.edges,
-      designModule
-    );
+  it(
+    'columnizes a top-level port that lost every edge to ' +
+      'a first-open cut, flanking the rest of the design',
+    async () => {
+      const designModule = {
+        name: 'top',
+        file: 'top.sv',
+        ports: [],
+        nodes: [
+          {
+            id: 'a',
+            kind: 'port' as const,
+            label: 'a',
+            ports: [{ id: 'out', name: 'a', direction: 'input' as const }],
+          },
+          {
+            id: 'u',
+            kind: 'instance' as const,
+            label: 'u',
+            ports: [{ id: 'in', name: 'a', direction: 'input' as const }],
+          },
+        ],
+        edges: [
+          {
+            id: 'a-u',
+            source: 'a',
+            sourcePort: 'out',
+            target: 'u',
+            targetPort: 'in',
+            metadata: { declaredNetName: 'a_to_u' },
+          },
+        ],
+      };
+      const cutLayout = mergeFirstOpenNetCuts(
+        { version: 1, modules: {} },
+        'top',
+        designModule.edges,
+        designModule,
+      );
+      expect(cutLayout.modules.top.nodes).toEqual({});
 
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: designModule }
-    }, 'top', cutLayout);
-    const byId = new Map(view.nodes.map((node) => [node.id, node]));
-    const clkBounds = boundsOf(byId.get('clk')!);
-    const rstBounds = boundsOf(byId.get('rst_n')!);
-    const yBounds = boundsOf(byId.get('y')!);
-    const targetBounds = boundsOf(byId.get('u')!);
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: { top: designModule },
+        },
+        'top',
+        cutLayout,
+      );
+      const byId = new Map(view.nodes.map((node) => [node.id, node]));
+      const source = byId.get('a')!;
+      const target = byId.get('u')!;
+      const sourceLabel = byId.get('cut-label:a:out:source')!;
+      const sinkLabel = byId.get('cut-label:a:out:sink:a-u')!;
+      const sourceBounds = boundsOf(source);
+      const targetBounds = boundsOf(target);
+      const sourceLabelBounds = boundsOf(sourceLabel);
+      const sinkLabelBounds = boundsOf(sinkLabel);
 
-    // Both cut inputs land left of the body, stacked with no vertical overlap.
-    expect(clkBounds.x + clkBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
-    expect(rstBounds.x + rstBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
-    expect(boxesOverlap(clkBounds, rstBounds)).toBe(false);
+      // 'a' is the only node in the design apart from 'u', so 'u' alone forms
+      // the "body" the disconnected input port is columnized against. Port
+      // nodes snap to the half-grid row (y ≡ gridSize/2 mod gridSize).
+      expect(sourceBounds.y % diagramSizing.gridSize).toBe(diagramSizing.gridSize / 2);
+      expect(sourceBounds.x + sourceBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+      expect(sourceBounds.x + sourceBounds.width).toBeLessThan(sourceLabelBounds.x);
+      expect(sourceLabelBounds.x + sourceLabelBounds.width).toBeLessThan(sinkLabelBounds.x);
+      expect(sinkLabelBounds.x + sinkLabelBounds.width).toBeLessThan(targetBounds.x);
+    },
+  );
 
-    // The cut output lands right of the body, on the opposite side from the inputs.
-    expect(yBounds.x).toBe(targetBounds.x + targetBounds.width + diagramSizing.columnGap);
-  });
+  it(
+    'stacks multiple disconnected ports on the same side ' +
+      'top-to-bottom and sorts input/output into opposite columns',
+    async () => {
+      const designModule = {
+        name: 'top',
+        file: 'top.sv',
+        ports: [],
+        nodes: [
+          {
+            id: 'clk',
+            kind: 'port' as const,
+            label: 'clk',
+            ports: [{ id: 'clk', name: 'clk', direction: 'input' as const }],
+          },
+          {
+            id: 'rst_n',
+            kind: 'port' as const,
+            label: 'rst_n',
+            ports: [{ id: 'rst_n', name: 'rst_n', direction: 'input' as const }],
+          },
+          {
+            id: 'y',
+            kind: 'port' as const,
+            label: 'y',
+            ports: [{ id: 'y', name: 'y', direction: 'output' as const }],
+          },
+          {
+            id: 'u',
+            kind: 'instance' as const,
+            label: 'u',
+            ports: [
+              { id: 'clk', name: 'clk', direction: 'input' as const },
+              { id: 'rst_n', name: 'rst_n', direction: 'input' as const },
+              { id: 'y', name: 'y', direction: 'output' as const },
+            ],
+          },
+        ],
+        edges: [
+          {
+            id: 'clk-u',
+            source: 'clk',
+            sourcePort: 'clk',
+            target: 'u',
+            targetPort: 'clk',
+            metadata: { declaredNetName: 'clk' },
+          },
+          {
+            id: 'rst-u',
+            source: 'rst_n',
+            sourcePort: 'rst_n',
+            target: 'u',
+            targetPort: 'rst_n',
+            metadata: { declaredNetName: 'rst_n' },
+          },
+          {
+            id: 'u-y',
+            source: 'u',
+            sourcePort: 'y',
+            target: 'y',
+            targetPort: 'y',
+            metadata: { declaredNetName: 'y' },
+          },
+        ],
+      };
+      const cutLayout = mergeFirstOpenNetCuts(
+        { version: 1, modules: {} },
+        'top',
+        designModule.edges,
+        designModule,
+      );
 
-  it('columnizes fully-cut ports even when nothing else survives to anchor a body against', async () => {
-    const designModule = {
-      name: 'top',
-      file: 'top.sv',
-      ports: [],
-      nodes: [
-        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' as const }] },
-        { id: 'x', kind: 'port' as const, label: 'x', ports: [{ id: 'p', name: 'x', direction: 'output' as const }] },
-        { id: 'y', kind: 'port' as const, label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' as const }] }
-      ],
-      edges: [
-        { id: 'a-x', source: 'a', sourcePort: 'p', target: 'x', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } },
-        { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p', metadata: { declaredNetName: 'chip_select' } }
-      ]
-    };
-    const cutLayout = mergeFirstOpenNetCuts(
-      { version: 1, modules: {} },
-      'top',
-      designModule.edges,
-      designModule
-    );
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: { top: designModule },
+        },
+        'top',
+        cutLayout,
+      );
+      const byId = new Map(view.nodes.map((node) => [node.id, node]));
+      const clkBounds = boundsOf(byId.get('clk')!);
+      const rstBounds = boundsOf(byId.get('rst_n')!);
+      const yBounds = boundsOf(byId.get('y')!);
+      const targetBounds = boundsOf(byId.get('u')!);
 
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: designModule }
-    }, 'top', cutLayout);
-    const byId = new Map(view.nodes.map((node) => [node.id, node]));
-    const aBounds = boundsOf(byId.get('a')!);
-    const xBounds = boundsOf(byId.get('x')!);
-    const yBounds = boundsOf(byId.get('y')!);
-    const sourceLabelBounds = boundsOf(byId.get('cut-label:a:p:source')!);
-    const xLabelBounds = boundsOf(byId.get('cut-label:a:p:sink:a-x')!);
+      // Both cut inputs land left of the body, stacked with no vertical overlap.
+      expect(clkBounds.x + clkBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+      expect(rstBounds.x + rstBounds.width).toBe(targetBounds.x - diagramSizing.columnGap);
+      expect(boxesOverlap(clkBounds, rstBounds)).toBe(false);
 
-    // 'a' (the only source-direction port) is alone in the left column; 'x'
-    // and 'y' stack in the right column, sorted top-to-bottom. There's no
-    // surviving body here, so the columns sit right next to each other
-    // rather than flanking body-sized empty space.
-    expect(aBounds.x).toBeLessThan(xBounds.x);
-    expect(aBounds.x).toBeLessThan(yBounds.x);
-    expect(xBounds.x).toBe(yBounds.x);
-    expect(xBounds.y).toBeLessThan(yBounds.y);
-    expect(boxesOverlap(xBounds, yBounds)).toBe(false);
-    expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(
-      diagramSizing.edgeLeadLength * 2
-      + sourceLabelBounds.width * 2
-      + diagramSizing.gridSize
-    );
-    expect(sourceLabelBounds.x).toBe(
-      aBounds.x + aBounds.width + diagramSizing.edgeLeadLength
-    );
-    expect(sourceLabelBounds.y + sourceLabelBounds.height / 2).toBe(
-      aBounds.y + aBounds.height / 2
-    );
-    expect(sourceLabelBounds.x + sourceLabelBounds.width + diagramSizing.gridSize).toBe(
-      xLabelBounds.x
-    );
-    expect(xLabelBounds.x + xLabelBounds.width + diagramSizing.edgeLeadLength).toBe(xBounds.x);
-  });
+      // The cut output lands right of the body, on the opposite side from the inputs.
+      expect(yBounds.x).toBe(targetBounds.x + targetBounds.width + diagramSizing.columnGap);
+    },
+  );
 
-  it('does not columnize once the layout has any saved node position (post-drag / after Auto Layout)', async () => {
-    const designModule = {
-      name: 'top',
-      file: 'top.sv',
-      ports: [],
-      nodes: [
-        { id: 'a', kind: 'port' as const, label: 'a', ports: [{ id: 'out', name: 'a', direction: 'input' as const }] },
-        { id: 'other', kind: 'port' as const, label: 'other', ports: [{ id: 'out', name: 'other', direction: 'input' as const }] },
-        { id: 'u', kind: 'instance' as const, label: 'u', ports: [{ id: 'in', name: 'a', direction: 'input' as const }] }
-      ],
-      edges: [
-        { id: 'a-u', source: 'a', sourcePort: 'out', target: 'u', targetPort: 'in', metadata: { declaredNetName: 'a_to_u' } }
-      ]
-    };
-    const cutLayout = mergeFirstOpenNetCuts(
-      { version: 1, modules: {} },
-      'top',
-      designModule.edges,
-      designModule
-    );
-    // Simulate the module already having a customized layout (e.g. the user
-    // dragged an unrelated node) — moduleLayout.nodes is no longer empty.
-    const customizedLayout: SavedLayout = {
-      version: 1,
-      modules: {
-        ...cutLayout.modules,
-        top: {
-          ...cutLayout.modules.top,
-          nodes: { other: { x: 999, y: 999, fixed: true } }
-        }
-      }
-    };
+  it(
+    'columnizes fully-cut ports even when nothing ' + 'else survives to anchor a body against',
+    async () => {
+      const designModule = {
+        name: 'top',
+        file: 'top.sv',
+        ports: [],
+        nodes: [
+          {
+            id: 'a',
+            kind: 'port' as const,
+            label: 'a',
+            ports: [{ id: 'p', name: 'a', direction: 'input' as const }],
+          },
+          {
+            id: 'x',
+            kind: 'port' as const,
+            label: 'x',
+            ports: [{ id: 'p', name: 'x', direction: 'output' as const }],
+          },
+          {
+            id: 'y',
+            kind: 'port' as const,
+            label: 'y',
+            ports: [{ id: 'p', name: 'y', direction: 'output' as const }],
+          },
+        ],
+        edges: [
+          {
+            id: 'a-x',
+            source: 'a',
+            sourcePort: 'p',
+            target: 'x',
+            targetPort: 'p',
+            metadata: { declaredNetName: 'chip_select' },
+          },
+          {
+            id: 'a-y',
+            source: 'a',
+            sourcePort: 'p',
+            target: 'y',
+            targetPort: 'p',
+            metadata: { declaredNetName: 'chip_select' },
+          },
+        ],
+      };
+      const cutLayout = mergeFirstOpenNetCuts(
+        { version: 1, modules: {} },
+        'top',
+        designModule.edges,
+        designModule,
+      );
 
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: designModule }
-    }, 'top', customizedLayout);
-    const byId = new Map(view.nodes.map((node) => [node.id, node]));
-    const source = boundsOf(byId.get('a')!);
-    const target = boundsOf(byId.get('u')!);
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: { top: designModule },
+        },
+        'top',
+        cutLayout,
+      );
+      const byId = new Map(view.nodes.map((node) => [node.id, node]));
+      const aBounds = boundsOf(byId.get('a')!);
+      const xBounds = boundsOf(byId.get('x')!);
+      const yBounds = boundsOf(byId.get('y')!);
+      const sourceLabelBounds = boundsOf(byId.get('cut-label:a:p:source')!);
+      const xLabelBounds = boundsOf(byId.get('cut-label:a:p:sink:a-x')!);
 
-    expect(source.x + source.width).not.toBe(target.x - diagramSizing.columnGap);
-  });
+      // 'a' (the only source-direction port) is alone in the left column; 'x'
+      // and 'y' stack in the right column, sorted top-to-bottom. There's no
+      // surviving body here, so the columns sit right next to each other
+      // rather than flanking body-sized empty space.
+      expect(aBounds.x).toBeLessThan(xBounds.x);
+      expect(aBounds.x).toBeLessThan(yBounds.x);
+      expect(xBounds.x).toBe(yBounds.x);
+      expect(xBounds.y).toBeLessThan(yBounds.y);
+      expect(boxesOverlap(xBounds, yBounds)).toBe(false);
+      expect(xBounds.x - (aBounds.x + aBounds.width)).toBe(
+        diagramSizing.edgeLeadLength * 2 + sourceLabelBounds.width * 2 + diagramSizing.gridSize,
+      );
+      expect(sourceLabelBounds.x).toBe(aBounds.x + aBounds.width + diagramSizing.edgeLeadLength);
+      expect(sourceLabelBounds.y + sourceLabelBounds.height / 2).toBe(
+        aBounds.y + aBounds.height / 2,
+      );
+      expect(sourceLabelBounds.x + sourceLabelBounds.width + diagramSizing.gridSize).toBe(
+        xLabelBounds.x,
+      );
+      expect(xLabelBounds.x + xLabelBounds.width + diagramSizing.edgeLeadLength).toBe(xBounds.x);
+    },
+  );
+
+  it(
+    'does not columnize once the layout has any saved ' +
+      'node position (post-drag / after Auto Layout)',
+    async () => {
+      const designModule = {
+        name: 'top',
+        file: 'top.sv',
+        ports: [],
+        nodes: [
+          {
+            id: 'a',
+            kind: 'port' as const,
+            label: 'a',
+            ports: [{ id: 'out', name: 'a', direction: 'input' as const }],
+          },
+          {
+            id: 'other',
+            kind: 'port' as const,
+            label: 'other',
+            ports: [{ id: 'out', name: 'other', direction: 'input' as const }],
+          },
+          {
+            id: 'u',
+            kind: 'instance' as const,
+            label: 'u',
+            ports: [{ id: 'in', name: 'a', direction: 'input' as const }],
+          },
+        ],
+        edges: [
+          {
+            id: 'a-u',
+            source: 'a',
+            sourcePort: 'out',
+            target: 'u',
+            targetPort: 'in',
+            metadata: { declaredNetName: 'a_to_u' },
+          },
+        ],
+      };
+      const cutLayout = mergeFirstOpenNetCuts(
+        { version: 1, modules: {} },
+        'top',
+        designModule.edges,
+        designModule,
+      );
+      // Simulate the module already having a customized layout (e.g. the user
+      // dragged an unrelated node) — moduleLayout.nodes is no longer empty.
+      const customizedLayout: SavedLayout = {
+        version: 1,
+        modules: {
+          ...cutLayout.modules,
+          top: {
+            ...cutLayout.modules.top,
+            nodes: { other: { x: 999, y: 999, fixed: true } },
+          },
+        },
+      };
+
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: { top: designModule },
+        },
+        'top',
+        customizedLayout,
+      );
+      const byId = new Map(view.nodes.map((node) => [node.id, node]));
+      const source = boundsOf(byId.get('a')!);
+      const target = boundsOf(byId.get('u')!);
+
+      expect(source.x + source.width).not.toBe(target.x - diagramSizing.columnGap);
+    },
+  );
 });
 
 function renderedPortCenterY(node: PositionedNode): number {
@@ -510,23 +821,30 @@ function renderedAluInputCenterY(node: PositionedNode, index: number): number {
   return node.position.y + (index === 0 ? diagramSizing.gridSize : diagramSizing.gridSize * 3);
 }
 
-function routeCrossesNodeInterior(route: Array<{ x: number; y: number }>, node: PositionedNode): boolean {
+function routeCrossesNodeInterior(
+  route: Array<{ x: number; y: number }>,
+  node: PositionedNode,
+): boolean {
   const dimensions = diagramNodeDimensions(node);
   const epsilon = 0.5;
 
   return route.slice(0, -1).some((point, index) => {
     const next = route[index + 1];
     if (point.y === next.y) {
-      return point.y > node.position.y + epsilon
-        && point.y < node.position.y + dimensions.height - epsilon
-        && Math.min(point.x, next.x) < node.position.x + dimensions.width - epsilon
-        && Math.max(point.x, next.x) > node.position.x + epsilon;
+      return (
+        point.y > node.position.y + epsilon &&
+        point.y < node.position.y + dimensions.height - epsilon &&
+        Math.min(point.x, next.x) < node.position.x + dimensions.width - epsilon &&
+        Math.max(point.x, next.x) > node.position.x + epsilon
+      );
     }
     if (point.x === next.x) {
-      return point.x > node.position.x + epsilon
-        && point.x < node.position.x + dimensions.width - epsilon
-        && Math.min(point.y, next.y) < node.position.y + dimensions.height - epsilon
-        && Math.max(point.y, next.y) > node.position.y + epsilon;
+      return (
+        point.x > node.position.x + epsilon &&
+        point.x < node.position.x + dimensions.width - epsilon &&
+        Math.min(point.y, next.y) < node.position.y + dimensions.height - epsilon &&
+        Math.max(point.y, next.y) > node.position.y + epsilon
+      );
     }
     return false;
   });
@@ -534,7 +852,7 @@ function routeCrossesNodeInterior(route: Array<{ x: number; y: number }>, node: 
 
 function boundsOverlap(
   a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number }
+  b: { x: number; y: number; width: number; height: number },
 ): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
@@ -542,12 +860,14 @@ function boundsOverlap(
 function hasShortInitialStair(points: Array<{ x: number; y: number }>): boolean {
   if (points.length < 5) return false;
   const [source, first, second, third, fourth] = points;
-  return first.y === source.y
-    && second.x === first.x
-    && third.y === second.y
-    && fourth.x === third.x
-    && second.y !== source.y
-    && Math.abs(third.x - first.x) <= diagramSizing.gridSize * 2;
+  return (
+    first.y === source.y &&
+    second.x === first.x &&
+    third.y === second.y &&
+    fourth.x === third.x &&
+    second.y !== source.y &&
+    Math.abs(third.x - first.x) <= diagramSizing.gridSize * 2
+  );
 }
 
 describe('layout merge', () => {
@@ -567,7 +887,9 @@ describe('layout merge', () => {
     expect(diagramSizing.minNodeSeparation % diagramSizing.gridSize).toBe(0);
     expect(diagramSizing.sameLayerNodeSeparation % diagramSizing.gridSize).toBe(0);
     expect(diagramSizing.sameLayerNodeSeparation).toBeLessThan(diagramSizing.minNodeSeparation);
-    expect(diagramSizing.minNodeSeparation).toBeGreaterThanOrEqual(diagramSizing.edgeLeadLength * 2);
+    expect(diagramSizing.minNodeSeparation).toBeGreaterThanOrEqual(
+      diagramSizing.edgeLeadLength * 2,
+    );
     expect(nodeHeightForPortRows(1)).toBe(diagramSizing.nodeHeight);
     expect(nodeHeightForPortRows(3)).toBe(diagramSizing.gridSize * 5);
     expect(muxHeightForPortRows(3)).toBe(diagramSizing.gridSize * 6);
@@ -586,10 +908,10 @@ describe('layout merge', () => {
       modules: {
         top: {
           nodes: {
-            a: { x: 10, y: 20, fixed: true }
-          }
-        }
-      }
+            a: { x: 10, y: 20, fixed: true },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(graph, 'top', layout);
@@ -614,11 +936,11 @@ describe('layout merge', () => {
   it('preserves a full grid gap between literals after snapping', () => {
     const literals: DiagramNode[] = [
       { id: 'start', kind: 'literal', label: 'START', ports: [] },
-      { id: 'busy', kind: 'literal', label: 'BUSY', ports: [] }
+      { id: 'busy', kind: 'literal', label: 'BUSY', ports: [] },
     ];
     const positions = new Map([
       ['start', { x: 504, y: 36 }],
-      ['busy', { x: 504, y: 60 }]
+      ['busy', { x: 504, y: 60 }],
     ]);
 
     enforceMinimumBlockGaps(literals, positions, { nodes: {} });
@@ -626,8 +948,9 @@ describe('layout merge', () => {
       .map((node) => ({ ...node, position: positions.get(node.id)! }))
       .sort((a, b) => a.position.y - b.position.y);
 
-    expect(ordered[1].position.y - (ordered[0].position.y + diagramNodeDimensions(ordered[0]).height))
-      .toBeGreaterThanOrEqual(diagramSizing.gridSize);
+    expect(
+      ordered[1].position.y - (ordered[0].position.y + diagramNodeDimensions(ordered[0]).height),
+    ).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
   it('preserves a full grid gap below a register reset lead after snapping', () => {
@@ -640,28 +963,26 @@ describe('layout merge', () => {
         { id: 'clk', name: 'clk', direction: 'input' },
         { id: 'rst_n', name: 'rst_n', direction: 'input' },
         { id: 'rv', name: 'RV', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' }
+        { id: 'q', name: 'Q', direction: 'output' },
       ],
-      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' }
+      metadata: { clockSignal: 'clk', resetSignal: 'rst_n' },
     };
     const done: DiagramNode = { id: 'done', kind: 'literal', label: 'DONE', ports: [] };
     const positions = new Map([
       [register.id, { x: 480, y: 144 }],
-      [done.id, { x: 504, y: 300 }]
+      [done.id, { x: 504, y: 300 }],
     ]);
 
     const registerGeometry = elkNodeForDiagramNode(register, true);
     const doneGeometry = elkNodeForDiagramNode(done, true);
-    const originalRegisterBottom = positions.get(register.id)!.y
-      - registerGeometry.layoutOffset.y
-      + registerGeometry.height;
+    const originalRegisterBottom =
+      positions.get(register.id)!.y - registerGeometry.layoutOffset.y + registerGeometry.height;
     const originalDoneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
     expect(originalRegisterBottom).toBeGreaterThan(originalDoneTop);
 
     enforceMinimumBlockGaps([register, done], positions, { nodes: {} });
-    const registerBottom = positions.get(register.id)!.y
-      - registerGeometry.layoutOffset.y
-      + registerGeometry.height;
+    const registerBottom =
+      positions.get(register.id)!.y - registerGeometry.layoutOffset.y + registerGeometry.height;
     const doneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
 
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
@@ -676,10 +997,10 @@ describe('layout merge', () => {
         { id: 'd', name: 'D', direction: 'input' },
         { id: 'clk', name: 'clk', direction: 'input' },
         { id: 'rst_n', name: 'rst_n', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' }
+        { id: 'q', name: 'Q', direction: 'output' },
       ],
       metadata: { clockSignal: 'clk', resetSignal: 'rst_n' },
-      sizeOverride: { width: 12, height: 8 }
+      sizeOverride: { width: 12, height: 8 },
     };
 
     const resolved = resolvedNodeDimensions(register);
@@ -701,9 +1022,9 @@ describe('layout merge', () => {
       ports: [
         { id: 'd', name: 'D', direction: 'input' },
         { id: 'clk', name: 'clk', direction: 'input' },
-        { id: 'q', name: 'Q', direction: 'output' }
+        { id: 'q', name: 'Q', direction: 'output' },
       ],
-      metadata: { clockSignal: 'clk' }
+      metadata: { clockSignal: 'clk' },
     };
     const placement = elkNodeForDiagramNode(register, true);
     const routing = elkRoutingNodeForDiagramNode(register);
@@ -712,17 +1033,17 @@ describe('layout merge', () => {
     expect(routing.height).toBe(placement.height + diagramSizing.gridSize);
     expect(routing.layoutOffset).toEqual({
       x: placement.layoutOffset.x,
-      y: placement.layoutOffset.y + diagramSizing.gridSize / 2
+      y: placement.layoutOffset.y + diagramSizing.gridSize / 2,
     });
 
     for (const placementPort of placement.ports) {
       const routingPort = routing.ports.find((port) => port.id === placementPort.id)!;
       expect({
         x: routingPort.x! - routing.layoutOffset.x,
-        y: routingPort.y! - routing.layoutOffset.y
+        y: routingPort.y! - routing.layoutOffset.y,
       }).toEqual({
         x: placementPort.x! - placement.layoutOffset.x,
-        y: placementPort.y! - placement.layoutOffset.y
+        y: placementPort.y! - placement.layoutOffset.y,
       });
     }
   });
@@ -734,21 +1055,21 @@ describe('layout merge', () => {
         kind: 'netLabel',
         label: 'clk',
         ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
-        metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } }
+        metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } },
       },
       {
         id: 'cut-label:clk:sink',
         kind: 'netLabel',
         label: 'clk',
         ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
-        metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } }
-      }
+        metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } },
+      },
     ];
 
     for (const cutEnd of cutEnds) {
       const geometry = elkNodeForDiagramNode(cutEnd, true);
       expect(geometry.ports[0].y! - geometry.layoutOffset.y).toBe(
-        diagramNodeDimensions(cutEnd).height / 2
+        diagramNodeDimensions(cutEnd).height / 2,
       );
     }
   });
@@ -761,14 +1082,14 @@ describe('layout merge', () => {
           nodes: {
             old: { x: 1, y: 2, fixed: true },
             a: { x: 3, y: 4, fixed: true },
-            auto: { x: 5, y: 6 } // not fixed
-          }
-        }
-      }
+            auto: { x: 5, y: 6 }, // not fixed
+          },
+        },
+      },
     };
     const nodes: PositionedNode[] = [
       { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 20.2, y: 31.8 }, fixed: true },
-      { id: 'b', kind: 'port', label: 'b', ports: [], position: { x: 100, y: 100 } } // not fixed
+      { id: 'b', kind: 'port', label: 'b', ports: [], position: { x: 100, y: 100 } }, // not fixed
     ];
 
     const merged = mergeNodePositions(layout, 'top', nodes);
@@ -789,13 +1110,19 @@ describe('layout merge', () => {
         ports: [],
         position: { x: 120, y: 96 },
         fixed: true,
-        sizeOverride: { width: 12, height: 8 }
-      }
+        sizeOverride: { width: 12, height: 8 },
+      },
     ];
 
     const merged = mergeNodePositions({ version: 1, modules: {} }, 'top', nodes);
 
-    expect(merged.modules.top.nodes.u).toEqual({ x: 120, y: 96, fixed: true, width: 12, height: 8 });
+    expect(merged.modules.top.nodes.u).toEqual({
+      x: 120,
+      y: 96,
+      fixed: true,
+      width: 12,
+      height: 8,
+    });
   });
 
   it('drops a previously saved size override once the node reports none (revert)', () => {
@@ -804,13 +1131,20 @@ describe('layout merge', () => {
       modules: {
         top: {
           nodes: {
-            u: { x: 120, y: 96, fixed: true, width: 12, height: 8 }
-          }
-        }
-      }
+            u: { x: 120, y: 96, fixed: true, width: 12, height: 8 },
+          },
+        },
+      },
     };
     const nodes: PositionedNode[] = [
-      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 120, y: 96 }, fixed: true }
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 120, y: 96 },
+        fixed: true,
+      },
     ];
 
     const merged = mergeNodePositions(layout, 'top', nodes);
@@ -824,10 +1158,10 @@ describe('layout merge', () => {
       modules: {
         top: {
           nodes: {
-            u: { x: 100, y: 100, fixed: true, width: 12, height: 8 }
-          }
-        }
-      }
+            u: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
+          },
+        },
+      },
     };
 
     const reverted = revertNodeSize(layout, 'top', 'u');
@@ -838,7 +1172,7 @@ describe('layout merge', () => {
   it('revertNodeSize is a no-op when the node has no saved override', () => {
     const layout: SavedLayout = {
       version: 1,
-      modules: { top: { nodes: { u: { x: 100, y: 100, fixed: true } } } }
+      modules: { top: { nodes: { u: { x: 100, y: 100, fixed: true } } } },
     };
 
     expect(revertNodeSize(layout, 'top', 'u')).toEqual(layout);
@@ -854,10 +1188,10 @@ describe('layout merge', () => {
           nodes: {
             u1: { x: 100, y: 100, fixed: true, width: 12, height: 8 },
             u2: { x: 300, y: 100, fixed: true, width: 10, height: 6 },
-            u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
-          }
-        }
-      }
+            u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 },
+          },
+        },
+      },
     };
 
     const reverted = revertNodeSizes(layout, 'top', ['u1', 'u2']);
@@ -865,10 +1199,11 @@ describe('layout merge', () => {
     expect(reverted.modules.top.nodes).toEqual({
       u1: { x: 100, y: 100, fixed: true },
       u2: { x: 300, y: 100, fixed: true },
-      u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 }
+      u3: { x: 500, y: 100, fixed: true, width: 9, height: 5 },
     });
   });
 
+  // eslint-disable-next-line max-len
   it('grows a resized instance past its saved size at view-model build time, floored by canonical size', async () => {
     const canonical = diagramNodeDimensions({ id: 'u', kind: 'instance', label: 'u', ports: [] });
     const grid = diagramSizing.gridSize;
@@ -882,24 +1217,30 @@ describe('layout merge', () => {
               y: 0,
               fixed: true,
               width: canonical.width / grid + 3,
-              height: canonical.height / grid + 2
-            }
-          }
-        }
-      }
+              height: canonical.height / grid + 2,
+            },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(graph, 'top', layout);
     const node = view.nodes.find((candidate) => candidate.id === 'u');
 
-    expect(node?.sizeOverride).toEqual({ width: canonical.width / grid + 3, height: canonical.height / grid + 2 });
+    expect(node?.sizeOverride).toEqual({
+      width: canonical.width / grid + 3,
+      height: canonical.height / grid + 2,
+    });
     const resolved = node && resolvedNodeDimensions(node);
     expect(resolved?.width).toBe(canonical.width + grid * 3);
     expect(resolved?.height).toBe(canonical.height + grid * 2);
   });
 
   it('persists edge waypoints and applies them to the view model', async () => {
-    const layout = mergeEdgeWaypoint({ version: 1, modules: {} }, 'top', 'e-a-u', { x: 42.4, y: 92.6 });
+    const layout = mergeEdgeWaypoint({ version: 1, modules: {} }, 'top', 'e-a-u', {
+      x: 42.4,
+      y: 92.6,
+    });
     const view = await buildViewModel(graph, 'top', layout);
 
     expect(layout.modules.top.edges?.['e-a-u'].waypoint).toEqual({ x: 42, y: 93 });
@@ -909,40 +1250,47 @@ describe('layout merge', () => {
   it('persists edge route points and applies them to the view model', async () => {
     const layout = mergeEdgeRoutePoints({ version: 1, modules: {} }, 'top', 'e-a-u', [
       { x: 10.2, y: 20.8 },
-      { x: 30.1, y: 40.5 }
+      { x: 30.1, y: 40.5 },
     ]);
     const view = await buildViewModel(graph, 'top', layout);
 
     expect(layout.modules.top.edges?.['e-a-u'].routePoints).toEqual([
       { x: 10, y: 21 },
-      { x: 30, y: 41 }
+      { x: 30, y: 41 },
     ]);
     expect(view.edges.find((edge) => edge.id === 'e-a-u')?.routePoints).toEqual([
       { x: 10, y: 21 },
-      { x: 30, y: 41 }
+      { x: 30, y: 41 },
     ]);
   });
 
   it('preserves moved node positions when route points are persisted afterward', async () => {
     const moved = mergeNodePositions({ version: 1, modules: {} }, 'top', [
       { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 120, y: 132 }, fixed: true },
-      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 }, fixed: true }
+      {
+        id: 'u',
+        kind: 'instance',
+        label: 'u',
+        ports: [],
+        position: { x: 360, y: 240 },
+        fixed: true,
+      },
     ]);
     const routed = mergeEdgeRoutePoints(moved, 'top', 'e-a-u', [
       { x: 168, y: 144 },
-      { x: 264, y: 144 }
+      { x: 264, y: 144 },
     ]);
     const view = await buildViewModel(graph, 'top', routed);
 
     expect(routed.modules.top.nodes).toEqual({
       a: { x: 120, y: 132, fixed: true },
-      u: { x: 360, y: 240, fixed: true }
+      u: { x: 360, y: 240, fixed: true },
     });
     expect(view.nodes.find((node) => node.id === 'a')?.position).toEqual({ x: 120, y: 132 });
     expect(view.nodes.find((node) => node.id === 'u')?.position).toEqual({ x: 360, y: 240 });
     expect(view.edges.find((edge) => edge.id === 'e-a-u')?.routePoints).toEqual([
       { x: 168, y: 144 },
-      { x: 264, y: 144 }
+      { x: 264, y: 144 },
     ]);
   });
 
@@ -952,10 +1300,10 @@ describe('layout merge', () => {
       modules: {
         top: {
           nodes: {
-            u: { x: 240, y: 120, fixed: true }
-          }
-        }
-      }
+            u: { x: 240, y: 120, fixed: true },
+          },
+        },
+      },
     };
     const graphWithRegion: DesignGraph = {
       ...graph,
@@ -964,17 +1312,19 @@ describe('layout merge', () => {
           ...graph.modules.top,
           nodes: [{ id: 'u', kind: 'instance', label: 'u', ports: [] }],
           edges: [],
-          generateRegions: [{
-            id: 'r0',
-            kind: 'case',
-            label: 'MODE == 0 (g_case_0)',
-            condition: 'MODE == 0',
-            blockLabel: 'g_case_0',
-            siblingGroupId: 'case:1',
-            nodeIds: ['u']
-          }]
-        }
-      }
+          generateRegions: [
+            {
+              id: 'r0',
+              kind: 'case',
+              label: 'MODE == 0 (g_case_0)',
+              condition: 'MODE == 0',
+              blockLabel: 'g_case_0',
+              siblingGroupId: 'case:1',
+              nodeIds: ['u'],
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(graphWithRegion, 'top', layout);
@@ -985,8 +1335,12 @@ describe('layout merge', () => {
     expect(region.blockLabel).toBe('g_case_0');
     expect(region.bounds.x).toBeLessThanOrEqual(node.position.x - diagramSizing.gridSize);
     expect(region.bounds.y).toBeLessThanOrEqual(node.position.y - diagramSizing.gridSize);
-    expect(region.bounds.x + region.bounds.width).toBeGreaterThanOrEqual(node.position.x + size.width + diagramSizing.gridSize);
-    expect(region.bounds.y + region.bounds.height).toBeGreaterThanOrEqual(node.position.y + size.height + diagramSizing.gridSize);
+    expect(region.bounds.x + region.bounds.width).toBeGreaterThanOrEqual(
+      node.position.x + size.width + diagramSizing.gridSize,
+    );
+    expect(region.bounds.y + region.bounds.height).toBeGreaterThanOrEqual(
+      node.position.y + size.height + diagramSizing.gridSize,
+    );
   });
 
   it('keeps saved generate region bounds from shrinking automatically', async () => {
@@ -995,13 +1349,13 @@ describe('layout merge', () => {
       modules: {
         top: {
           nodes: {
-            u: { x: 240, y: 120, fixed: true }
+            u: { x: 240, y: 120, fixed: true },
           },
           regions: {
-            r0: { x: 96, y: 48, width: 480, height: 360, fixed: true }
-          }
-        }
-      }
+            r0: { x: 96, y: 48, width: 480, height: 360, fixed: true },
+          },
+        },
+      },
     };
     const graphWithRegion: DesignGraph = {
       ...graph,
@@ -1010,16 +1364,18 @@ describe('layout merge', () => {
           ...graph.modules.top,
           nodes: [{ id: 'u', kind: 'instance', label: 'u', ports: [] }],
           edges: [],
-          generateRegions: [{
-            id: 'r0',
-            kind: 'if',
-            label: 'if (ENABLE)',
-            condition: 'ENABLE',
-            siblingGroupId: 'if:1',
-            nodeIds: ['u']
-          }]
-        }
-      }
+          generateRegions: [
+            {
+              id: 'r0',
+              kind: 'if',
+              label: 'if (ENABLE)',
+              condition: 'ENABLE',
+              siblingGroupId: 'if:1',
+              nodeIds: ['u'],
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(graphWithRegion, 'top', layout);
@@ -1029,27 +1385,46 @@ describe('layout merge', () => {
   });
 
   it('persists fixed generate region bounds and marks removed fixed regions stale', () => {
-    const merged = mergeRegionBounds({
-      version: 1,
-      modules: {
-        top: {
-          nodes: {},
-          regions: {
-            old: { x: 1, y: 2, width: 3, height: 4, fixed: true }
-          }
-        }
-      }
-    }, 'top', [{
-      id: 'r0',
-      kind: 'case',
-      label: 'MODE == 0',
-      bounds: { x: 24.4, y: 48.5, width: 191.8, height: 96.2 },
-      nodeIds: [],
-      fixed: true
-    }]);
+    const merged = mergeRegionBounds(
+      {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {},
+            regions: {
+              old: { x: 1, y: 2, width: 3, height: 4, fixed: true },
+            },
+          },
+        },
+      },
+      'top',
+      [
+        {
+          id: 'r0',
+          kind: 'case',
+          label: 'MODE == 0',
+          bounds: { x: 24.4, y: 48.5, width: 191.8, height: 96.2 },
+          nodeIds: [],
+          fixed: true,
+        },
+      ],
+    );
 
-    expect(merged.modules.top.regions?.old).toEqual({ x: 1, y: 2, width: 3, height: 4, fixed: true, stale: true });
-    expect(merged.modules.top.regions?.r0).toEqual({ x: 24, y: 49, width: 192, height: 96, fixed: true });
+    expect(merged.modules.top.regions?.old).toEqual({
+      x: 1,
+      y: 2,
+      width: 3,
+      height: 4,
+      fixed: true,
+      stale: true,
+    });
+    expect(merged.modules.top.regions?.r0).toEqual({
+      x: 24,
+      y: 49,
+      width: 192,
+      height: 96,
+      fixed: true,
+    });
   });
 
   it('places nested empty generate regions inside their parent placeholder', async () => {
@@ -1068,7 +1443,7 @@ describe('layout merge', () => {
               condition: 'ENABLE',
               blockLabel: 'g_if_on',
               siblingGroupId: 'if:1',
-              nodeIds: []
+              nodeIds: [],
             },
             {
               id: 'inner',
@@ -1078,11 +1453,11 @@ describe('layout merge', () => {
               blockLabel: 'g_case_0',
               parentRegionId: 'outer',
               siblingGroupId: 'case:1',
-              nodeIds: []
-            }
-          ]
-        }
-      }
+              nodeIds: [],
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(graphWithRegions, 'top', { version: 1, modules: {} });
@@ -1091,153 +1466,265 @@ describe('layout merge', () => {
 
     expect(inner.bounds.x).toBeGreaterThan(outer.bounds.x);
     expect(inner.bounds.y).toBeGreaterThan(outer.bounds.y);
-    expect(inner.bounds.x + inner.bounds.width).toBeLessThanOrEqual(outer.bounds.x + outer.bounds.width);
-    expect(inner.bounds.y + inner.bounds.height).toBeLessThanOrEqual(outer.bounds.y + outer.bounds.height);
+    expect(inner.bounds.x + inner.bounds.width).toBeLessThanOrEqual(
+      outer.bounds.x + outer.bounds.width,
+    );
+    expect(inner.bounds.y + inner.bounds.height).toBeLessThanOrEqual(
+      outer.bounds.y + outer.bounds.height,
+    );
   });
 
-  it('uses ELK compound regions to keep generate arm siblings separated during auto-layout', async () => {
-    const graphWithCaseRegions: DesignGraph = {
-      ...graph,
-      modules: {
-        top: {
-          ...graph.modules.top,
-          nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'input' }] },
-            { id: 'c', kind: 'port', label: 'c', ports: [{ id: 'p', name: 'c', direction: 'input' }] },
-            { id: 'u0', kind: 'instance', label: 'u0', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
-            { id: 'u1', kind: 'instance', label: 'u1', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
-            { id: 'ud', kind: 'instance', label: 'ud', ports: [{ id: 'a', name: 'a', direction: 'input' }, { id: 'y', name: 'y', direction: 'output' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
-          ],
-          edges: [
-            { id: 'e-a-u0', source: 'a', sourcePort: 'p', target: 'u0', targetPort: 'a', signal: 'w0' },
-            { id: 'e-u0-y', source: 'u0', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' },
-            { id: 'e-b-u1', source: 'b', sourcePort: 'p', target: 'u1', targetPort: 'a', signal: 'w1' },
-            { id: 'e-u1-y', source: 'u1', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' },
-            { id: 'e-c-ud', source: 'c', sourcePort: 'p', target: 'ud', targetPort: 'a', signal: 'wd' },
-            { id: 'e-ud-y', source: 'ud', sourcePort: 'y', target: 'y', targetPort: 'p', signal: 'w' }
-          ],
-          generateRegions: [
-            {
-              id: 'r0',
-              kind: 'case',
-              label: 'g_case_0 /* MODE == 0 */',
-              blockLabel: 'g_case_0',
-              caseValue: 'MODE == 0',
-              siblingGroupId: 'case:1',
-              armIndex: 0,
-              nodeIds: ['u0']
-            },
-            {
-              id: 'r1',
-              kind: 'case',
-              label: 'g_case_1 /* MODE == 1 */',
-              blockLabel: 'g_case_1',
-              caseValue: 'MODE == 1',
-              siblingGroupId: 'case:1',
-              armIndex: 1,
-              nodeIds: ['u1']
-            },
-            {
-              id: 'rd',
-              kind: 'case-default',
-              label: 'g_case_default /* default */',
-              blockLabel: 'g_case_default',
-              caseValue: 'default',
-              siblingGroupId: 'case:1',
-              armIndex: 2,
-              nodeIds: ['ud']
-            }
-          ]
+  it(
+    'uses ELK compound regions to keep generate ' + 'arm siblings separated during auto-layout',
+    async () => {
+      const graphWithCaseRegions: DesignGraph = {
+        ...graph,
+        modules: {
+          top: {
+            ...graph.modules.top,
+            nodes: [
+              {
+                id: 'a',
+                kind: 'port',
+                label: 'a',
+                ports: [{ id: 'p', name: 'a', direction: 'input' }],
+              },
+              {
+                id: 'b',
+                kind: 'port',
+                label: 'b',
+                ports: [{ id: 'p', name: 'b', direction: 'input' }],
+              },
+              {
+                id: 'c',
+                kind: 'port',
+                label: 'c',
+                ports: [{ id: 'p', name: 'c', direction: 'input' }],
+              },
+              {
+                id: 'u0',
+                kind: 'instance',
+                label: 'u0',
+                ports: [
+                  { id: 'a', name: 'a', direction: 'input' },
+                  { id: 'y', name: 'y', direction: 'output' },
+                ],
+              },
+              {
+                id: 'u1',
+                kind: 'instance',
+                label: 'u1',
+                ports: [
+                  { id: 'a', name: 'a', direction: 'input' },
+                  { id: 'y', name: 'y', direction: 'output' },
+                ],
+              },
+              {
+                id: 'ud',
+                kind: 'instance',
+                label: 'ud',
+                ports: [
+                  { id: 'a', name: 'a', direction: 'input' },
+                  { id: 'y', name: 'y', direction: 'output' },
+                ],
+              },
+              {
+                id: 'y',
+                kind: 'port',
+                label: 'y',
+                ports: [{ id: 'p', name: 'y', direction: 'output' }],
+              },
+            ],
+            edges: [
+              {
+                id: 'e-a-u0',
+                source: 'a',
+                sourcePort: 'p',
+                target: 'u0',
+                targetPort: 'a',
+                signal: 'w0',
+              },
+              {
+                id: 'e-u0-y',
+                source: 'u0',
+                sourcePort: 'y',
+                target: 'y',
+                targetPort: 'p',
+                signal: 'w',
+              },
+              {
+                id: 'e-b-u1',
+                source: 'b',
+                sourcePort: 'p',
+                target: 'u1',
+                targetPort: 'a',
+                signal: 'w1',
+              },
+              {
+                id: 'e-u1-y',
+                source: 'u1',
+                sourcePort: 'y',
+                target: 'y',
+                targetPort: 'p',
+                signal: 'w',
+              },
+              {
+                id: 'e-c-ud',
+                source: 'c',
+                sourcePort: 'p',
+                target: 'ud',
+                targetPort: 'a',
+                signal: 'wd',
+              },
+              {
+                id: 'e-ud-y',
+                source: 'ud',
+                sourcePort: 'y',
+                target: 'y',
+                targetPort: 'p',
+                signal: 'w',
+              },
+            ],
+            generateRegions: [
+              {
+                id: 'r0',
+                kind: 'case',
+                label: 'g_case_0 /* MODE == 0 */',
+                blockLabel: 'g_case_0',
+                caseValue: 'MODE == 0',
+                siblingGroupId: 'case:1',
+                armIndex: 0,
+                nodeIds: ['u0'],
+              },
+              {
+                id: 'r1',
+                kind: 'case',
+                label: 'g_case_1 /* MODE == 1 */',
+                blockLabel: 'g_case_1',
+                caseValue: 'MODE == 1',
+                siblingGroupId: 'case:1',
+                armIndex: 1,
+                nodeIds: ['u1'],
+              },
+              {
+                id: 'rd',
+                kind: 'case-default',
+                label: 'g_case_default /* default */',
+                blockLabel: 'g_case_default',
+                caseValue: 'default',
+                siblingGroupId: 'case:1',
+                armIndex: 2,
+                nodeIds: ['ud'],
+              },
+            ],
+          },
+        },
+      };
+
+      const view = await buildViewModel(graphWithCaseRegions, 'top', { version: 1, modules: {} });
+      const regions = [...view.generateRegions!].sort(
+        (a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0),
+      );
+
+      expect(regions.map((region) => region.blockLabel)).toEqual([
+        'g_case_0',
+        'g_case_1',
+        'g_case_default',
+      ]);
+      expect(regions[0].bounds.y).toBeLessThan(regions[1].bounds.y);
+      expect(regions[1].bounds.y).toBeLessThan(regions[2].bounds.y);
+      for (let i = 0; i < regions.length; i++) {
+        for (let j = i + 1; j < regions.length; j++) {
+          expect(boundsOverlap(regions[i].bounds, regions[j].bounds)).toBe(false);
         }
       }
-    };
 
-    const view = await buildViewModel(graphWithCaseRegions, 'top', { version: 1, modules: {} });
-    const regions = [...view.generateRegions!].sort((a, b) => (a.armIndex ?? 0) - (b.armIndex ?? 0));
-
-    expect(regions.map((region) => region.blockLabel)).toEqual(['g_case_0', 'g_case_1', 'g_case_default']);
-    expect(regions[0].bounds.y).toBeLessThan(regions[1].bounds.y);
-    expect(regions[1].bounds.y).toBeLessThan(regions[2].bounds.y);
-    for (let i = 0; i < regions.length; i++) {
-      for (let j = i + 1; j < regions.length; j++) {
-        expect(boundsOverlap(regions[i].bounds, regions[j].bounds)).toBe(false);
+      for (const region of regions) {
+        const node = view.nodes.find((candidate) => candidate.id === region.nodeIds[0])!;
+        const size = diagramNodeDimensions(node);
+        const padding = {
+          left: node.position.x - region.bounds.x,
+          top: node.position.y - region.bounds.y,
+          right: region.bounds.x + region.bounds.width - node.position.x - size.width,
+          bottom: region.bounds.y + region.bounds.height - node.position.y - size.height,
+        };
+        expect(padding.left).toBeGreaterThanOrEqual(diagramSizing.gridSize);
+        expect(padding.right).toBe(padding.left);
+        expect(padding.top).toBe(padding.left);
+        expect(padding.bottom).toBe(padding.left);
       }
-    }
 
-    for (const region of regions) {
-      const node = view.nodes.find((candidate) => candidate.id === region.nodeIds[0])!;
-      const size = diagramNodeDimensions(node);
-      const padding = {
-        left: node.position.x - region.bounds.x,
-        top: node.position.y - region.bounds.y,
-        right: region.bounds.x + region.bounds.width - node.position.x - size.width,
-        bottom: region.bounds.y + region.bounds.height - node.position.y - size.height
-      };
-      expect(padding.left).toBeGreaterThanOrEqual(diagramSizing.gridSize);
-      expect(padding.right).toBe(padding.left);
-      expect(padding.top).toBe(padding.left);
-      expect(padding.bottom).toBe(padding.left);
-    }
-
-    const defaultArmRoute = view.edges.find((edge) => edge.id === 'e-ud-y')?.routePoints ?? [];
-    expect(hasShortInitialStair(defaultArmRoute)).toBe(false);
-  });
+      const defaultArmRoute = view.edges.find((edge) => edge.id === 'e-ud-y')?.routePoints ?? [];
+      expect(hasShortInitialStair(defaultArmRoute)).toBe(false);
+    },
+  );
 
   it('freezes active nodes and clears manual edge routes for rerouting', () => {
-    const layout = mergeEdgeRoutePoints({
-      version: 1,
-      modules: {
-        top: {
-          nodes: {
-            old: { x: 1, y: 2, fixed: true }
+    const layout = mergeEdgeRoutePoints(
+      {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {
+              old: { x: 1, y: 2, fixed: true },
+            },
+            viewport: { x: 4, y: 5, zoom: 1.25 },
           },
-          viewport: { x: 4, y: 5, zoom: 1.25 }
-        }
-      }
-    }, 'top', 'e-a-u', [
-      { x: 10, y: 20 },
-      { x: 30, y: 40 }
-    ]);
+        },
+      },
+      'top',
+      'e-a-u',
+      [
+        { x: 10, y: 20 },
+        { x: 30, y: 40 },
+      ],
+    );
 
     const rerouted = mergeRerouteLayout(layout, 'top', [
       { id: 'a', kind: 'port', label: 'a', ports: [], position: { x: 120, y: 132 } },
-      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 } }
+      { id: 'u', kind: 'instance', label: 'u', ports: [], position: { x: 360, y: 240 } },
     ]);
 
     expect(rerouted.modules.top.nodes).toEqual({
       a: { x: 120, y: 132, fixed: true },
       u: { x: 360, y: 240, fixed: true },
-      old: { x: 1, y: 2, fixed: true, stale: true }
+      old: { x: 1, y: 2, fixed: true, stale: true },
     });
     expect(rerouted.modules.top.edges).toBeUndefined();
     expect(rerouted.modules.top.viewport).toEqual({ x: 4, y: 5, zoom: 1.25 });
   });
 
-  it('clears manual routes for exactly the given edges when batch-rerouting a wire selection', () => {
-    const withFirstRoute = mergeEdgeRoutePoints({
-      version: 1,
-      modules: { top: { nodes: {} } }
-    }, 'top', 'e-clk-u1', [{ x: 10, y: 20 }]);
-    const layout = mergeEdgeRoutePoints(withFirstRoute, 'top', 'e-clk-u2', [{ x: 30, y: 40 }]);
+  it(
+    'clears manual routes for exactly the given ' + 'edges when batch-rerouting a wire selection',
+    () => {
+      const withFirstRoute = mergeEdgeRoutePoints(
+        {
+          version: 1,
+          modules: { top: { nodes: {} } },
+        },
+        'top',
+        'e-clk-u1',
+        [{ x: 10, y: 20 }],
+      );
+      const layout = mergeEdgeRoutePoints(withFirstRoute, 'top', 'e-clk-u2', [{ x: 30, y: 40 }]);
 
-    const positioned: PositionedNode[] = [
-      { ...fanoutGraph.modules.top.nodes[0], position: { x: 0, y: 12 } },
-      { ...fanoutGraph.modules.top.nodes[1], position: { x: 240, y: 0 } },
-      { ...fanoutGraph.modules.top.nodes[2], position: { x: 240, y: 96 } }
-    ];
+      const positioned: PositionedNode[] = [
+        { ...fanoutGraph.modules.top.nodes[0], position: { x: 0, y: 12 } },
+        { ...fanoutGraph.modules.top.nodes[1], position: { x: 240, y: 0 } },
+        { ...fanoutGraph.modules.top.nodes[2], position: { x: 240, y: 96 } },
+      ];
 
-    const rerouted = mergeRerouteEdges(layout, 'top', ['e-clk-u1'], positioned);
+      const rerouted = mergeRerouteEdges(layout, 'top', ['e-clk-u1'], positioned);
 
-    expect(rerouted.modules.top.edges?.['e-clk-u1']).toBeUndefined();
-    expect(rerouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 30, y: 40 }] });
-    expect(rerouted.modules.top.nodes).toEqual({
-      clk: { x: 0, y: 12, fixed: true },
-      u1: { x: 240, y: 0, fixed: true },
-      u2: { x: 240, y: 96, fixed: true }
-    });
-  });
+      expect(rerouted.modules.top.edges?.['e-clk-u1']).toBeUndefined();
+      expect(rerouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 30, y: 40 }] });
+      expect(rerouted.modules.top.nodes).toEqual({
+        clk: { x: 0, y: 12, fixed: true },
+        u1: { x: 240, y: 0, fixed: true },
+        u2: { x: 240, y: 96, fixed: true },
+      });
+    },
+  );
 
   it('cuts every edge in a multi-wire selection in one batch', () => {
     const module = twoNetGraph.modules.top;
@@ -1246,7 +1733,7 @@ describe('layout merge', () => {
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 0, y: 60 } },
       { ...module.nodes[2], position: { x: 240, y: 12 } },
-      { ...module.nodes[3], position: { x: 240, y: 60 } }
+      { ...module.nodes[3], position: { x: 240, y: 60 } },
     ];
 
     const cut = mergeNetCuts({ version: 1, modules: {} }, 'top', module.edges, module, positioned);
@@ -1270,14 +1757,14 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 12, fixed: true },
             u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
+            u2: { x: 240, y: 96, fixed: true },
           },
           edges: {
             'e-clk-u1': { routePoints: [{ x: 10, y: 10 }] },
-            'e-clk-u2': { routePoints: [{ x: 20, y: 20 }] }
-          }
-        }
-      }
+            'e-clk-u2': { routePoints: [{ x: 20, y: 20 }] },
+          },
+        },
+      },
     };
 
     // The user dragged u1 to a new spot before clicking "Auto Layout" — its
@@ -1285,7 +1772,7 @@ describe('layout merge', () => {
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 288, y: 0 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
     ];
 
     const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
@@ -1301,7 +1788,7 @@ describe('layout merge', () => {
     expect(relayouted.modules.top.edges?.['e-clk-u2']).toEqual({ routePoints: [{ x: 20, y: 20 }] });
   });
 
-  it('preserves a resized node\'s size override when releasing it back to auto-layout', () => {
+  it("preserves a resized node's size override when releasing it back to auto-layout", () => {
     const module = fanoutGraph.modules.top;
     const seeded: SavedLayout = {
       version: 1,
@@ -1310,35 +1797,47 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 12, fixed: true },
             u1: { x: 240, y: 0, width: 96, height: 64, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
-          }
-        }
-      }
+            u2: { x: 240, y: 96, fixed: true },
+          },
+        },
+      },
     };
 
     // u1 was manually resized before the user clicked "Auto Layout" for it.
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 288, y: 0 }, sizeOverride: { width: 96, height: 64 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
     ];
 
     const relayouted = mergeRelayoutSelection(seeded, 'top', ['u1'], positioned, module);
 
     // u1 is released back to auto-layout, but its resize override survives.
-    expect(relayouted.modules.top.nodes.u1).toEqual({ x: 288, y: 0, fixed: false, width: 96, height: 64 });
+    expect(relayouted.modules.top.nodes.u1).toEqual({
+      x: 288,
+      y: 0,
+      fixed: false,
+      width: 96,
+      height: 64,
+    });
   });
 
   it('uses shared net keys for ordinary, literal, and cut stub edges', () => {
-    expect(edgeNetKey({ id: 'e', source: 'n1', sourcePort: 'out', target: 'n2' } as any)).toBe('n1:out');
-    expect(edgeNetKey({ id: 'lit', source: 'literal:1', sourcePort: 'out', target: 'n2' } as any)).toBe('literal:1');
-    expect(edgeNetKey({
-      id: 'stub',
-      source: 'cut-label:n1:out:sink:e',
-      sourcePort: 'cut',
-      target: 'n2',
-      metadata: { cutStub: { netKey: 'n1:out', role: 'sink', originalEdgeId: 'e' } }
-    })).toBe('n1:out');
+    expect(edgeNetKey({ id: 'e', source: 'n1', sourcePort: 'out', target: 'n2' } as any)).toBe(
+      'n1:out',
+    );
+    expect(
+      edgeNetKey({ id: 'lit', source: 'literal:1', sourcePort: 'out', target: 'n2' } as any),
+    ).toBe('literal:1');
+    expect(
+      edgeNetKey({
+        id: 'stub',
+        source: 'cut-label:n1:out:sink:e',
+        sourcePort: 'cut',
+        target: 'n2',
+        metadata: { cutStub: { netKey: 'n1:out', role: 'sink', originalEdgeId: 'e' } },
+      }),
+    ).toBe('n1:out');
   });
 
   it('generates default cut labels from source endpoint context', () => {
@@ -1352,112 +1851,145 @@ describe('layout merge', () => {
           id: 'u_alu',
           kind: 'instance' as const,
           label: 'u_alu',
-          ports: [{ id: 'result', name: 'result', direction: 'output' as const }]
-        }
+          ports: [{ id: 'result', name: 'result', direction: 'output' as const }],
+        },
       ],
-      edges: [
-        { id: 'result-y', source: 'u_alu', sourcePort: 'result', target: 'y' }
-      ]
+      edges: [{ id: 'result-y', source: 'u_alu', sourcePort: 'result', target: 'y' }],
     };
-    expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe('u_alu.result');
+    expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe(
+      'u_alu.result',
+    );
 
     const anonymousModule = {
       ...module,
       nodes: [
-        { id: 'comb:1', kind: 'comb' as const, label: 'assign', ports: [{ id: 'out', name: 'out', direction: 'output' as const }] }
-      ],
-      edges: [
-        { id: 'comb-y', source: 'comb:1', sourcePort: 'out', target: 'y' }
-      ]
-    };
-    expect(defaultNetCutLabel(anonymousModule.edges[0], anonymousModule, {
-      nodes: {},
-      netCuts: {
-        'old:out': { label: 'NET_1', source: { nodeId: 'old', portId: 'out' } }
-      }
-    })).toBe('NET_2');
-  });
-
-  it('prefers a declared net name over structural heuristics, even for an instance-driven net', () => {
-    const instanceModule = {
-      ...fanoutGraph.modules.top,
-      nodes: [
         {
-          id: 'u_alu',
-          kind: 'instance' as const,
-          label: 'u_alu',
-          ports: [{ id: 'result', name: 'result', direction: 'output' as const }]
-        }
+          id: 'comb:1',
+          kind: 'comb' as const,
+          label: 'assign',
+          ports: [{ id: 'out', name: 'out', direction: 'output' as const }],
+        },
       ],
-      edges: [
-        {
-          id: 'result-y',
-          source: 'u_alu',
-          sourcePort: 'result',
-          target: 'y',
-          signal: 'chip_select',
-          metadata: { declaredNetName: 'chip_select' }
-        }
-      ]
+      edges: [{ id: 'comb-y', source: 'comb:1', sourcePort: 'out', target: 'y' }],
     };
-    // Without a declaredNetName this would fall back to 'u_alu.result' (see
-    // the test above) — a real declared name always wins over that guess.
-    expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe('chip_select');
+    expect(
+      defaultNetCutLabel(anonymousModule.edges[0], anonymousModule, {
+        nodes: {},
+        netCuts: {
+          'old:out': { label: 'NET_1', source: { nodeId: 'old', portId: 'out' } },
+        },
+      }),
+    ).toBe('NET_2');
   });
 
-  it('marks a cut net origin as declared or synthetic based on whether the label came from a declared net name', () => {
-    const module = fanoutGraph.modules.top;
-    const positioned: PositionedNode[] = [
-      { ...module.nodes[0], position: { x: 0, y: 12 } },
-      { ...module.nodes[1], position: { x: 240, y: 0 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
-    ];
+  it(
+    'prefers a declared net name over structural ' + 'heuristics, even for an instance-driven net',
+    () => {
+      const instanceModule = {
+        ...fanoutGraph.modules.top,
+        nodes: [
+          {
+            id: 'u_alu',
+            kind: 'instance' as const,
+            label: 'u_alu',
+            ports: [{ id: 'result', name: 'result', direction: 'output' as const }],
+          },
+        ],
+        edges: [
+          {
+            id: 'result-y',
+            source: 'u_alu',
+            sourcePort: 'result',
+            target: 'y',
+            signal: 'chip_select',
+            metadata: { declaredNetName: 'chip_select' },
+          },
+        ],
+      };
+      // Without a declaredNetName this would fall back to 'u_alu.result' (see
+      // the test above) — a real declared name always wins over that guess.
+      expect(defaultNetCutLabel(instanceModule.edges[0], instanceModule, { nodes: {} })).toBe(
+        'chip_select',
+      );
+    },
+  );
 
-    // No declaredNetName on this fixture edge -> the label is tool-guessed.
-    const synthetic = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
-    expect(synthetic.modules.top.netCuts?.['clk:p'].origin).toBe('synthetic');
+  it(
+    'marks a cut net origin as declared or synthetic based ' +
+      'on whether the label came from a declared net name',
+    () => {
+      const module = fanoutGraph.modules.top;
+      const positioned: PositionedNode[] = [
+        { ...module.nodes[0], position: { x: 0, y: 12 } },
+        { ...module.nodes[1], position: { x: 240, y: 0 } },
+        { ...module.nodes[2], position: { x: 240, y: 96 } },
+      ];
 
-    const declaredModule = {
-      ...module,
-      edges: [
-        { ...module.edges[0], metadata: { declaredNetName: 'clk' } },
-        module.edges[1]
-      ]
-    };
-    const declared = mergeNetCut({ version: 1, modules: {} }, 'top', declaredModule.edges[0], declaredModule, positioned);
-    expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
-      label: 'clk',
-      source: { nodeId: 'clk', portId: 'p' },
-      deferLabelPlacement: true,
-      origin: 'declared',
-      defaultLabel: 'clk'
-    });
-  });
+      // No declaredNetName on this fixture edge -> the label is tool-guessed.
+      const synthetic = mergeNetCut(
+        { version: 1, modules: {} },
+        'top',
+        module.edges[0],
+        module,
+        positioned,
+      );
+      expect(synthetic.modules.top.netCuts?.['clk:p'].origin).toBe('synthetic');
 
-  it('dims a cut end the same way its underlying wire is dimmed on an inactive generate arm', async () => {
+      const declaredModule = {
+        ...module,
+        edges: [{ ...module.edges[0], metadata: { declaredNetName: 'clk' } }, module.edges[1]],
+      };
+      const declared = mergeNetCut(
+        { version: 1, modules: {} },
+        'top',
+        declaredModule.edges[0],
+        declaredModule,
+        positioned,
+      );
+      expect(declared.modules.top.netCuts?.['clk:p']).toEqual({
+        label: 'clk',
+        source: { nodeId: 'clk', portId: 'p' },
+        deferLabelPlacement: true,
+        origin: 'declared',
+        defaultLabel: 'clk',
+      });
+    },
+  );
+
+  it('dims a cut end the same way as its wire on an inactive generate arm', async () => {
     const module = {
       ...fanoutGraph.modules.top,
       edges: [
         {
           ...fanoutGraph.modules.top.edges[0],
-          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' }
+          metadata: { generateRegionId: 'g_other', generateActiveState: 'inactive' },
         },
-        fanoutGraph.modules.top.edges[1]
-      ]
+        fanoutGraph.modules.top.edges[1],
+      ],
     };
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 240, y: 0 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
     ];
 
-    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: { top: module }
-    }, 'top', cutLayout);
+    const cutLayout = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      module.edges[0],
+      module,
+      positioned,
+    );
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: { top: module },
+      },
+      'top',
+      cutLayout,
+    );
 
     const netKey = edgeNetKey(module.edges[0]);
     const byId = new Map(view.nodes.map((node) => [node.id, node]));
@@ -1482,10 +2014,14 @@ describe('layout merge', () => {
           nodes: {},
           netCuts: {
             'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' }, origin: 'declared' },
-            'old:out': { label: 'NET_1', source: { nodeId: 'old', portId: 'out' }, origin: 'synthetic' }
-          }
-        }
-      }
+            'old:out': {
+              label: 'NET_1',
+              source: { nodeId: 'old', portId: 'out' },
+              origin: 'synthetic',
+            },
+          },
+        },
+      },
     };
 
     const afterDeclaredRename = renameCutNet(layout, 'top', 'clk:p', 'renamed_clk');
@@ -1503,10 +2039,10 @@ describe('layout merge', () => {
         top: {
           nodes: {},
           netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
     const afterLegacyRename = renameCutNet(legacyLayout, 'top', 'clk:p', 'renamed_clk');
     expect(afterLegacyRename.modules.top.netCuts?.['clk:p'].label).toBe('renamed_clk');
@@ -1517,16 +2053,26 @@ describe('layout merge', () => {
     // identity is borrowed from one of its own endpoint ports has nothing
     // declared to protect, so it must come out 'synthetic' even though its
     // default label ("a") looks just as legitimate as a real wire name.
-    const graph = await runParser('uhdm', 'top.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'top.sv',
+      `
       module top(input a, output y);
         assign y = a;
       endmodule
-    `);
+    `,
+    );
     const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
     const edge = view.edges[0];
     expect(edge.label).toBeUndefined();
 
-    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', edge, graph.modules.top, view.nodes);
+    const cutLayout = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      edge,
+      graph.modules.top,
+      view.nodes,
+    );
     const cut = cutLayout.modules.top.netCuts?.[edgeNetKey(edge)];
     expect(cut?.label).toBe('a');
     expect(cut?.origin).toBe('synthetic');
@@ -1535,48 +2081,72 @@ describe('layout merge', () => {
     expect(renamed.modules.top.netCuts?.[edgeNetKey(edge)].label).toBe('chip_select');
   });
 
-  it('a cut net stays regular type (not renamed) until the label actually diverges from its default, and reverting restores it', async () => {
-    const graph = await runParser('uhdm', 'top.sv', `
+  it(
+    'a cut net stays regular type (not renamed) until the label ' +
+      'actually diverges from its default, and reverting restores it',
+    async () => {
+      const graph = await runParser(
+        'uhdm',
+        'top.sv',
+        `
       module top(input a, output y);
         assign y = a;
       endmodule
-    `);
-    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
-    const edge = view.edges[0];
-    const netKey = edgeNetKey(edge);
+    `,
+      );
+      const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+      const edge = view.edges[0];
+      const netKey = edgeNetKey(edge);
 
-    const cutLayout = mergeNetCut({ version: 1, modules: {} }, 'top', edge, graph.modules.top, view.nodes);
-    const freshCutView = await buildViewModel(graph, 'top', cutLayout);
-    const freshLabelNode = freshCutView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
-    expect(freshLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+      const cutLayout = mergeNetCut(
+        { version: 1, modules: {} },
+        'top',
+        edge,
+        graph.modules.top,
+        view.nodes,
+      );
+      const freshCutView = await buildViewModel(graph, 'top', cutLayout);
+      const freshLabelNode = freshCutView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+      expect(freshLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
 
-    const renamedLayout = renameCutNet(cutLayout, 'top', netKey, 'chip_select');
-    const renamedView = await buildViewModel(graph, 'top', renamedLayout);
-    const renamedLabelNode = renamedView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
-    expect(renamedLabelNode?.metadata?.cutNet?.isRenamed).toBe(true);
+      const renamedLayout = renameCutNet(cutLayout, 'top', netKey, 'chip_select');
+      const renamedView = await buildViewModel(graph, 'top', renamedLayout);
+      const renamedLabelNode = renamedView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
+      expect(renamedLabelNode?.metadata?.cutNet?.isRenamed).toBe(true);
 
-    // Typing the exact original name back also counts as "not renamed".
-    const revertedByTypingBack = renameCutNet(renamedLayout, 'top', netKey, 'a');
-    const typedBackView = await buildViewModel(graph, 'top', revertedByTypingBack);
-    const typedBackLabelNode = typedBackView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
-    expect(typedBackLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+      // Typing the exact original name back also counts as "not renamed".
+      const revertedByTypingBack = renameCutNet(renamedLayout, 'top', netKey, 'a');
+      const typedBackView = await buildViewModel(graph, 'top', revertedByTypingBack);
+      const typedBackLabelNode = typedBackView.nodes.find(
+        (n) => n.metadata?.cutNet?.netKey === netKey,
+      );
+      expect(typedBackLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
 
-    const revertedLayout = revertCutNetLabel(renamedLayout, 'top', netKey);
-    expect(revertedLayout.modules.top.netCuts?.[netKey].label).toBe('a');
-    const revertedView = await buildViewModel(graph, 'top', revertedLayout);
-    const revertedLabelNode = revertedView.nodes.find((n) => n.metadata?.cutNet?.netKey === netKey);
-    expect(revertedLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
-  });
+      const revertedLayout = revertCutNetLabel(renamedLayout, 'top', netKey);
+      expect(revertedLayout.modules.top.netCuts?.[netKey].label).toBe('a');
+      const revertedView = await buildViewModel(graph, 'top', revertedLayout);
+      const revertedLabelNode = revertedView.nodes.find(
+        (n) => n.metadata?.cutNet?.netKey === netKey,
+      );
+      expect(revertedLabelNode?.metadata?.cutNet?.isRenamed).toBe(false);
+    },
+  );
 
   it('adds, renames, removes, and reroutes net cuts without discarding the cut state', () => {
     const module = fanoutGraph.modules.top;
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 240, y: 0 } },
-      { ...module.nodes[2], position: { x: 240, y: 96 } }
+      { ...module.nodes[2], position: { x: 240, y: 96 } },
     ];
 
-    const cut = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    const cut = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      module.edges[0],
+      module,
+      positioned,
+    );
 
     expect(cut.modules.top.nodes.clk).toEqual({ x: 0, y: 12, fixed: true });
     expect(cut.modules.top.netCuts?.['clk:p']).toEqual({
@@ -1584,7 +2154,7 @@ describe('layout merge', () => {
       source: { nodeId: 'clk', portId: 'p' },
       deferLabelPlacement: true,
       origin: 'synthetic',
-      defaultLabel: 'clk'
+      defaultLabel: 'clk',
     });
 
     const duplicateCut = mergeNetCut(cut, 'top', module.edges[0], module, positioned);
@@ -1602,15 +2172,15 @@ describe('layout merge', () => {
           nodes: {
             ...renamed.modules.top.nodes,
             'cut-label:clk:p:source': { x: 24, y: 12, fixed: true },
-            'cut-label:clk:p:sink:e-clk-u1': { x: 180, y: 12, fixed: true }
+            'cut-label:clk:p:sink:e-clk-u1': { x: 180, y: 12, fixed: true },
           },
           edges: {
             'cut-stub:clk:p:source': { routePoints: [{ x: 0, y: 0 }] },
             'cut-stub:clk:p:sink:e-clk-u1': { routePoints: [{ x: 1, y: 1 }] },
-            'e-clk-u1': { routePoints: [{ x: 2, y: 2 }] }
-          }
-        }
-      }
+            'e-clk-u1': { routePoints: [{ x: 2, y: 2 }] },
+          },
+        },
+      },
     };
 
     const removed = removeNetCut(withSyntheticLayouts, 'top', 'clk:p');
@@ -1632,34 +2202,43 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 12, fixed: true },
             u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
+            u2: { x: 240, y: 96, fixed: true },
           },
           netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(fanoutGraph, 'top', layout);
     const edgeIds = view.edges.map((edge) => edge.id);
     expect(edgeIds).not.toContain('e-clk-u1');
     expect(edgeIds).not.toContain('e-clk-u2');
-    expect(view.nodes.filter((node) => node.kind === 'netLabel').map((node) => node.id).sort()).toEqual([
+    expect(
+      view.nodes
+        .filter((node) => node.kind === 'netLabel')
+        .map((node) => node.id)
+        .sort(),
+    ).toEqual([
       'cut-label:clk:p:sink:e-clk-u1',
       'cut-label:clk:p:sink:e-clk-u2',
-      'cut-label:clk:p:source'
+      'cut-label:clk:p:source',
     ]);
 
     const stubs = view.edges.filter((edge) => edge.metadata?.cutStub);
     expect(stubs).toHaveLength(3);
     expect(stubs.every((edge) => edge.metadata?.forceStraight === true)).toBe(true);
     expect(stubs.every((edge) => edgeNetKey(edge) === 'clk:p')).toBe(true);
-    expect(stubs.find((edge) => edge.metadata?.cutStub?.role === 'source')?.target).toBe('cut-label:clk:p:source');
-    expect(stubs.filter((edge) => edge.metadata?.cutStub?.role === 'sink').map((edge) => edge.source).sort()).toEqual([
-      'cut-label:clk:p:sink:e-clk-u1',
-      'cut-label:clk:p:sink:e-clk-u2'
-    ]);
+    expect(stubs.find((edge) => edge.metadata?.cutStub?.role === 'source')?.target).toBe(
+      'cut-label:clk:p:source',
+    );
+    expect(
+      stubs
+        .filter((edge) => edge.metadata?.cutStub?.role === 'sink')
+        .map((edge) => edge.source)
+        .sort(),
+    ).toEqual(['cut-label:clk:p:sink:e-clk-u1', 'cut-label:clk:p:sink:e-clk-u2']);
   });
 
   it('separates automatic cut labels that share the same canonical position', async () => {
@@ -1670,13 +2249,13 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 0, fixed: true },
             u1: { x: 144, y: 0, fixed: true },
-            u2: { x: 144, y: 0, fixed: true }
+            u2: { x: 144, y: 0, fixed: true },
           },
           netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(fanoutGraph, 'top', layout);
@@ -1700,16 +2279,31 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'p', name: 'b', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'p', name: 'a', direction: 'input' }],
+            },
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'p', name: 'b', direction: 'input' }],
+            },
+            {
+              id: 'y',
+              kind: 'port',
+              label: 'y',
+              ports: [{ id: 'p', name: 'y', direction: 'output' }],
+            },
           ],
           edges: [
             { id: 'a-y', source: 'a', sourcePort: 'p', target: 'y', targetPort: 'p' },
-            { id: 'b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' }
-          ]
-        }
-      }
+            { id: 'b-y', source: 'b', sourcePort: 'p', target: 'y', targetPort: 'p' },
+          ],
+        },
+      },
     };
     const layout: SavedLayout = {
       version: 1,
@@ -1718,20 +2312,18 @@ describe('layout merge', () => {
           nodes: {
             a: { x: 0, y: 0, fixed: true },
             b: { x: 0, y: 96, fixed: true },
-            y: { x: 240, y: 0, fixed: true }
+            y: { x: 240, y: 0, fixed: true },
           },
           netCuts: {
             'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
-            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } }
-          }
-        }
-      }
+            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(sharedSinkGraph, 'top', layout);
-    const sinks = view.nodes
-      .filter((node) => node.metadata?.cutNet?.role === 'sink')
-      .map(boundsOf);
+    const sinks = view.nodes.filter((node) => node.metadata?.cutNet?.role === 'sink').map(boundsOf);
 
     expect(sinks).toHaveLength(2);
     expect(sinks[0].x).toBe(sinks[1].x);
@@ -1750,8 +2342,18 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'data', kind: 'port', label: 'data', ports: [{ id: 'p', name: 'data', direction: 'input' }] },
-            { id: 'clk', kind: 'port', label: 'clk', ports: [{ id: 'p', name: 'clk', direction: 'input' }] },
+            {
+              id: 'data',
+              kind: 'port',
+              label: 'data',
+              ports: [{ id: 'p', name: 'data', direction: 'input' }],
+            },
+            {
+              id: 'clk',
+              kind: 'port',
+              label: 'clk',
+              ports: [{ id: 'p', name: 'clk', direction: 'input' }],
+            },
             {
               id: 'r',
               kind: 'register',
@@ -1760,16 +2362,16 @@ describe('layout merge', () => {
               ports: [
                 { id: 'd', name: 'D', direction: 'input' },
                 { id: 'clk', name: 'clk', direction: 'input' },
-                { id: 'q', name: 'Q', direction: 'output' }
-              ]
-            }
+                { id: 'q', name: 'Q', direction: 'output' },
+              ],
+            },
           ],
           edges: [
             { id: 'data-r', source: 'data', sourcePort: 'p', target: 'r', targetPort: 'd' },
-            { id: 'clk-r', source: 'clk', sourcePort: 'p', target: 'r', targetPort: 'clk' }
-          ]
-        }
-      }
+            { id: 'clk-r', source: 'clk', sourcePort: 'p', target: 'r', targetPort: 'clk' },
+          ],
+        },
+      },
     };
     const layout: SavedLayout = {
       version: 1,
@@ -1778,14 +2380,14 @@ describe('layout merge', () => {
           nodes: {
             data: { x: 0, y: 12, fixed: true },
             clk: { x: 0, y: 108, fixed: true },
-            r: { x: 456, y: 432, fixed: true }
+            r: { x: 456, y: 432, fixed: true },
           },
           netCuts: {
             'data:p': { label: 'data', source: { nodeId: 'data', portId: 'p' } },
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(registerCutGraph, 'top', layout);
@@ -1797,10 +2399,10 @@ describe('layout merge', () => {
     const clockBounds = boundsOf(clockLabel);
 
     expect(dataBounds.y + dataBounds.height / 2).toBe(
-      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2,
     );
     expect(clockBounds.y + clockBounds.height / 2).toBe(
-      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5
+      register.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * 1.5,
     );
     expect(boxesOverlap(dataBounds, clockBounds)).toBe(false);
   });
@@ -1815,21 +2417,27 @@ describe('layout merge', () => {
             ...node,
             ports: node.ports.map((port) => ({
               ...port,
-              direction: node.id === 'a' ? 'input' : node.id === 'x' ? 'output' : port.direction
-            }))
-          }))
-        }
-      }
+              direction: node.id === 'a' ? 'input' : node.id === 'x' ? 'output' : port.direction,
+            })),
+          })),
+        },
+      },
     };
     const module = manualCutGraph.modules.top;
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 0, y: 60 } },
       { ...module.nodes[2], position: { x: 240, y: 12 } },
-      { ...module.nodes[3], position: { x: 240, y: 60 } }
+      { ...module.nodes[3], position: { x: 240, y: 60 } },
     ];
     const netKey = edgeNetKey(module.edges[0]);
-    const cut = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    const cut = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      module.edges[0],
+      module,
+      positioned,
+    );
 
     expect(cut.modules.top.netCuts?.[netKey].deferLabelPlacement).toBe(true);
     const cutView = await buildViewModel(manualCutGraph, 'top', cut);
@@ -1837,17 +2445,13 @@ describe('layout merge', () => {
     expect(cutLabels).toHaveLength(2);
     expect(boxesOverlap(boundsOf(cutLabels[0]), boundsOf(cutLabels[1]))).toBe(true);
 
-    const relayouted = mergeRelayoutSelection(
-      cut,
-      'top',
-      ['a', 'x'],
-      cutView.nodes,
-      module
-    );
+    const relayouted = mergeRelayoutSelection(cut, 'top', ['a', 'x'], cutView.nodes, module);
     expect(relayouted.modules.top.netCuts?.[netKey].deferLabelPlacement).toBeUndefined();
 
     const relaidView = await buildViewModel(manualCutGraph, 'top', relayouted);
-    const relaidLabels = relaidView.nodes.filter((node) => node.metadata?.cutNet?.netKey === netKey);
+    const relaidLabels = relaidView.nodes.filter(
+      (node) => node.metadata?.cutNet?.netKey === netKey,
+    );
     expect(relaidLabels).toHaveLength(2);
     expect(boxesOverlap(boundsOf(relaidLabels[0]), boundsOf(relaidLabels[1]))).toBe(false);
   });
@@ -1860,13 +2464,13 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 12, fixed: true },
             u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
+            u2: { x: 240, y: 96, fixed: true },
           },
           netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
     const baseline = await buildViewModel(fanoutGraph, 'top', layout);
     const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
@@ -1877,10 +2481,10 @@ describe('layout merge', () => {
           ...fanoutGraph.modules.top,
           nodes: [
             ...fanoutGraph.modules.top.nodes,
-            { id: 'blocker', kind: 'instance', label: 'blocker', ports: [] }
-          ]
-        }
-      }
+            { id: 'blocker', kind: 'instance', label: 'blocker', ports: [] },
+          ],
+        },
+      },
     };
     const blockedLayout: SavedLayout = {
       ...layout,
@@ -1889,10 +2493,10 @@ describe('layout merge', () => {
           ...layout.modules.top,
           nodes: {
             ...layout.modules.top.nodes,
-            blocker: { ...sourceLabel.position, fixed: true }
-          }
-        }
-      }
+            blocker: { ...sourceLabel.position, fixed: true },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
@@ -1910,13 +2514,13 @@ describe('layout merge', () => {
           nodes: {
             clk: { x: 0, y: 12, fixed: true },
             u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
+            u2: { x: 240, y: 96, fixed: true },
           },
           netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
-        }
-      }
+            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+          },
+        },
+      },
     };
     const baseline = await buildViewModel(fanoutGraph, 'top', layout);
     const sourceLabel = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
@@ -1927,8 +2531,8 @@ describe('layout merge', () => {
       ports: Array.from({ length: 80 }, (_, index) => ({
         id: `in-${index}`,
         name: `in-${index}`,
-        direction: 'input' as const
-      }))
+        direction: 'input' as const,
+      })),
     };
     const blockerSize = diagramNodeDimensions(blocker);
     const sourceLabelSize = diagramNodeDimensions(sourceLabel);
@@ -1937,9 +2541,9 @@ describe('layout merge', () => {
       modules: {
         top: {
           ...fanoutGraph.modules.top,
-          nodes: [...fanoutGraph.modules.top.nodes, blocker]
-        }
-      }
+          nodes: [...fanoutGraph.modules.top.nodes, blocker],
+        },
+      },
     };
     const blockedLayout: SavedLayout = {
       ...layout,
@@ -1951,11 +2555,11 @@ describe('layout merge', () => {
             blocker: {
               x: sourceLabel.position.x - (blockerSize.width - sourceLabelSize.width) / 2,
               y: sourceLabel.position.y - (blockerSize.height - sourceLabelSize.height) / 2,
-              fixed: true
-            }
-          }
-        }
-      }
+              fixed: true,
+            },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(graphWithBlocker, 'top', blockedLayout);
@@ -1967,305 +2571,381 @@ describe('layout merge', () => {
     expect(boxesOverlap(boundsOf(blockedSource), boundsOf(positionedBlocker))).toBe(true);
   });
 
-  it('projects a cut net\'s declared origin and alias chain onto both its source and sink labels', async () => {
-    const declaredFanoutGraph: DesignGraph = {
-      ...fanoutGraph,
-      modules: {
-        top: {
-          ...fanoutGraph.modules.top,
-          edges: fanoutGraph.modules.top.edges.map((edge) => ({
-            ...edge,
-            metadata: { declaredNetName: 'clk', aliasNames: ['sys_clk', 'core_clk'] }
-          }))
-        }
-      }
-    };
-    const layout: SavedLayout = {
-      version: 1,
-      modules: {
-        top: {
-          nodes: {
-            clk: { x: 0, y: 12, fixed: true },
-            u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
+  it(
+    "projects a cut net's declared origin and alias " +
+      'chain onto both its source and sink labels',
+    async () => {
+      const declaredFanoutGraph: DesignGraph = {
+        ...fanoutGraph,
+        modules: {
+          top: {
+            ...fanoutGraph.modules.top,
+            edges: fanoutGraph.modules.top.edges.map((edge) => ({
+              ...edge,
+              metadata: { declaredNetName: 'clk', aliasNames: ['sys_clk', 'core_clk'] },
+            })),
           },
-          netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' }, origin: 'declared' }
-          }
-        }
-      }
-    };
+        },
+      };
+      const layout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {
+              clk: { x: 0, y: 12, fixed: true },
+              u1: { x: 240, y: 0, fixed: true },
+              u2: { x: 240, y: 96, fixed: true },
+            },
+            netCuts: {
+              'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' }, origin: 'declared' },
+            },
+          },
+        },
+      };
 
-    const view = await buildViewModel(declaredFanoutGraph, 'top', layout);
-    const labelNodes = view.nodes.filter((node) => node.kind === 'netLabel');
-    expect(labelNodes).toHaveLength(3);
-    for (const node of labelNodes) {
-      expect(node.metadata?.cutNet?.origin).toBe('declared');
-      expect(node.metadata?.cutNet?.aliasNames).toEqual(['sys_clk', 'core_clk']);
-    }
-  });
+      const view = await buildViewModel(declaredFanoutGraph, 'top', layout);
+      const labelNodes = view.nodes.filter((node) => node.kind === 'netLabel');
+      expect(labelNodes).toHaveLength(3);
+      for (const node of labelNodes) {
+        expect(node.metadata?.cutNet?.origin).toBe('declared');
+        expect(node.metadata?.cutNet?.aliasNames).toEqual(['sys_clk', 'core_clk']);
+      }
+    },
+  );
 
   it('shows no label on a plain net whose declared name matches an endpoint port', async () => {
     // assign y = a; -- the net's own name ('a') is already visible on the
     // port itself, so labeling the wire too would just repeat it.
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
-          ],
-          edges: [
-            {
-              id: 'e-a-y',
-              source: 'a',
-              sourcePort: 'p',
-              target: 'y',
-              targetPort: 'p',
-              signal: 'y',
-              metadata: { declaredNetName: 'a', aliasNames: ['y'] }
-            }
-          ]
-        }
-      }
-    } as DesignGraph, 'top', { version: 1, modules: {} });
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: {
+          top: {
+            name: 'top',
+            file: 'top.sv',
+            ports: [],
+            nodes: [
+              {
+                id: 'a',
+                kind: 'port',
+                label: 'a',
+                ports: [{ id: 'p', name: 'a', direction: 'input' }],
+              },
+              {
+                id: 'y',
+                kind: 'port',
+                label: 'y',
+                ports: [{ id: 'p', name: 'y', direction: 'output' }],
+              },
+            ],
+            edges: [
+              {
+                id: 'e-a-y',
+                source: 'a',
+                sourcePort: 'p',
+                target: 'y',
+                targetPort: 'p',
+                signal: 'y',
+                metadata: { declaredNetName: 'a', aliasNames: ['y'] },
+              },
+            ],
+          },
+        },
+      } as DesignGraph,
+      'top',
+      { version: 1, modules: {} },
+    );
     expect(view.edges[0].label).toBeUndefined();
   });
 
   it('labels a plain wire whose declared name differs from both endpoint ports', async () => {
     // wire x; assign x = a; assign y = x; -- 'x' isn't visible anywhere else
     // in the diagram, so the uncut wire shows it directly.
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
-          ],
-          edges: [
-            {
-              id: 'e-a-y',
-              source: 'a',
-              sourcePort: 'p',
-              target: 'y',
-              targetPort: 'p',
-              signal: 'y',
-              metadata: { declaredNetName: 'x', aliasNames: ['a', 'y'] }
-            }
-          ]
-        }
-      }
-    } as DesignGraph, 'top', { version: 1, modules: {} });
+    const view = await buildViewModel(
+      {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: {
+          top: {
+            name: 'top',
+            file: 'top.sv',
+            ports: [],
+            nodes: [
+              {
+                id: 'a',
+                kind: 'port',
+                label: 'a',
+                ports: [{ id: 'p', name: 'a', direction: 'input' }],
+              },
+              {
+                id: 'y',
+                kind: 'port',
+                label: 'y',
+                ports: [{ id: 'p', name: 'y', direction: 'output' }],
+              },
+            ],
+            edges: [
+              {
+                id: 'e-a-y',
+                source: 'a',
+                sourcePort: 'p',
+                target: 'y',
+                targetPort: 'p',
+                signal: 'y',
+                metadata: { declaredNetName: 'x', aliasNames: ['a', 'y'] },
+              },
+            ],
+          },
+        },
+      } as DesignGraph,
+      'top',
+      { version: 1, modules: {} },
+    );
     expect(view.edges[0].label).toBe('x');
   });
 
-  it('keeps only the alias names that are not already visible at either endpoint, for a multi-hop chain', async () => {
-    // wire x1, x2; assign x1 = a; assign x2 = x1; assign y = x2; -- 'x1' wins
-    // as the label (declared first). 'a' and 'y' are already shown as the
-    // ports at either end of this exact wire, so repeating them in the
-    // popover would say nothing new — only 'x2' (the other internal wire
-    // this chain passed through) is worth surfacing there.
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'p', name: 'y', direction: 'output' }] }
-          ],
-          edges: [
-            {
-              id: 'e-a-y',
-              source: 'a',
-              sourcePort: 'p',
-              target: 'y',
-              targetPort: 'p',
-              signal: 'y',
-              metadata: { declaredNetName: 'x1', aliasNames: ['x2', 'a', 'y'] }
-            }
-          ]
-        }
-      }
-    } as DesignGraph, 'top', { version: 1, modules: {} });
-    expect(view.edges[0].label).toBe('x1');
-    expect(view.edges[0].metadata?.aliasNames).toEqual(['x2']);
-  });
-
-  it('does not label a wire whose declared name only repeats the connected block\'s own title', async () => {
-    // An interface instance's block title *is* its instance name (e.g.
-    // `simple_if link(clk);` draws a block titled "link") — the connected
-    // port ("master"/"slave") differs from that name, but the block already
-    // says "link" regardless, so labeling the wire "link" too is redundant.
-    const view = await buildViewModel({
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            {
-              id: 'instance:top:u_producer',
-              kind: 'instance',
-              label: 'u_producer',
-              ports: [{ id: 'port:bus', name: 'bus', direction: 'output' }]
+  it(
+    'keeps only the alias names that are not already ' +
+      'visible at either endpoint, for a multi-hop chain',
+    async () => {
+      // wire x1, x2; assign x1 = a; assign x2 = x1; assign y = x2; -- 'x1' wins
+      // as the label (declared first). 'a' and 'y' are already shown as the
+      // ports at either end of this exact wire, so repeating them in the
+      // popover would say nothing new — only 'x2' (the other internal wire
+      // this chain passed through) is worth surfacing there.
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: {
+            top: {
+              name: 'top',
+              file: 'top.sv',
+              ports: [],
+              nodes: [
+                {
+                  id: 'a',
+                  kind: 'port',
+                  label: 'a',
+                  ports: [{ id: 'p', name: 'a', direction: 'input' }],
+                },
+                {
+                  id: 'y',
+                  kind: 'port',
+                  label: 'y',
+                  ports: [{ id: 'p', name: 'y', direction: 'output' }],
+                },
+              ],
+              edges: [
+                {
+                  id: 'e-a-y',
+                  source: 'a',
+                  sourcePort: 'p',
+                  target: 'y',
+                  targetPort: 'p',
+                  signal: 'y',
+                  metadata: { declaredNetName: 'x1', aliasNames: ['x2', 'a', 'y'] },
+                },
+              ],
             },
-            {
-              id: 'interface:top:link',
-              kind: 'interface',
-              label: 'link',
-              ports: [{ id: 'in:master', name: 'master', direction: 'input' }]
-            }
-          ],
-          edges: [
-            {
-              id: 'e-producer-link',
-              source: 'instance:top:u_producer',
-              sourcePort: 'port:bus',
-              target: 'interface:top:link',
-              targetPort: 'in:master',
-              signal: 'link',
-              metadata: { declaredNetName: 'link' }
-            }
-          ]
-        }
-      }
-    } as DesignGraph, 'top', { version: 1, modules: {} });
-    expect(view.edges[0].label).toBeUndefined();
-  });
-
-  it('re-derives a released cut-label position from geometry instead of a stale saved hint', async () => {
-    const baseLayout: SavedLayout = {
-      version: 1,
-      modules: {
-        top: {
-          nodes: {
-            clk: { x: 0, y: 12, fixed: true },
-            u1: { x: 240, y: 0, fixed: true },
-            u2: { x: 240, y: 96, fixed: true }
           },
-          netCuts: {
-            'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } }
-          }
+        } as DesignGraph,
+        'top',
+        { version: 1, modules: {} },
+      );
+      expect(view.edges[0].label).toBe('x1');
+      expect(view.edges[0].metadata?.aliasNames).toEqual(['x2']);
+    },
+  );
+
+  it(
+    'does not label a wire whose declared name ' + "only repeats the connected block's own title",
+    async () => {
+      // An interface instance's block title *is* its instance name (e.g.
+      // `simple_if link(clk);` draws a block titled "link") — the connected
+      // port ("master"/"slave") differs from that name, but the block already
+      // says "link" regardless, so labeling the wire "link" too is redundant.
+      const view = await buildViewModel(
+        {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: {
+            top: {
+              name: 'top',
+              file: 'top.sv',
+              ports: [],
+              nodes: [
+                {
+                  id: 'instance:top:u_producer',
+                  kind: 'instance',
+                  label: 'u_producer',
+                  ports: [{ id: 'port:bus', name: 'bus', direction: 'output' }],
+                },
+                {
+                  id: 'interface:top:link',
+                  kind: 'interface',
+                  label: 'link',
+                  ports: [{ id: 'in:master', name: 'master', direction: 'input' }],
+                },
+              ],
+              edges: [
+                {
+                  id: 'e-producer-link',
+                  source: 'instance:top:u_producer',
+                  sourcePort: 'port:bus',
+                  target: 'interface:top:link',
+                  targetPort: 'in:master',
+                  signal: 'link',
+                  metadata: { declaredNetName: 'link' },
+                },
+              ],
+            },
+          },
+        } as DesignGraph,
+        'top',
+        { version: 1, modules: {} },
+      );
+      expect(view.edges[0].label).toBeUndefined();
+    },
+  );
+
+  it(
+    're-derives a released cut-label position ' + 'from geometry instead of a stale saved hint',
+    async () => {
+      const baseLayout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {
+              clk: { x: 0, y: 12, fixed: true },
+              u1: { x: 240, y: 0, fixed: true },
+              u2: { x: 240, y: 96, fixed: true },
+            },
+            netCuts: {
+              'clk:p': { label: 'clk', source: { nodeId: 'clk', portId: 'p' } },
+            },
+          },
+        },
+      };
+
+      const baseline = await buildViewModel(fanoutGraph, 'top', baseLayout);
+      const baselineSource = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+
+      // Simulate a stale, non-fixed position hint left behind for the label —
+      // e.g. by an earlier selection Auto Layout pass that released it without
+      // ELK ever placing it. This must not stick: only a *pinned* (fixed) save
+      // should override the geometry-derived fallback.
+      const staleLayout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            ...baseLayout.modules.top,
+            nodes: {
+              ...baseLayout.modules.top.nodes,
+              'cut-label:clk:p:source': { x: 999, y: 999, fixed: false },
+            },
+          },
+        },
+      };
+
+      const view = await buildViewModel(fanoutGraph, 'top', staleLayout);
+      const source = view.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+      expect(source.position).toEqual(baselineSource.position);
+
+      // A genuinely pinned (fixed: true) save — e.g. the user dragged the label
+      // by hand — is still honored verbatim.
+      const pinnedLayout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            ...baseLayout.modules.top,
+            nodes: {
+              ...baseLayout.modules.top.nodes,
+              'cut-label:clk:p:source': { x: 999, y: 999, fixed: true },
+            },
+          },
+        },
+      };
+      const pinnedView = await buildViewModel(fanoutGraph, 'top', pinnedLayout);
+      const pinnedSource = pinnedView.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
+      expect(pinnedSource.position).toEqual({ x: 999, y: 999 });
+    },
+  );
+
+  it(
+    'reserves ELK margin for a net-cut label on the ' +
+      'lead side so it does not collide with a neighbor',
+    () => {
+      const outputPort: DiagramNode = {
+        id: 'a',
+        kind: 'port',
+        label: 'a',
+        ports: [{ id: 'p', name: 'a', direction: 'output' }],
+      };
+      const bare = elkNodeForDiagramNode(outputPort, true);
+      // An output port on a 'port' node is WEST-side — the label protrudes
+      // further left of the node and is vertically centered on the port, so a
+      // label that's both wider and taller than the base lead/box grows both
+      // the left margin (more room in the lead's own direction) and top/bottom
+      // margins (room for the part of the label that overshoots the box
+      // vertically), while leaving the right margin untouched.
+      const withLabel = elkNodeForDiagramNode(
+        outputPort,
+        true,
+        new Map([['p', { width: 80, height: 96 }]]),
+      );
+      expect(withLabel.width).toBeGreaterThan(bare.width);
+      expect(withLabel.layoutOffset.x).toBeGreaterThan(bare.layoutOffset.x);
+      expect(withLabel.height).toBeGreaterThan(bare.height);
+      expect(withLabel.width - bare.width).toBeCloseTo(80, 0);
+
+      // No entry for this port at all: behaves exactly like the call with no
+      // extraPortMargins argument (the common case is unaffected).
+      const untouched = elkNodeForDiagramNode(outputPort, true, new Map());
+      expect(untouched).toEqual(bare);
+    },
+  );
+
+  it(
+    'lays out several stacked net-cut source ports ' +
+      'without their dangling ends overlapping a neighbor',
+    async () => {
+      // Cut both nets, but save no node positions at all — ELK must freely
+      // place "a" and "b" (naturally stacked in the same layer, since both are
+      // plain sources with no other constraint) and, with them, reserve room
+      // for their now-active cut labels.
+      const layout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {},
+            netCuts: {
+              'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
+              'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } },
+            },
+          },
+        },
+      };
+
+      const view = await buildViewModel(twoNetGraph, 'top', layout);
+      const boxes = view.nodes.map((node) => ({ id: node.id, ...boundsOf(node) }));
+      expect(boxes.some((box) => box.id === 'cut-label:a:p:source')).toBe(true);
+      expect(boxes.some((box) => box.id === 'cut-label:b:p:source')).toBe(true);
+
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          expect(boxesOverlap(boxes[i], boxes[j]), `${boxes[i].id} overlaps ${boxes[j].id}`).toBe(
+            false,
+          );
         }
       }
-    };
-
-    const baseline = await buildViewModel(fanoutGraph, 'top', baseLayout);
-    const baselineSource = baseline.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
-
-    // Simulate a stale, non-fixed position hint left behind for the label —
-    // e.g. by an earlier selection Auto Layout pass that released it without
-    // ELK ever placing it. This must not stick: only a *pinned* (fixed) save
-    // should override the geometry-derived fallback.
-    const staleLayout: SavedLayout = {
-      version: 1,
-      modules: {
-        top: {
-          ...baseLayout.modules.top,
-          nodes: {
-            ...baseLayout.modules.top.nodes,
-            'cut-label:clk:p:source': { x: 999, y: 999, fixed: false }
-          }
-        }
-      }
-    };
-
-    const view = await buildViewModel(fanoutGraph, 'top', staleLayout);
-    const source = view.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
-    expect(source.position).toEqual(baselineSource.position);
-
-    // A genuinely pinned (fixed: true) save — e.g. the user dragged the label
-    // by hand — is still honored verbatim.
-    const pinnedLayout: SavedLayout = {
-      version: 1,
-      modules: {
-        top: {
-          ...baseLayout.modules.top,
-          nodes: {
-            ...baseLayout.modules.top.nodes,
-            'cut-label:clk:p:source': { x: 999, y: 999, fixed: true }
-          }
-        }
-      }
-    };
-    const pinnedView = await buildViewModel(fanoutGraph, 'top', pinnedLayout);
-    const pinnedSource = pinnedView.nodes.find((node) => node.id === 'cut-label:clk:p:source')!;
-    expect(pinnedSource.position).toEqual({ x: 999, y: 999 });
-  });
-
-  it('reserves ELK margin for a net-cut label on the lead side so it does not collide with a neighbor', () => {
-    const outputPort: DiagramNode = { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'p', name: 'a', direction: 'output' }] };
-    const bare = elkNodeForDiagramNode(outputPort, true);
-    // An output port on a 'port' node is WEST-side — the label protrudes
-    // further left of the node and is vertically centered on the port, so a
-    // label that's both wider and taller than the base lead/box grows both
-    // the left margin (more room in the lead's own direction) and top/bottom
-    // margins (room for the part of the label that overshoots the box
-    // vertically), while leaving the right margin untouched.
-    const withLabel = elkNodeForDiagramNode(outputPort, true, new Map([['p', { width: 80, height: 96 }]]));
-    expect(withLabel.width).toBeGreaterThan(bare.width);
-    expect(withLabel.layoutOffset.x).toBeGreaterThan(bare.layoutOffset.x);
-    expect(withLabel.height).toBeGreaterThan(bare.height);
-    expect(withLabel.width - bare.width).toBeCloseTo(80, 0);
-
-    // No entry for this port at all: behaves exactly like the call with no
-    // extraPortMargins argument (the common case is unaffected).
-    const untouched = elkNodeForDiagramNode(outputPort, true, new Map());
-    expect(untouched).toEqual(bare);
-  });
-
-  it('lays out several stacked net-cut source ports without their dangling ends overlapping a neighbor', async () => {
-    // Cut both nets, but save no node positions at all — ELK must freely
-    // place "a" and "b" (naturally stacked in the same layer, since both are
-    // plain sources with no other constraint) and, with them, reserve room
-    // for their now-active cut labels.
-    const layout: SavedLayout = {
-      version: 1,
-      modules: {
-        top: {
-          nodes: {},
-          netCuts: {
-            'a:p': { label: 'a', source: { nodeId: 'a', portId: 'p' } },
-            'b:p': { label: 'b', source: { nodeId: 'b', portId: 'p' } }
-          }
-        }
-      }
-    };
-
-    const view = await buildViewModel(twoNetGraph, 'top', layout);
-    const boxes = view.nodes.map((node) => ({ id: node.id, ...boundsOf(node) }));
-    expect(boxes.some((box) => box.id === 'cut-label:a:p:source')).toBe(true);
-    expect(boxes.some((box) => box.id === 'cut-label:b:p:source')).toBe(true);
-
-    for (let i = 0; i < boxes.length; i++) {
-      for (let j = i + 1; j < boxes.length; j++) {
-        expect(
-          boxesOverlap(boxes[i], boxes[j]),
-          `${boxes[i].id} overlaps ${boxes[j].id}`
-        ).toBe(false);
-      }
-    }
-  });
+    },
+  );
 
   it('resets a cut label back to its canonical position by clearing its saved override', () => {
     const layout: SavedLayout = {
@@ -2274,10 +2954,10 @@ describe('layout merge', () => {
         top: {
           nodes: {
             'cut-label:a:p:source': { x: 999, y: 999, fixed: true },
-            a: { x: 0, y: 12, fixed: true }
-          }
-        }
-      }
+            a: { x: 0, y: 12, fixed: true },
+          },
+        },
+      },
     };
 
     const reset = resetCutLabelPosition(layout, 'top', 'cut-label:a:p:source');
@@ -2289,17 +2969,23 @@ describe('layout merge', () => {
     expect(noop).toBe(reset);
   });
 
-  it('cutting a second net does not pin the first net\'s still-dynamic dangling end', () => {
+  it("cutting a second net does not pin the first net's still-dynamic dangling end", () => {
     const module = twoNetGraph.modules.top;
     const positioned: PositionedNode[] = [
       { ...module.nodes[0], position: { x: 0, y: 12 } },
       { ...module.nodes[1], position: { x: 0, y: 60 } },
       { ...module.nodes[2], position: { x: 240, y: 12 } },
-      { ...module.nodes[3], position: { x: 240, y: 60 } }
+      { ...module.nodes[3], position: { x: 240, y: 60 } },
     ];
 
     // Cut a->x first...
-    let layout = mergeNetCut({ version: 1, modules: {} }, 'top', module.edges[0], module, positioned);
+    let layout = mergeNetCut(
+      { version: 1, modules: {} },
+      'top',
+      module.edges[0],
+      module,
+      positioned,
+    );
     // ...its dangling end is dynamic (never dragged), so it has no saved entry yet.
     expect(layout.modules.top.nodes['cut-label:a:p:source']).toBeUndefined();
 
@@ -2307,7 +2993,13 @@ describe('layout merge', () => {
     // node — including a->x's cut label — through mergeNetCut again.
     const withBothCuts: PositionedNode[] = [
       ...positioned,
-      { id: 'cut-label:a:p:source', kind: 'netLabel', label: 'a', ports: [], position: { x: -120, y: -12 } }
+      {
+        id: 'cut-label:a:p:source',
+        kind: 'netLabel',
+        label: 'a',
+        ports: [],
+        position: { x: -120, y: -12 },
+      },
     ];
     layout = mergeNetCut(layout, 'top', module.edges[1], module, withBothCuts);
 
@@ -2318,64 +3010,81 @@ describe('layout merge', () => {
     expect(layout.modules.top.nodes.b).toEqual({ x: 0, y: 60, fixed: true });
   });
 
-  it('uses ELK routes for ordinary feedback edges so wires wrap around default node boxes', async () => {
-    const feedbackGraph: DesignGraph = {
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            {
-              id: 'latch',
-              kind: 'latch',
-              label: 'next_r',
-              ports: [
-                { id: 'q', name: 'Q', direction: 'output' },
-                { id: 'd', name: 'D', direction: 'input' }
-              ]
-            },
-            {
-              id: 'mux',
-              kind: 'mux',
-              label: 'if en',
-              ports: [
-                { id: 'sel', name: 'sel', direction: 'input' },
-                { id: 'true', name: 'true', direction: 'input' },
-                { id: 'out', name: 'out', direction: 'output' }
-              ]
-            }
-          ],
-          edges: [
-            { id: 'feedback', source: 'latch', sourcePort: 'q', target: 'mux', targetPort: 'true' },
-            { id: 'mux-latch', source: 'mux', sourcePort: 'out', target: 'latch', targetPort: 'd' }
-          ]
-        }
-      }
-    };
+  it(
+    'uses ELK routes for ordinary feedback edges ' + 'so wires wrap around default node boxes',
+    async () => {
+      const feedbackGraph: DesignGraph = {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: {
+          top: {
+            name: 'top',
+            file: 'top.sv',
+            ports: [],
+            nodes: [
+              {
+                id: 'latch',
+                kind: 'latch',
+                label: 'next_r',
+                ports: [
+                  { id: 'q', name: 'Q', direction: 'output' },
+                  { id: 'd', name: 'D', direction: 'input' },
+                ],
+              },
+              {
+                id: 'mux',
+                kind: 'mux',
+                label: 'if en',
+                ports: [
+                  { id: 'sel', name: 'sel', direction: 'input' },
+                  { id: 'true', name: 'true', direction: 'input' },
+                  { id: 'out', name: 'out', direction: 'output' },
+                ],
+              },
+            ],
+            edges: [
+              {
+                id: 'feedback',
+                source: 'latch',
+                sourcePort: 'q',
+                target: 'mux',
+                targetPort: 'true',
+              },
+              {
+                id: 'mux-latch',
+                source: 'mux',
+                sourcePort: 'out',
+                target: 'latch',
+                targetPort: 'd',
+              },
+            ],
+          },
+        },
+      };
 
-    const view = await buildViewModel(feedbackGraph, 'top', { version: 1, modules: {} });
-    const route = view.edges.find((edge) => edge.id === 'feedback')?.routePoints;
-    const latch = view.nodes.find((node) => node.id === 'latch')!;
-    const mux = view.nodes.find((node) => node.id === 'mux')!;
-    const latchBottom = latch.position.y + diagramNodeDimensions(latch).height;
-    const muxBottom = mux.position.y + diagramNodeDimensions(mux).height;
+      const view = await buildViewModel(feedbackGraph, 'top', { version: 1, modules: {} });
+      const route = view.edges.find((edge) => edge.id === 'feedback')?.routePoints;
+      const latch = view.nodes.find((node) => node.id === 'latch')!;
+      const mux = view.nodes.find((node) => node.id === 'mux')!;
+      const latchBottom = latch.position.y + diagramNodeDimensions(latch).height;
+      const muxBottom = mux.position.y + diagramNodeDimensions(mux).height;
 
-    expect(route).toBeDefined();
-    expect(route!.length).toBeGreaterThanOrEqual(4);
-    expect(route![0]).toEqual({
-      x: latch.position.x + diagramNodeDimensions(latch).width + diagramSizing.edgeLeadLength,
-      y: latch.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2
-    });
-    expect(route![route!.length - 1]).toEqual({
-      x: mux.position.x - diagramSizing.edgeLeadLength,
-      y: mux.position.y + diagramSizing.gridSize * 2
-    });
-    expect(Math.max(...route!.map((point) => point.y))).toBeGreaterThanOrEqual(Math.max(latchBottom, muxBottom));
-  });
+      expect(route).toBeDefined();
+      expect(route!.length).toBeGreaterThanOrEqual(4);
+      expect(route![0]).toEqual({
+        x: latch.position.x + diagramNodeDimensions(latch).width + diagramSizing.edgeLeadLength,
+        y: latch.position.y + diagramSizing.nodeHeaderHeight + diagramSizing.gridSize / 2,
+      });
+      expect(route![route!.length - 1]).toEqual({
+        x: mux.position.x - diagramSizing.edgeLeadLength,
+        y: mux.position.y + diagramSizing.gridSize * 2,
+      });
+      expect(Math.max(...route!.map((point) => point.y))).toBeGreaterThanOrEqual(
+        Math.max(latchBottom, muxBottom),
+      );
+    },
+  );
 
   it('routes register reset edges to the rendered one-grid bottom lead endpoint', async () => {
     const resetGraph: DesignGraph = {
@@ -2388,7 +3097,12 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'rst', kind: 'port', label: 'rst', ports: [{ id: 'rst', name: 'rst', direction: 'input' }] },
+            {
+              id: 'rst',
+              kind: 'port',
+              label: 'rst',
+              ports: [{ id: 'rst', name: 'rst', direction: 'input' }],
+            },
             {
               id: 'reg',
               kind: 'register',
@@ -2397,16 +3111,16 @@ describe('layout merge', () => {
                 { id: 'd', name: 'D', direction: 'input' },
                 { id: 'clk', name: 'clk', direction: 'input' },
                 { id: 'reset', name: 'rst', direction: 'input' },
-                { id: 'q', name: 'Q', direction: 'output' }
+                { id: 'q', name: 'Q', direction: 'output' },
               ],
-              metadata: { clockSignal: 'clk', resetSignal: 'rst' }
-            }
+              metadata: { clockSignal: 'clk', resetSignal: 'rst' },
+            },
           ],
           edges: [
-            { id: 'rst-reg', source: 'rst', sourcePort: 'rst', target: 'reg', targetPort: 'reset' }
-          ]
-        }
-      }
+            { id: 'rst-reg', source: 'rst', sourcePort: 'rst', target: 'reg', targetPort: 'reset' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(resetGraph, 'top', { version: 1, modules: {} });
@@ -2418,11 +3132,11 @@ describe('layout merge', () => {
     expect(route).toBeDefined();
     expect(route![0]).toEqual({
       x: rst.position.x + diagramNodeDimensions(rst).width,
-      y: rst.position.y + diagramSizing.portHeight / 2
+      y: rst.position.y + diagramSizing.portHeight / 2,
     });
     expect(route![route!.length - 1]).toEqual({
       x: reg.position.x + regDims.width / 2,
-      y: 108
+      y: 108,
     });
   });
 
@@ -2443,18 +3157,28 @@ describe('layout merge', () => {
               label: '',
               ports: [
                 { id: 'out', name: 'o', direction: 'output' },
-                { id: 'in', name: 'i', direction: 'input' }
-              ]
+                { id: 'in', name: 'i', direction: 'input' },
+              ],
             },
-            { id: 'i', kind: 'port', label: 'i', ports: [{ id: 'i', name: 'i', direction: 'input' }] },
-            { id: 'o', kind: 'port', label: 'o', ports: [{ id: 'o', name: 'o', direction: 'output' }] }
+            {
+              id: 'i',
+              kind: 'port',
+              label: 'i',
+              ports: [{ id: 'i', name: 'i', direction: 'input' }],
+            },
+            {
+              id: 'o',
+              kind: 'port',
+              label: 'o',
+              ports: [{ id: 'o', name: 'o', direction: 'output' }],
+            },
           ],
           edges: [
             { id: 'i-comb', source: 'i', sourcePort: 'i', target: 'comb', targetPort: 'in' },
-            { id: 'comb-o', source: 'comb', sourcePort: 'out', target: 'o', targetPort: 'o' }
-          ]
-        }
-      }
+            { id: 'comb-o', source: 'comb', sourcePort: 'out', target: 'o', targetPort: 'o' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(simpleGraph, 'top', { version: 1, modules: {} });
@@ -2484,18 +3208,28 @@ describe('layout merge', () => {
               ports: [
                 { id: 'out', name: 'o', direction: 'output' },
                 { id: 'a', name: 'a', direction: 'input' },
-                { id: 'b', name: 'b', direction: 'input' }
-              ]
+                { id: 'b', name: 'b', direction: 'input' },
+              ],
             },
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'a', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'b', name: 'b', direction: 'input' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'a', name: 'a', direction: 'input' }],
+            },
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'b', name: 'b', direction: 'input' }],
+            },
           ],
           edges: [
             { id: 'a-comb', source: 'a', sourcePort: 'a', target: 'comb', targetPort: 'a' },
-            { id: 'b-comb', source: 'b', sourcePort: 'b', target: 'comb', targetPort: 'b' }
-          ]
-        }
-      }
+            { id: 'b-comb', source: 'b', sourcePort: 'b', target: 'comb', targetPort: 'b' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(multiInputGraph, 'top', { version: 1, modules: {} });
@@ -2503,8 +3237,12 @@ describe('layout merge', () => {
     const b = view.nodes.find((node) => node.id === 'b')!;
     const comb = view.nodes.find((node) => node.id === 'comb')!;
 
-    expect(renderedNodeInputCenterY(comb, 1) - renderedNodeInputCenterY(comb, 0)).toBe(diagramSizing.gridSize);
-    expect(Math.abs(renderedPortCenterY(b) - renderedPortCenterY(a))).toBeGreaterThanOrEqual(diagramSizing.gridSize * 2);
+    expect(renderedNodeInputCenterY(comb, 1) - renderedNodeInputCenterY(comb, 0)).toBe(
+      diagramSizing.gridSize,
+    );
+    expect(Math.abs(renderedPortCenterY(b) - renderedPortCenterY(a))).toBeGreaterThanOrEqual(
+      diagramSizing.gridSize * 2,
+    );
   });
 
   it('lets ELK distribute simple leaf ports feeding multiple mux side inputs', async () => {
@@ -2526,18 +3264,28 @@ describe('layout merge', () => {
                 { id: 'sel', name: 'sel', direction: 'input' },
                 { id: 'a', name: 'a', direction: 'input' },
                 { id: 'b', name: 'b', direction: 'input' },
-                { id: 'out', name: 'y', direction: 'output' }
-              ]
+                { id: 'out', name: 'y', direction: 'output' },
+              ],
             },
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'a', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'b', name: 'b', direction: 'input' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'a', name: 'a', direction: 'input' }],
+            },
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'b', name: 'b', direction: 'input' }],
+            },
           ],
           edges: [
             { id: 'a-mux', source: 'a', sourcePort: 'a', target: 'mux', targetPort: 'a' },
-            { id: 'b-mux', source: 'b', sourcePort: 'b', target: 'mux', targetPort: 'b' }
-          ]
-        }
-      }
+            { id: 'b-mux', source: 'b', sourcePort: 'b', target: 'mux', targetPort: 'b' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(muxGraph, 'top', { version: 1, modules: {} });
@@ -2545,8 +3293,12 @@ describe('layout merge', () => {
     const b = view.nodes.find((node) => node.id === 'b')!;
     const mux = view.nodes.find((node) => node.id === 'mux')!;
 
-    expect(renderedMuxSideInputCenterY(mux, 1, 2) - renderedMuxSideInputCenterY(mux, 0, 2)).toBe(diagramSizing.gridSize);
-    expect(Math.abs(renderedPortCenterY(b) - renderedPortCenterY(a))).toBeGreaterThanOrEqual(diagramSizing.gridSize * 2);
+    expect(renderedMuxSideInputCenterY(mux, 1, 2) - renderedMuxSideInputCenterY(mux, 0, 2)).toBe(
+      diagramSizing.gridSize,
+    );
+    expect(Math.abs(renderedPortCenterY(b) - renderedPortCenterY(a))).toBeGreaterThanOrEqual(
+      diagramSizing.gridSize * 2,
+    );
   });
 
   it('uses fixed grid-aligned ALU port centers for routing', async () => {
@@ -2568,20 +3320,35 @@ describe('layout merge', () => {
               ports: [
                 { id: 'lhs', name: 'lhs', direction: 'input' },
                 { id: 'rhs', name: 'rhs', direction: 'input' },
-                { id: 'out', name: 'y', direction: 'output' }
-              ]
+                { id: 'out', name: 'y', direction: 'output' },
+              ],
             },
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'a', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'b', name: 'b', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'y', name: 'y', direction: 'output' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'a', name: 'a', direction: 'input' }],
+            },
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'b', name: 'b', direction: 'input' }],
+            },
+            {
+              id: 'y',
+              kind: 'port',
+              label: 'y',
+              ports: [{ id: 'y', name: 'y', direction: 'output' }],
+            },
           ],
           edges: [
             { id: 'a-alu', source: 'a', sourcePort: 'a', target: 'alu', targetPort: 'lhs' },
             { id: 'b-alu', source: 'b', sourcePort: 'b', target: 'alu', targetPort: 'rhs' },
-            { id: 'alu-y', source: 'alu', sourcePort: 'out', target: 'y', targetPort: 'y' }
-          ]
-        }
-      }
+            { id: 'alu-y', source: 'alu', sourcePort: 'out', target: 'y', targetPort: 'y' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(aluGraph, 'top', { version: 1, modules: {} });
@@ -2591,18 +3358,20 @@ describe('layout merge', () => {
     const outRoute = view.edges.find((edge) => edge.id === 'alu-y')?.routePoints;
 
     expect(renderedAluInputCenterY(alu, 0) % diagramSizing.gridSize).toBe(0);
-    expect(renderedAluInputCenterY(alu, 1) - renderedAluInputCenterY(alu, 0)).toBe(diagramSizing.gridSize * 2);
+    expect(renderedAluInputCenterY(alu, 1) - renderedAluInputCenterY(alu, 0)).toBe(
+      diagramSizing.gridSize * 2,
+    );
     expect(lhsRoute?.[lhsRoute.length - 1]).toEqual({
       x: alu.position.x - diagramSizing.edgeLeadLength,
-      y: renderedAluInputCenterY(alu, 0)
+      y: renderedAluInputCenterY(alu, 0),
     });
     expect(rhsRoute?.[rhsRoute.length - 1]).toEqual({
       x: alu.position.x - diagramSizing.edgeLeadLength,
-      y: renderedAluInputCenterY(alu, 1)
+      y: renderedAluInputCenterY(alu, 1),
     });
     expect(outRoute?.[0]).toEqual({
       x: alu.position.x + diagramNodeDimensions(alu).width + diagramSizing.edgeLeadLength,
-      y: alu.position.y + diagramNodeDimensions(alu).height / 2
+      y: alu.position.y + diagramNodeDimensions(alu).height / 2,
     });
   });
 
@@ -2617,21 +3386,33 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'literal', kind: 'literal', label: "8'h42", ports: [{ id: 'y', name: 'y', direction: 'output' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'y', name: 'y', direction: 'output' }] }
+            {
+              id: 'literal',
+              kind: 'literal',
+              label: "8'h42",
+              ports: [{ id: 'y', name: 'y', direction: 'output' }],
+            },
+            {
+              id: 'y',
+              kind: 'port',
+              label: 'y',
+              ports: [{ id: 'y', name: 'y', direction: 'output' }],
+            },
           ],
           edges: [
-            { id: 'literal-y', source: 'literal', sourcePort: 'y', target: 'y', targetPort: 'y' }
-          ]
-        }
-      }
+            { id: 'literal-y', source: 'literal', sourcePort: 'y', target: 'y', targetPort: 'y' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(literalGraph, 'top', { version: 1, modules: {} });
     const literal = view.nodes.find((node) => node.id === 'literal')!;
     const y = view.nodes.find((node) => node.id === 'y')!;
 
-    expect(literal.position.y + diagramNodeDimensions(literal).height / 2).toBe(renderedPortCenterY(y));
+    expect(literal.position.y + diagramNodeDimensions(literal).height / 2).toBe(
+      renderedPortCenterY(y),
+    );
   });
 
   it('aligns compact replication nodes with literal inputs and output ports', async () => {
@@ -2645,24 +3426,46 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'literal', kind: 'literal', label: "1'b1", ports: [{ id: 'out', name: "1'b1", direction: 'output' }] },
+            {
+              id: 'literal',
+              kind: 'literal',
+              label: "1'b1",
+              ports: [{ id: 'out', name: "1'b1", direction: 'output' }],
+            },
             {
               id: 'rep',
               kind: 'replicate',
               label: 'x4',
               ports: [
                 { id: 'in', name: 'in', direction: 'input' },
-                { id: 'out', name: 'fill_ones', direction: 'output' }
-              ]
+                { id: 'out', name: 'fill_ones', direction: 'output' },
+              ],
             },
-            { id: 'fill', kind: 'port', label: 'fill_ones', ports: [{ id: 'fill', name: 'fill_ones', direction: 'output' }] }
+            {
+              id: 'fill',
+              kind: 'port',
+              label: 'fill_ones',
+              ports: [{ id: 'fill', name: 'fill_ones', direction: 'output' }],
+            },
           ],
           edges: [
-            { id: 'literal-rep', source: 'literal', sourcePort: 'out', target: 'rep', targetPort: 'in' },
-            { id: 'rep-fill', source: 'rep', sourcePort: 'out', target: 'fill', targetPort: 'fill' }
-          ]
-        }
-      }
+            {
+              id: 'literal-rep',
+              source: 'literal',
+              sourcePort: 'out',
+              target: 'rep',
+              targetPort: 'in',
+            },
+            {
+              id: 'rep-fill',
+              source: 'rep',
+              sourcePort: 'out',
+              target: 'fill',
+              targetPort: 'fill',
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(replicationGraph, 'top', { version: 1, modules: {} });
@@ -2693,20 +3496,53 @@ describe('layout merge', () => {
               ports: [
                 { id: 'in', name: 'instr', direction: 'input' },
                 { id: 'opcode', name: 'instr[6:0]', direction: 'output' },
-                { id: 'flag', name: 'instr[30]', direction: 'output' }
-              ]
+                { id: 'flag', name: 'instr[30]', direction: 'output' },
+              ],
             },
-            { id: 'instr', kind: 'port', label: 'instr', ports: [{ id: 'instr', name: 'instr', direction: 'input' }] },
-            { id: 'opcode', kind: 'port', label: 'opcode', ports: [{ id: 'opcode', name: 'opcode', direction: 'output' }] },
-            { id: 'flag', kind: 'port', label: 'flag', ports: [{ id: 'flag', name: 'flag', direction: 'output' }] }
+            {
+              id: 'instr',
+              kind: 'port',
+              label: 'instr',
+              ports: [{ id: 'instr', name: 'instr', direction: 'input' }],
+            },
+            {
+              id: 'opcode',
+              kind: 'port',
+              label: 'opcode',
+              ports: [{ id: 'opcode', name: 'opcode', direction: 'output' }],
+            },
+            {
+              id: 'flag',
+              kind: 'port',
+              label: 'flag',
+              ports: [{ id: 'flag', name: 'flag', direction: 'output' }],
+            },
           ],
           edges: [
-            { id: 'instr-bus', source: 'instr', sourcePort: 'instr', target: 'bus', targetPort: 'in' },
-            { id: 'bus-opcode', source: 'bus', sourcePort: 'opcode', target: 'opcode', targetPort: 'opcode' },
-            { id: 'bus-flag', source: 'bus', sourcePort: 'flag', target: 'flag', targetPort: 'flag' }
-          ]
-        }
-      }
+            {
+              id: 'instr-bus',
+              source: 'instr',
+              sourcePort: 'instr',
+              target: 'bus',
+              targetPort: 'in',
+            },
+            {
+              id: 'bus-opcode',
+              source: 'bus',
+              sourcePort: 'opcode',
+              target: 'opcode',
+              targetPort: 'opcode',
+            },
+            {
+              id: 'bus-flag',
+              source: 'bus',
+              sourcePort: 'flag',
+              target: 'flag',
+              targetPort: 'flag',
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(busGraph, 'top', { version: 1, modules: {} });
@@ -2736,20 +3572,41 @@ describe('layout merge', () => {
               ports: [
                 { id: 'out', name: 'decoded', direction: 'output' },
                 { id: 'a', name: 'a', direction: 'input' },
-                { id: 'b', name: 'b', direction: 'input' }
-              ]
+                { id: 'b', name: 'b', direction: 'input' },
+              ],
             },
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'a', name: 'a', direction: 'input' }] },
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'b', name: 'b', direction: 'input' }] },
-            { id: 'decoded', kind: 'port', label: 'decoded', ports: [{ id: 'decoded', name: 'decoded', direction: 'output' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'a', name: 'a', direction: 'input' }],
+            },
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'b', name: 'b', direction: 'input' }],
+            },
+            {
+              id: 'decoded',
+              kind: 'port',
+              label: 'decoded',
+              ports: [{ id: 'decoded', name: 'decoded', direction: 'output' }],
+            },
           ],
           edges: [
             { id: 'a-comb', source: 'a', sourcePort: 'a', target: 'comb', targetPort: 'a' },
             { id: 'b-comb', source: 'b', sourcePort: 'b', target: 'comb', targetPort: 'b' },
-            { id: 'comb-decoded', source: 'comb', sourcePort: 'out', target: 'decoded', targetPort: 'decoded' }
-          ]
-        }
-      }
+            {
+              id: 'comb-decoded',
+              source: 'comb',
+              sourcePort: 'out',
+              target: 'decoded',
+              targetPort: 'decoded',
+            },
+          ],
+        },
+      },
     };
     const seededLayout: SavedLayout = {
       version: 1,
@@ -2759,10 +3616,10 @@ describe('layout merge', () => {
             comb: { x: 240, y: 96 },
             a: { x: 48, y: 96 },
             b: { x: 48, y: 144 },
-            decoded: { x: 480, y: 96 }
-          }
-        }
-      }
+            decoded: { x: 480, y: 96 },
+          },
+        },
+      },
     };
 
     const view = await buildViewModel(seededGraph, 'top', seededLayout);
@@ -2774,39 +3631,48 @@ describe('layout merge', () => {
 
     expect(edge.routePoints?.[0]).toMatchObject({
       x: a.position.x + diagramNodeDimensions(a).width + diagramSizing.edgeLeadLength,
-      y: renderedPortCenterY(a)
+      y: renderedPortCenterY(a),
     });
     expect(targetLead).toEqual({
       x: comb.position.x - diagramSizing.edgeLeadLength,
-      y: renderedNodeInputCenterY(comb, 0)
+      y: renderedNodeInputCenterY(comb, 0),
     });
     expect(beforeTargetLead?.y).toBe(targetLead?.y);
     expect(beforeTargetLead?.x).toBeLessThan(targetLead!.x);
   });
 
-  it('preserves explicit seeded positions for existing nodes when new nodes appear later', async () => {
-    const initialView = await buildViewModel(graph, 'top', { version: 1, modules: {} });
-    initialView.nodes.forEach(n => n.fixed = true);
-    const seeded = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
-    const expandedGraph: DesignGraph = {
-      ...graph,
-      modules: {
-        top: {
-          ...graph.modules.top,
-          nodes: [
-            ...graph.modules.top.nodes,
-            { id: 'new', kind: 'mux', label: 'new', ports: [] }
-          ]
-        }
-      }
-    };
+  it(
+    'preserves explicit seeded positions for ' + 'existing nodes when new nodes appear later',
+    async () => {
+      const initialView = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+      initialView.nodes.forEach((n) => (n.fixed = true));
+      const seeded = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
+      const expandedGraph: DesignGraph = {
+        ...graph,
+        modules: {
+          top: {
+            ...graph.modules.top,
+            nodes: [
+              ...graph.modules.top.nodes,
+              { id: 'new', kind: 'mux', label: 'new', ports: [] },
+            ],
+          },
+        },
+      };
 
-    const expandedView = await buildViewModel(expandedGraph, 'top', seeded);
+      const expandedView = await buildViewModel(expandedGraph, 'top', seeded);
 
-    expect(expandedView.nodes.find((node) => node.id === 'a')?.position).toEqual({ x: seeded.modules.top.nodes.a.x, y: seeded.modules.top.nodes.a.y });
-    expect(expandedView.nodes.find((node) => node.id === 'u')?.position).toEqual({ x: seeded.modules.top.nodes.u.x, y: seeded.modules.top.nodes.u.y });
-    expect(expandedView.nodes.find((node) => node.id === 'new')?.position).toBeDefined();
-  });
+      expect(expandedView.nodes.find((node) => node.id === 'a')?.position).toEqual({
+        x: seeded.modules.top.nodes.a.x,
+        y: seeded.modules.top.nodes.a.y,
+      });
+      expect(expandedView.nodes.find((node) => node.id === 'u')?.position).toEqual({
+        x: seeded.modules.top.nodes.u.x,
+        y: seeded.modules.top.nodes.u.y,
+      });
+      expect(expandedView.nodes.find((node) => node.id === 'new')?.position).toBeDefined();
+    },
+  );
 
   it('places renamed connected nodes with graph context instead of near the origin', async () => {
     const connectedGraph: DesignGraph = {
@@ -2821,14 +3687,14 @@ describe('layout merge', () => {
           nodes: [
             { id: 'input', kind: 'port', label: 'input', ports: [] },
             { id: 'old_reg', kind: 'register', label: 'old_reg', ports: [] },
-            { id: 'sink', kind: 'instance', label: 'sink', ports: [] }
+            { id: 'sink', kind: 'instance', label: 'sink', ports: [] },
           ],
           edges: [
             { id: 'input-new', source: 'input', target: 'new_reg' },
-            { id: 'new-sink', source: 'new_reg', target: 'sink' }
-          ]
-        }
-      }
+            { id: 'new-sink', source: 'new_reg', target: 'sink' },
+          ],
+        },
+      },
     };
     const layout: SavedLayout = {
       version: 1,
@@ -2837,12 +3703,17 @@ describe('layout merge', () => {
           nodes: {
             input: { x: 500, y: 500, fixed: true },
             sink: { x: 900, y: 500, fixed: true },
-            old_reg: { x: 700, y: 500, stale: true, fixed: true }
-          }
-        }
-      }
+            old_reg: { x: 700, y: 500, stale: true, fixed: true },
+          },
+        },
+      },
     };
-    connectedGraph.modules.top.nodes[1] = { id: 'new_reg', kind: 'register', label: 'new_reg', ports: [] };
+    connectedGraph.modules.top.nodes[1] = {
+      id: 'new_reg',
+      kind: 'register',
+      label: 'new_reg',
+      ports: [],
+    };
 
     const view = await buildViewModel(connectedGraph, 'top', layout);
     const newReg = view.nodes.find((node) => node.id === 'new_reg');
@@ -2864,9 +3735,24 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'port:top:clk', kind: 'port', label: 'clk', ports: [{ id: 'clk', name: 'clk', direction: 'input' }] },
-            { id: 'port:top:d', kind: 'port', label: 'd', ports: [{ id: 'd', name: 'd', direction: 'input' }] },
-            { id: 'port:top:q', kind: 'port', label: 'q', ports: [{ id: 'q', name: 'q', direction: 'output' }] },
+            {
+              id: 'port:top:clk',
+              kind: 'port',
+              label: 'clk',
+              ports: [{ id: 'clk', name: 'clk', direction: 'input' }],
+            },
+            {
+              id: 'port:top:d',
+              kind: 'port',
+              label: 'd',
+              ports: [{ id: 'd', name: 'd', direction: 'input' }],
+            },
+            {
+              id: 'port:top:q',
+              kind: 'port',
+              label: 'q',
+              ports: [{ id: 'q', name: 'q', direction: 'output' }],
+            },
             {
               id: 'reg:top:q',
               kind: 'register',
@@ -2874,18 +3760,36 @@ describe('layout merge', () => {
               ports: [
                 { id: 'd', name: 'D', direction: 'input' },
                 { id: 'clk', name: 'clk', direction: 'input' },
-                { id: 'q', name: 'Q', direction: 'output' }
+                { id: 'q', name: 'Q', direction: 'output' },
               ],
-              metadata: { clockSignal: 'clk' }
-            }
+              metadata: { clockSignal: 'clk' },
+            },
           ],
           edges: [
-            { id: 'd-q', source: 'port:top:d', sourcePort: 'd', target: 'reg:top:q', targetPort: 'd' },
-            { id: 'clk-q', source: 'port:top:clk', sourcePort: 'clk', target: 'reg:top:q', targetPort: 'clk' },
-            { id: 'q-out', source: 'reg:top:q', sourcePort: 'q', target: 'port:top:q', targetPort: 'q' }
-          ]
-        }
-      }
+            {
+              id: 'd-q',
+              source: 'port:top:d',
+              sourcePort: 'd',
+              target: 'reg:top:q',
+              targetPort: 'd',
+            },
+            {
+              id: 'clk-q',
+              source: 'port:top:clk',
+              sourcePort: 'clk',
+              target: 'reg:top:q',
+              targetPort: 'clk',
+            },
+            {
+              id: 'q-out',
+              source: 'reg:top:q',
+              sourcePort: 'q',
+              target: 'port:top:q',
+              targetPort: 'q',
+            },
+          ],
+        },
+      },
     };
     const initialView = await buildViewModel(before, 'top', { version: 1, modules: {} });
     const seededLayout = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
@@ -2896,7 +3800,12 @@ describe('layout merge', () => {
           ...before.modules.top,
           nodes: before.modules.top.nodes.map((node) => {
             if (node.id === 'port:top:q') {
-              return { ...node, id: 'port:top:q_new', label: 'q_new', ports: [{ id: 'q_new', name: 'q_new', direction: 'output' }] };
+              return {
+                ...node,
+                id: 'port:top:q_new',
+                label: 'q_new',
+                ports: [{ id: 'q_new', name: 'q_new', direction: 'output' }],
+              };
             }
             if (node.id === 'reg:top:q') {
               return { ...node, id: 'reg:top:q_new', label: 'q_new' };
@@ -2904,12 +3813,30 @@ describe('layout merge', () => {
             return node;
           }),
           edges: [
-            { id: 'd-q-new', source: 'port:top:d', sourcePort: 'd', target: 'reg:top:q_new', targetPort: 'd' },
-            { id: 'clk-q-new', source: 'port:top:clk', sourcePort: 'clk', target: 'reg:top:q_new', targetPort: 'clk' },
-            { id: 'q-new-out', source: 'reg:top:q_new', sourcePort: 'q', target: 'port:top:q_new', targetPort: 'q_new' }
-          ]
-        }
-      }
+            {
+              id: 'd-q-new',
+              source: 'port:top:d',
+              sourcePort: 'd',
+              target: 'reg:top:q_new',
+              targetPort: 'd',
+            },
+            {
+              id: 'clk-q-new',
+              source: 'port:top:clk',
+              sourcePort: 'clk',
+              target: 'reg:top:q_new',
+              targetPort: 'clk',
+            },
+            {
+              id: 'q-new-out',
+              source: 'reg:top:q_new',
+              sourcePort: 'q',
+              target: 'port:top:q_new',
+              targetPort: 'q_new',
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(after, 'top', seededLayout);
@@ -2936,14 +3863,14 @@ describe('layout merge', () => {
             { id: 'port:top:ccc', kind: 'port', label: 'ccc', ports: [] },
             { id: 'port:top:clk', kind: 'port', label: 'clk', ports: [] },
             { id: 'reg:top:c_q', kind: 'register', label: 'c_q', ports: [] },
-            { id: 'mux:top:y:sel', kind: 'mux', label: 'case sel', ports: [] }
+            { id: 'mux:top:y:sel', kind: 'mux', label: 'case sel', ports: [] },
           ],
           edges: [
             { id: 'ccc-cq', source: 'port:top:ccc', target: 'reg:top:c_q' },
-            { id: 'clk-cq', source: 'port:top:clk', target: 'reg:top:c_q' }
-          ]
-        }
-      }
+            { id: 'clk-cq', source: 'port:top:clk', target: 'reg:top:c_q' },
+          ],
+        },
+      },
     };
     const arrangedLayout: SavedLayout = {
       version: 1,
@@ -2953,10 +3880,10 @@ describe('layout merge', () => {
             'port:top:ccc': { x: 192, y: 732, fixed: true },
             'port:top:clk': { x: 192, y: 564, fixed: true },
             'reg:top:c_q': { x: 528, y: 696, fixed: true },
-            'mux:top:y:sel': { x: 528, y: 312, fixed: true }
-          }
-        }
-      }
+            'mux:top:y:sel': { x: 528, y: 312, fixed: true },
+          },
+        },
+      },
     };
     const expandedGraph: DesignGraph = {
       ...baseGraph,
@@ -2965,15 +3892,15 @@ describe('layout merge', () => {
           ...baseGraph.modules.top,
           nodes: [
             ...baseGraph.modules.top.nodes,
-            { id: 'reg:top:cc_q', kind: 'register', label: 'cc_q', ports: [] }
+            { id: 'reg:top:cc_q', kind: 'register', label: 'cc_q', ports: [] },
           ],
           edges: [
             ...baseGraph.modules.top.edges,
             { id: 'ccc-ccq', source: 'port:top:ccc', target: 'reg:top:cc_q' },
-            { id: 'clk-ccq', source: 'port:top:clk', target: 'reg:top:cc_q' }
-          ]
-        }
-      }
+            { id: 'clk-ccq', source: 'port:top:clk', target: 'reg:top:cc_q' },
+          ],
+        },
+      },
     };
 
     const expandedView = await buildViewModel(expandedGraph, 'top', arrangedLayout);
@@ -2981,14 +3908,20 @@ describe('layout merge', () => {
     const collapsedView = await buildViewModel(baseGraph, 'top', expandedLayout);
 
     for (const [id, expected] of Object.entries(arrangedLayout.modules.top.nodes)) {
-      expect(expandedView.nodes.find((node) => node.id === id)?.position).toEqual({ x: expected.x, y: expected.y });
-      expect(collapsedView.nodes.find((node) => node.id === id)?.position).toEqual({ x: expected.x, y: expected.y });
+      expect(expandedView.nodes.find((node) => node.id === id)?.position).toEqual({
+        x: expected.x,
+        y: expected.y,
+      });
+      expect(collapsedView.nodes.find((node) => node.id === id)?.position).toEqual({
+        x: expected.x,
+        y: expected.y,
+      });
     }
     expect(expandedView.nodes.some((node) => node.id === 'reg:top:cc_q')).toBe(true);
     expect(collapsedView.nodes.some((node) => node.id === 'reg:top:cc_q')).toBe(false);
   });
 
-    it('respects port order during auto-layout to avoid wire crossings', async () => {
+  it('respects port order during auto-layout to avoid wire crossings', async () => {
     // a connects to port0 (top), b connects to port1 (bottom)
     // If ELK respects order, 'a' should be above 'b'.
     const orderedGraph: DesignGraph = {
@@ -3001,85 +3934,118 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'p_a', kind: 'port', label: 'a', ports: [{ id: 'out', name: 'out', direction: 'output' }] },
-            { id: 'p_b', kind: 'port', label: 'b', ports: [{ id: 'out', name: 'out', direction: 'output' }] },
-            { id: 'c', kind: 'comb', label: 'comb', ports: [
-              { id: 'in_a', name: 'a', direction: 'input' },
-              { id: 'in_b', name: 'b', direction: 'input' }
-            ] }
+            {
+              id: 'p_a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'out', name: 'out', direction: 'output' }],
+            },
+            {
+              id: 'p_b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'out', name: 'out', direction: 'output' }],
+            },
+            {
+              id: 'c',
+              kind: 'comb',
+              label: 'comb',
+              ports: [
+                { id: 'in_a', name: 'a', direction: 'input' },
+                { id: 'in_b', name: 'b', direction: 'input' },
+              ],
+            },
           ],
           edges: [
             { id: 'e_a', source: 'p_a', target: 'c', sourcePort: 'out', targetPort: 'in_a' },
-            { id: 'e_b', source: 'p_b', target: 'c', sourcePort: 'out', targetPort: 'in_b' }
-          ]
-        }
-      }
+            { id: 'e_b', source: 'p_b', target: 'c', sourcePort: 'out', targetPort: 'in_b' },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(orderedGraph, 'top', { version: 1, modules: {} });
-    const posA = view.nodes.find(n => n.id === 'p_a')!.position;
-    const posB = view.nodes.find(n => n.id === 'p_b')!.position;
+    const posA = view.nodes.find((n) => n.id === 'p_a')!.position;
+    const posB = view.nodes.find((n) => n.id === 'p_b')!.position;
 
     // 'a' should be above 'b'
     expect(posA.y).toBeLessThan(posB.y);
-    });
+  });
 
-    it('allows auto-layout to move previously positioned nodes if they are not fixed', async () => {
-      const initialGraph: DesignGraph = {
-        rootModules: ['top'],
-        generatedAt: 'now',
-        diagnostics: [],
-        modules: {
-          top: {
-            name: 'top',
-            file: 'top.sv',
-            ports: [],
-            nodes: [
-              { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'out', name: 'out', direction: 'input' }] },
-              { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'in', name: 'in', direction: 'output' }] }
-            ],
-            edges: [
-              { id: 'a-y', source: 'a', target: 'y', sourcePort: 'out', targetPort: 'in' }
-            ]
-          }
-        }
-      };
+  it('allows auto-layout to move previously positioned nodes if they are not fixed', async () => {
+    const initialGraph: DesignGraph = {
+      rootModules: ['top'],
+      generatedAt: 'now',
+      diagnostics: [],
+      modules: {
+        top: {
+          name: 'top',
+          file: 'top.sv',
+          ports: [],
+          nodes: [
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'out', name: 'out', direction: 'input' }],
+            },
+            {
+              id: 'y',
+              kind: 'port',
+              label: 'y',
+              ports: [{ id: 'in', name: 'in', direction: 'output' }],
+            },
+          ],
+          edges: [{ id: 'a-y', source: 'a', target: 'y', sourcePort: 'out', targetPort: 'in' }],
+        },
+      },
+    };
 
-      const initialView = await buildViewModel(initialGraph, 'top', { version: 1, modules: {} });
-      const originalYPos = initialView.nodes.find(n => n.id === 'y')!.position.x;
-      const layout = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
+    const initialView = await buildViewModel(initialGraph, 'top', { version: 1, modules: {} });
+    const originalYPos = initialView.nodes.find((n) => n.id === 'y')!.position.x;
+    const layout = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
 
-      // Node 'a' should NOT be in the layout because it's not fixed
-      expect(layout.modules.top.nodes['a']).toBeUndefined();
+    // Node 'a' should NOT be in the layout because it's not fixed
+    expect(layout.modules.top.nodes['a']).toBeUndefined();
 
-      const expandedGraph: DesignGraph = {
-        ...initialGraph,
-        modules: {
-          top: {
-            ...initialGraph.modules.top,
-            nodes: [
-              ...initialGraph.modules.top.nodes,
-              { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'out', name: 'out', direction: 'output' }] },
-              { id: 'c', kind: 'comb', label: 'comb', ports: [
+    const expandedGraph: DesignGraph = {
+      ...initialGraph,
+      modules: {
+        top: {
+          ...initialGraph.modules.top,
+          nodes: [
+            ...initialGraph.modules.top.nodes,
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'out', name: 'out', direction: 'output' }],
+            },
+            {
+              id: 'c',
+              kind: 'comb',
+              label: 'comb',
+              ports: [
                 { id: 'in_a', name: 'in_a', direction: 'input' },
                 { id: 'in_b', name: 'in_b', direction: 'input' },
-                { id: 'out_y', name: 'out_y', direction: 'output' }
-              ] }
-            ],
-            edges: [
-              { id: 'a-c', source: 'a', target: 'c', sourcePort: 'out', targetPort: 'in_a' },
-              { id: 'b-c', source: 'b', target: 'c', sourcePort: 'out', targetPort: 'in_b' },
-              { id: 'c-y', source: 'c', target: 'y', sourcePort: 'out_y', targetPort: 'in' }
-            ]
-          }
-        }
-      };
+                { id: 'out_y', name: 'out_y', direction: 'output' },
+              ],
+            },
+          ],
+          edges: [
+            { id: 'a-c', source: 'a', target: 'c', sourcePort: 'out', targetPort: 'in_a' },
+            { id: 'b-c', source: 'b', target: 'c', sourcePort: 'out', targetPort: 'in_b' },
+            { id: 'c-y', source: 'c', target: 'y', sourcePort: 'out_y', targetPort: 'in' },
+          ],
+        },
+      },
+    };
 
-      const expandedView = await buildViewModel(expandedGraph, 'top', layout);
-      const newYPos = expandedView.nodes.find((node) => node.id === 'y')?.position.x;
+    const expandedView = await buildViewModel(expandedGraph, 'top', layout);
+    const newYPos = expandedView.nodes.find((node) => node.id === 'y')?.position.x;
 
-      expect(newYPos).toBeGreaterThan(originalYPos!);
-    });
+    expect(newYPos).toBeGreaterThan(originalYPos!);
+  });
   it('prevents auto-layout from moving nodes that are explicitly fixed', async () => {
     const initialGraph: DesignGraph = {
       rootModules: ['top'],
@@ -3091,18 +4057,26 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'a', kind: 'port', label: 'a', ports: [{ id: 'out', name: 'out', direction: 'input' }] },
-            { id: 'y', kind: 'port', label: 'y', ports: [{ id: 'in', name: 'in', direction: 'output' }] }
+            {
+              id: 'a',
+              kind: 'port',
+              label: 'a',
+              ports: [{ id: 'out', name: 'out', direction: 'input' }],
+            },
+            {
+              id: 'y',
+              kind: 'port',
+              label: 'y',
+              ports: [{ id: 'in', name: 'in', direction: 'output' }],
+            },
           ],
-          edges: [
-            { id: 'a-y', source: 'a', target: 'y', sourcePort: 'out', targetPort: 'in' }
-          ]
-        }
-      }
+          edges: [{ id: 'a-y', source: 'a', target: 'y', sourcePort: 'out', targetPort: 'in' }],
+        },
+      },
     };
 
     const initialView = await buildViewModel(initialGraph, 'top', { version: 1, modules: {} });
-    initialView.nodes.find(n => n.id === 'y')!.fixed = true;
+    initialView.nodes.find((n) => n.id === 'y')!.fixed = true;
     const layout = mergeNodePositions({ version: 1, modules: {} }, 'top', initialView.nodes);
 
     expect(layout.modules.top.nodes['y'].fixed).toBe(true);
@@ -3115,20 +4089,30 @@ describe('layout merge', () => {
           ...initialGraph.modules.top,
           nodes: [
             ...initialGraph.modules.top.nodes,
-            { id: 'b', kind: 'port', label: 'b', ports: [{ id: 'out', name: 'out', direction: 'output' }] },
-            { id: 'c', kind: 'comb', label: 'comb', ports: [
-              { id: 'in_a', name: 'in_a', direction: 'input' },
-              { id: 'in_b', name: 'in_b', direction: 'input' },
-              { id: 'out_y', name: 'out_y', direction: 'output' }
-            ] }
+            {
+              id: 'b',
+              kind: 'port',
+              label: 'b',
+              ports: [{ id: 'out', name: 'out', direction: 'output' }],
+            },
+            {
+              id: 'c',
+              kind: 'comb',
+              label: 'comb',
+              ports: [
+                { id: 'in_a', name: 'in_a', direction: 'input' },
+                { id: 'in_b', name: 'in_b', direction: 'input' },
+                { id: 'out_y', name: 'out_y', direction: 'output' },
+              ],
+            },
           ],
           edges: [
             { id: 'a-c', source: 'a', target: 'c', sourcePort: 'out', targetPort: 'in_a' },
             { id: 'b-c', source: 'b', target: 'c', sourcePort: 'out', targetPort: 'in_b' },
-            { id: 'c-y', source: 'c', target: 'y', sourcePort: 'out_y', targetPort: 'in' }
-          ]
-        }
-      }
+            { id: 'c-y', source: 'c', target: 'y', sourcePort: 'out_y', targetPort: 'in' },
+          ],
+        },
+      },
     };
 
     const expandedView = await buildViewModel(expandedGraph, 'top', layout);
@@ -3137,96 +4121,124 @@ describe('layout merge', () => {
     expect(newYPos).toBe(originalYPos!);
   });
 
-  it('gives stacked mux nodes enough bottom margin so backward edges clear the visual back-layer overhang', async () => {
-    // The back layer of a stacked node is rendered ARRAY_STACK_LANE_OFFSET (4 px) below the
-    // logical node boundary.  ELK routes edges outside ELK-node boundaries; the ELK node
-    // bottom = logical_bottom + bottom_margin.  If bottom_margin == 4 == ARRAY_STACK_LANE_OFFSET
-    // the route sits exactly on the back-layer skin, producing visible overlap.  We need
-    // bottom_margin > ARRAY_STACK_LANE_OFFSET so routes clear the skin entirely.
-    const ARRAY_STACK_LANE_OFFSET = 4; // mirror of arrayStackGeometry.ts
+  it(
+    'gives stacked mux nodes enough bottom margin so ' +
+      'backward edges clear the visual back-layer overhang',
+    async () => {
+      // The back layer of a stacked node is rendered ARRAY_STACK_LANE_OFFSET (4 px) below the
+      // logical node boundary.  ELK routes edges outside ELK-node boundaries; the ELK node
+      // bottom = logical_bottom + bottom_margin.  If bottom_margin == 4 == ARRAY_STACK_LANE_OFFSET
+      // the route sits exactly on the back-layer skin, producing visible overlap.  We need
+      // bottom_margin > ARRAY_STACK_LANE_OFFSET so routes clear the skin entirely.
+      const ARRAY_STACK_LANE_OFFSET = 4; // mirror of arrayStackGeometry.ts
 
-    // Topology mirrors array_address_write_enable_register:
-    //   inputs → write_en mux → addr mux → array register → outputs
-    //   array register Q feeds back to write_en mux.false and addr_mux.default
-    const stackedFeedbackGraph: DesignGraph = {
-      rootModules: ['top'],
-      generatedAt: 'now',
-      diagnostics: [],
-      modules: {
-        top: {
-          name: 'top',
-          file: 'top.sv',
-          ports: [],
-          nodes: [
-            {
-              id: 'wen_mux',
-              kind: 'mux',
-              label: 'if write_en',
-              ports: [
-                { id: 'wen_sel', name: 'sel', direction: 'input' },
-                { id: 'wen_true', name: 'true', direction: 'input' },
-                { id: 'wen_false', name: 'false', direction: 'input' },
-                { id: 'wen_out', name: 'out', direction: 'output' }
-              ],
-              metadata: { isArrayNode: true }
-            },
-            {
-              id: 'addr_mux',
-              kind: 'mux',
-              label: 'write address',
-              ports: [
-                { id: 'addr_sel', name: 'sel', direction: 'input' },
-                { id: 'addr_data', name: "2'b0", direction: 'input' },
-                { id: 'addr_default', name: 'default', direction: 'input' },
-                { id: 'addr_out', name: 'out', direction: 'output' }
-              ],
-              metadata: { isArrayNode: true }
-            },
-            {
-              id: 'reg',
-              kind: 'register',
-              label: 'storage',
-              ports: [
-                { id: 'reg_d', name: 'D', direction: 'input' },
-                { id: 'reg_clk', name: 'clk', direction: 'input' },
-                { id: 'reg_q', name: 'Q', direction: 'output' }
-              ],
-              metadata: { isArrayNode: true, clockSignal: 'clk' }
+      // Topology mirrors array_address_write_enable_register:
+      //   inputs → write_en mux → addr mux → array register → outputs
+      //   array register Q feeds back to write_en mux.false and addr_mux.default
+      const stackedFeedbackGraph: DesignGraph = {
+        rootModules: ['top'],
+        generatedAt: 'now',
+        diagnostics: [],
+        modules: {
+          top: {
+            name: 'top',
+            file: 'top.sv',
+            ports: [],
+            nodes: [
+              {
+                id: 'wen_mux',
+                kind: 'mux',
+                label: 'if write_en',
+                ports: [
+                  { id: 'wen_sel', name: 'sel', direction: 'input' },
+                  { id: 'wen_true', name: 'true', direction: 'input' },
+                  { id: 'wen_false', name: 'false', direction: 'input' },
+                  { id: 'wen_out', name: 'out', direction: 'output' },
+                ],
+                metadata: { isArrayNode: true },
+              },
+              {
+                id: 'addr_mux',
+                kind: 'mux',
+                label: 'write address',
+                ports: [
+                  { id: 'addr_sel', name: 'sel', direction: 'input' },
+                  { id: 'addr_data', name: "2'b0", direction: 'input' },
+                  { id: 'addr_default', name: 'default', direction: 'input' },
+                  { id: 'addr_out', name: 'out', direction: 'output' },
+                ],
+                metadata: { isArrayNode: true },
+              },
+              {
+                id: 'reg',
+                kind: 'register',
+                label: 'storage',
+                ports: [
+                  { id: 'reg_d', name: 'D', direction: 'input' },
+                  { id: 'reg_clk', name: 'clk', direction: 'input' },
+                  { id: 'reg_q', name: 'Q', direction: 'output' },
+                ],
+                metadata: { isArrayNode: true, clockSignal: 'clk' },
+              },
+            ],
+            edges: [
+              {
+                id: 'wen-addr',
+                source: 'wen_mux',
+                sourcePort: 'wen_out',
+                target: 'addr_mux',
+                targetPort: 'addr_data',
+              },
+              {
+                id: 'addr-reg',
+                source: 'addr_mux',
+                sourcePort: 'addr_out',
+                target: 'reg',
+                targetPort: 'reg_d',
+              },
+              // Backward feedback edges: reg Q drives both mux hold inputs
+              {
+                id: 'reg-wen-fb',
+                source: 'reg',
+                sourcePort: 'reg_q',
+                target: 'wen_mux',
+                targetPort: 'wen_false',
+              },
+              {
+                id: 'reg-addr-fb',
+                source: 'reg',
+                sourcePort: 'reg_q',
+                target: 'addr_mux',
+                targetPort: 'addr_default',
+              },
+            ],
+          },
+        },
+      };
+
+      const view = await buildViewModel(stackedFeedbackGraph, 'top', { version: 1, modules: {} });
+
+      const wenMux = view.nodes.find((n) => n.id === 'wen_mux')!;
+      const addrMux = view.nodes.find((n) => n.id === 'addr_mux')!;
+      expect(wenMux).toBeDefined();
+      expect(addrMux).toBeDefined();
+
+      // Any route point that dips below a stacked mux's logical bottom must also clear the
+      // back-layer overhang.  With only 4 px bottom margin the route lands exactly at the
+      // back-layer skin; with edgeLeadLength margin it lands well below it.
+      for (const edge of view.edges) {
+        if (!edge.routePoints) continue;
+        for (const point of edge.routePoints) {
+          for (const mux of [wenMux, addrMux]) {
+            const muxLogicalBottom = mux.position.y + diagramNodeDimensions(mux).height;
+            if (point.y > muxLogicalBottom) {
+              expect(point.y).toBeGreaterThan(muxLogicalBottom + ARRAY_STACK_LANE_OFFSET);
             }
-          ],
-          edges: [
-            { id: 'wen-addr', source: 'wen_mux', sourcePort: 'wen_out', target: 'addr_mux', targetPort: 'addr_data' },
-            { id: 'addr-reg', source: 'addr_mux', sourcePort: 'addr_out', target: 'reg', targetPort: 'reg_d' },
-            // Backward feedback edges: reg Q drives both mux hold inputs
-            { id: 'reg-wen-fb', source: 'reg', sourcePort: 'reg_q', target: 'wen_mux', targetPort: 'wen_false' },
-            { id: 'reg-addr-fb', source: 'reg', sourcePort: 'reg_q', target: 'addr_mux', targetPort: 'addr_default' }
-          ]
-        }
-      }
-    };
-
-    const view = await buildViewModel(stackedFeedbackGraph, 'top', { version: 1, modules: {} });
-
-    const wenMux = view.nodes.find((n) => n.id === 'wen_mux')!;
-    const addrMux = view.nodes.find((n) => n.id === 'addr_mux')!;
-    expect(wenMux).toBeDefined();
-    expect(addrMux).toBeDefined();
-
-    // Any route point that dips below a stacked mux's logical bottom must also clear the
-    // back-layer overhang.  With only 4 px bottom margin the route lands exactly at the
-    // back-layer skin; with edgeLeadLength margin it lands well below it.
-    for (const edge of view.edges) {
-      if (!edge.routePoints) continue;
-      for (const point of edge.routePoints) {
-        for (const mux of [wenMux, addrMux]) {
-          const muxLogicalBottom = mux.position.y + diagramNodeDimensions(mux).height;
-          if (point.y > muxLogicalBottom) {
-            expect(point.y).toBeGreaterThan(muxLogicalBottom + ARRAY_STACK_LANE_OFFSET);
           }
         }
       }
-    }
-  });
+    },
+  );
 
   it('keeps forward register fanout routes from backtracking through blocks', async () => {
     const stackedFanoutGraph: DesignGraph = {
@@ -3247,9 +4259,9 @@ describe('layout merge', () => {
                 { id: 'sel', name: 'sel', direction: 'input' },
                 { id: 'wen_true', name: 'true', direction: 'input' },
                 { id: 'wen_false', name: 'false', direction: 'input' },
-                { id: 'out', name: 'out', direction: 'output' }
+                { id: 'out', name: 'out', direction: 'output' },
               ],
-              metadata: { isArrayNode: true }
+              metadata: { isArrayNode: true },
             },
             {
               id: 'addr_mux',
@@ -3259,9 +4271,9 @@ describe('layout merge', () => {
                 { id: 'sel', name: 'sel', direction: 'input' },
                 { id: 'addr_data', name: "2'b0", direction: 'input' },
                 { id: 'addr_default', name: 'default', direction: 'input' },
-                { id: 'out', name: 'out', direction: 'output' }
+                { id: 'out', name: 'out', direction: 'output' },
               ],
-              metadata: { isArrayNode: true }
+              metadata: { isArrayNode: true },
             },
             {
               id: 'reg',
@@ -3270,26 +4282,56 @@ describe('layout merge', () => {
               ports: [
                 { id: 'd', name: 'D', direction: 'input' },
                 { id: 'q', name: 'Q', direction: 'output' },
-                { id: 'clk', name: 'clk', direction: 'input' }
+                { id: 'clk', name: 'clk', direction: 'input' },
               ],
-              metadata: { isArrayNode: true, clockSignal: 'clk' }
+              metadata: { isArrayNode: true, clockSignal: 'clk' },
             },
             {
               id: 'out_data',
               kind: 'port',
               label: 'out_data',
-              ports: [{ id: 'out_data', name: 'out_data', direction: 'output' }]
-            }
+              ports: [{ id: 'out_data', name: 'out_data', direction: 'output' }],
+            },
           ],
           edges: [
-            { id: 'wen-addr', source: 'wen_mux', sourcePort: 'out', target: 'addr_mux', targetPort: 'addr_data' },
-            { id: 'addr-reg', source: 'addr_mux', sourcePort: 'out', target: 'reg', targetPort: 'd' },
-            { id: 'reg-out', source: 'reg', sourcePort: 'q', target: 'out_data', targetPort: 'out_data' },
-            { id: 'reg-wen-fb', source: 'reg', sourcePort: 'q', target: 'wen_mux', targetPort: 'wen_false' },
-            { id: 'reg-addr-fb', source: 'reg', sourcePort: 'q', target: 'addr_mux', targetPort: 'addr_default' }
-          ]
-        }
-      }
+            {
+              id: 'wen-addr',
+              source: 'wen_mux',
+              sourcePort: 'out',
+              target: 'addr_mux',
+              targetPort: 'addr_data',
+            },
+            {
+              id: 'addr-reg',
+              source: 'addr_mux',
+              sourcePort: 'out',
+              target: 'reg',
+              targetPort: 'd',
+            },
+            {
+              id: 'reg-out',
+              source: 'reg',
+              sourcePort: 'q',
+              target: 'out_data',
+              targetPort: 'out_data',
+            },
+            {
+              id: 'reg-wen-fb',
+              source: 'reg',
+              sourcePort: 'q',
+              target: 'wen_mux',
+              targetPort: 'wen_false',
+            },
+            {
+              id: 'reg-addr-fb',
+              source: 'reg',
+              sourcePort: 'q',
+              target: 'addr_mux',
+              targetPort: 'addr_default',
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(stackedFanoutGraph, 'top', {
@@ -3300,10 +4342,10 @@ describe('layout merge', () => {
             reg: { x: 360, y: 216, fixed: true },
             wen_mux: { x: 768, y: 120, fixed: true },
             addr_mux: { x: 1128, y: 120, fixed: true },
-            out_data: { x: 768, y: 252, fixed: true }
-          }
-        }
-      }
+            out_data: { x: 768, y: 252, fixed: true },
+          },
+        },
+      },
     });
 
     const reg = view.nodes.find((node) => node.id === 'reg')!;
@@ -3319,7 +4361,9 @@ describe('layout merge', () => {
     const addrRoute = view.edges.find((edge) => edge.id === 'reg-addr-fb')!.routePoints!;
     expect(routeCrossesNodeInterior(addrRoute, wenMux)).toBe(false);
     expect(routeCrossesNodeInterior(addrRoute, outData)).toBe(false);
-    expect(Math.max(...addrRoute.map((point) => point.y))).toBeGreaterThan(outData.position.y + diagramNodeDimensions(outData).height);
+    expect(Math.max(...addrRoute.map((point) => point.y))).toBeGreaterThan(
+      outData.position.y + diagramNodeDimensions(outData).height,
+    );
   });
 
   it('keeps source-side fanout stems off the source lead', async () => {
@@ -3333,15 +4377,20 @@ describe('layout merge', () => {
           file: 'top.sv',
           ports: [],
           nodes: [
-            { id: 'data', kind: 'port', label: 'data', ports: [{ id: 'data', name: 'data', direction: 'input' }] },
+            {
+              id: 'data',
+              kind: 'port',
+              label: 'data',
+              ports: [{ id: 'data', name: 'data', direction: 'input' }],
+            },
             {
               id: 'upper',
               kind: 'loop',
               label: 'loop',
               ports: [
                 { id: 'in', name: 'in', direction: 'input' },
-                { id: 'out', name: 'out', direction: 'output' }
-              ]
+                { id: 'out', name: 'out', direction: 'output' },
+              ],
             },
             {
               id: 'lower',
@@ -3349,16 +4398,28 @@ describe('layout merge', () => {
               label: 'loop',
               ports: [
                 { id: 'in', name: 'in', direction: 'input' },
-                { id: 'out', name: 'out', direction: 'output' }
-              ]
-            }
+                { id: 'out', name: 'out', direction: 'output' },
+              ],
+            },
           ],
           edges: [
-            { id: 'data-upper', source: 'data', sourcePort: 'data', target: 'upper', targetPort: 'in' },
-            { id: 'data-lower', source: 'data', sourcePort: 'data', target: 'lower', targetPort: 'in' }
-          ]
-        }
-      }
+            {
+              id: 'data-upper',
+              source: 'data',
+              sourcePort: 'data',
+              target: 'upper',
+              targetPort: 'in',
+            },
+            {
+              id: 'data-lower',
+              source: 'data',
+              sourcePort: 'data',
+              target: 'lower',
+              targetPort: 'in',
+            },
+          ],
+        },
+      },
     };
 
     const view = await buildViewModel(fanoutGraph, 'top', {
@@ -3368,15 +4429,16 @@ describe('layout merge', () => {
           nodes: {
             data: { x: 24, y: 36, fixed: true },
             upper: { x: 408, y: 24, fixed: true },
-            lower: { x: 408, y: 144, fixed: true }
-          }
-        }
-      }
+            lower: { x: 408, y: 144, fixed: true },
+          },
+        },
+      },
     });
 
     const source = view.nodes.find((node) => node.id === 'data')!;
     const route = view.edges.find((edge) => edge.id === 'data-lower')!.routePoints!;
-    const sourceLeadX = source.position.x + diagramNodeDimensions(source).width + diagramSizing.edgeLeadLength;
+    const sourceLeadX =
+      source.position.x + diagramNodeDimensions(source).width + diagramSizing.edgeLeadLength;
 
     expect(route[0].x).toBe(sourceLeadX);
     expect(route[1].x).toBeGreaterThan(sourceLeadX);

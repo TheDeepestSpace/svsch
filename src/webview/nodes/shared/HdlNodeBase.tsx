@@ -17,7 +17,8 @@ export interface HdlNodeBaseProps {
   extraContent?: React.ReactNode;
   handles: React.ReactNode;
   selection?: React.ReactNode;
-  /** Resize hit-zones (register/instance only) — rendered after selection, before the warning icon, matching every kind's DOM order. */
+  /** Resize hit-zones (register/instance only) — rendered after selection, before the warning
+   * icon, matching every kind's DOM order. */
   resizeControls?: React.ReactNode;
   warningIcon: React.ReactNode;
 }
@@ -44,7 +45,7 @@ export function HdlNodeBase({
   handles,
   selection,
   resizeControls,
-  warningIcon
+  warningIcon,
 }: HdlNodeBaseProps): React.ReactElement {
   return (
     <button
@@ -55,7 +56,12 @@ export function HdlNodeBase({
       title={title}
       onDoubleClick={onDoubleClick}
     >
-      <svg className={svgClassName ? `hdl-node-svg ${svgClassName}` : 'hdl-node-svg'} width={width} height={height} aria-hidden="true">
+      <svg
+        className={svgClassName ? `hdl-node-svg ${svgClassName}` : 'hdl-node-svg'}
+        width={width}
+        height={height}
+        aria-hidden="true"
+      >
         {svg}
       </svg>
       {extraContent}

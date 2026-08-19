@@ -27,24 +27,27 @@ export function ArrayStackSkinRect({
   height,
   x,
   y,
-  className
+  className,
 }: ArrayStackSkinRectProps): React.ReactElement {
   const baseClass = className ? `svsch-node-shape ${className}` : 'svsch-node-shape';
 
   return (
     <>
-      {isArray && skinLayers.filter((layer) => layer.id !== 'front').map((layer) => (
-        <rect
-          key={layer.id}
-          className={`${baseClass} hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          x={x}
-          y={y}
-          width={width}
-          height={height}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
+      {isArray &&
+        skinLayers
+          .filter((layer) => layer.id !== 'front')
+          .map((layer) => (
+            <rect
+              key={layer.id}
+              className={`${baseClass} hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
+              transform={`translate(${layer.dx}, ${layer.dy})`}
+              x={x}
+              y={y}
+              width={width}
+              height={height}
+              opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+            />
+          ))}
       <rect
         className={`${baseClass}${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
         transform={shapeTransform}

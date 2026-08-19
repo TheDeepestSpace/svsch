@@ -1,16 +1,31 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
+import {
+  nodeArrayDimension,
+  nodeIsArrayNode,
+  nodeTypeName,
+  nodeTypeSource,
+  nodeWidth as metadataNodeWidth,
+} from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { normalizeWidth } from '../../../diagram/constants';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
-import { hasArrayConnection as sharedHasArrayConnection, arrayConnectionThick as sharedArrayConnectionThick } from '../shared/arrayConnections';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
-export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function LiteralNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const stackLayers = arrayStackLayersFor(stackWide);
@@ -68,7 +83,13 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
         height={shapeHeight}
         className="svsch-literal-shape"
       />
-      <text className="svsch-node-title svsch-literal-content" x={Math.round(width / 2 + contentShiftX)} y={Math.round(height / 2 + contentShiftY)} textAnchor="middle" dominantBaseline="middle">
+      <text
+        className="svsch-node-title svsch-literal-content"
+        x={Math.round(width / 2 + contentShiftX)}
+        y={Math.round(height / 2 + contentShiftY)}
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
@@ -83,7 +104,11 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
           </tspan>
         ) : widthSuffix ? (
           <tspan dx={suffixGap}>
-            <SvgParameterizedText text={widthSuffix} refs={outputPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+            <SvgParameterizedText
+              text={widthSuffix}
+              refs={outputPort?.parameterRefs}
+              onNavigateToSource={onNavigateToSource}
+            />
           </tspan>
         ) : null}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
@@ -109,17 +134,30 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
         />
       )}
       {isArray && arrayDim && (
-        <text className="svsch-node-kind svsch-array-badge" x={Math.round(width + 3)} y={-4} textAnchor="start">
+        <text
+          className="svsch-node-kind svsch-array-badge"
+          x={Math.round(width + 3)}
+          y={-4}
+          textAnchor="start"
+        >
           {arrayDim}
         </text>
       )}
 
       {/* Array stack leads */}
-      {isArray && outputs.map((port: DiagramPort) =>
-        hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={port.id} side="right" width={width} y={Math.round(height / 2)} />
-        ) : null
-      )}
+      {isArray &&
+        outputs.map((port: DiagramPort) =>
+          hasArrayConnection(port.id, 'source') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'source')}
+              key={port.id}
+              side="right"
+              width={width}
+              y={Math.round(height / 2)}
+            />
+          ) : null,
+        )}
     </>
   );
 }

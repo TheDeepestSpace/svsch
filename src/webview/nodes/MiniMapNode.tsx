@@ -6,7 +6,7 @@ import {
   distributedInterfaceSideCenters,
   interfaceSkinPath,
   interfaceTopHatHeight,
-  orderedInterfaceSidePorts
+  orderedInterfaceSidePorts,
 } from '../../diagram/interfaceGeometry';
 import { structRole, nodeTypeName, gateBodyOperation, gateIsNegated } from '../../ir/nodeMetadata';
 import { busTapPortCenterY } from '../../diagram/busGeometry';
@@ -14,13 +14,30 @@ import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
 import { isInputSidePort } from '../../diagram/portDirection';
 
-export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeProps): React.ReactElement | null {
+export function MiniMapNode({
+  id,
+  x,
+  y,
+  width,
+  height,
+  className,
+}: MiniMapNodeProps): React.ReactElement | null {
   const nodes = useNodes<HdlFlowNode>();
   const flowNode = nodes.find((n: HdlFlowNode) => n.id === id);
   const node = flowNode?.data.node;
 
   if (!node) {
-    return <rect x={x} y={y} width={width} height={height} className={className} data-minimap-node-id={id} fill="var(--vscode-editor-foreground)" />;
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        className={className}
+        data-minimap-node-id={id}
+        fill="var(--vscode-editor-foreground)"
+      />
+    );
   }
 
   if (node.kind === 'netLabel') {
@@ -44,16 +61,13 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
 
     const sidePorts = aggregatePorts;
     const aggregateInputs = sidePorts.filter(isInputSidePort);
-    const aggregateOutputs = sidePorts.filter(
-      (p) => p.direction === 'output'
-    );
+    const aggregateOutputs = sidePorts.filter((p) => p.direction === 'output');
 
-    const isComposition =
-      isStruct
-        ? role === 'composition'
-        : isInterface
-          ? false
-          : aggregateInputs.length > 1;
+    const isComposition = isStruct
+      ? role === 'composition'
+      : isInterface
+        ? false
+        : aggregateInputs.length > 1;
 
     const isArrayAggregate = isBus && node.metadata?.aggregateKind === 'array';
 
@@ -67,21 +81,23 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
 
     if (taps.length > 0) {
       const { width: actualWidth, height: actualHeight } = diagramNodeDimensions(node);
-      const tapCenters = taps.map((_, i) =>
-        busTapPortCenterY(i, isInterfaceModport ? 2 : 1)
-      );
+      const tapCenters = taps.map((_, i) => busTapPortCenterY(i, isInterfaceModport ? 2 : 1));
 
       const isModuleInterfaceModport = isInterfaceModport && node.label !== nodeTypeName(node);
       const pipeY = isModuleInterfaceModport ? 0 : tapCenters[0] - g / 2;
-      const pipeH = isModuleInterfaceModport ? tapCenters[tapCenters.length - 1] + g / 2 : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
+      const pipeH = isModuleInterfaceModport
+        ? tapCenters[tapCenters.length - 1] + g / 2
+        : tapCenters[tapCenters.length - 1] - tapCenters[0] + g;
 
       const pipeX = isArrayAggregate
         ? isComposition
           ? actualWidth - g * 0.5 - 3
           : g * 0.5 - 3
         : isInterfaceModport
-        ? Math.round(actualWidth / 2) - 3
-        : isComposition ? actualWidth - (isStruct ? 8 : 6) : 0;
+          ? Math.round(actualWidth / 2) - 3
+          : isComposition
+            ? actualWidth - (isStruct ? 8 : 6)
+            : 0;
 
       const pipeWidth = isStruct ? 8 : 6;
 
@@ -129,7 +145,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
     }
   }
 
-  const noseLength = node.kind === 'port' ? (diagramSizing.portNoseLength / diagramSizing.portWidth) * width : 0;
+  const noseLength =
+    node.kind === 'port' ? (diagramSizing.portNoseLength / diagramSizing.portWidth) * width : 0;
   const midY = y + height / 2;
 
   let path = `M ${x} ${y} h ${width} v ${height} h ${-width} Z`;
@@ -165,7 +182,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
   } else if (node.kind === 'inverter') {
     const side = height / 2;
     const bubbleRadius = Math.min(width / 12, side / 3);
-    const bodyRight = x + side * Math.sqrt(3) / 2;
+    const bodyRight = x + (side * Math.sqrt(3)) / 2;
     const bubbleCx = bodyRight + bubbleRadius;
     const triTop = midY - side / 2;
     const triBottom = midY + side / 2;
@@ -176,7 +193,7 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
       'Z',
       `M ${bubbleCx - bubbleRadius} ${midY}`,
       `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${bubbleRadius * 2} 0`,
-      `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${-bubbleRadius * 2} 0`
+      `a ${bubbleRadius} ${bubbleRadius} 0 1 0 ${-bubbleRadius * 2} 0`,
     ].join(' ');
   } else if (node.kind === 'gate') {
     const bodyOp = gateBodyOperation(node);
@@ -191,7 +208,8 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
     const left = xorGap;
     const right = width - bubbleRadius * 2;
     const gateMidY = height / 2;
-    const bodyPath = bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
+    const bodyPath =
+      bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
     const bubbleCx = right + bubbleRadius;
 
     return (
@@ -233,29 +251,48 @@ export function MiniMapNode({ id, x, y, width, height, className }: MiniMapNodeP
     );
   } else if (node.kind === 'interface') {
     const role = structRole(node);
-    const isInterfaceInstance = role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
+    const isInterfaceInstance =
+      role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
     if (isInterfaceInstance) {
       const { width: actualWidth, height: actualHeight } = diagramNodeDimensions(node);
       const scaleX = width / actualWidth;
       const scaleY = height / actualHeight;
-      const aggregatePorts = node.ports.filter((port) => port.width !== 'interface' || port.preferredSide);
-      const topPorts = aggregatePorts.filter(p => p.direction === 'input' && p.width !== 'interface');
-      const bottomPorts = aggregatePorts.filter(p => p.direction === 'output' && p.width !== 'interface');
-      const sidePorts = aggregatePorts.filter(p => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'));
+      const aggregatePorts = node.ports.filter(
+        (port) => port.width !== 'interface' || port.preferredSide,
+      );
+      const topPorts = aggregatePorts.filter(
+        (p) => p.direction === 'input' && p.width !== 'interface',
+      );
+      const bottomPorts = aggregatePorts.filter(
+        (p) => p.direction === 'output' && p.width !== 'interface',
+      );
+      const sidePorts = aggregatePorts.filter(
+        (p) => p.width === 'interface' || (p.direction !== 'input' && p.direction !== 'output'),
+      );
       const orderedSide = orderedInterfaceSidePorts(sidePorts);
       const topHatHeight = interfaceTopHatHeight(topPorts.length > 0);
       const bottomHatHeight = interfaceTopHatHeight(bottomPorts.length > 0);
       const shiftY = diagramSizing.interfaceInstanceShiftY;
       const unshiftedHeight = Math.max(diagramSizing.gridSize, actualHeight - shiftY);
-      const leftCenters = distributedInterfaceSideCenters(orderedSide.left.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
-      const rightCenters = distributedInterfaceSideCenters(orderedSide.right.length, unshiftedHeight, topHatHeight, bottomHatHeight).map(c => c + shiftY);
+      const leftCenters = distributedInterfaceSideCenters(
+        orderedSide.left.length,
+        unshiftedHeight,
+        topHatHeight,
+        bottomHatHeight,
+      ).map((c) => c + shiftY);
+      const rightCenters = distributedInterfaceSideCenters(
+        orderedSide.right.length,
+        unshiftedHeight,
+        topHatHeight,
+        bottomHatHeight,
+      ).map((c) => c + shiftY);
       const { path: skinPath } = interfaceSkinPath({
         width: actualWidth,
         height: actualHeight,
         leftCenters,
         rightCenters,
         topPortCount: topPorts.length,
-        bottomPortCount: bottomPorts.length
+        bottomPortCount: bottomPorts.length,
       });
       return (
         <g transform={`translate(${x}, ${y}) scale(${scaleX}, ${scaleY})`}>

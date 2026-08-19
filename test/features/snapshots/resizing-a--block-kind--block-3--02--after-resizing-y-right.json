@@ -154,7 +154,7 @@
       "target": "reg:top:y",
       "sourceHandle": "port:a",
       "targetHandle": "d",
-      "path": "M 157 148 L 451 148"
+      "path": "M 151 148 L 451 148"
     },
     {
       "id": "edge:reg:top:y:port:top:y:y",
@@ -162,7 +162,7 @@
       "target": "port:top:y",
       "sourceHandle": "q",
       "targetHandle": "port:y",
-      "path": "M 637 148 L 763 148"
+      "path": "M 631 148 L 763 148"
     }
   ]
 }

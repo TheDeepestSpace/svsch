@@ -12,7 +12,10 @@ const root = path.resolve(__dirname, '..');
 // skipped.
 const BENCHMARK_SAMPLE_LOGS = [
   {
-    samplesLogFile: path.join(root, 'test-results/visual/artifacts/diagram-elaboration-samples.log'),
+    samplesLogFile: path.join(
+      root,
+      'test-results/visual/artifacts/diagram-elaboration-samples.log',
+    ),
     benchmarkFile: path.join(root, 'test-results/visual/artifacts/benchmark-elaboration.json'),
   },
   {
