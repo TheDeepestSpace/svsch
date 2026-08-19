@@ -259,12 +259,50 @@ jobs:
       - name: Discard test-generated snapshot changes
         # The visual test suite can self-heal committed baseline snapshots
         # (e.g. restoring missing port data) during a run, leaving tracked
-        # files modified; drop those CI-only changes so the workspace stays
-        # clean for the artifact upload steps below.
+        # files modified. benchmark-action then fails to switch to gh-pages
+        # over a dirty tree, so drop those CI-only changes first.
         run: git checkout -- test/visual/__screenshots__
 
+      - name: Track diagram-generation benchmark (visual elaboration)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: visual-elaboration-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/visual/artifacts/benchmark-elaboration.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.ref == 'refs/heads/master' }}
+          # PR comments are posted once, combined across suites, by the
+          # report_benchmarks job below instead of per-suite here.
+          comment-always: false
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Reset local gh-pages ref before second benchmark track
+        # The elaboration step above left a local `gh-pages` branch ref behind
+        # (from its own internal fetch); a second benchmark-action invocation
+        # in the same job fetches into that same ref name, and since it's not
+        # an ancestor of the freshly fetched remote tip, git rejects it as a
+        # non-fast-forward update. Drop it so the rendering step starts clean.
+        run: git branch -D gh-pages || true
+
+      - name: Track diagram-generation benchmark (visual rendering)
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: visual-rendering-diagram-generation-duration
+          tool: customSmallerIsBetter
+          output-file-path: test-results/visual/artifacts/benchmark-rendering.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.ref == 'refs/heads/master' }}
+          comment-always: false
+          comment-on-alert: false
+          fail-on-alert: false
+
       - name: Upload benchmark result (visual)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: benchmark-visual
           path: |
