@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import packageJson from '../../package.json';
-import { DEFAULT_CLOCK_SIGNAL_NAMES, DEFAULT_RESET_SIGNAL_NAMES } from '../../src/parser/textExtractor';
+import {
+  DEFAULT_CLOCK_SIGNAL_NAMES,
+  DEFAULT_RESET_SIGNAL_NAMES,
+} from '../../src/parser/textExtractor';
 
 // extractor.hpp is C++ and can't import the TS defaults, so its own
 // hardcoded defaults are parsed out here and checked for drift too.
@@ -11,7 +14,7 @@ const extractorHpp = readFileSync(EXTRACTOR_HPP_PATH, 'utf-8');
 
 function parseBackendDefault(fieldName: string): string[] {
   const match = extractorHpp.match(
-    new RegExp(`std::vector<std::string>\\s+${fieldName}\\s*=\\s*\\{([^}]*)\\}`)
+    new RegExp(`std::vector<std::string>\\s+${fieldName}\\s*=\\s*\\{([^}]*)\\}`),
   );
   if (!match) throw new Error(`Could not find default for ${fieldName} in extractor.hpp`);
   return match[1]

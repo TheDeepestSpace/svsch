@@ -321,7 +321,7 @@
       "target": "reg:array_register:M",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1699.5 414 L 1710 414 L 1710 486 L 654 486 L 654 342 L 366 342 L 366 414 L 376.5 414"
+      "path": "M 1690.5 414 L 1710 414 L 1710 486 L 654 486 L 654 342 L 366 342 L 366 414 L 376.5 414"
     },
     {
       "id": "edge:mux:array_register:M_address_:rst:M_rst_candidate:mux:array_register:M_addr:M_rst_candidate",
@@ -329,7 +329,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "out",
       "targetHandle": "in:3_b0",
-      "path": "M 1339.5 342 L 1446 342 L 1446 414 L 1528.5 414"
+      "path": "M 1330.5 342 L 1446 342 L 1446 414 L 1528.5 414"
     },
     {
       "id": "edge:mux:array_register:M_address_:write_en:M_address__next:mux:array_register:M_address_:rst:M_rst_candidate:M_address__next",
@@ -337,7 +337,7 @@
       "target": "mux:array_register:M_address_:rst:M_rst_candidate",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 883.5 390 L 1038 390 L 1038 366 L 1168.5 366"
+      "path": "M 874.5 390 L 1038 390 L 1038 366 L 1168.5 366"
     },
     {
       "id": "edge:mux:array_register:M_read_address:port:array_register:read_data:read_data",
@@ -401,7 +401,7 @@
       "target": "mux:array_register:M_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 547.5 414 L 636 414 Q 648 402 660 414 L 726 414 L 726 462 L 1206 462 L 1206 438 L 1528.5 438"
+      "path": "M 538.5 414 L 636 414 Q 648 402 660 414 L 726 414 L 726 462 L 1206 462 L 1206 438 L 1528.5 438"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_address_:write_en:M_address__next:M",
@@ -409,7 +409,7 @@
       "target": "mux:array_register:M_address_:write_en:M_address__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 547.5 414 L 636 414 Q 648 402 660 414 L 760.5 414"
+      "path": "M 538.5 414 L 636 414 Q 648 402 660 414 L 760.5 414"
     },
     {
       "id": "edge:reg:array_register:M:mux:array_register:M_read_address:M",
@@ -417,7 +417,7 @@
       "target": "mux:array_register:M_read_address",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 547.5 414 L 726 414 L 726 126 L 744 126"
+      "path": "M 538.5 414 L 726 414 L 726 126 L 744 126"
     }
   ]
 }

@@ -6,10 +6,7 @@ import { expect } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildDesignGraph } from '../../src/parser/backend';
-import {
-  buildViewModel,
-  mergeNodePositions,
-} from '../../src/layout/mergeLayout';
+import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
 import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
@@ -22,10 +19,7 @@ export class BddWorld {
   // Set in Before hook from Playwright fixtures
   workbox!: Page;
   webviewPage!: FrameLocator;
-  evaluateInVSCode!: <R, Arg = void>(
-    fn: (vscode: any, arg: Arg) => R,
-    arg?: Arg
-  ) => Promise<R>;
+  evaluateInVSCode!: <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
   testInfo!: import('@playwright/test').TestInfo;
 
   // Scenario metadata
@@ -59,12 +53,16 @@ export class BddWorld {
 
   // Remembered positions/routes for assertions
   notedPositions: Map<string, { x: number; y: number }> = new Map();
-  notedRegionBounds: Map<string, { x: number; y: number; width: number; height: number }> = new Map();
-  notedGenerateRegionMoves: Map<string, {
-    nodePositions: Map<string, { x: number; y: number }>;
-    outsideNodePositions: Map<string, { x: number; y: number }>;
-    expectedDelta: { x: number; y: number };
-  }> = new Map();
+  notedRegionBounds: Map<string, { x: number; y: number; width: number; height: number }> =
+    new Map();
+  notedGenerateRegionMoves: Map<
+    string,
+    {
+      nodePositions: Map<string, { x: number; y: number }>;
+      outsideNodePositions: Map<string, { x: number; y: number }>;
+      expectedDelta: { x: number; y: number };
+    }
+  > = new Map();
   pendingNodeDrag?: {
     nodeId: string;
     label: string;
@@ -89,92 +87,109 @@ export class BddWorld {
       const safeScenarioName = this.scenarioName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
       const scenarioId = this.isScenarioOutline ? `-${this.scenarioExampleIndex}` : '';
       const safeLabel = label.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-      const snapshotName = `${safeScenarioName}${scenarioId}--${this.stepCounter.toString().padStart(2, '0')}--${safeLabel}`;
-      const graphState = await this.webviewPage.locator('html').evaluate(() => {
-        const rf = (window as any).reactFlowInstance;
-        if (!rf) return { nodes: [], edges: [] };
-        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
-        const nodeMap = new Map<string, Element>();
-        for (const el of nodeElems) {
-          const id = el.getAttribute('data-id');
-          if (id) nodeMap.set(id, el);
-        }
-        const nodes = rf.getNodes().map((n: any) => {
-          const nodeElement = nodeMap.get(n.id);
-          const warningNote = nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label')
-            ?? n.data?.node?.warningNote
-            ?? undefined;
-          return {
-            id: n.id, type: n.type,
-            position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
-            width: Math.round(n.measured?.width ?? n.width ?? 0),
-            height: Math.round(n.measured?.height ?? n.height ?? 0),
-            data: n.data ? {
-              label: n.data.label,
-              kind: n.data.node?.kind,
-              ports: n.data.node?.ports?.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                side: p.side,
-                direction: p.direction,
-                metadata: p.metadata,
-              })),
-            } : undefined,
-            active: nodeElement?.classList.contains('generate-node-active') || undefined,
-            inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined,
-            invalid: nodeElement?.classList.contains('svsch-node-invalid') || undefined,
-            warningNote,
-          };
-        });
-        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
-        const edgeMap = new Map<string, Element>();
-        for (const el of edgeElems) {
-          const id = el.getAttribute('data-id');
-          if (id) edgeMap.set(id, el);
-        }
-        const edges = rf.getEdges().map((e: any) => {
-          const edgeEl = edgeMap.get(e.id);
-          const el = edgeEl?.querySelector('path.svsch-edge, path.react-flow__edge-path');
-          return { id: e.id, source: e.source, target: e.target,
-            sourceHandle: e.sourceHandle ?? null, targetHandle: e.targetHandle ?? null,
-            path: el?.getAttribute('d') ?? '',
-            active: edgeEl?.classList.contains('generate-edge-active') || undefined,
-            inactive: edgeEl?.classList.contains('generate-edge-inactive') || undefined };
-        });
-        const regions = Array.from(document.querySelectorAll('.generate-region')).map((region: Element) => {
-          const element = region as HTMLElement;
-          const title = element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
-          const warningNote = element.dataset.warningNote
-            ?? element.querySelector('.generate-region-warning')?.getAttribute('aria-label')
-            ?? element.querySelector('.generate-region-note')?.textContent?.trim()
-            ?? undefined;
-          return {
-            id: element.dataset.regionId ?? '',
-            kind: element.dataset.regionKind,
-            label: title,
-            bounds: {
-              x: Math.round(Number.parseFloat(element.style.left || '0')),
-              y: Math.round(Number.parseFloat(element.style.top || '0')),
-              width: Math.round(Number.parseFloat(element.style.width || '0')),
-              height: Math.round(Number.parseFloat(element.style.height || '0')),
-            },
-            active: element.classList.contains('generate-region-active') || undefined,
-            inactive: element.classList.contains('generate-region-inactive') || undefined,
-            invalid: element.classList.contains('generate-region-invalid') || undefined,
-            warningNote,
-          };
-        }).filter(region => region.id);
-        nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
-        edges.sort((a: any, b: any) => a.id.localeCompare(b.id));
-        regions.sort((a: any, b: any) => a.id.localeCompare(b.id));
-        return regions.length > 0 ? { nodes, edges, regions } : { nodes, edges };
-      }).catch(() => ({ nodes: [], edges: [] }));
+      const stepNumber = this.stepCounter.toString().padStart(2, '0');
+      const snapshotName = `${safeScenarioName}${scenarioId}--${stepNumber}--${safeLabel}`;
+      const graphState = await this.webviewPage
+        .locator('html')
+        .evaluate(() => {
+          const rf = (window as any).reactFlowInstance;
+          if (!rf) return { nodes: [], edges: [] };
+          const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
+          const nodeMap = new Map<string, Element>();
+          for (const el of nodeElems) {
+            const id = el.getAttribute('data-id');
+            if (id) nodeMap.set(id, el);
+          }
+          const nodes = rf.getNodes().map((n: any) => {
+            const nodeElement = nodeMap.get(n.id);
+            const warningNote =
+              nodeElement?.querySelector('.node-warning')?.getAttribute('aria-label') ??
+              n.data?.node?.warningNote ??
+              undefined;
+            return {
+              id: n.id,
+              type: n.type,
+              position: { x: Math.round(n.position.x), y: Math.round(n.position.y) },
+              width: Math.round(n.measured?.width ?? n.width ?? 0),
+              height: Math.round(n.measured?.height ?? n.height ?? 0),
+              data: n.data
+                ? {
+                    label: n.data.label,
+                    kind: n.data.node?.kind,
+                    ports: n.data.node?.ports?.map((p: any) => ({
+                      id: p.id,
+                      name: p.name,
+                      side: p.side,
+                      direction: p.direction,
+                      metadata: p.metadata,
+                    })),
+                  }
+                : undefined,
+              active: nodeElement?.classList.contains('generate-node-active') || undefined,
+              inactive: nodeElement?.classList.contains('generate-node-inactive') || undefined,
+              invalid: nodeElement?.classList.contains('svsch-node-invalid') || undefined,
+              warningNote,
+            };
+          });
+          const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+          const edgeMap = new Map<string, Element>();
+          for (const el of edgeElems) {
+            const id = el.getAttribute('data-id');
+            if (id) edgeMap.set(id, el);
+          }
+          const edges = rf.getEdges().map((e: any) => {
+            const edgeEl = edgeMap.get(e.id);
+            const el = edgeEl?.querySelector('path.svsch-edge, path.react-flow__edge-path');
+            return {
+              id: e.id,
+              source: e.source,
+              target: e.target,
+              sourceHandle: e.sourceHandle ?? null,
+              targetHandle: e.targetHandle ?? null,
+              path: el?.getAttribute('d') ?? '',
+              active: edgeEl?.classList.contains('generate-edge-active') || undefined,
+              inactive: edgeEl?.classList.contains('generate-edge-inactive') || undefined,
+            };
+          });
+          const regions = Array.from(document.querySelectorAll('.generate-region'))
+            .map((region: Element) => {
+              const element = region as HTMLElement;
+              const title =
+                element.querySelector('.generate-region-title')?.textContent?.trim() ?? '';
+              const warningNote =
+                element.dataset.warningNote ??
+                element.querySelector('.generate-region-warning')?.getAttribute('aria-label') ??
+                element.querySelector('.generate-region-note')?.textContent?.trim() ??
+                undefined;
+              return {
+                id: element.dataset.regionId ?? '',
+                kind: element.dataset.regionKind,
+                label: title,
+                bounds: {
+                  x: Math.round(Number.parseFloat(element.style.left || '0')),
+                  y: Math.round(Number.parseFloat(element.style.top || '0')),
+                  width: Math.round(Number.parseFloat(element.style.width || '0')),
+                  height: Math.round(Number.parseFloat(element.style.height || '0')),
+                },
+                active: element.classList.contains('generate-region-active') || undefined,
+                inactive: element.classList.contains('generate-region-inactive') || undefined,
+                invalid: element.classList.contains('generate-region-invalid') || undefined,
+                warningNote,
+              };
+            })
+            .filter((region) => region.id);
+          nodes.sort((a: any, b: any) => a.id.localeCompare(b.id));
+          edges.sort((a: any, b: any) => a.id.localeCompare(b.id));
+          regions.sort((a: any, b: any) => a.id.localeCompare(b.id));
+          return regions.length > 0 ? { nodes, edges, regions } : { nodes, edges };
+        })
+        .catch(() => ({ nodes: [], edges: [] }));
       if (!process.env.SKIP_SNAPSHOTS) {
         await this._compareSnapshots(
           screenshot,
           graphState,
           snapshotName,
-          await this._webviewCompareBox()
+          await this._webviewCompareBox(),
         );
       }
     }
@@ -182,7 +197,11 @@ export class BddWorld {
   }
 
   private async _webviewCompareBox(): Promise<PngCompareBox | null> {
-    const box = await this.workbox.locator('iframe.webview').first().boundingBox().catch(() => null);
+    const box = await this.workbox
+      .locator('iframe.webview')
+      .first()
+      .boundingBox()
+      .catch(() => null);
     if (!box || box.width < 10 || box.height < 10) return null;
     return {
       x: Math.floor(box.x),
@@ -211,7 +230,7 @@ export class BddWorld {
     actualBuffer: Buffer,
     actualGraph: any,
     snapshotName: string,
-    compareBox: PngCompareBox | null = null
+    compareBox: PngCompareBox | null = null,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
@@ -224,7 +243,7 @@ export class BddWorld {
       snapshotsDir,
       resultsDir,
       updateSnapshots,
-      () => {}
+      () => {},
     );
 
     const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
@@ -243,7 +262,7 @@ export class BddWorld {
       actualBuffer,
       SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
       SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
-      compareBox
+      compareBox,
     );
     if (comparison.matches) return;
     if (updateSnapshots) {
@@ -259,12 +278,14 @@ export class BddWorld {
     }
     if (comparison.numDiffPixels === undefined) {
       throw new Error(
-        `Snapshot size mismatch for "${snapshotName}": `
-        + `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, `
-        + `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`
+        `Snapshot size mismatch for "${snapshotName}": ` +
+          `expected ${comparison.expectedSize.width}x${comparison.expectedSize.height}, ` +
+          `got ${comparison.actualSize.width}x${comparison.actualSize.height}.`,
       );
     }
-    throw new Error(`Snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`);
+    throw new Error(
+      `Snapshot mismatch for "${snapshotName}": ${comparison.numDiffPixels} pixels differ.`,
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -281,8 +302,10 @@ export class BddWorld {
     const workspaceRoot = BddWorld.BDD_WORKSPACE;
     this.workspaceDir = workspaceRoot;
 
-    const surelogPath = process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
-    const backendPath = process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
+    const surelogPath =
+      process.env.SURELOG_PATH || path.resolve(process.cwd(), 'dist/surelog/bin/surelog');
+    const backendPath =
+      process.env.BACKEND_PATH || path.resolve(process.cwd(), 'dist/svsch_backend');
 
     this.lastGraph = await buildDesignGraph({
       workspaceRoot,
@@ -297,7 +320,7 @@ export class BddWorld {
 
   async selectModule(
     moduleName: string,
-    screenshotLabel: string | false = `Viewing module ${moduleName}`
+    screenshotLabel: string | false = `Viewing module ${moduleName}`,
   ): Promise<void> {
     await this._ensureGraphBuilt();
     if (this.lastGraph) {
@@ -326,9 +349,13 @@ export class BddWorld {
     const ports = await this.webviewPage.locator('html').evaluate(() => {
       const rf = (window as any).reactFlowInstance;
       if (!rf) return [];
-      return rf.getNodes()
+      return rf
+        .getNodes()
         .filter((n: any) => n.data?.node?.kind === 'port')
-        .map((n: any) => ({ label: n.data?.node?.label ?? n.data?.node?.name, position: n.position }));
+        .map((n: any) => ({
+          label: n.data?.node?.label ?? n.data?.node?.name,
+          position: n.position,
+        }));
     });
     for (const port of ports) {
       if (port.label) this.notedPositions.set(port.label, port.position);
@@ -336,7 +363,7 @@ export class BddWorld {
   }
 
   async _waitForDiagramRebuild(): Promise<void> {
-    await this.evaluateInVSCode(vscode => {
+    await this.evaluateInVSCode((vscode) => {
       void (vscode as any).commands.executeCommand('svsch.rebuildDiagram');
     }).catch(() => {});
     // Give VS Code's file watcher time to detect the change and start rebuilding.
@@ -356,10 +383,12 @@ export class BddWorld {
     // completion signal (e.g. a rebuild generation/version the webview
     // echoes back) rather than trimming this wait, and is left as follow-up
     // rather than risking more scenarios on an unverified guess.
-    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+    await this.webviewPage
+      .locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'visible', timeout: 10_000 })
       .catch(() => {});
-    await this.webviewPage.locator('div.busy-indicator[role="status"]')
+    await this.webviewPage
+      .locator('div.busy-indicator[role="status"]')
       .waitFor({ state: 'hidden', timeout: 90_000 })
       .catch(() => {});
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 30_000 });
@@ -369,20 +398,21 @@ export class BddWorld {
   async _waitForRenderedModule(moduleName: string, timeout = 60_000): Promise<void> {
     await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout });
     try {
-      await expect.poll(
-        async () => (await this._renderedModuleState(moduleName)).ready,
-        { timeout }
-      ).toBe(true);
+      await expect
+        .poll(async () => (await this._renderedModuleState(moduleName)).ready, { timeout })
+        .toBe(true);
     } catch (err) {
       // The plain expect.poll failure only says "expected true, got false" — not
       // useful for a predicate with several failure branches. Capture the last
       // observed state so a future occurrence of this (historically flaky)
       // check is diagnosable from CI logs instead of a bare timeout.
-      const state = await this._renderedModuleState(moduleName).catch((e) => ({ error: String(e) }));
+      const state = await this._renderedModuleState(moduleName).catch((e) => ({
+        error: String(e),
+      }));
       throw new Error(
         `Timed out waiting for module "${moduleName}" to finish rendering after ${timeout}ms. ` +
-        `Last observed state: ${JSON.stringify(state)}`,
-        { cause: err }
+          `Last observed state: ${JSON.stringify(state)}`,
+        { cause: err },
       );
     }
   }
@@ -403,118 +433,151 @@ export class BddWorld {
     validEdgeCount?: number;
     reason?: string;
   }> {
-    return this.webviewPage.locator('html').evaluate((_el, expectedModuleName) => {
-      try {
-        const rf = (window as any).reactFlowInstance;
-        if (!rf || typeof rf.getNodes !== 'function' || typeof rf.getEdges !== 'function') {
-          return { ready: false, reason: 'reactFlowInstance not available' };
-        }
+    return this.webviewPage
+      .locator('html')
+      .evaluate((_el, expectedModuleName) => {
+        try {
+          const rf = (window as any).reactFlowInstance;
+          if (!rf || typeof rf.getNodes !== 'function' || typeof rf.getEdges !== 'function') {
+            return { ready: false, reason: 'reactFlowInstance not available' };
+          }
 
-        const nodes = rf.getNodes();
-        if (!nodes || nodes.length === 0) return { ready: false, reason: 'no nodes' };
-        const mismatchedModuleNodeIds = nodes
-          .filter((node: any) => node.data?.moduleName !== expectedModuleName)
-          .map((node: any) => node.id);
-        if (mismatchedModuleNodeIds.length > 0) {
-          return { ready: false, reason: 'moduleName mismatch', nodeCount: nodes.length, mismatchedModuleNodeIds };
-        }
+          const nodes = rf.getNodes();
+          if (!nodes || nodes.length === 0) return { ready: false, reason: 'no nodes' };
+          const mismatchedModuleNodeIds = nodes
+            .filter((node: any) => node.data?.moduleName !== expectedModuleName)
+            .map((node: any) => node.id);
+          if (mismatchedModuleNodeIds.length > 0) {
+            return {
+              ready: false,
+              reason: 'moduleName mismatch',
+              nodeCount: nodes.length,
+              mismatchedModuleNodeIds,
+            };
+          }
 
-        const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
-        if (nodeElems.length === 0) return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
+          const nodeElems = Array.from(document.querySelectorAll('.react-flow__node'));
+          if (nodeElems.length === 0)
+            return { ready: false, reason: 'no rendered node elements', nodeCount: nodes.length };
 
-        const nodeMap = new Map<string, Element>();
-        for (const el of nodeElems) {
-          const id = el.getAttribute('data-id');
-          if (id) nodeMap.set(id, el);
-        }
-        const unsettledNodeMeasurements = nodes.flatMap((node: any) => {
-          const content = nodeMap.get(node.id)?.querySelector<HTMLElement>('[data-node-id]');
-          const expectedWidth = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-width') ?? '');
-          const expectedHeight = Number.parseFloat(content?.style.getPropertyValue('--svsch-node-height') ?? '');
-          const width = node.measured?.width ?? node.width;
-          const height = node.measured?.height ?? node.height;
-          const settled = content
-            && Number.isFinite(expectedWidth)
-            && Number.isFinite(expectedHeight)
-            && Math.abs(width - expectedWidth) < 0.5
-            && Math.abs(height - expectedHeight) < 0.5;
-          return settled ? [] : [{ id: node.id, width, height, expectedWidth, expectedHeight }];
-        });
-        if (unsettledNodeMeasurements.length > 0) {
-          return {
-            ready: false,
-            reason: 'node dimensions have not settled',
-            nodeCount: nodes.length,
-            unsettledNodeMeasurements,
-          };
-        }
+          const nodeMap = new Map<string, Element>();
+          for (const el of nodeElems) {
+            const id = el.getAttribute('data-id');
+            if (id) nodeMap.set(id, el);
+          }
+          const unsettledNodeMeasurements = nodes.flatMap((node: any) => {
+            const content = nodeMap.get(node.id)?.querySelector<HTMLElement>('[data-node-id]');
+            const expectedWidth = Number.parseFloat(
+              content?.style.getPropertyValue('--svsch-node-width') ?? '',
+            );
+            const expectedHeight = Number.parseFloat(
+              content?.style.getPropertyValue('--svsch-node-height') ?? '',
+            );
+            const width = node.measured?.width ?? node.width;
+            const height = node.measured?.height ?? node.height;
+            const settled =
+              content &&
+              Number.isFinite(expectedWidth) &&
+              Number.isFinite(expectedHeight) &&
+              Math.abs(width - expectedWidth) < 0.5 &&
+              Math.abs(height - expectedHeight) < 0.5;
+            return settled ? [] : [{ id: node.id, width, height, expectedWidth, expectedHeight }];
+          });
+          if (unsettledNodeMeasurements.length > 0) {
+            return {
+              ready: false,
+              reason: 'node dimensions have not settled',
+              nodeCount: nodes.length,
+              unsettledNodeMeasurements,
+            };
+          }
 
-        const edges = rf.getEdges();
-        if (!edges || edges.length === 0) return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
+          const edges = rf.getEdges();
+          if (!edges || edges.length === 0)
+            return { ready: true, nodeCount: nodes.length, edgeCount: 0 };
 
-        const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
-        if (edgeElems.length === 0) {
-          return { ready: false, reason: 'no rendered edge elements', nodeCount: nodes.length, edgeCount: edges.length };
-        }
+          const edgeElems = Array.from(document.querySelectorAll('.react-flow__edge'));
+          if (edgeElems.length === 0) {
+            return {
+              ready: false,
+              reason: 'no rendered edge elements',
+              nodeCount: nodes.length,
+              edgeCount: edges.length,
+            };
+          }
 
-        const edgeMap = new Map<string, Element>();
-        for (const el of edgeElems) {
-          const id = el.getAttribute('data-id');
-          if (id) edgeMap.set(id, el);
-        }
+          const edgeMap = new Map<string, Element>();
+          for (const el of edgeElems) {
+            const id = el.getAttribute('data-id');
+            if (id) edgeMap.set(id, el);
+          }
 
-        let validCount = 0;
-        for (const edge of edges) {
-          if (!edge || !edge.id) continue;
-          const el = edgeMap.get(edge.id);
-          if (el) {
-            const pathEl = el.querySelector('path[d], path');
-            if (pathEl && pathEl.getAttribute('d')) {
-              validCount++;
+          let validCount = 0;
+          for (const edge of edges) {
+            if (!edge || !edge.id) continue;
+            const el = edgeMap.get(edge.id);
+            if (el) {
+              const pathEl = el.querySelector('path[d], path');
+              if (pathEl && pathEl.getAttribute('d')) {
+                validCount++;
+              }
             }
           }
-        }
 
-        const ready = validCount === edges.length || (validCount > 0 && edgeElems.length > 0);
-        return {
-          ready,
-          nodeCount: nodes.length,
-          edgeCount: edges.length,
-          edgeElemCount: edgeElems.length,
-          validEdgeCount: validCount,
-          reason: ready ? undefined : 'edges present but no valid rendered paths'
-        };
-      } catch (e) {
-        return { ready: false, reason: `evaluate threw: ${e instanceof Error ? e.message : String(e)}` };
-      }
-    }, expectedModule).catch((e) => ({ ready: false, reason: `evaluate call failed: ${e instanceof Error ? e.message : String(e)}` }));
+          const ready = validCount === edges.length || (validCount > 0 && edgeElems.length > 0);
+          return {
+            ready,
+            nodeCount: nodes.length,
+            edgeCount: edges.length,
+            edgeElemCount: edgeElems.length,
+            validEdgeCount: validCount,
+            reason: ready ? undefined : 'edges present but no valid rendered paths',
+          };
+        } catch (e) {
+          return {
+            ready: false,
+            reason: `evaluate threw: ${e instanceof Error ? e.message : String(e)}`,
+          };
+        }
+      }, expectedModule)
+      .catch((e) => ({
+        ready: false,
+        reason: `evaluate call failed: ${e instanceof Error ? e.message : String(e)}`,
+      }));
   }
 
   async _settleWorkbenchForScreenshot(): Promise<void> {
-    const toasts = await this.workbox.locator('.notification-toast', { hasText: 'SVSCH' }).all().catch(() => []);
+    const toasts = await this.workbox
+      .locator('.notification-toast', { hasText: 'SVSCH' })
+      .all()
+      .catch(() => []);
     for (const toast of toasts) {
       await toast.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
     }
 
-    for (const btn of await this.workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+    for (const btn of await this.workbox
+      .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+      .all()) {
       await btn.click().catch(() => {});
     }
 
     await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
-    await this.webviewPage.locator('body').evaluate(async () => {
-      const viewportTransform = () => (
-        (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? ''
-      );
-      let previous = viewportTransform();
-      let stableSamples = 0;
-      for (let attempt = 0; attempt < 100; attempt += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        const current = viewportTransform();
-        stableSamples = current !== '' && current === previous ? stableSamples + 1 : 0;
-        previous = current;
-        if (stableSamples >= 5) break;
-      }
-    }).catch(() => {});
+    await this.webviewPage
+      .locator('body')
+      .evaluate(async () => {
+        const viewportTransform = () =>
+          (document.querySelector('.react-flow__viewport') as HTMLElement)?.style.transform ?? '';
+        let previous = viewportTransform();
+        let stableSamples = 0;
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          const current = viewportTransform();
+          stableSamples = current !== '' && current === previous ? stableSamples + 1 : 0;
+          previous = current;
+          if (stableSamples >= 5) break;
+        }
+      })
+      .catch(() => {});
   }
 
   async selectedEditorText(): Promise<string | null> {
@@ -537,14 +600,15 @@ export class BddWorld {
       await this.workbox.waitForTimeout(300);
     } else {
       // Tab gone — re-open via command
-      await this.evaluateInVSCode(vscode => {
+      await this.evaluateInVSCode((vscode) => {
         void (vscode as any).commands.executeCommand('svsch.openDiagram');
       });
-      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', { timeout: 30_000 });
+      await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', {
+        timeout: 30_000,
+      });
       await this.workbox.waitForTimeout(300);
     }
   }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -557,9 +621,7 @@ export const test = mergedTest.extend<{ world: BddWorld }>({
   world: async ({ workbox, evaluateInVSCode, $testInfo }, use) => {
     const w = new BddWorld();
     w.workbox = workbox;
-    w.webviewPage = workbox
-      .frameLocator('iframe.webview')
-      .frameLocator('iframe#active-frame');
+    w.webviewPage = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
     w.evaluateInVSCode = evaluateInVSCode as any;
     w.testInfo = $testInfo;
     await use(w);
@@ -581,7 +643,10 @@ function shouldUpdateSnapshots(testInfo: any): boolean {
   return mode === 'all' || mode === 'changed' || !!process.env.UPDATE_SNAPSHOTS;
 }
 
-function scenarioMetadata(bddContext: any, testInfo: any): { name: string; isOutline: boolean; exampleIndex?: number } {
+function scenarioMetadata(
+  bddContext: any,
+  testInfo: any,
+): { name: string; isOutline: boolean; exampleIndex?: number } {
   const info = testInfo ?? bddContext?.testInfo;
   const title = info?.title ?? 'scenario';
   const outline = outlineMetadataFromFeature(bddContext);
@@ -594,8 +659,9 @@ function scenarioMetadata(bddContext: any, testInfo: any): { name: string; isOut
     return { name: parentTitle, isOutline: true, exampleIndex: Number(exampleMatch[1]) };
   }
 
-  const isOutline = info?.repeatEachIndex > 0
-    || ((info?.annotations ?? []) as any[]).some((a: any) => a.type === 'outline');
+  const isOutline =
+    info?.repeatEachIndex > 0 ||
+    ((info?.annotations ?? []) as any[]).some((a: any) => a.type === 'outline');
   if (!isOutline) return { name: title, isOutline: false };
 
   const key = parentTitle ?? title;
@@ -604,7 +670,9 @@ function scenarioMetadata(bddContext: any, testInfo: any): { name: string; isOut
   return { name: key, isOutline: true, exampleIndex: count };
 }
 
-function outlineMetadataFromFeature(bddContext: any): { name: string; isOutline: true; exampleIndex: number } | undefined {
+function outlineMetadataFromFeature(
+  bddContext: any,
+): { name: string; isOutline: true; exampleIndex: number } | undefined {
   const featureUri = bddContext?.featureUri;
   const pickleLine = bddContext?.bddTestData?.pickleLine;
   if (!featureUri || !pickleLine) return undefined;
@@ -667,9 +735,7 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   if (!process.env.SKIP_SNAPSHOTS) {
     await this.workbox.setViewportSize({ width: 1400, height: 1000 });
   }
-  this.webviewPage = workbox
-    .frameLocator('iframe.webview')
-    .frameLocator('iframe#active-frame');
+  this.webviewPage = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
   this.evaluateInVSCode = evaluateInVSCode as any;
 
   // Scenario metadata from playwright-bdd. Scenario outlines use Playwright
@@ -716,34 +782,36 @@ Before(async function (this: BddWorld, { workbox, evaluateInVSCode, $bddContext,
   await workbox.waitForSelector('.monaco-workbench', { timeout: 30_000 });
 
   // Dismiss startup notifications
-  for (const btn of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+  for (const btn of await workbox
+    .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+    .all()) {
     await btn.click().catch(() => {});
   }
 
   // Reset svsch.projectFolder to a non-existent directory so the extension's
   // file watcher never triggers a successful rebuild during setup.
   // Tests opening the diagram will override this in their open steps.
-  await evaluateInVSCode(async _vscode => {
+  await evaluateInVSCode(async (_vscode) => {
     const configuration = (_vscode as any).workspace.getConfiguration('svsch');
     await configuration.update(
       'autocut-clk-reset',
       undefined,
-      (_vscode as any).ConfigurationTarget.Workspace
+      (_vscode as any).ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'clockSignalNames',
       undefined,
-      (_vscode as any).ConfigurationTarget.Workspace
+      (_vscode as any).ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'resetSignalNames',
       undefined,
-      (_vscode as any).ConfigurationTarget.Workspace
+      (_vscode as any).ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'projectFolder',
       './no-sv-files-here',
-      (_vscode as any).ConfigurationTarget.Workspace
+      (_vscode as any).ConfigurationTarget.Workspace,
     );
   });
 
@@ -758,22 +826,22 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
     await configuration.update(
       'autocut-clk-reset',
       undefined,
-      _vscode.ConfigurationTarget.Workspace
+      _vscode.ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'clockSignalNames',
       undefined,
-      _vscode.ConfigurationTarget.Workspace
+      _vscode.ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'resetSignalNames',
       undefined,
-      _vscode.ConfigurationTarget.Workspace
+      _vscode.ConfigurationTarget.Workspace,
     );
     await configuration.update(
       'projectFolder',
       './no-sv-files-here',
-      _vscode.ConfigurationTarget.Workspace
+      _vscode.ConfigurationTarget.Workspace,
     );
   }).catch(() => {});
 
@@ -791,7 +859,12 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
   // Never delete BDD_WORKSPACE — it's the VS Code workspace root and deleting
   // it causes the next test's Before hook to fail ("no workspace is opened").
   if (this.workspaceDir && this.workspaceDir !== BddWorld.BDD_WORKSPACE) {
-    await fs.promises.rm(this.workspaceDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    await fs.promises.rm(this.workspaceDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
     this.workspaceDir = undefined;
   }
 
@@ -799,7 +872,9 @@ After(async function (this: BddWorld, { workbox, evaluateInVSCode }: any) {
   await refreshFilesExplorer(workbox, evaluateInVSCode);
 
   // Dismiss any stray notifications
-  for (const btn of await workbox.locator('.notification-toast button', { hasText: /Never|Don't show/i }).all()) {
+  for (const btn of await workbox
+    .locator('.notification-toast button', { hasText: /Never|Don't show/i })
+    .all()) {
     await btn.click().catch(() => {});
   }
 });
@@ -820,9 +895,9 @@ async function cleanBddWorkspace(): Promise<void> {
 
 async function refreshFilesExplorer(
   workbox: Page,
-  evaluateInVSCode: <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>
+  evaluateInVSCode: <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>,
 ): Promise<void> {
-  await evaluateInVSCode(vscode => {
+  await evaluateInVSCode((vscode) => {
     return (vscode as any).commands.executeCommand('workbench.files.action.refreshFilesExplorer');
   }).catch(() => {});
   await workbox.waitForTimeout(200);
@@ -833,11 +908,18 @@ async function closeOpenSvschTabs(workbox: Page, evaluateInVSCode?: any): Promis
   for (let i = 0; i < 3; i++) {
     const count = await tabs.count().catch(() => 0);
     if (count === 0) return;
-    await tabs.first().click().catch(() => {});
+    await tabs
+      .first()
+      .click()
+      .catch(() => {});
     if (evaluateInVSCode) {
-      await evaluateInVSCode((_vscode: any) => _vscode.commands.executeCommand('workbench.action.closeActiveEditor')).catch(() => {});
+      await evaluateInVSCode((_vscode: any) =>
+        _vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
+      ).catch(() => {});
     } else {
-      await workbox.keyboard.press(process.platform === 'darwin' ? 'Meta+W' : 'Control+W').catch(() => {});
+      await workbox.keyboard
+        .press(process.platform === 'darwin' ? 'Meta+W' : 'Control+W')
+        .catch(() => {});
     }
     await workbox.waitForTimeout(200);
   }

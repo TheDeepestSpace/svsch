@@ -8,7 +8,7 @@ function terminal(direction: 'input' | 'output'): DiagramNode {
     id: direction,
     kind: 'port',
     label: direction,
-    ports: [{ id: direction, name: direction, direction }]
+    ports: [{ id: direction, name: direction, direction }],
   };
 }
 
@@ -18,7 +18,7 @@ describe('routing obstacle geometry', () => {
       left: diagramSizing.gridSize,
       right: 0,
       top: diagramSizing.gridSize / 2,
-      bottom: diagramSizing.gridSize / 2
+      bottom: diagramSizing.gridSize / 2,
     });
   });
 
@@ -27,7 +27,7 @@ describe('routing obstacle geometry', () => {
       left: 0,
       right: diagramSizing.gridSize,
       top: diagramSizing.gridSize / 2,
-      bottom: diagramSizing.gridSize / 2
+      bottom: diagramSizing.gridSize / 2,
     });
   });
 
@@ -36,31 +36,31 @@ describe('routing obstacle geometry', () => {
       id: 'literal',
       kind: 'literal',
       label: '1',
-      ports: [{ id: 'out', name: 'out', direction: 'output' }]
+      ports: [{ id: 'out', name: 'out', direction: 'output' }],
     };
 
     expect(routingObstacleMargins(literal, ['EAST'])).toEqual({
       left: diagramSizing.gridSize,
       right: 0,
       top: diagramSizing.gridSize / 2,
-      bottom: diagramSizing.gridSize / 2
+      bottom: diagramSizing.gridSize / 2,
     });
   });
 
-  it('uses the lead instead of extra obstacle padding on a cut source end\'s connected side', () => {
+  it("uses the lead instead of extra obstacle padding on a cut source end's connected side", () => {
     const cutEnd: DiagramNode = {
       id: 'cut-label:clk:source',
       kind: 'netLabel',
       label: 'clk',
       ports: [{ id: 'cut', name: 'cut', direction: 'input' }],
-      metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } }
+      metadata: { cutNet: { netKey: 'clk', role: 'source', align: 'end', handleSide: 'left' } },
     };
 
     expect(routingObstacleMargins(cutEnd, ['WEST'])).toEqual({
       left: 0,
       right: diagramSizing.gridSize,
       top: diagramSizing.gridSize,
-      bottom: diagramSizing.gridSize
+      bottom: diagramSizing.gridSize,
     });
   });
 
@@ -70,14 +70,14 @@ describe('routing obstacle geometry', () => {
       kind: 'netLabel',
       label: 'clk',
       ports: [{ id: 'cut', name: 'cut', direction: 'output' }],
-      metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } }
+      metadata: { cutNet: { netKey: 'clk', role: 'sink', align: 'start', handleSide: 'right' } },
     };
 
     expect(routingObstacleMargins(cutEnd, ['EAST'])).toEqual({
       left: diagramSizing.gridSize,
       right: 0,
       top: diagramSizing.gridSize,
-      bottom: diagramSizing.gridSize
+      bottom: diagramSizing.gridSize,
     });
   });
 });

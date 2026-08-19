@@ -22,7 +22,7 @@ test.describe('selection styles grid', () => {
     await openView(page, view);
     await page.waitForFunction(
       (expected) => document.querySelectorAll('.react-flow__node').length >= expected,
-      view.nodes.length
+      view.nodes.length,
     );
 
     // Fit the viewport ourselves from the known grid bounds instead of
@@ -32,24 +32,33 @@ test.describe('selection styles grid', () => {
     const margin = GRID * 2;
     const minX = Math.min(...overlay.map((e) => e.placementRect.x)) - margin;
     const minY = Math.min(...overlay.map((e) => e.placementRect.y)) - margin;
-    const maxX = Math.max(...overlay.map((e) => e.placementRect.x + e.placementRect.width)) + margin;
-    const maxY = Math.max(...overlay.map((e) => e.placementRect.y + e.placementRect.height)) + margin;
+    const maxX =
+      Math.max(...overlay.map((e) => e.placementRect.x + e.placementRect.width)) + margin;
+    const maxY =
+      Math.max(...overlay.map((e) => e.placementRect.y + e.placementRect.height)) + margin;
     await page.waitForFunction(() => Boolean((window as any).reactFlowInstance));
-    await page.evaluate(async (bounds) => {
-      // Fit against the pane's own box, not window.innerWidth/Height — a
-      // toolbar and a "Module parameters" bar sit above the pane, so the
-      // pane is shorter than the full window. Fitting to the window
-      // overflows content past the pane's actual (interactive) box, which
-      // silently swallows clicks/drags on the rows pushed past its edge.
-      const paneRect = document.querySelector('.react-flow__pane')!.getBoundingClientRect();
-      const viewport = { width: paneRect.width, height: paneRect.height };
-      const zoom = Math.min(viewport.width / (bounds.maxX - bounds.minX), viewport.height / (bounds.maxY - bounds.minY), 1);
-      await (window as any).reactFlowInstance.setViewport({
-        x: (viewport.width - (bounds.maxX - bounds.minX) * zoom) / 2 - bounds.minX * zoom,
-        y: (viewport.height - (bounds.maxY - bounds.minY) * zoom) / 2 - bounds.minY * zoom,
-        zoom
-      });
-    }, { minX, minY, maxX, maxY });
+    await page.evaluate(
+      async (bounds) => {
+        // Fit against the pane's own box, not window.innerWidth/Height — a
+        // toolbar and a "Module parameters" bar sit above the pane, so the
+        // pane is shorter than the full window. Fitting to the window
+        // overflows content past the pane's actual (interactive) box, which
+        // silently swallows clicks/drags on the rows pushed past its edge.
+        const paneRect = document.querySelector('.react-flow__pane')!.getBoundingClientRect();
+        const viewport = { width: paneRect.width, height: paneRect.height };
+        const zoom = Math.min(
+          viewport.width / (bounds.maxX - bounds.minX),
+          viewport.height / (bounds.maxY - bounds.minY),
+          1,
+        );
+        await (window as any).reactFlowInstance.setViewport({
+          x: (viewport.width - (bounds.maxX - bounds.minX) * zoom) / 2 - bounds.minX * zoom,
+          y: (viewport.height - (bounds.maxY - bounds.minY) * zoom) / 2 - bounds.minY * zoom,
+          zoom,
+        });
+      },
+      { minX, minY, maxX, maxY },
+    );
     await waitForViewportTransformToSettle(page);
 
     // Ctrl-click every node to build one big multi-selection (React Flow's
@@ -63,7 +72,7 @@ test.describe('selection styles grid', () => {
       Array.from(document.querySelectorAll('.react-flow__node')).map((el) => {
         const r = el.getBoundingClientRect();
         return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-      })
+      }),
     );
     // React Flow's multi-selection key check listens for real keydown/keyup
     // (useKeyPress), not just the click event's ctrlKey flag — hold the key
@@ -82,7 +91,12 @@ test.describe('selection styles grid', () => {
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const remaining = await page.evaluate(() => {
         const rf = (window as any).reactFlowInstance;
-        const selectedIds = new Set(rf.getNodes().filter((n: any) => n.selected).map((n: any) => n.id));
+        const selectedIds = new Set(
+          rf
+            .getNodes()
+            .filter((n: any) => n.selected)
+            .map((n: any) => n.id),
+        );
         return Array.from(document.querySelectorAll('.react-flow__node'))
           .filter((el) => !selectedIds.has(el.getAttribute('data-id')))
           .map((el) => {
@@ -91,23 +105,32 @@ test.describe('selection styles grid', () => {
           });
       });
       if (remaining.length === 0) break;
-      const [fx, fy] = [[0.25, 0.5], [0.75, 0.5], [0.5, 0.25], [0.5, 0.75]][attempt];
+      const [fx, fy] = [
+        [0.25, 0.5],
+        [0.75, 0.5],
+        [0.5, 0.25],
+        [0.5, 0.75],
+      ][attempt];
       for (const r of remaining) {
         await page.mouse.click(r.left + r.width * fx, r.top + r.height * fy);
       }
     }
     await page.keyboard.up('Control');
 
-    await expect.poll(async () => page.evaluate((expected) => {
-      const rf = (window as any).reactFlowInstance;
-      return rf.getNodes().filter((n: any) => n.selected).length === expected;
-    }, view.nodes.length)).toBe(true);
+    await expect
+      .poll(async () =>
+        page.evaluate((expected) => {
+          const rf = (window as any).reactFlowInstance;
+          return rf.getNodes().filter((n: any) => n.selected).length === expected;
+        }, view.nodes.length),
+      )
+      .toBe(true);
 
     await waitForViewportTransformToSettle(page);
     await page.waitForTimeout(100);
 
     await expect(page).toHaveScreenshot('selection-styles-grid.png', {
-      clip: await paddedAllNodesClip(page)
+      clip: await paddedAllNodesClip(page),
     });
   });
 });

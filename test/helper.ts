@@ -6,10 +6,10 @@ import { buildDesignGraph } from '../src/parser/backend';
 import type { DesignGraph } from '../src/ir/types';
 
 export async function runParser(
-  backend: 'uhdm', 
-  fileOrFiles: string | { file: string, text: string }[], 
+  backend: 'uhdm',
+  fileOrFiles: string | { file: string; text: string }[],
   singleText?: string,
-  includePaths?: string[]
+  includePaths?: string[],
 ): Promise<DesignGraph> {
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-test-'));
 
@@ -25,11 +25,13 @@ export async function runParser(
     }
   }
 
-  const surelogPath = process.env.SURELOG_PATH || path.resolve(__dirname, '../dist/surelog/bin/surelog');
-  const backendPath = process.env.BACKEND_PATH || 
-                     (fs_sync.existsSync(path.resolve(__dirname, '../dist/svsch_backend')) ? 
-                      path.resolve(__dirname, '../dist/svsch_backend') : 
-                      path.resolve(__dirname, '../src/parser/backend_cpp/build/svsch_backend'));
+  const surelogPath =
+    process.env.SURELOG_PATH || path.resolve(__dirname, '../dist/surelog/bin/surelog');
+  const backendPath =
+    process.env.BACKEND_PATH ||
+    (fs_sync.existsSync(path.resolve(__dirname, '../dist/svsch_backend'))
+      ? path.resolve(__dirname, '../dist/svsch_backend')
+      : path.resolve(__dirname, '../src/parser/backend_cpp/build/svsch_backend'));
 
   try {
     return await buildDesignGraph({
@@ -40,7 +42,7 @@ export async function runParser(
       surelogPath,
       backendPath,
       includePaths,
-      includeExternalDiagnostics: false
+      includeExternalDiagnostics: false,
     });
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true });

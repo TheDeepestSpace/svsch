@@ -96,15 +96,18 @@ const KEYWORDS = new Set([
   'module',
   'output',
   'reg',
-  'wire'
+  'wire',
 ]);
 
-export function extractDesignFromText(sources: SourceFile[], options?: TextExtractorOptions): DesignGraph {
+export function extractDesignFromText(
+  sources: SourceFile[],
+  options?: TextExtractorOptions,
+): DesignGraph {
   const graph: DesignGraph = {
     rootModules: [],
     modules: {},
     diagnostics: [],
-    generatedAt: new Date().toISOString()
+    generatedAt: new Date().toISOString(),
   };
 
   const clockSignalNames = options?.clockSignalNames ?? DEFAULT_CLOCK_SIGNAL_NAMES;
@@ -135,8 +138,10 @@ export function extractDesignFromText(sources: SourceFile[], options?: TextExtra
     if (!findModules(source).length && source.text.trim()) {
       graph.diagnostics.push({
         severity: 'warning',
-        message: `No module declarations found in ${source.file}; represented content may be incomplete.`,
-        source: { file: source.file }
+        message:
+          `No module declarations found in ${source.file}; ` +
+          `represented content may be incomplete.`,
+        source: { file: source.file },
       });
     }
   }
@@ -161,7 +166,7 @@ function findModules(source: SourceFile): ModuleMatch[] {
       header,
       body,
       file: source.file,
-      startLine: lineAt(source.text, match.index)
+      startLine: lineAt(source.text, match.index),
     });
   }
 
@@ -175,7 +180,7 @@ function findModules(source: SourceFile): ModuleMatch[] {
         header: firstSemi >= 0 ? full.slice(0, firstSemi) : full,
         body: firstSemi >= 0 ? full.slice(firstSemi + 1) : '',
         file: source.file,
-        startLine: lineAt(source.text, partial.index)
+        startLine: lineAt(source.text, partial.index),
       });
     }
   }
@@ -183,7 +188,11 @@ function findModules(source: SourceFile): ModuleMatch[] {
   return matches;
 }
 
-function extractModule(match: ModuleMatch, clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES, resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES): DesignModule {
+function extractModule(
+  match: ModuleMatch,
+  clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
+): DesignModule {
   const ports = extractPorts(match);
   const signalWidths = extractSignalWidths(match.header, match.body, ports);
   const nodes: DiagramNode[] = [
@@ -198,16 +207,32 @@ function extractModule(match: ModuleMatch, clockSignalNames: string[] = DEFAULT_
       arraySize: port.arraySize,
       source: port.source ?? {
         file: match.file,
-        startLine: match.startLine
-      }
-    }))
+        startLine: match.startLine,
+      },
+    })),
   ];
 
   const edges: DesignModule['edges'] = [];
   const instances = extractInstances(match);
-  const registers = extractRegisters(match, ports, signalWidths, clockSignalNames, resetSignalNames);
-  const continuousAssigns = extractContinuousAssigns(match, ports, [...nodes, ...instances, ...registers.nodes], signalWidths);
-  const muxes = extractMuxes(match, ports, [...nodes, ...instances, ...registers.nodes, ...continuousAssigns.nodes], signalWidths);
+  const registers = extractRegisters(
+    match,
+    ports,
+    signalWidths,
+    clockSignalNames,
+    resetSignalNames,
+  );
+  const continuousAssigns = extractContinuousAssigns(
+    match,
+    ports,
+    [...nodes, ...instances, ...registers.nodes],
+    signalWidths,
+  );
+  const muxes = extractMuxes(
+    match,
+    ports,
+    [...nodes, ...instances, ...registers.nodes, ...continuousAssigns.nodes],
+    signalWidths,
+  );
   nodes.push(...instances);
   nodes.push(...registers.nodes);
   nodes.push(...continuousAssigns.nodes);
@@ -222,26 +247,36 @@ function extractModule(match: ModuleMatch, clockSignalNames: string[] = DEFAULT_
     file: match.file,
     ports,
     nodes,
-    edges
+    edges,
   };
 }
 
 function extractPorts(match: ModuleMatch): DiagramPort[] {
   const ports = new Map<string, DiagramPort>();
   const headerPortList = match.header.match(/\(([\s\S]*)\)/)?.[1] ?? '';
-  const declaredPortRegex = /\b(input|output|inout)\b\s*(?:(wire|logic|reg)\s*)?(\[[^\]]+\]\s*)?([A-Za-z_$][\w$]*)(?:\s*(\[[^\]]+\]))?/g;
+  const declaredPortRegex =
+    /\b(input|output|inout)\b\s*(?:(wire|logic|reg)\s*)?(\[[^\]]+\]\s*)?([A-Za-z_$][\w$]*)(?:\s*(\[[^\]]+\]))?/g;
   let declared: RegExpExecArray | null;
 
   let portIndex = 0;
-  for (const [text, offset] of [[headerPortList, match.header.indexOf(headerPortList)], [match.body, match.header.length + 1]] as const) {
+  for (const [text, offset] of [
+    [headerPortList, match.header.indexOf(headerPortList)],
+    [match.body, match.header.length + 1],
+  ] as const) {
     if (!text || offset === -1) continue;
     while ((declared = declaredPortRegex.exec(text as string))) {
       const name = declared[4];
       const combined = match.header + ';' + match.body;
       const startLine = match.startLine + lineAt(combined, (offset as number) + declared.index) - 1;
-      const endLine = match.startLine + lineAt(combined, (offset as number) + declared.index + declared[0].length) - 1;
+      const endLine =
+        match.startLine +
+        lineAt(combined, (offset as number) + declared.index + declared[0].length) -
+        1;
       const startColumn = columnAt(combined, (offset as number) + declared.index);
-      const endColumn = columnAt(combined, (offset as number) + declared.index + declared[0].length);
+      const endColumn = columnAt(
+        combined,
+        (offset as number) + declared.index + declared[0].length,
+      );
       const arrayDimension = declared[5]?.trim();
       ports.set(name, {
         id: stableId('port', name),
@@ -257,8 +292,8 @@ function extractPorts(match: ModuleMatch): DiagramPort[] {
           startLine,
           startColumn,
           endLine,
-          endColumn
-        }
+          endColumn,
+        },
       });
     }
   }
@@ -275,8 +310,12 @@ function extractPorts(match: ModuleMatch): DiagramPort[] {
         if (!KEYWORDS.has(name) && !ports.has(name)) {
           const combined = match.header + ';' + match.body;
           const nameIndex = raw.indexOf(name);
-          const startLine = match.startLine + lineAt(combined, offset + currentOffset + nameIndex) - 1;
-          const endLine = match.startLine + lineAt(combined, offset + currentOffset + nameIndex + name.length) - 1;
+          const startLine =
+            match.startLine + lineAt(combined, offset + currentOffset + nameIndex) - 1;
+          const endLine =
+            match.startLine +
+            lineAt(combined, offset + currentOffset + nameIndex + name.length) -
+            1;
           const startColumn = columnAt(combined, offset + currentOffset + nameIndex);
           const endColumn = columnAt(combined, offset + currentOffset + nameIndex + name.length);
           ports.set(name, {
@@ -284,7 +323,7 @@ function extractPorts(match: ModuleMatch): DiagramPort[] {
             name,
             direction: 'unknown',
             position: portIndex++,
-            source: { file: match.file, startLine, startColumn, endLine, endColumn }
+            source: { file: match.file, startLine, startColumn, endLine, endColumn },
           });
         }
       }
@@ -295,8 +334,11 @@ function extractPorts(match: ModuleMatch): DiagramPort[] {
   return [...ports.values()];
 }
 
-
-function extractSignalWidths(header: string, body: string, ports: DiagramPort[]): Map<string, string> {
+function extractSignalWidths(
+  header: string,
+  body: string,
+  ports: DiagramPort[],
+): Map<string, string> {
   const widths = new Map<string, string>();
   for (const port of ports) {
     if (port.width) {
@@ -333,7 +375,8 @@ function arraySizeFromDimension(dimension: string | undefined): number | undefin
 
 function extractInstances(match: ModuleMatch): DiagramNode[] {
   const nodes: DiagramNode[] = [];
-  const instanceRegex = /^\s*([A-Za-z_$][\w$]*)\s*(?:#\s*\([\s\S]*?\)\s*)?([A-Za-z_$][\w$]*)\s*\(([\s\S]*?)\)\s*;/gm;
+  const instanceRegex =
+    /^\s*([A-Za-z_$][\w$]*)\s*(?:#\s*\([\s\S]*?\)\s*)?([A-Za-z_$][\w$]*)\s*\(([\s\S]*?)\)\s*;/gm;
   let instance: RegExpExecArray | null;
 
   while ((instance = instanceRegex.exec(match.body))) {
@@ -358,7 +401,7 @@ function extractInstances(match: ModuleMatch): DiagramNode[] {
           id: stableId('port', portName),
           name: portName,
           direction: 'unknown',
-          connectedSignal: firstIdentifier(signalExpr) ?? portName
+          connectedSignal: firstIdentifier(signalExpr) ?? portName,
         });
       } else {
         // Positional
@@ -368,7 +411,7 @@ function extractInstances(match: ModuleMatch): DiagramNode[] {
           name: `pos_${i}`,
           direction: 'unknown',
           connectedSignal: firstIdentifier(signalExpr),
-          position: i
+          position: i,
         });
       }
     }
@@ -386,9 +429,15 @@ function extractInstances(match: ModuleMatch): DiagramNode[] {
         file: match.file,
         startLine: match.startLine + lineAt(combined, match.header.length + 1 + instance.index) - 1,
         startColumn: columnAt(combined, match.header.length + 1 + instance.index),
-        endLine: match.startLine + lineAt(combined, match.header.length + 1 + instance.index + instance[0].length) - 1,
-        endColumn: columnAt(combined, match.header.length + 1 + instance.index + instance[0].length)
-      }
+        endLine:
+          match.startLine +
+          lineAt(combined, match.header.length + 1 + instance.index + instance[0].length) -
+          1,
+        endColumn: columnAt(
+          combined,
+          match.header.length + 1 + instance.index + instance[0].length,
+        ),
+      },
     });
   }
 
@@ -400,32 +449,47 @@ interface RegisterExpressions {
   reset?: string;
 }
 
-function identifyRegisterExpressions(block: string, target: string, resetSignal?: string): RegisterExpressions {
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function identifyRegisterExpressions(
+  block: string,
+  target: string,
+  resetSignal?: string,
+): RegisterExpressions {
+  const escapedTarget = escapeRegExp(target);
   const assignments: string[] = [];
-  const assignmentRegex = new RegExp(`\\b${target}\\s*<=\\s*([^;]+);`, 'g');
+  const assignmentRegex = new RegExp(`\\b${escapedTarget}\\s*<=\\s*([^;]+);`, 'g');
   let match: RegExpExecArray | null;
   while ((match = assignmentRegex.exec(block))) {
     assignments.push(match[1].trim());
   }
 
   if (assignments.length === 0) return { data: '' };
-  if (assignments.length === 1 || !resetSignal) return { data: assignments[assignments.length - 1] };
+  if (assignments.length === 1 || !resetSignal)
+    return { data: assignments[assignments.length - 1] };
 
   // Heuristic: if there's an if-else with resetSignal, the first assignment to target
   // is likely the reset value if it appears before the else.
   // Since we only have the raw block and a list of assignments, let's try to find
   // which assignment is inside the 'if (reset)' block.
-  
-  const ifResetRegex = new RegExp(`\\bif\\s*\\([^)]*\\b${resetSignal}\\b[^)]*\\)\\s*(?:begin\\s*)?([^]*?)(?:\\belse\\b|\\bend\\b|$)`);
+
+  const ifResetRegex = new RegExp(
+    `\\bif\\s*\\([^)]*\\b${escapeRegExp(resetSignal)}(?![\\w$])[^)]*\\)\\s*(?:begin\\s*)?` +
+      `([^]*?)(?:\\belse\\b|\\bend\\b|$)`,
+  );
   const ifResetMatch = block.match(ifResetRegex);
   if (ifResetMatch) {
-      const resetBlock = ifResetMatch[1];
-      const resetAssignmentMatch = resetBlock.match(new RegExp(`\\b${target}\\s*<=\\s*([^;]+);`));
-      if (resetAssignmentMatch) {
-          const resetExpr = resetAssignmentMatch[1].trim();
-          const dataExpr = assignments.find(a => a !== resetExpr) || resetExpr;
-          return { data: dataExpr, reset: resetExpr };
-      }
+    const resetBlock = ifResetMatch[1];
+    const resetAssignmentMatch = resetBlock.match(
+      new RegExp(`\\b${escapedTarget}\\s*<=\\s*([^;]+);`),
+    );
+    if (resetAssignmentMatch) {
+      const resetExpr = resetAssignmentMatch[1].trim();
+      const dataExpr = assignments.find((a) => a !== resetExpr) || resetExpr;
+      return { data: dataExpr, reset: resetExpr };
+    }
   }
 
   return { data: assignments[assignments.length - 1] };
@@ -444,7 +508,7 @@ function extractRegisters(
   modulePorts: DiagramPort[],
   signalWidths: Map<string, string>,
   clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
-  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): RegisterExtraction {
   const nodes: DiagramNode[] = [];
   const edges: DesignModule['edges'] = [];
@@ -458,33 +522,41 @@ function extractRegisters(
     reset?: string;
     sourceRange: { file: string; startLine: number; endLine: number };
   }> = [];
-  const alwaysRegex = /\balways_ff\b\s*@\s*\(([^)]*)\)([\s\S]*?)(?=\balways_|\balways\b|\bassign\b|\bendmodule\b|$)/g;
+  const alwaysRegex =
+    /\balways_ff\b\s*@\s*\(([^)]*)\)([\s\S]*?)(?=\balways_|\balways\b|\bassign\b|\bendmodule\b|$)/g;
   let alwaysMatch: RegExpExecArray | null;
 
   while ((alwaysMatch = alwaysRegex.exec(match.body))) {
     const eventExpression = alwaysMatch[1];
     const block = alwaysMatch[2];
     const timing = parseAlwaysFfTiming(eventExpression, block, clockSignalNames, resetSignalNames);
-    
+
     // Find all targets in this block
     const targets = new Set<string>();
     for (const assignment of block.matchAll(/\b([A-Za-z_$][\w$]*)\s*<=\s*([^;]+);/g)) {
-        targets.add(assignment[1]);
+      targets.add(assignment[1]);
     }
 
     if (targets.size === 0) {
-        // Fallback for empty blocks or unrecognizable ones
-        targets.add(`reg_${nodes.length}`);
+      // Fallback for empty blocks or unrecognizable ones
+      targets.add(`reg_${nodes.length}`);
     }
 
     const combined = match.header + ';' + match.body;
     const trimmedMatch = alwaysMatch[0].trimEnd();
     const sourceRange = {
       file: match.file,
-      startLine: match.startLine + lineAt(combined, match.header.length + 1 + alwaysMatch.index) - 1,
+      startLine:
+        match.startLine + lineAt(combined, match.header.length + 1 + alwaysMatch.index) - 1,
       startColumn: columnAt(combined, match.header.length + 1 + alwaysMatch.index),
-      endLine: match.startLine + lineAt(combined, match.header.length + 1 + alwaysMatch.index + trimmedMatch.length) - 1,
-      endColumn: columnAt(combined, match.header.length + 1 + alwaysMatch.index + trimmedMatch.length)
+      endLine:
+        match.startLine +
+        lineAt(combined, match.header.length + 1 + alwaysMatch.index + trimmedMatch.length) -
+        1,
+      endColumn: columnAt(
+        combined,
+        match.header.length + 1 + alwaysMatch.index + trimmedMatch.length,
+      ),
     };
 
     for (const target of targets) {
@@ -493,12 +565,17 @@ function extractRegisters(
       const registerPorts: DiagramPort[] = [
         { id: stableId('d'), name: 'D', direction: 'input', width: signalWidths.get(target) },
         { id: stableId('q'), name: 'Q', direction: 'output', width: signalWidths.get(target) },
-        { id: stableId('clk'), name: timing.clockSignal, direction: 'input' }
+        { id: stableId('clk'), name: timing.clockSignal, direction: 'input' },
       ];
       if (timing.resetSignal) {
         registerPorts.push({ id: stableId('reset'), name: timing.resetSignal, direction: 'input' });
         if (expressions.reset && isNonZeroExpression(expressions.reset)) {
-            registerPorts.push({ id: stableId('rv'), name: 'RV', direction: 'input', width: signalWidths.get(target) });
+          registerPorts.push({
+            id: stableId('rv'),
+            name: 'RV',
+            direction: 'input',
+            width: signalWidths.get(target),
+          });
         }
       }
 
@@ -513,18 +590,21 @@ function extractRegisters(
           clockSignal: timing.clockSignal,
           resetSignal: timing.resetSignal,
           resetKind: timing.resetKind,
-          resetActiveLow: timing.resetActiveLow
+          resetActiveLow: timing.resetActiveLow,
         },
-        source: sourceRange
+        source: sourceRange,
       });
       pendingAssignments.push({
         nodeId,
         target,
         expression: expressions.data,
-        resetExpression: (expressions.reset && isNonZeroExpression(expressions.reset)) ? expressions.reset : undefined,
+        resetExpression:
+          expressions.reset && isNonZeroExpression(expressions.reset)
+            ? expressions.reset
+            : undefined,
         clk: timing.clockSignal,
         reset: timing.resetSignal,
-        sourceRange
+        sourceRange,
       });
     }
   }
@@ -536,7 +616,16 @@ function extractRegisters(
     if (sourceSignal) {
       const selected = parseSelectExpression(assignment.expression);
       if (selected) {
-        const source = ensureBusTap(edges, match.name, modulePorts, nodes, nodes, signalWidths, selected.base, selected.select);
+        const source = ensureBusTap(
+          edges,
+          match.name,
+          modulePorts,
+          nodes,
+          nodes,
+          signalWidths,
+          selected.base,
+          selected.select,
+        );
         if (source) {
           pushUniqueEdge(edges, {
             id: edgeId(source.nodeId, assignment.nodeId, sourceSignal),
@@ -546,13 +635,30 @@ function extractRegisters(
             targetPort: stableId('d'),
             label: undefined,
             signal: sourceSignal,
-            width: selected.width
+            width: selected.width,
           });
         }
       } else if (!isSimpleIdentifierExpression(assignment.expression, sourceSignal)) {
-        const comb = createCombNode(match, assignment.target, assignment.expression, dRefs, assignment.nodeId, signalWidths.get(assignment.target), assignment.sourceRange);
+        const comb = createCombNode(
+          match,
+          assignment.target,
+          assignment.expression,
+          dRefs,
+          assignment.nodeId,
+          signalWidths.get(assignment.target),
+          assignment.sourceRange,
+        );
         combNodes.push(comb);
-        connectSignalRefsToNode(edges, match.name, dRefs, modulePorts, combNodes, [...nodes, ...combNodes], signalWidths, comb.id);
+        connectSignalRefsToNode(
+          edges,
+          match.name,
+          dRefs,
+          modulePorts,
+          combNodes,
+          [...nodes, ...combNodes],
+          signalWidths,
+          comb.id,
+        );
 
         pushUniqueEdge(edges, {
           id: edgeId(comb.id, assignment.nodeId, assignment.target),
@@ -562,7 +668,7 @@ function extractRegisters(
           targetPort: stableId('d'),
           label: assignment.target,
           signal: assignment.target,
-          width: signalWidths.get(assignment.target)
+          width: signalWidths.get(assignment.target),
         });
       } else {
         const source = signalSource(match.name, sourceSignal, modulePorts, nodes);
@@ -575,7 +681,7 @@ function extractRegisters(
             targetPort: stableId('d'),
             label: sourceSignal,
             signal: sourceSignal,
-            width: signalWidths.get(sourceSignal)
+            width: signalWidths.get(sourceSignal),
           });
         }
       }
@@ -583,53 +689,79 @@ function extractRegisters(
 
     // Connect RV input
     if (assignment.resetExpression) {
-        const rvRefs = expressionSignalRefs(assignment.resetExpression);
-        const rvSourceSignal = rvRefs[0]?.signal;
-        if (rvSourceSignal) {
-             const selected = parseSelectExpression(assignment.resetExpression);
-             if (selected) {
-                 const source = ensureBusTap(edges, match.name, modulePorts, nodes, nodes, signalWidths, selected.base, selected.select);
-                 if (source) {
-                     pushUniqueEdge(edges, {
-                         id: edgeId(source.nodeId, assignment.nodeId, rvSourceSignal + '_rv'),
-                         source: source.nodeId,
-                         target: assignment.nodeId,
-                         sourcePort: source.portId,
-                         targetPort: stableId('rv'),
-                         signal: rvSourceSignal,
-                         width: selected.width
-                     });
-                 }
-             } else if (!isSimpleIdentifierExpression(assignment.resetExpression, rvSourceSignal)) {
-                 const comb = createCombNode(match, assignment.target + '_rv', assignment.resetExpression, rvRefs, assignment.nodeId + '_rv', signalWidths.get(assignment.target), assignment.sourceRange);
-                 combNodes.push(comb);
-                 connectSignalRefsToNode(edges, match.name, rvRefs, modulePorts, combNodes, [...nodes, ...combNodes], signalWidths, comb.id);
+      const rvRefs = expressionSignalRefs(assignment.resetExpression);
+      const rvSourceSignal = rvRefs[0]?.signal;
+      if (rvSourceSignal) {
+        const selected = parseSelectExpression(assignment.resetExpression);
+        if (selected) {
+          const source = ensureBusTap(
+            edges,
+            match.name,
+            modulePorts,
+            nodes,
+            nodes,
+            signalWidths,
+            selected.base,
+            selected.select,
+          );
+          if (source) {
+            pushUniqueEdge(edges, {
+              id: edgeId(source.nodeId, assignment.nodeId, rvSourceSignal + '_rv'),
+              source: source.nodeId,
+              target: assignment.nodeId,
+              sourcePort: source.portId,
+              targetPort: stableId('rv'),
+              signal: rvSourceSignal,
+              width: selected.width,
+            });
+          }
+        } else if (!isSimpleIdentifierExpression(assignment.resetExpression, rvSourceSignal)) {
+          const comb = createCombNode(
+            match,
+            assignment.target + '_rv',
+            assignment.resetExpression,
+            rvRefs,
+            assignment.nodeId + '_rv',
+            signalWidths.get(assignment.target),
+            assignment.sourceRange,
+          );
+          combNodes.push(comb);
+          connectSignalRefsToNode(
+            edges,
+            match.name,
+            rvRefs,
+            modulePorts,
+            combNodes,
+            [...nodes, ...combNodes],
+            signalWidths,
+            comb.id,
+          );
 
-                 pushUniqueEdge(edges, {
-                     id: edgeId(comb.id, assignment.nodeId, assignment.target + '_rv'),
-                     source: comb.id,
-                     target: assignment.nodeId,
-                     sourcePort: stableId('out', assignment.target + '_rv'),
-                     targetPort: stableId('rv'),
-                     signal: assignment.target + '_rv',
-                     width: signalWidths.get(assignment.target)
-                 });
-             } else {
-                 const source = signalSource(match.name, rvSourceSignal, modulePorts, nodes);
-                 if (source) {
-                     edges.push({
-                         id: edgeId(source.nodeId, assignment.nodeId, rvSourceSignal + '_rv'),
-                         source: source.nodeId,
-                         target: assignment.nodeId,
-                         sourcePort: source.portId,
-                         targetPort: stableId('rv'),
-                         label: rvSourceSignal,
-                         signal: rvSourceSignal,
-                         width: signalWidths.get(rvSourceSignal)
-                     });
-                 }
-             }
+          pushUniqueEdge(edges, {
+            id: edgeId(comb.id, assignment.nodeId, assignment.target + '_rv'),
+            source: comb.id,
+            target: assignment.nodeId,
+            sourcePort: stableId('out', assignment.target + '_rv'),
+            targetPort: stableId('rv'),
+            signal: assignment.target + '_rv',
+            width: signalWidths.get(assignment.target),
+          });
+        } else {
+          const source = signalSource(match.name, rvSourceSignal, modulePorts, nodes);
+          if (source) {
+            edges.push({
+              id: edgeId(source.nodeId, assignment.nodeId, rvSourceSignal + '_rv'),
+              source: source.nodeId,
+              target: assignment.nodeId,
+              sourcePort: source.portId,
+              targetPort: stableId('rv'),
+              label: rvSourceSignal,
+              signal: rvSourceSignal,
+              width: signalWidths.get(rvSourceSignal),
+            });
+          }
         }
+      }
     }
 
     const clkPort = modulePorts.find((port) => port.name === assignment.clk);
@@ -641,7 +773,7 @@ function extractRegisters(
         sourcePort: clkPort.id,
         targetPort: stableId('clk'),
         label: assignment.clk,
-        signal: assignment.clk
+        signal: assignment.clk,
       });
     }
 
@@ -655,7 +787,7 @@ function extractRegisters(
           sourcePort: resetPort.id,
           targetPort: stableId('reset'),
           label: assignment.reset,
-          signal: assignment.reset
+          signal: assignment.reset,
         });
       }
     }
@@ -670,7 +802,7 @@ function extractRegisters(
         targetPort: targetPort.id,
         label: assignment.target,
         signal: assignment.target,
-        width: signalWidths.get(assignment.target)
+        width: signalWidths.get(assignment.target),
       });
     }
   }
@@ -682,15 +814,18 @@ function parseAlwaysFfTiming(
   eventExpression: string,
   block: string,
   clockSignalNames: string[] = DEFAULT_CLOCK_SIGNAL_NAMES,
-  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): RegisterTimingInfo {
-  const edgeTerms = [...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g)].map((term) => ({
-    edge: term[1],
-    signal: term[2]
-  }));
+  const edgeTerms = [...eventExpression.matchAll(/\b(posedge|negedge)\s+([A-Za-z_$][\w$]*)/g)].map(
+    (term) => ({
+      edge: term[1],
+      signal: term[2],
+    }),
+  );
 
   const fallbackClock = edgeTerms[0]?.signal ?? 'clk';
-  const clockTerm = edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ?? edgeTerms[0];
+  const clockTerm =
+    edgeTerms.find((term) => matchesSignalNameList(term.signal, clockSignalNames)) ?? edgeTerms[0];
   const clockSignal = clockTerm?.signal ?? fallbackClock;
   const resetTerm = edgeTerms.find((term) => term.signal !== clockSignal);
   if (resetTerm) {
@@ -698,7 +833,7 @@ function parseAlwaysFfTiming(
       clockSignal,
       resetSignal: resetTerm.signal,
       resetKind: 'async',
-      resetActiveLow: resetTerm.edge === 'negedge'
+      resetActiveLow: resetTerm.edge === 'negedge',
     };
   }
 
@@ -708,65 +843,56 @@ function parseAlwaysFfTiming(
       clockSignal,
       resetSignal: syncReset.signal,
       resetKind: 'sync',
-      resetActiveLow: syncReset.activeLow
+      resetActiveLow: syncReset.activeLow,
     };
   }
 
   return {
     clockSignal,
-    resetKind: 'none'
+    resetKind: 'none',
   };
 }
 
 function detectSynchronousReset(
   block: string,
   clockSignal: string,
-  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES
+  resetSignalNames: string[] = DEFAULT_RESET_SIGNAL_NAMES,
 ): { signal: string; activeLow: boolean } | undefined {
   const condition = block.match(/\bif\s*\(([^)]*)\)/)?.[1];
   if (!condition) {
     return undefined;
   }
 
-  const identifiers = expressionIdentifiers(condition).filter((identifier) => identifier !== clockSignal);
+  const identifiers = expressionIdentifiers(condition).filter(
+    (identifier) => identifier !== clockSignal,
+  );
   if (identifiers.length === 0) {
     return undefined;
   }
 
-  const resetSignal = identifiers.find((identifier) => matchesSignalNameList(identifier, resetSignalNames)) ?? identifiers[0];
+  const resetSignal =
+    identifiers.find((identifier) => matchesSignalNameList(identifier, resetSignalNames)) ??
+    identifiers[0];
   return {
     signal: resetSignal,
-    activeLow: isActiveLowResetCondition(condition, resetSignal)
+    activeLow: isActiveLowResetCondition(condition, resetSignal),
   };
 }
 
 function isActiveLowResetCondition(condition: string, signal: string): boolean {
   const escapedSignal = signal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(?:!|~)\\s*${escapedSignal}\\b`).test(condition)
-    || new RegExp(`\\b${escapedSignal}\\s*==\\s*(?:1'?b0|1'?d0|0)\\b`).test(condition)
-    || new RegExp(`\\b${escapedSignal}\\s*!=\\s*(?:1'?b1|1'?d1|1)\\b`).test(condition);
-}
-
-function chooseRegisterDataExpression(expressions: string[], resetSignal?: string): string {
-  if (expressions.length === 0) {
-    return '';
-  }
-
-  if (resetSignal) {
-    const preferred = expressions.find((expression) => !expressionIdentifiers(expression).includes(resetSignal));
-    if (preferred) {
-      return preferred;
-    }
-  }
-
-  return expressions[expressions.length - 1];
+  return (
+    new RegExp(`(?:!|~)\\s*${escapedSignal}\\b`).test(condition) ||
+    new RegExp(`\\b${escapedSignal}\\s*==\\s*(?:1'?b0|1'?d0|0)\\b`).test(condition) ||
+    new RegExp(`\\b${escapedSignal}\\s*!=\\s*(?:1'?b1|1'?d1|1)\\b`).test(condition)
+  );
 }
 
 function extractMuxes(
   match: ModuleMatch,
   modulePorts: DiagramPort[],
   existingNodes: DiagramNode[] = [],
-  signalWidths: Map<string, string> = new Map()
+  signalWidths: Map<string, string> = new Map(),
 ): MuxExtraction {
   const nodes: DiagramNode[] = [];
   const edges: DesignModule['edges'] = [];
@@ -777,27 +903,32 @@ function extractMuxes(
   while ((caseMatch = caseRegex.exec(match.body))) {
     const selector = caseMatch[1].trim() || 'sel';
     const selectorIdentifiers = expressionIdentifiers(selector);
-    const selectorSignal = isSimpleIdentifierExpression(selector, selectorIdentifiers[0] ?? '') ? selectorIdentifiers[0] : undefined;
+    const selectorSignal = isSimpleIdentifierExpression(selector, selectorIdentifiers[0] ?? '')
+      ? selectorIdentifiers[0]
+      : undefined;
     const selectorPortName = selectorSignal ?? 's';
-    const assignments = [...caseMatch[2].matchAll(/([^:;]+):\s*([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g)].map((assignment) => ({
+    const assignments = [
+      ...caseMatch[2].matchAll(/([^:;]+):\s*([A-Za-z_$][\w$]*)\s*=\s*([^;]+);/g),
+    ].map((assignment) => ({
       caseLabel: assignment[1].trim(),
       target: assignment[2],
-      expression: assignment[3].trim()
+      expression: assignment[3].trim(),
     }));
     const outputSignal = assignments[0]?.target ?? 'out';
     const inputCases = uniqueBy(
       assignments
         .map((assignment) => ({
           signal: firstIdentifier(assignment.expression),
-          label: assignment.caseLabel
+          label: assignment.caseLabel,
         }))
         .filter((input): input is { signal: string; label: string } => Boolean(input.signal)),
-      (input) => input.signal
+      (input) => input.signal,
     );
-    const inputSignals = unique([
-      selectorSignal,
-      ...inputCases.map((input) => input.signal)
-    ].filter((signal): signal is string => Boolean(signal)));
+    const inputSignals = unique(
+      [selectorSignal, ...inputCases.map((input) => input.signal)].filter(
+        (signal): signal is string => Boolean(signal),
+      ),
+    );
     const muxKey = stableId('mux', match.name, outputSignal, selector);
     const muxKeyCount = muxKeyCounts.get(muxKey) ?? 0;
     muxKeyCounts.set(muxKey, muxKeyCount + 1);
@@ -805,7 +936,16 @@ function extractMuxes(
     const combined = match.header + ';' + match.body;
     const selectedSelector = parseSelectExpression(selector);
     if (selectedSelector) {
-      const source = ensureBusTap(edges, match.name, modulePorts, nodes, [...existingNodes, ...nodes], signalWidths, selectedSelector.base, selectedSelector.select);
+      const source = ensureBusTap(
+        edges,
+        match.name,
+        modulePorts,
+        nodes,
+        [...existingNodes, ...nodes],
+        signalWidths,
+        selectedSelector.base,
+        selectedSelector.select,
+      );
       if (source) {
         pushUniqueEdge(edges, {
           id: edgeId(source.nodeId, nodeId, selectorPortName),
@@ -815,20 +955,42 @@ function extractMuxes(
           targetPort: stableId('in', selectorPortName),
           label: undefined,
           signal: selectedSelector.signal,
-          width: selectedSelector.width
+          width: selectedSelector.width,
         });
       }
     } else if (!selectorSignal && selectorIdentifiers.length > 0) {
       const sourceRange = {
         file: match.file,
-        startLine: match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index) - 1,
+        startLine:
+          match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index) - 1,
         startColumn: columnAt(combined, match.header.length + 1 + caseMatch.index),
-        endLine: match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length) - 1,
-        endColumn: columnAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length)
+        endLine:
+          match.startLine +
+          lineAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length) -
+          1,
+        endColumn: columnAt(
+          combined,
+          match.header.length + 1 + caseMatch.index + caseMatch[0].length,
+        ),
       };
-      const selectorComb = createCombNode(match, selectorPortName, selector, selectorIdentifiers, stableId(nodeId, 'selector'), undefined, sourceRange);
+      const selectorComb = createCombNode(
+        match,
+        selectorPortName,
+        selector,
+        selectorIdentifiers,
+        stableId(nodeId, 'selector'),
+        undefined,
+        sourceRange,
+      );
       nodes.push(selectorComb);
-      connectSignalsToNode(edges, match.name, selectorIdentifiers, modulePorts, [...existingNodes, ...nodes], selectorComb.id);
+      connectSignalsToNode(
+        edges,
+        match.name,
+        selectorIdentifiers,
+        modulePorts,
+        [...existingNodes, ...nodes],
+        selectorComb.id,
+      );
       pushUniqueEdge(edges, {
         id: edgeId(selectorComb.id, nodeId, selectorPortName),
         source: selectorComb.id,
@@ -836,7 +998,7 @@ function extractMuxes(
         sourcePort: stableId('out', selectorPortName),
         targetPort: stableId('in', selectorPortName),
         label: selectorPortName,
-        signal: selectorPortName
+        signal: selectorPortName,
       });
     }
     nodes.push({
@@ -845,23 +1007,41 @@ function extractMuxes(
       label: `case ${selector}`,
       parentModule: match.name,
       ports: [
-        { id: stableId('in', selectorPortName), name: selectorPortName, label: 's', direction: 'input' as const, width: selectedSelector?.width ?? signalWidths.get(selectorPortName) },
+        {
+          id: stableId('in', selectorPortName),
+          name: selectorPortName,
+          label: 's',
+          direction: 'input' as const,
+          width: selectedSelector?.width ?? signalWidths.get(selectorPortName),
+        },
         ...inputCases.map((input) => ({
           id: stableId('in', input.signal),
           name: input.signal,
           label: input.label,
           direction: 'input' as const,
-          width: signalWidths.get(input.signal)
+          width: signalWidths.get(input.signal),
         })),
-        { id: stableId('out', outputSignal), name: outputSignal, direction: 'output', width: signalWidths.get(outputSignal) }
+        {
+          id: stableId('out', outputSignal),
+          name: outputSignal,
+          direction: 'output',
+          width: signalWidths.get(outputSignal),
+        },
       ],
       source: {
         file: match.file,
-        startLine: match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index) - 1,
+        startLine:
+          match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index) - 1,
         startColumn: columnAt(combined, match.header.length + 1 + caseMatch.index),
-        endLine: match.startLine + lineAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length) - 1,
-        endColumn: columnAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length)
-      }
+        endLine:
+          match.startLine +
+          lineAt(combined, match.header.length + 1 + caseMatch.index + caseMatch[0].length) -
+          1,
+        endColumn: columnAt(
+          combined,
+          match.header.length + 1 + caseMatch.index + caseMatch[0].length,
+        ),
+      },
     });
 
     for (const signal of inputSignals) {
@@ -878,7 +1058,7 @@ function extractMuxes(
           targetPort: stableId('in', signal),
           label: signal,
           signal,
-          width: signalWidths.get(signal)
+          width: signalWidths.get(signal),
         });
       }
     }
@@ -893,7 +1073,7 @@ function extractMuxes(
         targetPort: targetPort.id,
         label: outputSignal,
         signal: outputSignal,
-        width: signalWidths.get(outputSignal)
+        width: signalWidths.get(outputSignal),
       });
     }
   }
@@ -905,7 +1085,7 @@ function extractContinuousAssigns(
   match: ModuleMatch,
   modulePorts: DiagramPort[],
   nodes: DiagramNode[],
-  signalWidths: Map<string, string>
+  signalWidths: Map<string, string>,
 ): ContinuousAssignExtraction {
   const combNodes: DiagramNode[] = [];
   const edges: DesignModule['edges'] = [];
@@ -923,7 +1103,16 @@ function extractContinuousAssigns(
 
     const selected = parseSelectExpression(expression);
     if (selected) {
-      const source = ensureBusTap(edges, match.name, modulePorts, combNodes, [...nodes, ...combNodes], signalWidths, selected.base, selected.select);
+      const source = ensureBusTap(
+        edges,
+        match.name,
+        modulePorts,
+        combNodes,
+        [...nodes, ...combNodes],
+        signalWidths,
+        selected.base,
+        selected.select,
+      );
       const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
       if (source && target) {
         pushUniqueEdge(edges, {
@@ -934,7 +1123,7 @@ function extractContinuousAssigns(
           targetPort: target.portId,
           label: undefined,
           signal: selected.signal,
-          width: selected.width
+          width: selected.width,
         });
       }
       continue;
@@ -944,10 +1133,17 @@ function extractContinuousAssigns(
       const combined = match.header + ';' + match.body;
       const sourceRange = {
         file: match.file,
-        startLine: match.startLine + lineAt(combined, match.header.length + 1 + assignment.index) - 1,
+        startLine:
+          match.startLine + lineAt(combined, match.header.length + 1 + assignment.index) - 1,
         startColumn: columnAt(combined, match.header.length + 1 + assignment.index),
-        endLine: match.startLine + lineAt(combined, match.header.length + 1 + assignment.index + assignment[0].length) - 1,
-        endColumn: columnAt(combined, match.header.length + 1 + assignment.index + assignment[0].length)
+        endLine:
+          match.startLine +
+          lineAt(combined, match.header.length + 1 + assignment.index + assignment[0].length) -
+          1,
+        endColumn: columnAt(
+          combined,
+          match.header.length + 1 + assignment.index + assignment[0].length,
+        ),
       };
 
       if (containsConditionalExpression(expression)) {
@@ -962,12 +1158,15 @@ function extractContinuousAssigns(
           signalWidths,
           edges,
           sourceRange,
-          signalWidths.get(targetSignal)
+          signalWidths.get(targetSignal),
         );
         if (promoted) {
           const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
           if (target) {
-            const source = signalSource(match.name, promoted.signal, modulePorts, [...nodes, ...combNodes]);
+            const source = signalSource(match.name, promoted.signal, modulePorts, [
+              ...nodes,
+              ...combNodes,
+            ]);
             if (source) {
               pushUniqueEdge(edges, {
                 id: edgeId(source.nodeId, target.nodeId, targetSignal),
@@ -977,7 +1176,7 @@ function extractContinuousAssigns(
                 targetPort: target.portId,
                 label: targetSignal,
                 signal: targetSignal,
-                width: promoted.width ?? signalWidths.get(targetSignal)
+                width: promoted.width ?? signalWidths.get(targetSignal),
               });
             }
           }
@@ -985,9 +1184,26 @@ function extractContinuousAssigns(
         }
       }
 
-      const comb = createCombNode(match, targetSignal, expression, refs, assignRegex.lastIndex.toString(), signalWidths.get(targetSignal), sourceRange);
+      const comb = createCombNode(
+        match,
+        targetSignal,
+        expression,
+        refs,
+        assignRegex.lastIndex.toString(),
+        signalWidths.get(targetSignal),
+        sourceRange,
+      );
       combNodes.push(comb);
-      connectSignalRefsToNode(edges, match.name, refs, modulePorts, combNodes, [...nodes, ...combNodes], signalWidths, comb.id);
+      connectSignalRefsToNode(
+        edges,
+        match.name,
+        refs,
+        modulePorts,
+        combNodes,
+        [...nodes, ...combNodes],
+        signalWidths,
+        comb.id,
+      );
 
       const target = signalTarget(match.name, targetSignal, modulePorts, nodes);
       if (target) {
@@ -999,7 +1215,7 @@ function extractContinuousAssigns(
           targetPort: target.portId,
           label: targetSignal,
           signal: targetSignal,
-          width: signalWidths.get(targetSignal)
+          width: signalWidths.get(targetSignal),
         });
       }
       continue;
@@ -1019,7 +1235,7 @@ function extractContinuousAssigns(
       targetPort: target.portId,
       label: sourceSignal,
       signal: sourceSignal,
-      width: signalWidths.get(sourceSignal)
+      width: signalWidths.get(sourceSignal),
     });
   }
 
@@ -1027,8 +1243,10 @@ function extractContinuousAssigns(
 }
 
 function containsConditionalExpression(expression: string): boolean {
-  return parseConditionalExpression(expression) !== undefined
-    || findParenthesizedConditional(expression) !== undefined;
+  return (
+    parseConditionalExpression(expression) !== undefined ||
+    findParenthesizedConditional(expression) !== undefined
+  );
 }
 
 function parseConditionalExpression(expression: string): ConditionalExpression | undefined {
@@ -1109,7 +1327,9 @@ function matchingClosingParen(expression: string, openingIndex: number): number 
   return -1;
 }
 
-function findParenthesizedConditional(expression: string): { start: number; end: number; expression: string } | undefined {
+function findParenthesizedConditional(
+  expression: string,
+): { start: number; end: number; expression: string } | undefined {
   const stack: number[] = [];
   let inString = false;
   for (let index = 0; index < expression.length; index++) {
@@ -1144,7 +1364,7 @@ function promoteTextExpression(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
-  outputWidth?: string
+  outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const conditional = parseConditionalExpression(expression);
   if (conditional) {
@@ -1160,14 +1380,23 @@ function promoteTextExpression(
       signalWidths,
       edges,
       sourceRange,
-      outputWidth
+      outputWidth,
     );
   }
 
   const unwrapped = stripOuterParentheses(expression);
   const selected = parseSelectExpression(unwrapped);
   if (selected) {
-    ensureBusTap(edges, match.name, modulePorts, mutableNodes, [...existingNodes, ...mutableNodes], signalWidths, selected.base, selected.select);
+    ensureBusTap(
+      edges,
+      match.name,
+      modulePorts,
+      mutableNodes,
+      [...existingNodes, ...mutableNodes],
+      signalWidths,
+      selected.base,
+      selected.select,
+    );
     return { signal: selected.signal, width: selected.width };
   }
 
@@ -1175,14 +1404,17 @@ function promoteTextExpression(
   if (identifiers.length === 1 && isSimpleIdentifierExpression(unwrapped, identifiers[0])) {
     const signal = identifiers[0];
     const arrayPort = modulePorts.find((port) => port.name === signal);
-    const arrayNode = [...existingNodes, ...mutableNodes].find((node) => (
-      node.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal)
-    ));
+    const arrayNode = [...existingNodes, ...mutableNodes].find((node) =>
+      node.ports.some((port) => port.direction === 'output' && port.connectedSignal === signal),
+    );
     return {
       signal,
       width: signalWidths.get(signal),
-      arrayDimension: arrayPort?.arrayDimension ?? arrayNode?.arrayDimension ?? arrayNode?.metadata?.arrayDimension,
-      arraySize: arrayPort?.arraySize ?? arrayNode?.arraySize ?? arrayNode?.metadata?.arraySize
+      arrayDimension:
+        arrayPort?.arrayDimension ??
+        arrayNode?.arrayDimension ??
+        arrayNode?.metadata?.arrayDimension,
+      arraySize: arrayPort?.arraySize ?? arrayNode?.arraySize ?? arrayNode?.metadata?.arraySize,
     };
   }
 
@@ -1206,19 +1438,37 @@ function promoteTextExpression(
       existingNodes,
       signalWidths,
       edges,
-      sourceRange
+      sourceRange,
     );
     if (!promoted) break;
-    rewritten = `${rewritten.slice(0, embedded.start)}${promoted.signal}${rewritten.slice(embedded.end)}`;
+    rewritten =
+      rewritten.slice(0, embedded.start) + promoted.signal + rewritten.slice(embedded.end);
     embeddedIndex++;
     embedded = findParenthesizedConditional(rewritten);
   }
 
   const refs = expressionSignalRefs(rewritten);
   if (refs.length === 0) return undefined;
-  const comb = createCombNode(match, preferredSignal, expression, refs, discriminator, outputWidth, sourceRange);
+  const comb = createCombNode(
+    match,
+    preferredSignal,
+    expression,
+    refs,
+    discriminator,
+    outputWidth,
+    sourceRange,
+  );
   mutableNodes.push(comb);
-  connectSignalRefsToNode(edges, match.name, refs, modulePorts, mutableNodes, [...existingNodes, ...mutableNodes], signalWidths, comb.id);
+  connectSignalRefsToNode(
+    edges,
+    match.name,
+    refs,
+    modulePorts,
+    mutableNodes,
+    [...existingNodes, ...mutableNodes],
+    signalWidths,
+    comb.id,
+  );
   return { signal: preferredSignal, width: outputWidth };
 }
 
@@ -1234,7 +1484,7 @@ function promoteTextConditional(
   signalWidths: Map<string, string>,
   edges: DesignModule['edges'],
   sourceRange: { file: string; startLine: number; endLine: number },
-  outputWidth?: string
+  outputWidth?: string,
 ): PromotedTextExpression | undefined {
   const nodeCount = mutableNodes.length;
   const edgeCount = edges.length;
@@ -1244,16 +1494,52 @@ function promoteTextConditional(
     return undefined;
   };
 
-  const selector = promoteTextExpression(match, conditional.condition, `${outputSignal}_sel`, `${discriminator}_sel`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange);
+  const selector = promoteTextExpression(
+    match,
+    conditional.condition,
+    `${outputSignal}_sel`,
+    `${discriminator}_sel`,
+    modulePorts,
+    mutableNodes,
+    existingNodes,
+    signalWidths,
+    edges,
+    sourceRange,
+  );
   if (!selector) return rollback();
-  const whenTrue = promoteTextExpression(match, conditional.whenTrue, `${outputSignal}_true`, `${discriminator}_true`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
+  const whenTrue = promoteTextExpression(
+    match,
+    conditional.whenTrue,
+    `${outputSignal}_true`,
+    `${discriminator}_true`,
+    modulePorts,
+    mutableNodes,
+    existingNodes,
+    signalWidths,
+    edges,
+    sourceRange,
+    outputWidth,
+  );
   if (!whenTrue) return rollback();
-  const whenFalse = promoteTextExpression(match, conditional.whenFalse, `${outputSignal}_false`, `${discriminator}_false`, modulePorts, mutableNodes, existingNodes, signalWidths, edges, sourceRange, outputWidth);
+  const whenFalse = promoteTextExpression(
+    match,
+    conditional.whenFalse,
+    `${outputSignal}_false`,
+    `${discriminator}_false`,
+    modulePorts,
+    mutableNodes,
+    existingNodes,
+    signalWidths,
+    edges,
+    sourceRange,
+    outputWidth,
+  );
   if (!whenFalse) return rollback();
 
   const width = outputWidth ?? whenTrue.width ?? whenFalse.width;
   const outputArray = modulePorts.find((port) => port.name === outputSignal);
-  const arrayDimension = outputArray?.arrayDimension ?? whenTrue.arrayDimension ?? whenFalse.arrayDimension;
+  const arrayDimension =
+    outputArray?.arrayDimension ?? whenTrue.arrayDimension ?? whenFalse.arrayDimension;
   const arraySize = outputArray?.arraySize ?? whenTrue.arraySize ?? whenFalse.arraySize;
   const node: DiagramNode = {
     id: stableId('mux', match.name, outputSignal, 'ternary'),
@@ -1264,18 +1550,52 @@ function promoteTextConditional(
     arrayDimension,
     arraySize,
     ports: [
-      { id: 'sel', name: 'sel', label: 's', direction: 'input', connectedSignal: selector.signal, width: selector.width },
-      { id: stableId('in', 'true'), name: 'true', label: "1'b1", direction: 'input', connectedSignal: whenTrue.signal, width: whenTrue.width },
-      { id: stableId('in', 'false'), name: 'false', label: "1'b0", direction: 'input', connectedSignal: whenFalse.signal, width: whenFalse.width },
-      { id: stableId('out'), name: 'out', direction: 'output', connectedSignal: outputSignal, width }
+      {
+        id: 'sel',
+        name: 'sel',
+        label: 's',
+        direction: 'input',
+        connectedSignal: selector.signal,
+        width: selector.width,
+      },
+      {
+        id: stableId('in', 'true'),
+        name: 'true',
+        label: "1'b1",
+        direction: 'input',
+        connectedSignal: whenTrue.signal,
+        width: whenTrue.width,
+      },
+      {
+        id: stableId('in', 'false'),
+        name: 'false',
+        label: "1'b0",
+        direction: 'input',
+        connectedSignal: whenFalse.signal,
+        width: whenFalse.width,
+      },
+      {
+        id: stableId('out'),
+        name: 'out',
+        direction: 'output',
+        connectedSignal: outputSignal,
+        width,
+      },
     ],
     metadata: { expression },
-    source: sourceRange
+    source: sourceRange,
   };
   mutableNodes.push(node);
 
-  for (const [value, targetPort] of [[selector, 'sel'], [whenTrue, stableId('in', 'true')], [whenFalse, stableId('in', 'false')]] as const) {
-    const source = signalSource(match.name, value.signal, modulePorts, [...existingNodes, ...mutableNodes]);
+  for (const [value, targetPort] of [
+    [selector, 'sel'],
+    [whenTrue, stableId('in', 'true')],
+    [whenFalse, stableId('in', 'false')],
+  ] as const) {
+    const source = signalSource(match.name, value.signal, modulePorts, [
+      ...existingNodes,
+      ...mutableNodes,
+    ]);
     if (!source) continue;
     pushUniqueEdge(edges, {
       id: edgeId(source.nodeId, node.id, targetPort),
@@ -1285,7 +1605,7 @@ function promoteTextConditional(
       targetPort,
       label: value.signal,
       signal: value.signal,
-      width: value.width
+      width: value.width,
     });
   }
 
@@ -1293,9 +1613,11 @@ function promoteTextConditional(
 }
 
 function isLiteralTextExpression(expression: string): boolean {
-  return /^(?:\d+)?'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]+$/.test(expression)
-    || /^'[01xXzZ]$/.test(expression)
-    || /^\d+$/.test(expression);
+  return (
+    /^(?:\d+)?'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]+$/.test(expression) ||
+    /^'[01xXzZ]$/.test(expression) ||
+    /^\d+$/.test(expression)
+  );
 }
 
 function literalTextWidth(expression: string): string | undefined {
@@ -1309,7 +1631,7 @@ function ensureTextLiteralNode(
   match: ModuleMatch,
   literal: string,
   nodes: DiagramNode[],
-  sourceRange: { file: string; startLine: number; endLine: number }
+  sourceRange: { file: string; startLine: number; endLine: number },
 ): string {
   if (nodes.some((node) => node.kind === 'literal' && node.label === literal)) return literal;
   nodes.push({
@@ -1317,8 +1639,16 @@ function ensureTextLiteralNode(
     kind: 'literal',
     label: literal,
     parentModule: match.name,
-    ports: [{ id: stableId('out', literal), name: literal, direction: 'output', connectedSignal: literal, width: literalTextWidth(literal) }],
-    source: sourceRange
+    ports: [
+      {
+        id: stableId('out', literal),
+        name: literal,
+        direction: 'output',
+        connectedSignal: literal,
+        width: literalTextWidth(literal),
+      },
+    ],
+    source: sourceRange,
   });
   return literal;
 }
@@ -1330,11 +1660,9 @@ function createCombNode(
   signals: Array<string | SignalRef>,
   discriminator: string,
   outputWidth?: string,
-  sourceRange?: { file: string; startLine: number; endLine: number }
+  sourceRange?: { file: string; startLine: number; endLine: number },
 ): DiagramNode {
-  const refs = signals.map((signal) => typeof signal === 'string'
-    ? signalRef(signal)
-    : signal);
+  const refs = signals.map((signal) => (typeof signal === 'string' ? signalRef(signal) : signal));
   return {
     id: stableId('comb', match.name, targetSignal, discriminator),
     kind: 'comb',
@@ -1346,18 +1674,23 @@ function createCombNode(
         name: ref.signal,
         label: ref.label,
         direction: 'input' as const,
-        width: ref.width
+        width: ref.width,
       })),
-      { id: stableId('out', targetSignal), name: targetSignal, direction: 'output', width: outputWidth }
+      {
+        id: stableId('out', targetSignal),
+        name: targetSignal,
+        direction: 'output',
+        width: outputWidth,
+      },
     ],
     metadata: {
       expression,
-      width: outputWidth
+      width: outputWidth,
     },
     source: sourceRange ?? {
       file: match.file,
-      startLine: match.startLine
-    }
+      startLine: match.startLine,
+    },
   };
 }
 
@@ -1369,11 +1702,20 @@ function connectSignalRefsToNode(
   mutableNodes: DiagramNode[],
   sourceNodes: DiagramNode[],
   signalWidths: Map<string, string>,
-  targetNodeId: string
+  targetNodeId: string,
 ): void {
   for (const ref of refs) {
     const source = ref.select
-      ? ensureBusTap(edges, moduleName, modulePorts, mutableNodes, sourceNodes, signalWidths, ref.sourceSignal, ref.select)
+      ? ensureBusTap(
+          edges,
+          moduleName,
+          modulePorts,
+          mutableNodes,
+          sourceNodes,
+          signalWidths,
+          ref.sourceSignal,
+          ref.select,
+        )
       : signalSource(moduleName, ref.sourceSignal, modulePorts, sourceNodes);
     if (source) {
       pushUniqueEdge(edges, {
@@ -1382,9 +1724,9 @@ function connectSignalRefsToNode(
         target: targetNodeId,
         sourcePort: source.portId,
         targetPort: stableId('in', ref.signal),
-        label: ref.select ? undefined : ref.label ?? ref.signal,
+        label: ref.select ? undefined : (ref.label ?? ref.signal),
         signal: ref.signal,
-        width: ref.width ?? signalWidths.get(ref.sourceSignal)
+        width: ref.width ?? signalWidths.get(ref.sourceSignal),
       });
     }
   }
@@ -1396,7 +1738,7 @@ function connectSignalsToNode(
   identifiers: string[],
   modulePorts: DiagramPort[],
   nodes: DiagramNode[],
-  targetNodeId: string
+  targetNodeId: string,
 ): void {
   for (const identifier of identifiers) {
     const source = signalSource(moduleName, identifier, modulePorts, nodes);
@@ -1408,7 +1750,7 @@ function connectSignalsToNode(
         sourcePort: source.portId,
         targetPort: stableId('in', identifier),
         label: identifier,
-        signal: identifier
+        signal: identifier,
       });
     }
   }
@@ -1422,12 +1764,14 @@ function ensureBusTap(
   sourceNodes: DiagramNode[],
   signalWidths: Map<string, string>,
   baseSignal: string,
-  select: string
+  select: string,
 ): { nodeId: string; portId: string } | undefined {
   const nodeId = stableId('bus', moduleName, baseSignal);
   const signal = `${baseSignal}${select}`;
   const outputPortId = stableId('out', signal);
-  let busNode = mutableNodes.find((node) => node.id === nodeId) ?? sourceNodes.find((node) => node.id === nodeId);
+  let busNode =
+    mutableNodes.find((node) => node.id === nodeId) ??
+    sourceNodes.find((node) => node.id === nodeId);
 
   if (!busNode) {
     busNode = {
@@ -1440,12 +1784,12 @@ function ensureBusTap(
           id: stableId('in', baseSignal),
           name: baseSignal,
           direction: 'input',
-          width: signalWidths.get(baseSignal)
-        }
+          width: signalWidths.get(baseSignal),
+        },
       ],
       metadata: {
-        width: signalWidths.get(baseSignal)
-      }
+        width: signalWidths.get(baseSignal),
+      },
     };
     mutableNodes.push(busNode);
   }
@@ -1456,11 +1800,16 @@ function ensureBusTap(
       name: signal,
       label: select,
       direction: 'output',
-      width: widthForSelect(select)
+      width: widthForSelect(select),
     });
   }
 
-  const source = signalSource(moduleName, baseSignal, modulePorts, sourceNodes.filter((node) => node.id !== nodeId));
+  const source = signalSource(
+    moduleName,
+    baseSignal,
+    modulePorts,
+    sourceNodes.filter((node) => node.id !== nodeId),
+  );
   if (source) {
     pushUniqueEdge(edges, {
       id: edgeId(source.nodeId, nodeId, baseSignal),
@@ -1470,13 +1819,13 @@ function ensureBusTap(
       targetPort: stableId('in', baseSignal),
       label: undefined,
       signal: baseSignal,
-      width: signalWidths.get(baseSignal)
+      width: signalWidths.get(baseSignal),
     });
   }
 
   return {
     nodeId,
-    portId: outputPortId
+    portId: outputPortId,
   };
 }
 
@@ -1484,14 +1833,24 @@ function signalSource(
   moduleName: string,
   signal: string,
   modulePorts: DiagramPort[],
-  nodes: DiagramNode[]
+  nodes: DiagramNode[],
 ): { nodeId: string; portId: string } | undefined {
-  const sourceMux = nodes.find((node) => node.kind === 'mux' && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal));
+  const sourceMux = nodes.find(
+    (node) =>
+      node.kind === 'mux' &&
+      node.ports.some(
+        (port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal,
+      ),
+  );
   if (sourceMux) {
-    const port = sourceMux.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
+    const port = sourceMux.ports.find(
+      (candidate) =>
+        candidate.direction === 'output' &&
+        (candidate.connectedSignal ?? candidate.name) === signal,
+    )!;
     return {
       nodeId: sourceMux.id,
-      portId: port.id
+      portId: port.id,
     };
   }
 
@@ -1499,45 +1858,74 @@ function signalSource(
   if (sourceRegister) {
     return {
       nodeId: sourceRegister.id,
-      portId: stableId('q')
+      portId: stableId('q'),
     };
   }
 
-  const sourceComb = nodes.find((node) => node.kind === 'comb' && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal));
+  const sourceComb = nodes.find(
+    (node) =>
+      node.kind === 'comb' &&
+      node.ports.some(
+        (port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal,
+      ),
+  );
   if (sourceComb) {
-    const port = sourceComb.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
+    const port = sourceComb.ports.find(
+      (candidate) =>
+        candidate.direction === 'output' &&
+        (candidate.connectedSignal ?? candidate.name) === signal,
+    )!;
     return {
       nodeId: sourceComb.id,
-      portId: port.id
+      portId: port.id,
     };
   }
 
-  const sourceInstance = nodes.find((node) => node.kind === 'instance' && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal));
+  const sourceInstance = nodes.find(
+    (node) =>
+      node.kind === 'instance' &&
+      node.ports.some(
+        (port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal,
+      ),
+  );
   if (sourceInstance) {
-    const port = sourceInstance.ports.find((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal);
+    const port = sourceInstance.ports.find(
+      (port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal,
+    );
     return {
       nodeId: sourceInstance.id,
-      portId: port!.id
+      portId: port!.id,
     };
   }
 
-  const sourceBus = nodes.find((node) => node.kind === 'bus' && node.ports.some((port) => port.direction === 'output' && port.name === signal));
+  const sourceBus = nodes.find(
+    (node) =>
+      node.kind === 'bus' &&
+      node.ports.some((port) => port.direction === 'output' && port.name === signal),
+  );
   if (sourceBus) {
     return {
       nodeId: sourceBus.id,
-      portId: stableId('out', signal)
+      portId: stableId('out', signal),
     };
   }
 
-  const sourceExpressionNode = nodes.find((node) => (
-    node.kind !== 'port'
-    && node.ports.some((port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal)
-  ));
+  const sourceExpressionNode = nodes.find(
+    (node) =>
+      node.kind !== 'port' &&
+      node.ports.some(
+        (port) => port.direction === 'output' && (port.connectedSignal ?? port.name) === signal,
+      ),
+  );
   if (sourceExpressionNode) {
-    const port = sourceExpressionNode.ports.find((candidate) => candidate.direction === 'output' && (candidate.connectedSignal ?? candidate.name) === signal)!;
+    const port = sourceExpressionNode.ports.find(
+      (candidate) =>
+        candidate.direction === 'output' &&
+        (candidate.connectedSignal ?? candidate.name) === signal,
+    )!;
     return {
       nodeId: sourceExpressionNode.id,
-      portId: port.id
+      portId: port.id,
     };
   }
 
@@ -1545,16 +1933,24 @@ function signalSource(
   if (sourcePort) {
     return {
       nodeId: stableId('port', moduleName, sourcePort.name),
-      portId: sourcePort.id
+      portId: sourcePort.id,
     };
   }
 
-  const unknownSourceInstance = nodes.find((node) => node.kind === 'instance' && node.ports.some((port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal));
+  const unknownSourceInstance = nodes.find(
+    (node) =>
+      node.kind === 'instance' &&
+      node.ports.some(
+        (port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal,
+      ),
+  );
   if (unknownSourceInstance) {
-    const port = unknownSourceInstance.ports.find((port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal);
+    const port = unknownSourceInstance.ports.find(
+      (port) => port.direction === 'unknown' && (port.connectedSignal ?? port.name) === signal,
+    );
     return {
       nodeId: unknownSourceInstance.id,
-      portId: port!.id
+      portId: port!.id,
     };
   }
 
@@ -1565,13 +1961,13 @@ function signalTarget(
   moduleName: string,
   signal: string,
   modulePorts: DiagramPort[],
-  nodes: DiagramNode[]
+  nodes: DiagramNode[],
 ): { nodeId: string; portId: string } | undefined {
   const targetRegister = nodes.find((node) => node.kind === 'register' && node.label === signal);
   if (targetRegister) {
     return {
       nodeId: targetRegister.id,
-      portId: stableId('d')
+      portId: stableId('d'),
     };
   }
 
@@ -1579,7 +1975,7 @@ function signalTarget(
   if (targetPort) {
     return {
       nodeId: stableId('port', moduleName, targetPort.name),
-      portId: targetPort.id
+      portId: targetPort.id,
     };
   }
 
@@ -1592,7 +1988,7 @@ function extractUnknowns(match: ModuleMatch, knownNodes: DiagramNode[]): Diagram
     [/\bgenerate\b[\s\S]*?\bendgenerate\b/g, 'generate'],
     [/\binterface\b[\s\S]*?\bendinterface\b/g, 'interface'],
     [/\balways_comb\b[\s\S]*?(?=\balways_|\balways\b|\bassign\b|$)/g, 'always_comb'],
-    [/\binitial\b[\s\S]*?(?=\balways_|\balways\b|\bassign\b|$)/g, 'initial']
+    [/\binitial\b[\s\S]*?(?=\balways_|\balways\b|\bassign\b|$)/g, 'initial'],
   ];
   const occupiedLines = new Set(knownNodes.map((node) => node.source?.startLine).filter(Boolean));
 
@@ -1616,15 +2012,15 @@ function extractUnknowns(match: ModuleMatch, knownNodes: DiagramNode[]): Diagram
         parentModule: match.name,
         ports: [],
         metadata: {
-          reason: 'Unsupported SV construct in MVP toy subset'
+          reason: 'Unsupported SV construct in MVP toy subset',
         },
         source: {
           file: match.file,
           startLine: line,
           startColumn: column,
           endLine: line + lineAt(trimmedMatch, trimmedMatch.length) - 1,
-          endColumn: columnAt(trimmedMatch, trimmedMatch.length)
-        }
+          endColumn: columnAt(trimmedMatch, trimmedMatch.length),
+        },
       });
     }
   }
@@ -1652,7 +2048,7 @@ function enrichInstanceConnections(graph: DesignGraph): void {
             direction: childPort.direction,
             width: childPort.width,
             widthExpression: childPort.widthExpression,
-            parameterRefs: childPort.parameterRefs
+            parameterRefs: childPort.parameterRefs,
           };
         }
         return port;
@@ -1677,10 +2073,15 @@ function enrichInstanceConnections(graph: DesignGraph): void {
             sourcePort: port.id,
             targetPort: modulePort.id,
             label: signal,
-            signal
+            signal,
           });
         } else {
-          const source = signalSource(designModule.name, signal, designModule.ports, designModule.nodes);
+          const source = signalSource(
+            designModule.name,
+            signal,
+            designModule.ports,
+            designModule.nodes,
+          );
           if (!source) {
             continue;
           }
@@ -1691,7 +2092,7 @@ function enrichInstanceConnections(graph: DesignGraph): void {
             sourcePort: source.portId,
             targetPort: port.id,
             label: signal,
-            signal
+            signal,
           });
         }
       }
@@ -1705,7 +2106,9 @@ function detectMultipleDrivers(graph: DesignGraph): DesignGraph['diagnostics'] {
   for (const designModule of Object.values(graph.modules)) {
     const drivers = new Map<string, DesignModule['edges']>();
     for (const edge of designModule.edges) {
-      const targetPort = designModule.ports.find((port) => stableId('port', designModule.name, port.name) === edge.target);
+      const targetPort = designModule.ports.find(
+        (port) => stableId('port', designModule.name, port.name) === edge.target,
+      );
       if (!targetPort || targetPort.direction !== 'output') {
         continue;
       }
@@ -1717,9 +2120,12 @@ function detectMultipleDrivers(graph: DesignGraph): DesignGraph['diagnostics'] {
 
     for (const [signal, edges] of drivers) {
       if (edges.length > 1) {
+        const driverSources = edges.map((edge) => edge.source).join(', ');
         diagnostics.push({
           severity: 'warning',
-          message: `Signal ${designModule.name}.${signal} has multiple diagram drivers: ${edges.map((edge) => edge.source).join(', ')}.`
+          message:
+            `Signal ${designModule.name}.${signal} has multiple diagram drivers: ` +
+            `${driverSources}.`,
         });
       }
     }
@@ -1768,7 +2174,7 @@ function expressionSignalRefs(expression: string): SignalRef[] {
       sourceSignal: base,
       select: range,
       label: range,
-      width: widthForSelect(range)
+      width: widthForSelect(range),
     });
     masked = masked.replace(select[0], ' '.repeat(select[0].length));
   }
@@ -1783,22 +2189,25 @@ function expressionSignalRefs(expression: string): SignalRef[] {
 function signalRef(signal: string): SignalRef {
   return {
     signal,
-    sourceSignal: signal
+    sourceSignal: signal,
   };
 }
 
-function parseSelectExpression(expression: string): { base: string; select: string; signal: string; width?: string } | undefined {
+function parseSelectExpression(
+  expression: string,
+): { base: string; select: string; signal: string; width?: string } | undefined {
   const selected = expression.trim().match(/^([A-Za-z_$][\w$]*)\s*(\[[^\]]+\])$/);
   if (!selected) {
     return undefined;
   }
 
   const selectText = selected[2].slice(1, -1).trim();
-  const isLiteral = /^\d+$/.test(selectText) || 
-                   /^\d+\s*:\s*\d+$/.test(selectText) || 
-                   /^\d+'[bdho][0-9a-fA-F_]+$/.test(selectText) ||
-                   /^[0-9a-fA-F_]+$/.test(selectText); // Heuristic for simple numbers
-  
+  const isLiteral =
+    /^\d+$/.test(selectText) ||
+    /^\d+\s*:\s*\d+$/.test(selectText) ||
+    /^\d+'[bdho][0-9a-fA-F_]+$/.test(selectText) ||
+    /^[0-9a-fA-F_]+$/.test(selectText); // Heuristic for simple numbers
+
   if (!isLiteral) {
     return undefined;
   }
@@ -1808,7 +2217,7 @@ function parseSelectExpression(expression: string): { base: string; select: stri
     base: selected[1],
     select,
     signal: `${selected[1]}${select}`,
-    width: widthForSelect(select)
+    width: widthForSelect(select),
   };
 }
 
@@ -1828,7 +2237,8 @@ function widthForSelect(select: string): string | undefined {
 }
 
 function stripComments(text: string): string {
-  return text.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\r\n]/g, ' '))
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\r\n]/g, ' '))
     .replace(/\/\/.*$/gm, (m) => ' '.repeat(m.length));
 }
 
@@ -1850,7 +2260,7 @@ function expressionIdentifiers(expression: string): string[] {
   return unique(
     [...expression.matchAll(/\b[A-Za-z_$][\w$]*\b/g)]
       .map((match) => match[0])
-      .filter((identifier) => !KEYWORDS.has(identifier))
+      .filter((identifier) => !KEYWORDS.has(identifier)),
   );
 }
 

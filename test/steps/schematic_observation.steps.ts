@@ -1,6 +1,5 @@
 import { Given, When, Then, BddWorld } from './fixtures';
 import { expect } from '@playwright/test';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -31,47 +30,61 @@ When('I press Enter', async function (this: BddWorld) {
 });
 
 Then('the SVSCH diagram panel opens', async function (this: BddWorld) {
-  await this.workbox.waitForSelector(
-    '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-    { timeout: 30_000 }
-  );
+  await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', {
+    timeout: 30_000,
+  });
   // Wait for the extension's graph build + webview render (Surelog may be slow on first run)
   await this.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 90_000 });
   await this.takeScreenshot('SVSCH diagram panel open');
 });
 
-Then('the {string} module is selected in the module dropdown', async function (this: BddWorld, moduleName: string) {
-  await expect(
-    this.webviewPage.locator('select[aria-label="Module"]')
-  ).toHaveValue(moduleName, { timeout: 10_000 });
-  await this.takeScreenshot(`Module ${moduleName} selected in dropdown`);
-});
+Then(
+  'the {string} module is selected in the module dropdown',
+  async function (this: BddWorld, moduleName: string) {
+    await expect(this.webviewPage.locator('select[aria-label="Module"]')).toHaveValue(moduleName, {
+      timeout: 10_000,
+    });
+    await this.takeScreenshot(`Module ${moduleName} selected in dropdown`);
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Composite step: write files + open diagram via command palette in one shot.
 // ---------------------------------------------------------------------------
 
-Given('I disable clock and reset cuts using this setting:', async function (this: BddWorld, docString: string) {
-  const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];
-  const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
-  await this.evaluateInVSCode((_vscode, arg) => {
-    return (_vscode as any).workspace
-      .getConfiguration('svsch')
-      .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
-  }, { key: configKey, value });
-});
-
-Given('I configure clock and reset signal names using this setting:', async function (this: BddWorld, docString: string) {
-  const settings = JSON.parse(`{${docString.trim()}}`) as Record<string, unknown>;
-  for (const [key, value] of Object.entries(settings)) {
+Given(
+  'I disable clock and reset cuts using this setting:',
+  async function (this: BddWorld, docString: string) {
+    const [key, value] = Object.entries(JSON.parse(`{${docString.trim()}}`))[0];
     const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
-    await this.evaluateInVSCode((_vscode, arg) => {
-      return (_vscode as any).workspace
-        .getConfiguration('svsch')
-        .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
-    }, { key: configKey, value });
-  }
-});
+    await this.evaluateInVSCode(
+      (_vscode, arg) => {
+        return (_vscode as any).workspace
+          .getConfiguration('svsch')
+          .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
+      },
+      { key: configKey, value },
+    );
+  },
+);
+
+Given(
+  'I configure clock and reset signal names using this setting:',
+  async function (this: BddWorld, docString: string) {
+    const settings = JSON.parse(`{${docString.trim()}}`) as Record<string, unknown>;
+    for (const [key, value] of Object.entries(settings)) {
+      const configKey = key.startsWith('svsch.') ? key.slice('svsch.'.length) : key;
+      await this.evaluateInVSCode(
+        (_vscode, arg) => {
+          return (_vscode as any).workspace
+            .getConfiguration('svsch')
+            .update(arg.key, arg.value, (_vscode as any).ConfigurationTarget.Workspace);
+        },
+        { key: configKey, value },
+      );
+    }
+  },
+);
 
 When('I open the {string} module in SVSCH', async function (this: BddWorld, moduleName: string) {
   if (this._bddWorkspaceFiles.length === 0) {
@@ -91,12 +104,12 @@ When('I open the {string} module in SVSCH', async function (this: BddWorld, modu
   await this.workbox.keyboard.type('SVSCH: Open Diagram');
   await this.workbox.keyboard.press('Enter');
 
-  await this.workbox.waitForSelector(
-    '.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]',
-    { timeout: 30_000 }
-  );
+  await this.workbox.waitForSelector('.tab[aria-label*="SVSCH"], .tab[title*="SVSCH"]', {
+    timeout: 30_000,
+  });
 
-  await this.webviewPage.locator('div.busy-indicator[role="status"]')
+  await this.webviewPage
+    .locator('div.busy-indicator[role="status"]')
     .waitFor({ state: 'hidden', timeout: 90_000 })
     .catch(() => {});
 
@@ -116,13 +129,15 @@ function commonProjectFolder(files: string[]): string {
     return '.';
   }
 
-  let commonParts = relativeDirs[0] === '.'
-    ? []
-    : relativeDirs[0].split(path.sep).filter(Boolean);
+  let commonParts = relativeDirs[0] === '.' ? [] : relativeDirs[0].split(path.sep).filter(Boolean);
   for (const relDir of relativeDirs.slice(1)) {
     const parts = relDir === '.' ? [] : relDir.split(path.sep).filter(Boolean);
     let index = 0;
-    while (index < commonParts.length && index < parts.length && commonParts[index] === parts[index]) {
+    while (
+      index < commonParts.length &&
+      index < parts.length &&
+      commonParts[index] === parts[index]
+    ) {
       index += 1;
     }
     commonParts = commonParts.slice(0, index);

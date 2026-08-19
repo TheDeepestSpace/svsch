@@ -21,7 +21,7 @@ export function comparePngBuffers(
   actualBuffer: Buffer,
   maxDiffPixels: number,
   threshold: number,
-  compareBox?: PngCompareBox | null
+  compareBox?: PngCompareBox | null,
 ): PngComparison {
   const expectedImage = PNG.sync.read(expectedBuffer);
   const actualImage = PNG.sync.read(actualBuffer);
@@ -41,7 +41,7 @@ export function comparePngBuffers(
     diff.data,
     expectedSize.width,
     expectedSize.height,
-    { threshold }
+    { threshold },
   );
   return {
     matches: numDiffPixels <= maxDiffPixels,

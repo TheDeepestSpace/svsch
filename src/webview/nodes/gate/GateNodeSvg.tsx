@@ -23,28 +23,34 @@ export function andBodyPath(left: number, right: number, height: number): string
  */
 const gateBackCurveControlXFraction = 0.1821041667;
 
-/** X the back curve's control points sit at — always deeper than the curve's actual visible reach. */
+/**
+ * X the back curve's control points sit at — always deeper than the curve's
+ * actual visible reach.
+ */
 export function gateConcaveEdgeReachX(left: number, right: number): number {
   return left + (right - left) * gateBackCurveControlXFraction;
 }
 
-/** Body path for an OR/XOR gate: concave left edge, curved back tapering to a point on the right. */
+/**
+ * Body path for an OR/XOR gate: concave left edge, curved back tapering to
+ * a point on the right.
+ */
 export function orBodyPath(left: number, right: number, height: number): string {
   const midY = height / 2;
   const span = right - left;
   const backCtrlX = gateConcaveEdgeReachX(left, right);
   const backCtrl1Y = height * 0.3030833333;
   const backCtrl2Y = height * 0.6969166667;
-  const bulgeCtrl1X = left + span * 0.4160312500;
+  const bulgeCtrl1X = left + span * 0.41603125;
   const bulgeCtrl1Y = height * 0.9771354167;
-  const bulgeCtrl2X = left + span * 0.7620937500;
+  const bulgeCtrl2X = left + span * 0.76209375;
   const bulgeCtrl2Y = height * 0.8853020833;
   return [
     `M ${left} 0`,
     `C ${backCtrlX} ${backCtrl1Y} ${backCtrlX} ${backCtrl2Y} ${left} ${height}`,
     `C ${bulgeCtrl1X} ${bulgeCtrl1Y} ${bulgeCtrl2X} ${bulgeCtrl2Y} ${right} ${midY}`,
     `C ${bulgeCtrl2X} ${height - bulgeCtrl2Y} ${bulgeCtrl1X} ${height - bulgeCtrl1Y} ${left} 0`,
-    'Z'
+    'Z',
   ].join(' ');
 }
 
@@ -86,14 +92,19 @@ export function gateLeftEdgeWireReach(node: DiagramNode, width: number): number 
   return gateConcaveEdgeReachX(left, right);
 }
 
-export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgProps): React.ReactElement {
+export function GateNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
 
   const inputs = node.ports.filter((p: DiagramPort) => p.direction !== 'output');
   const outputs = node.ports.filter((p: DiagramPort) => p.direction === 'output');
@@ -108,45 +119,81 @@ export function GateNodeSvg({ node, width, height, arrayConnections }: NodeSvgPr
   const midY = height / 2;
   const backCurve = xorBackCurvePath(right - left, height);
 
-  const path = bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
+  const path =
+    bodyOp === 'and' ? andBodyPath(left, right, height) : orBodyPath(left, right, height);
   const selectionPath = isXor ? xorSelectionPath(right, height) : path;
   const bubbleCx = right + gateBubbleGap + gateBubbleRadius;
 
   return (
     <>
-      {isArray && skinLayers.map(layer => (
-        <g key={layer.id}
-           className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-           transform={`translate(${layer.dx}, ${layer.dy})`}
-           opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}>
-          {isXor && <path className="svsch-node-shape gate-back-curve" d={backCurve} fill="none" />}
-          <path className="svsch-node-shape" d={path} />
-          {negated && <circle className="svsch-node-shape" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
-        </g>
-      ))}
-      {isXor && <path className="svsch-node-shape hdl-node-gate node-skin-body gate-back-curve" d={backCurve} fill="none" />}
+      {isArray &&
+        skinLayers.map((layer) => (
+          <g
+            key={layer.id}
+            className={`hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
+            transform={`translate(${layer.dx}, ${layer.dy})`}
+            opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+          >
+            {isXor && (
+              <path className="svsch-node-shape gate-back-curve" d={backCurve} fill="none" />
+            )}
+            <path className="svsch-node-shape" d={path} />
+            {negated && (
+              <circle className="svsch-node-shape" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />
+            )}
+          </g>
+        ))}
+      {isXor && (
+        <path
+          className="svsch-node-shape hdl-node-gate node-skin-body gate-back-curve"
+          d={backCurve}
+          fill="none"
+        />
+      )}
       <path className="svsch-node-shape hdl-node-gate node-skin-body" d={path} />
-      {negated && <circle className="svsch-node-shape hdl-node-gate node-skin-body gate-bubble" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
+      {negated && (
+        <circle
+          className="svsch-node-shape hdl-node-gate node-skin-body gate-bubble"
+          cx={bubbleCx}
+          cy={midY}
+          r={gateBubbleRadius}
+        />
+      )}
 
       {/* Array stack leads */}
-      {isArray && inputs.map((input, index) => (
-        hasArrayConnection(input.id, 'target') && (
-          <SvgArrayStackLeads
-            key={input.id}
-            wide={stackWide}
-            thick={arrayConnectionThick(input.id, 'target')}
-            side="left"
-            width={width}
-            y={gateInputPortCenterY(index, inputs.length, height)}
-            trimSink
-          />
-        )
-      ))}
+      {isArray &&
+        inputs.map(
+          (input, index) =>
+            hasArrayConnection(input.id, 'target') && (
+              <SvgArrayStackLeads
+                key={input.id}
+                wide={stackWide}
+                thick={arrayConnectionThick(input.id, 'target')}
+                side="left"
+                width={width}
+                y={gateInputPortCenterY(index, inputs.length, height)}
+                trimSink
+              />
+            ),
+        )}
       {isArray && outputs[0] && hasArrayConnection(outputs[0].id, 'source') && (
-        <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(outputs[0].id, 'source')} side="right" width={width} y={height / 2} />
+        <SvgArrayStackLeads
+          wide={stackWide}
+          thick={arrayConnectionThick(outputs[0].id, 'source')}
+          side="right"
+          width={width}
+          y={height / 2}
+        />
       )}
       <path className="node-skin-selection" d={selectionPath} />
-      {negated && <circle className="node-skin-selection gate-bubble-selection" cx={bubbleCx} cy={midY} r={gateBubbleRadius} />}
+      {negated && (
+        <circle
+          className="node-skin-selection gate-bubble-selection"
+          cx={bubbleCx}
+          cy={midY}
+          r={gateBubbleRadius}
+        />
+      )}
     </>
   );
 }

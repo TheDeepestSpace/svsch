@@ -1297,7 +1297,15 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
     // Check if RHS is a simple expression that doesn't need promotion.
     bool is_constant = isLiteralExpr(rhs);
     bool is_simple_rhs = (rhs_type == vpiNet || rhs_type == vpiReg || rhs_type == vpiPort || rhs_type == 608 || is_constant || is_select_rhs);
-    std::string preferred_output = out_base + (is_procedural && !isInverterOperation(rhs) ? "_next" : "");
+    // A concat/replication RHS is promoted to a self-sufficient bus/replicate node
+    // (promoteConcatExpr/promoteReplicationExpr) that already fully drives the
+    // output — same reasoning as the inverter case below. Naming that node's
+    // output directly as out_base (instead of "<out_base>_next") skips the
+    // otherwise-redundant wrapping "comb" alias node that processAssign would
+    // synthesize for any non-simple RHS whose promoted signal differs from
+    // out_signal.
+    bool is_self_sufficient_rhs = isInverterOperation(rhs) || isConcatOperation(rhs) || isReplicationOperation(rhs);
+    std::string preferred_output = out_base + (is_procedural && !is_self_sufficient_rhs ? "_next" : "");
     std::string in_signal = getOrPromoteExpr(rhs, mod, preferred_output, is_procedural);
     if (isReplicationOperation(rhs)) {
         std::string lhs_width = getWidth(lhs);

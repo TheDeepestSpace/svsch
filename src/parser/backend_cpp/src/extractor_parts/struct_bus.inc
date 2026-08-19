@@ -1,3 +1,7 @@
+// Defined in lookup_source.inc (included after this file); forward-declared
+// here so the breakout-tap fallback below can use it.
+std::string widthFromSignalSlice(const std::string& signal);
+
 std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& mod) {
     int type = vpi_get(vpiType, select_handle);
     std::string select_str = getSignalName(select_handle);
@@ -177,7 +181,14 @@ std::string DesignExtractor::processBusSelect(vpiHandle select_handle, Module& m
     }
 
     if (!port_exists) {
-        bus_node->ports.push_back({tap_label, "output", select_str, getWidth(select_handle), tap_label});
+        // getWidth(select_handle) comes back empty for a numeric part-select taken
+        // from a procedural (reg-driven) LHS — the VPI layer doesn't populate a
+        // usable range/size for it there the way it does for a continuous-assign
+        // (net-driven) select. Fall back to the slice embedded in the tap's own
+        // signal name (e.g. "data_i[3:0]"), which is always reliable.
+        std::string tap_width = getWidth(select_handle);
+        if (tap_width.empty()) tap_width = widthFromSignalSlice(select_str);
+        bus_node->ports.push_back({tap_label, "output", select_str, tap_width, tap_label});
     }
 
     return select_str;

@@ -7,24 +7,28 @@ const LOCK_FILE = '/tmp/svsch-global-test.lock';
 const STATUS_FILE = '/tmp/svsch-global-test-status.json';
 const WORKSPACE_ROOT = path.resolve(__dirname, '..');
 
-function getLatestMtime(dir: string, excludePaths: string[] = [], filterRegex: RegExp | null = null): number {
+function getLatestMtime(
+  dir: string,
+  excludePaths: string[] = [],
+  filterRegex: RegExp | null = null,
+): number {
   let latest = 0;
   function traverse(current: string) {
     if (!fs.existsSync(current)) return;
     let stats: fs.Stats;
     try {
       stats = fs.statSync(current);
-    } catch (e) {
+    } catch {
       return;
     }
     if (stats.isDirectory()) {
-      if (excludePaths.some(p => current === p || current.startsWith(p + path.sep))) {
+      if (excludePaths.some((p) => current === p || current.startsWith(p + path.sep))) {
         return;
       }
       let files: string[];
       try {
         files = fs.readdirSync(current);
-      } catch (e) {
+      } catch {
         return;
       }
       for (const file of files) {
@@ -42,7 +46,13 @@ function getLatestMtime(dir: string, excludePaths: string[] = [], filterRegex: R
   return latest;
 }
 
-function isOutdated(targetFile: string, srcDir: string, excludes: string[], filterRegex: RegExp, configFiles: string[]): boolean {
+function isOutdated(
+  targetFile: string,
+  srcDir: string,
+  excludes: string[],
+  filterRegex: RegExp,
+  configFiles: string[],
+): boolean {
   if (!fs.existsSync(targetFile)) return true;
   const targetMtime = fs.statSync(targetFile).mtimeMs;
   for (const cfg of configFiles) {
@@ -57,70 +67,70 @@ function getOutdatedComponents(): string[] {
 
   // 1. Extension
   const extensionOut = path.join(WORKSPACE_ROOT, 'dist', 'extension.js');
-  if (isOutdated(
-    extensionOut,
-    path.join(WORKSPACE_ROOT, 'src'),
-    [
-      path.join(WORKSPACE_ROOT, 'src', 'webview'),
-      path.join(WORKSPACE_ROOT, 'src', 'cli'),
-      path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
-    ],
-    /\.ts$/,
-    [
-      path.join(WORKSPACE_ROOT, 'package.json'),
-      path.join(WORKSPACE_ROOT, 'tsconfig.json'),
-      path.join(WORKSPACE_ROOT, 'tsconfig.extension.json')
-    ]
-  )) {
+  if (
+    isOutdated(
+      extensionOut,
+      path.join(WORKSPACE_ROOT, 'src'),
+      [
+        path.join(WORKSPACE_ROOT, 'src', 'webview'),
+        path.join(WORKSPACE_ROOT, 'src', 'cli'),
+        path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
+      ],
+      /\.ts$/,
+      [
+        path.join(WORKSPACE_ROOT, 'package.json'),
+        path.join(WORKSPACE_ROOT, 'tsconfig.json'),
+        path.join(WORKSPACE_ROOT, 'tsconfig.extension.json'),
+      ],
+    )
+  ) {
     outdated.push('extension');
   }
 
   // 2. Webview
   const webviewOut = path.join(WORKSPACE_ROOT, 'media', 'webview.js');
-  if (isOutdated(
-    webviewOut,
-    path.join(WORKSPACE_ROOT, 'src', 'webview'),
-    [],
-    /\.(ts|tsx|js|jsx|css|html)$/,
-    [
-      path.join(WORKSPACE_ROOT, 'package.json'),
-      path.join(WORKSPACE_ROOT, 'tsconfig.json'),
-      path.join(WORKSPACE_ROOT, 'tsconfig.webview.json'),
-      path.join(WORKSPACE_ROOT, 'vite.config.ts'),
-      path.join(WORKSPACE_ROOT, 'index.html')
-    ]
-  )) {
+  if (
+    isOutdated(
+      webviewOut,
+      path.join(WORKSPACE_ROOT, 'src', 'webview'),
+      [],
+      /\.(ts|tsx|js|jsx|css|html)$/,
+      [
+        path.join(WORKSPACE_ROOT, 'package.json'),
+        path.join(WORKSPACE_ROOT, 'tsconfig.json'),
+        path.join(WORKSPACE_ROOT, 'tsconfig.webview.json'),
+        path.join(WORKSPACE_ROOT, 'vite.config.ts'),
+        path.join(WORKSPACE_ROOT, 'index.html'),
+      ],
+    )
+  ) {
     outdated.push('webview');
   }
 
   // 3. CLI
   const cliOut = path.join(WORKSPACE_ROOT, 'dist', 'cli.js');
-  if (isOutdated(
-    cliOut,
-    path.join(WORKSPACE_ROOT, 'src', 'cli'),
-    [],
-    /\.ts$/,
-    [
+  if (
+    isOutdated(cliOut, path.join(WORKSPACE_ROOT, 'src', 'cli'), [], /\.ts$/, [
       path.join(WORKSPACE_ROOT, 'package.json'),
       path.join(WORKSPACE_ROOT, 'tsconfig.json'),
       path.join(WORKSPACE_ROOT, 'tsconfig.cli.json'),
-      path.join(WORKSPACE_ROOT, 'vite.config.cli.ts')
-    ]
-  )) {
+      path.join(WORKSPACE_ROOT, 'vite.config.cli.ts'),
+    ])
+  ) {
     outdated.push('cli');
   }
 
   // 4. Backend
   const backendOut = path.join(WORKSPACE_ROOT, 'dist', 'svsch_backend');
-  if (isOutdated(
-    backendOut,
-    path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
-    [path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'build')],
-    /\.(cpp|h|hpp|txt)$/,
-    [
-      path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'CMakeLists.txt')
-    ]
-  )) {
+  if (
+    isOutdated(
+      backendOut,
+      path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp'),
+      [path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'build')],
+      /\.(cpp|h|hpp|txt)$/,
+      [path.join(WORKSPACE_ROOT, 'src', 'parser', 'backend_cpp', 'CMakeLists.txt')],
+    )
+  ) {
     outdated.push('backend');
   }
 
@@ -188,7 +198,7 @@ export function acquirePlaywrightLock(suiteName: string) {
         pid: process.pid,
         worktree: WORKSPACE_ROOT,
         command: suiteName,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
       fs.writeSync(fd, JSON.stringify(lockData, null, 2));
       fs.closeSync(fd);
@@ -197,7 +207,10 @@ export function acquirePlaywrightLock(suiteName: string) {
         readline.moveCursor(process.stdout, 0, -printLines);
         readline.clearScreenDown(process.stdout);
       }
-      console.log(`[SVSCH Playwright Lock] Lock acquired successfully by PID ${process.pid} (${WORKSPACE_ROOT}).`);
+      console.log(
+        `[SVSCH Playwright Lock] Lock acquired successfully by PID ${process.pid} ` +
+          `(${WORKSPACE_ROOT}).`,
+      );
       break;
     } catch (err: any) {
       if (err.code !== 'EEXIST') {
@@ -207,14 +220,21 @@ export function acquirePlaywrightLock(suiteName: string) {
       let lockData: any;
       try {
         lockData = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
-      } catch (readErr) {
-        try { fs.unlinkSync(LOCK_FILE); } catch (uErr) {}
+      } catch {
+        try {
+          fs.unlinkSync(LOCK_FILE);
+        } catch {}
         continue;
       }
 
       if (!isPidAlive(lockData.pid)) {
-        console.log(`[SVSCH Playwright Lock] Found stale lock from dead PID ${lockData.pid}. Breaking lock...`);
-        try { fs.unlinkSync(LOCK_FILE); } catch (uErr) {}
+        console.log(
+          `[SVSCH Playwright Lock] Found stale lock from dead PID ${lockData.pid}. ` +
+            `Breaking lock...`,
+        );
+        try {
+          fs.unlinkSync(LOCK_FILE);
+        } catch {}
         continue;
       }
 
@@ -230,7 +250,7 @@ export function acquirePlaywrightLock(suiteName: string) {
           if (status.total && status.pid === lockData.pid) {
             progressStr = '\n' + getProgressBar(status.completed, status.total);
           }
-        } catch (statusErr) {}
+        } catch {}
       }
 
       if (printLines > 0) {
@@ -238,13 +258,15 @@ export function acquirePlaywrightLock(suiteName: string) {
         readline.clearScreenDown(process.stdout);
       }
 
-      const waitingMsg = `[SVSCH Playwright Lock] Waiting for Worktree '${lockData.worktree}' running '${lockData.command}' (PID ${lockData.pid})...`;
+      const waitingMsg =
+        `[SVSCH Playwright Lock] Waiting for Worktree '${lockData.worktree}' running ` +
+        `'${lockData.command}' (PID ${lockData.pid})...`;
       process.stdout.write(waitingMsg + progressStr + '\n');
       printLines = 1 + (progressStr ? 1 : 0);
 
       try {
         execSync('sleep 1', { stdio: 'ignore' });
-      } catch (sleepErr) {}
+      } catch {}
     }
   }
 
@@ -252,16 +274,23 @@ export function acquirePlaywrightLock(suiteName: string) {
   process.env.SVSCH_RUNNER_PID = String(process.pid);
 
   try {
-    fs.writeFileSync(STATUS_FILE, JSON.stringify({
-      total: 0,
-      completed: 0,
-      passed: 0,
-      failed: 0,
-      skipped: 0,
-      pid: process.pid,
-      timestamp: Date.now()
-    }, null, 2));
-  } catch (e) {}
+    fs.writeFileSync(
+      STATUS_FILE,
+      JSON.stringify(
+        {
+          total: 0,
+          completed: 0,
+          passed: 0,
+          failed: 0,
+          skipped: 0,
+          pid: process.pid,
+          timestamp: Date.now(),
+        },
+        null,
+        2,
+      ),
+    );
+  } catch {}
 
   const outdated = getOutdatedComponents();
   if (outdated.length > 0) {
@@ -275,7 +304,10 @@ export function acquirePlaywrightLock(suiteName: string) {
 
   if (!fs.existsSync(path.join(WORKSPACE_ROOT, 'dist', 'surelog'))) {
     console.log(`[SVSCH Playwright Lock] dist/surelog not found. Installing...`);
-    execSync('SURELOG_AUTO_INSTALL=1 npm run install-surelog', { cwd: WORKSPACE_ROOT, stdio: 'inherit' });
+    execSync('SURELOG_AUTO_INSTALL=1 npm run install-surelog', {
+      cwd: WORKSPACE_ROOT,
+      stdio: 'inherit',
+    });
   }
 
   registerCleanExitHandlers();
@@ -290,7 +322,7 @@ export function releasePlaywrightLock() {
         console.log(`[SVSCH Playwright Lock] Lock released cleanly by PID ${process.pid}.`);
       }
     }
-  } catch (err) {}
+  } catch {}
   try {
     if (fs.existsSync(STATUS_FILE)) {
       const status = JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8'));
@@ -298,5 +330,5 @@ export function releasePlaywrightLock() {
         fs.unlinkSync(STATUS_FILE);
       }
     }
-  } catch (err) {}
+  } catch {}
 }

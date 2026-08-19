@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { moveRouteSegment, normalizeRoutePoints, avoidFeedbackObstacles, type NodeObstacle } from '../../src/webview/orthogonal/logic';
+import {
+  moveRouteSegment,
+  normalizeRoutePoints,
+  avoidFeedbackObstacles,
+  type NodeObstacle,
+} from '../../src/webview/orthogonal/logic';
 import { HdlPosition } from '../../src/webview/orthogonal/types';
 import { diagramSizing } from '../../src/diagram/constants';
 
@@ -11,15 +16,15 @@ describe('orthogonal edge routing', () => {
           { x: 148, y: 10 },
           { x: 240, y: 10 },
           { x: 240, y: 90 },
-          { x: 352, y: 90 }
-        ]
+          { x: 352, y: 90 },
+        ],
       },
       192,
       48,
       408,
       168,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(route[0]).toEqual({ x: 192 + diagramSizing.edgeLeadLength, y: 48 });
@@ -27,13 +32,22 @@ describe('orthogonal edge routing', () => {
   });
 
   it('uses grid-aligned lead lengths from the shared diagram sizing', () => {
-    const route = normalizeRoutePoints(undefined, 96, 48, 408, 48, HdlPosition.Right, HdlPosition.Left);
+    const route = normalizeRoutePoints(
+      undefined,
+      96,
+      48,
+      408,
+      48,
+      HdlPosition.Right,
+      HdlPosition.Left,
+    );
 
     expect(route[0].x - 96).toBe(diagramSizing.edgeLeadLength);
     expect(408 - route[route.length - 1].x).toBe(diagramSizing.edgeLeadLength);
     expect(diagramSizing.edgeLeadLength % diagramSizing.gridSize).toBe(0);
   });
 
+  // eslint-disable-next-line max-len
   it('draws a flat, straight segment for two ports level with each other even when their shared Y is not itself grid-aligned', () => {
     // A port's connection point is node-top + half its own height, which
     // doesn't have to land on a full grid line (e.g. 52, not a multiple of
@@ -41,7 +55,15 @@ describe('orthogonal edge routing', () => {
     // waypoint) must not re-snap its own internal bends independently of
     // its endpoints — that previously opened a spurious few-pixel notch
     // in what should render as one flat horizontal line.
-    const route = normalizeRoutePoints(undefined, 120, 52, 360, 52, HdlPosition.Right, HdlPosition.Left);
+    const route = normalizeRoutePoints(
+      undefined,
+      120,
+      52,
+      360,
+      52,
+      HdlPosition.Right,
+      HdlPosition.Left,
+    );
     expect(route.every((point) => point.y === 52)).toBe(true);
   });
 
@@ -50,13 +72,13 @@ describe('orthogonal edge routing', () => {
       id: 'u1',
       kind: 'instance' as const,
       label: 'u1',
-      ports: [{ id: 'y', name: 'y', direction: 'output' as const }]
+      ports: [{ id: 'y', name: 'y', direction: 'output' as const }],
     };
     const targetNode = {
       id: 'cut-label:u1:y:source',
       kind: 'netLabel' as const,
       label: 'u1.y',
-      ports: [{ id: 'cut', name: 'cut', direction: 'input' as const }]
+      ports: [{ id: 'cut', name: 'cut', direction: 'input' as const }],
     };
     const route = normalizeRoutePoints(
       {
@@ -68,9 +90,9 @@ describe('orthogonal edge routing', () => {
           targetPort: 'cut',
           metadata: {
             forceStraight: true,
-            cutStub: { netKey: 'u1:y', role: 'source' as const }
-          }
-        }
+            cutStub: { netKey: 'u1:y', role: 'source' as const },
+          },
+        },
       },
       552,
       72,
@@ -82,12 +104,12 @@ describe('orthogonal edge routing', () => {
       'cut',
       true,
       sourceNode,
-      targetNode
+      targetNode,
     );
 
     expect(route).toEqual([
       { x: 576, y: 72 },
-      { x: 576, y: 120 }
+      { x: 576, y: 120 },
     ]);
   });
 
@@ -96,13 +118,13 @@ describe('orthogonal edge routing', () => {
       id: 'cut-label:o:sink',
       kind: 'netLabel' as const,
       label: 'o',
-      ports: [{ id: 'cut', name: 'cut', direction: 'output' as const }]
+      ports: [{ id: 'cut', name: 'cut', direction: 'output' as const }],
     };
     const targetNode = {
       id: 'o',
       kind: 'port' as const,
       label: 'o',
-      ports: [{ id: 'port:o', name: 'o', direction: 'output' as const }]
+      ports: [{ id: 'port:o', name: 'o', direction: 'output' as const }],
     };
     const route = normalizeRoutePoints(
       {
@@ -114,9 +136,9 @@ describe('orthogonal edge routing', () => {
           targetPort: 'port:o',
           metadata: {
             forceStraight: true,
-            cutStub: { netKey: 'o', role: 'sink' as const }
-          }
-        }
+            cutStub: { netKey: 'o', role: 'sink' as const },
+          },
+        },
       },
       384,
       48,
@@ -128,12 +150,10 @@ describe('orthogonal edge routing', () => {
       'port:o',
       true,
       sourceNode,
-      targetNode
+      targetNode,
     );
 
-    expect(route).toEqual([
-      { x: 384, y: 48 }
-    ]);
+    expect(route).toEqual([{ x: 384, y: 48 }]);
   });
 
   it('keeps horizontal leads on the route grid from one-grid-tall block handles', () => {
@@ -146,7 +166,7 @@ describe('orthogonal edge routing', () => {
       360,
       targetY,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(route[0]).toEqual({ x: 120 + diagramSizing.edgeLeadLength, y: sourceY });
@@ -162,22 +182,22 @@ describe('orthogonal edge routing', () => {
           { x: 216, y: 204 },
           { x: 333, y: 204 },
           { x: 333, y: 60 },
-          { x: 456, y: 60 }
-        ]
+          { x: 456, y: 60 },
+        ],
       },
       192,
       204,
       480,
       60,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(route).toEqual([
       { x: 216, y: 204 },
       { x: 336, y: 204 },
       { x: 336, y: 60 },
-      { x: 456, y: 60 }
+      { x: 456, y: 60 },
     ]);
   });
 
@@ -188,22 +208,22 @@ describe('orthogonal edge routing', () => {
           { x: 1416, y: 120 },
           { x: 1416, y: 24 },
           { x: 24, y: 24 },
-          { x: 24, y: 168 }
-        ]
+          { x: 24, y: 168 },
+        ],
       },
       1392,
       120,
       48,
       168,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(route).toEqual([
       { x: 1416, y: 120 },
       { x: 1416, y: 24 },
       { x: 24, y: 24 },
-      { x: 24, y: 168 }
+      { x: 24, y: 168 },
     ]);
   });
 
@@ -213,15 +233,15 @@ describe('orthogonal edge routing', () => {
         routePoints: [
           { x: 456, y: 0 },
           { x: 480, y: 0 },
-          { x: 480, y: 168 }
-        ]
+          { x: 480, y: 168 },
+        ],
       },
       456,
       0,
       480,
       180,
       HdlPosition.Right,
-      HdlPosition.Top
+      HdlPosition.Top,
     );
 
     expect(route[0]).toEqual({ x: 480, y: 0 });
@@ -229,7 +249,15 @@ describe('orthogonal edge routing', () => {
   });
 
   it('routes feedback edges around the target instead of straight through the nodes', () => {
-    const route = normalizeRoutePoints(undefined, 420, 120, 260, 120, HdlPosition.Right, HdlPosition.Left);
+    const route = normalizeRoutePoints(
+      undefined,
+      420,
+      120,
+      260,
+      120,
+      HdlPosition.Right,
+      HdlPosition.Left,
+    );
     const sourceLead = route[0];
     const targetLead = route[route.length - 1];
 
@@ -237,7 +265,11 @@ describe('orthogonal edge routing', () => {
     expect(targetLead).toEqual({ x: 240, y: 120 });
     expect(route.some((point) => point.y !== 120)).toBe(true);
     expect(route.some((point) => point.x > sourceLead.x)).toBe(true);
-    expect(route.every((point) => point.x % diagramSizing.gridSize === 0 && point.y % diagramSizing.gridSize === 0)).toBe(true);
+    expect(
+      route.every(
+        (point) => point.x % diagramSizing.gridSize === 0 && point.y % diagramSizing.gridSize === 0,
+      ),
+    ).toBe(true);
   });
 
   it('preserves edited feedback routes when lead constraints point through each other', () => {
@@ -248,15 +280,15 @@ describe('orthogonal edge routing', () => {
           { x: 528, y: 120 },
           { x: 528, y: 216 },
           { x: 240, y: 216 },
-          { x: 240, y: 120 }
-        ]
+          { x: 240, y: 120 },
+        ],
       },
       420,
       120,
       260,
       120,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(route).toContainEqual({ x: 528, y: 120 });
@@ -272,8 +304,8 @@ describe('orthogonal edge routing', () => {
           { x: 1128, y: 816 },
           { x: 1128, y: 384 },
           { x: 288, y: 384 },
-          { x: 288, y: 432 }
-        ]
+          { x: 288, y: 432 },
+        ],
       },
       1008,
       816,
@@ -282,7 +314,7 @@ describe('orthogonal edge routing', () => {
       HdlPosition.Right,
       HdlPosition.Top,
       'q',
-      'sel'
+      'sel',
     );
 
     expect(route).toContainEqual({ x: 1032, y: 816 });
@@ -301,8 +333,8 @@ describe('orthogonal edge routing', () => {
           { x: 1128, y: 384 },
           { x: 288, y: 384 },
           { x: 288, y: 432 },
-          { x: 288, y: 480 }
-        ]
+          { x: 288, y: 480 },
+        ],
       },
       1008,
       816,
@@ -311,7 +343,7 @@ describe('orthogonal edge routing', () => {
       HdlPosition.Right,
       HdlPosition.Top,
       'q',
-      'sel'
+      'sel',
     );
 
     expect(route).toContainEqual({ x: 1032, y: 816 });
@@ -327,15 +359,15 @@ describe('orthogonal edge routing', () => {
           { x: 148, y: 10 },
           { x: 240, y: 10 },
           { x: 260, y: 130 },
-          { x: 352, y: 90 }
-        ]
+          { x: 352, y: 90 },
+        ],
       },
       200,
       40,
       400,
       160,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     for (let index = 0; index < route.length - 1; index += 1) {
@@ -352,7 +384,7 @@ describe('orthogonal edge routing', () => {
       { x: 200, y: 100 },
       { x: 200, y: 200 },
       { x: 352, y: 200 },
-      { x: 400, y: 200 }
+      { x: 400, y: 200 },
     ];
 
     const { points: moved } = moveRouteSegment(points, 2, { x: 201, y: 130 });
@@ -371,15 +403,15 @@ describe('orthogonal edge routing', () => {
           { x: 369, y: 94 },
           { x: 474, y: 94 },
           { x: 474, y: 143 },
-          { x: 553, y: 143 }
-        ]
+          { x: 553, y: 143 },
+        ],
       },
       288,
       96,
       625,
       168,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
     const points = [{ x: 288, y: 96 }, ...route, { x: 625, y: 168 }];
     const editableSegments = points.slice(0, -1).filter((point, index) => {
@@ -388,7 +420,11 @@ describe('orthogonal edge routing', () => {
       return isEditable && (point.x === next.x || point.y === next.y);
     });
 
-    expect(route.every((point) => point.x % diagramSizing.gridSize === 0 && point.y % diagramSizing.gridSize === 0)).toBe(true);
+    expect(
+      route.every(
+        (point) => point.x % diagramSizing.gridSize === 0 && point.y % diagramSizing.gridSize === 0,
+      ),
+    ).toBe(true);
     expect(editableSegments.length).toBeGreaterThan(0);
   });
 
@@ -399,7 +435,7 @@ describe('orthogonal edge routing', () => {
       { x: 240, y: 96 },
       { x: 240, y: 192 },
       { x: 336, y: 192 },
-      { x: 408, y: 192 }
+      { x: 408, y: 192 },
     ];
 
     const { points: moved } = moveRouteSegment(points, 2, { x: 251, y: 130 });
@@ -416,7 +452,7 @@ describe('orthogonal edge routing', () => {
       288,
       103,
       HdlPosition.Right,
-      HdlPosition.Top
+      HdlPosition.Top,
     );
     const targetLead = route[route.length - 1];
 
@@ -435,7 +471,7 @@ describe('orthogonal edge routing', () => {
       HdlPosition.Bottom,
       HdlPosition.Bottom,
       'q',
-      'reset'
+      'reset',
     );
     const sourceLead = route[0];
     const targetLead = route[route.length - 1];
@@ -454,7 +490,7 @@ describe('orthogonal edge routing', () => {
       HdlPosition.Right,
       HdlPosition.Bottom,
       'rst_n',
-      'reset'
+      'reset',
     );
     const sourceLead = route[0];
     const targetLead = route[route.length - 1];
@@ -475,7 +511,7 @@ describe('orthogonal edge routing', () => {
       HdlPosition.Top,
       HdlPosition.Top,
       'sel',
-      'out'
+      'out',
     );
     const sourceLead = route[0];
     const targetLead = route[route.length - 1];
@@ -484,6 +520,7 @@ describe('orthogonal edge routing', () => {
     expect(targetLead.y).toBe(48 - diagramSizing.gridSize * 2);
   });
 
+  // eslint-disable-next-line max-len
   it('preserves the lead distance even when internal points are moved behind the lead point', () => {
     // Port at (96, 96), Right position, Lead at (120, 96)
     // Internal points: (100, 96), (100, 192), (432, 192)
@@ -493,15 +530,15 @@ describe('orthogonal edge routing', () => {
           { x: 120, y: 96 },
           { x: 100, y: 96 }, // Moved behind lead
           { x: 100, y: 192 },
-          { x: 432, y: 192 }
-        ]
+          { x: 432, y: 192 },
+        ],
       },
       96,
       96,
       456,
       192,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     // route[0] is the Lead point: (120, 96)
@@ -509,7 +546,7 @@ describe('orthogonal edge routing', () => {
     // route[1] is the next point.
     // The internal points (100, 96) and (100, 192) are both clamped to X=120.
     // Result of clamping: [(120, 96), (120, 96), (120, 192), (432, 192)]
-    // Duplicates are removed. 
+    // Duplicates are removed.
     // Result: [(120, 96), (120, 192), (432, 192)]
     expect(route[1]).toEqual({ x: 120, y: 192 });
   });
@@ -523,7 +560,7 @@ describe('orthogonal edge routing', () => {
       { x: 200, y: 100 }, // P1 (Segment 1: Horizontal)
       { x: 200, y: 300 }, // P2 (Segment 2: Vertical - THE DRAGGED ONE)
       { x: 376, y: 300 }, // TargetLead (Segment 3: Horizontal)
-      { x: 400, y: 300 }  // Target (Segment 4)
+      { x: 400, y: 300 }, // Target (Segment 4)
     ];
 
     // Drag vertical segment (index 2) to X=250
@@ -533,7 +570,7 @@ describe('orthogonal edge routing', () => {
     // Both should have their X coordinate updated to the snapped pointer (240).
     expect(moved[2].x).toBe(240);
     expect(moved[3].x).toBe(240);
-    
+
     // Orthogonality check
     expect(moved[2].y).toBe(moved[1].y); // Horizontal segment 1 preserved
     expect(moved[3].y).toBe(moved[4].y); // Horizontal segment 3 preserved
@@ -543,7 +580,7 @@ describe('orthogonal edge routing', () => {
 describe('avoidFeedbackObstacles', () => {
   const obstacles: NodeObstacle[] = [
     { id: 'A', x: 100, y: 0, width: 100, height: 48 },
-    { id: 'B', x: 100, y: 200, width: 100, height: 48 }
+    { id: 'B', x: 100, y: 200, width: 100, height: 48 },
   ];
 
   it('preserves a manually dragged clear route for Right-to-Left feedback', () => {
@@ -555,14 +592,14 @@ describe('avoidFeedbackObstacles', () => {
       { x: 300, y: 24 },
       { x: 300, y: 300 },
       { x: 76, y: 300 },
-      targetLead
+      targetLead,
     ];
 
     const result = avoidFeedbackObstacles(
       draggedPoints,
       obstacles,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(result).toEqual(draggedPoints);
@@ -578,14 +615,14 @@ describe('avoidFeedbackObstacles', () => {
       { x: 0, y: -24 },
       { x: 0, y: 300 },
       { x: 76, y: 300 },
-      targetLead
+      targetLead,
     ];
 
     const result = avoidFeedbackObstacles(
       draggedPoints,
       obstacles,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(result).toEqual(draggedPoints);
@@ -595,17 +632,13 @@ describe('avoidFeedbackObstacles', () => {
     const sourceLead = { x: 224, y: 24 };
     const targetLead = { x: 76, y: 224 };
 
-    const blockedPoints = [
-      sourceLead,
-      { x: 224, y: 224 },
-      targetLead
-    ];
+    const blockedPoints = [sourceLead, { x: 224, y: 224 }, targetLead];
 
     const result = avoidFeedbackObstacles(
       blockedPoints,
       obstacles,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(result).not.toEqual(blockedPoints);
@@ -624,14 +657,14 @@ describe('avoidFeedbackObstacles', () => {
       { x: 150, y: 400 },
       { x: 50, y: 400 },
       { x: 50, y: 224 },
-      targetLead
+      targetLead,
     ];
 
     const result = avoidFeedbackObstacles(
       complexPoints,
       obstacles,
       HdlPosition.Right,
-      HdlPosition.Left
+      HdlPosition.Left,
     );
 
     expect(result).toEqual(complexPoints);
@@ -641,19 +674,9 @@ describe('avoidFeedbackObstacles', () => {
     const sourceLead = { x: 224, y: 24 };
     const targetLead = { x: 76, y: 224 };
 
-    const zigZag = [
-      sourceLead,
-      { x: 150, y: 24 },
-      { x: 150, y: 224 },
-      targetLead
-    ];
+    const zigZag = [sourceLead, { x: 150, y: 24 }, { x: 150, y: 224 }, targetLead];
 
-    const result = avoidFeedbackObstacles(
-      zigZag,
-      obstacles,
-      HdlPosition.Right,
-      HdlPosition.Left
-    );
+    const result = avoidFeedbackObstacles(zigZag, obstacles, HdlPosition.Right, HdlPosition.Left);
 
     expect(result).not.toEqual(zigZag);
     expect(result[result.length - 2].y).toBeGreaterThan(248);
