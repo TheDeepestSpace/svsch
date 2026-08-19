@@ -16,10 +16,7 @@ import {
   postView,
   waitForViewportTransformToSettle,
 } from './helper';
-import {
-  mergeNodePositions,
-  mergeRelayoutSelection,
-} from '../../src/layout/mergeLayout';
+import { mergeNodePositions, mergeRelayoutSelection } from '../../src/layout/mergeLayout';
 import type { PositionedNode } from '../../src/ir/types';
 
 // "Expand instance in place" (issue #232) is entirely client-side once the
@@ -308,9 +305,9 @@ test.describe('expand instance in place visual', () => {
     // must carry the wire's style: multi-bit ports get the thick lead,
     // struct ports the struct-striped one, plain scalars the default 1.5px.
     const boundaryFor = (name: string) =>
-      page
-        .locator('[data-node-kind="boundaryPort"]')
-        .filter({ has: page.locator('.hdl-boundary-port-text', { hasText: new RegExp(`^${name}$`) }) });
+      page.locator('[data-node-kind="boundaryPort"]').filter({
+        has: page.locator('.hdl-boundary-port-text', { hasText: new RegExp(`^${name}$`) }),
+      });
     await expect(boundaryFor('bus_in').locator('.hdl-boundary-port-lead-thick')).toHaveCount(1);
     await expect(boundaryFor('bus_out').locator('.hdl-boundary-port-lead-thick')).toHaveCount(1);
     await expect(boundaryFor('pkt_in').locator('.hdl-boundary-port-lead-struct')).toHaveCount(1);
@@ -374,8 +371,8 @@ test.describe('expand instance in place visual', () => {
     await page.mouse.up();
     await expect
       .poll(() =>
-        page.evaluate(() =>
-          (window as any).reactFlowInstance.getNodes().filter((n: any) => n.selected).length,
+        page.evaluate(
+          () => (window as any).reactFlowInstance.getNodes().filter((n: any) => n.selected).length,
         ),
       )
       .toBeGreaterThan(2);
@@ -456,9 +453,7 @@ test.describe('expand instance in place visual', () => {
     // the selection styling.
     await page.evaluate(() => {
       const rf = (window as any).reactFlowInstance;
-      rf.setNodes(
-        rf.getNodes().map((n: any) => (n.selected ? { ...n, selected: false } : n)),
-      );
+      rf.setNodes(rf.getNodes().map((n: any) => (n.selected ? { ...n, selected: false } : n)));
     });
     await expect(page.locator('.svsch-selection-toolbar')).toHaveCount(0);
 

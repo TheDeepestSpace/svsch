@@ -372,9 +372,7 @@ describe('spliceExpandedInstance', () => {
         aggregate: undefined,
         thick: true,
       });
-      expect(boundaryPortEdgeStyle(styledChild, pktNode, styledPorts[1])?.aggregate).toBe(
-        'struct',
-      );
+      expect(boundaryPortEdgeStyle(styledChild, pktNode, styledPorts[1])?.aggregate).toBe('struct');
       expect(boundaryPortEdgeStyle(styledChild, bitNode, styledPorts[2])).toBeUndefined();
     });
 

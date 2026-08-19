@@ -303,8 +303,7 @@ export function syncSpliceCache(
           const flowEdge = flowEdgesById.get(edge.id);
           if (!flowEdge) return edge;
           const routePoints = (flowEdge.data as any)?.routePoints as
-            | Array<{ x: number; y: number }>
-            | undefined;
+            Array<{ x: number; y: number }> | undefined;
           if (routePoints === edge.routePoints) return edge;
           return { ...edge, routePoints: routePoints?.map((point) => ({ ...point })) };
         })
