@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runParser } from '../helper';
-import type { DesignModule, DiagramNode } from '../../src/ir/types';
 
 function fixture(name: string): string {
   return fs.readFileSync(path.join(__dirname, '..', 'fixtures', name), 'utf8');
@@ -14,12 +13,12 @@ describe.each(['uhdm'] as const)('nested if-else: %s', (backend) => {
     const mod = graph.modules.nested_if_clocked;
 
     // We expect a mux for 'out'
-    const muxes = mod.nodes.filter(n => n.kind === 'mux');
+    const muxes = mod.nodes.filter((n) => n.kind === 'mux');
 
     for (const mux of muxes) {
-      const outPort = mux.ports.find(p => p.direction === 'output' && p.name === 'out');
-      const falsePort = mux.ports.find(p => p.direction === 'input' && p.name === 'false');
-      
+      const outPort = mux.ports.find((p) => p.direction === 'output' && p.name === 'out');
+      const falsePort = mux.ports.find((p) => p.direction === 'input' && p.name === 'false');
+
       expect(outPort).toBeDefined();
       expect(falsePort).toBeDefined();
 
@@ -30,7 +29,10 @@ describe.each(['uhdm'] as const)('nested if-else: %s', (backend) => {
   });
 
   it('correctly handles nested if-else-if-else without creating loops', async () => {
-    const graph = await runParser('uhdm', 'nested_if_else.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'nested_if_else.sv',
+      `
       module nested_if_else_chain (
           input logic a,
           input logic b,
@@ -48,24 +50,28 @@ describe.each(['uhdm'] as const)('nested if-else: %s', (backend) => {
           end
       end
       endmodule
-    `);
+    `,
+    );
     const mod = graph.modules.nested_if_else_chain;
 
-    const muxes = mod.nodes.filter(n => n.kind === 'mux');
+    const muxes = mod.nodes.filter((n) => n.kind === 'mux');
     expect(muxes).toHaveLength(2);
 
     for (const mux of muxes) {
-        const outPort = mux.ports.find(p => p.direction === 'output');
-        const falsePort = mux.ports.find(p => p.name === 'false');
-        const truePort = mux.ports.find(p => p.name === 'true');
-        
-        expect(outPort?.connectedSignal).not.toBe(falsePort?.connectedSignal);
-        expect(outPort?.connectedSignal).not.toBe(truePort?.connectedSignal);
+      const outPort = mux.ports.find((p) => p.direction === 'output');
+      const falsePort = mux.ports.find((p) => p.name === 'false');
+      const truePort = mux.ports.find((p) => p.name === 'true');
+
+      expect(outPort?.connectedSignal).not.toBe(falsePort?.connectedSignal);
+      expect(outPort?.connectedSignal).not.toBe(truePort?.connectedSignal);
     }
   });
 
   it('correctly handles specific if-else-if-else case reported by user', async () => {
-    const graph = await runParser('uhdm', 'nested_if_else_user.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'nested_if_else_user.sv',
+      `
       module nested_if_else_user (
           input logic x,
           input logic b,
@@ -80,37 +86,42 @@ describe.each(['uhdm'] as const)('nested if-else: %s', (backend) => {
           else y = d;
       end
       endmodule
-    `);
+    `,
+    );
     const mod = graph.modules.nested_if_else_user;
 
     // We expect two muxes:
     // Mux 1 (nested): sel=b, true=c, false=d, out=y_if_false_<id>
     // Mux 2 (outer):  sel=x, true=a, false=y_if_false_<id>, out=y
 
-    const muxes = mod.nodes.filter(n => n.kind === 'mux');
+    const muxes = mod.nodes.filter((n) => n.kind === 'mux');
     expect(muxes).toHaveLength(2);
 
     for (const mux of muxes) {
-        const outPort = mux.ports.find(p => p.direction === 'output');
-        const truePort = mux.ports.find(p => p.name === 'true');
-        const falsePort = mux.ports.find(p => p.name === 'false');
+      const outPort = mux.ports.find((p) => p.direction === 'output');
+      const truePort = mux.ports.find((p) => p.name === 'true');
+      const falsePort = mux.ports.find((p) => p.name === 'false');
 
-        // Check for self-feedback loop (collision bug)
-        expect(outPort?.connectedSignal).not.toBe(falsePort?.connectedSignal);
-        expect(outPort?.connectedSignal).not.toBe(truePort?.connectedSignal);
+      // Check for self-feedback loop (collision bug)
+      expect(outPort?.connectedSignal).not.toBe(falsePort?.connectedSignal);
+      expect(outPort?.connectedSignal).not.toBe(truePort?.connectedSignal);
     }
 
     // Verify chain connectivity
-    const outerMux = muxes.find(n => n.ports.some(p => p.name === 'sel' && p.connectedSignal === 'x'));
-    const nestedMux = muxes.find(n => n.ports.some(p => p.name === 'sel' && p.connectedSignal === 'b'));
+    const outerMux = muxes.find((n) =>
+      n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'x'),
+    );
+    const nestedMux = muxes.find((n) =>
+      n.ports.some((p) => p.name === 'sel' && p.connectedSignal === 'b'),
+    );
 
     expect(outerMux).toBeDefined();
     expect(nestedMux).toBeDefined();
 
-    const nestedOutput = nestedMux?.ports.find(p => p.direction === 'output')?.connectedSignal;
-    const outerFalseInput = outerMux?.ports.find(p => p.name === 'false')?.connectedSignal;
+    const nestedOutput = nestedMux?.ports.find((p) => p.direction === 'output')?.connectedSignal;
+    const outerFalseInput = outerMux?.ports.find((p) => p.name === 'false')?.connectedSignal;
 
     expect(outerFalseInput).toBe(nestedOutput);
-    expect(outerMux?.ports.find(p => p.direction === 'output')?.connectedSignal).toBe('y');
+    expect(outerMux?.ports.find((p) => p.direction === 'output')?.connectedSignal).toBe('y');
   });
 });

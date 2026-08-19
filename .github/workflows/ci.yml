@@ -113,7 +113,9 @@ jobs:
       - *restore_npm_step
 
       - name: Lint
-        run: npm run lint
+        run: |
+          npm run lint
+          npm run format:check
 
       - name: Compile Extension and Webview
         run: |

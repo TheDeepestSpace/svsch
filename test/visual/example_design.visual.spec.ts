@@ -11,7 +11,7 @@ const EXAMPLE_DESIGN_MODULES = [
   'instr_mem',
   'mux2',
   'pc_reg',
-  'register_file'
+  'register_file',
 ];
 
 test.describe('example design visual rendering', () => {

@@ -13,9 +13,13 @@ function gateOfInputCount(count: number): DiagramNode {
     label: '',
     metadata: { operation: 'and' },
     ports: [
-      ...Array.from({ length: count }, (_, i) => ({ id: `in${i}`, name: `in${i}`, direction: 'input' as const })),
-      { id: 'out', name: 'out', direction: 'output' as const }
-    ]
+      ...Array.from({ length: count }, (_, i) => ({
+        id: `in${i}`,
+        name: `in${i}`,
+        direction: 'input' as const,
+      })),
+      { id: 'out', name: 'out', direction: 'output' as const },
+    ],
   };
 }
 
@@ -35,13 +39,16 @@ describe('gateInputPortCenterY', () => {
     expect(height - ys[ys.length - 1]).toBe(grid);
   });
 
-  test.each([4, 5, 8])('%i-input gate ports stay one full grid line apart, growing the body to fit', (count) => {
-    const { height } = diagramNodeDimensions(gateOfInputCount(count));
-    const ys = Array.from({ length: count }, (_, i) => gateInputPortCenterY(i, count, height));
-    expect(ys[0]).toBe(grid);
-    expect(height - ys[ys.length - 1]).toBe(grid);
-    for (let i = 1; i < ys.length; i++) {
-      expect(ys[i] - ys[i - 1]).toBe(grid * 2);
-    }
-  });
+  test.each([4, 5, 8])(
+    '%i-input gate ports stay one full grid line apart, growing the body to fit',
+    (count) => {
+      const { height } = diagramNodeDimensions(gateOfInputCount(count));
+      const ys = Array.from({ length: count }, (_, i) => gateInputPortCenterY(i, count, height));
+      expect(ys[0]).toBe(grid);
+      expect(height - ys[ys.length - 1]).toBe(grid);
+      for (let i = 1; i < ys.length; i++) {
+        expect(ys[i] - ys[i - 1]).toBe(grid * 2);
+      }
+    },
+  );
 });

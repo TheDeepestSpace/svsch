@@ -36,7 +36,9 @@ describe.each(['uhdm'] as const)('ALU-style case arms: %s', (backend) => {
     expect(gateNodes.some((n) => n.metadata?.operation === 'or')).toBe(true);
 
     // && reduces to a single bit regardless of operand width, same as a comparator.
-    const logicalGateNode = andGateNodes.find((n) => n.ports.find((p) => p.direction === 'output')?.width === '[0:0]');
+    const logicalGateNode = andGateNodes.find(
+      (n) => n.ports.find((p) => p.direction === 'output')?.width === '[0:0]',
+    );
     const logicalGateOutput = logicalGateNode?.ports.find((p) => p.direction === 'output');
     expect(logicalGateOutput?.width).toBe('[0:0]');
 
@@ -49,8 +51,11 @@ describe.each(['uhdm'] as const)('ALU-style case arms: %s', (backend) => {
     // Both the comparator's and the logical gate's 1-bit outputs feed the wider
     // mux through explicit zext nodes.
     expect(zextNodes).toHaveLength(2);
-    const zextForComparator = zextNodes.find((n) =>
-      n.ports.find((p) => p.direction === 'input')?.connectedSignal === comparatorOutput?.connectedSignal);
+    const zextForComparator = zextNodes.find(
+      (n) =>
+        n.ports.find((p) => p.direction === 'input')?.connectedSignal ===
+        comparatorOutput?.connectedSignal,
+    );
     expect(zextForComparator).toBeDefined();
     const zextInput = zextForComparator!.ports.find((p) => p.direction === 'input');
     const zextOutput = zextForComparator!.ports.find((p) => p.direction === 'output');
@@ -59,7 +64,11 @@ describe.each(['uhdm'] as const)('ALU-style case arms: %s', (backend) => {
     expect(zextOutput?.width).not.toBe(zextInput?.width);
     const muxOutput = mux.ports.find((p) => p.direction === 'output');
     expect(zextOutput?.width).toBe(muxOutput?.width);
-    expect(mux.ports.some((p) => p.direction === 'input' && p.connectedSignal === zextOutput?.connectedSignal)).toBe(true);
+    expect(
+      mux.ports.some(
+        (p) => p.direction === 'input' && p.connectedSignal === zextOutput?.connectedSignal,
+      ),
+    ).toBe(true);
 
     // default: result = '0 keeps rendering as its own constant-0 block.
     expect(literalNodes.length).toBeGreaterThan(0);

@@ -5,7 +5,7 @@ import type { DiagramEdge, PositionedNode } from '../../src/ir/types';
 import {
   routeDiagramWithLibavoid,
   setLibavoidRuntimeForTests,
-  type RoutingLeadPoint
+  type RoutingLeadPoint,
 } from '../../src/layout/libavoidRouter';
 import { simplifyOrthogonalRoute } from '../../src/layout/orthogonalRouteSimplifier';
 
@@ -14,12 +14,7 @@ beforeAll(async () => {
   setLibavoidRuntimeForTests(AvoidLib.getInstance());
 });
 
-function node(
-  id: string,
-  x: number,
-  y: number,
-  ports: PositionedNode['ports']
-): PositionedNode {
+function node(id: string, x: number, y: number, ports: PositionedNode['ports']): PositionedNode {
   return { id, kind: 'comb', label: id, ports, position: { x, y }, fixed: true };
 }
 
@@ -31,13 +26,13 @@ describe('libavoid production router', () => {
     const nodes = [source, upper, lower];
     const edges: DiagramEdge[] = [
       { id: 'to-upper', source: source.id, sourcePort: 'out', target: upper.id, targetPort: 'in' },
-      { id: 'to-lower', source: source.id, sourcePort: 'out', target: lower.id, targetPort: 'in' }
+      { id: 'to-lower', source: source.id, sourcePort: 'out', target: lower.id, targetPort: 'in' },
     ];
     const leads = leadResolver(nodes);
     const originalPositions = nodes.map((candidate) => ({ ...candidate.position }));
 
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => routeDiagramWithLibavoid(nodes, edges, leads))
+      Array.from({ length: 5 }, () => routeDiagramWithLibavoid(nodes, edges, leads)),
     );
 
     for (const result of results) {
@@ -61,7 +56,7 @@ describe('libavoid production router', () => {
     const nodes = [source, blocker, upper, lower];
     const edges: DiagramEdge[] = [
       { id: 'to-upper', source: source.id, sourcePort: 'out', target: upper.id, targetPort: 'in' },
-      { id: 'to-lower', source: source.id, sourcePort: 'out', target: lower.id, targetPort: 'in' }
+      { id: 'to-lower', source: source.id, sourcePort: 'out', target: lower.id, targetPort: 'in' },
     ];
 
     const result = await routeDiagramWithLibavoid(nodes, edges, leadResolver(nodes));
@@ -74,10 +69,20 @@ describe('libavoid production router', () => {
     const source = node('source', 0, 168, [{ id: 'out', name: 'out', direction: 'output' }]);
     const target = node('target', 480, 24, [{ id: 'in', name: 'in', direction: 'input' }]);
     const edges: DiagramEdge[] = [
-      { id: 'staggered', source: source.id, sourcePort: 'out', target: target.id, targetPort: 'in' }
+      {
+        id: 'staggered',
+        source: source.id,
+        sourcePort: 'out',
+        target: target.id,
+        targetPort: 'in',
+      },
     ];
 
-    const result = await routeDiagramWithLibavoid([source, target], edges, leadResolver([source, target]));
+    const result = await routeDiagramWithLibavoid(
+      [source, target],
+      edges,
+      leadResolver([source, target]),
+    );
     const route = result.routes.get('staggered')!;
 
     expect(result.rejectedNets.size).toBe(0);
@@ -97,7 +102,7 @@ describe('single-connection dogleg simplification', () => {
       { x: 384, y: 336 },
       { x: 384, y: 312 },
       { x: 552, y: 312 },
-      { x: 552, y: 264 }
+      { x: 552, y: 264 },
     ];
 
     expect(simplifyOrthogonalRoute(route, [], [])).toEqual([
@@ -105,7 +110,7 @@ describe('single-connection dogleg simplification', () => {
       { x: 312, y: 240 },
       { x: 312, y: 312 },
       { x: 552, y: 312 },
-      { x: 552, y: 264 }
+      { x: 552, y: 264 },
     ]);
   });
 
@@ -120,7 +125,7 @@ describe('single-connection dogleg simplification', () => {
       { x: 600, y: 168 },
       { x: 336, y: 168 },
       { x: 336, y: 240 },
-      { x: 351, y: 240 }
+      { x: 351, y: 240 },
     ];
 
     expect(simplifyOrthogonalRoute(route, [], [])).toEqual([
@@ -131,7 +136,7 @@ describe('single-connection dogleg simplification', () => {
       { x: 600, y: 168 },
       { x: 336, y: 168 },
       { x: 336, y: 240 },
-      { x: 351, y: 240 }
+      { x: 351, y: 240 },
     ]);
   });
 
@@ -142,17 +147,19 @@ describe('single-connection dogleg simplification', () => {
       { x: 72, y: 24 },
       { x: 24, y: 24 },
       { x: 24, y: -48 },
-      { x: -48, y: -48 }
+      { x: -48, y: -48 },
     ].map((point) => rotatePoint(point, turns));
 
     const simplified = simplifyOrthogonalRoute(route, [], []);
 
-    expect(simplified).toEqual([
-      { x: 144, y: 0 },
-      { x: 24, y: 0 },
-      { x: 24, y: -48 },
-      { x: -48, y: -48 }
-    ].map((point) => rotatePoint(point, turns)));
+    expect(simplified).toEqual(
+      [
+        { x: 144, y: 0 },
+        { x: 24, y: 0 },
+        { x: 24, y: -48 },
+        { x: -48, y: -48 },
+      ].map((point) => rotatePoint(point, turns)),
+    );
   });
 
   it('keeps a dogleg when the shorter replacement would hit an obstacle', () => {
@@ -161,12 +168,12 @@ describe('single-connection dogleg simplification', () => {
       { x: 72, y: 0 },
       { x: 72, y: 24 },
       { x: 24, y: 24 },
-      { x: 24, y: -48 }
+      { x: 24, y: -48 },
     ];
 
-    expect(simplifyOrthogonalRoute(route, [
-      { x: 36, y: -12, width: 12, height: 24 }
-    ], [])).toEqual(route);
+    expect(simplifyOrthogonalRoute(route, [{ x: 36, y: -12, width: 12, height: 24 }], [])).toEqual(
+      route,
+    );
   });
 
   it('uses the mirrored elbow when an obstacle blocks the preferred shortcut', () => {
@@ -176,16 +183,16 @@ describe('single-connection dogleg simplification', () => {
       { x: 216, y: 552 },
       { x: 384, y: 552 },
       { x: 384, y: 528 },
-      { x: 456, y: 528 }
+      { x: 456, y: 528 },
     ];
 
-    expect(simplifyOrthogonalRoute(route, [
-      { x: 212, y: 452, width: 152, height: 104 }
-    ], [])).toEqual([
+    expect(
+      simplifyOrthogonalRoute(route, [{ x: 212, y: 452, width: 152, height: 104 }], []),
+    ).toEqual([
       { x: 144, y: 360 },
       { x: 384, y: 360 },
       { x: 384, y: 528 },
-      { x: 456, y: 528 }
+      { x: 456, y: 528 },
     ]);
   });
 
@@ -195,11 +202,11 @@ describe('single-connection dogleg simplification', () => {
       { x: 72, y: 0 },
       { x: 72, y: 24 },
       { x: 24, y: 24 },
-      { x: 24, y: -48 }
+      { x: 24, y: -48 },
     ];
     const peer = [
       { x: 36, y: 0 },
-      { x: 60, y: 0 }
+      { x: 60, y: 0 },
     ];
 
     expect(simplifyOrthogonalRoute(route, [], [peer])).toEqual(route);
@@ -211,11 +218,11 @@ describe('single-connection dogleg simplification', () => {
       { x: 72, y: 0 },
       { x: 72, y: 24 },
       { x: 24, y: 24 },
-      { x: 24, y: -48 }
+      { x: 24, y: -48 },
     ];
     const peer = [
       { x: 48, y: -12 },
-      { x: 48, y: 12 }
+      { x: 48, y: 12 },
     ];
 
     expect(simplifyOrthogonalRoute(route, [], [peer])).toEqual(route);
@@ -224,7 +231,11 @@ describe('single-connection dogleg simplification', () => {
 
 function leadResolver(nodes: PositionedNode[]) {
   const byId = new Map(nodes.map((candidate) => [candidate.id, candidate]));
-  return (nodeId: string, portId: string | undefined, includeLeadMargins: boolean): RoutingLeadPoint | undefined => {
+  return (
+    nodeId: string,
+    portId: string | undefined,
+    includeLeadMargins: boolean,
+  ): RoutingLeadPoint | undefined => {
     const candidate = byId.get(nodeId);
     const port = candidate?.ports.find((item) => item.id === portId);
     if (!candidate || !port) return undefined;
@@ -234,17 +245,17 @@ function leadResolver(nodes: PositionedNode[]) {
     return {
       point: {
         x: x + (includeLeadMargins ? (side === 'EAST' ? 24 : -24) : 0),
-        y: candidate.position.y + size.height / 2
+        y: candidate.position.y + size.height / 2,
       },
-      side
+      side,
     };
   };
 }
 
 function routeIsOrthogonal(points: Array<{ x: number; y: number }>): boolean {
-  return points.slice(1).every((point, index) => (
-    point.x === points[index].x || point.y === points[index].y
-  ));
+  return points
+    .slice(1)
+    .every((point, index) => point.x === points[index].x || point.y === points[index].y);
 }
 
 function rotatePoint(point: { x: number; y: number }, turns: number): { x: number; y: number } {

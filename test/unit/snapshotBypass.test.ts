@@ -35,7 +35,7 @@ describe('snapshot bypass allowlist', () => {
         '    diff_pixel_count: 42',
         '    reason: one liner reason for bypassing',
         '',
-      ].join('\n')
+      ].join('\n'),
     );
 
     expect(loadSnapshotBypassEntries(filePath)).toEqual([
@@ -59,7 +59,7 @@ describe('snapshot bypass allowlist', () => {
         '    diff_pixel_count: 42',
         '    reason: missing the date field',
         '',
-      ].join('\n')
+      ].join('\n'),
     );
 
     expect(() => loadSnapshotBypassEntries(filePath)).toThrow(/bypass_threshold_restriction\[0\]/);

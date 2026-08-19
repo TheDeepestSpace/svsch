@@ -4,8 +4,8 @@ export type SelectionAction = 'cut' | 'reroute';
 
 // Edge-drag ('left'/'right'/'top'/'bottom') resizes one axis; corner-drag
 // (e.g. 'top-left') resizes both independently, no aspect lock.
-export type NodeResizeHandle = 'left' | 'right' | 'top' | 'bottom'
-  | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+export type NodeResizeHandle =
+  'left' | 'right' | 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export const InteractionContext = React.createContext<{
   hoveredNetKey?: string;
@@ -43,5 +43,5 @@ export const InteractionContext = React.createContext<{
   setSelectionHoverActive: () => {},
   setPendingSelectionAction: () => {},
   overlayPortalNode: null,
-  startNodeResize: () => {}
+  startNodeResize: () => {},
 });

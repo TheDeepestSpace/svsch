@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { runParser } from '../helper';
 
 describe('Array Reset Syntaxes', () => {
-  it('recognizes \'{default: 32\'b0} as a zero reset', async () => {
+  it("recognizes '{default: 32'b0} as a zero reset", async () => {
     const code = `
       module array_reset_default (
           input logic clk,
@@ -21,13 +21,13 @@ describe('Array Reset Syntaxes', () => {
     `;
     const graph = await runParser('uhdm', [{ file: 'array_reset_default.sv', text: code }]);
     const mod = graph.modules.array_reset_default;
-    const reg = mod.nodes.find(n => n.id === 'reg:array_reset_default:M');
+    const reg = mod.nodes.find((n) => n.id === 'reg:array_reset_default:M');
     expect(reg).toBeDefined();
     // If it's recognized as a zero reset, it should NOT have an RV port
-    expect(reg?.ports.some(p => p.id === 'rv')).toBe(false);
+    expect(reg?.ports.some((p) => p.id === 'rv')).toBe(false);
   });
 
-  it('recognizes \'{default: 0} as a zero reset', async () => {
+  it("recognizes '{default: 0} as a zero reset", async () => {
     const code = `
       module array_reset_zero (
           input logic clk,
@@ -46,11 +46,11 @@ describe('Array Reset Syntaxes', () => {
     `;
     const graph = await runParser('uhdm', [{ file: 'array_reset_zero.sv', text: code }]);
     const mod = graph.modules.array_reset_zero;
-    const reg = mod.nodes.find(n => n.id === 'reg:array_reset_zero:M');
-    expect(reg?.ports.some(p => p.id === 'rv')).toBe(false);
+    const reg = mod.nodes.find((n) => n.id === 'reg:array_reset_zero:M');
+    expect(reg?.ports.some((p) => p.id === 'rv')).toBe(false);
   });
 
-  it('recognizes \'{default: \'0} as a zero reset', async () => {
+  it("recognizes '{default: '0} as a zero reset", async () => {
     const code = `
       module array_reset_tick_zero (
           input logic clk,
@@ -69,8 +69,8 @@ describe('Array Reset Syntaxes', () => {
     `;
     const graph = await runParser('uhdm', [{ file: 'array_reset_tick_zero.sv', text: code }]);
     const mod = graph.modules.array_reset_tick_zero;
-    const reg = mod.nodes.find(n => n.id === 'reg:array_reset_tick_zero:M');
-    expect(reg?.ports.some(p => p.id === 'rv')).toBe(false);
+    const reg = mod.nodes.find((n) => n.id === 'reg:array_reset_tick_zero:M');
+    expect(reg?.ports.some((p) => p.id === 'rv')).toBe(false);
   });
 
   it('recognizes non-zero reset pattern as non-zero', async () => {
@@ -92,11 +92,11 @@ describe('Array Reset Syntaxes', () => {
     `;
     const graph = await runParser('uhdm', [{ file: 'array_reset_nonzero.sv', text: code }]);
     const mod = graph.modules.array_reset_nonzero;
-    const reg = mod.nodes.find(n => n.id === 'reg:array_reset_nonzero:M');
-    expect(reg?.ports.some(p => p.id === 'rv')).toBe(true);
+    const reg = mod.nodes.find((n) => n.id === 'reg:array_reset_nonzero:M');
+    expect(reg?.ports.some((p) => p.id === 'rv')).toBe(true);
   });
 
-  it('recognizes explicit zero pattern \'{0, 0, ...} as zero reset', async () => {
+  it("recognizes explicit zero pattern '{0, 0, ...} as zero reset", async () => {
     const code = `
       module array_reset_explicit (
           input logic clk,
@@ -115,7 +115,7 @@ describe('Array Reset Syntaxes', () => {
     `;
     const graph = await runParser('uhdm', [{ file: 'array_reset_explicit.sv', text: code }]);
     const mod = graph.modules.array_reset_explicit;
-    const reg = mod.nodes.find(n => n.id === 'reg:array_reset_explicit:M');
-    expect(reg?.ports.some(p => p.id === 'rv')).toBe(false);
+    const reg = mod.nodes.find((n) => n.id === 'reg:array_reset_explicit:M');
+    expect(reg?.ports.some((p) => p.id === 'rv')).toBe(false);
   });
 });

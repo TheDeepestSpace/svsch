@@ -1,6 +1,12 @@
 import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
-import { nodeArrayDimension, nodeIsArrayNode, nodeTypeName, nodeTypeSource, nodeWidth as metadataNodeWidth } from '../../../ir/nodeMetadata';
+import {
+  nodeArrayDimension,
+  nodeIsArrayNode,
+  nodeTypeName,
+  nodeTypeSource,
+  nodeWidth as metadataNodeWidth,
+} from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { normalizeWidth } from '../../../diagram/constants';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
@@ -8,16 +14,22 @@ import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
 import type { DiagramPort } from '../../../ir/types';
 
-export function LiteralNodeSvg({ node, width, height, arrayConnections, onNavigateToSource }: NodeSvgProps): React.ReactElement {
+export function LiteralNodeSvg({
+  node,
+  width,
+  height,
+  arrayConnections,
+  onNavigateToSource,
+}: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
   const stackLayers = arrayStackLayersFor(stackWide);
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some(c => c.portId === portId && c.role === role);
+    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find(c => c.portId === portId && c.role === role)?.thick ?? false;
+    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const outputPort = outputs[0];
   const nodeDeclaredWidth = normalizeWidth(metadataNodeWidth(node));
@@ -54,33 +66,51 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
     onNavigateToSource(typeSource);
   };
 
+  const arrayLayerClassName = (layerId: string) =>
+    `svsch-node-shape svsch-literal-shape hdl-node-array-layer ` +
+    `hdl-node-array-${layerId} svsch-array-layer-${layerId}`;
+  const frontShapeClassName =
+    `svsch-node-shape svsch-literal-shape` +
+    (isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : '');
+  const typeLabelClassName =
+    `svsch-type-label svsch-literal-type-label` + (typeSource ? ' svsch-svg-link' : '');
+
   return (
     <>
-      {isArray && skinLayers.filter(layer => layer.id !== 'front').map(layer => (
-        <rect
-          key={layer.id}
-          className={`svsch-node-shape svsch-literal-shape hdl-node-array-layer hdl-node-array-${layer.id} svsch-array-layer-${layer.id}`}
-          transform={`translate(${layer.dx}, ${layer.dy})`}
-          x={0.5}
-          y={0.5}
-          width={shapeWidth}
-          height={shapeHeight}
-          opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-        />
-      ))}
+      {isArray &&
+        skinLayers
+          .filter((layer) => layer.id !== 'front')
+          .map((layer) => (
+            <rect
+              key={layer.id}
+              className={arrayLayerClassName(layer.id)}
+              transform={`translate(${layer.dx}, ${layer.dy})`}
+              x={0.5}
+              y={0.5}
+              width={shapeWidth}
+              height={shapeHeight}
+              opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
+            />
+          ))}
       <rect
-        className={`svsch-node-shape svsch-literal-shape${isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''}`}
+        className={frontShapeClassName}
         transform={shapeTransform}
         x={0.5}
         y={0.5}
         width={shapeWidth}
         height={shapeHeight}
       />
-      <text className="svsch-node-title svsch-literal-content" x={Math.round(width / 2 + contentShiftX)} y={Math.round(height / 2 + contentShiftY)} textAnchor="middle" dominantBaseline="middle">
+      <text
+        className="svsch-node-title svsch-literal-content"
+        x={Math.round(width / 2 + contentShiftX)}
+        y={Math.round(height / 2 + contentShiftY)}
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
-            className={`svsch-type-label svsch-literal-type-label${typeSource ? ' svsch-svg-link' : ''}`}
+            className={typeLabelClassName}
             dx={suffixGap}
             onClick={navigateSvgType}
             onDoubleClick={stopSvgInteraction}
@@ -91,7 +121,11 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
           </tspan>
         ) : widthSuffix ? (
           <tspan dx={suffixGap}>
-            <SvgParameterizedText text={widthSuffix} refs={outputPort?.parameterRefs} onNavigateToSource={onNavigateToSource} />
+            <SvgParameterizedText
+              text={widthSuffix}
+              refs={outputPort?.parameterRefs}
+              onNavigateToSource={onNavigateToSource}
+            />
           </tspan>
         ) : null}
         {isArray && <tspan className="svsch-svg-array-index"> [0]</tspan>}
@@ -117,17 +151,30 @@ export function LiteralNodeSvg({ node, width, height, arrayConnections, onNaviga
         />
       )}
       {isArray && arrayDim && (
-        <text className="svsch-node-kind svsch-array-badge" x={Math.round(width + 3)} y={-4} textAnchor="start">
+        <text
+          className="svsch-node-kind svsch-array-badge"
+          x={Math.round(width + 3)}
+          y={-4}
+          textAnchor="start"
+        >
           {arrayDim}
         </text>
       )}
 
       {/* Array stack leads */}
-      {isArray && outputs.map((port: DiagramPort) =>
-        hasArrayConnection(port.id, 'source') ? (
-          <SvgArrayStackLeads wide={stackWide} thick={arrayConnectionThick(port.id, 'source')} key={port.id} side="right" width={width} y={Math.round(height / 2)} />
-        ) : null
-      )}
+      {isArray &&
+        outputs.map((port: DiagramPort) =>
+          hasArrayConnection(port.id, 'source') ? (
+            <SvgArrayStackLeads
+              wide={stackWide}
+              thick={arrayConnectionThick(port.id, 'source')}
+              key={port.id}
+              side="right"
+              width={width}
+              y={Math.round(height / 2)}
+            />
+          ) : null,
+        )}
     </>
   );
 }
