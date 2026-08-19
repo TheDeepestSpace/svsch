@@ -260,12 +260,16 @@ export function defaultRoute(
     ];
   }
 
+  // Strict comparisons: when the two leads land on exactly the same
+  // coordinate (endpoints exactly two lead lengths apart — e.g. an expanded
+  // instance's border coming to rest one lead-pair short of a neighboring
+  // port), a straight route still fits and a wrap-around loop is pure noise.
   const isRightFeedback = sourcePosition === HdlPosition.Right
     && targetPosition === HdlPosition.Left
-    && sourceLead.x >= targetLead.x;
+    && sourceLead.x > targetLead.x;
   const isLeftFeedback = sourcePosition === HdlPosition.Left
     && targetPosition === HdlPosition.Right
-    && sourceLead.x <= targetLead.x;
+    && sourceLead.x < targetLead.x;
 
   if (isRightFeedback || isLeftFeedback) {
     const direction = isRightFeedback ? 1 : -1;
@@ -285,10 +289,10 @@ export function defaultRoute(
 
   const isBottomFeedback = sourcePosition === HdlPosition.Bottom
     && targetPosition === HdlPosition.Top
-    && sourceLead.y >= targetLead.y;
+    && sourceLead.y > targetLead.y;
   const isTopFeedback = sourcePosition === HdlPosition.Top
     && targetPosition === HdlPosition.Bottom
-    && sourceLead.y <= targetLead.y;
+    && sourceLead.y < targetLead.y;
 
   if (isBottomFeedback || isTopFeedback) {
     const direction = isBottomFeedback ? 1 : -1;

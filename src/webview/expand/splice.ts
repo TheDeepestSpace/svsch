@@ -241,8 +241,28 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       return [{ node: boundaryNode, port, index, side, size: diagramNodeDimensions(boundaryNode) }];
     });
 
-  const inputColumn = buildBoundaryColumn(inputs, 'left');
-  const outputColumn = buildBoundaryColumn(outputs, 'right');
+  // Every node in a column is widened to the column's max width (grow-only
+  // sizeOverride, in grid units — already grid-snapped by nodeWidthForKind):
+  // all inner handles then share a single x past *every* label in the
+  // column, so an inner stub's vertical jog (one edge lead past its handle)
+  // can never strike through a neighboring row's longer label. The label
+  // itself stays anchored to the border side (see BoundaryPortNode) — only
+  // the node's inner wire lead absorbs the extra width.
+  const alignColumnWidths = (column: ReturnType<typeof buildBoundaryColumn>) => {
+    if (column.length === 0) return column;
+    const width = Math.max(...column.map((entry) => entry.size.width));
+    return column.map((entry) => ({
+      ...entry,
+      size: { ...entry.size, width },
+      node: {
+        ...entry.node,
+        sizeOverride: { width: width / diagramSizing.gridSize, height: entry.size.height / diagramSizing.gridSize }
+      }
+    }));
+  };
+
+  const inputColumn = alignColumnWidths(buildBoundaryColumn(inputs, 'left'));
+  const outputColumn = alignColumnWidths(buildBoundaryColumn(outputs, 'right'));
 
   // Padding between the node border and the spliced diagram: horizontally
   // the widest port-label column on that side plus a gap (so a stub's

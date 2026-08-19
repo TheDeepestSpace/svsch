@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { spliceExpandedInstance, childNamespace, namespacedId, expandRegionId, isExpandNamespacedId } from '../../src/webview/expand/splice';
 import type { DesignModule, DiagramPort } from '../../src/ir/types';
-import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 
 // A tiny two-port-plus-register module, standing in for the child module
 // being spliced in when its instance is "Expand"ed in place (issue #232).
@@ -73,8 +73,43 @@ describe('spliceExpandedInstance', () => {
     // *expanded* node's right border (the node itself grows to contain the
     // spliced diagram — its border is the frame).
     expect(sumNode.metadata?.boundaryPort?.outerSide).toBe('right');
-    expect(sumNode.position.x + diagramNodeDimensions(sumNode).width)
+    expect(sumNode.position.x + resolvedNodeDimensions(sumNode).width)
       .toBe(instancePosition.x + result.expandedSize.width);
+  });
+
+  it('widens every boundary node in a column to the column\'s max width so inner handles clear every label in the column', async () => {
+    const longPort: DiagramPort = { id: 'p:long', name: 'a_much_longer_port_name', direction: 'input' };
+    const withLongLabel: DesignModule = {
+      ...childModule,
+      ports: [clkPort, longPort, sumPort],
+      nodes: [
+        { id: 'port:clk', kind: 'port', label: 'clk', ports: [clkPort] },
+        { id: 'port:long', kind: 'port', label: 'a_much_longer_port_name', ports: [longPort] },
+        { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] },
+        childModule.nodes.find((n) => n.id === 'reg1')!
+      ],
+      edges: []
+    };
+    const result = await spliceExpandedInstance({
+      ...baseInput(),
+      instancePorts: [clkPort, longPort, sumPort],
+      childModule: withLongLabel
+    });
+
+    const leftNodes = result.nodes.filter((n) => n.metadata?.boundaryPort?.outerSide === 'left');
+    expect(leftNodes).toHaveLength(2);
+    const leftWidths = leftNodes.map((n) => resolvedNodeDimensions(n).width);
+    // Uniform: the short "clk" node is widened (via sizeOverride) to the long
+    // label's column width, so both inner handles land on the same x — a
+    // vertical jog just past clk's inner handle can never cross the longer
+    // label on the row below.
+    expect(new Set(leftWidths).size).toBe(1);
+    expect(leftWidths[0]).toBeGreaterThanOrEqual(Math.max(...leftNodes.map((n) => diagramNodeDimensions(n).width)));
+    // Both nodes still start at the border, so their labels (anchored to the
+    // outer edge — see BoundaryPortNode) stay at the pre-expand position.
+    for (const node of leftNodes) {
+      expect(node.position.x).toBe(instancePosition.x);
+    }
   });
 
   it('grows the instance node to contain the spliced diagram with label clearances on every side', async () => {
@@ -92,10 +127,10 @@ describe('spliceExpandedInstance', () => {
     const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
     const inputWidths = boundaryNodes
       .filter((n) => n.metadata?.boundaryPort?.outerSide === 'left')
-      .map((n) => diagramNodeDimensions(n).width);
+      .map((n) => resolvedNodeDimensions(n).width);
     const outputWidths = boundaryNodes
       .filter((n) => n.metadata?.boundaryPort?.outerSide === 'right')
-      .map((n) => diagramNodeDimensions(n).width);
+      .map((n) => resolvedNodeDimensions(n).width);
 
     // The internal diagram sits fully inside the expanded node, clear of the
     // port-label columns on both sides and below the header row.
@@ -128,7 +163,7 @@ describe('spliceExpandedInstance', () => {
 
     const left = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'left')!;
     const right = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'right')!;
-    const gap = right.position.x - (left.position.x + diagramNodeDimensions(left).width);
+    const gap = right.position.x - (left.position.x + resolvedNodeDimensions(left).width);
     // Room for the pass-through wire's Z-route between the two label columns
     // (a lead leaving each inner handle) — otherwise it degenerates into a
     // wrap-around loop.

@@ -7,7 +7,7 @@
         "x": 360,
         "y": 72
       },
-      "width": 96,
+      "width": 72,
       "height": 48,
       "data": {
         "kind": "boundaryPort",
@@ -27,7 +27,7 @@
         "x": 360,
         "y": 48
       },
-      "width": 96,
+      "width": 72,
       "height": 48,
       "data": {
         "kind": "boundaryPort",
@@ -44,10 +44,10 @@
       "id": "expand:instance:top:u1::port:leaf:y",
       "type": "hdl",
       "position": {
-        "x": 696,
+        "x": 672,
         "y": 48
       },
-      "width": 96,
+      "width": 48,
       "height": 48,
       "data": {
         "kind": "boundaryPort",
@@ -64,7 +64,7 @@
       "id": "expand:instance:top:u1::reg:leaf:y",
       "type": "hdl",
       "position": {
-        "x": 528,
+        "x": 504,
         "y": 96
       },
       "width": 96,
@@ -97,7 +97,7 @@
         "x": 360,
         "y": 24
       },
-      "width": 432,
+      "width": 360,
       "height": 216,
       "data": {
         "kind": "instance",
@@ -188,7 +188,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 792 72 L 816 72 L 888 72 L 888 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 720 72 L 744 72 L 768 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -212,7 +212,7 @@
       "target": "expand:instance:top:u1::reg:leaf:y",
       "sourceHandle": "inner",
       "targetHandle": "d",
-      "path": "M 456 96 L 480 96 L 504 96 L 504 144 L 528 144"
+      "path": "M 432 96 L 456 96 L 480 96 L 480 144 L 504 144"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:clk:reg:leaf:y:clk",
@@ -220,7 +220,7 @@
       "target": "expand:instance:top:u1::reg:leaf:y",
       "sourceHandle": "inner",
       "targetHandle": "clk",
-      "path": "M 456 72 L 480 72 L 504 72 L 504 168 L 528 168"
+      "path": "M 432 72 L 456 72 L 480 72 L 480 168 L 504 168"
     },
     {
       "id": "expand:instance:top:u1::edge:reg:leaf:y:port:leaf:y:y",
@@ -228,7 +228,7 @@
       "target": "expand:instance:top:u1::port:leaf:y",
       "sourceHandle": "q",
       "targetHandle": "inner",
-      "path": "M 624 144 L 648 144 L 672 144 L 672 72 L 696 72"
+      "path": "M 600 144 L 624 144 L 648 144 L 648 72 L 672 72"
     }
   ]
 }

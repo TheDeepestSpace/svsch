@@ -228,6 +228,22 @@ describe('orthogonal edge routing', () => {
     expect(route.every((point) => point.x === 480)).toBe(true);
   });
 
+  it('routes straight, not as a wrap-around loop, when the two leads land on exactly the same point', () => {
+    // Endpoints exactly two lead lengths apart — e.g. an expanded instance's
+    // border coming to rest one lead-pair short of the neighboring port. A
+    // straight run fits exactly; treating this as feedback drew a loop that
+    // doubled back through the target node.
+    const sourceX = 720;
+    const y = 72;
+    const probe = normalizeRoutePoints(undefined, sourceX, y, sourceX + 480, y, HdlPosition.Right, HdlPosition.Left);
+    const lead = probe[0].x - sourceX;
+    const targetX = sourceX + 2 * lead;
+
+    const route = normalizeRoutePoints(undefined, sourceX, y, targetX, y, HdlPosition.Right, HdlPosition.Left);
+    expect(route.every((point) => point.y === y)).toBe(true);
+    expect(route.every((point) => point.x >= sourceX && point.x <= targetX)).toBe(true);
+  });
+
   it('routes feedback edges around the target instead of straight through the nodes', () => {
     const route = normalizeRoutePoints(undefined, 420, 120, 260, 120, HdlPosition.Right, HdlPosition.Left);
     const sourceLead = route[0];
