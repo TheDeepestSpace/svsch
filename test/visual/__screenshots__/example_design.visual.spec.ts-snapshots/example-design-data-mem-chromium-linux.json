@@ -5,7 +5,7 @@
       "type": "hdl",
       "position": {
         "x": 1344,
-        "y": 504
+        "y": 336
       },
       "width": 96,
       "height": 48,
@@ -25,7 +25,7 @@
       "type": "hdl",
       "position": {
         "x": -216,
-        "y": 168
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -45,7 +45,7 @@
       "type": "hdl",
       "position": {
         "x": 480,
-        "y": 504
+        "y": 336
       },
       "width": 96,
       "height": 48,
@@ -65,7 +65,7 @@
       "type": "hdl",
       "position": {
         "x": 888,
-        "y": 504
+        "y": 336
       },
       "width": 96,
       "height": 48,
@@ -84,28 +84,8 @@
       "id": "cut-label:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
       "type": "hdl",
       "position": {
-        "x": 984,
-        "y": 96
-      },
-      "width": 96,
-      "height": 48,
-      "data": {
-        "kind": "netLabel",
-        "ports": [
-          {
-            "id": "cut",
-            "name": "cut",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
-      "id": "cut-label:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:select:data_mem:ram_addr_:ram",
-      "type": "hdl",
-      "position": {
-        "x": 936,
-        "y": 336
+        "x": 888,
+        "y": 168
       },
       "width": 96,
       "height": 48,
@@ -125,7 +105,7 @@
       "type": "hdl",
       "position": {
         "x": 1584,
-        "y": 480
+        "y": 312
       },
       "width": 96,
       "height": 48,
@@ -145,7 +125,7 @@
       "type": "hdl",
       "position": {
         "x": 1008,
-        "y": 456
+        "y": 288
       },
       "width": 144,
       "height": 96,
@@ -180,7 +160,7 @@
       "type": "hdl",
       "position": {
         "x": 600,
-        "y": 456
+        "y": 288
       },
       "width": 96,
       "height": 96,
@@ -214,22 +194,22 @@
       "id": "mux:data_mem:ram_read_addr",
       "type": "hdl",
       "position": {
-        "x": 984,
-        "y": 168
+        "x": 1008,
+        "y": 144
       },
-      "width": 96,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
         "ports": [
           {
-            "id": "in:in",
-            "name": "in",
+            "id": "sel",
+            "name": "sel",
             "direction": "input"
           },
           {
-            "id": "sel",
-            "name": "sel",
+            "id": "in:in",
+            "name": "in",
             "direction": "input"
           },
           {
@@ -245,7 +225,7 @@
       "type": "hdl",
       "position": {
         "x": 480,
-        "y": 252
+        "y": 108
       },
       "width": 216,
       "height": 24,
@@ -265,7 +245,7 @@
       "type": "hdl",
       "position": {
         "x": -360,
-        "y": 180
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -285,7 +265,7 @@
       "type": "hdl",
       "position": {
         "x": 168,
-        "y": 396
+        "y": 228
       },
       "width": 120,
       "height": 24,
@@ -305,7 +285,7 @@
       "type": "hdl",
       "position": {
         "x": 1368,
-        "y": 348
+        "y": 180
       },
       "width": 264,
       "height": 24,
@@ -325,7 +305,7 @@
       "type": "hdl",
       "position": {
         "x": 24,
-        "y": 492
+        "y": 324
       },
       "width": 264,
       "height": 24,
@@ -345,7 +325,7 @@
       "type": "hdl",
       "position": {
         "x": 1464,
-        "y": 456
+        "y": 288
       },
       "width": 96,
       "height": 96,
@@ -369,36 +349,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "select:data_mem:ram[addr]",
-      "type": "hdl",
-      "position": {
-        "x": 1056,
-        "y": 312
-      },
-      "width": 96,
-      "height": 96,
-      "data": {
-        "kind": "select",
-        "ports": [
-          {
-            "id": "port:sel",
-            "name": "sel",
-            "direction": "input"
-          },
-          {
-            "id": "port:in",
-            "name": "in",
-            "direction": "input"
-          },
-          {
-            "id": "port:out",
-            "name": "out",
-            "direction": "output"
-          }
-        ]
-      }
     }
   ],
   "edges": [
@@ -408,7 +358,7 @@
       "target": "reg:data_mem:ram",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 1440 528"
+      "path": "M 1440 360"
     },
     {
       "id": "cut-stub:port:data_mem:clk:port:clk:source",
@@ -416,7 +366,7 @@
       "target": "cut-label:port:data_mem:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M -240 192 L -216 192 L -216 192"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_addr_:mem_write:ram_addr__next:ram",
@@ -424,7 +374,7 @@
       "target": "mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 583 532 L 595 532"
+      "path": "M 583 364 L 595 364"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_addr:ram",
@@ -432,7 +382,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:default",
-      "path": "M 991 532 L 1003 532"
+      "path": "M 991 364 L 1003 364"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
@@ -440,15 +390,7 @@
       "target": "mux:data_mem:ram_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:in",
-      "path": "M 1036 151 L 1012 148 L 1012 220 L 964 220 L 984 220"
-    },
-    {
-      "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:select:data_mem:ram_addr_:ram",
-      "source": "cut-label:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:select:data_mem:ram_addr_:ram",
-      "target": "select:data_mem:ram[addr]",
-      "sourceHandle": "cut",
-      "targetHandle": "port:in",
-      "path": "M 1039 364 L 1056 364"
+      "path": "M 991 196 L 1008 196"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:source",
@@ -456,7 +398,7 @@
       "target": "cut-label:reg:data_mem:ram:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 1567 508 L 1579 508"
+      "path": "M 1567 340 L 1579 340"
     },
     {
       "id": "edge:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mux:data_mem:ram_addr:ram_addr__next",
@@ -464,7 +406,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "out",
       "targetHandle": "in:8_b0",
-      "path": "M 703 508 L 1003 508"
+      "path": "M 703 340 L 1003 340"
     },
     {
       "id": "edge:mux:data_mem:ram_addr:reg:data_mem:ram:ram_next",
@@ -472,7 +414,7 @@
       "target": "reg:data_mem:ram",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1159 508 L 1459 508"
+      "path": "M 1159 340 L 1459 340"
     },
     {
       "id": "edge:mux:data_mem:ram_read_addr:port:data_mem:read_data:read_data",
@@ -480,7 +422,7 @@
       "target": "port:data_mem:read_data",
       "sourceHandle": "out",
       "targetHandle": "port:read_data",
-      "path": "M 1080 216 L 1104 216 L 1272 216 L 1272 360 L 1344 360 L 1368 360"
+      "path": "M 1152 192 L 1176 192 L 1344 192 L 1368 192"
     },
     {
       "id": "edge:port:data_mem:addr:mux:data_mem:ram_addr:addr",
@@ -488,7 +430,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 696 264 L 912 264 L 912 432 L 1080 432"
+      "path": "M 696 120 L 864 120 L 864 264 L 1080 264"
     },
     {
       "id": "edge:port:data_mem:addr:mux:data_mem:ram_read_addr:addr",
@@ -496,15 +438,7 @@
       "target": "mux:data_mem:ram_read_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 696 264 L 720 264 L 912 264 L 912 144 L 1032 144 L 1032 192"
-    },
-    {
-      "id": "edge:port:data_mem:addr:select:data_mem:ram_addr_:addr",
-      "source": "port:data_mem:addr",
-      "target": "select:data_mem:ram[addr]",
-      "sourceHandle": "port:addr",
-      "targetHandle": "port:sel",
-      "path": "M 696 264 L 720 264 L 912 264 L 912 288 L 1104 288 L 1104 336"
+      "path": "M 696 120 L 720 120 L 1080 120 L 1080 168"
     },
     {
       "id": "edge:port:data_mem:mem_write:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mem_write",
@@ -512,7 +446,7 @@
       "target": "mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "port:mem_write",
       "targetHandle": "sel",
-      "path": "M 288 408 L 648 408 L 648 432"
+      "path": "M 288 240 L 648 240 L 648 264"
     },
     {
       "id": "edge:port:data_mem:write_data:mux:data_mem:ram_addr_:mem_write:ram_addr__next:write_data",
@@ -520,15 +454,7 @@
       "target": "mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "port:write_data",
       "targetHandle": "in:true",
-      "path": "M 288 504 L 576 504"
-    },
-    {
-      "id": "edge:select:data_mem:ram_addr_:port:data_mem:read_data:read_data",
-      "source": "select:data_mem:ram[addr]",
-      "target": "port:data_mem:read_data",
-      "sourceHandle": "port:out",
-      "targetHandle": "port:read_data",
-      "path": "M 1152 360 L 1176 360 L 1344 360 L 1368 360"
+      "path": "M 288 336 L 576 336"
     }
   ]
 }

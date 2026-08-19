@@ -2448,13 +2448,13 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:port:instr_mem:addr:select:instr_mem:mem_addr_:addr"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:instr_mem:addr:select:instr_mem:mem_addr_:addr" data-net-key="port:instr_mem:addr:port:addr" d="M 240 48 L 264 48 L 504 48 L 504 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:select:instr_mem:mem_addr_:port:instr_mem:instr:instr"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:select:instr_mem:mem_addr_:port:instr_mem:instr:instr" data-net-key="select:instr_mem:mem[addr]:port:out" d="M 552 120 L 576 120 L 744 120 L 768 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:mux:instr_mem:mem_read_addr:port:instr_mem:instr:instr"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:mux:instr_mem:mem_read_addr:port:instr_mem:instr:instr" data-net-key="mux:instr_mem:mem_read_addr:out" d="M 552 120 L 576 120 L 744 120 L 768 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr" data-net-key="port:instr_mem:addr:port:addr" d="M 240 48 L 264 48 L 504 48 L 504 96" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-select" data-node-id="select:instr_mem:mem[addr]" data-node-kind="select" transform="translate(456 72)">
+<g class="svsch-node hdl-node hdl-node-mux" data-node-id="mux:instr_mem:mem_read_addr" data-node-kind="mux" transform="translate(456 72)">
 <svg class="hdl-node-svg mux-skin" width="96" height="96" aria-hidden="true">
-<path class="svsch-node-shape hdl-node-select node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="48" y="24" text-anchor="middle" dominant-baseline="middle">s[]</text></g><text class="svsch-port-label svsch-mux-side-port" x="12" y="48" dominant-baseline="middle">in[]</text><text class="svsch-port-label svsch-mux-output-port" x="84" y="48" text-anchor="end" dominant-baseline="middle">out</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 Z" style="stroke-linejoin:round"></path>
+<path class="svsch-node-shape hdl-node-mux node-skin-body" d="M 0 0 L 96 24 V 72 L 0 96 Z"></path><g class="svsch-mux-select-port"><text class="svsch-port-label" x="48" y="36" text-anchor="middle" dominant-baseline="middle">s<tspan class="svsch-port-type-suffix">[]</tspan></text></g><text class="svsch-port-label svsch-mux-side-port" x="12" y="48" dominant-baseline="middle">in</text><text class="svsch-port-label svsch-mux-output-port" x="84" y="48" text-anchor="end" dominant-baseline="middle">instr</text><path class="node-skin-selection" d="M 0 0 L 96 24 V 72 L 0 96 Z" style="stroke-linejoin:round"></path>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:instr_mem:addr" data-node-kind="port" transform="translate(24 36)">
