@@ -2804,6 +2804,24 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outputDrivers[0].source).toBe(readMux.id);
     });
 
+    it('dedupes a late-pass read mux against processAssign when the index needs sanitizing', async () => {
+      const graph = await runParser(
+        backend,
+        'array_local_read_write_sanitized_index.sv',
+        fixture('array_local_read_write_sanitized_index.sv'),
+      );
+      const mod = graph.modules.array_local_read_write_sanitized_index;
+      expect(mod).toBeDefined();
+
+      // The continuous `read_data` assignment (lowered by processAssign) and the
+      // `u_reader` instance port (lowered by the late-pass array-read synthesis)
+      // both read `ram[\addr#sel ]`. Without sanitizing the late-pass mux id the
+      // same way processAssign does, the `#` produces a second, differently-ID'd
+      // mux for the identical read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
+    });
+
     it('marks edges between stacked nodes as isStacked', async () => {
       const graph = await arrayRegisterGraph();
       const mod = graph.modules.array_register ?? Object.values(graph.modules)[0];

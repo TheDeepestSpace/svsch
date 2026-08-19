@@ -541,7 +541,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         if (!is_constant && !index.empty() && index != "?" && index != "idx" && index != "bit") {
             // processAssign lowers a continuous `out = base[index]` to this same mux id;
             // don't emit a second copy of it here.
-            std::string read_mux_id = "mux:" + mod.name + ":" + base + "_read_" + index;
+            std::string read_mux_id = sanitizeId("mux:" + mod.name + ":" + base + "_read_" + index);
             bool already_lowered = false;
             for (const auto& n : mod.nodes) {
                 if (n.id == read_mux_id) { already_lowered = true; break; }
