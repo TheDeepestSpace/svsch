@@ -808,6 +808,13 @@ text {
   opacity: 0.75;
 }
 
+/* While expanded, the boundary-port nodes render each port's label at full
+   brightness exactly where the instance's own (now dimmed) label sits — hide
+   the instance's copy so the two don't read as a doubled label. */
+.hdl-node-expand-ghost .svsch-port-label {
+  visibility: hidden;
+}
+
 .hdl-node-has-params {
   grid-template-rows: 16px var(--svsch-instance-param-height) calc(var(--svsch-node-header-height) - 16px) 1fr;
 }
@@ -1629,25 +1636,36 @@ text {
   left: 50%;
 }
 
-/* Boundary-port node ("Expand instance in place", issue #232) — label-only
-   with a wire stub on both edges (signal passes through), same sizing/handle
-   convention as .hdl-net-label above rather than a real port "skin". */
+/* Boundary-port node ("Expand instance in place", issue #232) — label-only,
+   anchored flush to the expanded node's border. The 12px padding on the
+   outer side is the same border inset the instance's own port labels use
+   (InstanceNodeSvg's `x={12}`/`x={width - 12}`), so the label doesn't shift
+   horizontally when the instance expands; the flex-growing lead fills the
+   rest of the node from the label's inner edge to the inner handle, so no
+   wire segment is ever drawn across the text. */
 .hdl-boundary-port {
   align-items: center;
+  box-sizing: border-box;
   color: var(--vscode-editor-foreground);
   display: flex;
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
+  gap: 4px;
   height: var(--svsch-node-height);
-  justify-content: center;
   overflow: visible;
   position: relative;
   width: var(--svsch-node-width);
 }
 
+.hdl-boundary-port-outer-left {
+  padding-left: 12px;
+}
+
+.hdl-boundary-port-outer-right {
+  padding-right: 12px;
+}
+
 .hdl-boundary-port-text {
-  background: var(--vscode-editor-background);
-  padding: 0 3px;
   pointer-events: none;
   white-space: nowrap;
 }
@@ -1656,11 +1674,17 @@ text {
   color: var(--vscode-focusBorder);
 }
 
-.hdl-boundary-port-wire-svg {
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-  position: absolute;
+/* The visible continuation of the internal wire on the label's other side —
+   1.5px tall to match .svsch-edge's stroke-width, vertically centered on the
+   same y the handles (top: 50%) put the wire endpoints on. */
+.hdl-boundary-port-lead {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  flex: 1;
+  height: 1.5px;
+}
+
+.hdl-boundary-port-selected .hdl-boundary-port-lead {
+  background: var(--vscode-focusBorder);
 }
 
 .hdl-boundary-port .react-flow__handle {
