@@ -35,12 +35,12 @@ const TEXT = [
   /*29*/ '        end',
   /*30*/ '      endcase',
   /*31*/ '    end else begin : g_if_other',
-  /*32*/ '      assign w = 1\'b0;',
+  /*32*/ "      assign w = 1'b0;",
   /*33*/ '    end',
   /*34*/ '  endgenerate',
   /*35*/ '',
   /*36*/ '  assign y = w;',
-  /*37*/ 'endmodule'
+  /*37*/ 'endmodule',
 ].join('\n');
 
 function spanText(span: { start: number; end: number } | undefined): string | undefined {
@@ -49,16 +49,24 @@ function spanText(span: { start: number; end: number } | undefined): string | un
 
 describe('generateArmSpan', () => {
   it('spans an if arm from the if keyword through its end', () => {
-    const span = generateArmSpan(TEXT, 'if',
+    const span = generateArmSpan(
+      TEXT,
+      'if',
       { file: 'x.sv', startLine: 17, startColumn: 8, endLine: 17, endColumn: 19 },
-      { file: 'x.sv', startLine: 18, startColumn: 11 });
-    expect(spanText(span)).toBe('if (ENABLE == 0) begin : g_if_zero\n      leaf u_zero(.a(a), .y(w));\n    end');
+      { file: 'x.sv', startLine: 18, startColumn: 11 },
+    );
+    expect(spanText(span)).toBe(
+      'if (ENABLE == 0) begin : g_if_zero\n      leaf u_zero(.a(a), .y(w));\n    end',
+    );
   });
 
   it('spans an else-if arm including a nested case statement', () => {
-    const span = generateArmSpan(TEXT, 'else-if',
+    const span = generateArmSpan(
+      TEXT,
+      'else-if',
       { file: 'x.sv', startLine: 19, startColumn: 17, endLine: 19, endColumn: 28 },
-      { file: 'x.sv', startLine: 20, startColumn: 6 });
+      { file: 'x.sv', startLine: 20, startColumn: 6 },
+    );
     const text = spanText(span);
     expect(text?.startsWith('else if (ENABLE == 1) begin : g_if_one')).toBe(true);
     expect(text?.includes('endcase')).toBe(true);
@@ -66,32 +74,48 @@ describe('generateArmSpan', () => {
   });
 
   it('spans an else arm from the else keyword', () => {
-    const span = generateArmSpan(TEXT, 'else',
+    const span = generateArmSpan(
+      TEXT,
+      'else',
       { file: 'x.sv', startLine: 19, startColumn: 13, endLine: 33, endColumn: 7 },
-      { file: 'x.sv', startLine: 32, startColumn: 6 });
-    expect(spanText(span)).toBe('else begin : g_if_other\n      assign w = 1\'b0;\n    end');
+      { file: 'x.sv', startLine: 32, startColumn: 6 },
+    );
+    expect(spanText(span)).toBe("else begin : g_if_other\n      assign w = 1'b0;\n    end");
   });
 
   it('spans a case arm from its value through its end', () => {
-    const span = generateArmSpan(TEXT, 'case',
+    const span = generateArmSpan(
+      TEXT,
+      'case',
       { file: 'x.sv', startLine: 21, startColumn: 8, endLine: 21, endColumn: 9 },
-      { file: 'x.sv', startLine: 22, startColumn: 10 });
-    expect(spanText(span)).toBe('0: begin : g_case_0\n          leaf u_case_0(.a(a), .y(w));\n        end');
+      { file: 'x.sv', startLine: 22, startColumn: 10 },
+    );
+    expect(spanText(span)).toBe(
+      '0: begin : g_case_0\n          leaf u_case_0(.a(a), .y(w));\n        end',
+    );
   });
 
   it('spans a default arm from the default keyword', () => {
-    const span = generateArmSpan(TEXT, 'case-default',
+    const span = generateArmSpan(
+      TEXT,
+      'case-default',
       { file: 'x.sv', startLine: 20, startColumn: 6, endLine: 30, endColumn: 13 },
-      { file: 'x.sv', startLine: 28, startColumn: 17 });
-    expect(spanText(span)).toBe('default: begin : g_case_default\n          assign w = c;\n        end');
+      { file: 'x.sv', startLine: 28, startColumn: 17 },
+    );
+    expect(spanText(span)).toBe(
+      'default: begin : g_case_default\n          assign w = c;\n        end',
+    );
   });
 
   it('returns undefined when the nearest begin belongs to an earlier block', () => {
     // Anchor after g_if_zero's end but with no begin of its own — the matched end
     // precedes the anchor, so no span is produced.
-    const span = generateArmSpan(TEXT, 'else',
+    const span = generateArmSpan(
+      TEXT,
+      'else',
       { file: 'x.sv', startLine: 36, startColumn: 2 },
-      { file: 'x.sv', startLine: 36, startColumn: 2 });
+      { file: 'x.sv', startLine: 36, startColumn: 2 },
+    );
     expect(span).toBeUndefined();
   });
 });

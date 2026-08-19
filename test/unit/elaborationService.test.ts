@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ElaborationService,
   type ElaborationRequest,
-  type ElaborationServiceHost
+  type ElaborationServiceHost,
 } from '../../src/elaborationService';
 import type { DesignGraph, DesignModule } from '../../src/ir/types';
 import type { ParserOptions } from '../../src/parser/backend';
@@ -12,7 +12,7 @@ function graph(module: DesignModule, diagnostics: DesignGraph['diagnostics'] = [
     rootModules: [module.name],
     modules: { [module.name]: module },
     diagnostics,
-    generatedAt: '2026-08-03T00:00:00.000Z'
+    generatedAt: '2026-08-03T00:00:00.000Z',
   };
 }
 
@@ -20,7 +20,11 @@ function designModule(name: string, file = `${name}.sv`): DesignModule {
   return { name, file, ports: [], nodes: [], edges: [] };
 }
 
-function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: Error) => void } {
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: Error) => void;
+} {
   let resolve!: (value: T) => void;
   let reject!: (error: Error) => void;
   const promise = new Promise<T>((resolvePromise, rejectPromise) => {
@@ -43,7 +47,7 @@ function createHost(build: ElaborationServiceHost['build']) {
     backendPath: 'svsch_backend',
     moduleName: request.moduleName,
     listOnly: request.listOnly,
-    includeExternalDiagnostics: !request.live
+    includeExternalDiagnostics: !request.live,
   }));
   const host: ElaborationServiceHost = {
     build,
@@ -52,14 +56,14 @@ function createHost(build: ElaborationServiceHost['build']) {
     watch: (listener) => {
       invalidate = listener;
       return { cancelPending, dispose: disposeWatcher };
-    }
+    },
   };
   return {
     host,
     createParserOptions,
     cancelPending,
     disposeWatcher,
-    invalidate: (live = false) => invalidate?.(live)
+    invalidate: (live = false) => invalidate?.(live),
   };
 }
 
@@ -86,7 +90,8 @@ describe('ElaborationService', () => {
   it('invalidates the cache once for all consumers and ignores a stale build', async () => {
     const staleBuild = deferred<DesignGraph>();
     const freshBuild = deferred<DesignGraph>();
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockReturnValueOnce(staleBuild.promise)
       .mockReturnValueOnce(freshBuild.promise);
     const { host, invalidate, createParserOptions } = createHost(build);
@@ -113,7 +118,8 @@ describe('ElaborationService', () => {
   it('keeps the fresh graph when a stale build settles last', async () => {
     const staleBuild = deferred<DesignGraph>();
     const freshBuild = deferred<DesignGraph>();
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockReturnValueOnce(staleBuild.promise)
       .mockReturnValueOnce(freshBuild.promise);
     const { host, invalidate } = createHost(build);
@@ -136,7 +142,8 @@ describe('ElaborationService', () => {
   it('does not share in-flight graphs across live modes', async () => {
     const savedBuild = deferred<DesignGraph>();
     const liveBuild = deferred<DesignGraph>();
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockReturnValueOnce(savedBuild.promise)
       .mockReturnValueOnce(liveBuild.promise);
     const { host, createParserOptions } = createHost(build);
@@ -154,18 +161,13 @@ describe('ElaborationService', () => {
     savedBuild.resolve(saved);
     await expect(savedPromise).resolves.toBe(saved);
     await expect(service.getGraph(true)).resolves.toBe(live);
-    expect(createParserOptions.mock.calls).toEqual([
-      [{ live: false }],
-      [{ live: true }]
-    ]);
+    expect(createParserOptions.mock.calls).toEqual([[{ live: false }], [{ live: true }]]);
   });
 
   it('rebuilds a cached graph when the requested live mode changes', async () => {
     const saved = graph(designModule('saved'));
     const live = graph(designModule('live'));
-    const build = vi.fn()
-      .mockResolvedValueOnce(saved)
-      .mockResolvedValueOnce(live);
+    const build = vi.fn().mockResolvedValueOnce(saved).mockResolvedValueOnce(live);
     const { host } = createHost(build);
     const service = new ElaborationService(host);
 
@@ -181,7 +183,9 @@ describe('ElaborationService', () => {
     const error = new Error('listener failed');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const secondListener = vi.fn();
-    service.onDidInvalidate(() => { throw error; });
+    service.onDidInvalidate(() => {
+      throw error;
+    });
     service.onDidInvalidate(secondListener);
 
     expect(() => invalidate(true)).not.toThrow();
@@ -196,11 +200,12 @@ describe('ElaborationService', () => {
       id: 'instance:top:u_child',
       kind: 'instance',
       label: 'u_child',
-      ports: []
+      ports: [],
     });
     const loaded = graph(loadedModule, [{ severity: 'warning', message: 'module diagnostic' }]);
     const moduleBuild = deferred<DesignGraph>();
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockResolvedValueOnce(placeholder)
       .mockReturnValueOnce(moduleBuild.promise);
     const { host, createParserOptions } = createHost(build);
@@ -222,7 +227,8 @@ describe('ElaborationService', () => {
 
   it('falls back to a list-only build when the backend exceeds its buffer', async () => {
     const result = graph(designModule('top', ''));
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockRejectedValueOnce(new Error('stdout maxBuffer length exceeded'))
       .mockResolvedValueOnce(result);
     const { host } = createHost(build);
@@ -256,7 +262,8 @@ describe('ElaborationService', () => {
     const placeholder = graph(designModule('top', ''));
     const loaded = graph(designModule('top'));
     const moduleBuild = deferred<DesignGraph>();
-    const build = vi.fn()
+    const build = vi
+      .fn()
       .mockResolvedValueOnce(placeholder)
       .mockReturnValueOnce(moduleBuild.promise);
     const { host } = createHost(build);

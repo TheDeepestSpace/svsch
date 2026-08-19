@@ -131,7 +131,9 @@ export class LayoutStore {
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+        console.warn(
+          `Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+        );
       }
       return false;
     }
@@ -145,7 +147,9 @@ export class LayoutStore {
       return { ...parsed, nodes: parsed.nodes ?? {} };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to read SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+        console.warn(
+          `Unable to read SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+        );
       }
       return { nodes: {} };
     }
@@ -198,7 +202,9 @@ export class LayoutStore {
         await fs.unlink(this.modulePath(moduleName));
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-          console.error(`Failed to reset SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+          console.error(
+            `Failed to reset SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+          );
         }
       }
     });
@@ -255,7 +261,9 @@ export class LayoutStore {
       await fs.writeFile(tmpPath, content, 'utf8');
       await fs.rename(tmpPath, filePath);
     } catch (error) {
-      console.error(`Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+      console.error(
+        `Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+      );
       await fs.unlink(tmpPath).catch(() => {});
     }
   }

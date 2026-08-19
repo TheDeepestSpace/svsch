@@ -7,7 +7,7 @@ function edge(id: string, generateActiveState?: 'active' | 'inactive'): DiagramE
     id,
     source: 's',
     target: 't',
-    metadata: generateActiveState ? { generateActiveState } : undefined
+    metadata: generateActiveState ? { generateActiveState } : undefined,
   } as DiagramEdge;
 }
 
@@ -18,7 +18,7 @@ describe('compareEdgePaintOrder', () => {
       edge('b'),
       edge('c', 'inactive'),
       edge('d', 'active'),
-      edge('e', 'inactive')
+      edge('e', 'inactive'),
     ].sort(compareEdgePaintOrder);
 
     expect(sorted.map((item) => item.id)).toEqual(['c', 'e', 'b', 'a', 'd']);

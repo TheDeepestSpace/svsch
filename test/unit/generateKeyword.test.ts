@@ -98,7 +98,7 @@ function regionSummary(region: GenerateRegion) {
     blockLabel: region.blockLabel,
     activeState: region.activeState,
     nodeCount: region.nodeIds?.length ?? 0,
-    isGenerateBlock: region.isGenerateBlock ?? false
+    isGenerateBlock: region.isGenerateBlock ?? false,
   };
 }
 
@@ -120,14 +120,19 @@ describe('generate keyword is optional', () => {
 
     const sortKey = (item: ReturnType<typeof regionSummary>) => `${item.kind}:${item.label}`;
     const summarize = (module: DesignModule) =>
-      (module.generateRegions ?? []).map(regionSummary).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+      (module.generateRegions ?? [])
+        .map(regionSummary)
+        .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
 
     expect(summarize(withoutKeyword)).toEqual(summarize(withKeyword));
 
     // Both variants synthesize one wrapper per expression, arms parented under it.
     for (const module of [withKeyword, withoutKeyword]) {
       const wrappers = wrappersOf(module);
-      expect(wrappers.map((wrapper) => wrapper.label).sort()).toEqual(['generate case (MODE)', 'generate if']);
+      expect(wrappers.map((wrapper) => wrapper.label).sort()).toEqual([
+        'generate case (MODE)',
+        'generate if',
+      ]);
       for (const arm of armsOf(module)) {
         expect(wrappers.some((wrapper) => wrapper.id === arm.parentRegionId)).toBe(true);
       }
@@ -142,7 +147,8 @@ describe('generate keyword is optional', () => {
     const arms = armsOf(module);
     expect(arms).toHaveLength(4);
 
-    const groupOf = (blockLabel: string) => arms.find((arm) => arm.blockLabel === blockLabel)?.siblingGroupId;
+    const groupOf = (blockLabel: string) =>
+      arms.find((arm) => arm.blockLabel === blockLabel)?.siblingGroupId;
     expect(groupOf('g_first')).toBeDefined();
     expect(groupOf('g_first')).toBe(groupOf('g_first_other'));
     expect(groupOf('g_second')).toBe(groupOf('g_second_other'));

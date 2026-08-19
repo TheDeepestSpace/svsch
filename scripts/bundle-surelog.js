@@ -10,7 +10,10 @@ function usage() {
 const argv = process.argv.slice(2);
 let src;
 for (let i = 0; i < argv.length; i++) {
-  if (argv[i] === '--src' && argv[i + 1]) { src = argv[i + 1]; i++; }
+  if (argv[i] === '--src' && argv[i + 1]) {
+    src = argv[i + 1];
+    i++;
+  }
 }
 src = src || process.env.SURELOG_SRC;
 if (!src) usage();

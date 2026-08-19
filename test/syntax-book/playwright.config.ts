@@ -37,13 +37,13 @@ export default defineConfig({
     baseURL: visualBaseUrl,
     colorScheme: 'dark',
     deviceScaleFactor: 1,
-    viewport: { width: 1400, height: 1000 }
+    viewport: { width: 1400, height: 1000 },
   },
   webServer: {
     command: `npm run visual:serve -- --port ${visualPort}`,
     url: visualBaseUrl,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000
+    timeout: 120_000,
   },
   projects: [
     {
@@ -51,9 +51,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          args: chromiumStabilizationArgs
-        }
-      }
-    }
-  ]
+          args: chromiumStabilizationArgs,
+        },
+      },
+    },
+  ],
 });

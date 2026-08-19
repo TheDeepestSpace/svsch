@@ -19,7 +19,9 @@ test.describe('inverter visual rendering', () => {
     await expect(page.locator('.inverter-skin')).toHaveCount(4);
     await expect(page.locator('.inverter-bubble')).toHaveCount(4);
 
-    await expectGraphAndScreenshot(page, 'inverter-node-canvas.png', { clip: await paddedGraphClip(page) });
+    await expectGraphAndScreenshot(page, 'inverter-node-canvas.png', {
+      clip: await paddedGraphClip(page),
+    });
 
     const inverter = page.locator('[data-node-kind="inverter"]').first();
     await inverter.click();

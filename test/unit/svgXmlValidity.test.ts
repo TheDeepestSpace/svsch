@@ -15,19 +15,29 @@ import { renderSvg } from '../../src/cli/svgRenderer';
 // browser (Playwright/Chromium), which never catches it.
 describe('exported SVG XML validity', () => {
   it('parses as strict, well-formed XML with the real embedded stylesheet', async () => {
-    const graph = await runParser('uhdm', 'top.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'top.sv',
+      `
       module top(input logic a, output logic y);
         assign y = a;
       endmodule
-    `);
+    `,
+    );
     const viewModel = await buildViewModel(graph, 'top', { version: 1, modules: {} });
 
-    const extensionCss = fs.readFileSync(path.resolve(__dirname, '../../src/webview/diagram.css'), 'utf8');
+    const extensionCss = fs.readFileSync(
+      path.resolve(__dirname, '../../src/webview/diagram.css'),
+      'utf8',
+    );
     const reactFlowCssCandidates = [
       path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
-      path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css')
+      path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css'),
     ];
-    const reactFlowCss = fs.readFileSync(reactFlowCssCandidates.find((p) => fs.existsSync(p))!, 'utf8');
+    const reactFlowCss = fs.readFileSync(
+      reactFlowCssCandidates.find((p) => fs.existsSync(p))!,
+      'utf8',
+    );
 
     const svg = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
 

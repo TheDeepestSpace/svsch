@@ -18,21 +18,23 @@ describe('Parser Typing Support', () => {
     const mod = graph.modules['top'];
 
     // Check module ports
-    const inStatePort = mod.ports.find(p => p.name === 'in_state');
+    const inStatePort = mod.ports.find((p) => p.name === 'in_state');
     expect(inStatePort?.typeName).toBe('state_t');
     expect(inStatePort?.typeSource).toMatchObject({ file: 'enum_test.sv', startLine: 2 });
 
-    const outStatePort = mod.ports.find(p => p.name === 'out_state');
+    const outStatePort = mod.ports.find((p) => p.name === 'out_state');
     expect(outStatePort?.typeName).toBe('state_t');
 
     // Check register node
-    const regNode = mod.nodes.find(n => n.kind === 'register');
+    const regNode = mod.nodes.find((n) => n.kind === 'register');
     expect(regNode?.metadata?.typeName).toBe('state_t');
     expect(regNode?.metadata?.typeSource).toMatchObject({ file: 'enum_test.sv', startLine: 2 });
   });
 
-  it('extracts struct type names for ports and registers without relabeling connections', async () => {
-    const code = `
+  it(
+    'extracts struct type names for ports and registers without relabeling ' + 'connections',
+    async () => {
+      const code = `
       typedef struct packed {
         logic [7:0] data;
         logic valid;
@@ -46,20 +48,21 @@ describe('Parser Typing Support', () => {
         assign out_p = in_p;
       endmodule
     `;
-    const graph = await runParser('uhdm', 'struct_test.sv', code);
-    const mod = graph.modules['top'];
+      const graph = await runParser('uhdm', 'struct_test.sv', code);
+      const mod = graph.modules['top'];
 
-    const inPacketPort = mod.ports.find(p => p.name === 'in_p');
-    expect(inPacketPort?.typeName).toBe('packet_t');
+      const inPacketPort = mod.ports.find((p) => p.name === 'in_p');
+      expect(inPacketPort?.typeName).toBe('packet_t');
 
-    const outPacketPort = mod.ports.find(p => p.name === 'out_p');
-    expect(outPacketPort?.typeName).toBe('packet_t');
+      const outPacketPort = mod.ports.find((p) => p.name === 'out_p');
+      expect(outPacketPort?.typeName).toBe('packet_t');
 
-    const regNode = mod.nodes.find(n => n.kind === 'register');
-    expect(regNode?.metadata?.typeName).toBe('packet_t');
+      const regNode = mod.nodes.find((n) => n.kind === 'register');
+      expect(regNode?.metadata?.typeName).toBe('packet_t');
 
-    const edge = mod.edges.find(e => e.signal === 'in_p');
-    expect(edge?.label).not.toBe('packet_t');
-    expect((edge as any)?.typeName).toBeUndefined();
-  });
+      const edge = mod.edges.find((e) => e.signal === 'in_p');
+      expect(edge?.label).not.toBe('packet_t');
+      expect((edge as any)?.typeName).toBeUndefined();
+    },
+  );
 });

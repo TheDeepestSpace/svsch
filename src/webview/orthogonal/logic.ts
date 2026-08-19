@@ -13,16 +13,21 @@ export interface NodeObstacle {
   height: number;
 }
 
-export function snapLeadPoint(point: OrthogonalPoint, handleX: number, handleY: number, position: HdlPosition): OrthogonalPoint {
+export function snapLeadPoint(
+  point: OrthogonalPoint,
+  handleX: number,
+  handleY: number,
+  position: HdlPosition,
+): OrthogonalPoint {
   if (position === HdlPosition.Top || position === HdlPosition.Bottom) {
     return {
       x: handleX,
-      y: snapToGrid(point.y)
+      y: snapToGrid(point.y),
     };
   } else {
     return {
       x: snapToGrid(point.x),
-      y: handleY
+      y: handleY,
     };
   }
 }
@@ -39,55 +44,85 @@ export function normalizeRoutePoints(
   targetHandleId?: string | null,
   simplify = true,
   sourceNode?: DiagramNode,
-  targetNode?: DiagramNode
+  targetNode?: DiagramNode,
 ): OrthogonalPoint[] {
   const forceStraight = (route as any)?.edge?.metadata?.forceStraight === true;
-  const isCutStub = forceStraight && (
-    (route as any)?.edge?.metadata?.cutStub !== undefined
-    || sourceNode?.kind === 'netLabel'
-    || targetNode?.kind === 'netLabel'
-  );
+  const isCutStub =
+    forceStraight &&
+    ((route as any)?.edge?.metadata?.cutStub !== undefined ||
+      sourceNode?.kind === 'netLabel' ||
+      targetNode?.kind === 'netLabel');
   // A cut label's handle already sits at the owning port's lead point. Keep
   // the ordinary lead on the real-node end of the stub, but add no second
   // lead at the synthetic label end. This makes a displaced label bend only
   // after the wire has cleared the real port.
   const sourceLeadLen = forceStraight
-    ? (isCutStub && sourceNode?.kind !== 'netLabel'
+    ? isCutStub && sourceNode?.kind !== 'netLabel'
       ? leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode)
-      : 0)
+      : 0
     : leadLengthForHandle(sourcePosition, sourceHandleId, undefined, sourceNode);
   const targetLeadLen = forceStraight
-    ? (isCutStub && targetNode?.kind !== 'netLabel'
+    ? isCutStub && targetNode?.kind !== 'netLabel'
       ? leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode)
-      : 0)
+      : 0
     : leadLengthForHandle(targetPosition, targetHandleId, undefined, targetNode);
   // A zero-lead endpoint may land on a half-grid coordinate (e.g. the centre
   // of a port node). Preserve it exactly; only snap an endpoint for which an
   // actual lead was added.
-  const sourceLead = forceStraight && sourceLeadLen === 0
-    ? { x: sourceX, y: sourceY }
-    : snapLeadPoint(leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen), sourceX, sourceY, sourcePosition);
-  const targetLead = forceStraight && targetLeadLen === 0
-    ? { x: targetX, y: targetY }
-    : snapLeadPoint(leadPoint(targetX, targetY, targetPosition, targetLeadLen), targetX, targetY, targetPosition);
+  const sourceLead =
+    forceStraight && sourceLeadLen === 0
+      ? { x: sourceX, y: sourceY }
+      : snapLeadPoint(
+          leadPoint(sourceX, sourceY, sourcePosition, sourceLeadLen),
+          sourceX,
+          sourceY,
+          sourcePosition,
+        );
+  const targetLead =
+    forceStraight && targetLeadLen === 0
+      ? { x: targetX, y: targetY }
+      : snapLeadPoint(
+          leadPoint(targetX, targetY, targetPosition, targetLeadLen),
+          targetX,
+          targetY,
+          targetPosition,
+        );
   const hasPersistedRoute = Boolean(route?.routePoints?.length || route?.waypoint);
-  const alignedOpposingCutStub = !hasPersistedRoute && isCutStub && (
-    ((sourcePosition === HdlPosition.Right && targetPosition === HdlPosition.Left)
-      || (sourcePosition === HdlPosition.Left && targetPosition === HdlPosition.Right))
+  const alignedOpposingCutStub =
+    !hasPersistedRoute &&
+    isCutStub &&
+    ((sourcePosition === HdlPosition.Right && targetPosition === HdlPosition.Left) ||
+    (sourcePosition === HdlPosition.Left && targetPosition === HdlPosition.Right)
       ? Math.abs(sourceLead.x - targetLead.x) < 0.5
-      : ((sourcePosition === HdlPosition.Bottom && targetPosition === HdlPosition.Top)
-        || (sourcePosition === HdlPosition.Top && targetPosition === HdlPosition.Bottom))
-        && Math.abs(sourceLead.y - targetLead.y) < 0.5
-  );
+      : ((sourcePosition === HdlPosition.Bottom && targetPosition === HdlPosition.Top) ||
+          (sourcePosition === HdlPosition.Top && targetPosition === HdlPosition.Bottom)) &&
+        Math.abs(sourceLead.y - targetLead.y) < 0.5);
   if (alignedOpposingCutStub) {
     return makeOrthogonal([sourceLead, targetLead], simplify);
   }
   const saved = route?.routePoints?.length
     ? stripHandleEndpoints(route.routePoints, sourceX, sourceY, targetX, targetY)
-    : migrateRoutePoints(route?.waypoint, sourceLead, targetLead, sourceY, targetY, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
+    : migrateRoutePoints(
+        route?.waypoint,
+        sourceLead,
+        targetLead,
+        sourceY,
+        targetY,
+        sourcePosition,
+        targetPosition,
+        sourceHandleId,
+        targetHandleId,
+      );
 
   if (saved.length < 2) {
-    return defaultRoute(sourceLead, targetLead, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
+    return defaultRoute(
+      sourceLead,
+      targetLead,
+      sourcePosition,
+      targetPosition,
+      sourceHandleId,
+      targetHandleId,
+    );
   }
 
   // A freshly computed default route (no persisted routePoints/waypoint to
@@ -102,29 +137,36 @@ export function normalizeRoutePoints(
     return makeOrthogonal(saved, simplify);
   }
 
-  const canClampInternalPoints = leadConstraintsAreCompatible(sourceLead, targetLead, sourcePosition, targetPosition);
+  const canClampInternalPoints = leadConstraintsAreCompatible(
+    sourceLead,
+    targetLead,
+    sourcePosition,
+    targetPosition,
+  );
 
   // saved points start with the old sourceLead and end with the old targetLead.
   // We want to keep everything BETWEEN them.
   const savedInternal = saved.slice(1, -1);
-  const internal = savedInternal.map((point, index) => {
-    const snapped = snapPoint(point);
-    if (index === 0) {
-      preserveEndpointSegmentAxis(point, snapped, sourceLead, sourcePosition);
-    }
-    if (index === savedInternal.length - 1) {
-      preserveEndpointSegmentAxis(point, snapped, targetLead, targetPosition);
-    }
-    return snapped;
-  }).map((point) => {
-    if (!simplify || !canClampInternalPoints) {
-      return point;
-    }
+  const internal = savedInternal
+    .map((point, index) => {
+      const snapped = snapPoint(point);
+      if (index === 0) {
+        preserveEndpointSegmentAxis(point, snapped, sourceLead, sourcePosition);
+      }
+      if (index === savedInternal.length - 1) {
+        preserveEndpointSegmentAxis(point, snapped, targetLead, targetPosition);
+      }
+      return snapped;
+    })
+    .map((point) => {
+      if (!simplify || !canClampInternalPoints) {
+        return point;
+      }
 
-    let clamped = clampToLead(point, sourceX, sourceY, sourcePosition, sourceLeadLen);
-    clamped = clampToLead(clamped, targetX, targetY, targetPosition, targetLeadLen);
-    return clamped;
-  });
+      let clamped = clampToLead(point, sourceX, sourceY, sourcePosition, sourceLeadLen);
+      clamped = clampToLead(clamped, targetX, targetY, targetPosition, targetLeadLen);
+      return clamped;
+    });
 
   const combined = [sourceLead, ...internal, targetLead];
   return makeOrthogonal(combined, simplify);
@@ -134,7 +176,7 @@ function preserveEndpointSegmentAxis(
   original: OrthogonalPoint,
   snapped: OrthogonalPoint,
   lead: OrthogonalPoint,
-  position: HdlPosition
+  position: HdlPosition,
 ): void {
   if (position === HdlPosition.Left || position === HdlPosition.Right) {
     if (Math.abs(original.x - lead.x) < 0.5) snapped.x = lead.x;
@@ -146,7 +188,13 @@ function preserveEndpointSegmentAxis(
   }
 }
 
-export function clampToLead(point: OrthogonalPoint, nodeX: number, nodeY: number, position: HdlPosition, distance: number): OrthogonalPoint {
+export function clampToLead(
+  point: OrthogonalPoint,
+  nodeX: number,
+  nodeY: number,
+  position: HdlPosition,
+  distance: number,
+): OrthogonalPoint {
   const next = { ...point };
   if (position === HdlPosition.Left) {
     next.x = Math.min(next.x, nodeX - distance);
@@ -165,7 +213,7 @@ export function stripHandleEndpoints(
   sourceX: number,
   sourceY: number,
   targetX: number,
-  targetY: number
+  targetY: number,
 ): OrthogonalPoint[] {
   if (routePoints.length < 4) {
     return routePoints;
@@ -173,7 +221,10 @@ export function stripHandleEndpoints(
 
   const first = routePoints[0];
   const last = routePoints[routePoints.length - 1];
-  if (pointsAlmostEqual(first, { x: sourceX, y: sourceY }) && pointsAlmostEqual(last, { x: targetX, y: targetY })) {
+  if (
+    pointsAlmostEqual(first, { x: sourceX, y: sourceY }) &&
+    pointsAlmostEqual(last, { x: targetX, y: targetY })
+  ) {
     return routePoints.slice(1, -1);
   }
 
@@ -184,7 +235,12 @@ function pointsAlmostEqual(a: OrthogonalPoint, b: OrthogonalPoint): boolean {
   return Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1;
 }
 
-export function leadLengthForHandle(position: HdlPosition, handleId?: string | null, maxLead?: number, node?: DiagramNode): number {
+export function leadLengthForHandle(
+  position: HdlPosition,
+  handleId?: string | null,
+  maxLead?: number,
+  node?: DiagramNode,
+): number {
   let length = diagramSizing.edgeLeadLength;
   if (position === HdlPosition.Top || position === HdlPosition.Bottom) {
     if (position === HdlPosition.Top && isInterfaceInstanceNode(node)) {
@@ -207,12 +263,23 @@ export function leadLengthForHandle(position: HdlPosition, handleId?: string | n
 // Module-level interface modports use a single-grid hat stem. Must match the
 // leadOverride in elkNodeForDiagramNode so webview routes and ELK anchors agree.
 function isModuleModportHatNode(node?: DiagramNode): boolean {
-  return !!node && node.kind === 'interface' && structRole(node) === 'modport' && node.label !== nodeTypeName(node);
+  return (
+    !!node &&
+    node.kind === 'interface' &&
+    structRole(node) === 'modport' &&
+    node.label !== nodeTypeName(node)
+  );
 }
 
 function isInterfaceInstanceNode(node?: DiagramNode): boolean {
   const role = node ? structRole(node) : undefined;
-  return !!node && node.kind === 'interface' && role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
+  return (
+    !!node &&
+    node.kind === 'interface' &&
+    role !== 'modport' &&
+    role !== 'port' &&
+    !node.id.startsWith('interface_type:')
+  );
 }
 
 export function migrateRoutePoints(
@@ -224,7 +291,7 @@ export function migrateRoutePoints(
   sourcePosition?: HdlPosition,
   targetPosition?: HdlPosition,
   sourceHandleId?: string | null,
-  targetHandleId?: string | null
+  targetHandleId?: string | null,
 ): OrthogonalPoint[] {
   if (waypoint) {
     return [
@@ -232,11 +299,18 @@ export function migrateRoutePoints(
       { x: waypoint.x, y: sourceY },
       { x: waypoint.x, y: waypoint.y },
       { x: targetLead.x, y: waypoint.y },
-      targetLead
+      targetLead,
     ];
   }
 
-  return defaultRoute(sourceLead, targetLead, sourcePosition, targetPosition, sourceHandleId, targetHandleId);
+  return defaultRoute(
+    sourceLead,
+    targetLead,
+    sourcePosition,
+    targetPosition,
+    sourceHandleId,
+    targetHandleId,
+  );
 }
 
 export function defaultRoute(
@@ -245,81 +319,89 @@ export function defaultRoute(
   sourcePosition?: HdlPosition,
   targetPosition?: HdlPosition,
   _sourceHandleId?: string | null,
-  targetHandleId?: string | null
+  targetHandleId?: string | null,
 ): OrthogonalPoint[] {
   const grid = diagramSizing.gridSize;
-  const isResetBottomTarget = targetHandleId === 'reset'
-    && targetPosition === HdlPosition.Bottom
-    && (sourcePosition === HdlPosition.Left || sourcePosition === HdlPosition.Right);
+  const isResetBottomTarget =
+    targetHandleId === 'reset' &&
+    targetPosition === HdlPosition.Bottom &&
+    (sourcePosition === HdlPosition.Left || sourcePosition === HdlPosition.Right);
 
   if (isResetBottomTarget) {
-    return [
-      sourceLead,
-      { x: targetLead.x, y: sourceLead.y },
-      targetLead
-    ];
+    return [sourceLead, { x: targetLead.x, y: sourceLead.y }, targetLead];
   }
 
-  const isRightFeedback = sourcePosition === HdlPosition.Right
-    && targetPosition === HdlPosition.Left
-    && sourceLead.x >= targetLead.x;
-  const isLeftFeedback = sourcePosition === HdlPosition.Left
-    && targetPosition === HdlPosition.Right
-    && sourceLead.x <= targetLead.x;
+  const isRightFeedback =
+    sourcePosition === HdlPosition.Right &&
+    targetPosition === HdlPosition.Left &&
+    sourceLead.x >= targetLead.x;
+  const isLeftFeedback =
+    sourcePosition === HdlPosition.Left &&
+    targetPosition === HdlPosition.Right &&
+    sourceLead.x <= targetLead.x;
 
   if (isRightFeedback || isLeftFeedback) {
     const direction = isRightFeedback ? 1 : -1;
-    const loopX = snapToGrid((direction > 0 ? Math.max(sourceLead.x, targetLead.x) : Math.min(sourceLead.x, targetLead.x)) + direction * grid * 3);
-    const loopY = Math.abs(sourceLead.y - targetLead.y) < 0.5
-      ? snapToGrid(sourceLead.y + grid * 3)
-      : targetLead.y;
+    const loopX = snapToGrid(
+      (direction > 0
+        ? Math.max(sourceLead.x, targetLead.x)
+        : Math.min(sourceLead.x, targetLead.x)) +
+        direction * grid * 3,
+    );
+    const loopY =
+      Math.abs(sourceLead.y - targetLead.y) < 0.5
+        ? snapToGrid(sourceLead.y + grid * 3)
+        : targetLead.y;
 
     return [
       sourceLead,
       { x: loopX, y: sourceLead.y },
       { x: loopX, y: loopY },
       { x: targetLead.x, y: loopY },
-      targetLead
+      targetLead,
     ];
   }
 
-  const isBottomFeedback = sourcePosition === HdlPosition.Bottom
-    && targetPosition === HdlPosition.Top
-    && sourceLead.y >= targetLead.y;
-  const isTopFeedback = sourcePosition === HdlPosition.Top
-    && targetPosition === HdlPosition.Bottom
-    && sourceLead.y <= targetLead.y;
+  const isBottomFeedback =
+    sourcePosition === HdlPosition.Bottom &&
+    targetPosition === HdlPosition.Top &&
+    sourceLead.y >= targetLead.y;
+  const isTopFeedback =
+    sourcePosition === HdlPosition.Top &&
+    targetPosition === HdlPosition.Bottom &&
+    sourceLead.y <= targetLead.y;
 
   if (isBottomFeedback || isTopFeedback) {
     const direction = isBottomFeedback ? 1 : -1;
-    const loopY = snapToGrid((direction > 0 ? Math.max(sourceLead.y, targetLead.y) : Math.min(sourceLead.y, targetLead.y)) + direction * grid * 3);
-    const loopX = Math.abs(sourceLead.x - targetLead.x) < 0.5
-      ? snapToGrid(sourceLead.x + grid * 3)
-      : targetLead.x;
+    const loopY = snapToGrid(
+      (direction > 0
+        ? Math.max(sourceLead.y, targetLead.y)
+        : Math.min(sourceLead.y, targetLead.y)) +
+        direction * grid * 3,
+    );
+    const loopX =
+      Math.abs(sourceLead.x - targetLead.x) < 0.5
+        ? snapToGrid(sourceLead.x + grid * 3)
+        : targetLead.x;
 
     return [
       sourceLead,
       { x: sourceLead.x, y: loopY },
       { x: loopX, y: loopY },
       { x: loopX, y: targetLead.y },
-      targetLead
+      targetLead,
     ];
   }
 
   const midX = snapToGrid((sourceLead.x + targetLead.x) / 2);
-  return [
-    sourceLead,
-    { x: midX, y: sourceLead.y },
-    { x: midX, y: targetLead.y },
-    targetLead
-  ];
+  return [sourceLead, { x: midX, y: sourceLead.y }, { x: midX, y: targetLead.y }, targetLead];
 }
 
 export function leadConstraintsAreCompatible(
   sourceLead: OrthogonalPoint,
   targetLead: OrthogonalPoint,
   sourcePosition: HdlPosition,
-  targetPosition: HdlPosition
+  targetPosition: HdlPosition,
 ): boolean {
   if (sourcePosition === HdlPosition.Right && targetPosition === HdlPosition.Left) {
     return sourceLead.x < targetLead.x;
@@ -374,7 +456,8 @@ export function removeRedundantPoints(points: OrthogonalPoint[]): OrthogonalPoin
 
     if (orientationPrev && orientationNext && orientationPrev === orientationNext) {
       // Check if it's a 180 degree turn (double back).
-      const dotProduct = (point.x - previous.x) * (next.x - point.x) + (point.y - previous.y) * (next.y - point.y);
+      const dotProduct =
+        (point.x - previous.x) * (next.x - point.x) + (point.y - previous.y) * (next.y - point.y);
       if (dotProduct < 0) {
         return true; // Keep it for now, might be a 180 turn
       }
@@ -387,7 +470,6 @@ export function removeRedundantPoints(points: OrthogonalPoint[]): OrthogonalPoin
   const result: OrthogonalPoint[] = [];
   for (const point of simplified) {
     if (result.length >= 2) {
-      const prev = result[result.length - 1];
       const prevPrev = result[result.length - 2];
       // If we are doubling back exactly to the previous point's start, it's a spike
       if (pointsAlmostEqual(point, prevPrev)) {
@@ -400,7 +482,12 @@ export function removeRedundantPoints(points: OrthogonalPoint[]): OrthogonalPoin
   return result;
 }
 
-export function leadPoint(x: number, y: number, position: HdlPosition, distance: number): OrthogonalPoint {
+export function leadPoint(
+  x: number,
+  y: number,
+  position: HdlPosition,
+  distance: number,
+): OrthogonalPoint {
   if (position === HdlPosition.Left) {
     return { x: x - distance, y };
   }
@@ -417,7 +504,10 @@ export function pointsToPath(points: OrthogonalPoint[]): string {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 }
 
-export function segmentOrientation(a: OrthogonalPoint, b: OrthogonalPoint): 'horizontal' | 'vertical' | undefined {
+export function segmentOrientation(
+  a: OrthogonalPoint,
+  b: OrthogonalPoint,
+): 'horizontal' | 'vertical' | undefined {
   if (Math.abs(a.y - b.y) < 0.5) {
     return 'horizontal';
   }
@@ -427,7 +517,10 @@ export function segmentOrientation(a: OrthogonalPoint, b: OrthogonalPoint): 'hor
   return undefined;
 }
 
-export function dominantOrientation(a: OrthogonalPoint, b: OrthogonalPoint): 'horizontal' | 'vertical' {
+export function dominantOrientation(
+  a: OrthogonalPoint,
+  b: OrthogonalPoint,
+): 'horizontal' | 'vertical' {
   return Math.abs(a.x - b.x) >= Math.abs(a.y - b.y) ? 'horizontal' : 'vertical';
 }
 
@@ -436,27 +529,39 @@ export interface MoveResult {
   newIndex: number;
 }
 
-export function moveRouteSegment(points: OrthogonalPoint[], segmentIndex: number, pointer: OrthogonalPoint): MoveResult {
+export function moveRouteSegment(
+  points: OrthogonalPoint[],
+  segmentIndex: number,
+  pointer: OrthogonalPoint,
+): MoveResult {
   const next = points.map((point) => ({ ...point }));
-  const orientation = segmentOrientation(next[segmentIndex], next[segmentIndex + 1])
-    ?? dominantOrientation(next[segmentIndex], next[segmentIndex + 1]);
+  const orientation =
+    segmentOrientation(next[segmentIndex], next[segmentIndex + 1]) ??
+    dominantOrientation(next[segmentIndex], next[segmentIndex + 1]);
   const snappedPointer = snapPoint(pointer);
 
   let startIndex = segmentIndex;
   let endIndex = segmentIndex + 1;
 
   // Expand start of the collinear run
-  while (startIndex > 0 && segmentOrientation(next[startIndex - 1], next[startIndex]) === orientation) {
+  while (
+    startIndex > 0 &&
+    segmentOrientation(next[startIndex - 1], next[startIndex]) === orientation
+  ) {
     startIndex -= 1;
   }
   // Expand end of the collinear run
-  while (endIndex < next.length - 1 && segmentOrientation(next[endIndex], next[endIndex + 1]) === orientation) {
+  while (
+    endIndex < next.length - 1 &&
+    segmentOrientation(next[endIndex], next[endIndex + 1]) === orientation
+  ) {
     endIndex += 1;
   }
 
   let finalSegmentIndex = segmentIndex;
 
-  // Smart Split at Start: If we expanded to index 0, it means we are slanting the handle attachment.
+  // Smart Split at Start: If we expanded to index 0, it means we are slanting
+  // the handle attachment.
   if (startIndex === 0) {
     // Insert a copy of the lead point to become the new bend.
     next.splice(1, 0, { ...next[1] });
@@ -492,7 +597,7 @@ export function moveRouteSegment(points: OrthogonalPoint[], segmentIndex: number
 export function snapPoint(point: OrthogonalPoint): OrthogonalPoint {
   return {
     x: snapToGrid(point.x),
-    y: snapToGrid(point.y)
+    y: snapToGrid(point.y),
   };
 }
 
@@ -504,7 +609,7 @@ export function snapToGrid(value: number): number {
 export function midpoint(a: OrthogonalPoint, b: OrthogonalPoint): OrthogonalPoint {
   return {
     x: (a.x + b.x) / 2,
-    y: (a.y + b.y) / 2
+    y: (a.y + b.y) / 2,
   };
 }
 
@@ -525,7 +630,7 @@ export function pointNearPathStart(points: OrthogonalPoint[]): OrthogonalPoint |
   const offset = Math.min(24, distance / 2);
   return {
     x: start.x + (dx / distance) * offset,
-    y: start.y + (dy / distance) * offset
+    y: start.y + (dy / distance) * offset,
   };
 }
 
@@ -537,20 +642,28 @@ function verticalOverlap(rect: NodeObstacle, minY: number, maxY: number): boolea
   return rect.y < maxY && rect.y + rect.height > minY;
 }
 
-function segmentIntersectsObstacle(start: OrthogonalPoint, end: OrthogonalPoint, rect: NodeObstacle): boolean {
+function segmentIntersectsObstacle(
+  start: OrthogonalPoint,
+  end: OrthogonalPoint,
+  rect: NodeObstacle,
+): boolean {
   const epsilon = 0.5;
   if (Math.abs(start.y - end.y) < epsilon) {
-    return start.y > rect.y + epsilon
-      && start.y < rect.y + rect.height - epsilon
-      && Math.min(start.x, end.x) < rect.x + rect.width - epsilon
-      && Math.max(start.x, end.x) > rect.x + epsilon;
+    return (
+      start.y > rect.y + epsilon &&
+      start.y < rect.y + rect.height - epsilon &&
+      Math.min(start.x, end.x) < rect.x + rect.width - epsilon &&
+      Math.max(start.x, end.x) > rect.x + epsilon
+    );
   }
 
   if (Math.abs(start.x - end.x) < epsilon) {
-    return start.x > rect.x + epsilon
-      && start.x < rect.x + rect.width - epsilon
-      && Math.min(start.y, end.y) < rect.y + rect.height - epsilon
-      && Math.max(start.y, end.y) > rect.y + epsilon;
+    return (
+      start.x > rect.x + epsilon &&
+      start.x < rect.x + rect.width - epsilon &&
+      Math.min(start.y, end.y) < rect.y + rect.height - epsilon &&
+      Math.max(start.y, end.y) > rect.y + epsilon
+    );
   }
 
   return false;
@@ -567,7 +680,7 @@ export function avoidFeedbackObstacles(
   points: OrthogonalPoint[],
   obstacles: NodeObstacle[],
   sourcePosition: HdlPosition,
-  targetPosition: HdlPosition
+  targetPosition: HdlPosition,
 ): OrthogonalPoint[] {
   if (points.length < 2 || obstacles.length === 0) {
     return points;
@@ -576,12 +689,14 @@ export function avoidFeedbackObstacles(
   const sourceLead = points[0];
   const targetLead = points[points.length - 1];
   const grid = diagramSizing.gridSize;
-  const isRightFeedback = sourcePosition === HdlPosition.Right
-    && targetPosition === HdlPosition.Left
-    && sourceLead.x >= targetLead.x;
-  const isLeftFeedback = sourcePosition === HdlPosition.Left
-    && targetPosition === HdlPosition.Right
-    && sourceLead.x <= targetLead.x;
+  const isRightFeedback =
+    sourcePosition === HdlPosition.Right &&
+    targetPosition === HdlPosition.Left &&
+    sourceLead.x >= targetLead.x;
+  const isLeftFeedback =
+    sourcePosition === HdlPosition.Left &&
+    targetPosition === HdlPosition.Right &&
+    sourceLead.x <= targetLead.x;
 
   if (isRightFeedback || isLeftFeedback) {
     const minX = Math.min(sourceLead.x, targetLead.x);
@@ -593,9 +708,10 @@ export function avoidFeedbackObstacles(
 
     const maxY = Math.max(...crossed.map((rect) => rect.y + rect.height));
     const direction = isRightFeedback ? 1 : -1;
-    const outerX = direction > 0
-      ? Math.max(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x + rect.width)) + grid
-      : Math.min(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x)) - grid;
+    const outerX =
+      direction > 0
+        ? Math.max(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x + rect.width)) + grid
+        : Math.min(sourceLead.x, targetLead.x, ...crossed.map((rect) => rect.x)) - grid;
     const loopX = snapToGrid(outerX);
     const loopY = snapToGrid(maxY + grid);
 
@@ -604,16 +720,18 @@ export function avoidFeedbackObstacles(
       { x: loopX, y: sourceLead.y },
       { x: loopX, y: loopY },
       { x: targetLead.x, y: loopY },
-      targetLead
+      targetLead,
     ]);
   }
 
-  const isBottomFeedback = sourcePosition === HdlPosition.Bottom
-    && targetPosition === HdlPosition.Top
-    && sourceLead.y >= targetLead.y;
-  const isTopFeedback = sourcePosition === HdlPosition.Top
-    && targetPosition === HdlPosition.Bottom
-    && sourceLead.y <= targetLead.y;
+  const isBottomFeedback =
+    sourcePosition === HdlPosition.Bottom &&
+    targetPosition === HdlPosition.Top &&
+    sourceLead.y >= targetLead.y;
+  const isTopFeedback =
+    sourcePosition === HdlPosition.Top &&
+    targetPosition === HdlPosition.Bottom &&
+    sourceLead.y <= targetLead.y;
 
   if (isBottomFeedback || isTopFeedback) {
     const minY = Math.min(sourceLead.y, targetLead.y);
@@ -625,9 +743,11 @@ export function avoidFeedbackObstacles(
 
     const maxX = Math.max(...crossed.map((rect) => rect.x + rect.width));
     const direction = isBottomFeedback ? 1 : -1;
-    const outerY = direction > 0
-      ? Math.max(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y + rect.height)) + grid
-      : Math.min(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y)) - grid;
+    const outerY =
+      direction > 0
+        ? Math.max(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y + rect.height)) +
+          grid
+        : Math.min(sourceLead.y, targetLead.y, ...crossed.map((rect) => rect.y)) - grid;
     const loopY = snapToGrid(outerY);
     const loopX = snapToGrid(maxX + grid);
 
@@ -636,7 +756,7 @@ export function avoidFeedbackObstacles(
       { x: sourceLead.x, y: loopY },
       { x: loopX, y: loopY },
       { x: loopX, y: targetLead.y },
-      targetLead
+      targetLead,
     ]);
   }
 

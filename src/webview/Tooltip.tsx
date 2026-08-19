@@ -13,7 +13,7 @@ import {
   useFocus,
   useHover,
   useInteractions,
-  useRole
+  useRole,
 } from '@floating-ui/react';
 
 export interface TooltipTriggerProps {
@@ -59,7 +59,12 @@ function useTooltipBorderColor(tone: 'warning' | 'info'): string {
 // Screen-space tooltip. The reference element lives inside React Flow's zoomed
 // ViewportPortal, so the floating bubble is portaled to <body> and positioned by
 // Floating UI to avoid being scaled by the canvas zoom or clipped at its edges.
-export function Tooltip({ content, placement = 'right', tone = 'warning', children }: TooltipProps): React.ReactElement {
+export function Tooltip({
+  content,
+  placement = 'right',
+  tone = 'warning',
+  children,
+}: TooltipProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const arrowRef = useRef<SVGSVGElement>(null);
   const borderColor = useTooltipBorderColor(tone);
@@ -72,9 +77,9 @@ export function Tooltip({ content, placement = 'right', tone = 'warning', childr
       offset(ARROW_HEIGHT + 4),
       flip({ padding: 6 }),
       shift({ padding: 6 }),
-      arrow({ element: arrowRef })
+      arrow({ element: arrowRef }),
     ],
-    whileElementsMounted: autoUpdate
+    whileElementsMounted: autoUpdate,
   });
 
   const hover = useHover(context, { move: false, delay: { open: 0, close: 0 } });
