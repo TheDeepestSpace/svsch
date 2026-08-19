@@ -3,7 +3,6 @@ import * as path from 'node:path';
 import type { DesignGraph } from '../ir/types';
 import { extractDesignWithUhdm } from './uhdmExtractor';
 import { logger } from '../logger';
-const HDL_EXTENSIONS = new Set(['.sv', '.v', '.svh', '.vh']);
 
 export interface ParserOptions {
   workspaceRoot: string;
@@ -28,12 +27,17 @@ export async function buildDesignGraph(options: ParserOptions): Promise<DesignGr
   const projectRoot = path.resolve(options.workspaceRoot, options.projectFolder || '.');
   const { sources, headers } = await collectHdlFiles(projectRoot);
 
-  let graph: DesignGraph = { rootModules: [], modules: {}, diagnostics: [], generatedAt: new Date().toISOString() };
+  let graph: DesignGraph = {
+    rootModules: [],
+    modules: {},
+    diagnostics: [],
+    generatedAt: new Date().toISOString(),
+  };
 
   if (sources.length === 0) {
     graph.diagnostics.push({
       severity: 'warning',
-      message: `No SystemVerilog or Verilog source files found in ${options.projectFolder || '.'}.`
+      message: `No SystemVerilog or Verilog source files found in ${options.projectFolder || '.'}.`,
     });
     return graph;
   }
@@ -42,38 +46,38 @@ export async function buildDesignGraph(options: ParserOptions): Promise<DesignGr
   if (!options.surelogPath || !options.backendPath) {
     graph.diagnostics.push({
       severity: 'error',
-      message: 'UHDM backend requires surelogPath and backendPath to be configured.'
+      message: 'UHDM backend requires surelogPath and backendPath to be configured.',
     });
     return graph;
   }
 
   // Automatically add directories containing headers to include paths
-  const autoIncludePaths = Array.from(new Set(headers.map(h => path.dirname(h))));
+  const autoIncludePaths = Array.from(new Set(headers.map((h) => path.dirname(h))));
   const allIncludePaths = [...(options.includePaths || []), ...autoIncludePaths];
 
   try {
     graph = await extractDesignWithUhdm(
-      sources, 
-      options.workspaceRoot, 
-      options.surelogPath, 
+      sources,
+      options.workspaceRoot,
+      options.surelogPath,
       options.backendPath,
       allIncludePaths,
       options.defines,
       options.listOnly ? '--list-only' : options.moduleName,
-      options.onProgress
+      options.onProgress,
     );
   } catch (e: any) {
     logger.error('UHDM Extraction Crashed', e);
     graph.diagnostics.push({
       severity: 'error',
-      message: `UHDM extraction crashed: ${e.message}`
+      message: `UHDM extraction crashed: ${e.message}`,
     });
   }
 
   return graph;
 }
 
-async function collectHdlFiles(root: string): Promise<{ sources: string[], headers: string[] }> {
+async function collectHdlFiles(root: string): Promise<{ sources: string[]; headers: string[] }> {
   const sources: string[] = [];
   const headers: string[] = [];
   const SRC_EXT = new Set(['.sv', '.v']);
@@ -106,8 +110,8 @@ async function collectHdlFiles(root: string): Promise<{ sources: string[], heade
   }
 
   await walk(root);
-  return { 
-    sources: sources.sort(), 
-    headers: headers.sort() 
+  return {
+    sources: sources.sort(),
+    headers: headers.sort(),
   };
 }

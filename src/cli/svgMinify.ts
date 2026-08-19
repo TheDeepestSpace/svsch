@@ -38,7 +38,7 @@ const SAFE_MINIFY_PLUGINS = [
   'removeUnusedNS',
   'sortAttrs',
   'sortDefsChildren',
-  'removeDesc'
+  'removeDesc',
 ] as const;
 
 // svgo ships ESM-only; dynamic import keeps this callable from the

@@ -15,13 +15,14 @@ interface Token {
 const OPENERS = new Set(['begin', 'case', 'casez', 'casex', 'fork']);
 const CLOSERS = new Set(['end', 'endcase', 'join', 'join_any', 'join_none']);
 
-const TOKEN_RE = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|\b(begin|endcase|end|casez|casex|case|fork|join_any|join_none|join|else|if|default)\b/g;
+const TOKEN_RE =
+  /\/\/[^\n]*|\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|\b(begin|endcase|end|casez|casex|case|fork|join_any|join_none|join|else|if|default)\b/g;
 
 export function generateArmSpan(
   text: string,
   kind: string,
   source: SourceRange,
-  bodySource: SourceRange
+  bodySource: SourceRange,
 ): { start: number; end: number } | undefined {
   const lineStarts = computeLineStarts(text);
   const toOffset = (line?: number, column?: number): number => {
@@ -78,10 +79,16 @@ export function generateArmSpan(
     const expressionStart = Math.min(toOffset(source.startLine, source.startColumn), beginStart);
     start = expressionStart;
     if (kind === 'if' || kind === 'else-if') {
-      const ifToken = findLast(headerTokens, (token) => token.word === 'if' && token.end <= expressionStart);
+      const ifToken = findLast(
+        headerTokens,
+        (token) => token.word === 'if' && token.end <= expressionStart,
+      );
       if (ifToken && /^\s*\(\s*$/.test(text.slice(ifToken.end, expressionStart))) {
         start = ifToken.start;
-        const elseToken = findLast(headerTokens, (token) => token.word === 'else' && token.end <= ifToken.start);
+        const elseToken = findLast(
+          headerTokens,
+          (token) => token.word === 'else' && token.end <= ifToken.start,
+        );
         if (elseToken && /^\s*$/.test(text.slice(elseToken.end, ifToken.start))) {
           start = elseToken.start;
         }

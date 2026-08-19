@@ -32,11 +32,18 @@ const suiteArgs = process.argv.slice(2).map((arg) => {
   return { name, file };
 });
 
-const { GITHUB_API_URL = 'https://api.github.com', GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, PR_NUMBER } =
-  process.env;
+const {
+  GITHUB_API_URL = 'https://api.github.com',
+  GITHUB_REPOSITORY,
+  GITHUB_SHA,
+  GITHUB_TOKEN,
+  PR_NUMBER,
+} = process.env;
 
 if (suiteArgs.length === 0) {
-  throw new Error('Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]');
+  throw new Error(
+    'Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]',
+  );
 }
 if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
   throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, and PR_NUMBER must be set');
@@ -46,12 +53,26 @@ if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
 // visual's two suites share one stacked chart (elaboration segment drawn
 // first since that's the Surelog/UHDM C++ path).
 const METRIC_META = {
-  'visual-elaboration-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Elaboration — Surelog/UHDM (C++ path)', order: 0 },
-  'visual-rendering-diagram-generation-duration': { chartKey: 'visual', chartTitle: 'Visual suite performance statistics', label: 'Rendering — webview paint', order: 1 },
+  'visual-elaboration-diagram-generation-duration': {
+    chartKey: 'visual',
+    chartTitle: 'Visual suite performance statistics',
+    label: 'Elaboration — Surelog/UHDM (C++ path)',
+    order: 0,
+  },
+  'visual-rendering-diagram-generation-duration': {
+    chartKey: 'visual',
+    chartTitle: 'Visual suite performance statistics',
+    label: 'Rendering — webview paint',
+    order: 1,
+  },
 };
 
+// Bounds every git/GitHub API call below so a network stall (fetch/push
+// against gh-pages, or the GitHub API) can't hang the CI job indefinitely.
+const NETWORK_TIMEOUT_MS = 60_000;
+
 function git(args, opts = {}) {
-  return execFileSync('git', args, { encoding: 'utf8', ...opts });
+  return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
 }
 
 // Checkout's persisted credentials don't reliably reach git commands run
@@ -89,12 +110,21 @@ const chartGroups = new Map();
 for (const { name, file } of suiteArgs) {
   const meta = METRIC_META[name];
   if (!meta) {
-    throw new Error(`Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`);
+    throw new Error(
+      `Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`,
+    );
   }
   const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
   const baselineByName = extractBaseline(baselineData, name);
   const group = chartGroups.get(meta.chartKey) ?? { title: meta.chartTitle, metrics: [] };
-  group.metrics.push({ name, order: meta.order, label: meta.label, unit: entries[0]?.unit ?? 'ms', entries, baselineByName });
+  group.metrics.push({
+    name,
+    order: meta.order,
+    label: meta.label,
+    unit: entries[0]?.unit ?? 'ms',
+    entries,
+    baselineByName,
+  });
   chartGroups.set(meta.chartKey, group);
 }
 
@@ -128,8 +158,18 @@ function publishFiles(contentByFilename) {
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
       }
 
-      git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=github-actions[bot]@users.noreply.github.com',
-        'commit', '-m', `Update benchmark charts for PR #${PR_NUMBER}`], { cwd: worktreeDir });
+      git(
+        [
+          '-c',
+          'user.name=github-actions[bot]',
+          '-c',
+          'user.email=github-actions[bot]@users.noreply.github.com',
+          'commit',
+          '-m',
+          `Update benchmark charts for PR #${PR_NUMBER}`,
+        ],
+        { cwd: worktreeDir },
+      );
       try {
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
         return git(['rev-parse', 'HEAD'], { cwd: worktreeDir }).trim();
@@ -154,7 +194,11 @@ const csvFilenamesByKey = new Map();
 for (const [key, group] of chartGroups) {
   const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
   const showLabels = CHART_KEYS_WITH_LABELS.has(key);
-  const svg = renderStackedSuiteChart({ suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`, metrics, showLabels });
+  const svg = renderStackedSuiteChart({
+    suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`,
+    metrics,
+    showLabels,
+  });
   contentByFilename.set(`${key}.svg`, svg);
 
   if (CHART_KEYS_WITH_CSV.has(key)) {
@@ -181,7 +225,9 @@ for (const [, group] of chartGroups) {
     if (!avg) continue;
     const signMs = avg.avgNominal > 0 ? '+' : '';
     const signPct = avg.avgPct > 0 ? '+' : '';
-    summaryLines.push(`- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`);
+    summaryLines.push(
+      `- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`,
+    );
   }
 }
 
@@ -206,7 +252,14 @@ for (const [key, group] of chartGroups) {
     const table = renderDeltaTableMarkdown(rows);
     if (table) {
       const heading = metrics.length > 1 ? `${metric.label} delta` : 'Delta summary';
-      lines.push('', `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`, '', table, '', '</details>');
+      lines.push(
+        '',
+        `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`,
+        '',
+        table,
+        '',
+        '</details>',
+      );
     }
   }
   sections.push(lines.join('\n'));
@@ -243,6 +296,7 @@ const request = async (method, apiPath, requestBody) => {
       method,
       headers,
       body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS),
     });
     if (response.ok) return response.json();
     const text = await response.text();
@@ -255,15 +309,23 @@ const request = async (method, apiPath, requestBody) => {
 
 const reviews = [];
 for (let page = 1; ; page++) {
-  const batch = await request('GET', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews?per_page=100&page=${page}`);
+  const batch = await request(
+    'GET',
+    `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews?per_page=100&page=${page}`,
+  );
   reviews.push(...batch);
   if (batch.length < 100) break;
 }
 const existing = reviews.find((review) => review.body?.startsWith(startTag));
 if (existing) {
-  await request('PUT', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews/${existing.id}`, { body });
+  await request('PUT', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews/${existing.id}`, {
+    body,
+  });
   console.log('Updated combined benchmark comment.');
 } else {
-  await request('POST', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews`, { event: 'COMMENT', body });
+  await request('POST', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews`, {
+    event: 'COMMENT',
+    body,
+  });
   console.log('Created combined benchmark comment.');
 }

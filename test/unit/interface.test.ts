@@ -3,7 +3,10 @@ import { runParser } from '../helper';
 
 describe('parser: interfaces and modports', () => {
   it('extracts interface modport formals, harness nodes, and field edges', async () => {
-    const graph = await runParser('uhdm', 'interface_modport.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_modport.sv',
+      `
       interface simple_if(input logic clk);
         logic valid;
         logic ready;
@@ -20,13 +23,14 @@ describe('parser: interfaces and modports', () => {
         simple_if if0(clk);
         child u_child(.bus(if0), .y());
       endmodule
-    `);
+    `,
+    );
 
     const child = graph.modules.child;
     const busPort = child.ports.find((port) => port.name === 'bus');
     expect(busPort).toMatchObject({
       typeName: 'simple_if',
-      modportName: 'slave'
+      modportName: 'slave',
     });
     expect(busPort?.typeSource).toMatchObject({ file: 'interface_modport.sv', startLine: 2 });
     expect(busPort?.modportSource).toMatchObject({ file: 'interface_modport.sv', startLine: 6 });
@@ -37,10 +41,10 @@ describe('parser: interfaces and modports', () => {
       aggregateKind: 'interface',
       role: 'port',
       typeName: 'simple_if',
-      modportName: 'slave'
+      modportName: 'slave',
     });
     expect(interfacePort?.ports.filter((port) => port.width === 'interface')).toEqual([
-      expect.objectContaining({ name: 'slave', preferredSide: 'right' })
+      expect.objectContaining({ name: 'slave', preferredSide: 'right' }),
     ]);
 
     const harness = child.nodes.find((node) => node.id === 'interface_modport:child:bus');
@@ -49,54 +53,79 @@ describe('parser: interfaces and modports', () => {
       aggregateKind: 'interface',
       role: 'modport',
       typeName: 'simple_if',
-      modportName: 'slave'
+      modportName: 'slave',
     });
     // Module-declaration modports are flipped to the module perspective:
     // interface inputs feed the module from the right; interface outputs leave on the left.
-    expect(harness?.ports.filter((port) => port.width !== 'interface').map((port) => [port.name, port.direction])).toEqual([
+    expect(
+      harness?.ports
+        .filter((port) => port.width !== 'interface')
+        .map((port) => [port.name, port.direction]),
+    ).toEqual([
       ['clk', 'output'],
       ['valid', 'output'],
-      ['ready', 'input']
+      ['ready', 'input'],
     ]);
 
-    expect(child.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        source: 'interface_modport:child:bus',
-        sourcePort: 'out:valid',
-        target: 'interface_modport:child:bus',
-        targetPort: 'in:ready',
-        signal: 'bus.valid',
-      })
-    ]));
+    expect(child.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'interface_modport:child:bus',
+          sourcePort: 'out:valid',
+          target: 'interface_modport:child:bus',
+          targetPort: 'in:ready',
+          signal: 'bus.valid',
+        }),
+      ]),
+    );
 
     const top = graph.modules.top;
-    const instancePort = top.nodes.find((node) => node.kind === 'instance' && node.label === 'u_child')?.ports.find((port) => port.name === 'bus');
+    const instancePort = top.nodes
+      .find((node) => node.kind === 'instance' && node.label === 'u_child')
+      ?.ports.find((port) => port.name === 'bus');
     expect(instancePort).toMatchObject({ typeName: 'simple_if', modportName: 'slave' });
-    
+
     // Interface instance nodes are synthesized
-    expect(top.nodes.find((node) => node.kind === 'interface' && node.label === 'if0')).toBeDefined();
+    expect(
+      top.nodes.find((node) => node.kind === 'interface' && node.label === 'if0'),
+    ).toBeDefined();
 
     const interfaceView = graph.modules['interface simple_if'];
     expect(interfaceView).toBeDefined();
-    expect(interfaceView.nodes.find((node) => node.kind === 'interface' && node.metadata?.modportName === 'master')).toBeDefined();
-    expect(interfaceView.nodes.find((node) => node.kind === 'interface' && node.metadata?.modportName === 'slave')).toBeDefined();
-    expect(interfaceView.nodes.find((node) => node.kind === 'port' && node.label === 'clk')).toBeDefined();
-    expect(interfaceView.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        source: 'port:interface_simple_if:clk',
-        target: 'interface_modport:simple_if:master',
-        targetPort: 'in:clk'
-      }),
-      expect.objectContaining({
-        source: 'port:interface_simple_if:clk',
-        target: 'interface_modport:simple_if:slave',
-        targetPort: 'in:clk'
-      })
-    ]));
+    expect(
+      interfaceView.nodes.find(
+        (node) => node.kind === 'interface' && node.metadata?.modportName === 'master',
+      ),
+    ).toBeDefined();
+    expect(
+      interfaceView.nodes.find(
+        (node) => node.kind === 'interface' && node.metadata?.modportName === 'slave',
+      ),
+    ).toBeDefined();
+    expect(
+      interfaceView.nodes.find((node) => node.kind === 'port' && node.label === 'clk'),
+    ).toBeDefined();
+    expect(interfaceView.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'port:interface_simple_if:clk',
+          target: 'interface_modport:simple_if:master',
+          targetPort: 'in:clk',
+        }),
+        expect.objectContaining({
+          source: 'port:interface_simple_if:clk',
+          target: 'interface_modport:simple_if:slave',
+          targetPort: 'in:clk',
+        }),
+      ]),
+    );
   });
 
   it('connects producer and consumer modules through a shared interface instance', async () => {
-    const graph = await runParser('uhdm', 'interface_shared.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_shared.sv',
+      `
       interface simple_if(input logic clk);
         logic [7:0] data;
         logic valid;
@@ -120,54 +149,83 @@ describe('parser: interfaces and modports', () => {
         producer u_producer(.bus(link));
         consumer u_consumer(.bus(link), .observed(observed));
       endmodule
-    `);
+    `,
+    );
 
     const top = graph.modules.top;
     // Hub node is now present
     const link = top.nodes.find((node) => node.kind === 'interface' && node.label === 'link');
     expect(link).toBeDefined();
     const linkInterfacePorts = link?.ports.filter((port) => port.width === 'interface') ?? [];
-    expect(linkInterfacePorts.map((port) => port.label ?? port.name).sort()).toEqual(['master', 'slave']);
-    expect(linkInterfacePorts.find((port) => port.name === 'master')).toMatchObject({ preferredSide: 'left' });
-    expect(linkInterfacePorts.find((port) => port.name === 'slave')).toMatchObject({ preferredSide: 'right' });
-    expect(linkInterfacePorts.every((port) => port.label !== 'link simple_if' && port.name !== 'link')).toBe(true);
+    expect(linkInterfacePorts.map((port) => port.label ?? port.name).sort()).toEqual([
+      'master',
+      'slave',
+    ]);
+    expect(linkInterfacePorts.find((port) => port.name === 'master')).toMatchObject({
+      preferredSide: 'left',
+    });
+    expect(linkInterfacePorts.find((port) => port.name === 'slave')).toMatchObject({
+      preferredSide: 'right',
+    });
+    expect(
+      linkInterfacePorts.every((port) => port.label !== 'link simple_if' && port.name !== 'link'),
+    ).toBe(true);
     expect(link?.ports.find((port) => port.name === 'clk')).toMatchObject({
       direction: 'input',
-      connectedSignal: 'link.clk'
+      connectedSignal: 'link.clk',
     });
 
-    const producerBus = top.nodes.find((node) => node.kind === 'instance' && node.label === 'u_producer')?.ports.find((port) => port.name === 'bus');
-    const consumerBus = top.nodes.find((node) => node.kind === 'instance' && node.label === 'u_consumer')?.ports.find((port) => port.name === 'bus');
-    expect(producerBus).toMatchObject({ typeName: 'simple_if', modportName: 'master', direction: 'output' });
-    expect(consumerBus).toMatchObject({ typeName: 'simple_if', modportName: 'slave', direction: 'input' });
-    
+    const producerBus = top.nodes
+      .find((node) => node.kind === 'instance' && node.label === 'u_producer')
+      ?.ports.find((port) => port.name === 'bus');
+    const consumerBus = top.nodes
+      .find((node) => node.kind === 'instance' && node.label === 'u_consumer')
+      ?.ports.find((port) => port.name === 'bus');
+    expect(producerBus).toMatchObject({
+      typeName: 'simple_if',
+      modportName: 'master',
+      direction: 'output',
+    });
+    expect(consumerBus).toMatchObject({
+      typeName: 'simple_if',
+      modportName: 'slave',
+      direction: 'input',
+    });
+
     // Edges go through the link hub
-    expect(top.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        source: 'instance:top:u_producer',
-        sourcePort: 'port:bus',
-        target: 'interface:top:link',
-        targetPort: 'in:master',
-        signal: 'link',
-        metadata: expect.objectContaining({ aggregate: 'interface' })
-      }),
-      expect.objectContaining({
-        source: 'interface:top:link',
-        sourcePort: 'out:slave',
-        target: 'instance:top:u_consumer',
-        targetPort: 'port:bus',
-        signal: 'link',
-        metadata: expect.objectContaining({ aggregate: 'interface' })
-      })
-    ]));
+    expect(top.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'instance:top:u_producer',
+          sourcePort: 'port:bus',
+          target: 'interface:top:link',
+          targetPort: 'in:master',
+          signal: 'link',
+          metadata: expect.objectContaining({ aggregate: 'interface' }),
+        }),
+        expect.objectContaining({
+          source: 'interface:top:link',
+          sourcePort: 'out:slave',
+          target: 'instance:top:u_consumer',
+          targetPort: 'port:bus',
+          signal: 'link',
+          metadata: expect.objectContaining({ aggregate: 'interface' }),
+        }),
+      ]),
+    );
 
     const interfaceView = graph.modules['interface simple_if'];
-    const master = interfaceView.nodes.find((node) => node.kind === 'interface' && node.metadata?.modportName === 'master');
+    const master = interfaceView.nodes.find(
+      (node) => node.kind === 'interface' && node.metadata?.modportName === 'master',
+    );
     expect(master?.ports.map((port) => port.name)).toEqual(['clk', 'data', 'valid', 'ready']);
   });
 
   it('splits module interface ports from flipped modport field harnesses', async () => {
-    const graph = await runParser('uhdm', 'interface_consumer.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_consumer.sv',
+      `
       interface simple_if(input logic clk);
         logic [7:0] data;
         logic valid;
@@ -179,56 +237,78 @@ describe('parser: interfaces and modports', () => {
         assign bus.ready = bus.valid;
         assign observed = bus.data[0];
       endmodule
-    `);
+    `,
+    );
 
     const consumer = graph.modules.consumer;
     const interfacePort = consumer.nodes.find((node) => node.id === 'interface:consumer:bus');
     const modport = consumer.nodes.find((node) => node.id === 'interface_modport:consumer:bus');
 
-    expect(interfacePort?.metadata).toMatchObject({ role: 'port', typeName: 'simple_if', modportName: 'slave' });
+    expect(interfacePort?.metadata).toMatchObject({
+      role: 'port',
+      typeName: 'simple_if',
+      modportName: 'slave',
+    });
     expect(interfacePort?.ports.filter((port) => port.width === 'interface')).toEqual([
-      expect.objectContaining({ name: 'slave', preferredSide: 'right' })
+      expect.objectContaining({ name: 'slave', preferredSide: 'right' }),
     ]);
 
-    expect(modport?.metadata).toMatchObject({ role: 'modport', typeName: 'simple_if', modportName: 'slave' });
-    expect(modport?.ports.filter((port) => port.width !== 'interface').map((port) => [port.name, port.direction])).toEqual([
+    expect(modport?.metadata).toMatchObject({
+      role: 'modport',
+      typeName: 'simple_if',
+      modportName: 'slave',
+    });
+    expect(
+      modport?.ports
+        .filter((port) => port.width !== 'interface')
+        .map((port) => [port.name, port.direction]),
+    ).toEqual([
       ['clk', 'output'],
       ['data', 'output'],
       ['valid', 'output'],
-      ['ready', 'input']
+      ['ready', 'input'],
     ]);
-    expect(consumer.nodes.find((node) => node.id === 'comb:consumer:bus.ready:expr')).toBeUndefined();
+    expect(
+      consumer.nodes.find((node) => node.id === 'comb:consumer:bus.ready:expr'),
+    ).toBeUndefined();
 
-    const validToReady = consumer.edges.find((edge) => (
-      edge.source === 'interface_modport:consumer:bus'
-      && edge.sourcePort === 'out:valid'
-      && edge.target === 'interface_modport:consumer:bus'
-      && edge.targetPort === 'in:ready'
-    ));
+    const validToReady = consumer.edges.find(
+      (edge) =>
+        edge.source === 'interface_modport:consumer:bus' &&
+        edge.sourcePort === 'out:valid' &&
+        edge.target === 'interface_modport:consumer:bus' &&
+        edge.targetPort === 'in:ready',
+    );
     expect(validToReady).toMatchObject({ signal: 'bus.valid' });
     expect(validToReady?.metadata?.aggregate).toBeUndefined();
 
-    const dataToBreakout = consumer.edges.find((edge) => (
-      edge.source === 'interface_modport:consumer:bus'
-      && edge.sourcePort === 'out:data'
-      && edge.target === 'bus:consumer:data'
-      && edge.targetPort === 'in:data'
-    ));
+    const dataToBreakout = consumer.edges.find(
+      (edge) =>
+        edge.source === 'interface_modport:consumer:bus' &&
+        edge.sourcePort === 'out:data' &&
+        edge.target === 'bus:consumer:data' &&
+        edge.targetPort === 'in:data',
+    );
     expect(dataToBreakout).toMatchObject({ signal: 'bus.data' });
     expect(dataToBreakout?.metadata?.aggregate).toBeUndefined();
 
-    expect(consumer.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        source: 'bus:consumer:data',
-        target: 'port:consumer:observed',
-        targetPort: 'port:observed',
-        signal: 'bus.data[0]'
-      })
-    ]));
+    expect(consumer.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'bus:consumer:data',
+          target: 'port:consumer:observed',
+          targetPort: 'port:observed',
+          signal: 'bus.data[0]',
+        }),
+      ]),
+    );
   });
 
   it('extracts interfaces without modports as interface type views', async () => {
-    const graph = await runParser('uhdm', 'interface_plain.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_plain.sv',
+      `
       interface packet_if;
         logic [7:0] data;
         logic valid;
@@ -237,20 +317,28 @@ describe('parser: interfaces and modports', () => {
       module top;
         packet_if pkt();
       endmodule
-    `);
+    `,
+    );
 
     const top = graph.modules.top;
     // synthesized node does not exist because there is no activity or ports
-    expect(top.nodes.find((node) => node.kind === 'interface' && node.label === 'pkt')).toBeUndefined();
+    expect(
+      top.nodes.find((node) => node.kind === 'interface' && node.label === 'pkt'),
+    ).toBeUndefined();
 
     const interfaceView = graph.modules['interface packet_if'];
     const typeNode = interfaceView.nodes.find((node) => node.kind === 'interface');
     expect(typeNode).toBeDefined();
-    expect(typeNode?.ports.map((port) => port.name)).toEqual(expect.arrayContaining(['data', 'valid']));
+    expect(typeNode?.ports.map((port) => port.name)).toEqual(
+      expect.arrayContaining(['data', 'valid']),
+    );
   });
 
   it('preserves packed struct member type labels inside interfaces', async () => {
-    const graph = await runParser('uhdm', 'interface_struct_member.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_struct_member.sv',
+      `
       typedef struct packed {
         logic [3:0] opcode;
         logic valid;
@@ -264,24 +352,34 @@ describe('parser: interfaces and modports', () => {
       module consumer(packet_if bus, output logic valid);
         assign valid = bus.payload.valid & bus.ready;
       endmodule
-    `);
+    `,
+    );
 
     const consumer = graph.modules.consumer;
     const bus = consumer.nodes.find((node) => node.kind === 'interface' && node.label === 'bus');
     expect(bus).toBeDefined();
-    expect(bus?.metadata?.fields).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'payload', typeName: 'packet_t' }),
-      expect.objectContaining({ name: 'ready' })
-    ]));
-    expect(bus?.ports.find((port) => port.name === 'payload')).toMatchObject({ typeName: 'packet_t' });
+    expect(bus?.metadata?.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'payload', typeName: 'packet_t' }),
+        expect.objectContaining({ name: 'ready' }),
+      ]),
+    );
+    expect(bus?.ports.find((port) => port.name === 'payload')).toMatchObject({
+      typeName: 'packet_t',
+    });
 
     const interfaceView = graph.modules['interface packet_if'];
     const typeNode = interfaceView.nodes.find((node) => node.kind === 'interface');
-    expect(typeNode?.ports.find((port) => port.name === 'payload')).toMatchObject({ typeName: 'packet_t' });
+    expect(typeNode?.ports.find((port) => port.name === 'payload')).toMatchObject({
+      typeName: 'packet_t',
+    });
   });
 
   it('calculates modport positioning and respects svsch:modport:pos comments', async () => {
-    const graph = await runParser('uhdm', 'interface_pos.sv', `
+    await runParser(
+      'uhdm',
+      'interface_pos.sv',
+      `
       interface pos_if;
         logic a, b, c, d;
         // svsch:modport:pos=left
@@ -294,23 +392,27 @@ describe('parser: interfaces and modports', () => {
       module top;
         pos_if if0();
       endmodule
-    `);
+    `,
+    );
 
-    const interfaceView = graph.modules['interface pos_if'];
-    
-    const manualLeft = interfaceView.nodes.find(n => n.metadata?.modportName === 'manual_left');
-    // UHDM extractor currently doesn't reliably propagate preferredSide for standalone modports in some views.
+    // UHDM extractor currently doesn't reliably propagate preferredSide for standalone
+    // modports in some views.
+    // const interfaceView = graph.modules['interface pos_if'];
+    // const manualLeft = interfaceView.nodes.find(n => n.metadata?.modportName === 'manual_left');
     // expect(manualLeft?.preferredSide || manualLeft?.metadata?.preferredSide).toBeDefined();
 
-    const producer = interfaceView.nodes.find(n => n.metadata?.modportName === 'producer');
+    // const producer = interfaceView.nodes.find(n => n.metadata?.modportName === 'producer');
     // expect(producer?.preferredSide || producer?.metadata?.preferredSide).toBe('left');
 
-    const consumer = interfaceView.nodes.find(n => n.metadata?.modportName === 'consumer');
+    // const consumer = interfaceView.nodes.find(n => n.metadata?.modportName === 'consumer');
     // expect(consumer?.preferredSide || consumer?.metadata?.preferredSide).toBe('right');
   });
 
   it('builds a multi-modport interface instance with side and top ports', async () => {
-    const graph = await runParser('uhdm', 'interface_multi_modport.sv', `
+    const graph = await runParser(
+      'uhdm',
+      'interface_multi_modport.sv',
+      `
       interface stream_if(input logic clk, input logic rst_n);
         logic [7:0] data;
         logic valid;
@@ -338,7 +440,8 @@ describe('parser: interfaces and modports', () => {
         packet_monitor u_monitor(.bus(stream));
         packet_controller u_controller(.bus(stream));
       endmodule
-    `);
+    `,
+    );
 
     const top = graph.modules.top;
     const stream = top.nodes.find((node) => node.id === 'interface:top:stream');
@@ -349,44 +452,55 @@ describe('parser: interfaces and modports', () => {
       ['consumer', 'left'],
       ['controller', 'left'],
       ['monitor', 'left'],
-      ['producer', 'left']
+      ['producer', 'left'],
     ]);
-    expect(stream?.ports.filter((port) => port.width !== 'interface').map((port) => [port.name, port.direction])).toEqual([
+    expect(
+      stream?.ports
+        .filter((port) => port.width !== 'interface')
+        .map((port) => [port.name, port.direction]),
+    ).toEqual([
       ['clk', 'input'],
-      ['rst_n', 'input']
+      ['rst_n', 'input'],
     ]);
 
-    expect(top.edges).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        source: 'instance:top:u_source',
-        target: 'interface:top:stream',
-        targetPort: 'in:producer',
-        metadata: expect.objectContaining({ aggregate: 'interface' })
-      }),
-      expect.objectContaining({
-        source: 'instance:top:u_sink',
-        target: 'interface:top:stream',
-        targetPort: 'in:consumer',
-        metadata: expect.objectContaining({ aggregate: 'interface' })
-      }),
-      expect.objectContaining({
-        source: 'instance:top:u_controller',
-        target: 'interface:top:stream',
-        targetPort: 'in:controller',
-        metadata: expect.objectContaining({ aggregate: 'interface' })
-      })
-    ]));
+    expect(top.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: 'instance:top:u_source',
+          target: 'interface:top:stream',
+          targetPort: 'in:producer',
+          metadata: expect.objectContaining({ aggregate: 'interface' }),
+        }),
+        expect.objectContaining({
+          source: 'instance:top:u_sink',
+          target: 'interface:top:stream',
+          targetPort: 'in:consumer',
+          metadata: expect.objectContaining({ aggregate: 'interface' }),
+        }),
+        expect.objectContaining({
+          source: 'instance:top:u_controller',
+          target: 'interface:top:stream',
+          targetPort: 'in:controller',
+          metadata: expect.objectContaining({ aggregate: 'interface' }),
+        }),
+      ]),
+    );
   });
 
-  it('wires a gate whose operand is an inverted interface field to a single clean driver', async () => {
-    // Regression for a false "multiple diagram drivers" diagnostic: `bus.ready` (a
-    // modport field reference) is UHDM's vpiHierPath node type, which getOrPromoteExpr
-    // didn't recognize as a plain signal — it fell through to the generic comb-node
-    // promotion path, minting a phantom node named after the gate's internal
-    // "<out>_in<i>" placeholder instead of resolving to the real "bus.ready" signal.
-    // That placeholder later got collapsed back onto the interface as a second,
-    // wrongly-named input port alongside the correctly-resolved "bus.ready" port.
-    const graph = await runParser('uhdm', 'interface_gate_operand.sv', `
+  it(
+    'wires a gate whose operand is an inverted interface field to a single ' + 'clean driver',
+    async () => {
+      // Regression for a false "multiple diagram drivers" diagnostic: `bus.ready` (a
+      // modport field reference) is UHDM's vpiHierPath node type, which getOrPromoteExpr
+      // didn't recognize as a plain signal — it fell through to the generic comb-node
+      // promotion path, minting a phantom node named after the gate's internal
+      // "<out>_in<i>" placeholder instead of resolving to the real "bus.ready" signal.
+      // That placeholder later got collapsed back onto the interface as a second,
+      // wrongly-named input port alongside the correctly-resolved "bus.ready" port.
+      const graph = await runParser(
+        'uhdm',
+        'interface_gate_operand.sv',
+        `
       interface channel_if(input logic clk, input logic rst_n);
         logic valid;
         logic ready;
@@ -398,24 +512,36 @@ describe('parser: interfaces and modports', () => {
       module channel_controller(channel_if.controller bus);
         assign bus.flush = bus.valid & ~bus.ready;
       endmodule
-    `);
+    `,
+      );
 
-    expect(graph.diagnostics.filter((diagnostic) => diagnostic.message.includes('multiple diagram drivers'))).toEqual([]);
+      expect(
+        graph.diagnostics.filter((diagnostic) =>
+          diagnostic.message.includes('multiple diagram drivers'),
+        ),
+      ).toEqual([]);
 
-    const module = graph.modules.channel_controller;
-    const inverter = module.nodes.find((node) => node.kind === 'inverter');
-    const gate = module.nodes.find((node) => node.kind === 'gate');
-    expect(inverter).toBeDefined();
-    expect(gate).toBeDefined();
+      const module = graph.modules.channel_controller;
+      const inverter = module.nodes.find((node) => node.kind === 'inverter');
+      const gate = module.nodes.find((node) => node.kind === 'gate');
+      expect(inverter).toBeDefined();
+      expect(gate).toBeDefined();
 
-    // The inverter's only input should be the real "bus.ready" field — no leftover
-    // placeholder port from the gate's internal per-operand naming.
-    expect(inverter?.ports.filter((port) => port.direction === 'input').map((port) => port.connectedSignal)).toEqual(['bus.ready']);
+      // The inverter's only input should be the real "bus.ready" field — no leftover
+      // placeholder port from the gate's internal per-operand naming.
+      expect(
+        inverter?.ports
+          .filter((port) => port.direction === 'input')
+          .map((port) => port.connectedSignal),
+      ).toEqual(['bus.ready']);
 
-    // Every input port on the gate should have exactly one driving edge.
-    for (const port of gate?.ports.filter((p) => p.direction === 'input') ?? []) {
-      const drivers = module.edges.filter((edge) => edge.target === gate!.id && edge.targetPort === port.id);
-      expect(drivers, `gate input "${port.name}" (${port.connectedSignal})`).toHaveLength(1);
-    }
-  });
+      // Every input port on the gate should have exactly one driving edge.
+      for (const port of gate?.ports.filter((p) => p.direction === 'input') ?? []) {
+        const drivers = module.edges.filter(
+          (edge) => edge.target === gate!.id && edge.targetPort === port.id,
+        );
+        expect(drivers, `gate input "${port.name}" (${port.connectedSignal})`).toHaveLength(1);
+      }
+    },
+  );
 });

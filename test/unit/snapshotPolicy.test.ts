@@ -23,27 +23,44 @@ describe('snapshot update policy', () => {
   });
 
   it('maps each baseline mechanism and per-test override to its effective threshold', () => {
-    expect(baselineThresholdFor(
-      'test/visual/__screenshots__/mux.visual.spec.ts-snapshots/mux-long-names-webview-chromium-linux.png'
-    )?.maxDiffPixels).toBe(2);
-    expect(baselineThresholdFor(
-      'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/generate-region-resize-left-chromium-linux.png'
-    )?.maxDiffPixels).toBe(120);
-    expect(baselineThresholdFor(
-      'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/generate-region-selected-canvas-chromium-linux.png'
-    )?.maxDiffPixels).toBe(50);
-    expect(baselineThresholdFor(
-      'test/features/__screenshots__/1.91.0/example.spec.ts-snapshots/example-linux.png'
-    )?.maxDiffPixels).toBe(300);
+    expect(
+      baselineThresholdFor(
+        'test/visual/__screenshots__/mux.visual.spec.ts-snapshots/' +
+          'mux-long-names-webview-chromium-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(2);
+    expect(
+      baselineThresholdFor(
+        'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
+          'generate-region-resize-left-chromium-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(120);
+    expect(
+      baselineThresholdFor(
+        'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
+          'generate-region-selected-canvas-chromium-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(50);
+    expect(
+      baselineThresholdFor(
+        'test/features/__screenshots__/1.91.0/example.spec.ts-snapshots/example-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(300);
     expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(50);
-    expect(baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels).toBe(100);
-    expect(baselineThresholdFor(
-      'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png'
-    )?.maxDiffPixels).toBe(500);
+    expect(
+      baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels,
+    ).toBe(100);
+    expect(
+      baselineThresholdFor(
+        'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(500);
   });
 
   it('rejects Playwright all mode', () => {
-    expect(() => assertSafeSnapshotUpdateMode({ updateSnapshots: 'all' } as any)).toThrow(/changed/);
+    expect(() => assertSafeSnapshotUpdateMode({ updateSnapshots: 'all' } as any)).toThrow(
+      /changed/,
+    );
     expect(() => assertSafeSnapshotUpdateMode({ updateSnapshots: 'changed' } as any)).not.toThrow();
   });
 
@@ -54,16 +71,13 @@ describe('snapshot update policy', () => {
       expected,
       actual,
       1,
-      SNAPSHOT_THRESHOLDS.pixelmatch.threshold
+      SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
     );
     expect(comparison.numDiffPixels).toBe(1);
     expect(comparison.matches).toBe(true);
-    expect(comparePngBuffers(
-      expected,
-      actual,
-      0,
-      SNAPSHOT_THRESHOLDS.pixelmatch.threshold
-    ).matches).toBe(false);
+    expect(
+      comparePngBuffers(expected, actual, 0, SNAPSHOT_THRESHOLDS.pixelmatch.threshold).matches,
+    ).toBe(false);
   });
 
   it('does not rewrite an equivalent graph baseline in update mode', () => {
@@ -105,7 +119,11 @@ function emptyGraph(): GraphState {
   return { nodes: [], edges: [] };
 }
 
-function pngBuffer(width: number, height: number, firstPixel: [number, number, number, number]): Buffer {
+function pngBuffer(
+  width: number,
+  height: number,
+  firstPixel: [number, number, number, number],
+): Buffer {
   const png = new PNG({ width, height });
   for (let offset = 0; offset < png.data.length; offset += 4) {
     png.data.set([0, 0, 0, 255], offset);

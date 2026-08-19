@@ -39,7 +39,7 @@ describe('LayoutStore', () => {
   it('writes concurrent updates to different modules without clobbering each other', async () => {
     await Promise.all([
       store.writeModuleLayout('moduleA', { nodes: { node1: { x: 10, y: 0 } } }),
-      store.writeModuleLayout('moduleB', { nodes: { node1: { x: 20, y: 0 } } })
+      store.writeModuleLayout('moduleB', { nodes: { node1: { x: 20, y: 0 } } }),
     ]);
     await store.flush();
 

@@ -32,7 +32,9 @@ describe('extractDesignWithUhdm concurrency guard', () => {
       await fs.writeFile(logFile, '');
 
       const fakeSurelog = path.join(tmpDir, 'fake-surelog.js');
-      await writeExecutable(fakeSurelog, `#!/usr/bin/env node
+      await writeExecutable(
+        fakeSurelog,
+        `#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const args = process.argv.slice(2);
@@ -45,18 +47,22 @@ const until = Date.now() + 300;
 while (Date.now() < until) { /* busy wait */ }
 fs.writeFileSync(path.join(outDir, 'slpp_unit', 'surelog.uhdm'), 'fake-uhdm');
 fs.appendFileSync(process.env.SVSCH_TEST_SURELOG_LOG, 'end ' + Date.now() + '\\n');
-`);
+`,
+      );
 
       const fakeBackend = path.join(tmpDir, 'fake-backend.js');
-      await writeExecutable(fakeBackend, `#!/usr/bin/env node
+      await writeExecutable(
+        fakeBackend,
+        `#!/usr/bin/env node
 process.stdout.write(JSON.stringify({ modules: [], rootModules: [] }));
-`);
+`,
+      );
 
       process.env.SVSCH_TEST_SURELOG_LOG = logFile;
 
       const results = await Promise.all([
         extractDesignWithUhdm([srcFile], tmpDir, fakeSurelog, fakeBackend),
-        extractDesignWithUhdm([srcFile], tmpDir, fakeSurelog, fakeBackend)
+        extractDesignWithUhdm([srcFile], tmpDir, fakeSurelog, fakeBackend),
       ]);
 
       // No crash: both concurrent calls resolved successfully.
@@ -87,28 +93,39 @@ process.stdout.write(JSON.stringify({ modules: [], rootModules: [] }));
   // reading it. The fake backend below reads the file twice with a delay in between and
   // fails if the content changed out from under it, which is what a still-running Surelog
   // overwrite would look like.
-  it('keeps the shared .uhdm file stable while the backend reads it, even with a queued caller of a different fingerprint', async () => {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-race-backend-'));
+  it(
+    'keeps the shared .uhdm file stable while the backend reads ' +
+      'it, even with a queued caller of a different fingerprint',
+    async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-race-backend-'));
 
-    try {
-      const srcFileA = path.join(tmpDir, 'a.sv');
-      const srcFileB = path.join(tmpDir, 'b.sv');
-      await fs.writeFile(srcFileA, 'module a(); endmodule\n');
-      await fs.writeFile(srcFileB, 'module b(); endmodule\n');
+      try {
+        const srcFileA = path.join(tmpDir, 'a.sv');
+        const srcFileB = path.join(tmpDir, 'b.sv');
+        await fs.writeFile(srcFileA, 'module a(); endmodule\n');
+        await fs.writeFile(srcFileB, 'module b(); endmodule\n');
 
-      const fakeSurelog = path.join(tmpDir, 'fake-surelog.js');
-      await writeExecutable(fakeSurelog, `#!/usr/bin/env node
+        const fakeSurelog = path.join(tmpDir, 'fake-surelog.js');
+        await writeExecutable(
+          fakeSurelog,
+          `#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const args = process.argv.slice(2);
 const outDir = args[args.indexOf('-o') + 1];
 const srcFile = args[args.length - 1];
 fs.mkdirSync(path.join(outDir, 'slpp_unit'), { recursive: true });
-fs.writeFileSync(path.join(outDir, 'slpp_unit', 'surelog.uhdm'), 'uhdm-for-' + path.basename(srcFile));
-`);
+fs.writeFileSync(
+  path.join(outDir, 'slpp_unit', 'surelog.uhdm'),
+  'uhdm-for-' + path.basename(srcFile),
+);
+`,
+        );
 
-      const fakeBackend = path.join(tmpDir, 'fake-backend.js');
-      await writeExecutable(fakeBackend, `#!/usr/bin/env node
+        const fakeBackend = path.join(tmpDir, 'fake-backend.js');
+        await writeExecutable(
+          fakeBackend,
+          `#!/usr/bin/env node
 const fs = require('fs');
 const uhdmFile = process.argv[2];
 const first = fs.readFileSync(uhdmFile, 'utf-8');
@@ -123,16 +140,20 @@ if (first !== second) {
   process.exit(1);
 }
 process.stdout.write(JSON.stringify({ modules: [], rootModules: [] }));
-`);
+`,
+        );
 
-      // Different files (and thus different fingerprints) so the second call can't cache-hit
-      // and must queue behind the first's full cache-check + Surelog + backend section.
-      await expect(Promise.all([
-        extractDesignWithUhdm([srcFileA], tmpDir, fakeSurelog, fakeBackend),
-        extractDesignWithUhdm([srcFileB], tmpDir, fakeSurelog, fakeBackend)
-      ])).resolves.toHaveLength(2);
-    } finally {
-      await fs.rm(tmpDir, { recursive: true, force: true });
-    }
-  });
+        // Different files (and thus different fingerprints) so the second call can't cache-hit
+        // and must queue behind the first's full cache-check + Surelog + backend section.
+        await expect(
+          Promise.all([
+            extractDesignWithUhdm([srcFileA], tmpDir, fakeSurelog, fakeBackend),
+            extractDesignWithUhdm([srcFileB], tmpDir, fakeSurelog, fakeBackend),
+          ]),
+        ).resolves.toHaveLength(2);
+      } finally {
+        await fs.rm(tmpDir, { recursive: true, force: true });
+      }
+    },
+  );
 });

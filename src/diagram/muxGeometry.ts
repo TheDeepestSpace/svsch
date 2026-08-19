@@ -20,7 +20,10 @@ export function gateInputPortCenterY(index: number, count: number, height: numbe
   return fits ? spreadCenterY(index) : muxInputPortCenterY(index, count, height);
 }
 
-/** Y of the trapezoid's top-right vertex — shared by mux/select/alu skins, whose right edge slopes in from the full height. */
+/**
+ * Y of the trapezoid's top-right vertex — shared by mux/select/alu skins,
+ * whose right edge slopes in from the full height.
+ */
 export function muxRightTopY(height: number): number {
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
   return (height - rightSideHeight) / 2;

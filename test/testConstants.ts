@@ -9,5 +9,5 @@ export const chromiumStabilizationArgs = [
   '--disable-software-rasterizer',
   '--disable-dev-shm-usage',
   '--no-sandbox',
-  '--disable-setuid-sandbox'
+  '--disable-setuid-sandbox',
 ];

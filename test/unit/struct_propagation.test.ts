@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { runParser } from '../helper';
-import type { DesignModule } from '../../src/ir/types';
 
 function fixture(name: string): string {
   return fs.readFileSync(path.join(__dirname, '..', 'fixtures', name), 'utf8');
@@ -14,12 +13,12 @@ describe.each(['uhdm'] as const)('struct propagation: %s', (backend) => {
     const mod = graph.modules.struct_mux;
 
     // The output port edge should have aggregate: 'struct'
-    const outEdge = mod.edges.find(e => e.target === 'port:struct_mux:out');
+    const outEdge = mod.edges.find((e) => e.target === 'port:struct_mux:out');
     expect(outEdge).toBeDefined();
     expect(outEdge?.metadata?.aggregate).toBe('struct');
 
     // Mux input edges from in1 and in2 should also be structs
-    const in1Edge = mod.edges.find(e => e.signal === 'in1');
+    const in1Edge = mod.edges.find((e) => e.signal === 'in1');
     expect(in1Edge?.metadata?.aggregate).toBe('struct');
   });
 
@@ -28,7 +27,7 @@ describe.each(['uhdm'] as const)('struct propagation: %s', (backend) => {
     const mod = graph.modules.struct_complex;
 
     // The edge from the XOR comb node to 'out' should be a struct
-    const outEdge = mod.edges.find(e => e.target === 'port:struct_complex:out');
+    const outEdge = mod.edges.find((e) => e.target === 'port:struct_complex:out');
     expect(outEdge).toBeDefined();
     expect(outEdge?.metadata?.aggregate).toBe('struct');
   });

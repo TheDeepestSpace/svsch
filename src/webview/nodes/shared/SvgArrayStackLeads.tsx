@@ -8,7 +8,7 @@ export function SvgArrayStackLeads({
   x,
   trimSink = false,
   wide = false,
-  thick = false
+  thick = false,
 }: {
   side: 'left' | 'right' | 'top' | 'bottom';
   width: number;
@@ -41,22 +41,23 @@ export function SvgArrayStackLeads({
         // discoloration), which reads worse than the sub-pixel overlap rounding
         // produces here. Round each endpoint so the lead's stroke fully covers up
         // to the wire's start — a solid, if not mathematically exact, join.
-        const shapeX = (side === 'top' || side === 'bottom')
-          ? Math.round((x ?? width / 2) + layer.dx)
-          : side === 'left'
-            ? Math.round(layer.dx)
-            : Math.round(width + layer.dx);
+        const shapeX =
+          side === 'top' || side === 'bottom'
+            ? Math.round((x ?? width / 2) + layer.dx)
+            : side === 'left'
+              ? Math.round(layer.dx)
+              : Math.round(width + layer.dx);
         const shapeY = Math.round(y + layer.dy);
-        const leadX = Math.round((side === 'top' || side === 'bottom')
-          ? shapeX
-          : side === 'left'
-            ? shapeX - trim
-            : shapeX + trim);
-        const leadY = Math.round(side === 'top'
-          ? shapeY - trim
-          : side === 'bottom'
-            ? shapeY + trim
-            : shapeY);
+        const leadX = Math.round(
+          side === 'top' || side === 'bottom'
+            ? shapeX
+            : side === 'left'
+              ? shapeX - trim
+              : shapeX + trim,
+        );
+        const leadY = Math.round(
+          side === 'top' ? shapeY - trim : side === 'bottom' ? shapeY + trim : shapeY,
+        );
         return (
           <path
             key={layer.id}

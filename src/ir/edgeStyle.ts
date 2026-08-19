@@ -33,11 +33,16 @@ export function portSuggestsThickWire(port: DiagramPort | undefined): boolean {
   return widthIsPotentiallyMultiBit(port.width) || widthIsPotentiallyMultiBit(port.widthExpression);
 }
 
-function findPort(node: Pick<DiagramNode, 'ports'> | undefined, portId: string | undefined): DiagramPort | undefined {
+function findPort(
+  node: Pick<DiagramNode, 'ports'> | undefined,
+  portId: string | undefined,
+): DiagramPort | undefined {
   if (!node || !portId) {
     return undefined;
   }
-  return node.ports.find((port) => port.id === portId) ?? node.ports.find((port) => port.name === portId);
+  return (
+    node.ports.find((port) => port.id === portId) ?? node.ports.find((port) => port.name === portId)
+  );
 }
 
 /**
@@ -48,7 +53,9 @@ function findPort(node: Pick<DiagramNode, 'ports'> | undefined, portId: string |
  * the port heuristic below only backs up views built without that pass
  * (synthetic test fixtures).
  */
-export function nodeStackIsWide(node: Pick<DiagramNode, 'ports' | 'metadata'> | undefined): boolean {
+export function nodeStackIsWide(
+  node: Pick<DiagramNode, 'ports' | 'metadata'> | undefined,
+): boolean {
   if (!node) {
     return false;
   }
@@ -72,7 +79,7 @@ export function nodeStackIsWide(node: Pick<DiagramNode, 'ports' | 'metadata'> | 
 export function edgeIsThick(
   edge: DiagramEdge | undefined,
   sourceNode?: Pick<DiagramNode, 'ports'>,
-  targetNode?: Pick<DiagramNode, 'ports'>
+  targetNode?: Pick<DiagramNode, 'ports'>,
 ): boolean {
   if (!edge) {
     return false;
@@ -87,14 +94,18 @@ export function edgeIsThick(
   if (widthIsPotentiallyMultiBit(edge.width)) {
     return true;
   }
-  return portSuggestsThickWire(findPort(sourceNode, edge.sourcePort))
-    || portSuggestsThickWire(findPort(targetNode, edge.targetPort));
+  return (
+    portSuggestsThickWire(findPort(sourceNode, edge.sourcePort)) ||
+    portSuggestsThickWire(findPort(targetNode, edge.targetPort))
+  );
 }
 
 function nodeIsArrayLike(node: DiagramNode): boolean {
-  return node.isArrayNode === true
-    || node.metadata?.isArrayNode === true
-    || (node.kind === 'bus' && node.metadata?.aggregateKind === 'array');
+  return (
+    node.isArrayNode === true ||
+    node.metadata?.isArrayNode === true ||
+    (node.kind === 'bus' && node.metadata?.aggregateKind === 'array')
+  );
 }
 
 /**
@@ -122,11 +133,12 @@ export function annotateWireStyles(module: { nodes: DiagramNode[]; edges: Diagra
     }
     const src = findPort(nodesById.get(edge.source), edge.sourcePort);
     const tgt = findPort(nodesById.get(edge.target), edge.targetPort);
-    const carriesInterface = edge.width === 'interface'
-      || src?.width === 'interface'
-      || tgt?.width === 'interface'
-      || src?.modportName !== undefined
-      || tgt?.modportName !== undefined;
+    const carriesInterface =
+      edge.width === 'interface' ||
+      src?.width === 'interface' ||
+      tgt?.width === 'interface' ||
+      src?.modportName !== undefined ||
+      tgt?.modportName !== undefined;
     if (carriesInterface) {
       edge.metadata = { ...(edge.metadata ?? {}), aggregate: 'interface' };
     }
@@ -145,12 +157,14 @@ export function annotateWireStyles(module: { nodes: DiagramNode[]; edges: Diagra
     if (!nodeIsArrayLike(node)) {
       continue;
     }
-    const wide = node.ports.some(portSuggestsThickWire)
-      || module.edges.some((edge) => (
-        thickEdges.has(edge)
-        && edge.isStacked === true
-        && (edge.source === node.id || edge.target === node.id)
-      ));
+    const wide =
+      node.ports.some(portSuggestsThickWire) ||
+      module.edges.some(
+        (edge) =>
+          thickEdges.has(edge) &&
+          edge.isStacked === true &&
+          (edge.source === node.id || edge.target === node.id),
+      );
     if (wide) {
       node.metadata = { ...(node.metadata ?? {}), stackWide: true };
     }

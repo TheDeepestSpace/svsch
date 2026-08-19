@@ -8,10 +8,11 @@ function extract(text: string): DesignModule {
 }
 
 function muxSelectedBy(module: DesignModule, selector: string): DiagramNode | undefined {
-  return module.nodes.find((node) => (
-    node.kind === 'mux'
-    && node.ports.some((port) => port.name === 'sel' && port.connectedSignal === selector)
-  ));
+  return module.nodes.find(
+    (node) =>
+      node.kind === 'mux' &&
+      node.ports.some((port) => port.name === 'sel' && port.connectedSignal === selector),
+  );
 }
 
 describe('text fallback ternary extraction', () => {
@@ -34,9 +35,15 @@ describe('text fallback ternary extraction', () => {
     expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
     expect(mux?.ports.find((port) => port.direction === 'output')?.name).toBe('out');
     expectMuxSelector(module, mux, 'sel');
-    expect(module.edges.some((edge) => edge.source === 'port:top:a' && edge.target === mux?.id)).toBe(true);
-    expect(module.edges.some((edge) => edge.source === 'port:top:b' && edge.target === mux?.id)).toBe(true);
-    expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === 'port:top:y')).toBe(true);
+    expect(
+      module.edges.some((edge) => edge.source === 'port:top:a' && edge.target === mux?.id),
+    ).toBe(true);
+    expect(
+      module.edges.some((edge) => edge.source === 'port:top:b' && edge.target === mux?.id),
+    ).toBe(true);
+    expect(
+      module.edges.some((edge) => edge.source === mux?.id && edge.target === 'port:top:y'),
+    ).toBe(true);
   });
 
   it('recursively emits nested ternaries as cascaded muxes', () => {
@@ -58,7 +65,9 @@ describe('text fallback ternary extraction', () => {
     expect(module.nodes.filter((node) => node.kind === 'mux')).toHaveLength(2);
     expectMuxSelector(module, outer, 'sel1');
     expectMuxSelector(module, inner, 'sel2');
-    expect(module.edges.some((edge) => edge.source === inner?.id && edge.target === outer?.id)).toBe(true);
+    expect(
+      module.edges.some((edge) => edge.source === inner?.id && edge.target === outer?.id),
+    ).toBe(true);
   });
 
   it('marks a whole-array ternary as a stacked mux', () => {
@@ -96,10 +105,18 @@ describe('text fallback ternary extraction', () => {
 
     expect(mux).toBeDefined();
     expect(comb).toBeDefined();
-    expect(comb?.ports.some((port) => port.direction === 'input' && port.name === 'y_ternary_0')).toBe(true);
-    expect(comb?.ports.some((port) => port.direction === 'input' && ['sel', 'b', 'c'].includes(port.name))).toBe(false);
+    expect(
+      comb?.ports.some((port) => port.direction === 'input' && port.name === 'y_ternary_0'),
+    ).toBe(true);
+    expect(
+      comb?.ports.some(
+        (port) => port.direction === 'input' && ['sel', 'b', 'c'].includes(port.name),
+      ),
+    ).toBe(false);
     expectMuxSelector(module, mux, 'sel');
-    expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === comb?.id)).toBe(true);
+    expect(module.edges.some((edge) => edge.source === mux?.id && edge.target === comb?.id)).toBe(
+      true,
+    );
   });
 
   it('falls back to a comb node when a ternary operand cannot be promoted', () => {
@@ -112,7 +129,9 @@ describe('text fallback ternary extraction', () => {
 
     expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
     expect(comb?.metadata?.expression).toBe('sel ? 1.5 : a');
-    expect(module.edges.some((edge) => edge.source === comb?.id && edge.target === 'port:top:y')).toBe(true);
+    expect(
+      module.edges.some((edge) => edge.source === comb?.id && edge.target === 'port:top:y'),
+    ).toBe(true);
   });
 
   it('rolls back earlier promoted operands when a later operand cannot be promoted', () => {
@@ -126,10 +145,13 @@ describe('text fallback ternary extraction', () => {
     expect(module.nodes.some((node) => node.kind === 'mux')).toBe(false);
     expect(combs).toHaveLength(1);
     expect(combs[0].metadata?.expression).toBe('sel ? a + b : 1 + 2');
-    expect(module.edges.every((edge) => (
-      module.nodes.some((node) => node.id === edge.source)
-      && module.nodes.some((node) => node.id === edge.target)
-    ))).toBe(true);
+    expect(
+      module.edges.every(
+        (edge) =>
+          module.nodes.some((node) => node.id === edge.source) &&
+          module.nodes.some((node) => node.id === edge.target),
+      ),
+    ).toBe(true);
   });
 
   it('ignores question-mark digits in sized literals when splitting a ternary', () => {
@@ -165,17 +187,18 @@ describe('text fallback ternary extraction', () => {
       endmodule
     `);
     const mux = muxSelectedBy(module, 'sel');
-    const scopedArm = module.nodes.find((node) => (
-      node.kind === 'comb' && node.metadata?.expression === 'pkg::value'
-    ));
+    const scopedArm = module.nodes.find(
+      (node) => node.kind === 'comb' && node.metadata?.expression === 'pkg::value',
+    );
 
     expect(mux?.ports.find((port) => port.label === "1'b1")?.connectedSignal).toBe('y_true');
     expect(mux?.ports.find((port) => port.label === "1'b0")?.connectedSignal).toBe('b');
     expect(scopedArm).toBeDefined();
-    expect(module.edges.some((edge) => (
-      edge.source === scopedArm?.id
-      && edge.target === mux?.id
-      && edge.targetPort === 'in:true'
-    ))).toBe(true);
+    expect(
+      module.edges.some(
+        (edge) =>
+          edge.source === scopedArm?.id && edge.target === mux?.id && edge.targetPort === 'in:true',
+      ),
+    ).toBe(true);
   });
 });

@@ -22,12 +22,16 @@ export function recordNamedBenchmarkSample(
   samplesLogFile: string,
   name: string,
   unit: string,
-  value: number
+  value: number,
 ): void {
   if (!Number.isFinite(value) || value < 0) return;
 
   fs.mkdirSync(path.dirname(samplesLogFile), { recursive: true });
-  fs.appendFileSync(samplesLogFile, `${JSON.stringify({ name, unit, value: Math.round(value) })}\n`, 'utf8');
+  fs.appendFileSync(
+    samplesLogFile,
+    `${JSON.stringify({ name, unit, value: Math.round(value) })}\n`,
+    'utf8',
+  );
 }
 
 // Collapses a samples log into the benchmark file consumed by
@@ -53,6 +57,6 @@ export function finalizeNamedBenchmarkSamples(samplesLogFile: string, benchmarkF
   }
   writeBenchmarkEntries(
     benchmarkFile,
-    [...entries.values()].sort((a, b) => a.name.localeCompare(b.name))
+    [...entries.values()].sort((a, b) => a.name.localeCompare(b.name)),
   );
 }

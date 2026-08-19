@@ -69,17 +69,17 @@ export function themeCss(themeName: SvgThemeName): string {
     `  --vscode-charts-yellow: ${t.chartsYellow};`,
     // Edge colours — pre-computed from the webview's color-mix() formulas
     `  --svsch-edge-color: ${edgeColor};`,
-    `  --svsch-edge-stacked-back: ${mix(fg, 0.50, bg)};`,
+    `  --svsch-edge-stacked-back: ${mix(fg, 0.5, bg)};`,
     `  --svsch-edge-stacked-middle: ${mix(fg, 0.75, bg)};`,
     `  --svsch-edge-stacked-front: ${fg};`,
     // Interface edge
-    `  --svsch-interface-stripe: ${mix(fg, 0.70, t.chartsBlue)};`,
-    `  --svsch-interface-bg-edge: ${mix(edgeColor, 0.50, bg)};`,
+    `  --svsch-interface-stripe: ${mix(fg, 0.7, t.chartsBlue)};`,
+    `  --svsch-interface-bg-edge: ${mix(edgeColor, 0.5, bg)};`,
     // Node fills / strokes derived from chart colours
     `  --svsch-mux-fill: ${mix(t.chartsPurple, 0.12, bg)};`,
     `  --svsch-alu-fill: ${mix(t.chartsOrange, 0.14, bg)};`,
     `  --svsch-interface-fill: ${mix(t.chartsBlue, 0.12, bg)};`,
-    `  --svsch-interface-stroke: ${mix(t.chartsBlue, 0.60, fg)};`,
+    `  --svsch-interface-stroke: ${mix(t.chartsBlue, 0.6, fg)};`,
     `  --svsch-interface-port-fill: ${mix(t.chartsBlue, 0.28, bg)};`,
     `  --svsch-port-skin-fill: ${mix(t.chartsYellow, 0.36, bg)};`,
     `  --svsch-port-skin-stroke: ${t.chartsYellow};`,
@@ -92,6 +92,6 @@ export function themeCss(themeName: SvgThemeName): string {
     `  --svsch-node-header: ${t.editorWidgetBackground};`,
     `  --svsch-port-fill: ${mix(t.chartsYellow, 0.36, bg)};`,
     `  --svsch-port-border: ${t.chartsYellow};`,
-    '}'
+    '}',
   ].join('\n');
 }
