@@ -246,7 +246,7 @@
       "target": "mux:inout_array_alias:a_elem_0:ternary",
       "sourceHandle": "out:_0_",
       "targetHandle": "sel",
-      "path": "M 619.5 54 L 726 54 L 726 270 L 894 270 L 894 312"
+      "path": "M 610.5 54 L 726 54 L 726 270 L 894 270 L 894 312"
     },
     {
       "id": "edge:bus:inout_array_alias:drive_enable:mux:inout_array_alias:a_elem_1:ternary:drive_enable_1_",
@@ -254,7 +254,7 @@
       "target": "mux:inout_array_alias:a_elem_1:ternary",
       "sourceHandle": "out:_1_",
       "targetHandle": "sel",
-      "path": "M 619.5 102 L 894 102 L 894 168"
+      "path": "M 610.5 102 L 894 102 L 894 168"
     },
     {
       "id": "edge:literal:inout_array_alias:8_hff:8_hff:mux:inout_array_alias:a_elem_0:ternary:8_hff",
@@ -310,7 +310,7 @@
       "target": "port:inout_array_alias:y",
       "sourceHandle": "port:a",
       "targetHandle": "port:y",
-      "path": "M 1699.5 270 L 1888.5 270"
+      "path": "M 1690.5 270 L 1888.5 270"
     },
     {
       "id": "edge:port:inout_array_alias:drive_enable:bus:inout_array_alias:drive_enable:drive_enable",
@@ -318,7 +318,7 @@
       "target": "bus:inout_array_alias:drive_enable",
       "sourceHandle": "port:drive_enable",
       "targetHandle": "in:drive_enable",
-      "path": "M 235.5 126 L 464 126"
+      "path": "M 226.5 126 L 464 126"
     }
   ]
 }

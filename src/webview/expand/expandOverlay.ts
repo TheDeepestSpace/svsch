@@ -1,6 +1,11 @@
 import type { Edge } from '@xyflow/react';
 import { diagramSizing } from '../../diagram/constants';
-import type { DiagramEdge, DiagramPort, PositionedGenerateRegion, PositionedNode } from '../../ir/types';
+import type {
+  DiagramEdge,
+  DiagramPort,
+  PositionedGenerateRegion,
+  PositionedNode,
+} from '../../ir/types';
 import type { HdlFlowNode } from '../nodes/types';
 import type { RouteChange } from '../orthogonal';
 import { isExpandNamespacedId, type SpliceResult } from './splice';
@@ -17,19 +22,34 @@ export { isExpandNamespacedId };
 const SPLICE_NODE_Z_INDEX = 2;
 const EXPAND_GHOST_Z_INDEX = 0;
 
-/** CSS class marking an expanded instance's own node as a dimmed backdrop — see applyActiveSplices. */
+/**
+ * CSS class marking an expanded instance's own node as a dimmed backdrop —
+ * see applyActiveSplices.
+ */
 export const EXPAND_GHOST_CLASS = 'hdl-node-expand-ghost';
 
-/** One currently-expanded instance's live overlay state, cached independently of the server-driven `view` so it survives unrelated view refreshes (see main.tsx's spliceMapRef). */
+/**
+ * One currently-expanded instance's live overlay state, cached independently
+ * of the server-driven `view` so it survives unrelated view refreshes (see
+ * main.tsx's spliceMapRef).
+ */
 export interface ActiveSplice extends SpliceResult {
   namespace: string;
-  /** Id this splice's instance node has *in the current flow `nodes` array* — the plain instance id at the top level, or the enclosing splice's namespaced id for a nested Expand. */
+  /**
+   * Id this splice's instance node has *in the current flow `nodes` array* —
+   * the plain instance id at the top level, or the enclosing splice's
+   * namespaced id for a nested Expand.
+   */
   flowInstanceId: string;
   parentModuleName: string;
   instanceId: string;
   childModuleName: string;
   topLevel: boolean;
-  /** The instance's position at the moment this splice's node positions were computed — diffed against its current position on every reattachment to rigidly translate the whole splice if the instance has since moved. */
+  /**
+   * The instance's position at the moment this splice's node positions were
+   * computed — diffed against its current position on every reattachment to
+   * rigidly translate the whole splice if the instance has since moved.
+   */
   anchorInstancePosition: { x: number; y: number };
   /**
    * The instance node's own `sizeOverride` (usually undefined) as it arrived
@@ -47,11 +67,15 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
     type: 'hdl',
     position: node.position,
     zIndex: SPLICE_NODE_Z_INDEX,
-    data: { node, moduleName, arrayConnections: [] }
+    data: { node, moduleName, arrayConnections: [] },
   };
 }
 
-function toFlowEdge(edge: DiagramEdge, moduleName: string, onRouteChange: (changes: RouteChange[], commit: boolean) => void): Edge {
+function toFlowEdge(
+  edge: DiagramEdge,
+  moduleName: string,
+  onRouteChange: (changes: RouteChange[], commit: boolean) => void,
+): Edge {
   return {
     id: edge.id,
     source: edge.source,
@@ -67,8 +91,8 @@ function toFlowEdge(edge: DiagramEdge, moduleName: string, onRouteChange: (chang
       edge,
       moduleName,
       isNetLeader: true,
-      netEdgeIds: [edge.id]
-    }
+      netEdgeIds: [edge.id],
+    },
   } as Edge;
 }
 
@@ -93,10 +117,10 @@ function dimAsExpandGhost(node: HdlFlowNode, splice: ActiveSplice): HdlFlowNode 
         ...node.data.node,
         sizeOverride: {
           width: Math.ceil(splice.expandedSize.width / grid),
-          height: Math.ceil(splice.expandedSize.height / grid)
-        }
-      }
-    }
+          height: Math.ceil(splice.expandedSize.height / grid),
+        },
+      },
+    },
   };
 }
 
@@ -128,7 +152,7 @@ export function applyActiveSplices(
   baseRegions: PositionedGenerateRegion[],
   splices: Map<string, ActiveSplice>,
   moduleName: string,
-  onRouteChange: (changes: RouteChange[], commit: boolean) => void
+  onRouteChange: (changes: RouteChange[], commit: boolean) => void,
 ): { nodes: HdlFlowNode[]; edges: Edge[]; regions: PositionedGenerateRegion[] } {
   if (splices.size === 0) {
     return { nodes: baseNodes, edges: baseEdges, regions: baseRegions };
@@ -137,7 +161,7 @@ export function applyActiveSplices(
   // Shallowest first: a nested splice's own instance node only exists in
   // `nodes` once its parent splice's content has already been merged in.
   const ordered = [...splices.values()].sort(
-    (a, b) => a.namespace.split('::').length - b.namespace.split('::').length
+    (a, b) => a.namespace.split('::').length - b.namespace.split('::').length,
   );
 
   let nodes = baseNodes;
@@ -155,12 +179,24 @@ export function applyActiveSplices(
 
     const dx = instanceNode.position.x - splice.anchorInstancePosition.x;
     const dy = instanceNode.position.y - splice.anchorInstancePosition.y;
-    const translatedNodes = dx === 0 && dy === 0
-      ? splice.nodes
-      : splice.nodes.map((node) => ({ ...node, position: { x: node.position.x + dx, y: node.position.y + dy } }));
-    const region = dx === 0 && dy === 0
-      ? splice.region
-      : { ...splice.region, bounds: { ...splice.region.bounds, x: splice.region.bounds.x + dx, y: splice.region.bounds.y + dy } };
+    const translatedNodes =
+      dx === 0 && dy === 0
+        ? splice.nodes
+        : splice.nodes.map((node) => ({
+            ...node,
+            position: { x: node.position.x + dx, y: node.position.y + dy },
+          }));
+    const region =
+      dx === 0 && dy === 0
+        ? splice.region
+        : {
+            ...splice.region,
+            bounds: {
+              ...splice.region.bounds,
+              x: splice.region.bounds.x + dx,
+              y: splice.region.bounds.y + dy,
+            },
+          };
 
     const boundaryIdByPortName = splice.boundaryNodeIdByChildPortName;
     const instancePortNames = portNameById(instanceNode.data.node.ports);
@@ -179,7 +215,7 @@ export function applyActiveSplices(
         target: targetMatches ? boundaryId : edge.target,
         sourceHandle: sourceMatches ? 'outer' : edge.sourceHandle,
         targetHandle: targetMatches ? 'outer' : edge.targetHandle,
-        data: { ...edge.data, routePoints: undefined, waypoint: undefined }
+        data: { ...edge.data, routePoints: undefined, waypoint: undefined },
       };
     });
 
@@ -188,8 +224,10 @@ export function applyActiveSplices(
     // persistence paths can restore it (see ActiveSplice.baseSizeOverride).
     splice.baseSizeOverride = instanceNode.data.node.sizeOverride;
     nodes = [
-      ...nodes.map((node) => (node.id === splice.flowInstanceId ? dimAsExpandGhost(node, splice) : node)),
-      ...translatedNodes.map((n) => toFlowNode(n, moduleName))
+      ...nodes.map((node) =>
+        node.id === splice.flowInstanceId ? dimAsExpandGhost(node, splice) : node,
+      ),
+      ...translatedNodes.map((n) => toFlowNode(n, moduleName)),
     ];
     edges = [...edges, ...splice.edges.map((edge) => toFlowEdge(edge, moduleName, onRouteChange))];
     extraRegions.push(region);
@@ -212,7 +250,7 @@ export function applyActiveSplices(
 export function syncSpliceCache(
   splices: Map<string, ActiveSplice>,
   nodes: HdlFlowNode[],
-  regions: PositionedGenerateRegion[]
+  regions: PositionedGenerateRegion[],
 ): void {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const regionsById = new Map(regions.map((region) => [region.id, region]));
@@ -237,17 +275,24 @@ export function syncSpliceCache(
           x: instanceNode.position.x,
           y: instanceNode.position.y,
           width: splice.expandedSize.width,
-          height: splice.expandedSize.height
-        }
+          height: splice.expandedSize.height,
+        },
       },
       nodes: updatedNodes,
-      anchorInstancePosition: { ...instanceNode.position }
+      anchorInstancePosition: { ...instanceNode.position },
     });
   }
 }
 
-/** Removes a splice and every splice nested inside it (namespace-prefix match), returning the removed set's flow-instance ids so callers can e.g. re-select the collapsed instance. */
-export function removeSpliceAndDescendants(splices: Map<string, ActiveSplice>, namespace: string): void {
+/**
+ * Removes a splice and every splice nested inside it (namespace-prefix
+ * match), returning the removed set's flow-instance ids so callers can e.g.
+ * re-select the collapsed instance.
+ */
+export function removeSpliceAndDescendants(
+  splices: Map<string, ActiveSplice>,
+  namespace: string,
+): void {
   for (const key of [...splices.keys()]) {
     if (key === namespace || key.startsWith(`${namespace}::`)) {
       splices.delete(key);

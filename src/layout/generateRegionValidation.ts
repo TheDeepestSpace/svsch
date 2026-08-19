@@ -5,13 +5,14 @@ type RegionBounds = PositionedGenerateRegion['bounds'];
 
 export const GENERATE_REGION_OVERLAP_WARNING = 'arm blocks overlapping';
 export const GENERATE_REGION_EXTERNAL_NODE_WARNING = 'node does not belong to arm block';
-export const GENERATE_REGION_EXTERNAL_BLOCK_WARNING = 'this block does not belong to a generate arm block';
+export const GENERATE_REGION_EXTERNAL_BLOCK_WARNING =
+  'this block does not belong to a generate arm block';
 export const GENERATE_BLOCK_OVERLAP_WARNING = 'generate blocks overlapping';
 export const GENERATE_BLOCK_EXTERNAL_NODE_WARNING = 'block does not belong to this generate block';
 
 export function annotateGenerateRegionWarnings(
   regions: PositionedGenerateRegion[],
-  nodes: PositionedNode[]
+  nodes: PositionedNode[],
 ): PositionedGenerateRegion[] {
   if (regions.length === 0) return regions;
 
@@ -38,17 +39,26 @@ export function annotateGenerateRegionWarnings(
       const b = regions[j];
       if (isAncestor(a.id, b.id) || isAncestor(b.id, a.id)) continue;
       if (rectsOverlap(a.bounds, b.bounds)) {
-        addWarning(a.id, a.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING);
-        addWarning(b.id, b.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING);
+        addWarning(
+          a.id,
+          a.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING,
+        );
+        addWarning(
+          b.id,
+          b.isGenerateBlock ? GENERATE_BLOCK_OVERLAP_WARNING : GENERATE_REGION_OVERLAP_WARNING,
+        );
       }
     }
   }
 
   const { regionIds: regionsWithExternalNode } = classifyExternalBlocks(regions, nodes);
   for (const regionId of regionsWithExternalNode) {
-    addWarning(regionId, byId.get(regionId)?.isGenerateBlock
-      ? GENERATE_BLOCK_EXTERNAL_NODE_WARNING
-      : GENERATE_REGION_EXTERNAL_NODE_WARNING);
+    addWarning(
+      regionId,
+      byId.get(regionId)?.isGenerateBlock
+        ? GENERATE_BLOCK_EXTERNAL_NODE_WARNING
+        : GENERATE_REGION_EXTERNAL_NODE_WARNING,
+    );
   }
 
   return regions.map((region) => {
@@ -56,9 +66,7 @@ export function annotateGenerateRegionWarnings(
     return {
       ...region,
       invalid: validationWarnings.length > 0 || undefined,
-      warningNote: validationWarnings.length > 0
-        ? validationWarnings.join('; ')
-        : undefined
+      warningNote: validationWarnings.length > 0 ? validationWarnings.join('; ') : undefined,
     };
   });
 }
@@ -66,7 +74,7 @@ export function annotateGenerateRegionWarnings(
 // Ids of blocks whose visual bounds overlap a generate arm they do not belong to.
 export function findExternalBlockIds(
   regions: PositionedGenerateRegion[],
-  nodes: PositionedNode[]
+  nodes: PositionedNode[],
 ): Set<string> {
   return classifyExternalBlocks(regions, nodes).nodeIds;
 }
@@ -76,7 +84,7 @@ export function findExternalBlockIds(
 // by the region (nor a descendant) yet its bounds overlap the region bounds.
 function classifyExternalBlocks(
   regions: PositionedGenerateRegion[],
-  nodes: PositionedNode[]
+  nodes: PositionedNode[],
 ): { regionIds: Set<string>; nodeIds: Set<string> } {
   const regionIds = new Set<string>();
   const nodeIds = new Set<string>();
@@ -105,7 +113,7 @@ function classifyExternalBlocks(
         x: node.position.x,
         y: node.position.y,
         width: size.width,
-        height: size.height
+        height: size.height,
       };
       if (rectsOverlap(nodeBounds, region.bounds)) {
         regionIds.add(region.id);
@@ -117,7 +125,10 @@ function classifyExternalBlocks(
 }
 
 // The region itself plus every region nested under it.
-function descendantRegionIdSet(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): Set<string> {
+function descendantRegionIdSet(
+  region: PositionedGenerateRegion,
+  regions: PositionedGenerateRegion[],
+): Set<string> {
   const ids = new Set<string>([region.id]);
   let changed = true;
   while (changed) {
@@ -132,7 +143,10 @@ function descendantRegionIdSet(region: PositionedGenerateRegion, regions: Positi
   return ids;
 }
 
-function descendantNodeIds(region: PositionedGenerateRegion, regions: PositionedGenerateRegion[]): string[] {
+function descendantNodeIds(
+  region: PositionedGenerateRegion,
+  regions: PositionedGenerateRegion[],
+): string[] {
   const ids = new Set(region.nodeIds);
   let changed = true;
   while (changed) {

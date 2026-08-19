@@ -15,12 +15,15 @@ describe('output as source', () => {
     // Find the edge driving 'i' (which is used by 'r')
     // 'i' should be driven by 'a.b' (or a select node from 'a')
     // NOT by 'c'
-    
-    const cPortAsSource = mod.edges.filter(e => e.source === 'port:output_as_source:c');
+
+    const cPortAsSource = mod.edges.filter((e) => e.source === 'port:output_as_source:c');
     expect(cPortAsSource.length, 'Output port should not be a source for internal wires').toBe(0);
 
-    const busCIncoming = mod.edges.filter(e => e.target === 'bus:output_as_source:c');
-    expect(busCIncoming.length, 'Bus node for "c" should have an incoming edge from its driver').toBeGreaterThan(0);
+    const busCIncoming = mod.edges.filter((e) => e.target === 'bus:output_as_source:c');
+    expect(
+      busCIncoming.length,
+      'Bus node for "c" should have an incoming edge from its driver',
+    ).toBeGreaterThan(0);
     expect(busCIncoming[0].source).toBe('struct:output_as_source:a');
   });
 });

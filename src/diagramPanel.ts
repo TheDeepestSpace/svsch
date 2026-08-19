@@ -3,9 +3,41 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { resolveSignalSource } from './core';
 import { logger } from './logger';
-import type { DesignGraph, DesignModule, DiagramViewModel, PositionedGenerateRegion, PositionedNode, SourceRange, DiagramEdge } from './ir/types';
-import { buildViewModel, firstOpenAutoCutEdges, mergeEdgeRoutePoints, mergeEdgeWaypoint, mergeFirstOpenNetCuts, mergeNetCut, mergeNetCuts, mergeNodePositions, mergeRegionBounds, mergeRelayoutSelection, mergeRerouteEdges, mergeRerouteLayout, mergeRerouteSingleEdge, removeNetCut, renameCutNet, resetCutLabelPosition, revertCutNetLabel, revertNodeSizes } from './layout/mergeLayout';
-import { LayoutStore, type SavedExpandedInstanceLayout, type SavedLayout, type SavedNodeLayout } from './storage/layoutStore';
+import type {
+  DesignGraph,
+  DesignModule,
+  DiagramViewModel,
+  PositionedGenerateRegion,
+  PositionedNode,
+  SourceRange,
+  DiagramEdge,
+} from './ir/types';
+import {
+  buildViewModel,
+  firstOpenAutoCutEdges,
+  mergeEdgeRoutePoints,
+  mergeEdgeWaypoint,
+  mergeFirstOpenNetCuts,
+  mergeNetCut,
+  mergeNetCuts,
+  mergeNodePositions,
+  mergeRegionBounds,
+  mergeRelayoutSelection,
+  mergeRerouteEdges,
+  mergeRerouteLayout,
+  mergeRerouteSingleEdge,
+  removeNetCut,
+  renameCutNet,
+  resetCutLabelPosition,
+  revertCutNetLabel,
+  revertNodeSizes,
+} from './layout/mergeLayout';
+import {
+  LayoutStore,
+  type SavedExpandedInstanceLayout,
+  type SavedLayout,
+  type SavedNodeLayout,
+} from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -26,11 +58,31 @@ export interface ExpandInstancePayload {
 
 type WebviewMessage =
   | { type: 'ready' }
-  | { type: 'layoutChanged'; moduleName: string; nodes: PositionedNode[]; regions?: PositionedGenerateRegion[] }
+  | {
+      type: 'layoutChanged';
+      moduleName: string;
+      nodes: PositionedNode[];
+      regions?: PositionedGenerateRegion[];
+    }
   | { type: 'regionLayoutChanged'; moduleName: string; regions: PositionedGenerateRegion[] }
-  | { type: 'edgeLayoutChanged'; moduleName: string; edgeId: string; waypoint: { x: number; y: number } }
-  | { type: 'edgeRouteChanged'; moduleName: string; edgeId: string; routePoints: Array<{ x: number; y: number }> }
-  | { type: 'edgeRoutesChanged'; moduleName: string; changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>; nodes?: PositionedNode[] }
+  | {
+      type: 'edgeLayoutChanged';
+      moduleName: string;
+      edgeId: string;
+      waypoint: { x: number; y: number };
+    }
+  | {
+      type: 'edgeRouteChanged';
+      moduleName: string;
+      edgeId: string;
+      routePoints: Array<{ x: number; y: number }>;
+    }
+  | {
+      type: 'edgeRoutesChanged';
+      moduleName: string;
+      changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>;
+      nodes?: PositionedNode[];
+    }
   | { type: 'openModule'; moduleName: string }
   | { type: 'resetLayout'; moduleName: string }
   | { type: 'rerouteLayout'; moduleName: string; nodes: PositionedNode[] }
@@ -57,7 +109,15 @@ type WebviewMessage =
       instanceOrigin?: { x: number; y: number };
     }
   | { type: 'navigateToSource'; source: SourceRange }
-  | { type: 'navigateToRegion'; region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange } }
+  | {
+      type: 'navigateToRegion';
+      region: {
+        kind: string;
+        isGenerateBlock?: boolean;
+        source?: SourceRange;
+        bodySource?: SourceRange;
+      };
+    }
   | { type: 'navigateToSignal'; edge: DiagramEdge }
   | { type: 'exportSvg' };
 
@@ -74,7 +134,7 @@ export class DiagramPanel {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly elaborationService: ElaborationService,
-    private readonly onDispose: () => void
+    private readonly onDispose: () => void,
   ) {
     this.elaborationInvalidationDisposable = elaborationService.onDidInvalidate((live) => {
       if (this.panel && workspaceRootPath()) {
@@ -103,7 +163,7 @@ export class DiagramPanel {
     const moduleLayout = await store.readModuleLayout(moduleName);
     this.layout = {
       version: 1,
-      modules: { ...this.layout.modules, [moduleName]: moduleLayout }
+      modules: { ...this.layout.modules, [moduleName]: moduleLayout },
     };
   }
 
@@ -117,13 +177,22 @@ export class DiagramPanel {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
     } else {
-      this.panel = vscode.window.createWebviewPanel('svsch.diagram', 'SVSCH Diagram', vscode.ViewColumn.Beside, {
-        enableScripts: true,
-        retainContextWhenHidden: true,
-        localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')]
-      });
+      this.panel = vscode.window.createWebviewPanel(
+        'svsch.diagram',
+        'SVSCH Diagram',
+        vscode.ViewColumn.Beside,
+        {
+          enableScripts: true,
+          retainContextWhenHidden: true,
+          localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'media')],
+        },
+      );
       this.panel.webview.html = this.html(this.panel.webview);
-      this.panel.webview.onDidReceiveMessage((message: WebviewMessage) => this.handleMessage(message), undefined, this.context.subscriptions);
+      this.panel.webview.onDidReceiveMessage(
+        (message: WebviewMessage) => this.handleMessage(message),
+        undefined,
+        this.context.subscriptions,
+      );
       this.panel.onDidDispose(() => this.dispose(), undefined, this.context.subscriptions);
     }
 
@@ -156,9 +225,10 @@ export class DiagramPanel {
       }
       this.graph = graph;
 
-      this.currentModule = this.currentModule && this.graph.modules[this.currentModule]
-        ? this.currentModule
-        : this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '';
+      this.currentModule =
+        this.currentModule && this.graph.modules[this.currentModule]
+          ? this.currentModule
+          : (this.graph.rootModules[0] ?? Object.keys(this.graph.modules)[0] ?? '');
 
       const currentModule = this.currentModule ? this.graph.modules[this.currentModule] : undefined;
       if (this.currentModule && currentModule && isListOnlyPlaceholder(currentModule)) {
@@ -205,9 +275,14 @@ export class DiagramPanel {
     // SavedExpandedInstanceLayout) — "Reset Layout" should clear those too,
     // not just leave them as orphaned files a future re-expand of the same
     // instance would silently pick back up.
-    const moduleLayout = this.layout.modules[this.currentModule] ?? await store.readModuleLayout(this.currentModule);
+    const moduleLayout =
+      this.layout.modules[this.currentModule] ?? (await store.readModuleLayout(this.currentModule));
     const expandedInstanceIds = Object.keys(moduleLayout.expanded ?? {});
-    await Promise.all(expandedInstanceIds.map((instanceId) => store.resetExpandedInstanceLayout(this.currentModule!, instanceId)));
+    await Promise.all(
+      expandedInstanceIds.map((instanceId) =>
+        store.resetExpandedInstanceLayout(this.currentModule!, instanceId),
+      ),
+    );
 
     await store.resetModuleLayout(this.currentModule);
     const { [this.currentModule]: _removed, ...remainingModules } = this.layout.modules;
@@ -326,7 +401,7 @@ export class DiagramPanel {
         message.nodes,
         message.bounds,
         message.fixed,
-        message.instanceOrigin
+        message.instanceOrigin,
       );
       return;
     }
@@ -361,9 +436,33 @@ export class DiagramPanel {
       let reactFlowCss = '';
       try {
         const paths = [
-          path.join(this.context.extensionUri.fsPath, 'node_modules', '@xyflow', 'react', 'dist', 'style.css'),
-          path.join(this.context.extensionUri.fsPath, '..', 'node_modules', '@xyflow', 'react', 'dist', 'style.css'),
-          path.join(this.context.extensionUri.fsPath, '..', '..', 'node_modules', '@xyflow', 'react', 'dist', 'style.css')
+          path.join(
+            this.context.extensionUri.fsPath,
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
+          path.join(
+            this.context.extensionUri.fsPath,
+            '..',
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
+          path.join(
+            this.context.extensionUri.fsPath,
+            '..',
+            '..',
+            'node_modules',
+            '@xyflow',
+            'react',
+            'dist',
+            'style.css',
+          ),
         ];
         for (const p of paths) {
           if (fs.existsSync(p)) {
@@ -381,7 +480,10 @@ export class DiagramPanel {
         if (fs.existsSync(p)) {
           extensionCss = fs.readFileSync(p, 'utf8');
         } else {
-          logger.log(`Warning: ${p} not found; the exported SVG will have no diagram styling. Run "npm run build:webview".`);
+          logger.log(
+            `Warning: ${p} not found; the exported SVG will have no diagram styling. ` +
+              `Run "npm run build:webview".`,
+          );
         }
       } catch (err) {
         logger.log(`Warning: Could not load extension CSS for export: ${err}`);
@@ -389,16 +491,22 @@ export class DiagramPanel {
 
       const viewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
       let svg = renderSvg(viewModel, {
-        theme: vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
+        theme:
+          vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',
         reactFlowCss,
-        extensionCss
+        extensionCss,
       });
       if (vscode.workspace.getConfiguration('svsch').get<boolean>('minifySvg', true)) {
         svg = await minifySvg(svg);
       }
 
-      const defaultUri = vscode.Uri.file(path.join(workspaceRootPath() ?? '.', `${this.currentModule.replace(/[^a-z0-9]/gi, '_')}.svg`));
-      
+      const defaultUri = vscode.Uri.file(
+        path.join(
+          workspaceRootPath() ?? '.',
+          `${this.currentModule.replace(/[^a-z0-9]/gi, '_')}.svg`,
+        ),
+      );
+
       // In tests, we bypass the dialog to avoid hanging
       if (process.env.SVSCH_TEST) {
         fs.writeFileSync(defaultUri.fsPath, svg);
@@ -407,8 +515,8 @@ export class DiagramPanel {
 
       const uri = await vscode.window.showSaveDialog({
         defaultUri,
-        filters: { 'SVG': ['svg'] },
-        title: 'Export Diagram as SVG'
+        filters: { SVG: ['svg'] },
+        title: 'Export Diagram as SVG',
       });
 
       if (uri) {
@@ -434,30 +542,41 @@ export class DiagramPanel {
       startLine,
       source.startColumn ?? 0,
       endLine,
-      source.endColumn ?? document.lineAt(endLine).text.length
+      source.endColumn ?? document.lineAt(endLine).text.length,
     );
     await this.revealDocumentRange(document, range);
   }
 
-  private async openSourceDocument(source: SourceRange): Promise<{ document: vscode.TextDocument } | undefined> {
+  private async openSourceDocument(
+    source: SourceRange,
+  ): Promise<{ document: vscode.TextDocument } | undefined> {
     const workspaceRoot = workspaceRootPath();
     if (!workspaceRoot || !source.file) {
       return undefined;
     }
-    const uri = vscode.Uri.file(vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath);
+    const uri = vscode.Uri.file(
+      vscode.Uri.joinPath(vscode.Uri.file(workspaceRoot), source.file).fsPath,
+    );
     const document = await vscode.workspace.openTextDocument(uri);
     return { document };
   }
 
-  private async revealDocumentRange(document: vscode.TextDocument, range: vscode.Range): Promise<void> {
+  private async revealDocumentRange(
+    document: vscode.TextDocument,
+    range: vscode.Range,
+  ): Promise<void> {
     // Find if the document is already open in any tab group
     const tab = vscode.window.tabGroups.all
       .flatMap((group) => group.tabs)
-      .find((tab) => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === document.uri.toString());
+      .find(
+        (tab) =>
+          tab.input instanceof vscode.TabInputText &&
+          tab.input.uri.toString() === document.uri.toString(),
+      );
 
     await vscode.window.showTextDocument(document, {
       viewColumn: tab?.group.viewColumn ?? vscode.ViewColumn.Active,
-      selection: range
+      selection: range,
     });
   }
 
@@ -465,7 +584,12 @@ export class DiagramPanel {
   // whole generate statement; an arm's UHDM ranges only give its expression and a
   // point inside its body, so the arm's begin..end block is recovered from the
   // document text to highlight the full "expression + body".
-  private async navigateToRegion(region: { kind: string; isGenerateBlock?: boolean; source?: SourceRange; bodySource?: SourceRange }): Promise<void> {
+  private async navigateToRegion(region: {
+    kind: string;
+    isGenerateBlock?: boolean;
+    source?: SourceRange;
+    bodySource?: SourceRange;
+  }): Promise<void> {
     const source = region.source ?? region.bodySource;
     if (!source?.file) {
       return;
@@ -501,7 +625,11 @@ export class DiagramPanel {
     vscode.window.showWarningMessage('This is an internal wire.');
   }
 
-  private async saveLayout(moduleName: string, nodes: PositionedNode[], regions?: PositionedGenerateRegion[]): Promise<void> {
+  private async saveLayout(
+    moduleName: string,
+    nodes: PositionedNode[],
+    regions?: PositionedGenerateRegion[],
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -514,7 +642,10 @@ export class DiagramPanel {
     await this.persistModuleLayout(store, moduleName);
   }
 
-  private async saveRegionLayout(moduleName: string, regions: PositionedGenerateRegion[]): Promise<void> {
+  private async saveRegionLayout(
+    moduleName: string,
+    regions: PositionedGenerateRegion[],
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -535,7 +666,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async rerouteSingleEdge(moduleName: string, edgeId: string, nodes: PositionedNode[]): Promise<void> {
+  private async rerouteSingleEdge(
+    moduleName: string,
+    edgeId: string,
+    nodes: PositionedNode[],
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -546,7 +681,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async rerouteSelectedEdges(moduleName: string, edgeIds: string[], nodes: PositionedNode[]): Promise<void> {
+  private async rerouteSelectedEdges(
+    moduleName: string,
+    edgeIds: string[],
+    nodes: PositionedNode[],
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -557,7 +696,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async relayoutSelection(moduleName: string, nodeIds: string[], nodes: PositionedNode[]): Promise<void> {
+  private async relayoutSelection(
+    moduleName: string,
+    nodeIds: string[],
+    nodes: PositionedNode[],
+  ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
     if (!store || !designModule || !this.graph) {
@@ -581,7 +724,9 @@ export class DiagramPanel {
       // original selection's centroid, and commit that as the new fixed
       // position — the same as if the user had dragged it there by hand.
       const relaidView = await buildViewModel(this.graph, moduleName, this.layout);
-      const relaidCentroid = centroidOfPositions(relaidView.nodes.filter((node) => selected.has(node.id)));
+      const relaidCentroid = centroidOfPositions(
+        relaidView.nodes.filter((node) => selected.has(node.id)),
+      );
       if (relaidCentroid) {
         const dx = originalCentroid.x - relaidCentroid.x;
         const dy = originalCentroid.y - relaidCentroid.y;
@@ -590,7 +735,7 @@ export class DiagramPanel {
           .map((node) => ({
             ...node,
             position: { x: node.position.x + dx, y: node.position.y + dy },
-            fixed: true
+            fixed: true,
           }));
         this.layout = mergeNodePositions(this.layout, moduleName, anchoredNodes);
       }
@@ -600,7 +745,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async saveEdgeLayout(moduleName: string, edgeId: string, waypoint: { x: number; y: number }): Promise<void> {
+  private async saveEdgeLayout(
+    moduleName: string,
+    edgeId: string,
+    waypoint: { x: number; y: number },
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -610,7 +759,11 @@ export class DiagramPanel {
     await this.persistModuleLayout(store, moduleName);
   }
 
-  private async saveEdgeRoute(moduleName: string, edgeId: string, routePoints: Array<{ x: number; y: number }>): Promise<void> {
+  private async saveEdgeRoute(
+    moduleName: string,
+    edgeId: string,
+    routePoints: Array<{ x: number; y: number }>,
+  ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
@@ -624,7 +777,7 @@ export class DiagramPanel {
   private async saveEdgeRoutes(
     moduleName: string,
     changes: Array<{ edgeId: string; routePoints: Array<{ x: number; y: number }> }>,
-    nodes?: PositionedNode[]
+    nodes?: PositionedNode[],
   ): Promise<void> {
     const store = this.getStore();
     if (!store) {
@@ -640,7 +793,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async saveNetCut(moduleName: string, edge: DiagramEdge, nodes: PositionedNode[]): Promise<void> {
+  private async saveNetCut(
+    moduleName: string,
+    edge: DiagramEdge,
+    nodes: PositionedNode[],
+  ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
     if (!store || !designModule) {
@@ -653,7 +810,11 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  private async saveNetCuts(moduleName: string, edges: DiagramEdge[], nodes: PositionedNode[]): Promise<void> {
+  private async saveNetCuts(
+    moduleName: string,
+    edges: DiagramEdge[],
+    nodes: PositionedNode[],
+  ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
     if (!store || !designModule) {
@@ -703,10 +864,14 @@ export class DiagramPanel {
     // then anchor that result. Later ties must not re-run ELK over unrelated
     // components and make already-settled portions of the diagram jump.
     const tiedView = await buildViewModel(graph, moduleName, this.layout);
-    this.layout = mergeNodePositions(this.layout, moduleName, tiedView.nodes.map((node) => ({
-      ...node,
-      fixed: node.kind === 'netLabel' ? node.fixed : true
-    })));
+    this.layout = mergeNodePositions(
+      this.layout,
+      moduleName,
+      tiedView.nodes.map((node) => ({
+        ...node,
+        fixed: node.kind === 'netLabel' ? node.fixed : true,
+      })),
+    );
     await this.persistModuleLayout(store, moduleName);
     await this.postView();
   }
@@ -741,7 +906,11 @@ export class DiagramPanel {
   // same data `openModule` already uses) plus any previously-saved splice
   // snapshot for this specific instance, and to persist the `expanded` flag
   // so a reopened module knows to re-request this on load.
-  private async requestExpandInstance(moduleName: string, instanceId: string, topLevel: boolean): Promise<void> {
+  private async requestExpandInstance(
+    moduleName: string,
+    instanceId: string,
+    topLevel: boolean,
+  ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
     if (!store || !designModule || !this.panel) {
@@ -781,11 +950,20 @@ export class DiagramPanel {
     }
 
     const savedLayout = await store.readExpandedInstanceLayout(moduleName, instanceId);
-    const payload: ExpandInstancePayload = { instanceId, childModuleName, module: childModule, savedLayout };
+    const payload: ExpandInstancePayload = {
+      instanceId,
+      childModuleName,
+      module: childModule,
+      savedLayout,
+    };
     await this.panel.webview.postMessage({ type: 'expandInstanceData', moduleName, payload });
   }
 
-  private async collapseInstance(moduleName: string, instanceId: string, topLevel: boolean): Promise<void> {
+  private async collapseInstance(
+    moduleName: string,
+    instanceId: string,
+    topLevel: boolean,
+  ): Promise<void> {
     if (!topLevel) {
       return;
     }
@@ -805,13 +983,19 @@ export class DiagramPanel {
     nodes: Record<string, SavedNodeLayout>,
     bounds?: { x: number; y: number; width: number; height: number },
     fixed?: boolean,
-    instanceOrigin?: { x: number; y: number }
+    instanceOrigin?: { x: number; y: number },
   ): Promise<void> {
     const store = this.getStore();
     if (!store) {
       return;
     }
-    await store.writeExpandedInstanceLayout(moduleName, instanceId, { childModuleName, nodes, bounds, fixed, instanceOrigin });
+    await store.writeExpandedInstanceLayout(moduleName, instanceId, {
+      childModuleName,
+      nodes,
+      bounds,
+      fixed,
+      instanceOrigin,
+    });
   }
 
   private postView(): Promise<void> {
@@ -827,15 +1011,12 @@ export class DiagramPanel {
     const panel = this.panel;
     const graph = this.graph;
     const moduleName = this.currentModule;
-    const isCurrentView = () => (
-      this.panel === panel
-      && this.graph === graph
-      && this.currentModule === moduleName
-    );
+    const isCurrentView = () =>
+      this.panel === panel && this.graph === graph && this.currentModule === moduleName;
     const store = this.getStore();
     if (store) {
-      const isFirstOpen = !this.layout.modules[moduleName]
-        && !(await store.hasModuleLayout(moduleName));
+      const isFirstOpen =
+        !this.layout.modules[moduleName] && !(await store.hasModuleLayout(moduleName));
       if (!isCurrentView()) {
         return;
       }
@@ -867,14 +1048,14 @@ export class DiagramPanel {
       type: 'graph',
       view,
       modules: Object.keys(graph.modules),
-      expandedInstanceIds
+      expandedInstanceIds,
     });
   }
 
   private async postStatus(status: 'idle' | 'rebuilding'): Promise<void> {
     await this.panel?.webview.postMessage({
       type: 'status',
-      status
+      status,
     });
   }
 
@@ -883,11 +1064,16 @@ export class DiagramPanel {
     const styleUri = this.webviewMediaUri(webview, 'webview.css');
     logger.log(`Webview URIs: script=${scriptUri.toString()}, style=${styleUri.toString()}`);
     const nonce = String(Date.now());
+    const csp =
+      `default-src 'none'; connect-src ${webview.cspSource} https:; ` +
+      `font-src ${webview.cspSource}; img-src ${webview.cspSource} data:; ` +
+      `style-src ${webview.cspSource} 'unsafe-inline'; ` +
+      `script-src 'nonce-${nonce}' ${webview.cspSource};`;
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src ${webview.cspSource} https:; font-src ${webview.cspSource}; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' ${webview.cspSource};">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="${styleUri}" rel="stylesheet">
   <title>SVSCH Diagram</title>
@@ -916,7 +1102,12 @@ function workspaceRootPath(): string | undefined {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 }
 
-function setInstanceExpanded(layout: SavedLayout, moduleName: string, instanceId: string, isExpanded: boolean): SavedLayout {
+function setInstanceExpanded(
+  layout: SavedLayout,
+  moduleName: string,
+  instanceId: string,
+  isExpanded: boolean,
+): SavedLayout {
   const moduleLayout = layout.modules[moduleName] ?? { nodes: {} };
   const expanded = { ...(moduleLayout.expanded ?? {}) };
   if (isExpanded) {
@@ -926,15 +1117,20 @@ function setInstanceExpanded(layout: SavedLayout, moduleName: string, instanceId
   }
   return {
     version: 1,
-    modules: { ...layout.modules, [moduleName]: { ...moduleLayout, expanded } }
+    modules: { ...layout.modules, [moduleName]: { ...moduleLayout, expanded } },
   };
 }
 
-function centroidOfPositions(nodes: Array<{ position: { x: number; y: number } }>): { x: number; y: number } | undefined {
+function centroidOfPositions(
+  nodes: Array<{ position: { x: number; y: number } }>,
+): { x: number; y: number } | undefined {
   if (nodes.length === 0) {
     return undefined;
   }
-  const sum = nodes.reduce((acc, node) => ({ x: acc.x + node.position.x, y: acc.y + node.position.y }), { x: 0, y: 0 });
+  const sum = nodes.reduce(
+    (acc, node) => ({ x: acc.x + node.position.x, y: acc.y + node.position.y }),
+    { x: 0, y: 0 },
+  );
   return { x: sum.x / nodes.length, y: sum.y / nodes.length };
 }
 
@@ -942,7 +1138,7 @@ function generateArmHighlightRange(
   document: vscode.TextDocument,
   kind: string,
   source: SourceRange,
-  bodySource: SourceRange
+  bodySource: SourceRange,
 ): vscode.Range | undefined {
   const span = generateArmSpan(document.getText(), kind, source, bodySource);
   if (!span) return undefined;

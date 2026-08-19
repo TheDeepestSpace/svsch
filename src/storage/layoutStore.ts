@@ -164,7 +164,7 @@ export class LayoutStore {
     return path.join(
       this.layoutsDir,
       'expanded',
-      `${encodeURIComponent(parentModuleName)}__${encodeURIComponent(instanceId)}.json`
+      `${encodeURIComponent(parentModuleName)}__${encodeURIComponent(instanceId)}.json`,
     );
   }
 
@@ -175,7 +175,10 @@ export class LayoutStore {
    * never been expanded before (the caller falls back to a fresh ELK
    * auto-layout, same as the module's own first-open path).
    */
-  async readExpandedInstanceLayout(parentModuleName: string, instanceId: string): Promise<SavedExpandedInstanceLayout | undefined> {
+  async readExpandedInstanceLayout(
+    parentModuleName: string,
+    instanceId: string,
+  ): Promise<SavedExpandedInstanceLayout | undefined> {
     const filePath = this.expandedInstancePath(parentModuleName, instanceId);
     try {
       const raw = await fs.readFile(filePath, 'utf8');
@@ -184,7 +187,9 @@ export class LayoutStore {
       return { ...parsed, childModuleName: parsed.childModuleName, nodes: parsed.nodes ?? {} };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to read SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+        console.warn(
+          `Unable to read SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`,
+        );
       }
       return undefined;
     }
@@ -194,7 +199,11 @@ export class LayoutStore {
    * Writes (immediately, not debounced — these are far rarer than ordinary
    * node drags) the splice snapshot for one expanded instance.
    */
-  async writeExpandedInstanceLayout(parentModuleName: string, instanceId: string, layout: SavedExpandedInstanceLayout): Promise<void> {
+  async writeExpandedInstanceLayout(
+    parentModuleName: string,
+    instanceId: string,
+    layout: SavedExpandedInstanceLayout,
+  ): Promise<void> {
     const filePath = this.expandedInstancePath(parentModuleName, instanceId);
     const tmpPath = `${filePath}.tmp`;
     try {
@@ -203,18 +212,25 @@ export class LayoutStore {
       await fs.writeFile(tmpPath, content, 'utf8');
       await fs.rename(tmpPath, filePath);
     } catch (error) {
-      console.error(`Failed to write SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+      console.error(
+        `Failed to write SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`,
+      );
       await fs.unlink(tmpPath).catch(() => {});
     }
   }
 
-  /** Deletes a single instance's saved splice snapshot (used when Collapse discards it, e.g. via "Reset Layout"). */
+  /**
+   * Deletes a single instance's saved splice snapshot (used when Collapse
+   * discards it, e.g. via "Reset Layout").
+   */
   async resetExpandedInstanceLayout(parentModuleName: string, instanceId: string): Promise<void> {
     try {
       await fs.unlink(this.expandedInstancePath(parentModuleName, instanceId));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.error(`Failed to reset SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`);
+        console.error(
+          `Failed to reset SVSCH expanded-instance layout for "${parentModuleName}"/"${instanceId}": ${(error as Error).message}`,
+        );
       }
     }
   }
@@ -225,7 +241,9 @@ export class LayoutStore {
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+        console.warn(
+          `Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+        );
       }
       return false;
     }
@@ -239,7 +257,9 @@ export class LayoutStore {
       return { ...parsed, nodes: parsed.nodes ?? {} };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(`Unable to read SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+        console.warn(
+          `Unable to read SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+        );
       }
       return { nodes: {} };
     }
@@ -292,7 +312,9 @@ export class LayoutStore {
         await fs.unlink(this.modulePath(moduleName));
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-          console.error(`Failed to reset SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+          console.error(
+            `Failed to reset SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+          );
         }
       }
     });
@@ -349,7 +371,9 @@ export class LayoutStore {
       await fs.writeFile(tmpPath, content, 'utf8');
       await fs.rename(tmpPath, filePath);
     } catch (error) {
-      console.error(`Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`);
+      console.error(
+        `Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
+      );
       await fs.unlink(tmpPath).catch(() => {});
     }
   }

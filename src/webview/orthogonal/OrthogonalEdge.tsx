@@ -1,13 +1,12 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { type EdgeProps, useEdges, useNodes, useReactFlow } from '@xyflow/react';
 import {
-  Position,
-  type EdgeProps,
-  useEdges,
-  useNodes,
-  useReactFlow
-} from '@xyflow/react';
-import { HdlPosition, type RouteChange, type RouteChangeHandler, type SerializableOrthogonalRoute } from './types';
+  HdlPosition,
+  type RouteChange,
+  type RouteChangeHandler,
+  type SerializableOrthogonalRoute,
+} from './types';
 import type { DiagramEdge, DiagramPort, PositionedNode } from '../../ir/types';
 import { edgeNetKey } from '../../ir/edgeNet';
 import { diagramSizing } from '../../diagram/constants';
@@ -21,10 +20,15 @@ import {
   midpoint,
   pointNearPathStart,
   avoidFeedbackObstacles,
-  type NodeObstacle
+  type NodeObstacle,
 } from './logic';
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
-import { useEdgeOverlapHints, useLineJumpRender, useOptionalLineJumpContext, buildLineJumpRender, type LineJumpHalo } from '../react-flow-line-jumps';
+import {
+  useEdgeOverlapHints,
+  useLineJumpRender,
+  useOptionalLineJumpContext,
+  buildLineJumpRender,
+} from '../react-flow-line-jumps';
 import { InteractionContext } from '../nodes/shared/context';
 import { nodeIsArrayNode } from '../../ir/nodeMetadata';
 import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
@@ -41,7 +45,6 @@ import {
   stackedLayerEdgeClass,
   stackedLayerGradientStopClass,
   type ConvergingStackPath,
-  type PromotedStackFanout
 } from './stackedEdgeGeometry';
 
 interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
@@ -61,7 +64,8 @@ export { moveRouteSegment, normalizeRoutePoints };
 
 function jumpHaloPathsFromPath(path: string): string[] {
   const halos: string[] = [];
-  const pattern = /L (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) Q (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g;
+  const pattern =
+    /L (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) Q (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g;
   let match = pattern.exec(path);
 
   while (match) {
@@ -76,7 +80,10 @@ function pointsAlmostEqual(a: OrthogonalPoint, b: OrthogonalPoint): boolean {
   return Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1;
 }
 
-function routePointsWithAnchoredLeads(points: OrthogonalPoint[], officialPoints: OrthogonalPoint[]): OrthogonalPoint[] {
+function routePointsWithAnchoredLeads(
+  points: OrthogonalPoint[],
+  officialPoints: OrthogonalPoint[],
+): OrthogonalPoint[] {
   const routePoints = points.slice(1, -1);
   const sourceLead = officialPoints[0];
   const targetLead = officialPoints[officialPoints.length - 1];
@@ -134,7 +141,7 @@ function nodeObstacle(node: any): NodeObstacle | undefined {
     x: position.x,
     y: position.y,
     width,
-    height
+    height,
   };
 }
 
@@ -159,7 +166,7 @@ function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
         // net-cut label that's still tracking its port dynamically must not
         // be forced fixed just because it happened to be on screen; only
         // honor an actual existing pin.
-        fixed: diagramNode.kind === 'netLabel' ? diagramNode.fixed : true
+        fixed: diagramNode.kind === 'netLabel' ? diagramNode.fixed : true,
       };
     })
     .filter((node): node is PositionedNode => node !== undefined);
@@ -179,7 +186,7 @@ export function OrthogonalEdge({
   targetHandleId,
   label,
   selected,
-  data
+  data,
 }: EdgeProps): React.ReactElement {
   const reactFlow = useReactFlow();
   const flowNodes = useNodes();
@@ -193,13 +200,13 @@ export function OrthogonalEdge({
     setSelectionHoverActive,
     pendingSelectionAction,
     setPendingSelectionAction,
-    overlayPortalNode
+    overlayPortalNode,
   } = React.useContext(InteractionContext);
 
   const edgeData = data as OrthogonalEdgeData | undefined;
   const diagramEdge = edgeData?.edge;
   const netKey = diagramEdge ? edgeNetKey(diagramEdge) : undefined;
-  
+
   const isStructAggregate = diagramEdge?.metadata?.aggregate === 'struct';
   const isInterfaceAggregate = diagramEdge?.metadata?.aggregate === 'interface';
   const isStacked = diagramEdge?.isStacked === true;
@@ -209,15 +216,27 @@ export function OrthogonalEdge({
   const sourceInputs = sourceNode?.ports.filter(isInputSidePort) ?? [];
   const sourceAggregateInputs = sourceInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const sourceIsComposition = sourceAggregateInputs.length > 1;
-  const sourceIsArray = sourceNode ? (nodeIsArrayNode(sourceNode) || (sourceNode.kind === 'netLabel' && sourceNode.metadata?.cutNet?.isSourceStacked)) : false;
-  const sourceIsArrayComposition = sourceNode?.kind === 'bus' && sourceIsComposition && sourceNode.metadata?.aggregateKind === 'array';
+  const sourceIsArray = sourceNode
+    ? nodeIsArrayNode(sourceNode) ||
+      (sourceNode.kind === 'netLabel' && sourceNode.metadata?.cutNet?.isSourceStacked)
+    : false;
+  const sourceIsArrayComposition =
+    sourceNode?.kind === 'bus' &&
+    sourceIsComposition &&
+    sourceNode.metadata?.aggregateKind === 'array';
 
   const targetNode = targetFlowNode?.data?.node;
   const targetInputs = targetNode?.ports.filter(isInputSidePort) ?? [];
   const targetAggregateInputs = targetInputs.filter((p: DiagramPort) => p.width !== 'interface');
   const targetIsComposition = targetAggregateInputs.length > 1;
-  const targetIsArray = targetNode ? (nodeIsArrayNode(targetNode) || (targetNode.kind === 'netLabel' && targetNode.metadata?.cutNet?.isSourceStacked)) : false;
-  const targetIsArrayBreakout = targetNode?.kind === 'bus' && !targetIsComposition && targetNode.metadata?.aggregateKind === 'array';
+  const targetIsArray = targetNode
+    ? nodeIsArrayNode(targetNode) ||
+      (targetNode.kind === 'netLabel' && targetNode.metadata?.cutNet?.isSourceStacked)
+    : false;
+  const targetIsArrayBreakout =
+    targetNode?.kind === 'bus' &&
+    !targetIsComposition &&
+    targetNode.metadata?.aggregateKind === 'array';
 
   const isPromotedStack = isStacked && targetIsArray && !sourceIsArray;
   const isConvergingStack = isStacked && sourceIsArray && !targetIsArray;
@@ -232,18 +251,20 @@ export function OrthogonalEdge({
 
   const isNetHovered = netKey !== undefined && hoveredNetKey === netKey;
   const isLeaderInNet = edgeData?.isNetLeader === true;
-  const isGroupSelected = (sourceFlowNode?.selected === true) && (targetFlowNode?.selected === true);
+  const isGroupSelected = sourceFlowNode?.selected === true && targetFlowNode?.selected === true;
 
   // Every other cuttable/reroutable wire that's part of the same multi-selection
   // as this one, so hovering or acting on any one of them can target them all.
   const selectedCuttableEdges = React.useMemo(
-    () => flowEdges.filter((edge) => (
-      edge.selected === true
-      && edge.data?.edge !== undefined
-      && edge.data.edge.metadata?.cutStub === undefined
-      && !isExpandNamespacedId(edge.id)
-    )),
-    [flowEdges]
+    () =>
+      flowEdges.filter(
+        (edge) =>
+          edge.selected === true &&
+          edge.data?.edge !== undefined &&
+          edge.data.edge.metadata?.cutStub === undefined &&
+          !isExpandNamespacedId(edge.id),
+      ),
+    [flowEdges],
   );
   const isMultiSelected = selected === true && selectedCuttableEdges.length > 1;
   const isPendingCutTarget = isMultiSelected && pendingSelectionAction === 'cut';
@@ -272,32 +293,36 @@ export function OrthogonalEdge({
     targetHandleId,
     !isDragging,
     sourceNode,
-    targetNode
+    targetNode,
   );
   const obstacles = React.useMemo(
-    () => flowNodes.map(nodeObstacle).filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),
-    [flowNodes]
+    () =>
+      flowNodes
+        .map(nodeObstacle)
+        .filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),
+    [flowNodes],
   );
   const officialPoints = React.useMemo(() => {
-    if (diagramEdge?.metadata?.forceStraight === true || (diagramEdge?.routePoints && diagramEdge.routePoints.length > 0)) {
+    if (
+      diagramEdge?.metadata?.forceStraight === true ||
+      (diagramEdge?.routePoints && diagramEdge.routePoints.length > 0)
+    ) {
       return normalizedOfficialPoints;
     }
     return avoidFeedbackObstacles(
       normalizedOfficialPoints,
       obstacles,
       sourcePosition as unknown as HdlPosition,
-      targetPosition as unknown as HdlPosition
+      targetPosition as unknown as HdlPosition,
     );
   }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
 
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
-  const targetHdlPosition = forceStraight && isVertical
-    ? HdlPosition.Top
-    : targetPosition as unknown as HdlPosition;
-  const sourceHdlPosition = forceStraight && isVertical
-    ? HdlPosition.Bottom
-    : sourcePosition as unknown as HdlPosition;
+  const targetHdlPosition =
+    forceStraight && isVertical ? HdlPosition.Top : (targetPosition as unknown as HdlPosition);
+  const sourceHdlPosition =
+    forceStraight && isVertical ? HdlPosition.Bottom : (sourcePosition as unknown as HdlPosition);
 
   // Use localPoints if we are dragging, otherwise use officialPoints.
   // We MUST prepend and append the actual handle coordinates to officialPoints
@@ -309,16 +334,16 @@ export function OrthogonalEdge({
   // XOR/XNOR) concave edge, so it disappears under the node's fill instead of stopping
   // short of the visible curve — see gateLeftEdgeWireReach for why this is safe.
   const points = extendTargetIntoGate(
-    localPoints ?? [
-      { x: sourceX, y: sourceY },
-      ...officialPoints,
-      { x: targetX, y: targetY }
-    ],
+    localPoints ?? [{ x: sourceX, y: sourceY }, ...officialPoints, { x: targetX, y: targetY }],
     targetNode,
-    targetHdlPosition
+    targetHdlPosition,
   );
   const rawEdgePath = pathFromPoints(points);
-  const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
+  const {
+    back: backStackPoints,
+    middle: middleStackPoints,
+    front: frontStackPoints,
+  } = computeStackedEdgeLayerPoints({
     points,
     sourceHdlPosition,
     targetHdlPosition,
@@ -328,25 +353,42 @@ export function OrthogonalEdge({
     targetIsArray,
     targetIsArrayBreakout,
     targetNode,
-    isThickWire
+    isThickWire,
   });
 
-  const edgeGeometry = React.useMemo(() => ({
-    edgeId: id,
-    points,
-    sourceId: netKey ?? source,
-    targetId: `${target}:${targetHandleId ?? ''}`,
-    netKey,
-    sourceHandlePoint: { x: sourceX, y: sourceY },
-    targetHandlePoint: { x: targetX, y: targetY },
-    isStruct: isStructAggregate,
-    isInterface: isInterfaceAggregate,
-    isThick: isThickWire,
-    isStacked: isStacked && !isPromotedStack && !isConvergingStack
-  }), [
-    id, points, source, target, targetHandleId, netKey, sourceX, sourceY, targetX, targetY,
-    isStructAggregate, isInterfaceAggregate, isThickWire, isStacked, isPromotedStack, isConvergingStack
-  ]);
+  const edgeGeometry = React.useMemo(
+    () => ({
+      edgeId: id,
+      points,
+      sourceId: netKey ?? source,
+      targetId: `${target}:${targetHandleId ?? ''}`,
+      netKey,
+      sourceHandlePoint: { x: sourceX, y: sourceY },
+      targetHandlePoint: { x: targetX, y: targetY },
+      isStruct: isStructAggregate,
+      isInterface: isInterfaceAggregate,
+      isThick: isThickWire,
+      isStacked: isStacked && !isPromotedStack && !isConvergingStack,
+    }),
+    [
+      id,
+      points,
+      source,
+      target,
+      targetHandleId,
+      netKey,
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+      isStructAggregate,
+      isInterfaceAggregate,
+      isThickWire,
+      isStacked,
+      isPromotedStack,
+      isConvergingStack,
+    ],
+  );
 
   const edgeRender = useLineJumpRender(edgeGeometry);
   const overlapHints = useEdgeOverlapHints(edgeGeometry);
@@ -358,12 +400,21 @@ export function OrthogonalEdge({
       points: backStackPoints,
       isStacked: false,
       isStruct: isStructAggregate,
-      isInterface: isInterfaceAggregate
+      isInterface: isInterfaceAggregate,
     };
     return context
       ? buildLineJumpRender(geom, context.geometries, context.options)
       : { path: pathFromPoints(backStackPoints), jumpPaths: [], jumpHalos: [] };
-  }, [edgeGeometry, backStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+  }, [
+    edgeGeometry,
+    backStackPoints,
+    isStacked,
+    isPromotedStack,
+    isConvergingStack,
+    isStructAggregate,
+    isInterfaceAggregate,
+    context,
+  ]);
 
   const middleRender = React.useMemo(() => {
     if (!isStacked || isPromotedStack || isConvergingStack) return null;
@@ -372,12 +423,21 @@ export function OrthogonalEdge({
       points: middleStackPoints,
       isStacked: false,
       isStruct: isStructAggregate,
-      isInterface: isInterfaceAggregate
+      isInterface: isInterfaceAggregate,
     };
     return context
       ? buildLineJumpRender(geom, context.geometries, context.options)
       : { path: pathFromPoints(middleStackPoints), jumpPaths: [], jumpHalos: [] };
-  }, [edgeGeometry, middleStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+  }, [
+    edgeGeometry,
+    middleStackPoints,
+    isStacked,
+    isPromotedStack,
+    isConvergingStack,
+    isStructAggregate,
+    isInterfaceAggregate,
+    context,
+  ]);
 
   const frontRender = React.useMemo(() => {
     if (!isStacked || isPromotedStack || isConvergingStack) return null;
@@ -386,12 +446,21 @@ export function OrthogonalEdge({
       points: frontStackPoints,
       isStacked: false,
       isStruct: isStructAggregate,
-      isInterface: isInterfaceAggregate
+      isInterface: isInterfaceAggregate,
     };
     return context
       ? buildLineJumpRender(geom, context.geometries, context.options)
       : { path: pathFromPoints(frontStackPoints), jumpPaths: [], jumpHalos: [] };
-  }, [edgeGeometry, frontStackPoints, isStacked, isPromotedStack, isConvergingStack, isStructAggregate, isInterfaceAggregate, context]);
+  }, [
+    edgeGeometry,
+    frontStackPoints,
+    isStacked,
+    isPromotedStack,
+    isConvergingStack,
+    isStructAggregate,
+    isInterfaceAggregate,
+    context,
+  ]);
 
   const backStackPath = backRender ? backRender.path : pathFromPoints(backStackPoints);
   const middleStackPath = middleRender ? middleRender.path : pathFromPoints(middleStackPoints);
@@ -402,55 +471,80 @@ export function OrthogonalEdge({
       return [
         ...(backRender?.jumpHalos ?? []),
         ...(middleRender?.jumpHalos ?? []),
-        ...(frontRender?.jumpHalos ?? [])
+        ...(frontRender?.jumpHalos ?? []),
       ];
     }
     if (edgeRender.jumpHalos && edgeRender.jumpHalos.length > 0) {
       return edgeRender.jumpHalos;
     }
-    const paths = edgeRender.jumpPaths.length > 0
-      ? edgeRender.jumpPaths
-      : jumpHaloPathsFromPath(edgeRender.path);
-    
-    return paths.map(p => ({ path: p, strokeWidth: 12 }));
+    const paths =
+      edgeRender.jumpPaths.length > 0
+        ? edgeRender.jumpPaths
+        : jumpHaloPathsFromPath(edgeRender.path);
+
+    return paths.map((p) => ({ path: p, strokeWidth: 12 }));
   }, [
-    isStacked, isPromotedStack, isConvergingStack, backRender, middleRender, frontRender,
-    edgeRender, isInterfaceAggregate, isStructAggregate
+    isStacked,
+    isPromotedStack,
+    isConvergingStack,
+    backRender,
+    middleRender,
+    frontRender,
+    edgeRender,
+    isInterfaceAggregate,
+    isStructAggregate,
   ]);
-  const promotedFanout = isPromotedStack ? promotedStackFanoutPath(
-    points,
-    targetPosition as unknown as HdlPosition,
-    diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1),
-    promotedStackWide
-  ) : undefined;
+  const promotedFanout = isPromotedStack
+    ? promotedStackFanoutPath(
+        points,
+        targetPosition as unknown as HdlPosition,
+        diagramSizing.gridSize * (isMuxSelectorPromotion ? 2 : 1),
+        promotedStackWide,
+      )
+    : undefined;
   const promotedFanoutGradientId = `svsch-stack-fanout-gradient-${stableFragmentId(id)}`;
   const convergingStackPaths = isConvergingStack
     ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-      .map((layerId) => convergingStackPath(points, layerId, sourceHdlPosition, targetHdlPosition, convergingStackWide))
-      .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
+        .map((layerId) =>
+          convergingStackPath(
+            points,
+            layerId,
+            sourceHdlPosition,
+            targetHdlPosition,
+            convergingStackWide,
+          ),
+        )
+        .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
     : [];
-  const convergingStackGradientId = (layerId: ArrayStackLayerId) => `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
+  const convergingStackGradientId = (layerId: ArrayStackLayerId) =>
+    `svsch-stack-converge-gradient-${layerId}-${stableFragmentId(id)}`;
 
-  const labelPoint = pointNearPathStart(points) ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
+  const labelPoint =
+    pointNearPathStart(points) ?? midpoint({ x: sourceX, y: sourceY }, { x: targetX, y: targetY });
   const cutButtonPoint = routeControlPoint(points);
   const isCutStub = diagramEdge?.metadata?.cutStub !== undefined;
   // One end of a cut stub is always the synthetic `netLabel` node — whichever
   // of source/target carries the `cut-label:` id — used by the stub's own
   // solo "Reroute" control to reset just that dangling end's position.
   const cutLabelNodeId = isCutStub
-    ? (diagramEdge?.source.startsWith('cut-label:') ? diagramEdge.source : diagramEdge?.target)
+    ? diagramEdge?.source.startsWith('cut-label:')
+      ? diagramEdge.source
+      : diagramEdge?.target
     : undefined;
   // The stub's own midpoint sits right next to the port it's attached to —
   // routinely underneath the connected block's handle, which always wins
   // pointer-event hit-testing over floating edge UI. Anchor the reset button
   // just below the label itself instead: by construction it's offset clear
   // of the block, so the control lands somewhere actually clickable.
-  const cutLabelFlowNode = cutLabelNodeId ? flowNodes.find((node) => node.id === cutLabelNodeId) : undefined;
+  const cutLabelFlowNode = cutLabelNodeId
+    ? flowNodes.find((node) => node.id === cutLabelNodeId)
+    : undefined;
   const cutLabelButtonAnchor = cutLabelFlowNode
     ? {
-      x: cutLabelFlowNode.position.x + diagramNodeDimensions(cutLabelFlowNode.data.node).width / 2,
-      y: cutLabelFlowNode.position.y + diagramNodeDimensions(cutLabelFlowNode.data.node).height
-    }
+        x:
+          cutLabelFlowNode.position.x + diagramNodeDimensions(cutLabelFlowNode.data.node).width / 2,
+        y: cutLabelFlowNode.position.y + diagramNodeDimensions(cutLabelFlowNode.data.node).height,
+      }
     : cutButtonPoint;
   // A wire's own controls normally only appear while it's directly hovered. When
   // it's part of a multi-wire selection, hovering ANY selected wire reveals every
@@ -463,17 +557,28 @@ export function OrthogonalEdge({
   // don't even offer the controls (see also positionedNodesFromFlowNodes's
   // filter below, which protects the node payload the same way).
   const isExpandSplicedEdge = diagramEdge !== undefined && isExpandNamespacedId(diagramEdge.id);
-  const showCutButton = diagramEdge !== undefined && edgeData?.moduleName !== undefined && !isCutStub && !isExpandSplicedEdge
-    && (isEdgeHovered || (isMultiSelected && selectionHoverActive));
-  const showCutStubResetButton = isCutStub && diagramEdge !== undefined && edgeData?.moduleName !== undefined
-    && cutLabelNodeId !== undefined && isEdgeHovered;
-  const netGeometries = context && edgeData?.netEdgeIds
-    ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
-    : [];
-  const netJunctions = (isLeaderInNet || isInterfaceAggregate || isStructAggregate) && context
-    ? findNetJunctions(netGeometries)
-    : [];
-  const useStackedJunctionDots = sourceIsArray && isLeaderInNet && !isInterfaceAggregate && !isStructAggregate;
+  const showCutButton =
+    diagramEdge !== undefined &&
+    edgeData?.moduleName !== undefined &&
+    !isCutStub &&
+    !isExpandSplicedEdge &&
+    (isEdgeHovered || (isMultiSelected && selectionHoverActive));
+  const showCutStubResetButton =
+    isCutStub &&
+    diagramEdge !== undefined &&
+    edgeData?.moduleName !== undefined &&
+    cutLabelNodeId !== undefined &&
+    isEdgeHovered;
+  const netGeometries =
+    context && edgeData?.netEdgeIds
+      ? context.geometries.filter((geometry) => edgeData.netEdgeIds?.includes(geometry.edgeId))
+      : [];
+  const netJunctions =
+    (isLeaderInNet || isInterfaceAggregate || isStructAggregate) && context
+      ? findNetJunctions(netGeometries)
+      : [];
+  const useStackedJunctionDots =
+    sourceIsArray && isLeaderInNet && !isInterfaceAggregate && !isStructAggregate;
 
   const keepEdgeHover = React.useCallback(() => {
     if (hoverClearTimeoutRef.current) {
@@ -504,19 +609,22 @@ export function OrthogonalEdge({
     }, 500);
   }, [id, setHovered, setSelectionHoverActive, setHoveredEdgeId]);
 
-  React.useEffect(() => () => {
-    if (hoverClearTimeoutRef.current) {
-      clearTimeout(hoverClearTimeoutRef.current);
-    }
-  }, []);
+  React.useEffect(
+    () => () => {
+      if (hoverClearTimeoutRef.current) {
+        clearTimeout(hoverClearTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const moveSegment = (event: React.PointerEvent, segmentIndex: number, commit: boolean) => {
     const flowPoint = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
 
-    let currentStructuredPoints = localPoints ?? [
+    const currentStructuredPoints = localPoints ?? [
       { x: sourceX, y: sourceY },
       ...officialPoints,
-      { x: targetX, y: targetY }
+      { x: targetX, y: targetY },
     ];
 
     // On drag start, capture offset and lock the structure
@@ -524,7 +632,7 @@ export function OrthogonalEdge({
       const initialPoint = currentStructuredPoints[segmentIndex];
       dragOffsetRef.current = {
         x: initialPoint.x - flowPoint.x,
-        y: initialPoint.y - flowPoint.y
+        y: initialPoint.y - flowPoint.y,
       };
       activeSegmentIndexRef.current = segmentIndex;
     }
@@ -532,19 +640,26 @@ export function OrthogonalEdge({
     const currentSegmentIndex = activeSegmentIndexRef.current;
     const adjustedPoint = {
       x: flowPoint.x + dragOffsetRef.current.x,
-      y: flowPoint.y + dragOffsetRef.current.y
+      y: flowPoint.y + dragOffsetRef.current.y,
     };
 
     const availableGeometries = context?.geometries ?? [edgeGeometry];
-    const dragGeometries = availableGeometries.map((geometry) => (
-      geometry.edgeId === id ? { ...edgeGeometry, points: currentStructuredPoints } : geometry
-    ));
-    const { moves: sharedMoves, newDraggedIndex } = moveSharedNetSegments(dragGeometries, id, currentSegmentIndex, adjustedPoint);
+    const dragGeometries = availableGeometries.map((geometry) =>
+      geometry.edgeId === id ? { ...edgeGeometry, points: currentStructuredPoints } : geometry,
+    );
+    const { moves: sharedMoves, newDraggedIndex } = moveSharedNetSegments(
+      dragGeometries,
+      id,
+      currentSegmentIndex,
+      adjustedPoint,
+    );
     activeSegmentIndexRef.current = newDraggedIndex;
 
     const ownMove = sharedMoves.find((move) => move.edgeId === id);
-    const nextPoints = ownMove?.points ?? moveRouteSegment(currentStructuredPoints, currentSegmentIndex, adjustedPoint).points;
-    
+    const nextPoints =
+      ownMove?.points ??
+      moveRouteSegment(currentStructuredPoints, currentSegmentIndex, adjustedPoint).points;
+
     if (commit) {
       setLocalPoints(null);
       // Ensure we have a stable structure to save.
@@ -553,14 +668,14 @@ export function OrthogonalEdge({
       const finalPoints = makeOrthogonal(nextPoints, false);
       const mainChange: RouteChange = {
         edgeId: id,
-        routePoints: routePointsWithAnchoredLeads(finalPoints, officialPoints)
+        routePoints: routePointsWithAnchoredLeads(finalPoints, officialPoints),
       };
 
       const otherChanges: RouteChange[] = sharedMoves
         .filter((move) => move.edgeId !== id)
         .map((move) => ({
           edgeId: move.edgeId,
-          routePoints: routePointsFromFullPoints(makeOrthogonal(move.points, false))
+          routePoints: routePointsFromFullPoints(makeOrthogonal(move.points, false)),
         }));
 
       edgeData?.onRouteChange?.([mainChange, ...otherChanges], true);
@@ -570,7 +685,7 @@ export function OrthogonalEdge({
         .filter((move) => move.edgeId !== id)
         .map((move) => ({
           edgeId: move.edgeId,
-          routePoints: routePointsFromFullPoints(move.points)
+          routePoints: routePointsFromFullPoints(move.points),
         }));
 
       if (changes.length > 0) {
@@ -580,13 +695,16 @@ export function OrthogonalEdge({
   };
 
   return (
-    <g
-      onMouseEnter={keepEdgeHover}
-      onMouseLeave={releaseEdgeHover}
-    >
+    <g onMouseEnter={keepEdgeHover} onMouseLeave={releaseEdgeHover}>
       {isInterfaceAggregate && (
         <defs>
-          <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <pattern
+            id="svsch-interface-stripes"
+            patternUnits="userSpaceOnUse"
+            width="10"
+            height="10"
+            patternTransform="rotate(45)"
+          >
             {/* Centered in the tile: pattern content is clipped to the 10px tile, so a
                 line at x=0 would lose half its stroke width. */}
             <line className="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />
@@ -595,7 +713,13 @@ export function OrthogonalEdge({
       )}
       {isStructAggregate && (
         <defs>
-          <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <pattern
+            id="svsch-struct-stripes"
+            patternUnits="userSpaceOnUse"
+            width="10"
+            height="10"
+            patternTransform="rotate(45)"
+          >
             <line className="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />
           </pattern>
         </defs>
@@ -613,8 +737,8 @@ export function OrthogonalEdge({
           {(() => {
             const netEdgeIds = new Set(edgeData?.netEdgeIds || []);
             const edgePaths = context.geometries
-              .filter(g => netEdgeIds.has(g.edgeId))
-              .map(g => {
+              .filter((g) => netEdgeIds.has(g.edgeId))
+              .map((g) => {
                 const render = buildLineJumpRender(g, context.geometries, context.options);
                 return (
                   <path
@@ -649,12 +773,12 @@ export function OrthogonalEdge({
               let hPath: string;
               let vPath = '';
               if (handleSide === 'top' || handleSide === 'bottom') {
-                hPath = align === 'end'
-                  ? `M ${midX} ${midY} H ${mx + lw}`
-                  : `M ${mx} ${midY} H ${midX}`;
-                vPath = handleSide === 'top'
-                  ? `M ${midX} ${midY} V ${my}`
-                  : `M ${midX} ${midY} V ${my + lh}`;
+                hPath =
+                  align === 'end' ? `M ${midX} ${midY} H ${mx + lw}` : `M ${mx} ${midY} H ${midX}`;
+                vPath =
+                  handleSide === 'top'
+                    ? `M ${midX} ${midY} V ${my}`
+                    : `M ${midX} ${midY} V ${my + lh}`;
               } else {
                 hPath = `M ${mx} ${midY} H ${mx + lw}`;
               }
@@ -664,7 +788,7 @@ export function OrthogonalEdge({
                   key={`halo-label-${dn.id}`}
                   className="svsch-edge-net-highlight"
                   d={hPath + (vPath ? ' ' + vPath : '')}
-                />
+                />,
               );
             }
 
@@ -680,7 +804,10 @@ export function OrthogonalEdge({
           without the edge itself being flagged (isGroupSelected — e.g.
           shift/ctrl-click on each node), and hovering the Cut/Reroute control
           of a multi-wire selection. */}
-      {(selected || (isGroupSelected && isLeaderInNet) || isPendingCutTarget || isPendingRerouteTarget) && (
+      {(selected ||
+        (isGroupSelected && isLeaderInNet) ||
+        isPendingCutTarget ||
+        isPendingRerouteTarget) && (
         <g className="svsch-edge-net-highlight-group">
           <path className="svsch-edge-net-highlight" d={edgeRender.path} />
         </g>
@@ -694,7 +821,10 @@ export function OrthogonalEdge({
             <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
           )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className={`svsch-edge svsch-edge-stacked-back${isThickWire ? ' svsch-edge-thick' : ''}`} d={backStackPath} />
+            <path
+              className={`svsch-edge svsch-edge-stacked-back${isThickWire ? ' svsch-edge-thick' : ''}`}
+              d={backStackPath}
+            />
           )}
           {promotedFanout ? (
             <>
@@ -712,8 +842,15 @@ export function OrthogonalEdge({
                   <stop offset="100%" className="svsch-stack-gradient-back-stop" />
                 </linearGradient>
               </defs>
-              <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={promotedFanout.trunk} />
-              <path className="svsch-edge svsch-edge-stacked-breakout" d={promotedFanout.bar} style={{ stroke: `url(#${promotedFanoutGradientId})` }} />
+              <path
+                className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
+                d={promotedFanout.trunk}
+              />
+              <path
+                className="svsch-edge svsch-edge-stacked-breakout"
+                d={promotedFanout.bar}
+                style={{ stroke: `url(#${promotedFanoutGradientId})` }}
+              />
               {promotedFanout.branches.map((branch, index) => (
                 <path
                   key={`${id}-stack-branch-${index}`}
@@ -735,7 +872,10 @@ export function OrthogonalEdge({
                     x2={stackPath.end.x}
                     y2={stackPath.end.y}
                   >
-                    <stop offset="0%" className={stackedLayerGradientStopClass(stackPath.layerId)} />
+                    <stop
+                      offset="0%"
+                      className={stackedLayerGradientStopClass(stackPath.layerId)}
+                    />
                     <stop offset="78%" className="svsch-stack-gradient-regular-stop" />
                     <stop offset="100%" className="svsch-stack-gradient-regular-stop" />
                   </linearGradient>
@@ -751,10 +891,16 @@ export function OrthogonalEdge({
               ))}
             </>
           ) : (
-            <path className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={isStacked ? middleStackPath : edgeRender.path} />
+            <path
+              className={`svsch-edge${isStacked ? ' svsch-edge-stacked' : ''}${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
+              d={isStacked ? middleStackPath : edgeRender.path}
+            />
           )}
           {!isPromotedStack && !isConvergingStack && (
-            <path className={`svsch-edge svsch-edge-stacked-front${isThickWire ? ' svsch-edge-thick' : ''}`} d={frontStackPath} />
+            <path
+              className={`svsch-edge svsch-edge-stacked-front${isThickWire ? ' svsch-edge-thick' : ''}`}
+              d={frontStackPath}
+            />
           )}
         </>
       ) : (
@@ -765,7 +911,10 @@ export function OrthogonalEdge({
           {isStructAggregate && (
             <path className="svsch-edge svsch-edge-struct-bg" d={edgeRender.path} />
           )}
-          <path className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`} d={edgeRender.path} />
+          <path
+            className={`svsch-edge${isStructAggregate ? ' svsch-edge-struct' : ''}${isInterfaceAggregate ? ' svsch-edge-interface' : ''}${isThickWire ? ' svsch-edge-thick' : ''}`}
+            d={edgeRender.path}
+          />
         </>
       )}
       <path
@@ -775,14 +924,17 @@ export function OrthogonalEdge({
       {overlapHints.map((hint) => (
         <path key={hint.id} className="svsch-edge-overlap-hint" d={hint.path} style={hint.style} />
       ))}
-      {netJunctions.map((junction) => (
+      {netJunctions.map((junction) =>
         useStackedJunctionDots ? (
           <g key={`${id}-junction-${junction.id}`} className="svsch-edge-junction-stacked">
-            {(() => { const junctionLayers = arrayStackLayersFor(isThickWire); return [
-              { layer: junctionLayers.front, opacity: 1 },
-              { layer: junctionLayers.middle, opacity: 0.75 },
-              { layer: junctionLayers.back, opacity: 0.5 }
-            ]; })().map(({ layer, opacity }, index) => (
+            {(() => {
+              const junctionLayers = arrayStackLayersFor(isThickWire);
+              return [
+                { layer: junctionLayers.front, opacity: 1 },
+                { layer: junctionLayers.middle, opacity: 0.75 },
+                { layer: junctionLayers.back, opacity: 0.5 },
+              ];
+            })().map(({ layer, opacity }, index) => (
               <circle
                 key={`${id}-junction-${junction.id}-${index}`}
                 className="svsch-edge-junction svsch-edge-junction-stacked-dot"
@@ -801,8 +953,8 @@ export function OrthogonalEdge({
             cy={junction.y}
             r={isInterfaceAggregate || isStructAggregate ? 6.5 : 4.75}
           />
-        )
-      ))}
+        ),
+      )}
       {points.slice(0, -1).map((point, index) => {
         const next = points[index + 1];
         const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
@@ -860,7 +1012,11 @@ export function OrthogonalEdge({
             <button
               type="button"
               className="svsch-edge-reroute-control"
-              title={isMultiSelected ? `Reroute ${selectedCuttableEdges.length} selected connections` : 'Reroute this connection'}
+              title={
+                isMultiSelected
+                  ? `Reroute ${selectedCuttableEdges.length} selected connections`
+                  : 'Reroute this connection'
+              }
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
@@ -871,7 +1027,7 @@ export function OrthogonalEdge({
                     type: 'rerouteEdges',
                     moduleName: edgeData.moduleName,
                     edgeIds: selectedCuttableEdges.map((edge) => edge.id),
-                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                    nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
                   return;
                 }
@@ -879,7 +1035,7 @@ export function OrthogonalEdge({
                   type: 'rerouteEdge',
                   moduleName: edgeData.moduleName,
                   edgeId: diagramEdge.id,
-                  nodes: positionedNodesFromFlowNodes(flowNodes)
+                  nodes: positionedNodesFromFlowNodes(flowNodes),
                 });
               }}
               onDoubleClick={(event) => event.stopPropagation()}
@@ -896,7 +1052,9 @@ export function OrthogonalEdge({
             <button
               type="button"
               className="svsch-edge-cut-control"
-              title={isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'}
+              title={
+                isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'
+              }
               onClick={(event) => {
                 event.stopPropagation();
                 if (!diagramEdge || !edgeData?.moduleName) {
@@ -906,8 +1064,10 @@ export function OrthogonalEdge({
                   vscode.postMessage({
                     type: 'cutNets',
                     moduleName: edgeData.moduleName,
-                    edges: selectedCuttableEdges.map((edge) => edge.data?.edge).filter((edge): edge is DiagramEdge => edge !== undefined),
-                    nodes: positionedNodesFromFlowNodes(flowNodes)
+                    edges: selectedCuttableEdges
+                      .map((edge) => edge.data?.edge)
+                      .filter((edge): edge is DiagramEdge => edge !== undefined),
+                    nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
                   return;
                 }
@@ -915,7 +1075,7 @@ export function OrthogonalEdge({
                   type: 'cutNet',
                   moduleName: edgeData.moduleName,
                   edge: diagramEdge,
-                  nodes: positionedNodesFromFlowNodes(flowNodes)
+                  nodes: positionedNodesFromFlowNodes(flowNodes),
                 });
               }}
               onDoubleClick={(event) => event.stopPropagation()}
@@ -932,7 +1092,8 @@ export function OrthogonalEdge({
           </div>
         </foreignObject>
       )}
-      {showCutStubResetButton && overlayPortalNode && (
+      {showCutStubResetButton &&
+        overlayPortalNode &&
         // A cut stub is always short and hugs the node it's attached to, so
         // its own (deliberately low, non-covering) SVG edge layer sits behind
         // node handles — a foreignObject control here would be unclickable
@@ -962,7 +1123,7 @@ export function OrthogonalEdge({
                   vscode.postMessage({
                     type: 'resetCutLabelPosition',
                     moduleName: edgeData.moduleName,
-                    nodeId: cutLabelNodeId
+                    nodeId: cutLabelNodeId,
                   });
                 }}
                 onDoubleClick={(event) => event.stopPropagation()}
@@ -973,18 +1134,26 @@ export function OrthogonalEdge({
               </button>
             </div>
           </div>,
-          overlayPortalNode
-        )
-      )}
+          overlayPortalNode,
+        )}
       {label && (
         // Left-anchored at the lead point instead of centered on it — a
         // centered 120-wide box would extend 60px back toward the block the
         // wire just left, overlapping it on anything but a long lead.
-        <foreignObject width={120} height={14} x={labelPoint.x} y={labelPoint.y - 17} className="svsch-edge-label">
+        <foreignObject
+          width={120}
+          height={14}
+          x={labelPoint.x}
+          y={labelPoint.y - 17}
+          className="svsch-edge-label"
+        >
           <div>
             <span className="svsch-edge-label-text">{label}</span>
             {diagramEdge?.metadata?.aliasNames && diagramEdge.metadata.aliasNames.length > 0 && (
-              <Tooltip content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`} tone="info">
+              <Tooltip
+                content={`Also declared as: ${diagramEdge.metadata.aliasNames.join(', ')}`}
+                tone="info"
+              >
                 {(trigger) => (
                   <sup
                     {...trigger}

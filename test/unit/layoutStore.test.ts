@@ -39,7 +39,7 @@ describe('LayoutStore', () => {
   it('writes concurrent updates to different modules without clobbering each other', async () => {
     await Promise.all([
       store.writeModuleLayout('moduleA', { nodes: { node1: { x: 10, y: 0 } } }),
-      store.writeModuleLayout('moduleB', { nodes: { node1: { x: 20, y: 0 } } })
+      store.writeModuleLayout('moduleB', { nodes: { node1: { x: 20, y: 0 } } }),
     ]);
     await store.flush();
 
@@ -91,13 +91,14 @@ describe('LayoutStore', () => {
       expect(await store.readExpandedInstanceLayout('top', 'u0')).toBeUndefined();
     });
 
-    it('persists and reads back a per-instance snapshot separately from the child module\'s own standalone layout', async () => {
+    // eslint-disable-next-line max-len
+    it("persists and reads back a per-instance snapshot separately from the child module's own standalone layout", async () => {
       await store.writeExpandedInstanceLayout('top', 'u0', {
         childModuleName: 'adder',
         nodes: { reg1: { x: 100, y: 200, fixed: true } },
         bounds: { x: 0, y: 0, width: 240, height: 120 },
         fixed: true,
-        instanceOrigin: { x: 10, y: 20 }
+        instanceOrigin: { x: 10, y: 20 },
       });
 
       const snapshot = await store.readExpandedInstanceLayout('top', 'u0');
@@ -106,16 +107,23 @@ describe('LayoutStore', () => {
         nodes: { reg1: { x: 100, y: 200, fixed: true } },
         bounds: { x: 0, y: 0, width: 240, height: 120 },
         fixed: true,
-        instanceOrigin: { x: 10, y: 20 }
+        instanceOrigin: { x: 10, y: 20 },
       });
 
       // Never touches the child module's own per-module layout file.
       expect(await store.readModuleLayout('adder')).toEqual({ nodes: {} });
     });
 
+    // eslint-disable-next-line max-len
     it('scopes snapshots per instance, not per child module — two instances of the same module get independent snapshots', async () => {
-      await store.writeExpandedInstanceLayout('top', 'u0', { childModuleName: 'adder', nodes: { r: { x: 1, y: 1 } } });
-      await store.writeExpandedInstanceLayout('top', 'u1', { childModuleName: 'adder', nodes: { r: { x: 2, y: 2 } } });
+      await store.writeExpandedInstanceLayout('top', 'u0', {
+        childModuleName: 'adder',
+        nodes: { r: { x: 1, y: 1 } },
+      });
+      await store.writeExpandedInstanceLayout('top', 'u1', {
+        childModuleName: 'adder',
+        nodes: { r: { x: 2, y: 2 } },
+      });
 
       expect((await store.readExpandedInstanceLayout('top', 'u0'))?.nodes.r.x).toBe(1);
       expect((await store.readExpandedInstanceLayout('top', 'u1'))?.nodes.r.x).toBe(2);
@@ -132,7 +140,9 @@ describe('LayoutStore', () => {
     });
 
     it('resetExpandedInstanceLayout on an instance with no saved snapshot is a no-op', async () => {
-      await expect(store.resetExpandedInstanceLayout('top', 'never_expanded')).resolves.toBeUndefined();
+      await expect(
+        store.resetExpandedInstanceLayout('top', 'never_expanded'),
+      ).resolves.toBeUndefined();
     });
   });
 });

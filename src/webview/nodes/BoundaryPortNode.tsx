@@ -19,7 +19,7 @@ import { Tooltip } from '../Tooltip';
 export function BoundaryPortNode({
   node,
   selected,
-  style
+  style,
 }: {
   node: PositionedNode;
   selected?: boolean;
@@ -45,10 +45,26 @@ export function BoundaryPortNode({
       {/* Both a source and target Handle at each id: the node is a pass-through,
           not a real source/sink, and (like an inout port elsewhere in this
           codebase) either edge endpoint may legitimately land on either side. */}
-      <Handle type="target" id="outer" position={outerSide === 'left' ? Position.Left : Position.Right} />
-      <Handle type="source" id="outer" position={outerSide === 'left' ? Position.Left : Position.Right} />
-      <Handle type="target" id="inner" position={innerSide === 'left' ? Position.Left : Position.Right} />
-      <Handle type="source" id="inner" position={innerSide === 'left' ? Position.Left : Position.Right} />
+      <Handle
+        type="target"
+        id="outer"
+        position={outerSide === 'left' ? Position.Left : Position.Right}
+      />
+      <Handle
+        type="source"
+        id="outer"
+        position={outerSide === 'left' ? Position.Left : Position.Right}
+      />
+      <Handle
+        type="target"
+        id="inner"
+        position={innerSide === 'left' ? Position.Left : Position.Right}
+      />
+      <Handle
+        type="source"
+        id="inner"
+        position={innerSide === 'left' ? Position.Left : Position.Right}
+      />
       {outerSide === 'left' ? (
         <>
           {label}
@@ -68,7 +84,11 @@ export function BoundaryPortNode({
               className="node-warning"
               role="img"
               aria-label={node.warningNote}
-              style={{ left: warningCenter.x, top: warningCenter.y, transform: 'translate(-50%, -50%)' }}
+              style={{
+                left: warningCenter.x,
+                top: warningCenter.y,
+                transform: 'translate(-50%, -50%)',
+              }}
             >
               ⚠
             </span>

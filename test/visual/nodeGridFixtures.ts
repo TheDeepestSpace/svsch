@@ -29,102 +29,239 @@ export const selections: FixtureSelection[] = [
   {
     fixture: 'register_async_reset.sv',
     picks: [
-      { label: 'port: input', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'input' },
-      { label: 'port: output', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'output' },
-      { label: 'register: async reset', match: (n) => n.kind === 'register' }
-    ]
+      {
+        label: 'port: input',
+        match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'input',
+      },
+      {
+        label: 'port: output',
+        match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'output',
+      },
+      { label: 'register: async reset', match: (n) => n.kind === 'register' },
+    ],
   },
   {
     fixture: 'register_file.sv',
     picks: [
       { label: 'port: wide input', match: (n) => n.kind === 'port' && n.label === 'addr' },
-      { label: 'register: stacked (wide)', match: (n) => n.kind === 'register' && nodeIsArrayNode(n) }
-    ]
+      {
+        label: 'register: stacked (wide)',
+        match: (n) => n.kind === 'register' && nodeIsArrayNode(n),
+      },
+    ],
   },
   {
     fixture: 'array_port_register.sv',
     picks: [
-      { label: 'port: stacked input (wide)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input' },
-      { label: 'port: stacked output (wide)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output' }
-    ]
+      {
+        label: 'port: stacked input (wide)',
+        match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input',
+      },
+      {
+        label: 'port: stacked output (wide)',
+        match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output',
+      },
+    ],
   },
   {
     fixture: 'array_port_register_bit.sv',
     picks: [
-      { label: 'port: stacked input (1-bit)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input' },
-      { label: 'port: stacked output (1-bit)', match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output' },
-      { label: 'register: stacked (1-bit)', match: (n) => n.kind === 'register' && nodeIsArrayNode(n) }
-    ]
+      {
+        label: 'port: stacked input (1-bit)',
+        match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'input',
+      },
+      {
+        label: 'port: stacked output (1-bit)',
+        match: (n) => n.kind === 'port' && nodeIsArrayNode(n) && n.ports[0]?.direction === 'output',
+      },
+      {
+        label: 'register: stacked (1-bit)',
+        match: (n) => n.kind === 'register' && nodeIsArrayNode(n),
+      },
+    ],
   },
   { fixture: 'mux_three_inputs.sv', picks: [{ label: 'mux', match: (n) => n.kind === 'mux' }] },
   {
     fixture: 'array_register.sv',
     picks: [
-      { label: 'mux: stacked write address', match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'write address' },
-      { label: 'mux: stacked write enable', match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'if write_en' }
-    ]
+      {
+        label: 'mux: stacked write address',
+        match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'write address',
+      },
+      {
+        label: 'mux: stacked write enable',
+        match: (n) => n.kind === 'mux' && nodeIsArrayNode(n) && n.label === 'if write_en',
+      },
+    ],
   },
   { fixture: 'alu_connected.sv', picks: [{ label: 'alu', match: (n) => n.kind === 'alu' }] },
-  { fixture: 'inverter_expr.sv', picks: [{ label: 'inverter', match: (n) => n.kind === 'inverter' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_eq', picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_and', picks: [{ label: 'gate: and', match: (n) => n.kind === 'gate' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_or', picks: [{ label: 'gate: or', match: (n) => n.kind === 'gate' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_xor', picks: [{ label: 'gate: xor', match: (n) => n.kind === 'gate' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_nand', picks: [{ label: 'gate: nand', match: (n) => n.kind === 'gate' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_nor', picks: [{ label: 'gate: nor', match: (n) => n.kind === 'gate' }] },
-  { fixture: 'comb_assigns.sv', module: 'assign_xnor', picks: [{ label: 'gate: xnor', match: (n) => n.kind === 'gate' }] },
+  {
+    fixture: 'inverter_expr.sv',
+    picks: [{ label: 'inverter', match: (n) => n.kind === 'inverter' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_eq',
+    picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_and',
+    picks: [{ label: 'gate: and', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_or',
+    picks: [{ label: 'gate: or', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_xor',
+    picks: [{ label: 'gate: xor', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_nand',
+    picks: [{ label: 'gate: nand', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_nor',
+    picks: [{ label: 'gate: nor', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'comb_assigns.sv',
+    module: 'assign_xnor',
+    picks: [{ label: 'gate: xnor', match: (n) => n.kind === 'gate' }],
+  },
   { fixture: 'var_bit_select.sv', picks: [{ label: 'select', match: (n) => n.kind === 'select' }] },
-  { fixture: 'bus_two_taps.sv', picks: [{ label: 'bus: breakout', match: (n) => n.kind === 'bus' }] },
-  { fixture: 'bus_composition.sv', picks: [{ label: 'bus: composition', match: (n) => n.kind === 'bus' }] },
-  { fixture: 'array_stack_breakout.sv', picks: [{ label: 'bus: stacked breakout', match: (n) => n.kind === 'bus' && nodeIsArrayNode(n) }] },
-  { fixture: 'array_stack_composition_elements.sv', picks: [{ label: 'bus: stacked composition', match: (n) => n.kind === 'bus' && nodeIsArrayNode(n) }] },
-  { fixture: 'array_stack_composition_literal.sv', picks: [{ label: 'literal', match: (n) => n.kind === 'literal' }] },
-  { fixture: 'struct_breakout.sv', picks: [{ label: 'struct: breakout', match: (n) => n.kind === 'struct' }] },
-  { fixture: 'struct_composition.sv', picks: [{ label: 'struct: composition', match: (n) => n.kind === 'struct' }] },
-  { fixture: 'interface_modport.sv', picks: [{ label: 'interface: instance', match: (n) => n.kind === 'interface' }] },
+  {
+    fixture: 'bus_two_taps.sv',
+    picks: [{ label: 'bus: breakout', match: (n) => n.kind === 'bus' }],
+  },
+  {
+    fixture: 'bus_composition.sv',
+    picks: [{ label: 'bus: composition', match: (n) => n.kind === 'bus' }],
+  },
+  {
+    fixture: 'array_stack_breakout.sv',
+    picks: [
+      { label: 'bus: stacked breakout', match: (n) => n.kind === 'bus' && nodeIsArrayNode(n) },
+    ],
+  },
+  {
+    fixture: 'array_stack_composition_elements.sv',
+    picks: [
+      { label: 'bus: stacked composition', match: (n) => n.kind === 'bus' && nodeIsArrayNode(n) },
+    ],
+  },
+  {
+    fixture: 'array_stack_composition_literal.sv',
+    picks: [{ label: 'literal', match: (n) => n.kind === 'literal' }],
+  },
+  {
+    fixture: 'struct_breakout.sv',
+    picks: [{ label: 'struct: breakout', match: (n) => n.kind === 'struct' }],
+  },
+  {
+    fixture: 'struct_composition.sv',
+    picks: [{ label: 'struct: composition', match: (n) => n.kind === 'struct' }],
+  },
+  {
+    fixture: 'interface_modport.sv',
+    picks: [{ label: 'interface: instance', match: (n) => n.kind === 'interface' }],
+  },
   {
     fixture: 'interface_modport.sv',
     module: 'consumer',
-    picks: [{ label: 'interface: modport', match: (n) => n.kind === 'interface' && structRole(n) === 'modport' }]
+    picks: [
+      {
+        label: 'interface: modport',
+        match: (n) => n.kind === 'interface' && structRole(n) === 'modport',
+      },
+    ],
   },
   {
     fixture: 'interface_modport_arrangements.sv',
     module: 'interface_all_left_modports',
-    picks: [{ label: 'interface: modports one side', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
+    picks: [
+      {
+        label: 'interface: modports one side',
+        match: (n) => n.kind === 'interface' && structRole(n) !== 'modport',
+      },
+    ],
   },
   {
     fixture: 'interface_modport_arrangements.sv',
     module: 'interface_uneven_modport',
-    picks: [{ label: 'interface: uneven modports', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
+    picks: [
+      {
+        label: 'interface: uneven modports',
+        match: (n) => n.kind === 'interface' && structRole(n) !== 'modport',
+      },
+    ],
   },
   {
     fixture: 'interface_multi_modport.sv',
-    picks: [{ label: 'interface: multi modport + clk/rst', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
+    picks: [
+      {
+        label: 'interface: multi modport + clk/rst',
+        match: (n) => n.kind === 'interface' && structRole(n) !== 'modport',
+      },
+    ],
   },
   {
     fixture: 'interface_caps_only.sv',
-    picks: [{ label: 'interface: scalar caps only', match: (n) => n.kind === 'interface' && structRole(n) !== 'modport' }]
+    picks: [
+      {
+        label: 'interface: scalar caps only',
+        match: (n) => n.kind === 'interface' && structRole(n) !== 'modport',
+      },
+    ],
   },
-  { fixture: 'typed_instance_ports.sv', picks: [{ label: 'instance', match: (n) => n.kind === 'instance' }] },
-  { fixture: 'instance_array.sv', picks: [{ label: 'instance: stacked', match: (n) => n.kind === 'instance' && nodeIsArrayNode(n) }] },
-  { fixture: 'replication_expr.sv', picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }] },
+  {
+    fixture: 'typed_instance_ports.sv',
+    picks: [{ label: 'instance', match: (n) => n.kind === 'instance' }],
+  },
+  {
+    fixture: 'instance_array.sv',
+    picks: [
+      { label: 'instance: stacked', match: (n) => n.kind === 'instance' && nodeIsArrayNode(n) },
+    ],
+  },
+  {
+    fixture: 'replication_expr.sv',
+    picks: [{ label: 'replicate', match: (n) => n.kind === 'replicate' }],
+  },
   { fixture: 'loop_logic.sv', picks: [{ label: 'loop', match: (n) => n.kind === 'loop' }] },
   { fixture: 'latch_simple.sv', picks: [{ label: 'latch', match: (n) => n.kind === 'latch' }] },
   {
     fixture: 'cut_net_simple.sv',
     layoutMode: 'cutNet',
     picks: [
-      { label: 'netLabel: cut source end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source' },
-      { label: 'netLabel: cut sink end', match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'sink' },
+      {
+        label: 'netLabel: cut source end',
+        match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'source',
+      },
+      {
+        label: 'netLabel: cut sink end',
+        match: (n) => n.kind === 'netLabel' && n.metadata?.cutNet?.role === 'sink',
+      },
       // Same fixture, but picking the *real* port each label hangs off of —
       // the green dashed box is that port's ELK bounding box inflated by
       // netCutPortMargins (see mergeLayout.ts): the label is never its own
       // ELK graph node, but its footprint still has to keep the layered
       // algorithm from packing a neighbor on top of it.
-      { label: 'port: source (+ cut margin)', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'input' },
-      { label: 'port: sink (+ cut margin)', match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'output' }
-    ]
-  }
+      {
+        label: 'port: source (+ cut margin)',
+        match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'input',
+      },
+      {
+        label: 'port: sink (+ cut margin)',
+        match: (n) => n.kind === 'port' && n.ports[0]?.direction === 'output',
+      },
+    ],
+  },
 ];
 
 // Auto-detects, for a picked node, whichever of its own ports has a dangling
@@ -132,7 +269,10 @@ export const selections: FixtureSelection[] = [
 // cut-stub edges), and the size that end's label would reserve. Mirrors
 // netCutPortMargins in mergeLayout.ts, but read back from a built view
 // instead of a SavedLayout, since these are hand-picked visual fixtures.
-export function netCutMarginsForNode(view: DiagramViewModel, node: DiagramNode): Map<string, { width: number; height: number }> | undefined {
+export function netCutMarginsForNode(
+  view: DiagramViewModel,
+  node: DiagramNode,
+): Map<string, { width: number; height: number }> | undefined {
   const margins = new Map<string, { width: number; height: number }>();
   for (const edge of view.edges) {
     if (!edge.metadata?.cutStub) continue;
@@ -151,7 +291,10 @@ export function snapFullGrid(value: number): number {
 }
 
 export function snapForKind(value: number, node: DiagramNode): number {
-  const halfGrid = node.kind === 'port' || node.kind === 'literal' || (node.kind === 'interface' && structRole(node) === 'port');
+  const halfGrid =
+    node.kind === 'port' ||
+    node.kind === 'literal' ||
+    (node.kind === 'interface' && structRole(node) === 'port');
   if (halfGrid) {
     return Math.round((value - GRID / 2) / GRID) * GRID + GRID / 2;
   }
@@ -167,13 +310,23 @@ export interface CollectedNode {
 export async function collectNodes(): Promise<CollectedNode[]> {
   const collected: CollectedNode[] = [];
   for (const selection of selections) {
-    const view = await buildFixtureView(selection.fixture, selection.layoutMode ?? 'auto', selection.module);
+    const view = await buildFixtureView(
+      selection.fixture,
+      selection.layoutMode ?? 'auto',
+      selection.module,
+    );
     for (const pick of selection.picks) {
       const node = view.nodes.find((candidate) => pick.match(candidate));
       if (!node) {
-        throw new Error(`No node matching "${pick.label}" in ${selection.fixture}${selection.module ? ` (module ${selection.module})` : ''}`);
+        throw new Error(
+          `No node matching "${pick.label}" in ${selection.fixture}${selection.module ? ` (module ${selection.module})` : ''}`,
+        );
       }
-      collected.push({ label: pick.label, node, extraPortMargins: netCutMarginsForNode(view, node) });
+      collected.push({
+        label: pick.label,
+        node,
+        extraPortMargins: netCutMarginsForNode(view, node),
+      });
     }
   }
   const ids = new Set<string>();
@@ -201,7 +354,10 @@ export interface OverlayEntry {
   ports: OverlayPort[];
 }
 
-export function buildGridView(collected: CollectedNode[]): { view: DiagramViewModel; overlay: OverlayEntry[] } {
+export function buildGridView(collected: CollectedNode[]): {
+  view: DiagramViewModel;
+  overlay: OverlayEntry[];
+} {
   const positioned: PositionedNode[] = [];
   const overlay: OverlayEntry[] = [];
 
@@ -218,7 +374,9 @@ export function buildGridView(collected: CollectedNode[]): { view: DiagramViewMo
       // The margin-inflated box is for the overlay comparison only — the
       // node's own rendered position still comes from the plain lead offset,
       // exactly like it does in the real diagram (see makeCutLabelNode).
-      const withMargins = extraPortMargins ? elkNodeForDiagramNode(node, true, extraPortMargins) : undefined;
+      const withMargins = extraPortMargins
+        ? elkNodeForDiagramNode(node, true, extraPortMargins)
+        : undefined;
       const offset = withLeads.layoutOffset;
       // A cut-net margin on the west/north side grows the offset beyond the
       // plain lead's — shift the node rightward/downward within its cell by
@@ -229,7 +387,7 @@ export function buildGridView(collected: CollectedNode[]): { view: DiagramViewMo
 
       const position = {
         x: snapFullGrid(x + offset.x + extraLeft),
-        y: snapForKind(y + offset.y + extraTop, node)
+        y: snapForKind(y + offset.y + extraTop, node),
       };
       positioned.push({ ...node, position, fixed: true });
 
@@ -237,20 +395,22 @@ export function buildGridView(collected: CollectedNode[]): { view: DiagramViewMo
         x: position.x - offset.x,
         y: position.y - offset.y,
         width: withLeads.width,
-        height: withLeads.height
+        height: withLeads.height,
       };
       const routingRect = {
         x: position.x - withRoutingMargins.layoutOffset.x,
         y: position.y - withRoutingMargins.layoutOffset.y,
         width: withRoutingMargins.width,
-        height: withRoutingMargins.height
+        height: withRoutingMargins.height,
       };
-      const marginRect = withMargins ? {
-        x: position.x - withMargins.layoutOffset.x,
-        y: position.y - withMargins.layoutOffset.y,
-        width: withMargins.width,
-        height: withMargins.height
-      } : undefined;
+      const marginRect = withMargins
+        ? {
+            x: position.x - withMargins.layoutOffset.x,
+            y: position.y - withMargins.layoutOffset.y,
+            width: withMargins.width,
+            height: withMargins.height,
+          }
+        : undefined;
       const barePortsById = new Map(bare.ports.map((port) => [port.id, port]));
       const ports = withLeads.ports.map((port) => {
         const barePort = barePortsById.get(port.id);
@@ -268,17 +428,28 @@ export function buildGridView(collected: CollectedNode[]): { view: DiagramViewMo
         return {
           anchor: { x: placementRect.x + port.x, y: placementRect.y + port.y },
           surface: visual
-            ? { x: placementRect.x + offset.x + visual.offset.x, y: placementRect.y + offset.y + visual.offset.y }
+            ? {
+                x: placementRect.x + offset.x + visual.offset.x,
+                y: placementRect.y + offset.y + visual.offset.y,
+              }
             : {
-              x: placementRect.x + offset.x + barePort.x - bare.layoutOffset.x,
-              y: placementRect.y + offset.y + barePort.y - bare.layoutOffset.y
-            }
+                x: placementRect.x + offset.x + barePort.x - bare.layoutOffset.x,
+                y: placementRect.y + offset.y + barePort.y - bare.layoutOffset.y,
+              },
         };
       });
       overlay.push({ label, placementRect, routingRect, marginRect, ports });
 
-      const cellWidth = Math.max(extraLeft + withLeads.width, marginRect?.width ?? 0, withRoutingMargins.width);
-      const cellHeight = Math.max(extraTop + withLeads.height, marginRect?.height ?? 0, withRoutingMargins.height);
+      const cellWidth = Math.max(
+        extraLeft + withLeads.width,
+        marginRect?.width ?? 0,
+        withRoutingMargins.width,
+      );
+      const cellHeight = Math.max(
+        extraTop + withLeads.height,
+        marginRect?.height ?? 0,
+        withRoutingMargins.height,
+      );
       x += Math.ceil(cellWidth / GRID) * GRID + COLUMN_GAP;
       rowHeight = Math.max(rowHeight, cellHeight);
     }
@@ -290,7 +461,7 @@ export function buildGridView(collected: CollectedNode[]): { view: DiagramViewMo
     moduleName: 'elk_geometry_grid',
     nodes: positioned,
     edges: [],
-    diagnostics: []
+    diagnostics: [],
   };
   return { view, overlay };
 }

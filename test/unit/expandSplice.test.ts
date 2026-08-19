@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { spliceExpandedInstance, childNamespace, namespacedId, expandRegionId, isExpandNamespacedId } from '../../src/webview/expand/splice';
+import {
+  spliceExpandedInstance,
+  childNamespace,
+  namespacedId,
+  expandRegionId,
+  isExpandNamespacedId,
+} from '../../src/webview/expand/splice';
 import type { DesignModule, DiagramPort } from '../../src/ir/types';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 
@@ -17,13 +23,27 @@ const childModule: DesignModule = {
     { id: 'port:clk', kind: 'port', label: 'clk', ports: [clkPort] },
     { id: 'port:a', kind: 'port', label: 'a', ports: [aPort] },
     { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] },
-    { id: 'reg1', kind: 'register', label: 'reg1', ports: [{ id: 'd', name: 'd', direction: 'input' }, { id: 'q', name: 'q', direction: 'output' }] }
+    {
+      id: 'reg1',
+      kind: 'register',
+      label: 'reg1',
+      ports: [
+        { id: 'd', name: 'd', direction: 'input' },
+        { id: 'q', name: 'q', direction: 'output' },
+      ],
+    },
   ],
   edges: [
-    { id: 'e-clk-reg1', source: 'port:clk', target: 'reg1', sourcePort: 'p:clk', targetPort: 'clk' },
+    {
+      id: 'e-clk-reg1',
+      source: 'port:clk',
+      target: 'reg1',
+      sourcePort: 'p:clk',
+      targetPort: 'clk',
+    },
     { id: 'e-a-reg1', source: 'port:a', target: 'reg1', sourcePort: 'p:a', targetPort: 'd' },
-    { id: 'e-reg1-sum', source: 'reg1', target: 'port:sum', sourcePort: 'q', targetPort: 'p:sum' }
-  ]
+    { id: 'e-reg1-sum', source: 'reg1', target: 'port:sum', sourcePort: 'q', targetPort: 'p:sum' },
+  ],
 };
 
 const instancePosition = { x: 240, y: 120 };
@@ -43,12 +63,13 @@ function baseInput() {
     instanceSize,
     instanceParamRows: 0,
     instancePorts,
-    childModule
+    childModule,
   };
 }
 
 describe('spliceExpandedInstance', () => {
-  it('replaces the child module\'s own port nodes with namespaced boundary-port nodes anchored to the instance\'s port positions', async () => {
+  // eslint-disable-next-line max-len
+  it("replaces the child module's own port nodes with namespaced boundary-port nodes anchored to the instance's port positions", async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
@@ -73,12 +94,18 @@ describe('spliceExpandedInstance', () => {
     // *expanded* node's right border (the node itself grows to contain the
     // spliced diagram — its border is the frame).
     expect(sumNode.metadata?.boundaryPort?.outerSide).toBe('right');
-    expect(sumNode.position.x + resolvedNodeDimensions(sumNode).width)
-      .toBe(instancePosition.x + result.expandedSize.width);
+    expect(sumNode.position.x + resolvedNodeDimensions(sumNode).width).toBe(
+      instancePosition.x + result.expandedSize.width,
+    );
   });
 
-  it('widens every boundary node in a column to the column\'s max width so inner handles clear every label in the column', async () => {
-    const longPort: DiagramPort = { id: 'p:long', name: 'a_much_longer_port_name', direction: 'input' };
+  // eslint-disable-next-line max-len
+  it("widens every boundary node in a column to the column's max width so inner handles clear every label in the column", async () => {
+    const longPort: DiagramPort = {
+      id: 'p:long',
+      name: 'a_much_longer_port_name',
+      direction: 'input',
+    };
     const withLongLabel: DesignModule = {
       ...childModule,
       ports: [clkPort, longPort, sumPort],
@@ -86,14 +113,14 @@ describe('spliceExpandedInstance', () => {
         { id: 'port:clk', kind: 'port', label: 'clk', ports: [clkPort] },
         { id: 'port:long', kind: 'port', label: 'a_much_longer_port_name', ports: [longPort] },
         { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] },
-        childModule.nodes.find((n) => n.id === 'reg1')!
+        childModule.nodes.find((n) => n.id === 'reg1')!,
       ],
-      edges: []
+      edges: [],
     };
     const result = await spliceExpandedInstance({
       ...baseInput(),
       instancePorts: [clkPort, longPort, sumPort],
-      childModule: withLongLabel
+      childModule: withLongLabel,
     });
 
     const leftNodes = result.nodes.filter((n) => n.metadata?.boundaryPort?.outerSide === 'left');
@@ -104,7 +131,9 @@ describe('spliceExpandedInstance', () => {
     // vertical jog just past clk's inner handle can never cross the longer
     // label on the row below.
     expect(new Set(leftWidths).size).toBe(1);
-    expect(leftWidths[0]).toBeGreaterThanOrEqual(Math.max(...leftNodes.map((n) => diagramNodeDimensions(n).width)));
+    expect(leftWidths[0]).toBeGreaterThanOrEqual(
+      Math.max(...leftNodes.map((n) => diagramNodeDimensions(n).width)),
+    );
     // Both nodes still start at the border, so their labels (anchored to the
     // outer edge — see BoundaryPortNode) stay at the pre-expand position.
     for (const node of leftNodes) {
@@ -112,6 +141,7 @@ describe('spliceExpandedInstance', () => {
     }
   });
 
+  // eslint-disable-next-line max-len
   it('grows the instance node to contain the spliced diagram with label clearances on every side', async () => {
     const result = await spliceExpandedInstance(baseInput());
 
@@ -135,13 +165,16 @@ describe('spliceExpandedInstance', () => {
     // The internal diagram sits fully inside the expanded node, clear of the
     // port-label columns on both sides and below the header row.
     expect(reg.position.x).toBeGreaterThanOrEqual(instancePosition.x + Math.max(...inputWidths));
-    expect(reg.position.x + regSize.width)
-      .toBeLessThanOrEqual(instancePosition.x + result.expandedSize.width - Math.max(...outputWidths));
+    expect(reg.position.x + regSize.width).toBeLessThanOrEqual(
+      instancePosition.x + result.expandedSize.width - Math.max(...outputWidths),
+    );
     expect(reg.position.y).toBeGreaterThanOrEqual(instancePosition.y + 48); // below header text
-    expect(reg.position.y + regSize.height)
-      .toBeLessThanOrEqual(instancePosition.y + result.expandedSize.height);
+    expect(reg.position.y + regSize.height).toBeLessThanOrEqual(
+      instancePosition.y + result.expandedSize.height,
+    );
   });
 
+  // eslint-disable-next-line max-len
   it('still widens the node enough to separate the boundary label columns when the child has no internal nodes at all', async () => {
     // e.g. `assign y = a` — every child node is a port, so the spliced
     // content is just the two boundary columns and a pass-through wire.
@@ -151,14 +184,22 @@ describe('spliceExpandedInstance', () => {
       ports: [aPort, sumPort],
       nodes: [
         { id: 'port:a', kind: 'port', label: 'a', ports: [aPort] },
-        { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] }
+        { id: 'port:sum', kind: 'port', label: 'sum', ports: [sumPort] },
       ],
-      edges: [{ id: 'e-a-sum', source: 'port:a', target: 'port:sum', sourcePort: 'p:a', targetPort: 'p:sum' }]
+      edges: [
+        {
+          id: 'e-a-sum',
+          source: 'port:a',
+          target: 'port:sum',
+          sourcePort: 'p:a',
+          targetPort: 'p:sum',
+        },
+      ],
     };
     const result = await spliceExpandedInstance({
       ...baseInput(),
       instancePorts: [aPort, sumPort],
-      childModule: passThrough
+      childModule: passThrough,
     });
 
     const left = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'left')!;
@@ -170,7 +211,8 @@ describe('spliceExpandedInstance', () => {
     expect(gap).toBeGreaterThan(48);
   });
 
-  it('lays out the child\'s internal (non-port) nodes via elkjs, namespaced under the instance', async () => {
+  // eslint-disable-next-line max-len
+  it("lays out the child's internal (non-port) nodes via elkjs, namespaced under the instance", async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
@@ -180,7 +222,8 @@ describe('spliceExpandedInstance', () => {
     expect(Number.isFinite(reg?.position.y)).toBe(true);
   });
 
-  it('rewires internal edges onto the namespaced nodes, pointing a former child-port endpoint at the boundary node\'s inner handle', async () => {
+  // eslint-disable-next-line max-len
+  it("rewires internal edges onto the namespaced nodes, pointing a former child-port endpoint at the boundary node's inner handle", async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     const clkEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-clk-reg1'));
@@ -201,12 +244,17 @@ describe('spliceExpandedInstance', () => {
     expect(sumEdge?.targetPort).toBe('inner');
   });
 
-  it('produces a region shaped like the rest of the region overlay machinery, with bounds exactly the expanded node\'s rect', async () => {
+  // eslint-disable-next-line max-len
+  it("produces a region shaped like the rest of the region overlay machinery, with bounds exactly the expanded node's rect", async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     expect(result.region.id).toBe(expandRegionId('u0'));
     expect(result.region.kind).toBe('expand');
-    expect(result.region.expandedInstance).toEqual({ instanceId: 'u0', childModuleName: 'adder', parentModuleName: 'top' });
+    expect(result.region.expandedInstance).toEqual({
+      instanceId: 'u0',
+      childModuleName: 'adder',
+      parentModuleName: 'top',
+    });
     expect(new Set(result.region.nodeIds)).toEqual(new Set(result.nodes.map((n) => n.id)));
     // The region is never rendered as its own frame — the expanded node is
     // the frame, so the region's bounds are exactly the node's rect.
@@ -214,11 +262,12 @@ describe('spliceExpandedInstance', () => {
       x: instancePosition.x,
       y: instancePosition.y,
       width: result.expandedSize.width,
-      height: result.expandedSize.height
+      height: result.expandedSize.height,
     });
   });
 
-  it('round-trips through toSavedLayout keyed by the child module\'s own (unnamespaced) node ids, boundary nodes excluded', async () => {
+  // eslint-disable-next-line max-len
+  it("round-trips through toSavedLayout keyed by the child module's own (unnamespaced) node ids, boundary nodes excluded", async () => {
     const result = await spliceExpandedInstance(baseInput());
     const saved = result.toSavedLayout(result.nodes, result.region.bounds, true, instancePosition);
 
@@ -228,22 +277,24 @@ describe('spliceExpandedInstance', () => {
     expect(saved.fixed).toBe(true);
   });
 
-  it('reuses a saved snapshot verbatim when the instance hasn\'t moved since it was saved', async () => {
+  // eslint-disable-next-line max-len
+  it("reuses a saved snapshot verbatim when the instance hasn't moved since it was saved", async () => {
     const savedLayout = {
       childModuleName: 'adder',
       nodes: { reg1: { x: 999, y: 111, fixed: true } },
-      instanceOrigin: instancePosition
+      instanceOrigin: instancePosition,
     };
     const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
     const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
     expect(reg?.position).toEqual({ x: 999, y: 111 });
   });
 
+  // eslint-disable-next-line max-len
   it('rigidly translates a saved snapshot when the instance has moved since it was saved', async () => {
     const savedLayout = {
       childModuleName: 'adder',
       nodes: { reg1: { x: 100, y: 50, fixed: true } },
-      instanceOrigin: { x: 0, y: 0 }
+      instanceOrigin: { x: 0, y: 0 },
     };
     // Instance is now at (240, 120) — 240 right, 120 down from where it was
     // when this snapshot was saved.
@@ -255,8 +306,16 @@ describe('spliceExpandedInstance', () => {
   it('namespaces recursively for a nested Expand (expand-of-an-expanded-instance)', async () => {
     const nestedNamespace = childNamespace('u0', 'u1');
     expect(nestedNamespace).toBe('u0::u1');
-    const result = await spliceExpandedInstance({ ...baseInput(), namespace: nestedNamespace, parentModuleName: 'adder', instanceId: 'u1', parentRegionId: expandRegionId('u0') });
+    const result = await spliceExpandedInstance({
+      ...baseInput(),
+      namespace: nestedNamespace,
+      parentModuleName: 'adder',
+      instanceId: 'u1',
+      parentRegionId: expandRegionId('u0'),
+    });
     expect(result.region.parentRegionId).toBe(expandRegionId('u0'));
-    expect(result.nodes.every((n) => n.id.startsWith(namespacedId(nestedNamespace, '')))).toBe(true);
+    expect(result.nodes.every((n) => n.id.startsWith(namespacedId(nestedNamespace, '')))).toBe(
+      true,
+    );
   });
 });

@@ -11,7 +11,7 @@ import {
   fitGraphView,
   expectGraphAndScreenshot,
   openView,
-  waitForViewportTransformToSettle
+  waitForViewportTransformToSettle,
 } from './helper';
 
 // "Expand instance in place" (issue #232) is entirely client-side once the
@@ -32,7 +32,7 @@ async function installMessageCapture(page: Page): Promise<void> {
     window.acquireVsCodeApi = () => ({
       postMessage: (message: unknown) => {
         (window as any).__svschMessages.push(message);
-      }
+      },
     });
   });
 }
@@ -47,7 +47,8 @@ async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-expand-visual-'));
   try {
     fs.writeFileSync(path.join(tmpDir, fixtureName), text);
-    const surelogPath = process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
+    const surelogPath =
+      process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
     const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
     return await buildDesignGraph({
       workspaceRoot: tmpDir,
@@ -56,7 +57,7 @@ async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
       veriblePath: 'verible-verilog-syntax',
       surelogPath,
       backendPath,
-      includeExternalDiagnostics: false
+      includeExternalDiagnostics: false,
     });
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -64,7 +65,10 @@ async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
 }
 
 test.describe('expand instance in place visual', () => {
-  test('selecting a single instance shows Expand; clicking it splices in the child module, Collapse removes it', async ({ page }) => {
+  // eslint-disable-next-line max-len
+  test('selecting a single instance shows Expand; clicking it splices in the child module, Collapse removes it', async ({
+    page,
+  }) => {
     await installMessageCapture(page);
 
     const graph = await buildFixtureGraph('expand_instance.sv');
@@ -85,36 +89,46 @@ test.describe('expand instance in place visual', () => {
     // runs at a different zoom level than this point.
     const collapsedLayoutSize = await instance.evaluate((el) => ({
       width: (el as HTMLElement).offsetWidth,
-      height: (el as HTMLElement).offsetHeight
+      height: (el as HTMLElement).offsetHeight,
     }));
-    await page.mouse.click(collapsedBox.x + collapsedBox.width / 2, collapsedBox.y + collapsedBox.height / 2);
+    await page.mouse.click(
+      collapsedBox.x + collapsedBox.width / 2,
+      collapsedBox.y + collapsedBox.height / 2,
+    );
 
     const expandButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Expand' });
     await expect(expandButton).toBeVisible();
     await expandButton.click();
 
-    await expect.poll(async () => {
-      const messages = await capturedMessages(page);
-      return messages.some((message: any) => message.type === 'requestExpandInstance');
-    }).toBe(true);
+    await expect
+      .poll(async () => {
+        const messages = await capturedMessages(page);
+        return messages.some((message: any) => message.type === 'requestExpandInstance');
+      })
+      .toBe(true);
 
-    const request = (await capturedMessages(page)).find((message: any) => message.type === 'requestExpandInstance');
+    const request = (await capturedMessages(page)).find(
+      (message: any) => message.type === 'requestExpandInstance',
+    );
     expect(request.instanceId).toBe(instanceId);
     expect(request.topLevel).toBe(true);
 
     // Mirrors diagramPanel.ts's requestExpandInstance response — the
     // extension host has no logic of its own here beyond handing back the
     // already-elaborated child DesignModule.
-    await page.evaluate(({ moduleName, payload }) => {
-      window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
-    }, {
-      moduleName: request.moduleName,
-      payload: {
-        instanceId: request.instanceId,
-        childModuleName: 'leaf',
-        module: graph.modules.leaf
-      }
-    });
+    await page.evaluate(
+      ({ moduleName, payload }) => {
+        window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
+      },
+      {
+        moduleName: request.moduleName,
+        payload: {
+          instanceId: request.instanceId,
+          childModuleName: 'leaf',
+          module: graph.modules.leaf,
+        },
+      },
+    );
 
     await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
@@ -141,8 +155,12 @@ test.describe('expand instance in place visual', () => {
       if (!splicedBox) continue;
       expect(splicedBox.x).toBeGreaterThanOrEqual(expandedBox.x);
       expect(splicedBox.y).toBeGreaterThanOrEqual(expandedBox.y);
-      expect(splicedBox.x + splicedBox.width).toBeLessThanOrEqual(expandedBox.x + expandedBox.width);
-      expect(splicedBox.y + splicedBox.height).toBeLessThanOrEqual(expandedBox.y + expandedBox.height);
+      expect(splicedBox.x + splicedBox.width).toBeLessThanOrEqual(
+        expandedBox.x + expandedBox.width,
+      );
+      expect(splicedBox.y + splicedBox.height).toBeLessThanOrEqual(
+        expandedBox.y + expandedBox.height,
+      );
     }
 
     await fitGraphView(page, 0.2);
@@ -169,9 +187,13 @@ test.describe('expand instance in place visual', () => {
     await expect(ghostInstanceWrapper).not.toHaveClass(/hdl-node-expand-ghost/);
     // Collapsing reverts the node to its original (pre-expand) size — the
     // expanded size is splice state, never persisted as a manual resize.
-    await expect.poll(() => ghostInstance.evaluate((el) => ({
-      width: (el as HTMLElement).offsetWidth,
-      height: (el as HTMLElement).offsetHeight
-    }))).toEqual(collapsedLayoutSize);
+    await expect
+      .poll(() =>
+        ghostInstance.evaluate((el) => ({
+          width: (el as HTMLElement).offsetWidth,
+          height: (el as HTMLElement).offsetHeight,
+        })),
+      )
+      .toEqual(collapsedLayoutSize);
   });
 });

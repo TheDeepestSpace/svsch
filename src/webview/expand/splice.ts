@@ -4,7 +4,7 @@ import type {
   DiagramNode,
   DiagramPort,
   PositionedGenerateRegion,
-  PositionedNode
+  PositionedNode,
 } from '../../ir/types';
 import { diagramSizing, nodePortCenterOffset, snapUpToGrid } from '../../diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../diagram/nodeSizing';
@@ -52,12 +52,19 @@ export interface SavedExpandedInstanceLayout {
 export const EXPAND_ID_PREFIX = 'expand:';
 const EXPAND_NS_SEP = '::';
 
-/** Extends a (possibly already-nested) expand namespace with one more instance id — see `spliceExpandedInstance`'s `namespace` param for nested/recursive Expand. */
+/**
+ * Extends a (possibly already-nested) expand namespace with one more
+ * instance id — see `spliceExpandedInstance`'s `namespace` param for
+ * nested/recursive Expand.
+ */
 export function childNamespace(namespace: string, instanceId: string): string {
   return namespace ? `${namespace}${EXPAND_NS_SEP}${instanceId}` : instanceId;
 }
 
-/** A namespaced id for a node/edge spliced in under the given expand namespace, built from the child module's own local id for that node/edge. */
+/**
+ * A namespaced id for a node/edge spliced in under the given expand
+ * namespace, built from the child module's own local id for that node/edge.
+ */
 export function namespacedId(namespace: string, localId: string): string {
   return `${EXPAND_ID_PREFIX}${namespace}${EXPAND_NS_SEP}${localId}`;
 }
@@ -71,9 +78,18 @@ export function expandRegionId(namespace: string): string {
 }
 
 export interface SpliceInput {
-  /** Unique path of instance ids down to (and including) the instance being expanded — e.g. "u0" or "u0::u1" for an expand nested inside another expand. */
+  /**
+   * Unique path of instance ids down to (and including) the instance being
+   * expanded — e.g. "u0" or "u0::u1" for an expand nested inside another
+   * expand.
+   */
   namespace: string;
-  /** Id (within `namespace`'s immediate parent scope) of the region this splice's frame should nest under, if any — the parent module's own generate region, or an enclosing expand region. Undefined at the top level. */
+  /**
+   * Id (within `namespace`'s immediate parent scope) of the region this
+   * splice's frame should nest under, if any — the parent module's own
+   * generate region, or an enclosing expand region. Undefined at the top
+   * level.
+   */
   parentRegionId?: string;
   /**
    * Name of the module whose own node graph directly contains `instanceId` —
@@ -107,10 +123,21 @@ export interface SpliceResult {
    * region's bounds are exactly this rect.
    */
   expandedSize: { width: number; height: number };
-  /** child-module-local node id -> namespaced boundary node id, for rewiring the parent's edges that used to terminate on the instance itself. */
+  /**
+   * child-module-local node id -> namespaced boundary node id, for rewiring
+   * the parent's edges that used to terminate on the instance itself.
+   */
   boundaryNodeIdByChildPortName: Map<string, string>;
-  /** Snapshot suitable for persisting via `saveExpandedInstanceLayout` (keyed by the child module's own local node ids, not namespaced). */
-  toSavedLayout(nodes: PositionedNode[], bounds: PositionedGenerateRegion['bounds'], fixed: boolean, instanceOrigin: { x: number; y: number }): SavedExpandedInstanceLayout;
+  /**
+   * Snapshot suitable for persisting via `saveExpandedInstanceLayout` (keyed
+   * by the child module's own local node ids, not namespaced).
+   */
+  toSavedLayout(
+    nodes: PositionedNode[],
+    bounds: PositionedGenerateRegion['bounds'],
+    fixed: boolean,
+    instanceOrigin: { x: number; y: number },
+  ): SavedExpandedInstanceLayout;
 }
 
 /**
@@ -136,7 +163,9 @@ function snap(value: number): number {
   return Math.round(value / diagramSizing.gridSize) * diagramSizing.gridSize;
 }
 
-function unionBounds(rects: Array<{ x: number; y: number; width: number; height: number }>): { x: number; y: number; width: number; height: number } | undefined {
+function unionBounds(
+  rects: Array<{ x: number; y: number; width: number; height: number }>,
+): { x: number; y: number; width: number; height: number } | undefined {
   if (rects.length === 0) return undefined;
   const minX = Math.min(...rects.map((r) => r.x));
   const minY = Math.min(...rects.map((r) => r.y));
@@ -159,7 +188,9 @@ function unionBounds(rects: Array<{ x: number; y: number; width: number; height:
  * here means the spliced content never carries stale absolute-coordinate
  * routes computed for a different context.
  */
-async function layoutInternalNodes(childModule: DesignModule): Promise<Map<string, { x: number; y: number }>> {
+async function layoutInternalNodes(
+  childModule: DesignModule,
+): Promise<Map<string, { x: number; y: number }>> {
   const positions = new Map<string, { x: number; y: number }>();
   if (childModule.nodes.length === 0) return positions;
 
@@ -183,10 +214,10 @@ async function layoutInternalNodes(childModule: DesignModule): Promise<Map<strin
         'elk.spacing.componentComponent': diagramSizing.sameLayerNodeSeparation.toString(),
         'elk.layered.spacing.nodeNodeBetweenLayers': diagramSizing.minNodeSeparation.toString(),
         'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-        'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`
+        'elk.padding': `[top=${diagramSizing.gridSize}, left=${diagramSizing.gridSize}, bottom=${diagramSizing.gridSize}, right=${diagramSizing.gridSize}]`,
       },
       children: elkNodes,
-      edges: elkEdges
+      edges: elkEdges,
     });
 
     for (const child of graph.children ?? []) {
@@ -203,7 +234,14 @@ async function layoutInternalNodes(childModule: DesignModule): Promise<Map<strin
 }
 
 export async function spliceExpandedInstance(input: SpliceInput): Promise<SpliceResult> {
-  const { namespace, childModule, instancePorts, instancePosition, instanceSize, instanceParamRows } = input;
+  const {
+    namespace,
+    childModule,
+    instancePorts,
+    instancePosition,
+    instanceSize,
+    instanceParamRows,
+  } = input;
 
   const childPortNodesByName = new Map<string, DiagramNode>();
   for (const node of childModule.nodes) {
@@ -222,7 +260,8 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   const buildBoundaryColumn = (ports: DiagramPort[], side: 'left' | 'right') =>
     ports.flatMap((port, index) => {
       const childPortNode = childPortNodesByName.get(port.name);
-      if (!childPortNode) return []; // defensive: instance/module port lists should always agree by name
+      // defensive: instance/module port lists should always agree by name
+      if (!childPortNode) return [];
       const boundaryNode: DiagramNode = {
         id: childPortNode.id,
         kind: 'boundaryPort',
@@ -234,9 +273,9 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
             instanceId: input.instanceId,
             childModuleName: childModule.name,
             childPortId: childPortNode.id,
-            outerSide: side
-          }
-        }
+            outerSide: side,
+          },
+        },
       };
       return [{ node: boundaryNode, port, index, side, size: diagramNodeDimensions(boundaryNode) }];
     });
@@ -256,8 +295,11 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       size: { ...entry.size, width },
       node: {
         ...entry.node,
-        sizeOverride: { width: width / diagramSizing.gridSize, height: entry.size.height / diagramSizing.gridSize }
-      }
+        sizeOverride: {
+          width: width / diagramSizing.gridSize,
+          height: entry.size.height / diagramSizing.gridSize,
+        },
+      },
     }));
   };
 
@@ -269,25 +311,32 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   // vertical jog happens past the labels), vertically the node's own header
   // text and parameter rows.
   const columnPad = (column: typeof inputColumn) =>
-    column.length > 0 ? Math.max(...column.map((entry) => entry.size.width)) + LABEL_COLUMN_GAP : CONTENT_INSET;
+    column.length > 0
+      ? Math.max(...column.map((entry) => entry.size.width)) + LABEL_COLUMN_GAP
+      : CONTENT_INSET;
   const padLeft = columnPad(inputColumn);
   const padRight = columnPad(outputColumn);
-  const padTop = snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize) + HEADER_GAP;
+  const padTop =
+    snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize) +
+    HEADER_GAP;
 
   const internalNodes = childModule.nodes.filter((node) => node.kind !== 'port');
 
-  const savedCoversAllNodes = input.savedLayout !== undefined
-    && internalNodes.every((node) => input.savedLayout!.nodes[node.id] !== undefined);
+  const savedCoversAllNodes =
+    input.savedLayout !== undefined &&
+    internalNodes.every((node) => input.savedLayout!.nodes[node.id] !== undefined);
 
   let internalPositions: Map<string, { x: number; y: number }>;
   if (savedCoversAllNodes && input.savedLayout) {
     const origin = input.savedLayout.instanceOrigin ?? instancePosition;
     const dx = instancePosition.x - origin.x;
     const dy = instancePosition.y - origin.y;
-    internalPositions = new Map(internalNodes.map((node) => {
-      const saved = input.savedLayout!.nodes[node.id];
-      return [node.id, { x: saved.x + dx, y: saved.y + dy }];
-    }));
+    internalPositions = new Map(
+      internalNodes.map((node) => {
+        const saved = input.savedLayout!.nodes[node.id];
+        return [node.id, { x: saved.x + dx, y: saved.y + dy }];
+      }),
+    );
   } else {
     const elkPositions = await layoutInternalNodes(childModule);
     const elkRects = internalNodes
@@ -297,7 +346,10 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
         const size = resolvedNodeDimensions(node);
         return { x: pos.x, y: pos.y, width: size.width, height: size.height };
       })
-      .filter((rect): rect is { x: number; y: number; width: number; height: number } => rect !== undefined);
+      .filter(
+        (rect): rect is { x: number; y: number; width: number; height: number } =>
+          rect !== undefined,
+      );
     const elkBounds = unionBounds(elkRects) ?? { x: 0, y: 0, width: 0, height: 0 };
 
     // Place the child diagram inside the (about-to-be-expanded) node body:
@@ -310,16 +362,21 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     // every node at once, if the dynamic import of elkjs itself failed —
     // see layoutInternalNodes's catch) — stack diagonally by index rather
     // than collapsing every missing node onto the same point.
-    internalPositions = new Map(internalNodes.map((node, index) => {
-      const pos = elkPositions.get(node.id) ?? { x: index * diagramSizing.gridSize * 4, y: index * diagramSizing.gridSize * 4 };
-      return [node.id, { x: snap(pos.x + translateX), y: snap(pos.y + translateY) }];
-    }));
+    internalPositions = new Map(
+      internalNodes.map((node, index) => {
+        const pos = elkPositions.get(node.id) ?? {
+          x: index * diagramSizing.gridSize * 4,
+          y: index * diagramSizing.gridSize * 4,
+        };
+        return [node.id, { x: snap(pos.x + translateX), y: snap(pos.y + translateY) }];
+      }),
+    );
   }
 
   const internalPositionedNodes: PositionedNode[] = internalNodes.map((node) => ({
     ...node,
     id: namespacedId(namespace, node.id),
-    position: internalPositions.get(node.id) ?? { x: instancePosition.x, y: instancePosition.y }
+    position: internalPositions.get(node.id) ?? { x: instancePosition.x, y: instancePosition.y },
   }));
 
   // The size the instance's own node grows to — the user's mental model is
@@ -340,12 +397,12 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       // width between them for a pass-through wire's Z-route — otherwise
       // the columns abut and every such wire degenerates into a loop.
       snapUpToGrid(padLeft + padRight),
-      content ? snapUpToGrid(content.x + content.width + padRight - instancePosition.x) : 0
+      content ? snapUpToGrid(content.x + content.width + padRight - instancePosition.x) : 0,
     ),
     height: Math.max(
       instanceSize.height,
-      content ? snapUpToGrid(content.y + content.height + CONTENT_INSET - instancePosition.y) : 0
-    )
+      content ? snapUpToGrid(content.y + content.height + CONTENT_INSET - instancePosition.y) : 0,
+    ),
   };
 
   const boundaryNodes: PositionedNode[] = [];
@@ -358,9 +415,10 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     // expanded width.
     const anchorX = side === 'left' ? instancePosition.x : instancePosition.x + expandedSize.width;
     const anchorY = instancePosition.y + nodePortCenterOffset(index + instanceParamRows);
-    const position = side === 'left'
-      ? { x: anchorX, y: anchorY - size.height / 2 }
-      : { x: anchorX - size.width, y: anchorY - size.height / 2 };
+    const position =
+      side === 'left'
+        ? { x: anchorX, y: anchorY - size.height / 2 }
+        : { x: anchorX - size.width, y: anchorY - size.height / 2 };
     const namespacedNodeId = namespacedId(namespace, node.id);
     boundaryNodes.push({ ...node, id: namespacedNodeId, position });
     boundaryNodeIdByChildPortName.set(port.name, namespacedNodeId);
@@ -368,7 +426,10 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
 
   const allNodes = [...boundaryNodes, ...internalPositionedNodes];
 
-  const rewritePortEndpoint = (nodeId: string, portId: string | undefined): { nodeId: string; portId: string | undefined } => {
+  const rewritePortEndpoint = (
+    nodeId: string,
+    portId: string | undefined,
+  ): { nodeId: string; portId: string | undefined } => {
     const portNode = childModule.nodes.find((n) => n.id === nodeId && n.kind === 'port');
     if (!portNode) {
       return { nodeId: namespacedId(namespace, nodeId), portId };
@@ -388,7 +449,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       sourcePort: src.portId,
       targetPort: tgt.portId,
       waypoint: undefined,
-      routePoints: undefined
+      routePoints: undefined,
     };
   });
 
@@ -399,7 +460,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     x: instancePosition.x,
     y: instancePosition.y,
     width: expandedSize.width,
-    height: expandedSize.height
+    height: expandedSize.height,
   };
 
   const region: PositionedGenerateRegion = {
@@ -413,8 +474,8 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     expandedInstance: {
       instanceId: input.instanceId,
       childModuleName: childModule.name,
-      parentModuleName: input.parentModuleName
-    }
+      parentModuleName: input.parentModuleName,
+    },
   };
 
   return {
@@ -426,7 +487,9 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     toSavedLayout(nodes, saveBounds, fixed, instanceOrigin) {
       const nodesById: Record<string, SavedNodeLayout> = {};
       for (const node of nodes) {
-        const localId = node.id.startsWith(namespacedId(namespace, '')) ? node.id.slice(namespacedId(namespace, '').length) : undefined;
+        const localId = node.id.startsWith(namespacedId(namespace, ''))
+          ? node.id.slice(namespacedId(namespace, '').length)
+          : undefined;
         if (localId === undefined) continue;
         // Only the child module's own internal (non-port) nodes are saved —
         // boundary nodes are re-derived from the instance's current ports
@@ -439,8 +502,8 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
         nodes: nodesById,
         bounds: saveBounds,
         fixed,
-        instanceOrigin
+        instanceOrigin,
       };
-    }
+    },
   };
 }

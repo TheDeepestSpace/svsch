@@ -1,11 +1,18 @@
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import {
   Background,
   Controls,
   MiniMap,
-  Position,
   ReactFlow,
   ReactFlowProvider,
   ViewportPortal,
@@ -13,17 +20,21 @@ import {
   useReactFlow,
   useEdgesState,
   useNodesState,
-  useStore
+  useStore,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './diagram.css';
 import './webview-chrome.css';
-import { diagramSizing, normalizeWidth } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, resolvedNodeDimensions } from '../diagram/nodeSizing';
+import { diagramSizing } from '../diagram/constants';
+import {
+  diagramNodeDimensions,
+  instanceParameterRows,
+  resolvedNodeDimensions,
+} from '../diagram/nodeSizing';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
-  GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+  GENERATE_REGION_EXTERNAL_BLOCK_WARNING,
 } from '../layout/generateRegionValidation';
 import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
@@ -34,7 +45,7 @@ import type {
   DiagramEdge,
   DiagramPort,
   PositionedGenerateRegion,
-  PositionedNode
+  PositionedNode,
 } from '../ir/types';
 import { edgeNetKey } from '../ir/edgeNet';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
@@ -42,11 +53,28 @@ import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import { edgeIsThick } from '../ir/edgeStyle';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
-import { InteractionContext, type NodeResizeHandle, type SelectionAction } from './nodes/shared/context';
+import {
+  InteractionContext,
+  type NodeResizeHandle,
+  type SelectionAction,
+} from './nodes/shared/context';
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
-import { childNamespace, isExpandNamespacedId, namespacedId, spliceExpandedInstance, type SavedExpandedInstanceLayout, type SpliceInput } from './expand/splice';
-import { applyActiveSplices, EXPAND_GHOST_CLASS, removeSpliceAndDescendants, syncSpliceCache, type ActiveSplice } from './expand/expandOverlay';
+import {
+  childNamespace,
+  isExpandNamespacedId,
+  namespacedId,
+  spliceExpandedInstance,
+  type SavedExpandedInstanceLayout,
+  type SpliceInput,
+} from './expand/splice';
+import {
+  applyActiveSplices,
+  EXPAND_GHOST_CLASS,
+  removeSpliceAndDescendants,
+  syncSpliceCache,
+  type ActiveSplice,
+} from './expand/expandOverlay';
 
 interface GraphMessage {
   type: 'graph';
@@ -138,8 +166,10 @@ function MiniMapRegionOutlines({ regions }: { regions: PositionedGenerateRegion[
         [
           'svsch-minimap-region',
           region.isGenerateBlock ? 'svsch-minimap-region-block' : 'svsch-minimap-region-arm',
-          region.invalid ? 'svsch-minimap-region-invalid' : ''
-        ].filter(Boolean).join(' ')
+          region.invalid ? 'svsch-minimap-region-invalid' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
       );
       group.appendChild(rect);
     }
@@ -193,120 +223,125 @@ function DiagramApp(): React.ReactElement {
   // — e.g. right after a new splice is computed, or on collapse.
   const [spliceVersion, setSpliceVersion] = useState(0);
   const pendingSpliceRequestsRef = useRef<Map<string, PendingExpandRequest>>(new Map());
-  const onNodesChange = useCallback((changes: any[]) => {
-    const adjusted = changes.map((change) => {
-      if (change.type === 'position' && change.position) {
-        const node = nodes.find((candidate) => candidate.id === change.id);
-        const kind = node?.data?.node?.kind;
-        const role = node?.data?.node?.metadata?.role;
-        const isHalfGrid = kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
-        if (kind === 'netLabel') {
-          return {
-            ...change,
-            position: {
-              x: Math.round(change.position.x / 24) * 24,
-              y: Math.round(change.position.y / 24) * 24
-            }
-          };
+  const onNodesChange = useCallback(
+    (changes: any[]) => {
+      const adjusted = changes.map((change) => {
+        if (change.type === 'position' && change.position) {
+          const node = nodes.find((candidate) => candidate.id === change.id);
+          const kind = node?.data?.node?.kind;
+          const role = node?.data?.node?.metadata?.role;
+          const isHalfGrid =
+            kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
+          if (kind === 'netLabel') {
+            return {
+              ...change,
+              position: {
+                x: Math.round(change.position.x / 24) * 24,
+                y: Math.round(change.position.y / 24) * 24,
+              },
+            };
+          }
+          if (isHalfGrid) {
+            return {
+              ...change,
+              position: {
+                x: Math.round(change.position.x / 24) * 24,
+                y: Math.round((change.position.y - 12) / 24) * 24 + 12,
+              },
+            };
+          }
         }
-        if (isHalfGrid) {
-          return {
-            ...change,
-            position: {
-              x: Math.round(change.position.x / 24) * 24,
-              y: Math.round((change.position.y - 12) / 24) * 24 + 12
-            }
+        return change;
+      });
+
+      // Dynamic cut labels are derived from their owning port and are not
+      // persisted as fixed nodes. If a dragged owner would run into its stale
+      // local label position, carry the label by the same delta so the node and
+      // stub stay clear until the next extension-host rebuild. Labels that are
+      // already clear remain untouched (and outside unrelated selections).
+      const changedIds = new Set(adjusted.map((change) => change.id));
+      const followers = new Map<string, any>();
+      for (const change of adjusted) {
+        if (change.type !== 'position' || !change.position) continue;
+        const owner = nodes.find((node) => node.id === change.id);
+        if (!owner || owner.data.node.kind === 'netLabel') continue;
+
+        for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
+          if (changedIds.has(labelId) || followers.has(labelId)) continue;
+
+          const label = nodes.find((node) => node.id === labelId);
+          if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
+          const ownerSize = resolvedNodeDimensions(owner.data.node);
+          const labelSize = diagramNodeDimensions(label.data.node);
+          const ownerBounds = {
+            x: change.position.x - diagramSizing.gridSize,
+            y: change.position.y - diagramSizing.gridSize,
+            width: ownerSize.width + diagramSizing.gridSize * 2,
+            height: ownerSize.height + diagramSizing.gridSize * 2,
           };
+          const labelBounds = {
+            x: label.position.x,
+            y: label.position.y,
+            width: labelSize.width,
+            height: labelSize.height,
+          };
+          const wouldOverlap =
+            ownerBounds.x < labelBounds.x + labelBounds.width &&
+            labelBounds.x < ownerBounds.x + ownerBounds.width &&
+            ownerBounds.y < labelBounds.y + labelBounds.height &&
+            labelBounds.y < ownerBounds.y + ownerBounds.height;
+          if (!wouldOverlap) continue;
+          followers.set(labelId, {
+            type: 'position',
+            id: labelId,
+            position: {
+              x: label.position.x + change.position.x - owner.position.x,
+              y: label.position.y + change.position.y - owner.position.y,
+            },
+            dragging: change.dragging,
+          });
         }
       }
-      return change;
-    });
 
-    // Dynamic cut labels are derived from their owning port and are not
-    // persisted as fixed nodes. If a dragged owner would run into its stale
-    // local label position, carry the label by the same delta so the node and
-    // stub stay clear until the next extension-host rebuild. Labels that are
-    // already clear remain untouched (and outside unrelated selections).
-    const changedIds = new Set(adjusted.map((change) => change.id));
-    const followers = new Map<string, any>();
-    for (const change of adjusted) {
-      if (change.type !== 'position' || !change.position) continue;
-      const owner = nodes.find((node) => node.id === change.id);
-      if (!owner || owner.data.node.kind === 'netLabel') continue;
-
-      for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
-        if (changedIds.has(labelId) || followers.has(labelId)) continue;
-
-        const label = nodes.find((node) => node.id === labelId);
-        if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
-        const ownerSize = resolvedNodeDimensions(owner.data.node);
-        const labelSize = diagramNodeDimensions(label.data.node);
-        const ownerBounds = {
-          x: change.position.x - diagramSizing.gridSize,
-          y: change.position.y - diagramSizing.gridSize,
-          width: ownerSize.width + diagramSizing.gridSize * 2,
-          height: ownerSize.height + diagramSizing.gridSize * 2
-        };
-        const labelBounds = {
-          x: label.position.x,
-          y: label.position.y,
-          width: labelSize.width,
-          height: labelSize.height
-        };
-        const wouldOverlap = (
-          ownerBounds.x < labelBounds.x + labelBounds.width
-          && labelBounds.x < ownerBounds.x + ownerBounds.width
-          && ownerBounds.y < labelBounds.y + labelBounds.height
-          && labelBounds.y < ownerBounds.y + ownerBounds.height
+      // Dragging an expanded instance's dimmed node carries its entire spliced
+      // subtree with it — the node's own border IS the expanded frame (there's
+      // no separate region outline to drag), so moving it must move the
+      // unfolded content live, not just re-anchor it after the drop. Processed
+      // as a queue because a carried member can itself be a (nested) expanded
+      // instance whose own members then need the same delta.
+      const spliceFollowers = new Map<string, any>();
+      const carryQueue = [...adjusted];
+      while (carryQueue.length > 0) {
+        const change = carryQueue.shift();
+        if (change.type !== 'position' || !change.position) continue;
+        const splice = [...spliceMapRef.current.values()].find(
+          (s) => s.flowInstanceId === change.id,
         );
-        if (!wouldOverlap) continue;
-        followers.set(labelId, {
-          type: 'position',
-          id: labelId,
-          position: {
-            x: label.position.x + change.position.x - owner.position.x,
-            y: label.position.y + change.position.y - owner.position.y
-          },
-          dragging: change.dragging
-        });
+        if (!splice) continue;
+        const owner = nodes.find((node) => node.id === change.id);
+        if (!owner) continue;
+        const dx = change.position.x - owner.position.x;
+        const dy = change.position.y - owner.position.y;
+        if (dx === 0 && dy === 0) continue;
+        for (const memberId of splice.region.nodeIds) {
+          if (changedIds.has(memberId) || spliceFollowers.has(memberId)) continue;
+          const member = nodes.find((node) => node.id === memberId);
+          if (!member) continue;
+          const memberChange = {
+            type: 'position',
+            id: memberId,
+            position: { x: member.position.x + dx, y: member.position.y + dy },
+            dragging: change.dragging,
+          };
+          spliceFollowers.set(memberId, memberChange);
+          carryQueue.push(memberChange);
+        }
       }
-    }
 
-    // Dragging an expanded instance's dimmed node carries its entire spliced
-    // subtree with it — the node's own border IS the expanded frame (there's
-    // no separate region outline to drag), so moving it must move the
-    // unfolded content live, not just re-anchor it after the drop. Processed
-    // as a queue because a carried member can itself be a (nested) expanded
-    // instance whose own members then need the same delta.
-    const spliceFollowers = new Map<string, any>();
-    const carryQueue = [...adjusted];
-    while (carryQueue.length > 0) {
-      const change = carryQueue.shift();
-      if (change.type !== 'position' || !change.position) continue;
-      const splice = [...spliceMapRef.current.values()].find((s) => s.flowInstanceId === change.id);
-      if (!splice) continue;
-      const owner = nodes.find((node) => node.id === change.id);
-      if (!owner) continue;
-      const dx = change.position.x - owner.position.x;
-      const dy = change.position.y - owner.position.y;
-      if (dx === 0 && dy === 0) continue;
-      for (const memberId of splice.region.nodeIds) {
-        if (changedIds.has(memberId) || spliceFollowers.has(memberId)) continue;
-        const member = nodes.find((node) => node.id === memberId);
-        if (!member) continue;
-        const memberChange = {
-          type: 'position',
-          id: memberId,
-          position: { x: member.position.x + dx, y: member.position.y + dy },
-          dragging: change.dragging
-        };
-        spliceFollowers.set(memberId, memberChange);
-        carryQueue.push(memberChange);
-      }
-    }
-
-    onNodesChangeRaw([...adjusted, ...followers.values(), ...spliceFollowers.values()]);
-  }, [nodes, onNodesChangeRaw]);
+      onNodesChangeRaw([...adjusted, ...followers.values(), ...spliceFollowers.values()]);
+    },
+    [nodes, onNodesChangeRaw],
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
@@ -332,21 +367,25 @@ function DiagramApp(): React.ReactElement {
       x: (userSelectionRect.x - viewport.x) / zoom,
       y: (userSelectionRect.y - viewport.y) / zoom,
       width: userSelectionRect.width / zoom,
-      height: userSelectionRect.height / zoom
+      height: userSelectionRect.height / zoom,
     };
-    const inside = new Set(regions
-      // Expand regions render no frame of their own (the expanded instance's
-      // node is the frame) — a marquee selects that node instead.
-      .filter((region) => region.kind !== 'expand')
-      .filter((region) => (
-        region.bounds.x >= rect.x &&
-        region.bounds.y >= rect.y &&
-        region.bounds.x + region.bounds.width <= rect.x + rect.width &&
-        region.bounds.y + region.bounds.height <= rect.y + rect.height
-      ))
-      .map((region) => region.id));
+    const inside = new Set(
+      regions
+        // Expand regions render no frame of their own (the expanded instance's
+        // node is the frame) — a marquee selects that node instead.
+        .filter((region) => region.kind !== 'expand')
+        .filter(
+          (region) =>
+            region.bounds.x >= rect.x &&
+            region.bounds.y >= rect.y &&
+            region.bounds.x + region.bounds.width <= rect.x + rect.width &&
+            region.bounds.y + region.bounds.height <= rect.y + rect.height,
+        )
+        .map((region) => region.id),
+    );
     setSelectedRegionIds((current) => {
-      if (current.size === inside.size && [...inside].every((id) => current.has(id))) return current;
+      if (current.size === inside.size && [...inside].every((id) => current.has(id)))
+        return current;
       return inside;
     });
   }, [userSelectionRect, regions, viewport]);
@@ -355,42 +394,44 @@ function DiagramApp(): React.ReactElement {
     selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
   }, []);
 
-  const handleSelectionEnd = useCallback((event: React.MouseEvent) => {
-    const start = selectionStartPointRef.current;
-    selectionStartPointRef.current = null;
-    if (!start) return;
+  const handleSelectionEnd = useCallback(
+    (event: React.MouseEvent) => {
+      const start = selectionStartPointRef.current;
+      selectionStartPointRef.current = null;
+      if (!start) return;
 
-    const startFlow = reactFlow.screenToFlowPosition(start);
-    const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    const rect = {
-      x: Math.min(startFlow.x, endFlow.x),
-      y: Math.min(startFlow.y, endFlow.y),
-      width: Math.abs(endFlow.x - startFlow.x),
-      height: Math.abs(endFlow.y - startFlow.y)
-    };
+      const startFlow = reactFlow.screenToFlowPosition(start);
+      const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const rect = {
+        x: Math.min(startFlow.x, endFlow.x),
+        y: Math.min(startFlow.y, endFlow.y),
+        width: Math.abs(endFlow.x - startFlow.x),
+        height: Math.abs(endFlow.y - startFlow.y),
+      };
 
-    // React Flow's lasso can omit synthetic cut-label nodes even when their
-    // measured boxes are visibly inside the rectangle. Apply the same partial
-    // intersection rule explicitly so the rendered selection matches the box
-    // the user drew. Labels outside the lasso remain unselected.
-    setNodes((current) => {
-      let changed = false;
-      const next = current.map((node) => {
-        if (node.data.node.kind !== 'netLabel') return node;
-        const size = diagramNodeDimensions(node.data.node);
-        const selected = (
-          node.position.x < rect.x + rect.width
-          && rect.x < node.position.x + size.width
-          && node.position.y < rect.y + rect.height
-          && rect.y < node.position.y + size.height
-        );
-        if (Boolean(node.selected) === selected) return node;
-        changed = true;
-        return { ...node, selected };
+      // React Flow's lasso can omit synthetic cut-label nodes even when their
+      // measured boxes are visibly inside the rectangle. Apply the same partial
+      // intersection rule explicitly so the rendered selection matches the box
+      // the user drew. Labels outside the lasso remain unselected.
+      setNodes((current) => {
+        let changed = false;
+        const next = current.map((node) => {
+          if (node.data.node.kind !== 'netLabel') return node;
+          const size = diagramNodeDimensions(node.data.node);
+          const selected =
+            node.position.x < rect.x + rect.width &&
+            rect.x < node.position.x + size.width &&
+            node.position.y < rect.y + rect.height &&
+            rect.y < node.position.y + size.height;
+          if (Boolean(node.selected) === selected) return node;
+          changed = true;
+          return { ...node, selected };
+        });
+        return changed ? next : current;
       });
-      return changed ? next : current;
-    });
-  }, [reactFlow, setNodes]);
+    },
+    [reactFlow, setNodes],
+  );
 
   const clearRegionSelection = useCallback(() => {
     setSelectedRegionIds((current) => (current.size === 0 ? current : new Set()));
@@ -398,46 +439,57 @@ function DiagramApp(): React.ReactElement {
 
   // Single-click/drag selection of a region, mirroring node click behavior: the
   // clicked region becomes the sole selection and any selected nodes are dropped.
-  const selectRegion = useCallback((regionId: string) => {
-    setSelectedRegionIds(new Set([regionId]));
-    setNodes((current) => {
-      let changed = false;
-      const next = current.map((node) => {
-        if (!node.selected) return node;
-        changed = true;
-        return { ...node, selected: false };
+  const selectRegion = useCallback(
+    (regionId: string) => {
+      setSelectedRegionIds(new Set([regionId]));
+      setNodes((current) => {
+        let changed = false;
+        const next = current.map((node) => {
+          if (!node.selected) return node;
+          changed = true;
+          return { ...node, selected: false };
+        });
+        return changed ? next : current;
       });
-      return changed ? next : current;
-    });
-  }, [setNodes]);
+    },
+    [setNodes],
+  );
 
   // React Flow's built-in double-click zoom fires for any double-click inside the
   // pane, including ones that navigate to source (nodes, edges, generate region
   // titles). It is disabled and re-implemented here for empty-canvas double-clicks
   // only, keeping d3's behavior: zoom ×2 centered on the cursor, shift to zoom out.
-  const handleCanvasDoubleClick = useCallback((event: React.MouseEvent) => {
-    const target = event.target as Element;
-    if (!target.closest('.react-flow__pane')) return;
-    if (target.closest('.react-flow__node, .react-flow__edge, .generate-region')) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const current = reactFlow.getViewport();
-    const zoom = Math.min(maxZoom, Math.max(minZoom, current.zoom * (event.shiftKey ? 0.5 : 2)));
-    if (zoom === current.zoom) return;
-    const pointerX = event.clientX - bounds.left;
-    const pointerY = event.clientY - bounds.top;
-    const scale = zoom / current.zoom;
-    void reactFlow.setViewport({
-      x: pointerX - (pointerX - current.x) * scale,
-      y: pointerY - (pointerY - current.y) * scale,
-      zoom
-    }, { duration: 250 });
-  }, [reactFlow, minZoom, maxZoom]);
+  const handleCanvasDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.react-flow__pane')) return;
+      if (target.closest('.react-flow__node, .react-flow__edge, .generate-region')) return;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const current = reactFlow.getViewport();
+      const zoom = Math.min(maxZoom, Math.max(minZoom, current.zoom * (event.shiftKey ? 0.5 : 2)));
+      if (zoom === current.zoom) return;
+      const pointerX = event.clientX - bounds.left;
+      const pointerY = event.clientY - bounds.top;
+      const scale = zoom / current.zoom;
+      void reactFlow.setViewport(
+        {
+          x: pointerX - (pointerX - current.x) * scale,
+          y: pointerY - (pointerY - current.y) * scale,
+          zoom,
+        },
+        { duration: 250 },
+      );
+    },
+    [reactFlow, minZoom, maxZoom],
+  );
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
   const [selectionHoverActive, setSelectionHoverActive] = useState(false);
-  const [pendingSelectionAction, setPendingSelectionAction] = useState<SelectionAction | undefined>();
+  const [pendingSelectionAction, setPendingSelectionAction] = useState<
+    SelectionAction | undefined
+  >();
 
   const setHovered = useCallback((netKey?: string, immediate = false) => {
     if (hoverTimeoutRef.current) {
@@ -481,18 +533,24 @@ function DiagramApp(): React.ReactElement {
         } else {
           dynamicExternalIds.delete(node.id);
         }
-        const base = generateStateClass(node.data.node.metadata?.generateActiveState, 'generate-node');
+        const base = generateStateClass(
+          node.data.node.metadata?.generateActiveState,
+          'generate-node',
+        );
         // Preserve the "Expand instance in place" dimming class (see
         // expandOverlay's dimAsExpandGhost) — this effect otherwise rebuilds
         // className from scratch and would silently strip it every time
         // regions/nodes change.
         const isExpandGhost = node.className?.split(' ').includes(EXPAND_GHOST_CLASS) ?? false;
-        const className = [base, wantInvalid ? 'svsch-node-invalid' : '', isExpandGhost ? EXPAND_GHOST_CLASS : '']
-          .filter(Boolean).join(' ') || undefined;
+        const className =
+          [base, wantInvalid ? 'svsch-node-invalid' : '', isExpandGhost ? EXPAND_GHOST_CLASS : '']
+            .filter(Boolean)
+            .join(' ') || undefined;
         const invalid = wantInvalid || undefined;
-        const dataNode = (node.data.node.invalid === invalid && node.data.node.warningNote === warningNote)
-          ? node.data.node
-          : { ...node.data.node, invalid, warningNote };
+        const dataNode =
+          node.data.node.invalid === invalid && node.data.node.warningNote === warningNote
+            ? node.data.node
+            : { ...node.data.node, invalid, warningNote };
         if ((node.className || undefined) === className && dataNode === node.data.node) return node;
         changed = true;
         return { ...node, className, data: { ...node.data, node: dataNode } };
@@ -501,33 +559,44 @@ function DiagramApp(): React.ReactElement {
     });
   }, [regions, nodes, setNodes]);
 
-  const handleRouteChange = useCallback((changes: RouteChange[], commit: boolean) => {
-    const changeMap = new Map(changes.map(c => [c.edgeId, c.routePoints]));
+  const handleRouteChange = useCallback(
+    (changes: RouteChange[], commit: boolean) => {
+      const changeMap = new Map(changes.map((c) => [c.edgeId, c.routePoints]));
 
-    setEdges((currentEdges: Edge[]) => currentEdges.map((edge: Edge) => {
-      const routePoints = changeMap.get(edge.id);
-      if (routePoints) {
-        return { ...edge, data: { ...edge.data, routePoints } };
+      setEdges((currentEdges: Edge[]) =>
+        currentEdges.map((edge: Edge) => {
+          const routePoints = changeMap.get(edge.id);
+          if (routePoints) {
+            return { ...edge, data: { ...edge.data, routePoints } };
+          }
+          return edge;
+        }),
+      );
+
+      if (commit && view) {
+        const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
+        vscode.postMessage({
+          type: 'edgeRoutesChanged',
+          moduleName: view.moduleName,
+          changes,
+          nodes: stripExpandSplices(
+            flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))),
+            spliceMapRef.current,
+          ),
+        });
       }
-      return edge;
-    }));
+    },
+    [reactFlow, setEdges, view],
+  );
 
-    if (commit && view) {
-      const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
-      vscode.postMessage({
-        type: 'edgeRoutesChanged',
-        moduleName: view.moduleName,
-        changes,
-        nodes: stripExpandSplices(flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))), spliceMapRef.current)
-      });
-    }
-  }, [reactFlow, setEdges, view]);
-
-  const onEdgeMouseEnter = useCallback((_event: React.MouseEvent, edge: Edge) => {
-    const diagramEdge = edge.data?.edge as DiagramEdge | undefined;
-    const netKey = diagramEdge ? edgeNetKey(diagramEdge) : undefined;
-    setHovered(netKey);
-  }, [setHovered]);
+  const onEdgeMouseEnter = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      const diagramEdge = edge.data?.edge as DiagramEdge | undefined;
+      const netKey = diagramEdge ? edgeNetKey(diagramEdge) : undefined;
+      setHovered(netKey);
+    },
+    [setHovered],
+  );
 
   const onEdgeMouseLeave = useCallback(() => {
     setHovered(undefined);
@@ -536,7 +605,9 @@ function DiagramApp(): React.ReactElement {
   const [expandedInstanceIds, setExpandedInstanceIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const listener = (event: MessageEvent<GraphMessage | StatusMessage | ExpandInstanceDataMessage>) => {
+    const listener = (
+      event: MessageEvent<GraphMessage | StatusMessage | ExpandInstanceDataMessage>,
+    ) => {
       if (event.data.type === 'graph') {
         const view = event.data.view;
         setView(view);
@@ -558,7 +629,10 @@ function DiagramApp(): React.ReactElement {
         // match the oldest still-pending request for that pair.
         let pendingKey: string | undefined;
         for (const [key, candidate] of pendingSpliceRequestsRef.current) {
-          if (candidate.parentModuleName === moduleName && candidate.localInstanceId === payload.instanceId) {
+          if (
+            candidate.parentModuleName === moduleName &&
+            candidate.localInstanceId === payload.instanceId
+          ) {
             pendingKey = key;
             break;
           }
@@ -577,7 +651,7 @@ function DiagramApp(): React.ReactElement {
           instanceParamRows: pending.instanceParamRows,
           instancePorts: pending.instancePorts,
           childModule: payload.module,
-          savedLayout: payload.savedLayout
+          savedLayout: payload.savedLayout,
         };
         void spliceExpandedInstance(spliceInput).then((result) => {
           spliceMapRef.current.set(pending.namespace, {
@@ -588,7 +662,7 @@ function DiagramApp(): React.ReactElement {
             instanceId: payload.instanceId,
             childModuleName: payload.childModuleName,
             topLevel: pending.topLevel,
-            anchorInstancePosition: pending.instancePosition
+            anchorInstancePosition: pending.instancePosition,
           });
           setSpliceVersion((v) => v + 1);
         });
@@ -607,48 +681,58 @@ function DiagramApp(): React.ReactElement {
   // is a top-level instance of the open module or a nested instance living
   // inside an already-expanded splice (issue #232 decision 3 — no depth
   // cap), by checking spliceMapRef for a splice that owns this node id.
-  const requestExpand = useCallback((instanceNode: HdlFlowNode) => {
-    if (!view) return;
-    let parentNamespace: string | undefined;
-    let enclosing: ActiveSplice | undefined;
-    for (const splice of spliceMapRef.current.values()) {
-      if (splice.region.nodeIds.includes(instanceNode.id)) {
-        enclosing = splice;
-        parentNamespace = splice.namespace;
-        break;
+  const requestExpand = useCallback(
+    (instanceNode: HdlFlowNode) => {
+      if (!view) return;
+      let parentNamespace: string | undefined;
+      let enclosing: ActiveSplice | undefined;
+      for (const splice of spliceMapRef.current.values()) {
+        if (splice.region.nodeIds.includes(instanceNode.id)) {
+          enclosing = splice;
+          parentNamespace = splice.namespace;
+          break;
+        }
       }
-    }
-    const localInstanceId = enclosing
-      ? instanceNode.id.slice(namespacedId(enclosing.namespace, '').length)
-      : instanceNode.id;
-    const namespace = parentNamespace ? childNamespace(parentNamespace, localInstanceId) : localInstanceId;
-    const parentModuleName = enclosing ? enclosing.childModuleName : view.moduleName;
-    const parentRegionId = enclosing?.region.id;
-    const topLevel = enclosing === undefined;
+      const localInstanceId = enclosing
+        ? instanceNode.id.slice(namespacedId(enclosing.namespace, '').length)
+        : instanceNode.id;
+      const namespace = parentNamespace
+        ? childNamespace(parentNamespace, localInstanceId)
+        : localInstanceId;
+      const parentModuleName = enclosing ? enclosing.childModuleName : view.moduleName;
+      const parentRegionId = enclosing?.region.id;
+      const topLevel = enclosing === undefined;
 
-    const node = instanceNode.data.node;
-    // Keyed by namespace, not (parentModuleName, localInstanceId) — two
-    // sibling instances of the same child module type share that pair (see
-    // the expandInstanceData handler above for why), but namespaces are
-    // always globally unique.
-    if (spliceMapRef.current.has(namespace) || pendingSpliceRequestsRef.current.has(namespace)) {
-      return;
-    }
-    pendingSpliceRequestsRef.current.set(namespace, {
-      namespace,
-      parentRegionId,
-      parentModuleName,
-      localInstanceId,
-      topLevel,
-      flowInstanceId: instanceNode.id,
-      instanceLabel: node.label,
-      instancePosition: instanceNode.position,
-      instanceSize: resolvedNodeDimensions(node),
-      instanceParamRows: instanceParameterRows(node),
-      instancePorts: node.ports
-    });
-    vscode.postMessage({ type: 'requestExpandInstance', moduleName: parentModuleName, instanceId: localInstanceId, topLevel });
-  }, [view]);
+      const node = instanceNode.data.node;
+      // Keyed by namespace, not (parentModuleName, localInstanceId) — two
+      // sibling instances of the same child module type share that pair (see
+      // the expandInstanceData handler above for why), but namespaces are
+      // always globally unique.
+      if (spliceMapRef.current.has(namespace) || pendingSpliceRequestsRef.current.has(namespace)) {
+        return;
+      }
+      pendingSpliceRequestsRef.current.set(namespace, {
+        namespace,
+        parentRegionId,
+        parentModuleName,
+        localInstanceId,
+        topLevel,
+        flowInstanceId: instanceNode.id,
+        instanceLabel: node.label,
+        instancePosition: instanceNode.position,
+        instanceSize: resolvedNodeDimensions(node),
+        instanceParamRows: instanceParameterRows(node),
+        instancePorts: node.ports,
+      });
+      vscode.postMessage({
+        type: 'requestExpandInstance',
+        moduleName: parentModuleName,
+        instanceId: localInstanceId,
+        topLevel,
+      });
+    },
+    [view],
+  );
 
   // Auto-restore: on module (re)open, re-request a splice for every
   // top-level instance the host has flagged expanded (see
@@ -671,21 +755,29 @@ function DiagramApp(): React.ReactElement {
     if (!splice) return;
     removeSpliceAndDescendants(spliceMapRef.current, namespace);
     if (splice.topLevel) {
-      vscode.postMessage({ type: 'collapseInstance', moduleName: splice.parentModuleName, instanceId: splice.instanceId, topLevel: true });
+      vscode.postMessage({
+        type: 'collapseInstance',
+        moduleName: splice.parentModuleName,
+        instanceId: splice.instanceId,
+        topLevel: true,
+      });
     }
     setSpliceVersion((v) => v + 1);
   }, []);
 
   // GenerateRegionOverlay only knows region ids, not expand namespaces —
   // resolve one from the other via the cached splice map.
-  const handleCollapseRegion = useCallback((regionId: string) => {
-    for (const [namespace, splice] of spliceMapRef.current) {
-      if (splice.region.id === regionId) {
-        collapseInstance(namespace);
-        return;
+  const handleCollapseRegion = useCallback(
+    (regionId: string) => {
+      for (const [namespace, splice] of spliceMapRef.current) {
+        if (splice.region.id === regionId) {
+          collapseInstance(namespace);
+          return;
+        }
       }
-    }
-  }, [collapseInstance]);
+    },
+    [collapseInstance],
+  );
 
   // r/t/c shortcuts for the Reroute/Cut/Tie controls, plus `c` for the
   // block-selection toolbar's Cut out button (see their badges next to the
@@ -706,7 +798,13 @@ function DiagramApp(): React.ReactElement {
       if (key !== 'r' && key !== 't' && key !== 'c') return;
 
       const target = event.target;
-      if (target instanceof HTMLElement && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
         return;
       }
       if (!view) return;
@@ -721,15 +819,22 @@ function DiagramApp(): React.ReactElement {
       const graphInSync =
         nodes.length === view.nodes.length &&
         edges.length === view.edges.length &&
-        nodes.every((node) => node.data.moduleName === view.moduleName && viewNodeIds.has(node.id)) &&
-        edges.every((edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id));
+        nodes.every(
+          (node) => node.data.moduleName === view.moduleName && viewNodeIds.has(node.id),
+        ) &&
+        edges.every(
+          (edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id),
+        );
       if (!graphInSync) return;
 
       if (key === 't') {
         const netLabelNode = nodes.find((node) => {
           const cutNet = node.data.node.metadata?.cutNet;
           if (!cutNet) return false;
-          return node.selected === true || (hoveredNetKey !== undefined && hoveredNetKey === cutNet.netKey);
+          return (
+            node.selected === true ||
+            (hoveredNetKey !== undefined && hoveredNetKey === cutNet.netKey)
+          );
         });
         const cutNet = netLabelNode?.data.node.metadata?.cutNet;
         if (!cutNet) return;
@@ -742,9 +847,10 @@ function DiagramApp(): React.ReactElement {
       // take over the moment more than one cuttable wire is selected); a solo
       // hover only ever targets the one specific edge under the pointer.
       const selectedEdges = edges.filter((edge) => edge.selected === true && isCuttable(edge));
-      let targetEdges = selectedEdges.length > 0
-        ? selectedEdges
-        : edges.filter((edge) => edge.id === hoveredEdgeId && isCuttable(edge));
+      let targetEdges =
+        selectedEdges.length > 0
+          ? selectedEdges
+          : edges.filter((edge) => edge.id === hoveredEdgeId && isCuttable(edge));
       // `c` also mirrors the block-selection toolbar's "Cut out" button: with
       // no wire selected or hovered to disambiguate, fall back to every
       // cuttable edge touching the selected block(s), if any.
@@ -758,17 +864,30 @@ function DiagramApp(): React.ReactElement {
       // rerouting freezes every real block in place, but a net-cut label that's
       // still tracking its port dynamically must not be forced fixed just
       // because it happened to be on screen.
-      const positioned = stripExpandSplices(nodes.map((node) => ({
-        ...node.data.node,
-        position: node.position,
-        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-      })), spliceMapRef.current);
+      const positioned = stripExpandSplices(
+        nodes.map((node) => ({
+          ...node.data.node,
+          position: node.position,
+          fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+        })),
+        spliceMapRef.current,
+      );
 
       if (key === 'r') {
         if (targetEdges.length === 1) {
-          vscode.postMessage({ type: 'rerouteEdge', moduleName: view.moduleName, edgeId: targetEdges[0].id, nodes: positioned });
+          vscode.postMessage({
+            type: 'rerouteEdge',
+            moduleName: view.moduleName,
+            edgeId: targetEdges[0].id,
+            nodes: positioned,
+          });
         } else {
-          vscode.postMessage({ type: 'rerouteEdges', moduleName: view.moduleName, edgeIds: targetEdges.map((edge) => edge.id), nodes: positioned });
+          vscode.postMessage({
+            type: 'rerouteEdges',
+            moduleName: view.moduleName,
+            edgeIds: targetEdges.map((edge) => edge.id),
+            nodes: positioned,
+          });
         }
         return;
       }
@@ -777,9 +896,19 @@ function DiagramApp(): React.ReactElement {
         .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
         .filter((edge): edge is DiagramEdge => edge !== undefined);
       if (diagramEdges.length === 1) {
-        vscode.postMessage({ type: 'cutNet', moduleName: view.moduleName, edge: diagramEdges[0], nodes: positioned });
+        vscode.postMessage({
+          type: 'cutNet',
+          moduleName: view.moduleName,
+          edge: diagramEdges[0],
+          nodes: positioned,
+        });
       } else {
-        vscode.postMessage({ type: 'cutNets', moduleName: view.moduleName, edges: diagramEdges, nodes: positioned });
+        vscode.postMessage({
+          type: 'cutNets',
+          moduleName: view.moduleName,
+          edges: diagramEdges,
+          nodes: positioned,
+        });
       }
     };
 
@@ -797,7 +926,11 @@ function DiagramApp(): React.ReactElement {
     const dynamicCutLabelIdsByOwner = new Map<string, string[]>();
     const addArrayConnection = (nodeId: string, connection: ArrayStackConnection) => {
       const list = arrayConnectionsByNode.get(nodeId) ?? [];
-      if (!list.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
+      if (
+        !list.some(
+          (existing) => existing.portId === connection.portId && existing.role === connection.role,
+        )
+      ) {
         list.push(connection);
       }
       arrayConnectionsByNode.set(nodeId, list);
@@ -848,14 +981,18 @@ function DiagramApp(): React.ReactElement {
       selected: reselectIds?.has(node.id) ?? undefined,
       className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
       zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
+      data: {
+        node,
+        moduleName: view.moduleName,
+        arrayConnections: arrayConnectionsByNode.get(node.id) ?? [],
+      },
     }));
     const baseRegions = view.generateRegions ?? [];
 
     const netToLeader = new Map<string, string>();
     const edgesByNet = new Map<string, string[]>();
 
-    view.edges.forEach(edge => {
+    view.edges.forEach((edge) => {
       const netKey = edgeNetKey(edge);
       const list = edgesByNet.get(netKey) || [];
       list.push(edge.id);
@@ -889,15 +1026,22 @@ function DiagramApp(): React.ReactElement {
           edge,
           moduleName: view.moduleName,
           isNetLeader,
-          netEdgeIds
-        }
+          netEdgeIds,
+        },
       };
     });
 
     // Reattach every currently-expanded instance's spliced content on top of
     // the freshly-rebuilt base — see spliceMapRef's declaration for why this
     // is a cheap reattach (translate + merge) rather than a re-fetch/re-layout.
-    const merged = applyActiveSplices(baseNodes, baseEdges, baseRegions, spliceMapRef.current, view.moduleName, handleRouteChange);
+    const merged = applyActiveSplices(
+      baseNodes,
+      baseEdges,
+      baseRegions,
+      spliceMapRef.current,
+      view.moduleName,
+      handleRouteChange,
+    );
     setNodes(merged.nodes);
     setRegions(merged.regions);
     setEdges(merged.edges);
@@ -966,41 +1110,51 @@ function DiagramApp(): React.ReactElement {
       for (const e of edges) {
         const pts = e.data?.routePoints as Array<{ x: number; y: number }> | undefined;
         if (movedIds.has(e.source) && movedIds.has(e.target) && pts && pts.length > 0) {
-          originalRoutes.set(e.id, pts.map((pt) => ({ ...pt })));
+          originalRoutes.set(
+            e.id,
+            pts.map((pt) => ({ ...pt })),
+          );
         }
       }
       groupDragRef.current = {
         startPos: { x: dragged.position.x, y: dragged.position.y },
         originalRoutes,
-        startRegions: regionsRef.current.map((region) => ({ ...region, bounds: { ...region.bounds } })),
+        startRegions: regionsRef.current.map((region) => ({
+          ...region,
+          bounds: { ...region.bounds },
+        })),
       };
     },
-    [edges, clearRegionSelection, selectedRegionIds]
+    [edges, clearRegionSelection, selectedRegionIds],
   );
 
   const onNodeDrag = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[] = [dragged]) => {
       const movedNodes = allNodes.length > 0 ? allNodes : [dragged];
       const allFlowNodes = mergeDraggedFlowNodes(reactFlow.getNodes() as HdlFlowNode[], movedNodes);
-      const positioned = flowNodesToPositioned(allFlowNodes, new Set(movedNodes.map((node) => node.id)));
+      const positioned = flowNodesToPositioned(
+        allFlowNodes,
+        new Set(movedNodes.map((node) => node.id)),
+      );
       const state = groupDragRef.current;
       const dx = state ? dragged.position.x - state.startPos.x : 0;
       const dy = state ? dragged.position.y - state.startPos.y : 0;
       setRegions((current) => {
-        const base = state && dragged.selected && selectedRegionIds.size > 0
-          ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
-          : current;
+        const base =
+          state && dragged.selected && selectedRegionIds.size > 0
+            ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+            : current;
         return expandRegionsForNodes(base, positioned);
       });
 
       if (!state || state.originalRoutes.size === 0) return;
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
         edgeId,
-        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
       }));
       handleRouteChange(changes, false);
     },
-    [handleRouteChange, reactFlow, selectedRegionIds]
+    [handleRouteChange, reactFlow, selectedRegionIds],
   );
 
   const onNodeDragStop = useCallback(
@@ -1018,18 +1172,19 @@ function DiagramApp(): React.ReactElement {
       const dx = state ? dragged.position.x - state.startPos.x : 0;
       const dy = state ? dragged.position.y - state.startPos.y : 0;
       const translatesRegions = Boolean(state) && dragged.selected && selectedRegionIds.size > 0;
-      const baseRegions = translatesRegions && state
-        ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
-        : regionsRef.current;
-      const expandedRegions = expandRegionsForNodes(baseRegions, positioned).map((region) => (
-        translatesRegions && selectedRegionIds.has(region.id) ? { ...region, fixed: true } : region
-      ));
+      const baseRegions =
+        translatesRegions && state
+          ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+          : regionsRef.current;
+      const expandedRegions = expandRegionsForNodes(baseRegions, positioned).map((region) =>
+        translatesRegions && selectedRegionIds.has(region.id) ? { ...region, fixed: true } : region,
+      );
       setRegions(expandedRegions);
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName: view.moduleName,
         nodes: stripExpandSplices(positioned, spliceMapRef.current),
-        regions: stripExpandRegions(expandedRegions)
+        regions: stripExpandRegions(expandedRegions),
       });
       if (spliceMapRef.current.size > 0) {
         syncSpliceCache(spliceMapRef.current, allFlowNodes, expandedRegions);
@@ -1042,11 +1197,11 @@ function DiagramApp(): React.ReactElement {
 
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
         edgeId,
-        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange, reactFlow, selectedRegionIds]
+    [view, handleRouteChange, reactFlow, selectedRegionIds],
   );
 
   // Grow-only block resize (instance/register nodes) — same custom
@@ -1059,31 +1214,37 @@ function DiagramApp(): React.ReactElement {
   // calls startNodeResize (via InteractionContext) on pointerdown.
   const nodeResizeDragRef = useRef<NodeResizeDragState | null>(null);
 
-  const startNodeResize = useCallback((event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const node = nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-    const canonical = diagramNodeDimensions(node.data.node);
-    const resolved = resolvedNodeDimensions(node.data.node);
-    nodeResizeDragRef.current = {
-      nodeId,
-      handle,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startPosition: { ...node.position },
-      startWidth: resolved.width,
-      startHeight: resolved.height,
-      canonicalWidth: canonical.width,
-      canonicalHeight: canonical.height,
-      startNodes: nodes.map((n) => ({
-        ...n,
-        position: { ...n.position },
-        data: { ...n.data, node: { ...n.data.node } }
-      })),
-      startRegions: regionsRef.current.map((region) => ({ ...region, bounds: { ...region.bounds } }))
-    };
-  }, [nodes]);
+  const startNodeResize = useCallback(
+    (event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const canonical = diagramNodeDimensions(node.data.node);
+      const resolved = resolvedNodeDimensions(node.data.node);
+      nodeResizeDragRef.current = {
+        nodeId,
+        handle,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startPosition: { ...node.position },
+        startWidth: resolved.width,
+        startHeight: resolved.height,
+        canonicalWidth: canonical.width,
+        canonicalHeight: canonical.height,
+        startNodes: nodes.map((n) => ({
+          ...n,
+          position: { ...n.position },
+          data: { ...n.data, node: { ...n.data.node } },
+        })),
+        startRegions: regionsRef.current.map((region) => ({
+          ...region,
+          bounds: { ...region.bounds },
+        })),
+      };
+    },
+    [nodes],
+  );
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -1116,7 +1277,7 @@ function DiagramApp(): React.ReactElement {
         type: 'layoutChanged',
         moduleName: view.moduleName,
         nodes: stripExpandSplices(positioned, spliceMapRef.current),
-        regions: stripExpandRegions(update.regions)
+        regions: stripExpandRegions(update.regions),
       });
       if (spliceMapRef.current.size > 0) {
         syncSpliceCache(spliceMapRef.current, update.nodes, update.regions);
@@ -1138,7 +1299,11 @@ function DiagramApp(): React.ReactElement {
       requestAnimationFrame(() => {
         const el = document.querySelector(`.react-flow__node[data-id="${drag.nodeId}"]`);
         if (el) {
-          updateNodeInternals(new Map([[drag.nodeId, { id: drag.nodeId, nodeElement: el as HTMLDivElement, force: true }]]));
+          updateNodeInternals(
+            new Map([
+              [drag.nodeId, { id: drag.nodeId, nodeElement: el as HTMLDivElement, force: true }],
+            ]),
+          );
         }
       });
     };
@@ -1155,30 +1320,61 @@ function DiagramApp(): React.ReactElement {
     if (!view) {
       return;
     }
-    const positioned = stripExpandSplices(nodes.map((node) => ({
-      ...node.data.node,
-      position: node.position,
-      // "Reroute All" freezes every real block in place — a net-cut label
-      // that's still tracking its port dynamically must not be forced fixed
-      // just because it happened to be on screen.
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-    })), spliceMapRef.current);
+    const positioned = stripExpandSplices(
+      nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        // "Reroute All" freezes every real block in place — a net-cut label
+        // that's still tracking its port dynamically must not be forced fixed
+        // just because it happened to be on screen.
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+      })),
+      spliceMapRef.current,
+    );
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
   const nodeTypes = useMemo(() => ({ hdl: HdlNode }), []);
   const edgeTypes = useMemo(() => ({ svsch: OrthogonalEdge }), []);
-  const diagramStyle = useMemo(() => ({
-    '--svsch-grid': `${diagramSizing.gridSize}px`,
-    '--svsch-node-width': `${diagramSizing.nodeWidth}px`,
-    '--svsch-node-height': `${diagramSizing.nodeHeight}px`,
-    '--svsch-node-header-height': `${diagramSizing.nodeHeaderHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`,
-    '--svsch-port-height': `${diagramSizing.portHeight}px`,
-    '--svsch-port-skin-height': `${diagramSizing.portSkinHeight}px`,
-    '--svsch-port-nose-length': `${diagramSizing.portNoseLength}px`,
-    '--svsch-handle-offset': '-7px'
-  }) as React.CSSProperties, []);
+  const diagramStyle = useMemo(
+    () =>
+      ({
+        '--svsch-grid': `${diagramSizing.gridSize}px`,
+        '--svsch-node-width': `${diagramSizing.nodeWidth}px`,
+        '--svsch-node-height': `${diagramSizing.nodeHeight}px`,
+        '--svsch-node-header-height': `${diagramSizing.nodeHeaderHeight}px`,
+        '--svsch-port-width': `${diagramSizing.portWidth}px`,
+        '--svsch-port-height': `${diagramSizing.portHeight}px`,
+        '--svsch-port-skin-height': `${diagramSizing.portSkinHeight}px`,
+        '--svsch-port-nose-length': `${diagramSizing.portNoseLength}px`,
+        '--svsch-handle-offset': '-7px',
+      }) as React.CSSProperties,
+    [],
+  );
+
+  const interactionValue = useMemo(
+    () => ({
+      hoveredNetKey,
+      setHovered,
+      hoveredEdgeId,
+      setHoveredEdgeId,
+      selectionHoverActive,
+      setSelectionHoverActive,
+      pendingSelectionAction,
+      setPendingSelectionAction,
+      overlayPortalNode,
+      startNodeResize,
+    }),
+    [
+      hoveredNetKey,
+      setHovered,
+      hoveredEdgeId,
+      selectionHoverActive,
+      pendingSelectionAction,
+      overlayPortalNode,
+      startNodeResize,
+    ],
+  );
 
   if (!view) {
     return <div className="empty">Building diagram...</div>;
@@ -1186,154 +1382,154 @@ function DiagramApp(): React.ReactElement {
 
   return (
     <div className="shell" style={diagramStyle}>
-        <header className="toolbar">
-          <select
-            className="vscode-control vscode-select"
-            aria-label="Module"
-            value={view.moduleName}
-            onChange={(event) => vscode.postMessage({ type: 'openModule', moduleName: event.target.value })}
-          >
-            {modules.map((moduleName) => (
-              <option key={moduleName} value={moduleName}>
-                {moduleName}
-              </option>
-            ))}
-          </select>
-          <button className="vscode-control vscode-button vscode-button-secondary" onClick={() => vscode.postMessage({ type: 'exportSvg' })}>Export SVG</button>
-          <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
-          <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
-          <div className="status-indicator">
-            {status === 'rebuilding' ? (
-              <div className="busy-indicator" role="status" aria-live="polite">
-                <span />
-                Updating
-              </div>
-            ) : view.diagnostics.length > 0 ? (
-              <div
-                className="diagnostics-indicator"
-                role="status"
-              >
-                <span aria-hidden="true">⚠</span>
-                {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
-              </div>
-            ) : null}
-          </div>
-        </header>
-        <main className="canvas" key={view.moduleName}>
-          <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
-          <InteractionContext.Provider value={{
-            hoveredNetKey,
-            setHovered,
-            hoveredEdgeId,
-            setHoveredEdgeId,
-            selectionHoverActive,
-            setSelectionHoverActive,
-            pendingSelectionAction,
-            setPendingSelectionAction,
-            overlayPortalNode,
-            startNodeResize
-          }}>
-            <LineJumpProvider>
-              <ReactFlow<HdlFlowNode, Edge>
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onNodeDragStart={onNodeDragStart}
-                onNodeDrag={onNodeDrag}
-                onNodeDragStop={onNodeDragStop}
-                onSelectionDragStart={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDragStart(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionDrag={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDrag(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionStart={handleSelectionStart}
-                onSelectionEnd={handleSelectionEnd}
-                onEdgeMouseEnter={onEdgeMouseEnter}
-                onEdgeMouseLeave={onEdgeMouseLeave}
-                onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
-                  event.stopPropagation();
-                }}
-                onEdgeDoubleClick={(event: React.MouseEvent, edge: Edge) => {
-                  if (edge.data?.edge) {
-                    const msg = { type: 'navigateToSignal', edge: edge.data.edge };
-                    console.log('NAVIGATE:', JSON.stringify(msg));
-                    vscode.postMessage(msg);
-                  }
-                }}
-                onInit={(instance: any) => {
-                  (window as any).reactFlowInstance = instance;
-                  setViewport(instance.getViewport?.() ?? { x: 0, y: 0, zoom: 1 });
-                }}
-                onMove={(_: unknown, nextViewport: FlowViewport) => setViewport(nextViewport)}
-                nodesConnectable={false}
-                deleteKeyCode={null}
-                selectionOnDrag
-                panOnDrag={[1, 2]}
-                zoomOnDoubleClick={false}
-                onDoubleClick={handleCanvasDoubleClick}
-                onPaneClick={clearRegionSelection}
-                onNodeClick={clearRegionSelection}
-                selectionMode="partial"
-                snapToGrid
-                snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
-                zIndexMode="manual"
-                proOptions={{ hideAttribution: true }}
-              >
-                <Background gap={diagramSizing.gridSize} />
-                <ViewportPortal>
-                  <GenerateRegionOverlay
-                    moduleName={view.moduleName}
-                    regions={regions}
-                    nodes={nodes}
-                    edges={edges}
-                    viewport={viewport}
-                    setNodes={setNodes}
-                    setRegions={setRegions}
-                    onRouteChange={handleRouteChange}
-                    selectedRegionIds={selectedRegionIds}
-                    selectRegion={selectRegion}
-                    spliceMapRef={spliceMapRef}
-                  />
-                </ViewportPortal>
-                {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
+      <header className="toolbar">
+        <select
+          className="vscode-control vscode-select"
+          aria-label="Module"
+          value={view.moduleName}
+          onChange={(event) =>
+            vscode.postMessage({ type: 'openModule', moduleName: event.target.value })
+          }
+        >
+          {modules.map((moduleName) => (
+            <option key={moduleName} value={moduleName}>
+              {moduleName}
+            </option>
+          ))}
+        </select>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={() => vscode.postMessage({ type: 'exportSvg' })}
+        >
+          Export SVG
+        </button>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={rerouteLayout}
+        >
+          Reroute All
+        </button>
+        <button
+          className="vscode-control vscode-button"
+          onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}
+        >
+          Reset Layout
+        </button>
+        <div className="status-indicator">
+          {status === 'rebuilding' ? (
+            <div className="busy-indicator" role="status" aria-live="polite">
+              <span />
+              Updating
+            </div>
+          ) : view.diagnostics.length > 0 ? (
+            <div className="diagnostics-indicator" role="status">
+              <span aria-hidden="true">⚠</span>
+              {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
+            </div>
+          ) : null}
+        </div>
+      </header>
+      <main className="canvas" key={view.moduleName}>
+        <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
+        <InteractionContext.Provider value={interactionValue}>
+          <LineJumpProvider>
+            <ReactFlow<HdlFlowNode, Edge>
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeDragStart={onNodeDragStart}
+              onNodeDrag={onNodeDrag}
+              onNodeDragStop={onNodeDragStop}
+              onSelectionDragStart={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDragStart(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionDrag={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDrag(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionStart={handleSelectionStart}
+              onSelectionEnd={handleSelectionEnd}
+              onEdgeMouseEnter={onEdgeMouseEnter}
+              onEdgeMouseLeave={onEdgeMouseLeave}
+              onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
+                event.stopPropagation();
+              }}
+              onEdgeDoubleClick={(event: React.MouseEvent, edge: Edge) => {
+                if (edge.data?.edge) {
+                  const msg = { type: 'navigateToSignal', edge: edge.data.edge };
+                  console.log('NAVIGATE:', JSON.stringify(msg));
+                  vscode.postMessage(msg);
+                }
+              }}
+              onInit={(instance: any) => {
+                (window as any).reactFlowInstance = instance;
+                setViewport(instance.getViewport?.() ?? { x: 0, y: 0, zoom: 1 });
+              }}
+              onMove={(_: unknown, nextViewport: FlowViewport) => setViewport(nextViewport)}
+              nodesConnectable={false}
+              deleteKeyCode={null}
+              selectionOnDrag
+              panOnDrag={[1, 2]}
+              zoomOnDoubleClick={false}
+              onDoubleClick={handleCanvasDoubleClick}
+              onPaneClick={clearRegionSelection}
+              onNodeClick={clearRegionSelection}
+              selectionMode="partial"
+              snapToGrid
+              snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
+              zIndexMode="manual"
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background gap={diagramSizing.gridSize} />
+              <ViewportPortal>
+                <GenerateRegionOverlay
+                  moduleName={view.moduleName}
+                  regions={regions}
+                  nodes={nodes}
+                  edges={edges}
+                  viewport={viewport}
+                  setNodes={setNodes}
+                  setRegions={setRegions}
+                  onRouteChange={handleRouteChange}
+                  selectedRegionIds={selectedRegionIds}
+                  selectRegion={selectRegion}
+                  spliceMapRef={spliceMapRef}
+                />
+              </ViewportPortal>
+              {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
                     through ViewportPortal — that portal is shared with GenerateRegionOverlay
                     above, which must stay beneath node bodies, while floating controls like
                     the selection toolbar need to paint above them. Its own inline transform
                     (see the style prop) reproduces react-flow's pan/zoom so flow-space
                     coordinates still work for anything portaled into it. */}
-                <div
-                  ref={setOverlayPortalNode}
-                  className="svsch-overlay-portal-root"
-                  style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
-                />
-                <NodeSelectionToolbar
-                  moduleName={view.moduleName}
-                  nodes={nodes}
-                  edges={edges}
-                  pendingReselectIdsRef={pendingReselectIdsRef}
-                  onExpandInstance={requestExpand}
-                  onCollapseInstance={handleCollapseRegion}
-                  spliceMapRef={spliceMapRef}
-                />
-                <MiniMap
-                  pannable
-                  zoomable
-                  className="svsch-minimap"
-                  nodeComponent={MiniMapNode}
-                />
-                <MiniMapRegionOutlines regions={regions} />
-                <Controls />
-              </ReactFlow>
-            </LineJumpProvider>
-          </InteractionContext.Provider>
-        </main>
+              <div
+                ref={setOverlayPortalNode}
+                className="svsch-overlay-portal-root"
+                style={{
+                  transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+                }}
+              />
+              <NodeSelectionToolbar
+                moduleName={view.moduleName}
+                nodes={nodes}
+                edges={edges}
+                pendingReselectIdsRef={pendingReselectIdsRef}
+                onExpandInstance={requestExpand}
+                onCollapseInstance={handleCollapseRegion}
+                spliceMapRef={spliceMapRef}
+              />
+              <MiniMap pannable zoomable className="svsch-minimap" nodeComponent={MiniMapNode} />
+              <MiniMapRegionOutlines regions={regions} />
+              <Controls />
+            </ReactFlow>
+          </LineJumpProvider>
+        </InteractionContext.Provider>
+      </main>
     </div>
   );
 }
@@ -1380,7 +1576,7 @@ function applyNodeResizeDrag(
   drag: NodeResizeDragState,
   clientX: number,
   clientY: number,
-  zoom: number
+  zoom: number,
 ): { nodes: HdlFlowNode[]; regions: PositionedGenerateRegion[] } {
   const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
@@ -1397,22 +1593,22 @@ function applyNodeResizeDrag(
         node: {
           ...node.data.node,
           position,
-          sizeOverride: { width: width / grid, height: height / grid }
-        }
-      }
+          sizeOverride: { width: width / grid, height: height / grid },
+        },
+      },
     };
   });
 
   return {
     nodes,
-    regions: expandRegionsForFlowNodes(drag.startRegions, nodes)
+    regions: expandRegionsForFlowNodes(drag.startRegions, nodes),
   };
 }
 
 function resizeNodeBounds(
   drag: NodeResizeDragState,
   dx: number,
-  dy: number
+  dy: number,
 ): { position: { x: number; y: number }; width: number; height: number } {
   const includesLeft = drag.handle.includes('left');
   const includesRight = drag.handle.includes('right');
@@ -1452,7 +1648,7 @@ function GenerateRegionOverlay({
   onRouteChange,
   selectedRegionIds,
   selectRegion,
-  spliceMapRef
+  spliceMapRef,
 }: {
   moduleName: string;
   regions: PositionedGenerateRegion[];
@@ -1468,70 +1664,85 @@ function GenerateRegionOverlay({
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
 
-  const startDrag = useCallback((event: React.PointerEvent, region: PositionedGenerateRegion, kind: RegionDragState['kind'], side?: RegionDragSide) => {
-    event.preventDefault();
-    event.stopPropagation();
-    // Interacting with a selected region moves the whole selection; interacting with
-    // an unselected one selects just it (mirrors React Flow's node behavior — a
-    // click or drag highlights the region with the standard selection border).
-    const moveRoots = kind === 'move' && selectedRegionIds.has(region.id)
-      ? [...selectedRegionIds]
-      : [region.id];
-    if (!selectedRegionIds.has(region.id)) selectRegion(region.id);
-    const affectedRegionIds = kind === 'move'
-      ? new Set(moveRoots.flatMap((rootId) => [...descendantRegionIds(rootId, regions, true)]))
-      : new Set([region.id]);
-    const affectedNodeIds = kind === 'move'
-      ? nodeIdsForRegions(affectedRegionIds, regions)
-      : new Set<string>();
-    // A moved region may contain an expanded instance's dimmed node — carry
-    // that instance's entire spliced subtree along (its expand region has no
-    // rendered frame of its own; the node is the frame). Fixpoint loop:
-    // a carried member can itself be a nested expanded instance.
-    if (kind === 'move') {
-      let grew = true;
-      while (grew) {
-        grew = false;
-        for (const splice of spliceMapRef.current.values()) {
-          if (!affectedNodeIds.has(splice.flowInstanceId)) continue;
-          for (const memberId of splice.region.nodeIds) {
-            if (!affectedNodeIds.has(memberId)) {
-              affectedNodeIds.add(memberId);
-              grew = true;
+  const startDrag = useCallback(
+    (
+      event: React.PointerEvent,
+      region: PositionedGenerateRegion,
+      kind: RegionDragState['kind'],
+      side?: RegionDragSide,
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
+      // Interacting with a selected region moves the whole selection; interacting with
+      // an unselected one selects just it (mirrors React Flow's node behavior — a
+      // click or drag highlights the region with the standard selection border).
+      const moveRoots =
+        kind === 'move' && selectedRegionIds.has(region.id) ? [...selectedRegionIds] : [region.id];
+      if (!selectedRegionIds.has(region.id)) selectRegion(region.id);
+      const affectedRegionIds =
+        kind === 'move'
+          ? new Set(moveRoots.flatMap((rootId) => [...descendantRegionIds(rootId, regions, true)]))
+          : new Set([region.id]);
+      const affectedNodeIds =
+        kind === 'move' ? nodeIdsForRegions(affectedRegionIds, regions) : new Set<string>();
+      // A moved region may contain an expanded instance's dimmed node — carry
+      // that instance's entire spliced subtree along (its expand region has no
+      // rendered frame of its own; the node is the frame). Fixpoint loop:
+      // a carried member can itself be a nested expanded instance.
+      if (kind === 'move') {
+        let grew = true;
+        while (grew) {
+          grew = false;
+          for (const splice of spliceMapRef.current.values()) {
+            if (!affectedNodeIds.has(splice.flowInstanceId)) continue;
+            for (const memberId of splice.region.nodeIds) {
+              if (!affectedNodeIds.has(memberId)) {
+                affectedNodeIds.add(memberId);
+                grew = true;
+              }
             }
           }
         }
       }
-    }
-    const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
-    if (kind === 'move') {
-      for (const edge of edges) {
-        const pts = edge.data?.routePoints as Array<{ x: number; y: number }> | undefined;
-        if (affectedNodeIds.has(edge.source) && affectedNodeIds.has(edge.target) && pts && pts.length > 0) {
-          startRoutes.set(edge.id, pts.map((pt) => ({ ...pt })));
+      const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
+      if (kind === 'move') {
+        for (const edge of edges) {
+          const pts = edge.data?.routePoints as Array<{ x: number; y: number }> | undefined;
+          if (
+            affectedNodeIds.has(edge.source) &&
+            affectedNodeIds.has(edge.target) &&
+            pts &&
+            pts.length > 0
+          ) {
+            startRoutes.set(
+              edge.id,
+              pts.map((pt) => ({ ...pt })),
+            );
+          }
         }
       }
-    }
-    dragRef.current = {
-      kind,
-      regionId: region.id,
-      side,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startRegions: regions.map((item) => ({ ...item, bounds: { ...item.bounds } })),
-      startNodes: nodes.map((node) => ({
-        ...node,
-        position: { ...node.position },
-        data: {
-          ...node.data,
-          node: { ...node.data.node, position: { ...node.data.node.position } }
-        }
-      })),
-      affectedRegionIds,
-      affectedNodeIds,
-      startRoutes
-    };
-  }, [edges, nodes, regions, selectedRegionIds, selectRegion]);
+      dragRef.current = {
+        kind,
+        regionId: region.id,
+        side,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startRegions: regions.map((item) => ({ ...item, bounds: { ...item.bounds } })),
+        startNodes: nodes.map((node) => ({
+          ...node,
+          position: { ...node.position },
+          data: {
+            ...node.data,
+            node: { ...node.data.node, position: { ...node.data.node.position } },
+          },
+        })),
+        affectedRegionIds,
+        affectedNodeIds,
+        startRoutes,
+      };
+    },
+    [edges, nodes, regions, selectedRegionIds, selectRegion],
+  );
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -1540,7 +1751,14 @@ function GenerateRegionOverlay({
       const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
       setRegions(update.regions);
       setNodes(update.nodes);
-      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, false);
+      applyRegionDragRoutes(
+        drag,
+        event.clientX,
+        event.clientY,
+        viewport.zoom || 1,
+        onRouteChange,
+        false,
+      );
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -1561,7 +1779,7 @@ function GenerateRegionOverlay({
 
       const fixedRegions = update.regions.map((region) => ({
         ...region,
-        fixed: region.fixed || drag.affectedRegionIds.has(region.id)
+        fixed: region.fixed || drag.affectedRegionIds.has(region.id),
       }));
 
       if (spliceMapRef.current.size > 0) {
@@ -1570,7 +1788,11 @@ function GenerateRegionOverlay({
       }
 
       if (drag.kind === 'resize') {
-        vscode.postMessage({ type: 'regionLayoutChanged', moduleName, regions: stripExpandRegions(fixedRegions) });
+        vscode.postMessage({
+          type: 'regionLayoutChanged',
+          moduleName,
+          regions: stripExpandRegions(fixedRegions),
+        });
         return;
       }
 
@@ -1579,9 +1801,16 @@ function GenerateRegionOverlay({
         type: 'layoutChanged',
         moduleName,
         nodes: stripExpandSplices(positioned, spliceMapRef.current),
-        regions: stripExpandRegions(fixedRegions)
+        regions: stripExpandRegions(fixedRegions),
       });
-      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, true);
+      applyRegionDragRoutes(
+        drag,
+        event.clientX,
+        event.clientY,
+        viewport.zoom || 1,
+        onRouteChange,
+        true,
+      );
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -1604,75 +1833,77 @@ function GenerateRegionOverlay({
         .filter((region) => region.kind !== 'expand')
         .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
         .map((region) => (
-        <div
-          key={region.id}
-          className={[
-            'generate-region',
-            region.isGenerateBlock ? 'generate-block' : '',
-            region.activeState === 'active' ? 'generate-region-active' : '',
-            region.activeState === 'inactive' ? 'generate-region-inactive' : '',
-            region.invalid ? 'generate-region-invalid' : '',
-            selectedRegionIds.has(region.id) ? 'generate-region-selected' : ''
-          ].filter(Boolean).join(' ')}
-          data-region-id={region.id}
-          data-region-kind={region.kind}
-          data-warning-note={region.warningNote || undefined}
-          style={{
-            left: region.bounds.x,
-            top: region.bounds.y,
-            width: region.bounds.width,
-            height: region.bounds.height
-          }}
-        >
-          <div className="generate-region-outline" />
-          {region.warningNote && (
-            <Tooltip content={region.warningNote}>
-              {(trigger) => (
-                <span
-                  {...trigger}
-                  className="generate-region-warning"
-                  role="img"
-                  aria-label={region.warningNote}
-                >
-                  ⚠
-                </span>
-              )}
-            </Tooltip>
-          )}
-          <button
-            type="button"
-            className="generate-region-title"
-            onPointerDown={(event) => startDrag(event, region, 'move')}
-            onClick={(event) => event.stopPropagation()}
-            onDoubleClick={() => {
-              const msg = {
-                type: 'navigateToRegion',
-                region: {
-                  kind: region.kind,
-                  isGenerateBlock: region.isGenerateBlock,
-                  source: region.source,
-                  bodySource: region.bodySource
-                }
-              } as const;
-              console.log('NAVIGATE:', JSON.stringify(msg));
-              vscode.postMessage(msg);
+          <div
+            key={region.id}
+            className={[
+              'generate-region',
+              region.isGenerateBlock ? 'generate-block' : '',
+              region.activeState === 'active' ? 'generate-region-active' : '',
+              region.activeState === 'inactive' ? 'generate-region-inactive' : '',
+              region.invalid ? 'generate-region-invalid' : '',
+              selectedRegionIds.has(region.id) ? 'generate-region-selected' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            data-region-id={region.id}
+            data-region-kind={region.kind}
+            data-warning-note={region.warningNote || undefined}
+            style={{
+              left: region.bounds.x,
+              top: region.bounds.y,
+              width: region.bounds.width,
+              height: region.bounds.height,
             }}
-            title={region.label}
           >
-            {region.label}
-          </button>
-          {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
+            <div className="generate-region-outline" />
+            {region.warningNote && (
+              <Tooltip content={region.warningNote}>
+                {(trigger) => (
+                  <span
+                    {...trigger}
+                    className="generate-region-warning"
+                    role="img"
+                    aria-label={region.warningNote}
+                  >
+                    ⚠
+                  </span>
+                )}
+              </Tooltip>
+            )}
             <button
-              key={side}
               type="button"
-              aria-label={`Resize ${region.label} ${side}`}
-              className={`generate-region-resize generate-region-resize-${side}`}
-              onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+              className="generate-region-title"
+              onPointerDown={(event) => startDrag(event, region, 'move')}
               onClick={(event) => event.stopPropagation()}
-            />
-          ))}
-        </div>
-      ))}
+              onDoubleClick={() => {
+                const msg = {
+                  type: 'navigateToRegion',
+                  region: {
+                    kind: region.kind,
+                    isGenerateBlock: region.isGenerateBlock,
+                    source: region.source,
+                    bodySource: region.bodySource,
+                  },
+                } as const;
+                console.log('NAVIGATE:', JSON.stringify(msg));
+                vscode.postMessage(msg);
+              }}
+              title={region.label}
+            >
+              {region.label}
+            </button>
+            {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
+              <button
+                key={side}
+                type="button"
+                aria-label={`Resize ${region.label} ${side}`}
+                className={`generate-region-resize generate-region-resize-${side}`}
+                onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+                onClick={(event) => event.stopPropagation()}
+              />
+            ))}
+          </div>
+        ))}
     </div>
   );
 }
@@ -1687,8 +1918,11 @@ function cutOutEdgesForSelection(nodes: HdlFlowNode[], edges: Edge[]): Edge[] {
   // below) only applies to genuine blocks in the currently open module.
   const selectedIds = new Set(
     nodes
-      .filter((node) => node.selected && node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id))
-      .map((node) => node.id)
+      .filter(
+        (node) =>
+          node.selected && node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id),
+      )
+      .map((node) => node.id),
   );
   if (selectedIds.size === 0) return [];
   return edges.filter((edge) => {
@@ -1724,14 +1958,17 @@ function NodeSelectionToolbar({
   pendingReselectIdsRef,
   onExpandInstance,
   onCollapseInstance,
-  spliceMapRef
+  spliceMapRef,
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
   onExpandInstance: (instanceNode: HdlFlowNode) => void;
-  /** Collapses an "Expand instance in place" region (see issue #232) — a no-op for a real generate region id. */
+  /**
+   * Collapses an "Expand instance in place" region (see issue #232) — a
+   * no-op for a real generate region id.
+   */
   onCollapseInstance: (regionId: string) => void;
   spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
@@ -1742,7 +1979,7 @@ function NodeSelectionToolbar({
   // whose actions only make sense for actual block selections.
   const selectedBlocks = useMemo(
     () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel'),
-    [nodes]
+    [nodes],
   );
   // Spliced-in expand content (see webview/expand) isn't real module IR the
   // extension host knows about — every action except Expand/Collapse only
@@ -1751,7 +1988,7 @@ function NodeSelectionToolbar({
   // rule on the wire side).
   const selected = useMemo(
     () => selectedBlocks.filter((node) => !isExpandNamespacedId(node.id)),
-    [selectedBlocks]
+    [selectedBlocks],
   );
 
   // Same exclusion `selectedCuttableEdges` in OrthogonalEdge applies for the
@@ -1761,15 +1998,14 @@ function NodeSelectionToolbar({
   // An expanded instance's node carries the splice's computed expanded size
   // as an injected sizeOverride (see expandOverlay's dimAsExpandGhost) —
   // that's not a manual resize, so it must not surface "Revert Size".
-  const resizedNodeIds = useMemo(
-    () => {
-      const ghostIds = new Set([...spliceMapRef.current.values()].map((splice) => splice.flowInstanceId));
-      return selected
-        .filter((node) => node.data.node.sizeOverride !== undefined && !ghostIds.has(node.id))
-        .map((node) => node.id);
-    },
-    [selected, spliceMapRef]
-  );
+  const resizedNodeIds = useMemo(() => {
+    const ghostIds = new Set(
+      [...spliceMapRef.current.values()].map((splice) => splice.flowInstanceId),
+    );
+    return selected
+      .filter((node) => node.data.node.sizeOverride !== undefined && !ghostIds.has(node.id))
+      .map((node) => node.id);
+  }, [selected, spliceMapRef]);
 
   // "Expand instance in place" (issue #232 decision 8): only for a single
   // selected instance node, never a multi-select — and not for
@@ -1777,35 +2013,51 @@ function NodeSelectionToolbar({
   // Computed over the full block selection (not the `selected` narrowing):
   // an instance living inside an already-expanded splice is itself
   // expand/collapse-able (decision 3 — recursive, no depth cap).
-  const singleInstance = selectedBlocks.length === 1 && selectedBlocks[0].data.node.kind === 'instance' && !nodeIsArrayNode(selectedBlocks[0].data.node)
-    ? selectedBlocks[0]
-    : undefined;
+  const singleInstance =
+    selectedBlocks.length === 1 &&
+    selectedBlocks[0].data.node.kind === 'instance' &&
+    !nodeIsArrayNode(selectedBlocks[0].data.node)
+      ? selectedBlocks[0]
+      : undefined;
 
   // If the selected instance is already expanded, its splice is keyed by
   // this node's own id (the top-level case) or by the enclosing splice's
   // namespaced id (nested) — either way `flowInstanceId` is exactly this
   // node's id in the current `nodes` array (see ActiveSplice's doc).
   const activeSplice = singleInstance
-    ? [...spliceMapRef.current.values()].find((splice) => splice.flowInstanceId === singleInstance.id)
+    ? [...spliceMapRef.current.values()].find(
+        (splice) => splice.flowInstanceId === singleInstance.id,
+      )
     : undefined;
   const expandableInstance = activeSplice ? undefined : singleInstance;
 
-  // Skip rendering an empty toolbar.
-  if (!overlayPortalNode || selectedBlocks.length < 1
-    || (selectedBlocks.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0 && !expandableInstance && !activeSplice)
-    || (selected.length < 1 && !expandableInstance && !activeSplice)) {
+  // Nothing to offer: a lone block with every net already cut and no resize
+  // override gets no control, so skip rendering the (now empty) toolbar entirely.
+  if (
+    !overlayPortalNode ||
+    selectedBlocks.length < 1 ||
+    (selectedBlocks.length < 2 &&
+      cutOutEdges.length === 0 &&
+      resizedNodeIds.length === 0 &&
+      !expandableInstance &&
+      !activeSplice) ||
+    (selected.length < 1 && !expandableInstance && !activeSplice)
+  ) {
     return null;
   }
 
-  const bounds = (selected.length > 0 ? selected : selectedBlocks).reduce((acc, node) => {
-    const size = resolvedNodeDimensions(node.data.node);
-    return {
-      x: Math.min(acc.x, node.position.x),
-      y: Math.min(acc.y, node.position.y),
-      right: Math.max(acc.right, node.position.x + size.width),
-      bottom: Math.max(acc.bottom, node.position.y + size.height)
-    };
-  }, { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity });
+  const bounds = (selected.length > 0 ? selected : selectedBlocks).reduce(
+    (acc, node) => {
+      const size = resolvedNodeDimensions(node.data.node);
+      return {
+        x: Math.min(acc.x, node.position.x),
+        y: Math.min(acc.y, node.position.y),
+        right: Math.max(acc.right, node.position.x + size.width),
+        bottom: Math.max(acc.bottom, node.position.y + size.height),
+      };
+    },
+    { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity },
+  );
 
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -1823,10 +2075,10 @@ function NodeSelectionToolbar({
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
       const endpointIds = [edge.source, edge.target];
-      const touchesSelectedBlock = endpointIds.some((endpointId) => (
-        selectedIds.has(endpointId)
-        && nodesById.get(endpointId)?.data.node.kind !== 'netLabel'
-      ));
+      const touchesSelectedBlock = endpointIds.some(
+        (endpointId) =>
+          selectedIds.has(endpointId) && nodesById.get(endpointId)?.data.node.kind !== 'netLabel',
+      );
       if (!touchesSelectedBlock) continue;
       for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
@@ -1839,7 +2091,7 @@ function NodeSelectionToolbar({
       // Released nodes go free; every other real block is frozen in place —
       // but an unrelated net-cut label that's still tracking its port
       // dynamically must not be forced fixed just because it's on screen.
-      fixed: selectedIds.has(node.id) ? false : (node.kind === 'netLabel' ? node.fixed : true)
+      fixed: selectedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
     }));
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip
@@ -1849,7 +2101,7 @@ function NodeSelectionToolbar({
       type: 'relayoutSelection',
       moduleName,
       nodeIds: [...selectedIds],
-      nodes: stripExpandSplices(positioned, spliceMapRef.current)
+      nodes: stripExpandSplices(positioned, spliceMapRef.current),
     });
   };
 
@@ -1866,11 +2118,14 @@ function NodeSelectionToolbar({
     // Matches the wire "Cut" control's positionedNodesFromFlowNodes: every real
     // block is frozen in place, but a net-cut label keeps tracking its port
     // dynamically even if the marquee happened to select it too.
-    const positioned = stripExpandSplices(nodes.map((node) => ({
-      ...node.data.node,
-      position: node.position,
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
-    })), spliceMapRef.current);
+    const positioned = stripExpandSplices(
+      nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+      })),
+      spliceMapRef.current,
+    );
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
       return;
@@ -1886,10 +2141,7 @@ function NodeSelectionToolbar({
 
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
-      <div
-        className="svsch-selection-toolbar"
-        style={{ left: bounds.right, top: bounds.bottom }}
-      >
+      <div className="svsch-selection-toolbar" style={{ left: bounds.right, top: bounds.bottom }}>
         {selected.length >= 2 && (
           <button
             type="button"
@@ -1907,7 +2159,11 @@ function NodeSelectionToolbar({
           <button
             type="button"
             className="svsch-selection-revert-size-control"
-            title={resizedNodeIds.length === 1 ? 'Revert the selected block to its canonical size' : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`}
+            title={
+              resizedNodeIds.length === 1
+                ? 'Revert the selected block to its canonical size'
+                : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
+            }
             onClick={handleRevertSize}
             onDoubleClick={(event) => event.stopPropagation()}
             onMouseDown={(event) => event.stopPropagation()}
@@ -1966,7 +2222,7 @@ function NodeSelectionToolbar({
         )}
       </div>
     </div>,
-    overlayPortalNode
+    overlayPortalNode,
   );
 }
 
@@ -1978,19 +2234,24 @@ function applyRegionDragRoutes(
   clientY: number,
   zoom: number,
   onRouteChange: (changes: RouteChange[], commit: boolean) => void,
-  commit: boolean
+  commit: boolean,
 ): void {
   if (drag.kind !== 'move' || drag.startRoutes.size === 0) return;
   const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
   const changes: RouteChange[] = Array.from(drag.startRoutes.entries()).map(([edgeId, points]) => ({
     edgeId,
-    routePoints: points.map((point) => ({ x: point.x + dx, y: point.y + dy }))
+    routePoints: points.map((point) => ({ x: point.x + dx, y: point.y + dy })),
   }));
   onRouteChange(changes, commit);
 }
 
-function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number, zoom: number): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {
+function applyRegionDrag(
+  drag: RegionDragState,
+  clientX: number,
+  clientY: number,
+  zoom: number,
+): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {
   const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
 
@@ -2000,12 +2261,12 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
       if (region.id !== drag.regionId) return region;
       return {
         ...region,
-        bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag)
+        bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag),
       };
     });
     return {
       nodes,
-      regions: expandRegionsForFlowNodes(regions, nodes)
+      regions: expandRegionsForFlowNodes(regions, nodes),
     };
   }
 
@@ -2013,7 +2274,7 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
     if (!drag.affectedNodeIds.has(node.id)) return node;
     const position = {
       x: node.position.x + dx,
-      y: node.position.y + dy
+      y: node.position.y + dy,
     };
     return {
       ...node,
@@ -2022,9 +2283,9 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
         ...node.data,
         node: {
           ...node.data.node,
-          position
-        }
-      }
+          position,
+        },
+      },
     };
   });
   const regions = drag.startRegions.map((region) => {
@@ -2034,14 +2295,14 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
       bounds: {
         ...region.bounds,
         x: region.bounds.x + dx,
-        y: region.bounds.y + dy
-      }
+        y: region.bounds.y + dy,
+      },
     };
   });
 
   return {
     nodes,
-    regions: expandRegionsForFlowNodes(regions, nodes)
+    regions: expandRegionsForFlowNodes(regions, nodes),
   };
 }
 
@@ -2050,13 +2311,13 @@ function resizeRegionBounds(
   side: RegionDragSide,
   dx: number,
   dy: number,
-  drag: RegionDragState
+  drag: RegionDragState,
 ): PositionedGenerateRegion['bounds'] {
   const minWidth = diagramSizing.gridSize * 8;
   const minHeight = diagramSizing.gridSize * 4;
   const inset = GENERATE_REGION_MIN_CONTENT_PADDING;
   const content = resizeContentBounds(drag.regionId, drag.startRegions, drag.startNodes);
-  let next = { ...bounds };
+  const next = { ...bounds };
 
   if (side === 'left') {
     const right = bounds.x + bounds.width;
@@ -2079,7 +2340,11 @@ function resizeRegionBounds(
   return snapRegionBounds(next);
 }
 
-function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion['bounds'] | undefined {
+function resizeContentBounds(
+  regionId: string,
+  regions: PositionedGenerateRegion[],
+  nodes: HdlFlowNode[],
+): PositionedGenerateRegion['bounds'] | undefined {
   const descendantIds = descendantRegionIds(regionId, regions, false);
   const nodeIds = nodeIdsForRegions(new Set([regionId, ...descendantIds]), regions);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -2097,7 +2362,11 @@ function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion
   return unionRegionBounds(rects);
 }
 
-function descendantRegionIds(regionId: string, regions: PositionedGenerateRegion[], includeSelf: boolean): Set<string> {
+function descendantRegionIds(
+  regionId: string,
+  regions: PositionedGenerateRegion[],
+  includeSelf: boolean,
+): Set<string> {
   const result = new Set<string>(includeSelf ? [regionId] : []);
   let changed = true;
   while (changed) {
@@ -2113,7 +2382,10 @@ function descendantRegionIds(regionId: string, regions: PositionedGenerateRegion
   return result;
 }
 
-function nodeIdsForRegions(regionIds: Set<string>, regions: PositionedGenerateRegion[]): Set<string> {
+function nodeIdsForRegions(
+  regionIds: Set<string>,
+  regions: PositionedGenerateRegion[],
+): Set<string> {
   const nodeIds = new Set<string>();
   for (const region of regions) {
     if (!regionIds.has(region.id)) continue;
@@ -2126,7 +2398,7 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
   return nodes.map((node) => ({
     ...node.data.node,
     position: node.position,
-    fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id)
+    fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id),
   }));
 }
 
@@ -2138,19 +2410,24 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
 // edgeRoutesChanged, ...) must strip them first; spliced content instead
 // gets its own dedicated `saveExpandedInstanceLayout` message (see
 // persistActiveSplices).
-function stripExpandSplices(nodes: PositionedNode[], splices: Map<string, ActiveSplice>): PositionedNode[] {
+function stripExpandSplices(
+  nodes: PositionedNode[],
+  splices: Map<string, ActiveSplice>,
+): PositionedNode[] {
   const ghostOverrides = new Map(
-    [...splices.values()].map((splice) => [splice.flowInstanceId, splice.baseSizeOverride] as const)
+    [...splices.values()].map(
+      (splice) => [splice.flowInstanceId, splice.baseSizeOverride] as const,
+    ),
   );
   return nodes
     .filter((node) => !isExpandNamespacedId(node.id))
-    .map((node) => (
+    .map((node) =>
       // An expanded instance's node carries the splice's computed expanded
       // size as an injected sizeOverride (see expandOverlay's
       // dimAsExpandGhost) — restore the instance's own persisted override so
       // the expansion never saves as a manual resize.
-      ghostOverrides.has(node.id) ? { ...node, sizeOverride: ghostOverrides.get(node.id) } : node
-    ));
+      ghostOverrides.has(node.id) ? { ...node, sizeOverride: ghostOverrides.get(node.id) } : node,
+    );
 }
 
 function stripExpandRegions(regions: PositionedGenerateRegion[]): PositionedGenerateRegion[] {
@@ -2166,7 +2443,12 @@ function stripExpandRegions(regions: PositionedGenerateRegion[]): PositionedGene
 // JSON files, not debounced against each other.
 function persistActiveSplices(splices: Map<string, ActiveSplice>): void {
   for (const splice of splices.values()) {
-    const saved = splice.toSavedLayout(splice.nodes, splice.region.bounds, true, splice.anchorInstancePosition);
+    const saved = splice.toSavedLayout(
+      splice.nodes,
+      splice.region.bounds,
+      true,
+      splice.anchorInstancePosition,
+    );
     vscode.postMessage({
       type: 'saveExpandedInstanceLayout',
       moduleName: splice.parentModuleName,
@@ -2175,7 +2457,7 @@ function persistActiveSplices(splices: Map<string, ActiveSplice>): void {
       nodes: saved.nodes,
       bounds: saved.bounds,
       fixed: saved.fixed,
-      instanceOrigin: saved.instanceOrigin
+      instanceOrigin: saved.instanceOrigin,
     });
   }
 }
@@ -2192,13 +2474,12 @@ function mergeDraggedFlowNodes(nodes: HdlFlowNode[], draggedNodes: HdlFlowNode[]
   return merged;
 }
 
-function annotateRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
-  return annotateGenerateRegionWarnings(regions, flowNodesToPositioned(nodes, new Set()));
-}
-
 // Expand (never shrink) each region to contain its moved/resized content, then annotate.
 // Used while dragging an arm so its parent generate block grows to keep surrounding it.
-function expandRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
+function expandRegionsForFlowNodes(
+  regions: PositionedGenerateRegion[],
+  nodes: HdlFlowNode[],
+): PositionedGenerateRegion[] {
   return expandRegionsForNodes(regions, flowNodesToPositioned(nodes, new Set()));
 }
 
@@ -2208,32 +2489,43 @@ function translateRegions(
   regions: PositionedGenerateRegion[],
   selectedIds: Set<string>,
   dx: number,
-  dy: number
+  dy: number,
 ): PositionedGenerateRegion[] {
   if (selectedIds.size === 0 || (dx === 0 && dy === 0)) return regions;
-  return regions.map((region) => (selectedIds.has(region.id)
-    ? { ...region, bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy } }
-    : region));
+  return regions.map((region) =>
+    selectedIds.has(region.id)
+      ? {
+          ...region,
+          bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy },
+        }
+      : region,
+  );
 }
 
-function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
+function expandRegionsForNodes(
+  regions: PositionedGenerateRegion[],
+  nodes: PositionedNode[],
+): PositionedGenerateRegion[] {
   if (regions.length === 0) return regions;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const childRegionsByParent = new Map<string, PositionedGenerateRegion[]>();
   for (const region of regions) {
-    const parent = region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
+    const parent =
+      region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
     const list = childRegionsByParent.get(parent) ?? [];
     list.push(region);
     childRegionsByParent.set(parent, list);
   }
 
   const pad = GENERATE_REGION_MIN_CONTENT_PADDING;
-  const padRect = (rect: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] => ({
+  const padRect = (
+    rect: PositionedGenerateRegion['bounds'],
+  ): PositionedGenerateRegion['bounds'] => ({
     x: rect.x - pad,
     y: rect.y - pad,
     width: rect.width + pad * 2,
-    height: rect.height + pad * 2
+    height: rect.height + pad * 2,
   });
   const expandedById = new Map<string, PositionedGenerateRegion>();
 
@@ -2249,7 +2541,9 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
       const node = nodeById.get(nodeId);
       if (!node) continue;
       const size = resolvedNodeDimensions(node);
-      contentRects.push(padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }));
+      contentRects.push(
+        padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }),
+      );
     }
     for (const child of childRegionsByParent.get(region.id) ?? []) {
       contentRects.push(padRect(expand(child).bounds));
@@ -2258,15 +2552,19 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
     const content = unionRegionBounds(contentRects);
     const result: PositionedGenerateRegion = content
       ? {
-        ...region,
-        bounds: snapRegionBounds({
-          x: Math.min(region.bounds.x, content.x),
-          y: Math.min(region.bounds.y, content.y),
-          width: Math.max(region.bounds.x + region.bounds.width, content.x + content.width) - Math.min(region.bounds.x, content.x),
-          height: Math.max(region.bounds.y + region.bounds.height, content.y + content.height) - Math.min(region.bounds.y, content.y)
-        }),
-        fixed: region.fixed
-      }
+          ...region,
+          bounds: snapRegionBounds({
+            x: Math.min(region.bounds.x, content.x),
+            y: Math.min(region.bounds.y, content.y),
+            width:
+              Math.max(region.bounds.x + region.bounds.width, content.x + content.width) -
+              Math.min(region.bounds.x, content.x),
+            height:
+              Math.max(region.bounds.y + region.bounds.height, content.y + content.height) -
+              Math.min(region.bounds.y, content.y),
+          }),
+          fixed: region.fixed,
+        }
       : region;
     expandedById.set(region.id, result);
     return result;
@@ -2276,7 +2574,9 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
   return annotateGenerateRegionWarnings(expanded, nodes);
 }
 
-function unionRegionBounds(rects: PositionedGenerateRegion['bounds'][]): PositionedGenerateRegion['bounds'] | undefined {
+function unionRegionBounds(
+  rects: PositionedGenerateRegion['bounds'][],
+): PositionedGenerateRegion['bounds'] | undefined {
   if (rects.length === 0) return undefined;
   const minX = Math.min(...rects.map((rect) => rect.x));
   const minY = Math.min(...rects.map((rect) => rect.y));
@@ -2289,7 +2589,9 @@ function snapDelta(value: number): number {
   return Math.round(value / diagramSizing.gridSize) * diagramSizing.gridSize;
 }
 
-function snapRegionBounds(bounds: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] {
+function snapRegionBounds(
+  bounds: PositionedGenerateRegion['bounds'],
+): PositionedGenerateRegion['bounds'] {
   const grid = diagramSizing.gridSize;
   const x = Math.round(bounds.x / grid) * grid;
   const y = Math.round(bounds.y / grid) * grid;

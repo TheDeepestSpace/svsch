@@ -73,9 +73,8 @@ export function wrapLabel(text, maxCharsPerLine = 26, maxLines = 3) {
   const overflow = lines.slice(maxLines).join(' ');
   const lastIndex = maxLines - 1;
   const combined = `${kept[lastIndex]} ${overflow}`;
-  kept[lastIndex] = combined.length > maxCharsPerLine
-    ? `${combined.slice(0, maxCharsPerLine - 1)}…`
-    : combined;
+  kept[lastIndex] =
+    combined.length > maxCharsPerLine ? `${combined.slice(0, maxCharsPerLine - 1)}…` : combined;
   return kept;
 }
 
@@ -98,11 +97,27 @@ export function computeDeltaRows(entries, baselineByName) {
   return entries.map((entry) => {
     const baseline = baselineByName.get(entry.name);
     if (baseline === undefined) {
-      return { name: entry.name, value: entry.value, unit: entry.unit, baseline: undefined, deltaMs: undefined, deltaPct: undefined, isNew: true };
+      return {
+        name: entry.name,
+        value: entry.value,
+        unit: entry.unit,
+        baseline: undefined,
+        deltaMs: undefined,
+        deltaPct: undefined,
+        isNew: true,
+      };
     }
     const deltaMs = entry.value - baseline;
     const deltaPct = baseline === 0 ? undefined : (deltaMs / baseline) * 100;
-    return { name: entry.name, value: entry.value, unit: entry.unit, baseline, deltaMs, deltaPct, isNew: false };
+    return {
+      name: entry.name,
+      value: entry.value,
+      unit: entry.unit,
+      baseline,
+      deltaMs,
+      deltaPct,
+      isNew: false,
+    };
   });
 }
 
@@ -144,9 +159,13 @@ function renderLegend(x, y, items) {
   let cursorX = x;
   const parts = [];
   for (const item of items) {
-    parts.push(`<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}" />`);
+    parts.push(
+      `<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}" />`,
+    );
     const labelX = cursorX + 20;
-    parts.push(`<text x="${labelX}" y="${y + 11}" font-size="12" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(item.label)}</text>`);
+    parts.push(
+      `<text x="${labelX}" y="${y + 11}" font-size="12" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(item.label)}</text>`,
+    );
     cursorX = labelX + estimateTextWidth(item.label, 12) + LEGEND_ITEM_GAP;
   }
   return parts.join('\n');
@@ -165,7 +184,12 @@ function renderDiffSegment({ x, width, baseY, row, scale, solidFill, hatchFill }
 
   if (row.isNew) {
     const h = row.value * scale;
-    return { parts: [`<rect x="${x}" y="${baseY - h}" width="${width}" height="${h}" fill="${hatchFill}" />`], top: h };
+    return {
+      parts: [
+        `<rect x="${x}" y="${baseY - h}" width="${width}" height="${h}" fill="${hatchFill}" />`,
+      ],
+      top: h,
+    };
   }
 
   const baselineH = row.baseline * scale;
@@ -175,13 +199,21 @@ function renderDiffSegment({ x, width, baseY, row, scale, solidFill, hatchFill }
     // Faster: draw the full baseline bar, then repaint the top slice
     // (the saved amount) green — the visible top edge still sits at the
     // baseline height, with the green cap showing what was shaved off.
-    parts.push(`<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH}" fill="${solidFill}" />`);
-    parts.push(`<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH - valueH}" fill="${COLORS.good}" />`);
+    parts.push(
+      `<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH}" fill="${solidFill}" />`,
+    );
+    parts.push(
+      `<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH - valueH}" fill="${COLORS.good}" />`,
+    );
   } else {
     // Slower: draw the full baseline bar, then grow a red cap above it up
     // to the new (taller) value.
-    parts.push(`<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH}" fill="${solidFill}" />`);
-    parts.push(`<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`);
+    parts.push(
+      `<rect x="${x}" y="${baseY - baselineH}" width="${width}" height="${baselineH}" fill="${solidFill}" />`,
+    );
+    parts.push(
+      `<rect x="${x}" y="${baseY - valueH}" width="${width}" height="${valueH - baselineH}" fill="${COLORS.critical}" />`,
+    );
   }
   return { parts, top: Math.max(baselineH, valueH) };
 }
@@ -197,7 +229,9 @@ function renderXLabels(names, originY, barPitch) {
     lines.forEach((line, lineIndex) => {
       const lineX = x + LABEL_LINE_HEIGHT / 2 - lineIndex * LABEL_LINE_HEIGHT;
       const lineY = originY + 10;
-      parts.push(`<text x="${lineX}" y="${lineY}" font-size="9.5" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, ${lineX}, ${lineY})">${escapeXml(line)}</text>`);
+      parts.push(
+        `<text x="${lineX}" y="${lineY}" font-size="9.5" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" text-anchor="start" transform="rotate(90, ${lineX}, ${lineY})">${escapeXml(line)}</text>`,
+      );
     });
   });
   return parts.join('\n');
@@ -208,10 +242,16 @@ function renderXLabels(names, originY, barPitch) {
 // fastest-to-slowest by total (elaboration + rendering), not by name.
 export function computeStackedData(metrics) {
   const [elaboration, rendering] = metrics;
-  const elabRows = new Map(computeDeltaRows(elaboration.entries, elaboration.baselineByName).map((row) => [row.name, row]));
-  const renderRows = new Map(computeDeltaRows(rendering.entries, rendering.baselineByName).map((row) => [row.name, row]));
+  const elabRows = new Map(
+    computeDeltaRows(elaboration.entries, elaboration.baselineByName).map((row) => [row.name, row]),
+  );
+  const renderRows = new Map(
+    computeDeltaRows(rendering.entries, rendering.baselineByName).map((row) => [row.name, row]),
+  );
   const totalFor = (name) => (elabRows.get(name)?.value ?? 0) + (renderRows.get(name)?.value ?? 0);
-  const names = [...new Set([...elabRows.keys(), ...renderRows.keys()])].sort((a, b) => totalFor(a) - totalFor(b));
+  const names = [...new Set([...elabRows.keys(), ...renderRows.keys()])].sort(
+    (a, b) => totalFor(a) - totalFor(b),
+  );
   return { elabRows, renderRows, names };
 }
 
@@ -231,7 +271,10 @@ export function computeStackedData(metrics) {
 export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true }) {
   const { elabRows, renderRows, names } = computeStackedData(metrics);
 
-  const width = Math.max(legendWidth(24, STACKED_LEGEND_ITEMS), estimateTextWidth(suiteTitle, 18) + 48);
+  const width = Math.max(
+    legendWidth(24, STACKED_LEGEND_ITEMS),
+    estimateTextWidth(suiteTitle, 18) + 48,
+  );
   const barPitch = Math.max(width - LEFT_MARGIN - RIGHT_MARGIN, 1) / Math.max(names.length, 1);
   const barWidth = Math.max(MIN_BAR_WIDTH, barPitch * BAR_WIDTH_FRACTION);
   const labelAreaHeight = showLabels ? LABEL_AREA_HEIGHT : 0;
@@ -243,20 +286,31 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
   // chart's single bar — since a "slower" cap grows past the current value
   // while a "faster" cap grows past it up to the (taller) baseline.
   const diffTop = (row) => (!row ? 0 : row.isNew ? row.value : Math.max(row.baseline, row.value));
-  const maxValue = Math.max(1, ...names.map((name) => diffTop(elabRows.get(name)) + diffTop(renderRows.get(name))));
+  const maxValue = Math.max(
+    1,
+    ...names.map((name) => diffTop(elabRows.get(name)) + diffTop(renderRows.get(name))),
+  );
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = (PANEL_HEIGHT - DELTA_LABEL_SPACE) / chartMax;
 
   const parts = [];
-  parts.push(`<text x="${LEFT_MARGIN - 12}" y="${originY - PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Elaboration + rendering duration (ms)</text>`);
+  parts.push(
+    `<text x="${LEFT_MARGIN - 12}" y="${originY - PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Elaboration + rendering duration (ms)</text>`,
+  );
 
   for (let tick = 0; tick <= chartMax; tick += step) {
     const y = originY - tick * scale;
-    parts.push(`<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
-    parts.push(`<text x="${LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
+    parts.push(
+      `<line x1="${LEFT_MARGIN}" y1="${y}" x2="${LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`,
+    );
+    parts.push(
+      `<text x="${LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`,
+    );
   }
-  parts.push(`<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+  parts.push(
+    `<line x1="${LEFT_MARGIN}" y1="${originY}" x2="${LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
+  );
 
   // Elaboration is drawn as its own baseline-vs-current diff segment
   // (renderDiffSegment), then rendering stacks on top starting from wherever
@@ -267,10 +321,26 @@ export function renderStackedSuiteChart({ suiteTitle, metrics, showLabels = true
     const elabRow = elabRows.get(name);
     const renderRow = renderRows.get(name);
 
-    const elab = renderDiffSegment({ x, width: barWidth, baseY: originY, row: elabRow, scale, solidFill: COLORS.blue, hatchFill: 'url(#newHatchBlue)' });
+    const elab = renderDiffSegment({
+      x,
+      width: barWidth,
+      baseY: originY,
+      row: elabRow,
+      scale,
+      solidFill: COLORS.blue,
+      hatchFill: 'url(#newHatchBlue)',
+    });
     parts.push(...elab.parts);
 
-    const render = renderDiffSegment({ x, width: barWidth, baseY: originY - elab.top, row: renderRow, scale, solidFill: COLORS.purple, hatchFill: 'url(#newHatchPurple)' });
+    const render = renderDiffSegment({
+      x,
+      width: barWidth,
+      baseY: originY - elab.top,
+      row: renderRow,
+      scale,
+      solidFill: COLORS.purple,
+      hatchFill: 'url(#newHatchPurple)',
+    });
     parts.push(...render.parts);
   });
 
@@ -330,7 +400,7 @@ export function renderDeltaTableMarkdown(rows) {
     const best = byPct.slice(-5).reverse();
     const formatRow = (label, row) => {
       const sign = row.deltaMs > 0 ? '+' : '';
-      return `| **${label}** — ${row.name} | ${row.baseline} → ${row.value} | ${sign}${row.deltaMs} ms (${sign}${row.deltaPct.toFixed(0)}%) |`;
+      return `| **${label}** — ${escapeMarkdownCell(row.name)} | ${row.baseline} → ${row.value} | ${sign}${row.deltaMs} ms (${sign}${row.deltaPct.toFixed(0)}%) |`;
     };
     for (const row of worst) lines.push(formatRow('Worst', row));
     for (const row of best) lines.push(formatRow('Best', row));
@@ -341,6 +411,19 @@ export function renderDeltaTableMarkdown(rows) {
   lines.push(`| **Avg** — across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms (${avgSignPct}${avg.avgPct.toFixed(1)}%) |`);
 
   return lines.join('\n');
+}
+
+// Benchmark names come from spec filenames and test titles (see
+// test/visual/helper.ts), which a PR can control — escape table-breaking
+// pipes/newlines and Markdown link/image syntax before embedding them in a
+// PR comment.
+function escapeMarkdownCell(value) {
+  return String(value)
+    .replaceAll('\\', '\\\\')
+    .replaceAll('|', '\\|')
+    .replaceAll('[', '\\[')
+    .replaceAll(']', '\\]')
+    .replace(/\r?\n/g, ' ');
 }
 
 function csvField(value) {
@@ -355,15 +438,19 @@ export function renderDeltaCsv(rows) {
   const header = ['name', 'unit', 'baseline', 'value', 'delta_ms', 'delta_pct', 'is_new'];
   const lines = [header.join(',')];
   for (const row of rows) {
-    lines.push([
-      row.name,
-      row.unit,
-      row.baseline ?? '',
-      row.value,
-      row.deltaMs ?? '',
-      row.deltaPct !== undefined ? row.deltaPct.toFixed(2) : '',
-      row.isNew ? 'true' : 'false',
-    ].map(csvField).join(','));
+    lines.push(
+      [
+        row.name,
+        row.unit,
+        row.baseline ?? '',
+        row.value,
+        row.deltaMs ?? '',
+        row.deltaPct !== undefined ? row.deltaPct.toFixed(2) : '',
+        row.isNew ? 'true' : 'false',
+      ]
+        .map(csvField)
+        .join(','),
+    );
   }
   return lines.join('\n') + '\n';
 }
@@ -387,8 +474,18 @@ export function renderStackedCsv(metrics) {
 
   const header = [
     'name',
-    'elaboration_unit', 'elaboration_baseline', 'elaboration_value', 'elaboration_delta_ms', 'elaboration_delta_pct', 'elaboration_is_new',
-    'rendering_unit', 'rendering_baseline', 'rendering_value', 'rendering_delta_ms', 'rendering_delta_pct', 'rendering_is_new',
+    'elaboration_unit',
+    'elaboration_baseline',
+    'elaboration_value',
+    'elaboration_delta_ms',
+    'elaboration_delta_pct',
+    'elaboration_is_new',
+    'rendering_unit',
+    'rendering_baseline',
+    'rendering_value',
+    'rendering_delta_ms',
+    'rendering_delta_pct',
+    'rendering_is_new',
     'total_value',
   ];
   const lines = [header.join(',')];
@@ -396,12 +493,11 @@ export function renderStackedCsv(metrics) {
     const elabRow = elabRows.get(name);
     const renderRow = renderRows.get(name);
     const totalValue = (elabRow?.value ?? 0) + (renderRow?.value ?? 0);
-    lines.push([
-      name,
-      ...metricFields(elabRow),
-      ...metricFields(renderRow),
-      totalValue,
-    ].map(csvField).join(','));
+    lines.push(
+      [name, ...metricFields(elabRow), ...metricFields(renderRow), totalValue]
+        .map(csvField)
+        .join(','),
+    );
   }
   return lines.join('\n') + '\n';
 }
