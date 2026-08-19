@@ -9,6 +9,7 @@ import type {
 import { diagramSizing, nodePortCenterOffset, snapUpToGrid } from '../../diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
+import { edgeIsThick, portSuggestsThickWire } from '../../ir/edgeStyle';
 
 // Mirrors SavedNodeLayout / SavedExpandedInstanceLayout in
 // src/storage/layoutStore.ts (not imported directly — that file imports
@@ -153,6 +154,37 @@ const HEADER_GAP = diagramSizing.gridSize;
 /** Body inset used for a side with no ports at all, and below the diagram. */
 const CONTENT_INSET = diagramSizing.gridSize * 2;
 
+/**
+ * Wire style carried by the net passing through a boundary port, derived from
+ * the child module's own annotated edges touching that port node (falling
+ * back to the port's declared width when the port is unconnected inside), so
+ * the boundary node's drawn lead stub can match the struct/interface/
+ * multi-bit style of the wire it continues — the same contract
+ * cutLabelEdgeStyle establishes for netLabel nodes.
+ */
+export function boundaryPortEdgeStyle(
+  childModule: DesignModule,
+  portNode: DiagramNode,
+  port: DiagramPort,
+): { aggregate?: 'struct' | 'interface' | string; thick?: boolean } | undefined {
+  const nodesById = new Map(childModule.nodes.map((node) => [node.id, node]));
+  const touching = childModule.edges.filter(
+    (edge) => edge.source === portNode.id || edge.target === portNode.id,
+  );
+  const aggregate =
+    touching.map((edge) => edge.metadata?.aggregate).find(Boolean) ??
+    (port.width === 'interface' || port.modportName !== undefined ? 'interface' : undefined);
+  const thick =
+    aggregate === undefined &&
+    (touching.length > 0
+      ? touching.some((edge) =>
+          edgeIsThick(edge, nodesById.get(edge.source), nodesById.get(edge.target)),
+        )
+      : portSuggestsThickWire(port));
+  if (!aggregate && !thick) return undefined;
+  return { aggregate, thick: thick || undefined };
+}
+
 async function loadElk(): Promise<any> {
   const elkModule = await import('elkjs/lib/elk.bundled.js');
   const Elk = (elkModule as any).default;
@@ -274,6 +306,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
             childModuleName: childModule.name,
             childPortId: childPortNode.id,
             outerSide: side,
+            edgeStyle: boundaryPortEdgeStyle(childModule, childPortNode, port),
           },
         },
       };

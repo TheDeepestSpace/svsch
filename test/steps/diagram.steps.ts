@@ -4875,3 +4875,197 @@ async function getWorkspaceState(dir: string): Promise<string[]> {
   await walk(dir);
   return files;
 }
+
+// ---------------------------------------------------------------------------
+// Sub-diagram interaction ("Expand instance in place", issue #232) — steps
+// backing test/features/sub_diagram_interaction.feature.
+
+// Draw the marquee across every rendered node — guaranteed to cross the
+// expanded instance's border, which per the border-scoped selection semantics
+// (#242) makes it a top-level selection: sub-diagram content is exempt.
+When('I drag-select across the entire diagram', async function (this: BddWorld) {
+  const boxes: Array<{ x: number; y: number; width: number; height: number }> = [];
+  for (const node of await this.webviewPage.locator('.react-flow__node').all()) {
+    const box = await node.boundingBox();
+    if (box) boxes.push(box);
+  }
+  if (boxes.length === 0) throw new Error('No rendered nodes to drag-select across');
+  const startX = Math.min(...boxes.map((box) => box.x)) - 24;
+  const startY = Math.min(...boxes.map((box) => box.y)) - 24;
+  const endX = Math.max(...boxes.map((box) => box.x + box.width)) + 24;
+  const endY = Math.max(...boxes.map((box) => box.y + box.height)) + 24;
+
+  await this.workbox.mouse.move(startX, startY);
+  await this.workbox.mouse.down();
+  await this.workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+  await this.workbox.mouse.move(endX, endY, { steps: 8 });
+  await this.workbox.mouse.up();
+
+  // Wait until the selection has actually been applied to at least one
+  // top-level node before any assertion reads it.
+  await expect
+    .poll(
+      async () =>
+        this.webviewPage.locator('html').evaluate(() => {
+          const rf = (window as any).reactFlowInstance;
+          return rf.getNodes().filter((n: any) => n.selected).length;
+        }),
+      { timeout: 5000 },
+    )
+    .toBeGreaterThan(0);
+
+  await this.takeScreenshot('Drag-selected across the entire diagram');
+});
+
+Then('no sub-diagram nodes should be selected', async function (this: BddWorld) {
+  const selectedSpliced = await this.webviewPage.locator('html').evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    return [
+      ...rf
+        .getNodes()
+        .filter((n: any) => n.selected && n.id.startsWith('expand:'))
+        .map((n: any) => `node ${n.id}`),
+      ...rf
+        .getEdges()
+        .filter((e: any) => e.selected && e.id.startsWith('expand:'))
+        .map((e: any) => `wire ${e.id}`),
+    ];
+  });
+  expect(selectedSpliced, 'spliced sub-diagram content must not be marquee-selected').toEqual([]);
+});
+
+// Containment invariant of the expanded frame: every spliced node body and
+// every spliced wire's rendered path lies inside the dimmed instance node's
+// own rect (boundary ports sit astride the border by design and are exempt).
+Then(
+  'all spliced content should stay inside the expanded instance {string}',
+  async function (this: BddWorld, instanceLabel: string) {
+    const ghostId = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+    if (!ghostId) throw new Error(`Could not find expanded instance "${instanceLabel}"`);
+    const violations = await this.webviewPage.locator('html').evaluate((_el, id) => {
+      const ghost = document.querySelector(`.react-flow__node[data-id="${id}"]`);
+      if (!ghost) return [`expanded instance node ${id} not found`];
+      const frame = ghost.getBoundingClientRect();
+      // Half a stroke width plus antialiasing slack.
+      const tolerance = 8;
+      const bad: string[] = [];
+      const within = (rect: DOMRect) =>
+        rect.left >= frame.left - tolerance &&
+        rect.top >= frame.top - tolerance &&
+        rect.right <= frame.right + tolerance &&
+        rect.bottom <= frame.bottom + tolerance;
+      for (const el of Array.from(document.querySelectorAll('.react-flow__node'))) {
+        const elId = el.getAttribute('data-id') ?? '';
+        if (!elId.startsWith('expand:')) continue;
+        if (el.querySelector('[data-node-kind="boundaryPort"]')) continue;
+        const rect = el.getBoundingClientRect();
+        if (!within(rect)) bad.push(`node ${elId}`);
+      }
+      for (const el of Array.from(document.querySelectorAll('.react-flow__edge'))) {
+        const elId = el.getAttribute('data-id') ?? '';
+        if (!elId.startsWith('expand:')) continue;
+        const path = el.querySelector('path.svsch-edge');
+        if (!path) continue;
+        const rect = path.getBoundingClientRect();
+        if (!within(rect))
+          bad.push(
+            `wire ${elId} [${Math.round(rect.left)},${Math.round(rect.top)},` +
+              `${Math.round(rect.right)},${Math.round(rect.bottom)}] vs frame ` +
+              `[${Math.round(frame.left)},${Math.round(frame.top)},` +
+              `${Math.round(frame.right)},${Math.round(frame.bottom)}]`,
+          );
+      }
+      return bad;
+    }, ghostId);
+    expect(violations, 'spliced content escaping the expanded frame').toEqual([]);
+  },
+);
+
+// Reshape a wire inside the sub-diagram by dragging one of its horizontal
+// segment handles. Unlike adjustConnectionByGridCells this waits only for the
+// rendered route to change, not for the module layout file — spliced wire
+// routes deliberately live in the webview's splice cache, never in the host's
+// layout (see absorbSplicedEdgeRouteChanges).
+When(
+  // eslint-disable-next-line max-len
+  'I drag a wire segment between {string} and {string} inside the expanded instance down by {int} grid cells',
+  async function (this: BddWorld, source: string, target: string, cellsDown: number) {
+    // Either endpoint may be a boundary-port node, whose label lives in its
+    // own .hdl-boundary-port-text element that findNodeIdByLabel doesn't
+    // scan — try the boundary-port finder first.
+    const sourceId =
+      (await findBoundaryPortNodeIdByLabel(this.webviewPage, source)) ??
+      (await findNodeIdByLabel(this.webviewPage, source));
+    const targetId =
+      (await findBoundaryPortNodeIdByLabel(this.webviewPage, target)) ??
+      (await findNodeIdByLabel(this.webviewPage, target));
+    if (!sourceId || !targetId)
+      throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+    // Spliced edge ids namespace the child module's own edge ids, which don't
+    // embed the namespaced node ids — resolve through React Flow state.
+    const edgeId: string | null = await this.webviewPage.locator('html').evaluate(
+      (_el, { s, t }) => {
+        const rf = (window as any).reactFlowInstance;
+        const found = rf
+          .getEdges()
+          .find(
+            (e: any) =>
+              e.id.startsWith('expand:') &&
+              ((e.source === s && e.target === t) || (e.source === t && e.target === s)),
+          );
+        return found?.id ?? null;
+      },
+      { s: sourceId, t: targetId },
+    );
+    if (!edgeId) throw new Error(`No spliced wire between ${source} and ${target}`);
+
+    const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
+    const before = await edgeLocator.locator('path.svsch-edge').first().getAttribute('d');
+    await edgeLocator.locator('path.svsch-edge-bridge').hover({ force: true });
+    await this.workbox.waitForTimeout(200);
+
+    const handles = edgeLocator.locator('path.svsch-edge-segment-horizontal');
+    const handleCount = await handles.count();
+    if (handleCount === 0)
+      throw new Error(`No horizontal segment handle on spliced wire ${source} -> ${target}`);
+    let longestHandle = handles.first();
+    let bestWidth = -1;
+    for (let i = 0; i < handleCount; i += 1) {
+      const candidate = handles.nth(i);
+      const candidateBox = await candidate.boundingBox();
+      if (candidateBox && candidateBox.width > bestWidth) {
+        bestWidth = candidateBox.width;
+        longestHandle = candidate;
+      }
+    }
+    const handleBox = await longestHandle.boundingBox();
+    if (!handleBox) throw new Error('Could not measure the segment handle');
+
+    const screenPerFlow = await effectiveScreenPerFlow(this);
+    const gx = handleBox.x + handleBox.width / 2;
+    const gy = handleBox.y + handleBox.height / 2;
+    await this.workbox.mouse.move(gx, gy);
+    await this.workbox.mouse.down();
+    await this.workbox.mouse.move(gx, gy + Math.sign(cellsDown) * 3, { steps: 3 });
+    await this.workbox.mouse.move(gx, gy + cellsDown * diagramGrid.size * screenPerFlow, {
+      steps: 20,
+    });
+    await this.workbox.mouse.up();
+
+    await expect
+      .poll(
+        async () => {
+          const current = await edgeLocator.locator('path.svsch-edge').first().getAttribute('d');
+          return current !== before;
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
+    await this.takeScreenshot(`Dragged spliced wire ${source} -> ${target}`);
+  },
+);
+
+Then('the saved layout should contain no sub-diagram entries', async function (this: BddWorld) {
+  const layout = await readExtensionLayout(this);
+  expect(JSON.stringify(layout)).not.toContain('expand:');
+});

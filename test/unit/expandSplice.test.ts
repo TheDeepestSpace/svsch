@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   spliceExpandedInstance,
+  boundaryPortEdgeStyle,
   childNamespace,
   namespacedId,
   expandRegionId,
   isExpandNamespacedId,
 } from '../../src/webview/expand/splice';
-import type { DesignModule, DiagramPort } from '../../src/ir/types';
+import { absorbSplicedEdgeRouteChanges } from '../../src/webview/expand/expandOverlay';
+import { boundaryPortLeadClassName } from '../../src/webview/nodes/BoundaryPortNode';
+import type { DesignModule, DiagramEdge, DiagramPort } from '../../src/ir/types';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 
 // A tiny two-port-plus-register module, standing in for the child module
@@ -316,6 +319,143 @@ describe('spliceExpandedInstance', () => {
     expect(result.region.parentRegionId).toBe(expandRegionId('u0'));
     expect(result.nodes.every((n) => n.id.startsWith(namespacedId(nestedNamespace, '')))).toBe(
       true,
+    );
+  });
+
+  // The lead stub a boundary-port node draws is a continuation of the wire
+  // passing through the port — it must carry the same struct/interface/
+  // multi-bit style as the child module's own annotated edges on that net.
+  describe('boundary port wire style', () => {
+    const styledPorts: DiagramPort[] = [
+      { id: 'p:bus', name: 'bus', direction: 'input', width: '[7:0]' },
+      { id: 'p:pkt', name: 'pkt', direction: 'input', typeName: 'packet_t' },
+      { id: 'p:bit', name: 'bit', direction: 'output' },
+    ];
+    const styledChild: DesignModule = {
+      name: 'styled',
+      file: 'styled.sv',
+      ports: styledPorts,
+      nodes: [
+        { id: 'port:bus', kind: 'port', label: 'bus', ports: [styledPorts[0]] },
+        { id: 'port:pkt', kind: 'port', label: 'pkt', ports: [styledPorts[1]] },
+        { id: 'port:bit', kind: 'port', label: 'bit', ports: [styledPorts[2]] },
+        childModule.nodes.find((n) => n.id === 'reg1')!,
+      ],
+      edges: [
+        // annotateWireStyles has already run on real extracted modules — the
+        // stamps live on edge.metadata.
+        {
+          id: 'e-bus',
+          source: 'port:bus',
+          target: 'reg1',
+          sourcePort: 'p:bus',
+          targetPort: 'd',
+          metadata: { thick: true },
+        },
+        {
+          id: 'e-pkt',
+          source: 'port:pkt',
+          target: 'reg1',
+          sourcePort: 'p:pkt',
+          targetPort: 'd',
+          metadata: { aggregate: 'struct' },
+        },
+        { id: 'e-bit', source: 'reg1', target: 'port:bit', sourcePort: 'q', targetPort: 'p:bit' },
+      ],
+    };
+
+    it('stamps edgeStyle from the annotated edges touching each port node', () => {
+      const busNode = styledChild.nodes.find((n) => n.id === 'port:bus')!;
+      const pktNode = styledChild.nodes.find((n) => n.id === 'port:pkt')!;
+      const bitNode = styledChild.nodes.find((n) => n.id === 'port:bit')!;
+      expect(boundaryPortEdgeStyle(styledChild, busNode, styledPorts[0])).toEqual({
+        aggregate: undefined,
+        thick: true,
+      });
+      expect(boundaryPortEdgeStyle(styledChild, pktNode, styledPorts[1])?.aggregate).toBe(
+        'struct',
+      );
+      expect(boundaryPortEdgeStyle(styledChild, bitNode, styledPorts[2])).toBeUndefined();
+    });
+
+    it('falls back to the port declaration when the port is unconnected inside', () => {
+      const unconnected: DesignModule = { ...styledChild, edges: [] };
+      const busNode = unconnected.nodes.find((n) => n.id === 'port:bus')!;
+      const bitNode = unconnected.nodes.find((n) => n.id === 'port:bit')!;
+      expect(boundaryPortEdgeStyle(unconnected, busNode, styledPorts[0])?.thick).toBe(true);
+      expect(boundaryPortEdgeStyle(unconnected, bitNode, styledPorts[2])).toBeUndefined();
+      const ifacePort: DiagramPort = {
+        id: 'p:bus',
+        name: 'bus',
+        direction: 'input',
+        width: 'interface',
+      };
+      expect(boundaryPortEdgeStyle(unconnected, busNode, ifacePort)?.aggregate).toBe('interface');
+    });
+
+    // eslint-disable-next-line max-len
+    it('carries the style onto the spliced boundary nodes so the rendered lead can match', async () => {
+      const result = await spliceExpandedInstance({
+        ...baseInput(),
+        instancePorts: styledPorts,
+        childModule: styledChild,
+      });
+      const bus = result.nodes.find((n) => n.id === namespacedId('u0', 'port:bus'));
+      const pkt = result.nodes.find((n) => n.id === namespacedId('u0', 'port:pkt'));
+      const bit = result.nodes.find((n) => n.id === namespacedId('u0', 'port:bit'));
+      expect(bus?.metadata?.boundaryPort?.edgeStyle?.thick).toBe(true);
+      expect(pkt?.metadata?.boundaryPort?.edgeStyle?.aggregate).toBe('struct');
+      expect(bit?.metadata?.boundaryPort?.edgeStyle).toBeUndefined();
+    });
+  });
+
+  // Route drags on wires inside an expanded instance stay entirely in the
+  // webview: they're absorbed into the splice cache (so they survive the next
+  // reattachment) and never leak to the extension host, which knows nothing
+  // about spliced edge ids.
+  describe('absorbSplicedEdgeRouteChanges', () => {
+    it('stores spliced changes on the owning splice and returns only host-owned ones', async () => {
+      const result = await spliceExpandedInstance(baseInput());
+      // Only `edges` matters here — the rest of the ActiveSplice bookkeeping
+      // fields aren't consulted by the absorb path.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const splices = new Map<string, any>([['u0', { ...result, namespace: 'u0' }]]);
+      const splicedEdgeId = namespacedId('u0', 'e-a-reg1');
+      const route = [
+        { x: 10, y: 20 },
+        { x: 10, y: 80 },
+      ];
+      const remaining = absorbSplicedEdgeRouteChanges(splices, [
+        { edgeId: splicedEdgeId, routePoints: route },
+        { edgeId: 'host-edge', routePoints: [{ x: 1, y: 2 }] },
+      ]);
+      expect(remaining).toEqual([{ edgeId: 'host-edge', routePoints: [{ x: 1, y: 2 }] }]);
+      const stored = splices
+        .get('u0')!
+        .edges.find((edge: DiagramEdge) => edge.id === splicedEdgeId);
+      expect(stored?.routePoints).toEqual(route);
+      // Untouched spliced edges keep their (absent) route.
+      const other = splices
+        .get('u0')!
+        .edges.find((edge: DiagramEdge) => edge.id === namespacedId('u0', 'e-clk-reg1'));
+      expect(other?.routePoints).toBeUndefined();
+    });
+  });
+});
+
+// The rendered lead's CSS classes mirror the stamped style — locked in here
+// (and visually via the expand_instance visual spec's complex fixture).
+describe('boundaryPortLeadClassName', () => {
+  it('maps edgeStyle onto the lead modifier classes', () => {
+    expect(boundaryPortLeadClassName(undefined)).toBe('hdl-boundary-port-lead');
+    expect(boundaryPortLeadClassName({ thick: true })).toBe(
+      'hdl-boundary-port-lead hdl-boundary-port-lead-thick',
+    );
+    expect(boundaryPortLeadClassName({ aggregate: 'struct' })).toBe(
+      'hdl-boundary-port-lead hdl-boundary-port-lead-struct',
+    );
+    expect(boundaryPortLeadClassName({ aggregate: 'interface' })).toBe(
+      'hdl-boundary-port-lead hdl-boundary-port-lead-interface',
     );
   });
 });

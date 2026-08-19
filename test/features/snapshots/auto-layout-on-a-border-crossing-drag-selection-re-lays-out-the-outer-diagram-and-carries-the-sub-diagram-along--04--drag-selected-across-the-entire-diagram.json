@@ -7,66 +7,26 @@
         "x": 480,
         "y": 96
       },
-      "width": 240,
+      "width": 192,
       "height": 96,
       "data": {
         "kind": "instance",
         "ports": [
           {
-            "id": "port:a",
-            "name": "a",
+            "id": "port:w",
+            "name": "w",
             "direction": "input"
           },
           {
-            "id": "port:y",
-            "name": "y",
+            "id": "port:z",
+            "name": "z",
             "direction": "output"
           }
         ]
       }
     },
     {
-      "id": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:a",
-      "type": "hdl",
-      "position": {
-        "x": 480,
-        "y": 120
-      },
-      "width": 48,
-      "height": 48,
-      "data": {
-        "kind": "boundaryPort",
-        "ports": [
-          {
-            "id": "port:a",
-            "name": "a",
-            "direction": "input"
-          }
-        ]
-      }
-    },
-    {
-      "id": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:y",
-      "type": "hdl",
-      "position": {
-        "x": 672,
-        "y": 120
-      },
-      "width": 48,
-      "height": 48,
-      "data": {
-        "kind": "boundaryPort",
-        "ports": [
-          {
-            "id": "port:y",
-            "name": "y",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
-      "id": "expand:instance:top:u1::port:leaf:a",
+      "id": "expand:instance:top:u1::port:leaf:la",
       "type": "hdl",
       "position": {
         "x": 360,
@@ -78,15 +38,15 @@
         "kind": "boundaryPort",
         "ports": [
           {
-            "id": "port:a",
-            "name": "a",
+            "id": "port:la",
+            "name": "la",
             "direction": "input"
           }
         ]
       }
     },
     {
-      "id": "expand:instance:top:u1::port:leaf:y",
+      "id": "expand:instance:top:u1::port:leaf:ly",
       "type": "hdl",
       "position": {
         "x": 744,
@@ -98,8 +58,8 @@
         "kind": "boundaryPort",
         "ports": [
           {
-            "id": "port:y",
-            "name": "y",
+            "id": "port:ly",
+            "name": "ly",
             "direction": "output"
           }
         ]
@@ -118,13 +78,13 @@
         "kind": "instance",
         "ports": [
           {
-            "id": "port:a",
-            "name": "a",
+            "id": "port:la",
+            "name": "la",
             "direction": "input"
           },
           {
-            "id": "port:y",
-            "name": "y",
+            "id": "port:ly",
+            "name": "ly",
             "direction": "output"
           }
         ]
@@ -174,7 +134,7 @@
   "edges": [
     {
       "id": "edge:instance:top:u1:port:top:y:y",
-      "source": "expand:instance:top:u1::port:leaf:y",
+      "source": "expand:instance:top:u1::port:leaf:ly",
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
@@ -183,34 +143,26 @@
     {
       "id": "edge:port:top:a:instance:top:u1:a",
       "source": "port:top:a",
-      "target": "expand:instance:top:u1::port:leaf:a",
+      "target": "expand:instance:top:u1::port:leaf:la",
       "sourceHandle": "port:a",
       "targetHandle": "outer",
       "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     },
     {
-      "id": "expand:instance:top:u1::edge:instance:leaf:u_inner:port:leaf:y:y",
-      "source": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:y",
-      "target": "expand:instance:top:u1::port:leaf:y",
-      "sourceHandle": "outer",
+      "id": "expand:instance:top:u1::edge:instance:leaf:u_inner:port:leaf:ly:ly",
+      "source": "expand:instance:top:u1::instance:leaf:u_inner",
+      "target": "expand:instance:top:u1::port:leaf:ly",
+      "sourceHandle": "port:z",
       "targetHandle": "inner",
-      "path": "M 720 144 L 744 144 L 786 144 L 786 234 L 720 234 L 720 72 L 744 72"
+      "path": "M 672 144 L 696 144 L 720 144 L 720 72 L 744 72"
     },
     {
-      "id": "expand:instance:top:u1::edge:port:leaf:a:instance:leaf:u_inner:a",
-      "source": "expand:instance:top:u1::port:leaf:a",
-      "target": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:a",
+      "id": "expand:instance:top:u1::edge:port:leaf:la:instance:leaf:u_inner:la",
+      "source": "expand:instance:top:u1::port:leaf:la",
+      "target": "expand:instance:top:u1::instance:leaf:u_inner",
       "sourceHandle": "inner",
-      "targetHandle": "outer",
+      "targetHandle": "port:w",
       "path": "M 408 72 L 432 72 L 456 72 L 456 144 L 480 144"
-    },
-    {
-      "id": "expand:instance:top:u1::instance:leaf:u_inner::edge:port:inner:a:port:inner:y:y",
-      "source": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:a",
-      "target": "expand:instance:top:u1::instance:leaf:u_inner::port:inner:y",
-      "sourceHandle": "inner",
-      "targetHandle": "inner",
-      "path": "M 528 144 L 552 144 L 648 144 L 672 144"
     }
   ]
 }

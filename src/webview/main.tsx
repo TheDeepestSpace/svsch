@@ -69,6 +69,7 @@ import {
   type SpliceInput,
 } from './expand/splice';
 import {
+  absorbSplicedEdgeRouteChanges,
   applyActiveSplices,
   EXPAND_GHOST_CLASS,
   removeSpliceAndDescendants,
@@ -388,7 +389,16 @@ function DiagramApp(): React.ReactElement {
         return current;
       return inside;
     });
-  }, [userSelectionRect, regions, viewport]);
+
+    // Marquee selection is scoped to the top-level diagram: nodes and wires
+    // spliced inside an expanded instance (issue #232) belong to a separate
+    // sub-diagram and are exempt — the marquee selects the expanded
+    // instance's own (outer) node instead. Individual click-selection of
+    // spliced nodes is untouched (needed e.g. for nested Expand). Applied
+    // live while the rect is dragged out; handleSelectionEnd repeats the
+    // sweep once React Flow applies its final selection.
+    deselectSplicedContent(setNodes, setEdges);
+  }, [userSelectionRect, regions, viewport, setNodes, setEdges]);
 
   const handleSelectionStart = useCallback((event: React.MouseEvent) => {
     selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
@@ -429,8 +439,13 @@ function DiagramApp(): React.ReactElement {
         });
         return changed ? next : current;
       });
+
+      // The marquee never selects content spliced inside an expanded
+      // instance — see the userSelectionRect effect above; this repeats the
+      // sweep after React Flow has applied its own final selection.
+      deselectSplicedContent(setNodes, setEdges);
     },
-    [reactFlow, setNodes],
+    [reactFlow, setNodes, setEdges],
   );
 
   const clearRegionSelection = useCallback(() => {
@@ -574,11 +589,17 @@ function DiagramApp(): React.ReactElement {
       );
 
       if (commit && view) {
+        // Routes of wires spliced in by "Expand instance in place" belong to
+        // the webview's own splice cache (the host knows nothing about those
+        // edges) — absorb them there so a dragged internal wire survives the
+        // next splice reattachment, and only tell the host about its own.
+        const hostChanges = absorbSplicedEdgeRouteChanges(spliceMapRef.current, changes);
+        if (hostChanges.length === 0) return;
         const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
         vscode.postMessage({
           type: 'edgeRoutesChanged',
           moduleName: view.moduleName,
-          changes,
+          changes: hostChanges,
           nodes: stripExpandSplices(
             flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))),
             spliceMapRef.current,
@@ -1105,6 +1126,24 @@ function DiagramApp(): React.ReactElement {
       // drop the region selection with it.
       if (!dragged.selected) clearRegionSelection();
       const movedIds = new Set(allNodes.map((n) => n.id));
+      // Dragging an expanded instance's dimmed node carries its whole spliced
+      // subtree (see onNodesChange's spliceFollowers) — count those members
+      // as moved too, so their internal wires' saved routes translate rigidly
+      // with the drag exactly like a multi-select group's do. Fixpoint loop:
+      // a carried member can itself be a nested expanded instance.
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const splice of spliceMapRef.current.values()) {
+          if (!movedIds.has(splice.flowInstanceId)) continue;
+          for (const memberId of splice.region.nodeIds) {
+            if (!movedIds.has(memberId)) {
+              movedIds.add(memberId);
+              grew = true;
+            }
+          }
+        }
+      }
       if (movedIds.size < 2 && !(dragged.selected && selectedRegionIds.size > 0)) return;
       const originalRoutes = new Map<string, Array<{ x: number; y: number }>>();
       for (const e of edges) {
@@ -1187,7 +1226,7 @@ function DiagramApp(): React.ReactElement {
         regions: stripExpandRegions(expandedRegions),
       });
       if (spliceMapRef.current.size > 0) {
-        syncSpliceCache(spliceMapRef.current, allFlowNodes, expandedRegions);
+        syncSpliceCache(spliceMapRef.current, allFlowNodes, expandedRegions, reactFlow.getEdges());
         persistActiveSplices(spliceMapRef.current);
       }
 
@@ -2432,6 +2471,37 @@ function stripExpandSplices(
 
 function stripExpandRegions(regions: PositionedGenerateRegion[]): PositionedGenerateRegion[] {
   return regions.filter((region) => region.kind !== 'expand');
+}
+
+// Drops any selection React Flow's marquee applied to nodes/wires spliced in
+// by "Expand instance in place" (ids carrying the `expand:` namespace
+// prefix): the sub-diagram inside an expanded instance is its own diagram,
+// and drag-selection operates on the top-level one only — the marquee
+// selects the expanded instance's own node instead. (Click-selection of
+// spliced nodes doesn't pass through here and keeps working, e.g. for
+// nested Expand.)
+function deselectSplicedContent(
+  setNodes: (updater: (nodes: HdlFlowNode[]) => HdlFlowNode[]) => void,
+  setEdges: (updater: (edges: Edge[]) => Edge[]) => void,
+): void {
+  setNodes((current) => {
+    let changed = false;
+    const next = current.map((node) => {
+      if (!node.selected || !isExpandNamespacedId(node.id)) return node;
+      changed = true;
+      return { ...node, selected: false };
+    });
+    return changed ? next : current;
+  });
+  setEdges((current) => {
+    let changed = false;
+    const next = current.map((edge) => {
+      if (!edge.selected || !isExpandNamespacedId(edge.id)) return edge;
+      changed = true;
+      return { ...edge, selected: false };
+    });
+    return changed ? next : current;
+  });
 }
 
 // Persists every currently-active splice's own snapshot (separate from —

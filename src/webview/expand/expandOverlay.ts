@@ -74,6 +74,7 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
 function toFlowEdge(
   edge: DiagramEdge,
   moduleName: string,
+  containerNodeId: string,
   onRouteChange: (changes: RouteChange[], commit: boolean) => void,
 ): Edge {
   return {
@@ -92,6 +93,11 @@ function toFlowEdge(
       moduleName,
       isNetLeader: true,
       netEdgeIds: [edge.id],
+      // The expanded instance's own node is the frame the spliced content
+      // lives in — OrthogonalEdge clamps this edge's derived route inside
+      // that node's live rect so an internal wire can never escape the
+      // expanded module's boundary (see clampPointsToRect).
+      containerNodeId,
     },
   } as Edge;
 }
@@ -186,6 +192,24 @@ export function applyActiveSplices(
             ...node,
             position: { x: node.position.x + dx, y: node.position.y + dy },
           }));
+    // User-dragged internal wire routes (see absorbSplicedEdgeRouteChanges)
+    // are stored in absolute coordinates at the same anchor as the node
+    // positions — translate them by the same delta so a moved instance's
+    // wires reattach alongside its nodes instead of deforming.
+    const translatedEdges =
+      dx === 0 && dy === 0
+        ? splice.edges
+        : splice.edges.map((edge) =>
+            edge.routePoints && edge.routePoints.length > 0
+              ? {
+                  ...edge,
+                  routePoints: edge.routePoints.map((point) => ({
+                    x: point.x + dx,
+                    y: point.y + dy,
+                  })),
+                }
+              : edge,
+          );
     const region =
       dx === 0 && dy === 0
         ? splice.region
@@ -229,7 +253,12 @@ export function applyActiveSplices(
       ),
       ...translatedNodes.map((n) => toFlowNode(n, moduleName)),
     ];
-    edges = [...edges, ...splice.edges.map((edge) => toFlowEdge(edge, moduleName, onRouteChange))];
+    edges = [
+      ...edges,
+      ...translatedEdges.map((edge) =>
+        toFlowEdge(edge, moduleName, splice.flowInstanceId, onRouteChange),
+      ),
+    ];
     extraRegions.push(region);
   }
 
@@ -251,9 +280,11 @@ export function syncSpliceCache(
   splices: Map<string, ActiveSplice>,
   nodes: HdlFlowNode[],
   regions: PositionedGenerateRegion[],
+  flowEdges?: Edge[],
 ): void {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const regionsById = new Map(regions.map((region) => [region.id, region]));
+  const flowEdgesById = flowEdges ? new Map(flowEdges.map((edge) => [edge.id, edge])) : undefined;
   for (const [namespace, splice] of splices) {
     const region = regionsById.get(splice.region.id);
     const instanceNode = nodesById.get(splice.flowInstanceId);
@@ -264,8 +295,23 @@ export function syncSpliceCache(
       if (!flowNode) continue;
       updatedNodes.push({ ...flowNode.data.node, position: flowNode.position });
     }
+    // Wire routes live in the flow edges' data (kept current during drags by
+    // handleRouteChange) — re-capture them at the same moment the anchor
+    // position updates, so route coordinates and anchor stay consistent.
+    const updatedEdges = flowEdgesById
+      ? splice.edges.map((edge) => {
+          const flowEdge = flowEdgesById.get(edge.id);
+          if (!flowEdge) return edge;
+          const routePoints = (flowEdge.data as any)?.routePoints as
+            | Array<{ x: number; y: number }>
+            | undefined;
+          if (routePoints === edge.routePoints) return edge;
+          return { ...edge, routePoints: routePoints?.map((point) => ({ ...point })) };
+        })
+      : splice.edges;
     splices.set(namespace, {
       ...splice,
+      edges: updatedEdges,
       // Expand-region bounds are defined as exactly the expanded node's rect
       // (see splice.ts) — recompute from the instance's live position rather
       // than trusting the regions array, which node-drags don't update.
@@ -282,6 +328,40 @@ export function syncSpliceCache(
       anchorInstancePosition: { ...instanceNode.position },
     });
   }
+}
+
+/**
+ * Splits a route-change batch into spliced-edge changes (absorbed into the
+ * live splice cache, since the host knows nothing about spliced content) and
+ * the remainder (returned, for the host's own edgeRoutesChanged handling).
+ * Absorbing into `splices` is what lets a user-dragged internal wire survive
+ * the next applyActiveSplices reattachment instead of resetting to the
+ * default route. Mutates `splices` in place (it's a ref, not React state).
+ */
+export function absorbSplicedEdgeRouteChanges(
+  splices: Map<string, ActiveSplice>,
+  changes: RouteChange[],
+): RouteChange[] {
+  const remaining: RouteChange[] = [];
+  for (const change of changes) {
+    if (!isExpandNamespacedId(change.edgeId)) {
+      remaining.push(change);
+      continue;
+    }
+    for (const [namespace, splice] of splices) {
+      const index = splice.edges.findIndex((edge) => edge.id === change.edgeId);
+      if (index < 0) continue;
+      const edges = [...splice.edges];
+      edges[index] = {
+        ...edges[index],
+        waypoint: undefined,
+        routePoints: change.routePoints.map((point) => ({ ...point })),
+      };
+      splices.set(namespace, { ...splice, edges });
+      break;
+    }
+  }
+  return remaining;
 }
 
 /**

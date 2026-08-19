@@ -680,6 +680,32 @@ function routeIntersectsAnyObstacle(points: OrthogonalPoint[], obstacles: NodeOb
   });
 }
 
+/**
+ * Clamps every route point into `rect` shrunk by the given per-side insets —
+ * used for wires spliced inside an expanded instance ("Expand instance in
+ * place", issue #232), whose derived routes (feedback loops, obstacle
+ * avoidance detours) must never escape the expanded node's own border.
+ * Per-coordinate clamping is monotone, so equal coordinates stay equal and
+ * the route stays orthogonal; collapsed zero-length zigzags are simplified
+ * away.
+ */
+export function clampPointsToRect(
+  points: OrthogonalPoint[],
+  rect: { x: number; y: number; width: number; height: number },
+  insets: { top: number; right: number; bottom: number; left: number },
+): OrthogonalPoint[] {
+  const minX = rect.x + insets.left;
+  const maxX = rect.x + rect.width - insets.right;
+  const minY = rect.y + insets.top;
+  const maxY = rect.y + rect.height - insets.bottom;
+  if (maxX <= minX || maxY <= minY) return points;
+  const clamped = points.map((point) => ({
+    x: Math.min(Math.max(point.x, minX), maxX),
+    y: Math.min(Math.max(point.y, minY), maxY),
+  }));
+  return removeRedundantPoints(clamped);
+}
+
 export function avoidFeedbackObstacles(
   points: OrthogonalPoint[],
   obstacles: NodeObstacle[],

@@ -228,6 +228,21 @@ function exampleDesignGraph(): Promise<DesignGraph> {
 }
 
 export async function buildExampleDesignView(moduleName: string): Promise<DiagramViewModel> {
+  const { view } = await buildExampleDesignViewWithGraph(moduleName);
+  return view;
+}
+
+/**
+ * Like buildExampleDesignView, but also hands back the elaborated graph and
+ * the first-open layout it was built from — for specs that need to play the
+ * extension host's own role (e.g. answering requestExpandInstance with a
+ * child module's IR, or re-running relayoutSelection's merge+build flow).
+ */
+export async function buildExampleDesignViewWithGraph(moduleName: string): Promise<{
+  graph: DesignGraph;
+  layout: SavedLayout;
+  view: DiagramViewModel;
+}> {
   const graph = await exampleDesignGraph();
   const designModule = graph.modules[moduleName];
   const emptyLayout: SavedLayout = { version: 1, modules: {} };
@@ -239,7 +254,7 @@ export async function buildExampleDesignView(moduleName: string): Promise<Diagra
         designModule,
       )
     : emptyLayout;
-  return buildViewModel(graph, moduleName, layout);
+  return { graph, layout, view: await buildViewModel(graph, moduleName, layout) };
 }
 
 export async function openExampleDesignModule(

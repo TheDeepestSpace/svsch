@@ -942,7 +942,7 @@ Feature: Diagram Interaction
     And the boundary port node "y" should have moved by (2, -1) grid cells
     And the block "u_inner" should have moved by (2, -1) grid cells
 
-  # TODO: currently fails against real behavior, not a test bug — confirmed by
+  # TODO(#241): currently fails against real behavior, not a test bug — confirmed by
   # running this locally against a real surelog+svsch_backend: dragging u_inner
   # visually leaves it hanging outside the frame with no resize. Root cause:
   # ActiveSplice.expandedSize (src/webview/expand/expandOverlay.ts) is fixed at

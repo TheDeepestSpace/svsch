@@ -133,6 +133,17 @@ export interface DiagramNodeMetadata {
     childModuleName: string;
     childPortId: string;
     outerSide: 'left' | 'right';
+    /**
+     * Wire style of the net passing through this port, mirrored from the
+     * child module's own annotated edges (see annotateWireStyles) so the
+     * node's drawn lead stub matches the struct/interface/multi-bit style of
+     * the wire it continues — same idea as cutNet.edgeStyle on netLabel
+     * nodes.
+     */
+    edgeStyle?: {
+      aggregate?: 'struct' | 'interface' | string;
+      thick?: boolean;
+    };
   };
   cutNet?: {
     netKey: string;

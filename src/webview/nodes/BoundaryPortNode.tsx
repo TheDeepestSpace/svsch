@@ -5,6 +5,26 @@ import type { PositionedNode } from '../../ir/types';
 import { Tooltip } from '../Tooltip';
 
 /**
+ * The lead is a stub of the same wire the port carries — mirror the wire's
+ * struct/interface/multi-bit style (stamped by boundaryPortEdgeStyle in
+ * webview/expand/splice.ts) so the style reads continuously through the
+ * label, exactly like NetLabelWire does for cut-net labels.
+ */
+export function boundaryPortLeadClassName(edgeStyle?: {
+  aggregate?: 'struct' | 'interface' | string;
+  thick?: boolean;
+}): string {
+  return [
+    'hdl-boundary-port-lead',
+    edgeStyle?.aggregate === 'struct' ? 'hdl-boundary-port-lead-struct' : '',
+    edgeStyle?.aggregate === 'interface' ? 'hdl-boundary-port-lead-interface' : '',
+    edgeStyle?.thick ? 'hdl-boundary-port-lead-thick' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
  * Renders a `kind: 'boundaryPort'` node — the label-only standin for a child
  * module's port once its instance has been "Expand"ed in place (see
  * webview/expand). The label is anchored flush to the outer (border) side at
@@ -32,7 +52,9 @@ export function BoundaryPortNode({
   const warningCenter = nodeWarningIconCenter(node, width, height);
 
   const label = <span className="hdl-boundary-port-text">{node.label}</span>;
-  const innerLead = <span className="hdl-boundary-port-lead" aria-hidden="true" />;
+  const innerLead = (
+    <span className={boundaryPortLeadClassName(boundary?.edgeStyle)} aria-hidden="true" />
+  );
 
   return (
     <div

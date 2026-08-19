@@ -20,6 +20,7 @@ import {
   midpoint,
   pointNearPathStart,
   avoidFeedbackObstacles,
+  clampPointsToRect,
   type NodeObstacle,
 } from './logic';
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
@@ -53,6 +54,13 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   moduleName?: string;
   isNetLeader?: boolean;
   netEdgeIds?: string[];
+  /**
+   * Set on edges spliced in by "Expand instance in place" (issue #232): the
+   * flow id of the expanded instance's own node, whose live rect is the
+   * frame this wire must stay inside (see the clampPointsToRect pass on
+   * officialPoints below).
+   */
+  containerNodeId?: string;
 }
 
 import { getVscodeApi } from '../vscodeApi';
@@ -302,7 +310,7 @@ export function OrthogonalEdge({
         .filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),
     [flowNodes],
   );
-  const officialPoints = React.useMemo(() => {
+  const routedOfficialPoints = React.useMemo(() => {
     if (
       diagramEdge?.metadata?.forceStraight === true ||
       (diagramEdge?.routePoints && diagramEdge.routePoints.length > 0)
@@ -316,6 +324,40 @@ export function OrthogonalEdge({
       targetPosition as unknown as HdlPosition,
     );
   }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
+
+  // A wire spliced inside an expanded instance must never escape that
+  // instance's own border (the node IS the frame — see webview/expand):
+  // clamp the whole derived route (feedback loops, obstacle detours, saved
+  // drags alike) into the container node's live rect, staying below its
+  // header strip and just inside the other three borders. Skipped while
+  // either handle itself sits outside the frame (an internal node dragged
+  // beyond the not-yet-growing border — clamping only the route would break
+  // orthogonality against the un-clamped handle endpoints).
+  const containerFlowNode = edgeData?.containerNodeId
+    ? flowNodes.find((node) => node.id === edgeData.containerNodeId)
+    : undefined;
+  const officialPoints = React.useMemo(() => {
+    const containerRect = containerFlowNode ? nodeObstacle(containerFlowNode) : undefined;
+    if (!containerRect) return routedOfficialPoints;
+    const handlesInside = [
+      { x: sourceX, y: sourceY },
+      { x: targetX, y: targetY },
+    ].every(
+      (handle) =>
+        handle.x >= containerRect.x &&
+        handle.x <= containerRect.x + containerRect.width &&
+        handle.y >= containerRect.y &&
+        handle.y <= containerRect.y + containerRect.height,
+    );
+    if (!handlesInside) return routedOfficialPoints;
+    const inset = diagramSizing.gridSize / 4;
+    return clampPointsToRect(routedOfficialPoints, containerRect, {
+      top: diagramSizing.nodeHeaderHeight,
+      right: inset,
+      bottom: inset,
+      left: inset,
+    });
+  }, [routedOfficialPoints, containerFlowNode, sourceX, sourceY, targetX, targetY]);
 
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;

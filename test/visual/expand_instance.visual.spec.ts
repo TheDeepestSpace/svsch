@@ -7,12 +7,20 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import {
+  buildExampleDesignViewWithGraph,
   fixtureRoot,
   fitGraphView,
   expectGraphAndScreenshot,
   openView,
+  paddedAllNodesClip,
+  postView,
   waitForViewportTransformToSettle,
 } from './helper';
+import {
+  mergeNodePositions,
+  mergeRelayoutSelection,
+} from '../../src/layout/mergeLayout';
+import type { PositionedNode } from '../../src/ir/types';
 
 // "Expand instance in place" (issue #232) is entirely client-side once the
 // host hands over the child module's IR (see webview/expand/splice.ts and
@@ -39,6 +47,79 @@ async function installMessageCapture(page: Page): Promise<void> {
 
 async function capturedMessages(page: Page): Promise<any[]> {
   return page.evaluate(() => (window as any).__svschMessages ?? []);
+}
+
+// Select an instance node, click Expand, and answer the captured
+// requestExpandInstance the way diagramPanel.ts's handler would — with the
+// already-elaborated child DesignModule from the same graph.
+async function expandInstanceOnPage(
+  page: Page,
+  graph: DesignGraph,
+  instanceLocator: ReturnType<Page['locator']>,
+  childModuleName: string,
+): Promise<void> {
+  const box = await instanceLocator.boundingBox();
+  if (!box) throw new Error('Could not locate the instance node to expand');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const expandButton = page.locator('.svsch-selection-toolbar button', { hasText: 'Expand' });
+  await expect(expandButton).toBeVisible();
+  await expandButton.click();
+  await expect
+    .poll(async () =>
+      (await capturedMessages(page)).some(
+        (message: any) => message.type === 'requestExpandInstance',
+      ),
+    )
+    .toBe(true);
+  const request = (await capturedMessages(page)).find(
+    (message: any) => message.type === 'requestExpandInstance',
+  );
+  await page.evaluate(
+    ({ moduleName, payload }) => {
+      window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
+    },
+    {
+      moduleName: request.moduleName,
+      payload: {
+        instanceId: request.instanceId,
+        childModuleName,
+        module: graph.modules[childModuleName],
+      },
+    },
+  );
+  await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
+}
+
+// Every spliced non-boundary node and every spliced wire path must lie inside
+// the dimmed instance node's own rect — the containment invariant of the
+// expanded frame (boundary ports sit astride the border by design).
+async function expectSplicedContentInsideFrame(page: Page, instanceId: string): Promise<void> {
+  const violations = await page.evaluate((ghostId) => {
+    const ghost = document.querySelector(`.react-flow__node[data-id="${ghostId}"]`);
+    if (!ghost) return [`expanded instance node ${ghostId} not found`];
+    const frame = ghost.getBoundingClientRect();
+    const tolerance = 8; // half a stroke width plus antialiasing slack
+    const within = (rect: DOMRect) =>
+      rect.left >= frame.left - tolerance &&
+      rect.top >= frame.top - tolerance &&
+      rect.right <= frame.right + tolerance &&
+      rect.bottom <= frame.bottom + tolerance;
+    const bad: string[] = [];
+    for (const el of Array.from(document.querySelectorAll('.react-flow__node'))) {
+      const elId = el.getAttribute('data-id') ?? '';
+      if (!elId.startsWith('expand:')) continue;
+      if (el.querySelector('[data-node-kind="boundaryPort"]')) continue;
+      if (!within(el.getBoundingClientRect())) bad.push(`node ${elId}`);
+    }
+    for (const el of Array.from(document.querySelectorAll('.react-flow__edge'))) {
+      const elId = el.getAttribute('data-id') ?? '';
+      if (!elId.startsWith('expand:')) continue;
+      const path = el.querySelector('path.svsch-edge');
+      if (path && !within(path.getBoundingClientRect())) bad.push(`wire ${elId}`);
+    }
+    return bad;
+  }, instanceId);
+  expect(violations, 'spliced content escaping the expanded frame').toEqual([]);
 }
 
 async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
@@ -195,5 +276,193 @@ test.describe('expand instance in place visual', () => {
         })),
       )
       .toEqual(collapsedLayoutSize);
+  });
+
+  // eslint-disable-next-line max-len
+  test('a multi-node child: boundary leads carry the wire styles and every internal wire stays inside the frame', async ({
+    page,
+  }) => {
+    await installMessageCapture(page);
+
+    const graph = await buildFixtureGraph('expand_instance_complex.sv');
+    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+
+    await openView(page, view);
+    await page.waitForSelector('[data-node-kind="instance"]', { state: 'attached' });
+    await waitForViewportTransformToSettle(page);
+
+    const instance = page.locator('[data-node-kind="instance"]');
+    await expect(instance).toHaveCount(1);
+    const instanceId = await instance.getAttribute('data-node-id');
+    if (!instanceId) throw new Error('Could not locate the "u_dp" instance node');
+    await expandInstanceOnPage(page, graph, instance, 'datapath');
+
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
+    // Multiple internal nodes actually spliced in (registers + combs).
+    const internalSpliced = page.locator(
+      '.react-flow__node[data-id^="expand:"]:not(:has([data-node-kind="boundaryPort"]))',
+    );
+    expect(await internalSpliced.count()).toBeGreaterThanOrEqual(3);
+
+    // The boundary-port leads are stubs of the wires they continue — they
+    // must carry the wire's style: multi-bit ports get the thick lead,
+    // struct ports the struct-striped one, plain scalars the default 1.5px.
+    const boundaryFor = (name: string) =>
+      page
+        .locator('[data-node-kind="boundaryPort"]')
+        .filter({ has: page.locator('.hdl-boundary-port-text', { hasText: new RegExp(`^${name}$`) }) });
+    await expect(boundaryFor('bus_in').locator('.hdl-boundary-port-lead-thick')).toHaveCount(1);
+    await expect(boundaryFor('bus_out').locator('.hdl-boundary-port-lead-thick')).toHaveCount(1);
+    await expect(boundaryFor('pkt_in').locator('.hdl-boundary-port-lead-struct')).toHaveCount(1);
+    await expect(boundaryFor('clk').locator('.hdl-boundary-port-lead')).toHaveCount(1);
+    await expect(
+      boundaryFor('clk').locator(
+        '.hdl-boundary-port-lead-thick, .hdl-boundary-port-lead-struct, ' +
+          '.hdl-boundary-port-lead-interface',
+      ),
+    ).toHaveCount(0);
+
+    await expectSplicedContentInsideFrame(page, instanceId);
+
+    await fitGraphView(page, 0.15);
+    await expectGraphAndScreenshot(page, 'expand-instance-complex.png');
+  });
+
+  // The example design's cpu_top with its ALU expanded in place, then the
+  // outer diagram auto-layouted from a border-crossing drag-selection — the
+  // marquee must skip the sub-diagram's nodes, and the relayout round-trip
+  // (played by this test in the extension host's role, same merge+build
+  // calls diagramPanel.relayoutSelection makes) must carry the spliced
+  // content along with the re-placed instance.
+  // eslint-disable-next-line max-len
+  test('example design: cpu_top with u_alu expanded, outer auto-layout applied', async ({
+    page,
+  }) => {
+    await installMessageCapture(page);
+
+    const { graph, layout, view } = await buildExampleDesignViewWithGraph('cpu_top');
+    await openView(page, view);
+    await page.waitForSelector('.react-flow__node', { state: 'attached' });
+    await waitForViewportTransformToSettle(page);
+    await fitGraphView(page, 0.15);
+
+    // Resolve the instance from the IR ("u_alu" as a text filter would also
+    // match u_alu_src_mux), then locate its node by id.
+    const aluGraphNode = graph.modules.cpu_top.nodes.find(
+      (node) => node.kind === 'instance' && node.moduleName === 'alu',
+    );
+    if (!aluGraphNode) throw new Error('No alu instance in cpu_top');
+    const aluNodeId = aluGraphNode.id;
+    const aluInstance = page.locator(`[data-node-id="${aluNodeId}"]`);
+    await expandInstanceOnPage(page, graph, aluInstance, 'alu');
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
+
+    // Border-crossing marquee across the whole diagram: top-level nodes only.
+    // Clamp the lasso to the React Flow pane so the starting press lands on
+    // the pane itself (not the app header above it or the page body).
+    const clip = await paddedAllNodesClip(page);
+    const paneBox = await page.locator('.react-flow__pane').boundingBox();
+    if (!paneBox) throw new Error('No React Flow pane to drag-select on');
+    const startX = Math.max(clip.x, paneBox.x + 2);
+    const startY = Math.max(clip.y, paneBox.y + 2);
+    const endX = Math.min(clip.x + clip.width, paneBox.x + paneBox.width - 2);
+    const endY = Math.min(clip.y + clip.height, paneBox.y + paneBox.height - 2);
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+    await page.mouse.move(endX, endY, { steps: 8 });
+    await page.mouse.up();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          (window as any).reactFlowInstance.getNodes().filter((n: any) => n.selected).length,
+        ),
+      )
+      .toBeGreaterThan(2);
+    const selectedSpliced = await page.evaluate(() =>
+      (window as any).reactFlowInstance
+        .getNodes()
+        .filter((n: any) => n.selected && n.id.startsWith('expand:'))
+        .map((n: any) => n.id),
+    );
+    expect(selectedSpliced, 'marquee must not select sub-diagram nodes').toEqual([]);
+
+    const autoLayoutButton = page.locator('.svsch-selection-toolbar button', {
+      hasText: 'Auto Layout',
+    });
+    await expect(autoLayoutButton).toBeVisible();
+    await autoLayoutButton.click();
+    await expect
+      .poll(async () =>
+        (await capturedMessages(page)).some((message: any) => message.type === 'relayoutSelection'),
+      )
+      .toBe(true);
+    const relayout = (await capturedMessages(page)).find(
+      (message: any) => message.type === 'relayoutSelection',
+    );
+    expect(
+      relayout.nodeIds.filter((id: string) => id.startsWith('expand:')),
+      'relayout payload must not contain sub-diagram ids',
+    ).toEqual([]);
+
+    // Play the extension host's role: the same merge + build + re-anchor
+    // sequence diagramPanel.relayoutSelection runs, then post the resulting
+    // view back — the webview reattaches the still-cached splice to it.
+    const designModule = graph.modules.cpu_top;
+    const selected = new Set<string>(relayout.nodeIds);
+    const centroid = (nodes: PositionedNode[]) => {
+      const inSelection = nodes.filter((node) => selected.has(node.id));
+      if (inSelection.length === 0) return undefined;
+      return {
+        x: inSelection.reduce((sum, node) => sum + node.position.x, 0) / inSelection.length,
+        y: inSelection.reduce((sum, node) => sum + node.position.y, 0) / inSelection.length,
+      };
+    };
+    let hostLayout = mergeRelayoutSelection(
+      layout,
+      'cpu_top',
+      relayout.nodeIds,
+      relayout.nodes,
+      designModule,
+    );
+    const originalCentroid = centroid(relayout.nodes);
+    const relaidView = await buildViewModel(graph, 'cpu_top', hostLayout);
+    const relaidCentroid = centroid(relaidView.nodes);
+    if (originalCentroid && relaidCentroid) {
+      const dx = originalCentroid.x - relaidCentroid.x;
+      const dy = originalCentroid.y - relaidCentroid.y;
+      const anchoredNodes = relaidView.nodes
+        .filter((node) => selected.has(node.id))
+        .map((node) => ({
+          ...node,
+          position: { x: node.position.x + dx, y: node.position.y + dy },
+          fixed: true,
+        }));
+      hostLayout = mergeNodePositions(hostLayout, 'cpu_top', anchoredNodes);
+    }
+    const finalView = await buildViewModel(graph, 'cpu_top', hostLayout);
+    await postView(page, finalView);
+
+    // The splice reattaches to the re-laid-out diagram: boundary ports ride
+    // along and the sub-diagram stays inside the (re-placed) frame.
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
+    await expect(page.locator(`.react-flow__node[data-id="${aluNodeId}"]`)).toHaveClass(
+      /hdl-node-expand-ghost/,
+    );
+    await expectSplicedContentInsideFrame(page, aluNodeId);
+
+    // Auto Layout intentionally keeps the relaid blocks selected — drop the
+    // selection before the screenshot so the baseline shows the diagram, not
+    // the selection styling.
+    await page.evaluate(() => {
+      const rf = (window as any).reactFlowInstance;
+      rf.setNodes(
+        rf.getNodes().map((n: any) => (n.selected ? { ...n, selected: false } : n)),
+      );
+    });
+    await expect(page.locator('.svsch-selection-toolbar')).toHaveCount(0);
+
+    await fitGraphView(page, 0.15);
+    await expectGraphAndScreenshot(page, 'example-design-alu-expanded-autolayout.png');
   });
 });
