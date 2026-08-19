@@ -2,8 +2,10 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { load } from 'js-yaml';
 import {
   renderStackedSuiteChart,
+  renderHistoryTrendChart,
   renderDeltaTableMarkdown,
   renderStackedCsv,
   computeDeltaRows,
@@ -32,14 +34,14 @@ const suiteArgs = process.argv.slice(2).map((arg) => {
   return { name, file };
 });
 
-const { GITHUB_API_URL = 'https://api.github.com', GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, PR_NUMBER } =
+const { GITHUB_API_URL = 'https://api.github.com', GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, PR_NUMBER, PR_BASE_SHA } =
   process.env;
 
 if (suiteArgs.length === 0) {
   throw new Error('Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]');
 }
-if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
-  throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, and PR_NUMBER must be set');
+if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER || !PR_BASE_SHA) {
+  throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, PR_NUMBER, and PR_BASE_SHA must be set');
 }
 
 // Which chart each benchmark suite belongs to, and how it's labeled there.
@@ -84,6 +86,28 @@ const baselineData = (() => {
     return undefined;
   }
 })();
+
+// test/visual/benchmark-history.yaml is guarded to never differ between a
+// PR's base and head (see scripts/check-benchmark-history-unchanged.ts), so
+// reading it from the PR's base commit vs. the PR branch itself would give
+// the same content — base is read here since it's already what `git show`
+// needs no PR-branch checkout for, unlike the merge commit actions/checkout
+// leaves this job on.
+function loadBenchmarkHistory(baseSha) {
+  try {
+    git(['fetch', '--no-tags', '--depth=1', 'origin', baseSha]);
+  } catch {
+    // Best-effort — the git show below fails loudly if the commit truly isn't reachable.
+  }
+  let yamlText;
+  try {
+    yamlText = git(['show', `${baseSha}:test/visual/benchmark-history.yaml`]);
+  } catch {
+    return []; // No history yet (e.g. the very first PR after this file was added).
+  }
+  const parsed = load(yamlText);
+  return Array.isArray(parsed) ? parsed : [];
+}
 
 const chartGroups = new Map();
 for (const { name, file } of suiteArgs) {
@@ -167,6 +191,26 @@ for (const [key, group] of chartGroups) {
     csvFilenamesByKey.set(key, [{ filename }]);
   }
 }
+
+// The trend chart only exists for the visual suite — its history file is the
+// only one being persisted (see test/visual/benchmark-history.yaml).
+const visualGroup = chartGroups.get('visual');
+const elaborationMetric = visualGroup?.metrics.find((m) => m.name === 'visual-elaboration-diagram-generation-duration');
+const renderingMetric = visualGroup?.metrics.find((m) => m.name === 'visual-rendering-diagram-generation-duration');
+if (elaborationMetric && renderingMetric) {
+  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const currentRunAverages = {
+    elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
+    renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
+  };
+  const history = loadBenchmarkHistory(PR_BASE_SHA);
+  contentByFilename.set('visual-trend.svg', renderHistoryTrendChart({
+    title: 'Visual suite — historical average per master run',
+    history,
+    currentRunAverages,
+  }));
+}
+
 const chartCommitSha = publishFiles(contentByFilename);
 
 // A one-line "how'd it move" per tracked metric, surfaced right after the
@@ -209,6 +253,11 @@ for (const [key, group] of chartGroups) {
       lines.push('', `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`, '', table, '', '</details>');
     }
   }
+  if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
+    const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
+    lines.push('', `![Visual suite historical trend](${trendUrl})`);
+  }
+
   sections.push(lines.join('\n'));
 }
 

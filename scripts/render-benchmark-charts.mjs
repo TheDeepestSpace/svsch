@@ -343,6 +343,112 @@ export function renderDeltaTableMarkdown(rows) {
   return lines.join('\n');
 }
 
+// Line-chart trend data prep: turns persisted history (oldest→newest, as
+// stored in test/visual/benchmark-history.yaml) plus the current — not yet
+// merged — PR run's averages into the ordered point list both
+// renderHistoryTrendChart and its tests consume, so "which point is the PR
+// preview" can never disagree between them.
+export function computeHistoryTrendData(history, currentRunAverages) {
+  const points = history.map((entry) => ({
+    label: entry.sha.slice(0, 7),
+    elaborationAvgMs: entry.elaborationAvgMs,
+    renderingAvgMs: entry.renderingAvgMs,
+    isCurrent: false,
+  }));
+  points.push({
+    label: 'this PR',
+    elaborationAvgMs: currentRunAverages.elaborationAvgMs,
+    renderingAvgMs: currentRunAverages.renderingAvgMs,
+    isCurrent: true,
+  });
+  return points;
+}
+
+const TREND_LEFT_MARGIN = 60;
+const TREND_RIGHT_MARGIN = 24;
+const TREND_TOP_MARGIN = 92;
+const TREND_PANEL_HEIGHT = 220;
+const TREND_LABEL_AREA_HEIGHT = 40;
+const TREND_POINT_PITCH = 64;
+const TREND_LEGEND_ITEMS = [
+  { fill: COLORS.blue, label: 'Elaboration avg' },
+  { fill: COLORS.purple, label: 'Rendering avg' },
+];
+
+// One line per metric (elaboration, rendering) across every recorded master
+// run, each point a filled dot; the final segment — into the current, not
+// yet merged, PR run — is dashed and its point drawn hollow rather than
+// filled, the same "texture cue, not color alone" convention the stacked
+// chart above uses for its own "new" bars, so the preview point reads as
+// unconfirmed even in grayscale.
+export function renderHistoryTrendChart({ title, history, currentRunAverages }) {
+  const points = computeHistoryTrendData(history, currentRunAverages);
+  const plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
+  const width = Math.max(
+    TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
+    legendWidth(24, TREND_LEGEND_ITEMS),
+    estimateTextWidth(title, 18) + 48
+  );
+  const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
+  const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
+
+  const maxValue = Math.max(1, ...points.flatMap((p) => [p.elaborationAvgMs, p.renderingAvgMs]));
+  const step = niceStep(maxValue);
+  const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
+  const scale = TREND_PANEL_HEIGHT / chartMax;
+
+  const xFor = (index) => (points.length <= 1
+    ? TREND_LEFT_MARGIN + plotWidth / 2
+    : TREND_LEFT_MARGIN + (index / (points.length - 1)) * plotWidth);
+  const yFor = (value) => originY - value * scale;
+
+  const parts = [];
+  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>`);
+
+  for (let tick = 0; tick <= chartMax; tick += step) {
+    const y = originY - tick * scale;
+    parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${y}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
+    parts.push(`<text x="${TREND_LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
+  }
+  parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+
+  const drawSeries = (key, color) => {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const isPreviewSegment = points[i + 1].isCurrent;
+      const x1 = xFor(i);
+      const y1 = yFor(points[i][key]);
+      const x2 = xFor(i + 1);
+      const y2 = yFor(points[i + 1][key]);
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`);
+    }
+    points.forEach((p, i) => {
+      const x = xFor(i);
+      const y = yFor(p[key]);
+      if (p.isCurrent) {
+        parts.push(`<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`);
+      } else {
+        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+      }
+    });
+  };
+  drawSeries('elaborationAvgMs', COLORS.blue);
+  drawSeries('renderingAvgMs', COLORS.purple);
+
+  const labelParts = points.map((p, i) => {
+    const x = xFor(i);
+    const label = p.isCurrent ? 'this PR' : p.label;
+    return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
+  ${renderLegend(24, 52, TREND_LEGEND_ITEMS)}
+  ${parts.join('\n')}
+  ${labelParts.join('\n')}
+</svg>`;
+}
+
 function csvField(value) {
   const str = String(value);
   return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;

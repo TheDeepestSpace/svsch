@@ -126,6 +126,8 @@
     "test:system": "node scripts/run-system-tests.js",
     "test:system:update": "node scripts/run-system-tests.js --update-snapshots=changed",
     "test:snapshots:check-updates": "tsx scripts/check-snapshot-updates.ts",
+    "benchmark:check-history-unchanged": "tsx scripts/check-benchmark-history-unchanged.ts",
+    "benchmark:append-history": "tsx scripts/append-benchmark-history.ts",
     "docs:generate": "tsx test/scripts/generate-docs.mts",
     "docs:syntax": "GENERATE_SYNTAX_BOOK=1 playwright test --config test/syntax-book/playwright.config.ts",
     "test:syntax": "playwright test --config test/syntax-book/playwright.config.ts",
