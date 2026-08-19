@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { openView, expectGraphAndScreenshot, paddedAllNodesClip, waitForViewportTransformToSettle } from './helper';
+import {
+  openView,
+  expectGraphAndScreenshot,
+  paddedAllNodesClip,
+  waitForViewportTransformToSettle,
+} from './helper';
 import type { DiagramViewModel } from '../../src/ir/types';
 
 function visualPort(
@@ -9,23 +14,25 @@ function visualPort(
   x: number,
   y: number,
   isArray = false,
-  width?: string
+  width?: string,
 ): DiagramViewModel['nodes'][number] {
   return {
     id,
     kind: 'port',
     label,
-    ports: [{
-      id: 'p',
-      name: label,
-      direction,
-      width,
-      isArrayNode: isArray,
-      arrayDimension: isArray ? '[3:0]' : undefined
-    }],
+    ports: [
+      {
+        id: 'p',
+        name: label,
+        direction,
+        width,
+        isArrayNode: isArray,
+        arrayDimension: isArray ? '[3:0]' : undefined,
+      },
+    ],
     position: { x, y },
     isArrayNode: isArray,
-    metadata: isArray ? { isArrayNode: true, arrayDimension: '[3:0]' } : undefined
+    metadata: isArray ? { isArrayNode: true, arrayDimension: '[3:0]' } : undefined,
   };
 }
 
@@ -37,7 +44,7 @@ const WIRE_SPECS = [
   { name: 'str', isStacked: false, isStruct: true, isInterface: false, isMultiBit: false },
   { name: 'int', isStacked: false, isStruct: false, isInterface: true, isMultiBit: false },
   { name: 'stk', isStacked: true, isStruct: false, isInterface: false, isMultiBit: false },
-  { name: 'wstk', isStacked: true, isStruct: false, isInterface: false, isMultiBit: true }
+  { name: 'wstk', isStacked: true, isStruct: false, isInterface: false, isMultiBit: true },
 ] as const;
 
 type WireSpec = (typeof WIRE_SPECS)[number];
@@ -47,7 +54,11 @@ function edgeWidth(spec: WireSpec): string | undefined {
 }
 
 function aggregateMetadata(spec: WireSpec): { aggregate?: string } {
-  return spec.isStruct ? { aggregate: 'struct' } : spec.isInterface ? { aggregate: 'interface' } : {};
+  return spec.isStruct
+    ? { aggregate: 'struct' }
+    : spec.isInterface
+      ? { aggregate: 'interface' }
+      : {};
 }
 
 function createCrossProductView(): DiagramViewModel {
@@ -65,8 +76,28 @@ function createCrossProductView(): DiagramViewModel {
     WIRE_SPECS.forEach((spec, i) => {
       const yNode = 108 + i * 96;
       const yHandle = yNode + 12;
-      nodes.push(visualPort(`${horizontalPrefix}_${spec.name}_src`, `${spec.name}_src`, 'input', baseX - 144, yNode, spec.isStacked, edgeWidth(spec)));
-      nodes.push(visualPort(`${horizontalPrefix}_${spec.name}_tgt`, `${spec.name}_tgt`, 'output', baseX + 696, yNode, spec.isStacked, edgeWidth(spec)));
+      nodes.push(
+        visualPort(
+          `${horizontalPrefix}_${spec.name}_src`,
+          `${spec.name}_src`,
+          'input',
+          baseX - 144,
+          yNode,
+          spec.isStacked,
+          edgeWidth(spec),
+        ),
+      );
+      nodes.push(
+        visualPort(
+          `${horizontalPrefix}_${spec.name}_tgt`,
+          `${spec.name}_tgt`,
+          'output',
+          baseX + 696,
+          yNode,
+          spec.isStacked,
+          edgeWidth(spec),
+        ),
+      );
       edges.push({
         id: `${horizontalPrefix}_${spec.name}`,
         source: `${horizontalPrefix}_${spec.name}_src`,
@@ -75,11 +106,11 @@ function createCrossProductView(): DiagramViewModel {
         targetPort: 'p',
         routePoints: [
           { x: baseX + 120, y: yHandle },
-          { x: baseX + 696, y: yHandle }
+          { x: baseX + 696, y: yHandle },
         ],
         isStacked: spec.isStacked,
         width: edgeWidth(spec),
-        metadata: aggregateMetadata(spec)
+        metadata: aggregateMetadata(spec),
       });
     });
 
@@ -90,8 +121,28 @@ function createCrossProductView(): DiagramViewModel {
       // Wide stacks exit with longer leads: give the source an extra grid of
       // horizontal room so the lead-to-lane connection stays orthogonal.
       const srcX = xCenter - (spec.isStacked && spec.isMultiBit ? 144 : 120);
-      nodes.push(visualPort(`${verticalPrefix}_${spec.name}_src`, `${spec.name}_src`, 'input', srcX, srcHandleY - 12, spec.isStacked, edgeWidth(spec)));
-      nodes.push(visualPort(`${verticalPrefix}_${spec.name}_tgt`, `${spec.name}_tgt`, 'output', xCenter + 96, tgtHandleY - 12, spec.isStacked, edgeWidth(spec)));
+      nodes.push(
+        visualPort(
+          `${verticalPrefix}_${spec.name}_src`,
+          `${spec.name}_src`,
+          'input',
+          srcX,
+          srcHandleY - 12,
+          spec.isStacked,
+          edgeWidth(spec),
+        ),
+      );
+      nodes.push(
+        visualPort(
+          `${verticalPrefix}_${spec.name}_tgt`,
+          `${spec.name}_tgt`,
+          'output',
+          xCenter + 96,
+          tgtHandleY - 12,
+          spec.isStacked,
+          edgeWidth(spec),
+        ),
+      );
       edges.push({
         id: `${verticalPrefix}_${spec.name}`,
         source: `${verticalPrefix}_${spec.name}_src`,
@@ -102,14 +153,14 @@ function createCrossProductView(): DiagramViewModel {
           { x: xCenter + 48, y: srcHandleY },
           { x: xCenter + 48, y: srcHandleY },
           { x: xCenter + 48, y: tgtHandleY },
-          { x: xCenter + 48, y: tgtHandleY }
+          { x: xCenter + 48, y: tgtHandleY },
         ],
         isStacked: spec.isStacked,
         width: edgeWidth(spec),
         metadata: {
           ...aggregateMetadata(spec),
-          forceStraight: true
-        }
+          forceStraight: true,
+        },
       });
     });
   };
@@ -123,7 +174,7 @@ function createCrossProductView(): DiagramViewModel {
     moduleName: 'intersection_cross_product_visual',
     nodes,
     edges,
-    diagnostics: []
+    diagnostics: [],
   };
 }
 
@@ -142,7 +193,7 @@ test.describe('Wire Intersections Cross Product', () => {
 
     // Check that we have a screenshot of the crossings
     await expectGraphAndScreenshot(page, 'wire-intersections-crossing-grid.png', {
-      clip: await paddedAllNodesClip(page)
+      clip: await paddedAllNodesClip(page),
     });
   });
 });

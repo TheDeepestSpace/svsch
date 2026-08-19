@@ -4,7 +4,7 @@ import {
   buildLineJumpRender,
   defaultLineJumpOptions,
   getEdgeOverlapHints,
-  type PolylineEdgeGeometry
+  type PolylineEdgeGeometry,
 } from '../../src/webview/react-flow-line-jumps';
 
 function edge(
@@ -12,15 +12,29 @@ function edge(
   points: Array<{ x: number; y: number }>,
   sourceId?: string,
   targetId?: string,
-  netKey?: string
+  netKey?: string,
 ): PolylineEdgeGeometry {
   return { edgeId, points, sourceId, targetId, netKey: netKey ?? edgeId };
 }
 
 describe('react-flow-line-jumps crossings', () => {
   it('adds an arc jump for a perpendicular crossing', () => {
-    const lower = edge('a', [{ x: 0, y: 50 }, { x: 100, y: 50 }], 'src-a');
-    const upper = edge('b', [{ x: 50, y: 0 }, { x: 50, y: 100 }], 'src-b');
+    const lower = edge(
+      'a',
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      'src-a',
+    );
+    const upper = edge(
+      'b',
+      [
+        { x: 50, y: 0 },
+        { x: 50, y: 100 },
+      ],
+      'src-b',
+    );
 
     const path = buildLineJumpPath(upper, [lower, upper]);
 
@@ -29,8 +43,22 @@ describe('react-flow-line-jumps crossings', () => {
   });
 
   it('returns isolated jump arc paths for jump halos', () => {
-    const lower = edge('a', [{ x: 0, y: 50 }, { x: 100, y: 50 }], 'src-a');
-    const upper = edge('b', [{ x: 50, y: 0 }, { x: 50, y: 100 }], 'src-b');
+    const lower = edge(
+      'a',
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      'src-a',
+    );
+    const upper = edge(
+      'b',
+      [
+        { x: 50, y: 0 },
+        { x: 50, y: 100 },
+      ],
+      'src-b',
+    );
 
     const render = buildLineJumpRender(upper, [lower, upper]);
 
@@ -39,16 +67,47 @@ describe('react-flow-line-jumps crossings', () => {
   });
 
   it('uses deterministic edge ordering so only one crossing edge jumps', () => {
-    const lower = edge('a', [{ x: 0, y: 50 }, { x: 100, y: 50 }], 'src-a');
-    const upper = edge('b', [{ x: 50, y: 0 }, { x: 50, y: 100 }], 'src-b');
+    const lower = edge(
+      'a',
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      'src-a',
+    );
+    const upper = edge(
+      'b',
+      [
+        { x: 50, y: 0 },
+        { x: 50, y: 100 },
+      ],
+      'src-b',
+    );
 
     expect(buildLineJumpPath(lower, [lower, upper])).not.toContain('Q');
     expect(buildLineJumpPath(upper, [lower, upper])).toContain('Q');
   });
 
   it('still adds a jump when same-source edges cross after their shared trunk', () => {
-    const first = edge('a', [{ x: 0, y: 0 }, { x: 80, y: 0 }, { x: 80, y: 120 }], 'src');
-    const second = edge('b', [{ x: 0, y: 0 }, { x: 120, y: 0 }, { x: 120, y: 60 }, { x: 40, y: 60 }], 'src');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 0 },
+        { x: 80, y: 0 },
+        { x: 80, y: 120 },
+      ],
+      'src',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 0, y: 0 },
+        { x: 120, y: 0 },
+        { x: 120, y: 60 },
+        { x: 40, y: 60 },
+      ],
+      'src',
+    );
 
     const path = buildLineJumpPath(second, [first, second]);
 
@@ -57,16 +116,51 @@ describe('react-flow-line-jumps crossings', () => {
   });
 
   it('ignores endpoint-near crossings', () => {
-    const lower = edge('a', [{ x: 0, y: 50 }, { x: 100, y: 50 }], 'src-a');
-    const upper = edge('b', [{ x: 1, y: 0 }, { x: 1, y: 100 }], 'src-b');
+    const lower = edge(
+      'a',
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      'src-a',
+    );
+    const upper = edge(
+      'b',
+      [
+        { x: 1, y: 0 },
+        { x: 1, y: 100 },
+      ],
+      'src-b',
+    );
 
     expect(buildLineJumpPath(upper, [lower, upper])).toBe('M 1 0 L 1 100');
   });
 
   it('sorts multiple crossings along a segment', () => {
-    const first = edge('a', [{ x: 30, y: 0 }, { x: 30, y: 100 }], 'src-a');
-    const second = edge('b', [{ x: 70, y: 0 }, { x: 70, y: 100 }], 'src-b');
-    const crossingEdge = edge('c', [{ x: 0, y: 50 }, { x: 100, y: 50 }], 'src-c');
+    const first = edge(
+      'a',
+      [
+        { x: 30, y: 0 },
+        { x: 30, y: 100 },
+      ],
+      'src-a',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 70, y: 0 },
+        { x: 70, y: 100 },
+      ],
+      'src-b',
+    );
+    const crossingEdge = edge(
+      'c',
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      'src-c',
+    );
 
     const path = buildLineJumpPath(crossingEdge, [first, second, crossingEdge]);
 
@@ -76,46 +170,133 @@ describe('react-flow-line-jumps crossings', () => {
 
 describe('react-flow-line-jumps overlap hints', () => {
   it('adds an overlap hint for same-direction collinear unrelated sources', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src-a');
-    const second = edge('b', [{ x: 40, y: 20 }, { x: 140, y: 20 }], 'src-b');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src-a',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 40, y: 20 },
+        { x: 140, y: 20 },
+      ],
+      'src-b',
+    );
 
     expect(getEdgeOverlapHints(second, [first, second])).toEqual([
       {
         id: 'b-overlap-0-a-0',
-        path: 'M 44 20 L 96 20'
-      }
+        path: 'M 44 20 L 96 20',
+      },
     ]);
   });
 
   it('adds an overlap hint for opposite-direction collinear unrelated sources', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src-a');
-    const second = edge('b', [{ x: 140, y: 20 }, { x: 40, y: 20 }], 'src-b');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src-a',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 140, y: 20 },
+        { x: 40, y: 20 },
+      ],
+      'src-b',
+    );
 
     expect(getEdgeOverlapHints(second, [first, second])[0].path).toBe('M 44 20 L 96 20');
   });
 
   it('suppresses same-source shared trunk overlap hints', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src', undefined, 'net-s');
-    const second = edge('b', [{ x: 0, y: 20 }, { x: 60, y: 20 }, { x: 60, y: 80 }], 'src', undefined, 'net-s');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src',
+      undefined,
+      'net-s',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 0, y: 20 },
+        { x: 60, y: 20 },
+        { x: 60, y: 80 },
+      ],
+      'src',
+      undefined,
+      'net-s',
+    );
 
     expect(getEdgeOverlapHints(second, [first, second])).toEqual([]);
   });
 
   it('suppresses bundled overlaps into the same target node', () => {
-    const first = edge('a', [{ x: 100, y: 20 }, { x: 124, y: 20 }, { x: 124, y: 120 }], 'src-a', 'loop', 'net-l');
-    const second = edge('b', [{ x: 80, y: 40 }, { x: 124, y: 40 }, { x: 124, y: 160 }], 'src-b', 'loop', 'net-l');
+    const first = edge(
+      'a',
+      [
+        { x: 100, y: 20 },
+        { x: 124, y: 20 },
+        { x: 124, y: 120 },
+      ],
+      'src-a',
+      'loop',
+      'net-l',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 80, y: 40 },
+        { x: 124, y: 40 },
+        { x: 124, y: 160 },
+      ],
+      'src-b',
+      'loop',
+      'net-l',
+    );
 
     expect(getEdgeOverlapHints(second, [first, second])).toEqual([]);
   });
 
   it('suppresses overlaps that leave the same rendered handle point', () => {
     const first = {
-      ...edge('a', [{ x: 100, y: 20 }, { x: 124, y: 20 }, { x: 124, y: 100 }], 'literal-a', undefined, 'net-a'),
-      sourceHandlePoint: { x: 100, y: 20 }
+      ...edge(
+        'a',
+        [
+          { x: 100, y: 20 },
+          { x: 124, y: 20 },
+          { x: 124, y: 100 },
+        ],
+        'literal-a',
+        undefined,
+        'net-a',
+      ),
+      sourceHandlePoint: { x: 100, y: 20 },
     };
     const second = {
-      ...edge('b', [{ x: 100, y: 20 }, { x: 124, y: 20 }, { x: 124, y: 140 }], 'literal-b', undefined, 'net-a'),
-      sourceHandlePoint: { x: 100, y: 20 }
+      ...edge(
+        'b',
+        [
+          { x: 100, y: 20 },
+          { x: 124, y: 20 },
+          { x: 124, y: 140 },
+        ],
+        'literal-b',
+        undefined,
+        'net-a',
+      ),
+      sourceHandlePoint: { x: 100, y: 20 },
     };
 
     expect(getEdgeOverlapHints(second, [first, second])).toEqual([]);
@@ -123,34 +304,98 @@ describe('react-flow-line-jumps overlap hints', () => {
 
   it('suppresses downstream shared trunks from the same rendered handle point', () => {
     const first = {
-      ...edge('a', [{ x: 100, y: 20 }, { x: 124, y: 20 }, { x: 124, y: 120 }, { x: 200, y: 120 }], 'literal-a', undefined, 'net-a'),
-      sourceHandlePoint: { x: 100, y: 20 }
+      ...edge(
+        'a',
+        [
+          { x: 100, y: 20 },
+          { x: 124, y: 20 },
+          { x: 124, y: 120 },
+          { x: 200, y: 120 },
+        ],
+        'literal-a',
+        undefined,
+        'net-a',
+      ),
+      sourceHandlePoint: { x: 100, y: 20 },
     };
     const second = {
-      ...edge('b', [{ x: 100, y: 20 }, { x: 124, y: 20 }, { x: 124, y: 160 }, { x: 200, y: 160 }], 'literal-b', undefined, 'net-a'),
-      sourceHandlePoint: { x: 100, y: 20 }
+      ...edge(
+        'b',
+        [
+          { x: 100, y: 20 },
+          { x: 124, y: 20 },
+          { x: 124, y: 160 },
+          { x: 200, y: 160 },
+        ],
+        'literal-b',
+        undefined,
+        'net-a',
+      ),
+      sourceHandlePoint: { x: 100, y: 20 },
     };
 
     expect(getEdgeOverlapHints(second, [first, second])).toEqual([]);
   });
 
   it('trims partial overlaps to the shared interior span', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src-a');
-    const second = edge('b', [{ x: 50, y: 20 }, { x: 160, y: 20 }], 'src-b');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src-a',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 50, y: 20 },
+        { x: 160, y: 20 },
+      ],
+      'src-b',
+    );
 
     expect(getEdgeOverlapHints(second, [first, second])[0].path).toBe('M 54 20 L 96 20');
   });
 
   it('ignores endpoint-near or tiny overlaps', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src-a');
-    const tiny = edge('b', [{ x: 97, y: 20 }, { x: 130, y: 20 }], 'src-b');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src-a',
+    );
+    const tiny = edge(
+      'b',
+      [
+        { x: 97, y: 20 },
+        { x: 130, y: 20 },
+      ],
+      'src-b',
+    );
 
     expect(getEdgeOverlapHints(tiny, [first, tiny])).toEqual([]);
   });
 
   it('does not create jump arcs for pure overlaps', () => {
-    const first = edge('a', [{ x: 0, y: 20 }, { x: 100, y: 20 }], 'src-a');
-    const second = edge('b', [{ x: 40, y: 20 }, { x: 140, y: 20 }], 'src-b');
+    const first = edge(
+      'a',
+      [
+        { x: 0, y: 20 },
+        { x: 100, y: 20 },
+      ],
+      'src-a',
+    );
+    const second = edge(
+      'b',
+      [
+        { x: 40, y: 20 },
+        { x: 140, y: 20 },
+      ],
+      'src-b',
+    );
 
     expect(buildLineJumpPath(second, [first, second])).not.toContain('Q');
   });
@@ -159,7 +404,7 @@ describe('react-flow-line-jumps overlap hints', () => {
     expect(defaultLineJumpOptions).toEqual({
       jumpSize: 7,
       endpointPadding: 4,
-      minOverlapLength: 4
+      minOverlapLength: 4,
     });
   });
 });

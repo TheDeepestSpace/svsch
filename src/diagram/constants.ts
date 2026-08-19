@@ -21,7 +21,7 @@ export const diagramGrid = {
   minNodeSeparationUnits: 7,
   sameLayerNodeSeparationUnits: 1,
   columnGapUnits: 11,
-  rowGapUnits: 6
+  rowGapUnits: 6,
 } as const;
 
 export const diagramSizing = {
@@ -52,7 +52,7 @@ export const diagramSizing = {
   // anything larger just pads the top with dead space.
   interfaceInstanceShiftY: diagramGrid.size / 2,
   columnGap: diagramGrid.size * diagramGrid.columnGapUnits,
-  rowGap: diagramGrid.size * diagramGrid.rowGapUnits
+  rowGap: diagramGrid.size * diagramGrid.rowGapUnits,
 } as const;
 
 export function snapUpToGrid(value: number): number {
@@ -66,21 +66,35 @@ export function snapUpToEvenGrid(value: number): number {
 }
 
 export function nodeHeightForPortRows(portRows: number): number {
-  return Math.max(diagramSizing.nodeHeight, snapUpToGrid(diagramSizing.nodeHeaderHeight + diagramGrid.size * Math.max(1, portRows)));
+  return Math.max(
+    diagramSizing.nodeHeight,
+    snapUpToGrid(diagramSizing.nodeHeaderHeight + diagramGrid.size * Math.max(1, portRows)),
+  );
 }
 
 export function muxHeightForPortRows(portRows: number): number {
   return snapUpToEvenGrid(nodeHeightForPortRows(portRows));
 }
 
+/**
+ * Gate body height needed to fan `inputCount` input ports one full grid line
+ * apart (see `gateInputPortCenterY`), inset by one grid unit from the top/
+ * bottom edge: `grid * (1 + 2 * (inputCount - 1))` for the last port center,
+ * plus one grid of bottom inset.
+ */
+export function gateHeightForInputCount(inputCount: number): number {
+  const count = Math.max(2, inputCount);
+  return diagramGrid.size * 2 * count;
+}
+
 export function combHeightForPortRows(portRows: number): number {
   return Math.max(
     diagramSizing.combMinHeight,
-    snapUpToGrid(diagramSizing.nodeHeaderHeight + diagramGrid.size * Math.max(1, portRows))
+    snapUpToGrid(diagramSizing.nodeHeaderHeight + diagramGrid.size * Math.max(1, portRows)),
   );
 }
 
-export function literalHeightForPortRows(portRows: number): number {
+export function literalHeightForPortRows(): number {
   return diagramSizing.literalMinHeight;
 }
 

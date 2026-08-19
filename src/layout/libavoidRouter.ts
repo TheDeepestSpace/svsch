@@ -1,14 +1,11 @@
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { edgeNetKey } from '../ir/edgeNet';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import type { DiagramEdge, DiagramNode, PositionedNode } from '../ir/types';
 import { ARRAY_STACK_WIDE_LANE_OFFSET } from '../webview/arrayStackGeometry';
 import { normalizeRoutePoints } from '../webview/orthogonal/logic';
 import { HdlPosition } from '../webview/orthogonal/types';
-import {
-  simplifyOrthogonalRoute,
-  type OrthogonalRouteObstacle
-} from './orthogonalRouteSimplifier';
+import { simplifyOrthogonalRoute, type OrthogonalRouteObstacle } from './orthogonalRouteSimplifier';
 import { ROUTING_OBSTACLE_MARGIN, routingObstacleMargins } from './routingObstacleGeometry';
 
 const SHAPE_BUFFER_DISTANCE = 4;
@@ -23,7 +20,8 @@ export interface RoutingLeadPoint {
 export type RoutingLeadResolver = (
   nodeId: string,
   portId: string | undefined,
-  includeLeadMargins: boolean
+  includeLeadMargins: boolean,
+  role?: 'source' | 'target',
 ) => RoutingLeadPoint | undefined;
 
 export interface LibavoidRoutingResult {
@@ -66,19 +64,27 @@ export function setLibavoidRuntimeForTests(runtime: any): void {
 export async function routeDiagramWithLibavoid(
   nodes: PositionedNode[],
   edges: DiagramEdge[],
-  resolveLead: RoutingLeadResolver
+  resolveLead: RoutingLeadResolver,
 ): Promise<LibavoidRoutingResult> {
-  const result = routingQueue.then(() => routeDiagramWithLibavoidExclusive(nodes, edges, resolveLead));
-  routingQueue = result.then(() => undefined, () => undefined);
+  const result = routingQueue.then(() =>
+    routeDiagramWithLibavoidExclusive(nodes, edges, resolveLead),
+  );
+  routingQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
   return result;
 }
 
 async function routeDiagramWithLibavoidExclusive(
   nodes: PositionedNode[],
   edges: DiagramEdge[],
-  resolveLead: RoutingLeadResolver
+  resolveLead: RoutingLeadResolver,
 ): Promise<LibavoidRoutingResult> {
-  const empty = { routes: new Map<string, Array<{ x: number; y: number }>>(), rejectedNets: new Map<string, string>() };
+  const empty = {
+    routes: new Map<string, Array<{ x: number; y: number }>>(),
+    rejectedNets: new Map<string, string>(),
+  };
   if (nodes.length === 0 || edges.length === 0) return empty;
 
   try {
@@ -86,8 +92,8 @@ async function routeDiagramWithLibavoidExclusive(
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
     const libavoidNodes = nodes.map((node) => libavoidNodeForDiagramNode(node, resolveLead));
     const libavoidEdges = edges.flatMap((edge): LibavoidEdge[] => {
-      const sourcePort = resolvedPortId(edge.source, edge.sourcePort, nodesById);
-      const targetPort = resolvedPortId(edge.target, edge.targetPort, nodesById);
+      const sourcePort = resolvedPortId(edge.source, edge.sourcePort, nodesById, 'source');
+      const targetPort = resolvedPortId(edge.target, edge.targetPort, nodesById, 'target');
       return sourcePort && targetPort ? [{ edge, sourcePort, targetPort }] : [];
     });
     const rawRoutes = routeRaw(Avoid, libavoidNodes, libavoidEdges);
@@ -96,7 +102,9 @@ async function routeDiagramWithLibavoidExclusive(
     const reason = error instanceof Error ? error.message : String(error);
     return {
       routes: empty.routes,
-      rejectedNets: new Map(edges.map((edge) => [edgeNetKey(edge), `router unavailable: ${reason}`]))
+      rejectedNets: new Map(
+        edges.map((edge) => [edgeNetKey(edge), `router unavailable: ${reason}`]),
+      ),
     };
   }
 }
@@ -104,7 +112,9 @@ async function routeDiagramWithLibavoidExclusive(
 async function loadAvoidRuntime(): Promise<any> {
   avoidRuntimePromise ??= (async () => {
     // Keep native import() intact when the extension is compiled to CommonJS.
-    const nativeImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<any>;
+    const nativeImport = new Function('specifier', 'return import(specifier)') as (
+      specifier: string,
+    ) => Promise<any>;
     const module = await nativeImport('libavoid-js');
     await module.AvoidLib.load();
     return module.AvoidLib.getInstance();
@@ -112,15 +122,40 @@ async function loadAvoidRuntime(): Promise<any> {
   return avoidRuntimePromise;
 }
 
-function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLeadResolver): LibavoidNode {
-  const size = diagramNodeDimensions(node);
-  const leads = node.ports.map((port) => resolveLead(node.id, port.id, true));
-  const leadPoints = leads.flatMap((lead) => lead ? [lead.point] : []);
-  const margins = routingObstacleMargins(node, leads.map((lead) => lead?.side));
+// A boundary inout port is driven on one physical side and read on the
+// other (see mergeLayout's endpointId), so it needs two libavoid pins where
+// every other port needs exactly one.
+function isBoundaryInoutNode(node: PositionedNode): boolean {
+  return node.kind === 'port' && node.ports[0]?.direction === 'inout';
+}
+
+function libavoidNodeForDiagramNode(
+  node: PositionedNode,
+  resolveLead: RoutingLeadResolver,
+): LibavoidNode {
+  const size = resolvedNodeDimensions(node);
+  const dualSided = isBoundaryInoutNode(node);
+  type PinSpec = { port: (typeof node.ports)[number]; role: 'source' | 'target' | undefined };
+  const pinSpecs = node.ports.flatMap((port): PinSpec[] =>
+    dualSided
+      ? [
+          { port, role: 'target' },
+          { port, role: 'source' },
+        ]
+      : [{ port, role: undefined }],
+  );
+  const leads = pinSpecs.map(({ port, role }) => resolveLead(node.id, port.id, true, role));
+  const leadPoints = leads.flatMap((lead) => (lead ? [lead.point] : []));
+  const margins = routingObstacleMargins(
+    node,
+    leads.map((lead) => lead?.side),
+  );
   const left = Math.min(node.position.x, ...leadPoints.map((point) => point.x)) - margins.left;
-  const right = Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x)) + margins.right;
+  const right =
+    Math.max(node.position.x + size.width, ...leadPoints.map((point) => point.x)) + margins.right;
   const top = Math.min(node.position.y, ...leadPoints.map((point) => point.y)) - margins.top;
-  const bottom = Math.max(node.position.y + size.height, ...leadPoints.map((point) => point.y)) + margins.bottom;
+  const bottom =
+    Math.max(node.position.y + size.height, ...leadPoints.map((point) => point.y)) + margins.bottom;
 
   return {
     id: node.id,
@@ -128,26 +163,26 @@ function libavoidNodeForDiagramNode(node: PositionedNode, resolveLead: RoutingLe
     y: top,
     width: right - left,
     height: bottom - top,
-    ports: node.ports.map((port, index) => {
+    ports: pinSpecs.map(({ port, role }, index) => {
       const lead = leads[index];
       const point = lead?.point ?? {
         x: node.position.x + size.width / 2,
-        y: node.position.y + size.height / 2
+        y: node.position.y + size.height / 2,
       };
       return {
-        id: libavoidPortId(node.id, port.id),
+        id: libavoidPortId(node.id, port.id, role),
         x: point.x - left,
         y: point.y - top,
-        side: lead?.side ?? 'EAST'
+        side: lead?.side ?? 'EAST',
       };
-    })
+    }),
   };
 }
 
 function routeRaw(
   Avoid: any,
   nodes: LibavoidNode[],
-  edges: LibavoidEdge[]
+  edges: LibavoidEdge[],
 ): Map<string, Array<{ x: number; y: number }>> {
   const router = new Avoid.Router(Avoid.OrthogonalRouting);
   const shapes = new Map<string, any>();
@@ -171,7 +206,7 @@ function routeRaw(
     for (const node of nodes) {
       const rectangle = new Avoid.Rectangle(
         new Avoid.Point(node.x, node.y),
-        new Avoid.Point(node.x + node.width, node.y + node.height)
+        new Avoid.Point(node.x + node.width, node.y + node.height),
       );
       const shape = new Avoid.ShapeRef(router, rectangle);
       shapes.set(node.id, shape);
@@ -186,7 +221,7 @@ function routeRaw(
           clamp01(port.y / node.height),
           true,
           0,
-          connectionDirection(port.side)
+          connectionDirection(port.side),
         );
         pin.setExclusive(false);
         classId += 1;
@@ -205,8 +240,13 @@ function routeRaw(
       const targetShape = shapes.get(edge.target);
       const sourceClass = pinClasses.get(sourcePort);
       const targetClass = pinClasses.get(targetPort);
-      if (!sourceShape || !targetShape || sourceClass === undefined || targetClass === undefined) return;
-      addConnector(edge.id, new Avoid.ConnEnd(sourceShape, sourceClass), new Avoid.ConnEnd(targetShape, targetClass));
+      if (!sourceShape || !targetShape || sourceClass === undefined || targetClass === undefined)
+        return;
+      addConnector(
+        edge.id,
+        new Avoid.ConnEnd(sourceShape, sourceClass),
+        new Avoid.ConnEnd(targetShape, targetClass),
+      );
     };
 
     const groups = new Map<string, LibavoidEdge[]>();
@@ -241,7 +281,7 @@ function routeRaw(
       addConnector(
         trunkConnectorId,
         new Avoid.ConnEnd(sourceShape, sourceClass),
-        connEndForJunction(Avoid, junction, junctionPoint)
+        connEndForJunction(Avoid, junction, junctionPoint),
       );
 
       const branches: FanoutPlan['branches'] = [];
@@ -253,7 +293,7 @@ function routeRaw(
         addConnector(
           connectorId,
           connEndForJunction(Avoid, junction, junctionPoint),
-          new Avoid.ConnEnd(targetShape, targetClass)
+          new Avoid.ConnEnd(targetShape, targetClass),
         );
         branches.push({ edgeId: item.edge.id, connectorId });
       }
@@ -283,7 +323,8 @@ function routeRaw(
       if (!trunk) continue;
       for (const branch of plan.branches) {
         const branchRoute = connectorRoutes.get(branch.connectorId);
-        if (branchRoute) routes.set(branch.edgeId, removeConsecutiveDuplicates([...trunk, ...branchRoute]));
+        if (branchRoute)
+          routes.set(branch.edgeId, removeConsecutiveDuplicates([...trunk, ...branchRoute]));
       }
     }
     return routes;
@@ -297,7 +338,7 @@ function validateRoutes(
   libavoidNodes: LibavoidNode[],
   edges: LibavoidEdge[],
   rawRoutes: Map<string, Array<{ x: number; y: number }>>,
-  resolveLead: RoutingLeadResolver
+  resolveLead: RoutingLeadResolver,
 ): LibavoidRoutingResult {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const candidates = new Map<string, Array<{ x: number; y: number }>>();
@@ -306,14 +347,16 @@ function validateRoutes(
   for (const item of edges) {
     const netKey = edgeNetKey(item.edge);
     const raw = rawRoutes.get(item.edge.id);
-    const sourceLead = resolveLead(item.edge.source, item.edge.sourcePort, true);
-    const targetLead = resolveLead(item.edge.target, item.edge.targetPort, true);
+    const sourceLead = resolveLead(item.edge.source, item.edge.sourcePort, true, 'source');
+    const targetLead = resolveLead(item.edge.target, item.edge.targetPort, true, 'target');
     if (!raw || !sourceLead || !targetLead) {
       rejectedNets.set(netKey, 'missing route or endpoint');
       continue;
     }
 
-    const stitched = removeConsecutiveDuplicates([sourceLead.point, ...raw, targetLead.point].map(roundPoint));
+    const stitched = removeConsecutiveDuplicates(
+      [sourceLead.point, ...raw, targetLead.point].map(roundPoint),
+    );
     if (!routeIsOrthogonal(stitched)) {
       rejectedNets.set(netKey, 'non-orthogonal raw route');
       continue;
@@ -339,9 +382,7 @@ function validateRoutes(
 
     const peerRoutes = [...candidates.entries()].flatMap(([edgeId, candidate]) => {
       const peer = edgeById.get(edgeId);
-      return edgeId !== item.edge.id
-        && peer
-        && !rejectedNets.has(edgeNetKey(peer.edge))
+      return edgeId !== item.edge.id && peer && !rejectedNets.has(edgeNetKey(peer.edge))
         ? [candidate]
         : [];
     });
@@ -364,13 +405,13 @@ function validateRoutes(
 
 function simplificationObstacles(
   nodes: LibavoidNode[],
-  clearance: number
+  clearance: number,
 ): OrthogonalRouteObstacle[] {
   return nodes.map((node) => ({
     x: node.x - clearance,
     y: node.y - clearance,
     width: node.width + clearance * 2,
-    height: node.height + clearance * 2
+    height: node.height + clearance * 2,
   }));
 }
 
@@ -378,10 +419,10 @@ function normalizeRenderedRoute(
   edge: DiagramEdge,
   route: Array<{ x: number; y: number }>,
   nodesById: Map<string, DiagramNode>,
-  resolveLead: RoutingLeadResolver
+  resolveLead: RoutingLeadResolver,
 ): Array<{ x: number; y: number }> {
-  const sourceHandle = resolveLead(edge.source, edge.sourcePort, false);
-  const targetHandle = resolveLead(edge.target, edge.targetPort, false);
+  const sourceHandle = resolveLead(edge.source, edge.sourcePort, false, 'source');
+  const targetHandle = resolveLead(edge.target, edge.targetPort, false, 'target');
   if (!sourceHandle || !targetHandle) return route;
   return normalizeRoutePoints(
     { routePoints: route },
@@ -395,13 +436,13 @@ function normalizeRenderedRoute(
     edge.targetPort,
     true,
     nodesById.get(edge.source),
-    nodesById.get(edge.target)
+    nodesById.get(edge.target),
   );
 }
 
 function validateNormalizedRoute(
   route: Array<{ x: number; y: number }>,
-  nodes: PositionedNode[]
+  nodes: PositionedNode[],
 ): string | undefined {
   if (!routeIsOrthogonal(route)) return 'non-orthogonal normalized route';
 
@@ -413,49 +454,63 @@ function validateNormalizedRoute(
   return undefined;
 }
 
-function renderedNodeBounds(node: PositionedNode): { x: number; y: number; width: number; height: number } {
-  const size = diagramNodeDimensions(node);
+function renderedNodeBounds(node: PositionedNode): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const size = resolvedNodeDimensions(node);
   const stackPad = nodeIsArrayNode(node) ? 4 : 0;
   return {
     x: node.position.x - stackPad,
     y: node.position.y - stackPad,
     width: size.width + stackPad * 2,
-    height: size.height + stackPad * 2
+    height: size.height + stackPad * 2,
   };
 }
 
 function routeIntersectsRectInterior(
   points: Array<{ x: number; y: number }>,
-  rect: { x: number; y: number; width: number; height: number }
+  rect: { x: number; y: number; width: number; height: number },
 ): boolean {
-  return points.slice(1).some((point, index) => (
-    segmentIntersectsRectInterior(points[index], point, rect)
-  ));
+  return points
+    .slice(1)
+    .some((point, index) => segmentIntersectsRectInterior(points[index], point, rect));
 }
 
 function segmentIntersectsRectInterior(
   start: { x: number; y: number },
   end: { x: number; y: number },
-  rect: { x: number; y: number; width: number; height: number }
+  rect: { x: number; y: number; width: number; height: number },
 ): boolean {
   const left = rect.x;
   const right = rect.x + rect.width;
   const top = rect.y;
   const bottom = rect.y + rect.height;
   if (start.y === end.y) {
-    return start.y > top && start.y < bottom
-      && Math.max(start.x, end.x) > left
-      && Math.min(start.x, end.x) < right;
+    return (
+      start.y > top &&
+      start.y < bottom &&
+      Math.max(start.x, end.x) > left &&
+      Math.min(start.x, end.x) < right
+    );
   }
   if (start.x === end.x) {
-    return start.x > left && start.x < right
-      && Math.max(start.y, end.y) > top
-      && Math.min(start.y, end.y) < bottom;
+    return (
+      start.x > left &&
+      start.x < right &&
+      Math.max(start.y, end.y) > top &&
+      Math.min(start.y, end.y) < bottom
+    );
   }
   return true;
 }
 
-function fanoutJunctionPosition(node: LibavoidNode, port: LibavoidNode['ports'][number]): { x: number; y: number } {
+function fanoutJunctionPosition(
+  node: LibavoidNode,
+  port: LibavoidNode['ports'][number],
+): { x: number; y: number } {
   const point = { x: node.x + port.x, y: node.y + port.y };
   if (port.side === 'NORTH') point.y -= ROUTING_OBSTACLE_MARGIN * 2;
   else if (port.side === 'SOUTH') point.y += ROUTING_OBSTACLE_MARGIN * 2;
@@ -471,14 +526,18 @@ function connEndForJunction(Avoid: any, junction: any, position: any): any {
 function resolvedPortId(
   nodeId: string,
   portId: string | undefined,
-  nodesById: Map<string, DiagramNode>
+  nodesById: Map<string, DiagramNode>,
+  role: 'source' | 'target',
 ): string | undefined {
-  const resolved = portId ?? nodesById.get(nodeId)?.ports[0]?.id;
-  return resolved ? libavoidPortId(nodeId, resolved) : undefined;
+  const node = nodesById.get(nodeId);
+  const resolved = portId ?? node?.ports[0]?.id;
+  if (!resolved) return undefined;
+  const dualSided = node?.kind === 'port' && node.ports[0]?.direction === 'inout';
+  return libavoidPortId(nodeId, resolved, dualSided ? role : undefined);
 }
 
-function libavoidPortId(nodeId: string, portId: string): string {
-  return `${nodeId}::${portId}`;
+function libavoidPortId(nodeId: string, portId: string, role?: 'source' | 'target'): string {
+  return role ? `${nodeId}::${portId}::${role}` : `${nodeId}::${portId}`;
 }
 
 function connectionDirection(side: RoutingPortSide): number {
@@ -506,7 +565,9 @@ function roundPoint(point: { x: number; y: number }): { x: number; y: number } {
   return { x: Math.round(point.x * 1000) / 1000, y: Math.round(point.y * 1000) / 1000 };
 }
 
-function removeConsecutiveDuplicates(points: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> {
+function removeConsecutiveDuplicates(
+  points: Array<{ x: number; y: number }>,
+): Array<{ x: number; y: number }> {
   return points.filter((point, index) => {
     const previous = points[index - 1];
     return !previous || point.x !== previous.x || point.y !== previous.y;
@@ -514,7 +575,7 @@ function removeConsecutiveDuplicates(points: Array<{ x: number; y: number }>): A
 }
 
 function routeIsOrthogonal(points: Array<{ x: number; y: number }>): boolean {
-  return points.slice(1).every((point, index) => (
-    point.x === points[index].x || point.y === points[index].y
-  ));
+  return points
+    .slice(1)
+    .every((point, index) => point.x === points[index].x || point.y === points[index].y);
 }

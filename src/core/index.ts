@@ -36,7 +36,7 @@ const EMPTY_LAYOUT: SavedLayout = { version: 1, modules: {} };
 
 export async function renderDiagram(
   svFile: string,
-  opts: RenderDiagramOptions = {}
+  opts: RenderDiagramOptions = {},
 ): Promise<DiagramViewModel> {
   const svFilePath = path.resolve(svFile);
   await assertReadableFile(svFilePath);
@@ -52,7 +52,7 @@ export async function renderDiagram(
     includePaths: opts.includePaths,
     defines: opts.defines,
     includeExternalDiagnostics: true,
-    onProgress: opts.onProgress
+    onProgress: opts.onProgress,
   });
 
   const rendered = await renderModuleFromGraph(graph, svFilePath, workspaceRoot, opts);
@@ -63,7 +63,7 @@ export async function renderModuleFromGraph(
   graph: DesignGraph,
   svFilePath: string,
   workspaceRoot: string,
-  opts: RenderDiagramOptions
+  opts: RenderDiagramOptions,
 ): Promise<RenderedModule> {
   let moduleName = opts.topModule;
   if (moduleName) {
@@ -72,20 +72,31 @@ export async function renderModuleFromGraph(
     }
   } else {
     // Try to find modules defined in the input file within the graph
-    const modulesInFile = Object.values(graph.modules).filter((m) => path.resolve(workspaceRoot, m.file) === svFilePath);
+    const modulesInFile = Object.values(graph.modules).filter(
+      (m) => path.resolve(workspaceRoot, m.file) === svFilePath,
+    );
     if (modulesInFile.length > 0) {
       const rootsInFile = modulesInFile.filter((m) => graph.rootModules.includes(m.name));
       moduleName = rootsInFile[0]?.name ?? modulesInFile[0].name;
     } else {
       // If the input file has no modules in the graph (e.g. excluded by project folder),
       // and no explicit top module was requested, error out instead of picking an unrelated module.
-      throw new Error(`No modules from "${path.basename(svFilePath)}" were found in the project graph. Check --project-folder or --workspace.`);
+      throw new Error(
+        `No modules from "${path.basename(svFilePath)}" were found in the project graph. ` +
+          `Check --project-folder or --workspace.`,
+      );
     }
   }
 
   const { layout, source: layoutSource } = opts.noLayout
     ? { layout: EMPTY_LAYOUT, source: undefined }
-    : readLayoutForFileSync(svFilePath, workspaceRoot, moduleName, opts.layoutFile, opts.svschDataDir);
+    : readLayoutForFileSync(
+        svFilePath,
+        workspaceRoot,
+        moduleName,
+        opts.layoutFile,
+        opts.svschDataDir,
+      );
 
   const view = await buildViewModel(graph, moduleName, layout);
   return { view, layoutSource };
@@ -93,13 +104,14 @@ export async function renderModuleFromGraph(
 
 export function resolveProjectScope(
   svFilePath: string,
-  opts: RenderDiagramOptions
+  opts: RenderDiagramOptions,
 ): { workspaceRoot: string; projectFolder: string } {
   if (opts.workspaceRoot || opts.projectFolder) {
     const workspaceRoot = path.resolve(opts.workspaceRoot ?? process.cwd());
     return {
       workspaceRoot,
-      projectFolder: opts.projectFolder ?? relativeProjectFolder(workspaceRoot, path.dirname(svFilePath))
+      projectFolder:
+        opts.projectFolder ?? relativeProjectFolder(workspaceRoot, path.dirname(svFilePath)),
     };
   }
 
@@ -128,7 +140,7 @@ function readLayoutForFileSync(
   workspaceRoot: string,
   moduleName: string,
   explicitLayoutFile?: string,
-  svschDataDir?: string
+  svschDataDir?: string,
 ): { layout: SavedLayout; source?: string } {
   if (explicitLayoutFile) {
     const resolved = path.resolve(explicitLayoutFile);
@@ -143,7 +155,10 @@ function readLayoutForFileSync(
   const svschDir = svschDataDir ? path.resolve(svschDataDir) : path.join(workspaceRoot, '.svsch');
   const splitLayoutPath = path.join(svschDir, 'layouts', `${encodeURIComponent(moduleName)}.json`);
   if (fsSync.existsSync(splitLayoutPath)) {
-    return { layout: readSplitModuleLayoutSync(splitLayoutPath, moduleName), source: splitLayoutPath };
+    return {
+      layout: readSplitModuleLayoutSync(splitLayoutPath, moduleName),
+      source: splitLayoutPath,
+    };
   }
 
   const ext = path.extname(svFilePath);
@@ -152,7 +167,7 @@ function readLayoutForFileSync(
     `${stem}.svsch-layout.json`,
     `${svFilePath}.svsch-layout.json`,
     path.join(svschDir, 'layout.json'),
-    path.join(process.cwd(), '.svsch', 'layout.json')
+    path.join(process.cwd(), '.svsch', 'layout.json'),
   ]);
 
   for (const candidate of candidates) {
@@ -170,7 +185,7 @@ function readLayoutSync(layoutFile: string): SavedLayout {
     const parsed = JSON.parse(raw) as Partial<SavedLayout>;
     return {
       version: 1,
-      modules: parsed.modules ?? {}
+      modules: parsed.modules ?? {},
     };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -186,7 +201,7 @@ function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): Save
     const parsed = JSON.parse(raw) as Partial<SavedModuleLayout>;
     return {
       version: 1,
-      modules: { [moduleName]: { ...parsed, nodes: parsed.nodes ?? {} } }
+      modules: { [moduleName]: { ...parsed, nodes: parsed.nodes ?? {} } },
     };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -205,26 +220,32 @@ export function resolveBackendPath(explicitPath?: string): string {
   if (explicitPath) {
     return path.resolve(explicitPath);
   }
-  return findBundledFile(['dist', 'svsch_backend'])
-    ?? findBundledFile(['svsch_backend'])
-    ?? 'svsch_backend';
+  return (
+    findBundledFile(['dist', 'svsch_backend']) ??
+    findBundledFile(['svsch_backend']) ??
+    'svsch_backend'
+  );
 }
 
 export function resolveSurelogPath(explicitPath?: string): string {
   if (explicitPath) {
     return path.resolve(explicitPath);
   }
-  return findBundledFile(['dist', 'surelog', 'bin', 'surelog'])
-    ?? findBundledFile(['surelog', 'bin', 'surelog'])
-    ?? 'surelog';
+  return (
+    findBundledFile(['dist', 'surelog', 'bin', 'surelog']) ??
+    findBundledFile(['surelog', 'bin', 'surelog']) ??
+    'surelog'
+  );
 }
 
 function findBundledFile(relativeParts: string[]): string | undefined {
-  const starts = uniquePaths([
-    process.cwd(),
-    typeof __dirname === 'string' ? __dirname : undefined,
-    path.dirname(process.execPath)
-  ].filter((candidate): candidate is string => Boolean(candidate)));
+  const starts = uniquePaths(
+    [
+      process.cwd(),
+      typeof __dirname === 'string' ? __dirname : undefined,
+      path.dirname(process.execPath),
+    ].filter((candidate): candidate is string => Boolean(candidate)),
+  );
 
   for (const start of starts) {
     const found = findUp(start, relativeParts);

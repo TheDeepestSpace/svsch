@@ -13,10 +13,7 @@ const reportDir = path.join(os.tmpdir(), `svsch-bdd-report-${path.basename(root)
 const outputDir = defineBddConfig({
   features: path.join(root, 'test/features/**/*.feature'),
   featuresRoot: path.join(root, 'test'),
-  steps: [
-    path.join(root, 'test/steps/fixtures.ts'),
-    path.join(root, 'test/steps/*.steps.ts'),
-  ],
+  steps: [path.join(root, 'test/steps/fixtures.ts'), path.join(root, 'test/steps/*.steps.ts')],
   outputDir: generatedDir,
   tags: 'not @skip',
   disableWarnings: { importTestFrom: true },
@@ -30,7 +27,9 @@ const reporters: any[] = [
   // Emit a cucumber-JSON report so `npm run docs:generate` can build the
   // living BDD documentation (multiple-cucumber-html-reporter consumes this).
   // Own subdir so the reporter doesn't pick up snapshot-diff JSON in bdd/.
-  cucumberReporter('json', { outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json') }),
+  cucumberReporter('json', {
+    outputFile: path.join(root, 'test-results/bdd/cucumber/cucumber-report.json'),
+  }),
 ];
 
 if (process.env.SVSCH_TEST_STATUS_FILE) {
@@ -42,6 +41,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
+  // The resize/persist round-trip (CSS custom property -> React Flow's
+  // ResizeObserver-driven `measured` size) occasionally takes longer than a
+  // scenario's poll timeout to converge on CI runners; one retry absorbs
+  // that without masking a real regression (a deterministically broken
+  // scenario still fails both attempts).
+  retries: process.env.CI ? 2 : 0,
   // Keep test artifacts on overlayfs (/tmp) to avoid v9fs ENOSPC issues when
   // vscode-test-playwright copies VS Code logs at teardown.
   outputDir: path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(root)}`),

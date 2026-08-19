@@ -36,8 +36,8 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   if (normalizedPath.startsWith('test/visual/__screenshots__/')) {
     let maxDiffPixels: number = SNAPSHOT_THRESHOLDS.playwright.visual.default;
     if (
-      normalizedPath.includes('/mux.visual.spec.ts-snapshots/')
-      && isPlaywrightSnapshotNamed(normalizedPath, 'mux-long-names-webview')
+      normalizedPath.includes('/mux.visual.spec.ts-snapshots/') &&
+      isPlaywrightSnapshotNamed(normalizedPath, 'mux-long-names-webview')
     ) {
       maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.visual.muxLongNames;
     }
@@ -78,7 +78,8 @@ export function configuredPlaywrightUpdateMode(): 'changed' | 'missing' {
 export function assertSafeSnapshotUpdateMode(config: FullConfig): void {
   if (config.updateSnapshots === 'all') {
     throw new Error(
-      'Snapshot update mode "all" rewrites passing baselines. Use --update-snapshots=changed instead.'
+      'Snapshot update mode "all" rewrites passing baselines. ' +
+        'Use --update-snapshots=changed instead.',
     );
   }
 }

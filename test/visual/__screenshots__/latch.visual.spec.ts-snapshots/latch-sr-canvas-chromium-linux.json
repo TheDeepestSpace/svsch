@@ -1,0 +1,252 @@
+{
+  "nodes": [
+    {
+      "id": "bus:sr_latch:q_sel:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:q_sel",
+            "name": "q_sel",
+            "direction": "output"
+          },
+          {
+            "id": "in:_1_",
+            "name": "[1]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_0_",
+            "name": "[0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "latch:sr_latch:q",
+      "type": "hdl",
+      "position": {
+        "x": 1032,
+        "y": 120
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "latch",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:sr_latch:q_2_b01:1_b0",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 204
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:q_2_b01",
+            "name": "q_2_b01",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:sr_latch:q_2_b10:1_b1",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 156
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:q_2_b10",
+            "name": "q_2_b10",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:sr_latch:q:q_sel:q",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 120
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b10",
+            "name": "2'b10",
+            "direction": "input"
+          },
+          {
+            "id": "in:2_b01",
+            "name": "2'b01",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch:q",
+      "type": "hdl",
+      "position": {
+        "x": 1440,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch:r",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:r",
+            "name": "r",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:sr_latch:s",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:s",
+            "name": "s",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:sr_latch:q_sel:expr:mux:sr_latch:q:q_sel:q:q_sel",
+      "source": "bus:sr_latch:q_sel:expr",
+      "target": "mux:sr_latch:q:q_sel:q",
+      "sourceHandle": "out:q_sel",
+      "targetHandle": "sel",
+      "path": "M 504 48 L 528 48 L 768 48 L 768 96 L 768 144"
+    },
+    {
+      "id": "edge:latch:sr_latch:q:port:sr_latch:q:q",
+      "source": "latch:sr_latch:q",
+      "target": "port:sr_latch:q",
+      "sourceHandle": "q",
+      "targetHandle": "port:q",
+      "path": "M 1224 168 L 1248 168 L 1416 168 L 1440 168"
+    },
+    {
+      "id": "edge:literal:sr_latch:q_2_b01:1_b0:mux:sr_latch:q:q_sel:q:q_2_b01",
+      "source": "literal:sr_latch:q_2_b01:1_b0",
+      "target": "mux:sr_latch:q:q_sel:q",
+      "sourceHandle": "port:q_2_b01",
+      "targetHandle": "in:2_b01",
+      "path": "M 504 216 L 528 216 L 624 216 L 624 192 L 696 192 L 720 192"
+    },
+    {
+      "id": "edge:literal:sr_latch:q_2_b10:1_b1:mux:sr_latch:q:q_sel:q:q_2_b10",
+      "source": "literal:sr_latch:q_2_b10:1_b1",
+      "target": "mux:sr_latch:q:q_sel:q",
+      "sourceHandle": "port:q_2_b10",
+      "targetHandle": "in:2_b10",
+      "path": "M 504 168 L 528 168 L 696 168 L 720 168"
+    },
+    {
+      "id": "edge:mux:sr_latch:q:q_sel:q:latch:sr_latch:q:q_latch_d",
+      "source": "mux:sr_latch:q:q_sel:q",
+      "target": "latch:sr_latch:q",
+      "sourceHandle": "out",
+      "targetHandle": "d",
+      "path": "M 816 168 L 840 168 L 1008 168 L 1032 168"
+    },
+    {
+      "id": "edge:port:sr_latch:r:bus:sr_latch:q_sel:expr:r",
+      "source": "port:sr_latch:r",
+      "target": "bus:sr_latch:q_sel:expr",
+      "sourceHandle": "port:r",
+      "targetHandle": "in:_0_",
+      "path": "M 144 96 L 168 96 L 336 96 L 360 96"
+    },
+    {
+      "id": "edge:port:sr_latch:s:bus:sr_latch:q_sel:expr:s",
+      "source": "port:sr_latch:s",
+      "target": "bus:sr_latch:q_sel:expr",
+      "sourceHandle": "port:s",
+      "targetHandle": "in:_1_",
+      "path": "M 144 48 L 168 48 L 336 48 L 360 48"
+    }
+  ]
+}

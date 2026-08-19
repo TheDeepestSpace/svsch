@@ -868,12 +868,14 @@ text {
 .hdl-node-mux,
 .hdl-node-select,
 .hdl-node-alu,
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   background: transparent;
   box-shadow: none;
 }
 
-.hdl-node-inverter {
+.hdl-node-inverter,
+.hdl-node-gate {
   padding: 0;
 }
 
@@ -1015,7 +1017,8 @@ text {
 .hdl-node-mux:focus,
 .hdl-node-select:focus,
 .hdl-node-alu:focus,
-.hdl-node-inverter:focus {
+.hdl-node-inverter:focus,
+.hdl-node-gate:focus {
   outline: none;
 }
 
@@ -1026,7 +1029,9 @@ text {
 .hdl-node-alu>.node-kind,
 .hdl-node-alu>.node-title,
 .hdl-node-inverter>.node-kind,
-.hdl-node-inverter>.node-title {
+.hdl-node-inverter>.node-title,
+.hdl-node-gate>.node-kind,
+.hdl-node-gate>.node-title {
   display: none;
 }
 
@@ -1350,6 +1355,21 @@ text {
   fill: none;
 }
 
+.gate-skin .node-skin-body {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.gate-skin .gate-bubble {
+  fill: none;
+}
+
+.hdl-node-gate .gate-back-curve.svsch-node-shape {
+  fill: none;
+}
+
 .node-skin-selection {
   fill: none;
   opacity: 0;
@@ -1366,7 +1386,9 @@ text {
 .hdl-node-alu:focus .node-skin-selection,
 .hdl-node-alu:focus-visible .node-skin-selection,
 .hdl-node-inverter:focus .node-skin-selection,
-.hdl-node-inverter:focus-visible .node-skin-selection {
+.hdl-node-inverter:focus-visible .node-skin-selection,
+.hdl-node-gate:focus .node-skin-selection,
+.hdl-node-gate:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1890,6 +1912,13 @@ text {
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
+.hdl-node-gate .svsch-node-shape,
+.svsch-node-shape.hdl-node-gate {
+  fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
+  stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
 .hdl-node-replicate .svsch-node-shape,
 .svsch-node-shape.hdl-node-replicate {
   fill: var(--vscode-editor-background);
@@ -2310,6 +2339,7 @@ path.port-skin-body.port-skin-harness {
 .svsch-edges { opacity: 0.3; }
 .svsch-node { opacity: 0.3; }
 .svsch-node[data-node-id="instance:top:u_child"] { opacity: 1 !important; }
+.svsch-node[data-node-id="instance:top:u_child"] .svsch-array-stack-lead { opacity: 0.3; }
 
 :root {
   --vscode-editor-background: #1e1e1e;
@@ -2424,22 +2454,22 @@ path.port-skin-body.port-skin-harness {
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_child:port:top:b:b"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:instance:top:u_child:port:top:b:b" data-net-key="instance:top:u_child:port:b" d="M 565 76 L 763 76" />
+<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_child:port:top:b:b"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:instance:top:u_child:port:top:b:b" data-net-key="instance:top:u_child:port:b" d="M 559 76 L 763 76" />
 <path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:instance:top:u_child:port:top:b:b" data-net-key="instance:top:u_child:port:b" d="M 558 72 L 762 72" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:instance:top:u_child:port:top:b:b" data-net-key="instance:top:u_child:port:b" d="M 551 68 L 761 68" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:a:instance:top:u_child:a"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:port:top:a:instance:top:u_child:a" data-net-key="port:top:a:port:a" d="M 157 76 L 355 76" />
+<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:instance:top:u_child:port:top:b:b" data-net-key="instance:top:u_child:port:b" d="M 557 68 L 761 68" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:a:instance:top:u_child:a"><path class="svsch-edge svsch-edge-stacked-back" data-edge-id="edge:port:top:a:instance:top:u_child:a" data-net-key="port:top:a:port:a" d="M 151 76 L 355 76" />
 <path class="svsch-edge svsch-edge-stacked" data-edge-id="edge:port:top:a:instance:top:u_child:a" data-net-key="port:top:a:port:a" d="M 150 72 L 354 72" />
-<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:port:top:a:instance:top:u_child:a" data-net-key="port:top:a:port:a" d="M 143 68 L 353 68" /></g>
+<path class="svsch-edge svsch-edge-stacked-front" data-edge-id="edge:port:top:a:instance:top:u_child:a" data-net-key="port:top:a:port:a" d="M 149 68 L 353 68" /></g>
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance hdl-node-array" data-node-id="instance:top:u_child" data-node-kind="instance" transform="translate(360 24)">
 <svg class="hdl-node-svg" width="192" height="96" aria-hidden="true">
-<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="192" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="192" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="192" height="96"></rect><text class="svsch-node-kind" x="8" y="10" text-anchor="start" dominant-baseline="middle">child</text><text class="svsch-node-kind svsch-array-badge" x="195" y="-4" text-anchor="start">[3:0]</text><text class="svsch-node-title" x="8" y="22" text-anchor="start" dominant-baseline="middle">u_child<tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">a</text><text class="svsch-port-label" x="176" y="44" text-anchor="end" dominant-baseline="middle">b</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 198 44 L 188 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 198 48 L 192 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 205 52 L 196 52"></path></g>
+<g class="svsch-array-stack-leads svsch-array-stack-leads-target svsch-array-stack-leads-left" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-target-left" d="M -7 44 L -4 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-target-left" d="M -6 48 L 0 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-target-left" d="M -5 52 L 4 52"></path></g><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-back svsch-array-layer-back" transform="translate(4, 4)" width="192" height="96" opacity="0.5"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-middle svsch-array-layer-middle" transform="translate(0, 0)" width="192" height="96" opacity="0.75"></rect><rect class="svsch-node-shape hdl-node-array-layer hdl-node-array-front svsch-array-layer-front" transform="translate(-4, -4)" width="192" height="96"></rect><text class="svsch-node-kind" x="8" y="10" text-anchor="start" dominant-baseline="middle">child</text><text class="svsch-node-kind svsch-array-badge" x="195" y="-4" text-anchor="start">[3:0]</text><text class="svsch-node-title" x="8" y="22" text-anchor="start" dominant-baseline="middle">u_child<tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-port-label" x="8" y="44" dominant-baseline="middle">a</text><text class="svsch-port-label" x="176" y="44" text-anchor="end" dominant-baseline="middle">b</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 197 44 L 188 44"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 198 48 L 192 48"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 199 52 L 196 52"></path></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned hdl-node-array" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 60)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
-<g class="port-skin port-skin-input"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="56" y="8" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">a</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="123" y="-4" text-anchor="start">[3:0]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 126 8 L 116 8"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 126 12 L 120 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 133 16 L 124 16"></path></g></g>
+<g class="port-skin port-skin-input"><path class="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back" transform="translate(4, 4)" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" opacity="0.5"></path><path class="port-skin-body port-skin-array-middle svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front" transform="translate(-4, -4)" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="56" y="8" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">a</tspan><tspan class="svsch-svg-array-index"> [0]</tspan></text><text class="svsch-node-kind svsch-array-badge" x="123" y="-4" text-anchor="start">[3:0]</text><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 125 8 L 116 8"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 126 12 L 120 12"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 127 16 L 124 16"></path></g></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned hdl-node-array" data-node-id="port:top:b" data-node-kind="port" transform="translate(768 60)">

@@ -1,6 +1,10 @@
 import React from 'react';
 import { diagramSizing } from '../../../diagram/constants';
-import { portSkinPath, interfaceSkinPath } from '../../../diagram/interfaceGeometry';
+import {
+  portSkinPath,
+  interfaceSkinPath,
+  type PortSkinDirection,
+} from '../../../diagram/interfaceGeometry';
 import { arrayStackLayer, ARRAY_STACK_SKIN_LAYERS } from '../../arrayStackGeometry';
 
 export function muxSkinPath(width: number, height: number): string {
@@ -10,15 +14,43 @@ export function muxSkinPath(width: number, height: number): string {
   return `M 0 0 L ${width} ${rightTop} V ${rightBottom} L 0 ${height} Z`;
 }
 
-export function InputPortSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+export function InputPortSkin({
+  title,
+  width,
+  isArray = false,
+}: {
+  title: React.ReactNode;
+  width: number;
+  isArray?: boolean;
+}): React.ReactElement {
   return <PortSkin title={title} direction="input" width={width} isArray={isArray} />;
 }
 
-export function OutputPortSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+export function OutputPortSkin({
+  title,
+  width,
+  isArray = false,
+}: {
+  title: React.ReactNode;
+  width: number;
+  isArray?: boolean;
+}): React.ReactElement {
   return <PortSkin title={title} direction="output" width={width} isArray={isArray} />;
 }
 
-export function PortSkin({ title, direction, width, isArray = false, arrayWide = false }: { title: React.ReactNode; direction: 'input' | 'output' | 'harness'; width: number; isArray?: boolean; arrayWide?: boolean }): React.ReactElement {
+export function PortSkin({
+  title,
+  direction,
+  width,
+  isArray = false,
+  arrayWide = false,
+}: {
+  title: React.ReactNode;
+  direction: PortSkinDirection;
+  width: number;
+  isArray?: boolean;
+  arrayWide?: boolean;
+}): React.ReactElement {
   const height = diagramSizing.portHeight;
   const skinHeight = diagramSizing.portSkinHeight;
   const noseLength = diagramSizing.portNoseLength;
@@ -41,7 +73,10 @@ export function PortSkin({ title, direction, width, isArray = false, arrayWide =
         <path className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''}`} d={path} />
         {isArray && <path className="port-skin-array-layer port-skin-array-front" d={path} />}
         {isArray ? (
-          <path className="hdl-node-array-selection" d={arrayStackSelectionPath(direction, width, height, arrayWide)} />
+          <path
+            className="hdl-node-array-selection"
+            d={arrayStackSelectionPath(direction, width, height, arrayWide)}
+          />
         ) : (
           <path className="port-skin-selection" d={path} />
         )}
@@ -51,7 +86,15 @@ export function PortSkin({ title, direction, width, isArray = false, arrayWide =
   );
 }
 
-export function HarnessSkin({ title, width, isArray = false }: { title: React.ReactNode; width: number; isArray?: boolean }): React.ReactElement {
+export function HarnessSkin({
+  title,
+  width,
+  isArray = false,
+}: {
+  title: React.ReactNode;
+  width: number;
+  isArray?: boolean;
+}): React.ReactElement {
   return <PortSkin title={title} direction="harness" width={width} isArray={isArray} />;
 }
 
@@ -62,7 +105,7 @@ export function InterfaceSkin({
   rightCenters = [],
   topPortCount = 0,
   bottomPortCount = 0,
-  shiftY = 0
+  shiftY = 0,
 }: {
   width: number;
   height: number;
@@ -79,7 +122,7 @@ export function InterfaceSkin({
     rightCenters,
     topPortCount,
     bottomPortCount,
-    shiftY
+    shiftY,
   });
 
   return (
@@ -97,7 +140,15 @@ export function InterfaceSkin({
   );
 }
 
-export function MuxSkin({ width, height, showSelection = true }: { width: number; height: number; showSelection?: boolean }): React.ReactElement {
+export function MuxSkin({
+  width,
+  height,
+  showSelection = true,
+}: {
+  width: number;
+  height: number;
+  showSelection?: boolean;
+}): React.ReactElement {
   const path = muxSkinPath(width, height);
 
   return (
@@ -114,7 +165,13 @@ export function MuxSkin({ width, height, showSelection = true }: { width: number
   );
 }
 
-export function MuxArrayLayers({ width, height }: { width: number; height: number }): React.ReactElement {
+export function MuxArrayLayers({
+  width,
+  height,
+}: {
+  width: number;
+  height: number;
+}): React.ReactElement {
   const path = muxSkinPath(width, height);
 
   return (
@@ -135,7 +192,12 @@ export function MuxArrayLayers({ width, height }: { width: number; height: numbe
   );
 }
 
-export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output' | 'harness', width: number, height: number, wide = false): string {
+export function arrayStackSelectionPath(
+  kind: 'rect' | 'mux' | PortSkinDirection,
+  width: number,
+  height: number,
+  wide = false,
+): string {
   const front = arrayStackLayer('front', wide);
   const back = arrayStackLayer('back', wide);
 
@@ -150,11 +212,11 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
       `V ${rightBottom + back.dy}`,
       `L ${back.dx} ${height + back.dy}`,
       `L ${front.dx} ${height + front.dy}`,
-      'Z'
+      'Z',
     ].join(' ');
   }
 
-  if (kind === 'input' || kind === 'output' || kind === 'harness') {
+  if (kind === 'input' || kind === 'output' || kind === 'inout' || kind === 'harness') {
     const skinHeight = diagramSizing.portSkinHeight;
     const noseLength = diagramSizing.portNoseLength;
     const top = (height - skinHeight) / 2;
@@ -169,7 +231,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
         `L ${width - noseLength + back.dx} ${bottom + back.dy}`,
         `H ${back.dx}`,
         `L ${front.dx} ${bottom + front.dy}`,
-        'Z'
+        'Z',
       ].join(' ');
     }
 
@@ -182,11 +244,11 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
         `V ${bottom + back.dy}`,
         `H ${noseLength + back.dx}`,
         `L ${front.dx} ${midY + front.dy}`,
-        'Z'
+        'Z',
       ].join(' ');
     }
 
-    if (kind === 'harness') {
+    if (kind === 'inout' || kind === 'harness') {
       return [
         `M ${front.dx} ${midY + front.dy}`,
         `L ${noseLength + front.dx} ${top + front.dy}`,
@@ -195,7 +257,7 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
         `L ${width - noseLength + back.dx} ${bottom + back.dy}`,
         `H ${noseLength + back.dx}`,
         `L ${front.dx} ${midY + front.dy}`,
-        'Z'
+        'Z',
       ].join(' ');
     }
   }
@@ -207,11 +269,21 @@ export function arrayStackSelectionPath(kind: 'rect' | 'mux' | 'input' | 'output
     `V ${height + back.dy}`,
     `H ${back.dx}`,
     `L ${front.dx} ${height + front.dy}`,
-    'Z'
+    'Z',
   ].join(' ');
 }
 
-export function ArrayStackSelection({ kind, width, height, wide = false }: { kind: 'rect' | 'mux' | 'input' | 'output' | 'harness'; width: number; height: number; wide?: boolean }): React.ReactElement {
+export function ArrayStackSelection({
+  kind,
+  width,
+  height,
+  wide = false,
+}: {
+  kind: 'rect' | 'mux' | PortSkinDirection;
+  width: number;
+  height: number;
+  wide?: boolean;
+}): React.ReactElement {
   return (
     <svg
       className="hdl-node-array-selection-skin"
@@ -220,12 +292,21 @@ export function ArrayStackSelection({ kind, width, height, wide = false }: { kin
       aria-hidden="true"
       focusable="false"
     >
-      <path className="hdl-node-array-selection" d={arrayStackSelectionPath(kind, width, height, wide)} />
+      <path
+        className="hdl-node-array-selection"
+        d={arrayStackSelectionPath(kind, width, height, wide)}
+      />
     </svg>
   );
 }
 
-export function SelectSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+export function SelectSkin({
+  width,
+  height,
+}: {
+  width: number;
+  height: number;
+}): React.ReactElement {
   const rightSideHeight = Math.min(height, diagramSizing.muxRightSideHeight);
   const rightTop = (height - rightSideHeight) / 2;
   const rightBottom = rightTop + rightSideHeight;
@@ -265,7 +346,7 @@ export function AluSkin({ width, height }: { width: number; height: number }): R
     `V ${notchBottomY}`,
     `L ${notchX} ${midY}`,
     `L 0 ${notchTopY}`,
-    `Z`
+    `Z`,
   ].join(' ');
 
   return (
@@ -281,11 +362,17 @@ export function AluSkin({ width, height }: { width: number; height: number }): R
   );
 }
 
-export function InverterSkin({ width, height }: { width: number; height: number }): React.ReactElement {
+export function InverterSkin({
+  width,
+  height,
+}: {
+  width: number;
+  height: number;
+}): React.ReactElement {
   const side = diagramSizing.gridSize;
   const bubbleRadius = Math.min(diagramSizing.gridSize / 4, side / 6);
   const bubbleGap = 2;
-  const bodyRight = side * Math.sqrt(3) / 2;
+  const bodyRight = (side * Math.sqrt(3)) / 2;
   const midY = height / 2;
   const triTop = midY - side / 2;
   const triBottom = midY + side / 2;
@@ -303,7 +390,12 @@ export function InverterSkin({ width, height }: { width: number; height: number 
       <path className="node-skin-body" d={path} />
       <circle className="node-skin-body inverter-bubble" cx={bubbleCx} cy={midY} r={bubbleRadius} />
       <path className="node-skin-selection" d={path} />
-      <circle className="node-skin-selection inverter-bubble-selection" cx={bubbleCx} cy={midY} r={bubbleRadius} />
+      <circle
+        className="node-skin-selection inverter-bubble-selection"
+        cx={bubbleCx}
+        cy={midY}
+        r={bubbleRadius}
+      />
     </svg>
   );
 }

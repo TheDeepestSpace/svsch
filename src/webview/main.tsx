@@ -1,11 +1,18 @@
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import {
   Background,
   Controls,
   MiniMap,
-  Position,
   ReactFlow,
   ReactFlowProvider,
   ViewportPortal,
@@ -13,17 +20,17 @@ import {
   useReactFlow,
   useEdgesState,
   useNodesState,
-  useStore
+  useStore,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './diagram.css';
 import './webview-chrome.css';
-import { diagramSizing, normalizeWidth } from '../diagram/constants';
-import { diagramNodeDimensions } from '../diagram/nodeSizing';
+import { diagramSizing } from '../diagram/constants';
+import { diagramNodeDimensions, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
-  GENERATE_REGION_EXTERNAL_BLOCK_WARNING
+  GENERATE_REGION_EXTERNAL_BLOCK_WARNING,
 } from '../layout/generateRegionValidation';
 import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
@@ -32,7 +39,7 @@ import type {
   DiagramViewModel,
   DiagramEdge,
   PositionedGenerateRegion,
-  PositionedNode
+  PositionedNode,
 } from '../ir/types';
 import { edgeNetKey } from '../ir/edgeNet';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
@@ -40,7 +47,11 @@ import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import { edgeIsThick } from '../ir/edgeStyle';
 import { HdlNode } from './nodes/HdlNode';
 import { MiniMapNode } from './nodes/MiniMapNode';
-import { InteractionContext, type SelectionAction } from './nodes/shared/context';
+import {
+  InteractionContext,
+  type NodeResizeHandle,
+  type SelectionAction,
+} from './nodes/shared/context';
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
 
@@ -102,8 +113,10 @@ function MiniMapRegionOutlines({ regions }: { regions: PositionedGenerateRegion[
         [
           'svsch-minimap-region',
           region.isGenerateBlock ? 'svsch-minimap-region-block' : 'svsch-minimap-region-arm',
-          region.invalid ? 'svsch-minimap-region-invalid' : ''
-        ].filter(Boolean).join(' ')
+          region.invalid ? 'svsch-minimap-region-invalid' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
       );
       group.appendChild(rect);
     }
@@ -143,87 +156,90 @@ function DiagramApp(): React.ReactElement {
     // the dragged selection instead of merely stretching around their nodes.
     startRegions: PositionedGenerateRegion[];
   } | null>(null);
-  const onNodesChange = useCallback((changes: any[]) => {
-    const adjusted = changes.map((change) => {
-      if (change.type === 'position' && change.position) {
-        const node = nodes.find((candidate) => candidate.id === change.id);
-        const kind = node?.data?.node?.kind;
-        const role = node?.data?.node?.metadata?.role;
-        const isHalfGrid = kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
-        if (kind === 'netLabel') {
-          return {
-            ...change,
-            position: {
-              x: Math.round(change.position.x / 24) * 24,
-              y: Math.round(change.position.y / 24) * 24
-            }
-          };
+  const onNodesChange = useCallback(
+    (changes: any[]) => {
+      const adjusted = changes.map((change) => {
+        if (change.type === 'position' && change.position) {
+          const node = nodes.find((candidate) => candidate.id === change.id);
+          const kind = node?.data?.node?.kind;
+          const role = node?.data?.node?.metadata?.role;
+          const isHalfGrid =
+            kind === 'port' || kind === 'literal' || (kind === 'interface' && role === 'port');
+          if (kind === 'netLabel') {
+            return {
+              ...change,
+              position: {
+                x: Math.round(change.position.x / 24) * 24,
+                y: Math.round(change.position.y / 24) * 24,
+              },
+            };
+          }
+          if (isHalfGrid) {
+            return {
+              ...change,
+              position: {
+                x: Math.round(change.position.x / 24) * 24,
+                y: Math.round((change.position.y - 12) / 24) * 24 + 12,
+              },
+            };
+          }
         }
-        if (isHalfGrid) {
-          return {
-            ...change,
-            position: {
-              x: Math.round(change.position.x / 24) * 24,
-              y: Math.round((change.position.y - 12) / 24) * 24 + 12
-            }
+        return change;
+      });
+
+      // Dynamic cut labels are derived from their owning port and are not
+      // persisted as fixed nodes. If a dragged owner would run into its stale
+      // local label position, carry the label by the same delta so the node and
+      // stub stay clear until the next extension-host rebuild. Labels that are
+      // already clear remain untouched (and outside unrelated selections).
+      const changedIds = new Set(adjusted.map((change) => change.id));
+      const followers = new Map<string, any>();
+      for (const change of adjusted) {
+        if (change.type !== 'position' || !change.position) continue;
+        const owner = nodes.find((node) => node.id === change.id);
+        if (!owner || owner.data.node.kind === 'netLabel') continue;
+
+        for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
+          if (changedIds.has(labelId) || followers.has(labelId)) continue;
+
+          const label = nodes.find((node) => node.id === labelId);
+          if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
+          const ownerSize = resolvedNodeDimensions(owner.data.node);
+          const labelSize = diagramNodeDimensions(label.data.node);
+          const ownerBounds = {
+            x: change.position.x - diagramSizing.gridSize,
+            y: change.position.y - diagramSizing.gridSize,
+            width: ownerSize.width + diagramSizing.gridSize * 2,
+            height: ownerSize.height + diagramSizing.gridSize * 2,
           };
+          const labelBounds = {
+            x: label.position.x,
+            y: label.position.y,
+            width: labelSize.width,
+            height: labelSize.height,
+          };
+          const wouldOverlap =
+            ownerBounds.x < labelBounds.x + labelBounds.width &&
+            labelBounds.x < ownerBounds.x + ownerBounds.width &&
+            ownerBounds.y < labelBounds.y + labelBounds.height &&
+            labelBounds.y < ownerBounds.y + ownerBounds.height;
+          if (!wouldOverlap) continue;
+          followers.set(labelId, {
+            type: 'position',
+            id: labelId,
+            position: {
+              x: label.position.x + change.position.x - owner.position.x,
+              y: label.position.y + change.position.y - owner.position.y,
+            },
+            dragging: change.dragging,
+          });
         }
       }
-      return change;
-    });
 
-    // Dynamic cut labels are derived from their owning port and are not
-    // persisted as fixed nodes. If a dragged owner would run into its stale
-    // local label position, carry the label by the same delta so the node and
-    // stub stay clear until the next extension-host rebuild. Labels that are
-    // already clear remain untouched (and outside unrelated selections).
-    const changedIds = new Set(adjusted.map((change) => change.id));
-    const followers = new Map<string, any>();
-    for (const change of adjusted) {
-      if (change.type !== 'position' || !change.position) continue;
-      const owner = nodes.find((node) => node.id === change.id);
-      if (!owner || owner.data.node.kind === 'netLabel') continue;
-
-      for (const labelId of dynamicCutLabelIdsByOwnerRef.current.get(owner.id) ?? []) {
-        if (changedIds.has(labelId) || followers.has(labelId)) continue;
-
-        const label = nodes.find((node) => node.id === labelId);
-        if (!label || label.data.node.kind !== 'netLabel' || label.data.node.fixed) continue;
-        const ownerSize = diagramNodeDimensions(owner.data.node);
-        const labelSize = diagramNodeDimensions(label.data.node);
-        const ownerBounds = {
-          x: change.position.x - diagramSizing.gridSize,
-          y: change.position.y - diagramSizing.gridSize,
-          width: ownerSize.width + diagramSizing.gridSize * 2,
-          height: ownerSize.height + diagramSizing.gridSize * 2
-        };
-        const labelBounds = {
-          x: label.position.x,
-          y: label.position.y,
-          width: labelSize.width,
-          height: labelSize.height
-        };
-        const wouldOverlap = (
-          ownerBounds.x < labelBounds.x + labelBounds.width
-          && labelBounds.x < ownerBounds.x + ownerBounds.width
-          && ownerBounds.y < labelBounds.y + labelBounds.height
-          && labelBounds.y < ownerBounds.y + ownerBounds.height
-        );
-        if (!wouldOverlap) continue;
-        followers.set(labelId, {
-          type: 'position',
-          id: labelId,
-          position: {
-            x: label.position.x + change.position.x - owner.position.x,
-            y: label.position.y + change.position.y - owner.position.y
-          },
-          dragging: change.dragging
-        });
-      }
-    }
-
-    onNodesChangeRaw([...adjusted, ...followers.values()]);
-  }, [nodes, onNodesChangeRaw]);
+      onNodesChangeRaw([...adjusted, ...followers.values()]);
+    },
+    [nodes, onNodesChangeRaw],
+  );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlow = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
@@ -249,18 +265,22 @@ function DiagramApp(): React.ReactElement {
       x: (userSelectionRect.x - viewport.x) / zoom,
       y: (userSelectionRect.y - viewport.y) / zoom,
       width: userSelectionRect.width / zoom,
-      height: userSelectionRect.height / zoom
+      height: userSelectionRect.height / zoom,
     };
-    const inside = new Set(regions
-      .filter((region) => (
-        region.bounds.x >= rect.x &&
-        region.bounds.y >= rect.y &&
-        region.bounds.x + region.bounds.width <= rect.x + rect.width &&
-        region.bounds.y + region.bounds.height <= rect.y + rect.height
-      ))
-      .map((region) => region.id));
+    const inside = new Set(
+      regions
+        .filter(
+          (region) =>
+            region.bounds.x >= rect.x &&
+            region.bounds.y >= rect.y &&
+            region.bounds.x + region.bounds.width <= rect.x + rect.width &&
+            region.bounds.y + region.bounds.height <= rect.y + rect.height,
+        )
+        .map((region) => region.id),
+    );
     setSelectedRegionIds((current) => {
-      if (current.size === inside.size && [...inside].every((id) => current.has(id))) return current;
+      if (current.size === inside.size && [...inside].every((id) => current.has(id)))
+        return current;
       return inside;
     });
   }, [userSelectionRect, regions, viewport]);
@@ -269,42 +289,44 @@ function DiagramApp(): React.ReactElement {
     selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
   }, []);
 
-  const handleSelectionEnd = useCallback((event: React.MouseEvent) => {
-    const start = selectionStartPointRef.current;
-    selectionStartPointRef.current = null;
-    if (!start) return;
+  const handleSelectionEnd = useCallback(
+    (event: React.MouseEvent) => {
+      const start = selectionStartPointRef.current;
+      selectionStartPointRef.current = null;
+      if (!start) return;
 
-    const startFlow = reactFlow.screenToFlowPosition(start);
-    const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    const rect = {
-      x: Math.min(startFlow.x, endFlow.x),
-      y: Math.min(startFlow.y, endFlow.y),
-      width: Math.abs(endFlow.x - startFlow.x),
-      height: Math.abs(endFlow.y - startFlow.y)
-    };
+      const startFlow = reactFlow.screenToFlowPosition(start);
+      const endFlow = reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const rect = {
+        x: Math.min(startFlow.x, endFlow.x),
+        y: Math.min(startFlow.y, endFlow.y),
+        width: Math.abs(endFlow.x - startFlow.x),
+        height: Math.abs(endFlow.y - startFlow.y),
+      };
 
-    // React Flow's lasso can omit synthetic cut-label nodes even when their
-    // measured boxes are visibly inside the rectangle. Apply the same partial
-    // intersection rule explicitly so the rendered selection matches the box
-    // the user drew. Labels outside the lasso remain unselected.
-    setNodes((current) => {
-      let changed = false;
-      const next = current.map((node) => {
-        if (node.data.node.kind !== 'netLabel') return node;
-        const size = diagramNodeDimensions(node.data.node);
-        const selected = (
-          node.position.x < rect.x + rect.width
-          && rect.x < node.position.x + size.width
-          && node.position.y < rect.y + rect.height
-          && rect.y < node.position.y + size.height
-        );
-        if (Boolean(node.selected) === selected) return node;
-        changed = true;
-        return { ...node, selected };
+      // React Flow's lasso can omit synthetic cut-label nodes even when their
+      // measured boxes are visibly inside the rectangle. Apply the same partial
+      // intersection rule explicitly so the rendered selection matches the box
+      // the user drew. Labels outside the lasso remain unselected.
+      setNodes((current) => {
+        let changed = false;
+        const next = current.map((node) => {
+          if (node.data.node.kind !== 'netLabel') return node;
+          const size = diagramNodeDimensions(node.data.node);
+          const selected =
+            node.position.x < rect.x + rect.width &&
+            rect.x < node.position.x + size.width &&
+            node.position.y < rect.y + rect.height &&
+            rect.y < node.position.y + size.height;
+          if (Boolean(node.selected) === selected) return node;
+          changed = true;
+          return { ...node, selected };
+        });
+        return changed ? next : current;
       });
-      return changed ? next : current;
-    });
-  }, [reactFlow, setNodes]);
+    },
+    [reactFlow, setNodes],
+  );
 
   const clearRegionSelection = useCallback(() => {
     setSelectedRegionIds((current) => (current.size === 0 ? current : new Set()));
@@ -312,45 +334,57 @@ function DiagramApp(): React.ReactElement {
 
   // Single-click/drag selection of a region, mirroring node click behavior: the
   // clicked region becomes the sole selection and any selected nodes are dropped.
-  const selectRegion = useCallback((regionId: string) => {
-    setSelectedRegionIds(new Set([regionId]));
-    setNodes((current) => {
-      let changed = false;
-      const next = current.map((node) => {
-        if (!node.selected) return node;
-        changed = true;
-        return { ...node, selected: false };
+  const selectRegion = useCallback(
+    (regionId: string) => {
+      setSelectedRegionIds(new Set([regionId]));
+      setNodes((current) => {
+        let changed = false;
+        const next = current.map((node) => {
+          if (!node.selected) return node;
+          changed = true;
+          return { ...node, selected: false };
+        });
+        return changed ? next : current;
       });
-      return changed ? next : current;
-    });
-  }, [setNodes]);
+    },
+    [setNodes],
+  );
 
   // React Flow's built-in double-click zoom fires for any double-click inside the
   // pane, including ones that navigate to source (nodes, edges, generate region
   // titles). It is disabled and re-implemented here for empty-canvas double-clicks
   // only, keeping d3's behavior: zoom ×2 centered on the cursor, shift to zoom out.
-  const handleCanvasDoubleClick = useCallback((event: React.MouseEvent) => {
-    const target = event.target as Element;
-    if (!target.closest('.react-flow__pane')) return;
-    if (target.closest('.react-flow__node, .react-flow__edge, .generate-region')) return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const current = reactFlow.getViewport();
-    const zoom = Math.min(maxZoom, Math.max(minZoom, current.zoom * (event.shiftKey ? 0.5 : 2)));
-    if (zoom === current.zoom) return;
-    const pointerX = event.clientX - bounds.left;
-    const pointerY = event.clientY - bounds.top;
-    const scale = zoom / current.zoom;
-    void reactFlow.setViewport({
-      x: pointerX - (pointerX - current.x) * scale,
-      y: pointerY - (pointerY - current.y) * scale,
-      zoom
-    }, { duration: 250 });
-  }, [reactFlow, minZoom, maxZoom]);
+  const handleCanvasDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.react-flow__pane')) return;
+      if (target.closest('.react-flow__node, .react-flow__edge, .generate-region')) return;
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const current = reactFlow.getViewport();
+      const zoom = Math.min(maxZoom, Math.max(minZoom, current.zoom * (event.shiftKey ? 0.5 : 2)));
+      if (zoom === current.zoom) return;
+      const pointerX = event.clientX - bounds.left;
+      const pointerY = event.clientY - bounds.top;
+      const scale = zoom / current.zoom;
+      void reactFlow.setViewport(
+        {
+          x: pointerX - (pointerX - current.x) * scale,
+          y: pointerY - (pointerY - current.y) * scale,
+          zoom,
+        },
+        { duration: 250 },
+      );
+    },
+    [reactFlow, minZoom, maxZoom],
+  );
   const [hoveredNetKey, setHoveredNetKey] = useState<string | undefined>();
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | undefined>();
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const externalOverlapNodeIdsRef = useRef<Set<string>>(new Set());
   const [selectionHoverActive, setSelectionHoverActive] = useState(false);
-  const [pendingSelectionAction, setPendingSelectionAction] = useState<SelectionAction | undefined>();
+  const [pendingSelectionAction, setPendingSelectionAction] = useState<
+    SelectionAction | undefined
+  >();
 
   const setHovered = useCallback((netKey?: string, immediate = false) => {
     if (hoverTimeoutRef.current) {
@@ -394,12 +428,17 @@ function DiagramApp(): React.ReactElement {
         } else {
           dynamicExternalIds.delete(node.id);
         }
-        const base = generateStateClass(node.data.node.metadata?.generateActiveState, 'generate-node');
-        const className = [base, wantInvalid ? 'svsch-node-invalid' : ''].filter(Boolean).join(' ') || undefined;
+        const base = generateStateClass(
+          node.data.node.metadata?.generateActiveState,
+          'generate-node',
+        );
+        const className =
+          [base, wantInvalid ? 'svsch-node-invalid' : ''].filter(Boolean).join(' ') || undefined;
         const invalid = wantInvalid || undefined;
-        const dataNode = (node.data.node.invalid === invalid && node.data.node.warningNote === warningNote)
-          ? node.data.node
-          : { ...node.data.node, invalid, warningNote };
+        const dataNode =
+          node.data.node.invalid === invalid && node.data.node.warningNote === warningNote
+            ? node.data.node
+            : { ...node.data.node, invalid, warningNote };
         if ((node.className || undefined) === className && dataNode === node.data.node) return node;
         changed = true;
         return { ...node, className, data: { ...node.data, node: dataNode } };
@@ -408,33 +447,41 @@ function DiagramApp(): React.ReactElement {
     });
   }, [regions, nodes, setNodes]);
 
-  const handleRouteChange = useCallback((changes: RouteChange[], commit: boolean) => {
-    const changeMap = new Map(changes.map(c => [c.edgeId, c.routePoints]));
+  const handleRouteChange = useCallback(
+    (changes: RouteChange[], commit: boolean) => {
+      const changeMap = new Map(changes.map((c) => [c.edgeId, c.routePoints]));
 
-    setEdges((currentEdges: Edge[]) => currentEdges.map((edge: Edge) => {
-      const routePoints = changeMap.get(edge.id);
-      if (routePoints) {
-        return { ...edge, data: { ...edge.data, routePoints } };
+      setEdges((currentEdges: Edge[]) =>
+        currentEdges.map((edge: Edge) => {
+          const routePoints = changeMap.get(edge.id);
+          if (routePoints) {
+            return { ...edge, data: { ...edge.data, routePoints } };
+          }
+          return edge;
+        }),
+      );
+
+      if (commit && view) {
+        const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
+        vscode.postMessage({
+          type: 'edgeRoutesChanged',
+          moduleName: view.moduleName,
+          changes,
+          nodes: flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))),
+        });
       }
-      return edge;
-    }));
+    },
+    [reactFlow, setEdges, view],
+  );
 
-    if (commit && view) {
-      const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
-      vscode.postMessage({
-        type: 'edgeRoutesChanged',
-        moduleName: view.moduleName,
-        changes,
-        nodes: flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id)))
-      });
-    }
-  }, [reactFlow, setEdges, view]);
-
-  const onEdgeMouseEnter = useCallback((_event: React.MouseEvent, edge: Edge) => {
-    const diagramEdge = edge.data?.edge as DiagramEdge | undefined;
-    const netKey = diagramEdge ? edgeNetKey(diagramEdge) : undefined;
-    setHovered(netKey);
-  }, [setHovered]);
+  const onEdgeMouseEnter = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      const diagramEdge = edge.data?.edge as DiagramEdge | undefined;
+      const netKey = diagramEdge ? edgeNetKey(diagramEdge) : undefined;
+      setHovered(netKey);
+    },
+    [setHovered],
+  );
 
   const onEdgeMouseLeave = useCallback(() => {
     setHovered(undefined);
@@ -447,6 +494,7 @@ function DiagramApp(): React.ReactElement {
         setView(view);
         setModules(event.data.modules);
         setHovered(undefined, true);
+        setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
       }
@@ -455,6 +503,140 @@ function DiagramApp(): React.ReactElement {
     vscode.postMessage({ type: 'ready' });
     return () => window.removeEventListener('message', listener);
   }, [setHovered]);
+
+  // r/t/c shortcuts for the Reroute/Cut/Tie controls, plus `c` for the
+  // block-selection toolbar's Cut out button (see their badges next to the
+  // button labels). Each mirrors exactly what clicking the button would
+  // post, so it only fires when the same hover/selection state that reveals
+  // the button is present — never globally, since with nothing hovered or
+  // selected the target would be ambiguous.
+  useEffect(() => {
+    const isCuttable = (edge: Edge): boolean => {
+      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.repeat) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'r' && key !== 't' && key !== 'c') return;
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (!view) return;
+
+      // `nodes`/`edges` are rebuilt from `view` in a separate effect one render
+      // behind this one, so a new graph message can leave this handler holding a
+      // fresh `view` alongside stale node/edge ids from the previous graph.
+      // Bail until the local state has actually caught up, so a shortcut never
+      // combines a new moduleName with ids that belong to the old graph.
+      const viewNodeIds = new Set(view.nodes.map((node) => node.id));
+      const viewEdgeIds = new Set(view.edges.map((edge) => edge.id));
+      const graphInSync =
+        nodes.length === view.nodes.length &&
+        edges.length === view.edges.length &&
+        nodes.every(
+          (node) => node.data.moduleName === view.moduleName && viewNodeIds.has(node.id),
+        ) &&
+        edges.every(
+          (edge) => edge.data?.moduleName === view.moduleName && viewEdgeIds.has(edge.id),
+        );
+      if (!graphInSync) return;
+
+      if (key === 't') {
+        const netLabelNode = nodes.find((node) => {
+          const cutNet = node.data.node.metadata?.cutNet;
+          if (!cutNet) return false;
+          return (
+            node.selected === true ||
+            (hoveredNetKey !== undefined && hoveredNetKey === cutNet.netKey)
+          );
+        });
+        const cutNet = netLabelNode?.data.node.metadata?.cutNet;
+        if (!cutNet) return;
+        event.preventDefault();
+        vscode.postMessage({ type: 'tieNet', moduleName: view.moduleName, netKey: cutNet.netKey });
+        return;
+      }
+
+      // Selection wins over hover (matches the batch-Cut/Reroute controls, which
+      // take over the moment more than one cuttable wire is selected); a solo
+      // hover only ever targets the one specific edge under the pointer.
+      const selectedEdges = edges.filter((edge) => edge.selected === true && isCuttable(edge));
+      let targetEdges =
+        selectedEdges.length > 0
+          ? selectedEdges
+          : edges.filter((edge) => edge.id === hoveredEdgeId && isCuttable(edge));
+      // `c` also mirrors the block-selection toolbar's "Cut out" button: with
+      // no wire selected or hovered to disambiguate, fall back to every
+      // cuttable edge touching the selected block(s), if any.
+      if (key === 'c' && targetEdges.length === 0) {
+        targetEdges = cutOutEdgesForSelection(nodes, edges);
+      }
+      if (targetEdges.length === 0) return;
+      event.preventDefault();
+
+      // Matches positionedNodesFromFlowNodes in OrthogonalEdge.tsx: cutting/
+      // rerouting freezes every real block in place, but a net-cut label that's
+      // still tracking its port dynamically must not be forced fixed just
+      // because it happened to be on screen.
+      const positioned = nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+      }));
+
+      if (key === 'r') {
+        if (targetEdges.length === 1) {
+          vscode.postMessage({
+            type: 'rerouteEdge',
+            moduleName: view.moduleName,
+            edgeId: targetEdges[0].id,
+            nodes: positioned,
+          });
+        } else {
+          vscode.postMessage({
+            type: 'rerouteEdges',
+            moduleName: view.moduleName,
+            edgeIds: targetEdges.map((edge) => edge.id),
+            nodes: positioned,
+          });
+        }
+        return;
+      }
+
+      const diagramEdges = targetEdges
+        .map((edge) => (edge.data as { edge?: DiagramEdge } | undefined)?.edge)
+        .filter((edge): edge is DiagramEdge => edge !== undefined);
+      if (diagramEdges.length === 1) {
+        vscode.postMessage({
+          type: 'cutNet',
+          moduleName: view.moduleName,
+          edge: diagramEdges[0],
+          nodes: positioned,
+        });
+      } else {
+        vscode.postMessage({
+          type: 'cutNets',
+          moduleName: view.moduleName,
+          edges: diagramEdges,
+          nodes: positioned,
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nodes, edges, view, hoveredNetKey, hoveredEdgeId]);
 
   useEffect(() => {
     if (!view) {
@@ -466,7 +648,11 @@ function DiagramApp(): React.ReactElement {
     const dynamicCutLabelIdsByOwner = new Map<string, string[]>();
     const addArrayConnection = (nodeId: string, connection: ArrayStackConnection) => {
       const list = arrayConnectionsByNode.get(nodeId) ?? [];
-      if (!list.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
+      if (
+        !list.some(
+          (existing) => existing.portId === connection.portId && existing.role === connection.role,
+        )
+      ) {
         list.push(connection);
       }
       arrayConnectionsByNode.set(nodeId, list);
@@ -510,21 +696,27 @@ function DiagramApp(): React.ReactElement {
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
-    setNodes(view.nodes.map((node) => ({
-      id: node.id,
-      type: 'hdl',
-      position: node.position,
-      selected: reselectIds?.has(node.id) ?? undefined,
-      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-      data: { node, moduleName: view.moduleName, arrayConnections: arrayConnectionsByNode.get(node.id) ?? [] }
-    })));
+    setNodes(
+      view.nodes.map((node) => ({
+        id: node.id,
+        type: 'hdl',
+        position: node.position,
+        selected: reselectIds?.has(node.id) ?? undefined,
+        className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
+        zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+        data: {
+          node,
+          moduleName: view.moduleName,
+          arrayConnections: arrayConnectionsByNode.get(node.id) ?? [],
+        },
+      })),
+    );
     setRegions(view.generateRegions ?? []);
 
     const netToLeader = new Map<string, string>();
     const edgesByNet = new Map<string, string[]>();
 
-    view.edges.forEach(edge => {
+    view.edges.forEach((edge) => {
       const netKey = edgeNetKey(edge);
       const list = edgesByNet.get(netKey) || [];
       list.push(edge.id);
@@ -536,32 +728,34 @@ function DiagramApp(): React.ReactElement {
     });
 
     const sortedEdges = [...view.edges].sort(compareEdgePaintOrder);
-    setEdges(sortedEdges.map((edge) => {
-      const netKey = edgeNetKey(edge);
-      const isNetLeader = netToLeader.get(netKey) === edge.id;
-      const netEdgeIds = Array.from(edgesByNet.get(netKey) || []);
+    setEdges(
+      sortedEdges.map((edge) => {
+        const netKey = edgeNetKey(edge);
+        const isNetLeader = netToLeader.get(netKey) === edge.id;
+        const netEdgeIds = Array.from(edgesByNet.get(netKey) || []);
 
-      return {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        sourceHandle: edge.sourcePort,
-        targetHandle: edge.targetPort,
-        label: edge.label,
-        type: 'svsch',
-        className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
-        zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
-        data: {
-          waypoint: edge.waypoint,
-          routePoints: edge.routePoints,
-          onRouteChange: handleRouteChange,
-          edge,
-          moduleName: view.moduleName,
-          isNetLeader,
-          netEdgeIds
-        }
-      };
-    }));
+        return {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourcePort,
+          targetHandle: edge.targetPort,
+          label: edge.label,
+          type: 'svsch',
+          className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
+          zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
+          data: {
+            waypoint: edge.waypoint,
+            routePoints: edge.routePoints,
+            onRouteChange: handleRouteChange,
+            edge,
+            moduleName: view.moduleName,
+            isNetLeader,
+            netEdgeIds,
+          },
+        };
+      }),
+    );
   }, [handleRouteChange, setEdges, view]);
 
   const updateNodeInternals = useStore((s) => s.updateNodeInternals);
@@ -627,41 +821,51 @@ function DiagramApp(): React.ReactElement {
       for (const e of edges) {
         const pts = e.data?.routePoints as Array<{ x: number; y: number }> | undefined;
         if (movedIds.has(e.source) && movedIds.has(e.target) && pts && pts.length > 0) {
-          originalRoutes.set(e.id, pts.map((pt) => ({ ...pt })));
+          originalRoutes.set(
+            e.id,
+            pts.map((pt) => ({ ...pt })),
+          );
         }
       }
       groupDragRef.current = {
         startPos: { x: dragged.position.x, y: dragged.position.y },
         originalRoutes,
-        startRegions: regionsRef.current.map((region) => ({ ...region, bounds: { ...region.bounds } })),
+        startRegions: regionsRef.current.map((region) => ({
+          ...region,
+          bounds: { ...region.bounds },
+        })),
       };
     },
-    [edges, clearRegionSelection, selectedRegionIds]
+    [edges, clearRegionSelection, selectedRegionIds],
   );
 
   const onNodeDrag = useCallback(
     (_: React.MouseEvent, dragged: HdlFlowNode, allNodes: HdlFlowNode[] = [dragged]) => {
       const movedNodes = allNodes.length > 0 ? allNodes : [dragged];
       const allFlowNodes = mergeDraggedFlowNodes(reactFlow.getNodes() as HdlFlowNode[], movedNodes);
-      const positioned = flowNodesToPositioned(allFlowNodes, new Set(movedNodes.map((node) => node.id)));
+      const positioned = flowNodesToPositioned(
+        allFlowNodes,
+        new Set(movedNodes.map((node) => node.id)),
+      );
       const state = groupDragRef.current;
       const dx = state ? dragged.position.x - state.startPos.x : 0;
       const dy = state ? dragged.position.y - state.startPos.y : 0;
       setRegions((current) => {
-        const base = state && dragged.selected && selectedRegionIds.size > 0
-          ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
-          : current;
+        const base =
+          state && dragged.selected && selectedRegionIds.size > 0
+            ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+            : current;
         return expandRegionsForNodes(base, positioned);
       });
 
       if (!state || state.originalRoutes.size === 0) return;
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
         edgeId,
-        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
       }));
       handleRouteChange(changes, false);
     },
-    [handleRouteChange, reactFlow, selectedRegionIds]
+    [handleRouteChange, reactFlow, selectedRegionIds],
   );
 
   const onNodeDragStop = useCallback(
@@ -679,14 +883,20 @@ function DiagramApp(): React.ReactElement {
       const dx = state ? dragged.position.x - state.startPos.x : 0;
       const dy = state ? dragged.position.y - state.startPos.y : 0;
       const translatesRegions = Boolean(state) && dragged.selected && selectedRegionIds.size > 0;
-      const baseRegions = translatesRegions && state
-        ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
-        : regionsRef.current;
-      const expandedRegions = expandRegionsForNodes(baseRegions, positioned).map((region) => (
-        translatesRegions && selectedRegionIds.has(region.id) ? { ...region, fixed: true } : region
-      ));
+      const baseRegions =
+        translatesRegions && state
+          ? translateRegions(state.startRegions, selectedRegionIds, dx, dy)
+          : regionsRef.current;
+      const expandedRegions = expandRegionsForNodes(baseRegions, positioned).map((region) =>
+        translatesRegions && selectedRegionIds.has(region.id) ? { ...region, fixed: true } : region,
+      );
       setRegions(expandedRegions);
-      vscode.postMessage({ type: 'layoutChanged', moduleName: view.moduleName, nodes: positioned, regions: expandedRegions });
+      vscode.postMessage({
+        type: 'layoutChanged',
+        moduleName: view.moduleName,
+        nodes: positioned,
+        regions: expandedRegions,
+      });
 
       if (!state || state.originalRoutes.size === 0) return;
 
@@ -694,12 +904,120 @@ function DiagramApp(): React.ReactElement {
 
       const changes = Array.from(state.originalRoutes.entries()).map(([edgeId, pts]) => ({
         edgeId,
-        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }))
+        routePoints: pts.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
       }));
       handleRouteChange(changes, true);
     },
-    [view, handleRouteChange, reactFlow, selectedRegionIds]
+    [view, handleRouteChange, reactFlow, selectedRegionIds],
   );
+
+  // Grow-only block resize (instance/register nodes) — same custom
+  // pointer-drag pattern as GenerateRegionOverlay's region resize below, just
+  // scoped to one node's size instead of a region's bounds. Lives here rather
+  // than inside HdlNode because a resize can grow the node past its
+  // containing generate-region's current bounds, which needs the same
+  // `regions` state (and `expandRegionsForFlowNodes`) node-drag already uses
+  // for that live auto-grow. HdlNode only renders the handle hit-zones and
+  // calls startNodeResize (via InteractionContext) on pointerdown.
+  const nodeResizeDragRef = useRef<NodeResizeDragState | null>(null);
+
+  const startNodeResize = useCallback(
+    (event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const canonical = diagramNodeDimensions(node.data.node);
+      const resolved = resolvedNodeDimensions(node.data.node);
+      nodeResizeDragRef.current = {
+        nodeId,
+        handle,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startPosition: { ...node.position },
+        startWidth: resolved.width,
+        startHeight: resolved.height,
+        canonicalWidth: canonical.width,
+        canonicalHeight: canonical.height,
+        startNodes: nodes.map((n) => ({
+          ...n,
+          position: { ...n.position },
+          data: { ...n.data, node: { ...n.data.node } },
+        })),
+        startRegions: regionsRef.current.map((region) => ({
+          ...region,
+          bounds: { ...region.bounds },
+        })),
+      };
+    },
+    [nodes],
+  );
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = nodeResizeDragRef.current;
+      if (!drag) return;
+      const update = applyNodeResizeDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setNodes(update.nodes);
+      setRegions(update.regions);
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      const drag = nodeResizeDragRef.current;
+      if (!drag) return;
+      nodeResizeDragRef.current = null;
+      const update = applyNodeResizeDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
+      setNodes(update.nodes);
+      setRegions(update.regions);
+
+      // A zero-delta drag is just a click on a handle — don't pin the node
+      // (and its size) fixed for a no-op, same rule GenerateRegionOverlay
+      // applies to region resize.
+      const zoom = Math.max(viewport.zoom || 1, 0.01);
+      const dx = snapDelta((event.clientX - drag.startClientX) / zoom);
+      const dy = snapDelta((event.clientY - drag.startClientY) / zoom);
+      if (dx === 0 && dy === 0) return;
+
+      if (!view) return;
+      const positioned = flowNodesToPositioned(update.nodes, new Set([drag.nodeId]));
+      vscode.postMessage({
+        type: 'layoutChanged',
+        moduleName: view.moduleName,
+        nodes: positioned,
+        regions: update.regions,
+      });
+
+      // React Flow's own dimension tracking (node.measured, read by
+      // OrthogonalEdge for handle geometry) is normally kept in sync by the
+      // updateNodeInternals layout effect above, which re-fires on every one
+      // of the many setNodes calls a multi-step drag produces. Under that
+      // flurry of back-to-back forced updates for the same element, React
+      // Flow's internal store can drop the very last one and leave
+      // node.measured on a stale pre-resize size indefinitely — more likely
+      // the slower a node is to render (e.g. a stacked/array instance with
+      // extra port/parameter layers), which widens the window for calls to
+      // overlap. Requesting one more update once the drag's call flurry has
+      // drained (and the DOM has already settled on its final size) gives
+      // the store an uncontested chance to catch up.
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`.react-flow__node[data-id="${drag.nodeId}"]`);
+        if (el) {
+          updateNodeInternals(
+            new Map([
+              [drag.nodeId, { id: drag.nodeId, nodeElement: el as HTMLDivElement, force: true }],
+            ]),
+          );
+        }
+      });
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [setNodes, setRegions, view, viewport.zoom, updateNodeInternals]);
 
   const rerouteLayout = useCallback(() => {
     if (!view) {
@@ -711,24 +1029,52 @@ function DiagramApp(): React.ReactElement {
       // "Reroute All" freezes every real block in place — a net-cut label
       // that's still tracking its port dynamically must not be forced fixed
       // just because it happened to be on screen.
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
+      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
     }));
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
   const nodeTypes = useMemo(() => ({ hdl: HdlNode }), []);
   const edgeTypes = useMemo(() => ({ svsch: OrthogonalEdge }), []);
-  const diagramStyle = useMemo(() => ({
-    '--svsch-grid': `${diagramSizing.gridSize}px`,
-    '--svsch-node-width': `${diagramSizing.nodeWidth}px`,
-    '--svsch-node-height': `${diagramSizing.nodeHeight}px`,
-    '--svsch-node-header-height': `${diagramSizing.nodeHeaderHeight}px`,
-    '--svsch-port-width': `${diagramSizing.portWidth}px`,
-    '--svsch-port-height': `${diagramSizing.portHeight}px`,
-    '--svsch-port-skin-height': `${diagramSizing.portSkinHeight}px`,
-    '--svsch-port-nose-length': `${diagramSizing.portNoseLength}px`,
-    '--svsch-handle-offset': '-7px'
-  }) as React.CSSProperties, []);
+  const diagramStyle = useMemo(
+    () =>
+      ({
+        '--svsch-grid': `${diagramSizing.gridSize}px`,
+        '--svsch-node-width': `${diagramSizing.nodeWidth}px`,
+        '--svsch-node-height': `${diagramSizing.nodeHeight}px`,
+        '--svsch-node-header-height': `${diagramSizing.nodeHeaderHeight}px`,
+        '--svsch-port-width': `${diagramSizing.portWidth}px`,
+        '--svsch-port-height': `${diagramSizing.portHeight}px`,
+        '--svsch-port-skin-height': `${diagramSizing.portSkinHeight}px`,
+        '--svsch-port-nose-length': `${diagramSizing.portNoseLength}px`,
+        '--svsch-handle-offset': '-7px',
+      }) as React.CSSProperties,
+    [],
+  );
+
+  const interactionValue = useMemo(
+    () => ({
+      hoveredNetKey,
+      setHovered,
+      hoveredEdgeId,
+      setHoveredEdgeId,
+      selectionHoverActive,
+      setSelectionHoverActive,
+      pendingSelectionAction,
+      setPendingSelectionAction,
+      overlayPortalNode,
+      startNodeResize,
+    }),
+    [
+      hoveredNetKey,
+      setHovered,
+      hoveredEdgeId,
+      selectionHoverActive,
+      pendingSelectionAction,
+      overlayPortalNode,
+      startNodeResize,
+    ],
+  );
 
   if (!view) {
     return <div className="empty">Building diagram...</div>;
@@ -736,147 +1082,150 @@ function DiagramApp(): React.ReactElement {
 
   return (
     <div className="shell" style={diagramStyle}>
-        <header className="toolbar">
-          <select
-            className="vscode-control vscode-select"
-            aria-label="Module"
-            value={view.moduleName}
-            onChange={(event) => vscode.postMessage({ type: 'openModule', moduleName: event.target.value })}
-          >
-            {modules.map((moduleName) => (
-              <option key={moduleName} value={moduleName}>
-                {moduleName}
-              </option>
-            ))}
-          </select>
-          <button className="vscode-control vscode-button vscode-button-secondary" onClick={() => vscode.postMessage({ type: 'exportSvg' })}>Export SVG</button>
-          <button className="vscode-control vscode-button vscode-button-secondary" onClick={rerouteLayout}>Reroute All</button>
-          <button className="vscode-control vscode-button" onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}>Reset Layout</button>
-          <div className="status-indicator">
-            {status === 'rebuilding' ? (
-              <div className="busy-indicator" role="status" aria-live="polite">
-                <span />
-                Updating
-              </div>
-            ) : view.diagnostics.length > 0 ? (
-              <div
-                className="diagnostics-indicator"
-                role="status"
-              >
-                <span aria-hidden="true">⚠</span>
-                {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
-              </div>
-            ) : null}
-          </div>
-        </header>
-        <main className="canvas" key={view.moduleName}>
-          <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
-          <InteractionContext.Provider value={{
-            hoveredNetKey,
-            setHovered,
-            selectionHoverActive,
-            setSelectionHoverActive,
-            pendingSelectionAction,
-            setPendingSelectionAction,
-            overlayPortalNode
-          }}>
-            <LineJumpProvider>
-              <ReactFlow<HdlFlowNode, Edge>
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={edgeTypes}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onNodeDragStart={onNodeDragStart}
-                onNodeDrag={onNodeDrag}
-                onNodeDragStop={onNodeDragStop}
-                onSelectionDragStart={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDragStart(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionDrag={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDrag(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
-                  if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
-                }}
-                onSelectionStart={handleSelectionStart}
-                onSelectionEnd={handleSelectionEnd}
-                onEdgeMouseEnter={onEdgeMouseEnter}
-                onEdgeMouseLeave={onEdgeMouseLeave}
-                onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
-                  event.stopPropagation();
-                }}
-                onEdgeDoubleClick={(event: React.MouseEvent, edge: Edge) => {
-                  if (edge.data?.edge) {
-                    const msg = { type: 'navigateToSignal', edge: edge.data.edge };
-                    console.log('NAVIGATE:', JSON.stringify(msg));
-                    vscode.postMessage(msg);
-                  }
-                }}
-                onInit={(instance: any) => {
-                  (window as any).reactFlowInstance = instance;
-                  setViewport(instance.getViewport?.() ?? { x: 0, y: 0, zoom: 1 });
-                }}
-                onMove={(_: unknown, nextViewport: FlowViewport) => setViewport(nextViewport)}
-                nodesConnectable={false}
-                deleteKeyCode={null}
-                selectionOnDrag
-                panOnDrag={[1, 2]}
-                zoomOnDoubleClick={false}
-                onDoubleClick={handleCanvasDoubleClick}
-                onPaneClick={clearRegionSelection}
-                onNodeClick={clearRegionSelection}
-                selectionMode="partial"
-                snapToGrid
-                snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
-                zIndexMode="manual"
-                proOptions={{ hideAttribution: true }}
-              >
-                <Background gap={diagramSizing.gridSize} />
-                <ViewportPortal>
-                  <GenerateRegionOverlay
-                    moduleName={view.moduleName}
-                    regions={regions}
-                    nodes={nodes}
-                    edges={edges}
-                    viewport={viewport}
-                    setNodes={setNodes}
-                    setRegions={setRegions}
-                    onRouteChange={handleRouteChange}
-                    selectedRegionIds={selectedRegionIds}
-                    selectRegion={selectRegion}
-                  />
-                </ViewportPortal>
-                {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
+      <header className="toolbar">
+        <select
+          className="vscode-control vscode-select"
+          aria-label="Module"
+          value={view.moduleName}
+          onChange={(event) =>
+            vscode.postMessage({ type: 'openModule', moduleName: event.target.value })
+          }
+        >
+          {modules.map((moduleName) => (
+            <option key={moduleName} value={moduleName}>
+              {moduleName}
+            </option>
+          ))}
+        </select>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={() => vscode.postMessage({ type: 'exportSvg' })}
+        >
+          Export SVG
+        </button>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={rerouteLayout}
+        >
+          Reroute All
+        </button>
+        <button
+          className="vscode-control vscode-button"
+          onClick={() => vscode.postMessage({ type: 'resetLayout', moduleName: view.moduleName })}
+        >
+          Reset Layout
+        </button>
+        <div className="status-indicator">
+          {status === 'rebuilding' ? (
+            <div className="busy-indicator" role="status" aria-live="polite">
+              <span />
+              Updating
+            </div>
+          ) : view.diagnostics.length > 0 ? (
+            <div className="diagnostics-indicator" role="status">
+              <span aria-hidden="true">⚠</span>
+              {view.diagnostics.length} warning{view.diagnostics.length === 1 ? '' : 's'}
+            </div>
+          ) : null}
+        </div>
+      </header>
+      <main className="canvas" key={view.moduleName}>
+        <ModuleParameterTable moduleName={view.moduleName} parameters={view.parameters} />
+        <InteractionContext.Provider value={interactionValue}>
+          <LineJumpProvider>
+            <ReactFlow<HdlFlowNode, Edge>
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeDragStart={onNodeDragStart}
+              onNodeDrag={onNodeDrag}
+              onNodeDragStop={onNodeDragStop}
+              onSelectionDragStart={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDragStart(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionDrag={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDrag(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionDragStop={(event: React.MouseEvent, dragNodes: HdlFlowNode[]) => {
+                if (dragNodes.length > 0) onNodeDragStop(event, dragNodes[0], dragNodes);
+              }}
+              onSelectionStart={handleSelectionStart}
+              onSelectionEnd={handleSelectionEnd}
+              onEdgeMouseEnter={onEdgeMouseEnter}
+              onEdgeMouseLeave={onEdgeMouseLeave}
+              onEdgeClick={(event: React.MouseEvent, _edge: Edge) => {
+                event.stopPropagation();
+              }}
+              onEdgeDoubleClick={(event: React.MouseEvent, edge: Edge) => {
+                if (edge.data?.edge) {
+                  const msg = { type: 'navigateToSignal', edge: edge.data.edge };
+                  console.log('NAVIGATE:', JSON.stringify(msg));
+                  vscode.postMessage(msg);
+                }
+              }}
+              onInit={(instance: any) => {
+                (window as any).reactFlowInstance = instance;
+                setViewport(instance.getViewport?.() ?? { x: 0, y: 0, zoom: 1 });
+              }}
+              onMove={(_: unknown, nextViewport: FlowViewport) => setViewport(nextViewport)}
+              nodesConnectable={false}
+              deleteKeyCode={null}
+              selectionOnDrag
+              panOnDrag={[1, 2]}
+              zoomOnDoubleClick={false}
+              onDoubleClick={handleCanvasDoubleClick}
+              onPaneClick={clearRegionSelection}
+              onNodeClick={clearRegionSelection}
+              selectionMode="partial"
+              snapToGrid
+              snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
+              zIndexMode="manual"
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background gap={diagramSizing.gridSize} />
+              <ViewportPortal>
+                <GenerateRegionOverlay
+                  moduleName={view.moduleName}
+                  regions={regions}
+                  nodes={nodes}
+                  edges={edges}
+                  viewport={viewport}
+                  setNodes={setNodes}
+                  setRegions={setRegions}
+                  onRouteChange={handleRouteChange}
+                  selectedRegionIds={selectedRegionIds}
+                  selectRegion={selectRegion}
+                />
+              </ViewportPortal>
+              {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
                     through ViewportPortal — that portal is shared with GenerateRegionOverlay
                     above, which must stay beneath node bodies, while floating controls like
                     the selection toolbar need to paint above them. Its own inline transform
                     (see the style prop) reproduces react-flow's pan/zoom so flow-space
                     coordinates still work for anything portaled into it. */}
-                <div
-                  ref={setOverlayPortalNode}
-                  className="svsch-overlay-portal-root"
-                  style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
-                />
-                <NodeSelectionToolbar
-                  moduleName={view.moduleName}
-                  nodes={nodes}
-                  edges={edges}
-                  pendingReselectIdsRef={pendingReselectIdsRef}
-                />
-                <MiniMap
-                  pannable
-                  zoomable
-                  className="svsch-minimap"
-                  nodeComponent={MiniMapNode}
-                />
-                <MiniMapRegionOutlines regions={regions} />
-                <Controls />
-              </ReactFlow>
-            </LineJumpProvider>
-          </InteractionContext.Provider>
-        </main>
+              <div
+                ref={setOverlayPortalNode}
+                className="svsch-overlay-portal-root"
+                style={{
+                  transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+                }}
+              />
+              <NodeSelectionToolbar
+                moduleName={view.moduleName}
+                nodes={nodes}
+                edges={edges}
+                pendingReselectIdsRef={pendingReselectIdsRef}
+              />
+              <MiniMap pannable zoomable className="svsch-minimap" nodeComponent={MiniMapNode} />
+              <MiniMapRegionOutlines regions={regions} />
+              <Controls />
+            </ReactFlow>
+          </LineJumpProvider>
+        </InteractionContext.Provider>
+      </main>
     </div>
   );
 }
@@ -898,6 +1247,92 @@ interface RegionDragState {
   startRoutes: Map<string, Array<{ x: number; y: number }>>;
 }
 
+interface NodeResizeDragState {
+  nodeId: string;
+  handle: NodeResizeHandle;
+  startClientX: number;
+  startClientY: number;
+  startPosition: { x: number; y: number };
+  // Resolved (on-screen) size at drag start — the drag grows/shrinks from here.
+  startWidth: number;
+  startHeight: number;
+  // Grow-only floor — this node's canonical auto-fit size, independent of any
+  // override already in effect at drag start.
+  canonicalWidth: number;
+  canonicalHeight: number;
+  startNodes: HdlFlowNode[];
+  startRegions: PositionedGenerateRegion[];
+}
+
+// Pure geometry step for a node-resize drag: same shape as applyRegionDrag's
+// 'resize' branch, but for exactly one node's position+size instead of a
+// region's bounds. Recomputed from the drag-start snapshot each call (not
+// incrementally) so pointermove and the final pointerup commit agree exactly.
+function applyNodeResizeDrag(
+  drag: NodeResizeDragState,
+  clientX: number,
+  clientY: number,
+  zoom: number,
+): { nodes: HdlFlowNode[]; regions: PositionedGenerateRegion[] } {
+  const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
+  const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
+  const { position, width, height } = resizeNodeBounds(drag, dx, dy);
+  const grid = diagramSizing.gridSize;
+
+  const nodes = drag.startNodes.map((node) => {
+    if (node.id !== drag.nodeId) return node;
+    return {
+      ...node,
+      position,
+      data: {
+        ...node.data,
+        node: {
+          ...node.data.node,
+          position,
+          sizeOverride: { width: width / grid, height: height / grid },
+        },
+      },
+    };
+  });
+
+  return {
+    nodes,
+    regions: expandRegionsForFlowNodes(drag.startRegions, nodes),
+  };
+}
+
+function resizeNodeBounds(
+  drag: NodeResizeDragState,
+  dx: number,
+  dy: number,
+): { position: { x: number; y: number }; width: number; height: number } {
+  const includesLeft = drag.handle.includes('left');
+  const includesRight = drag.handle.includes('right');
+  const includesTop = drag.handle.includes('top');
+  const includesBottom = drag.handle.includes('bottom');
+
+  let width = drag.startWidth;
+  let height = drag.startHeight;
+  let x = drag.startPosition.x;
+  let y = drag.startPosition.y;
+
+  if (includesRight) {
+    width = Math.max(drag.canonicalWidth, drag.startWidth + dx);
+  } else if (includesLeft) {
+    width = Math.max(drag.canonicalWidth, drag.startWidth - dx);
+    x = drag.startPosition.x + (drag.startWidth - width);
+  }
+
+  if (includesBottom) {
+    height = Math.max(drag.canonicalHeight, drag.startHeight + dy);
+  } else if (includesTop) {
+    height = Math.max(drag.canonicalHeight, drag.startHeight - dy);
+    y = drag.startPosition.y + (drag.startHeight - height);
+  }
+
+  return { position: { x, y }, width, height };
+}
+
 function GenerateRegionOverlay({
   moduleName,
   regions,
@@ -908,7 +1343,7 @@ function GenerateRegionOverlay({
   setRegions,
   onRouteChange,
   selectedRegionIds,
-  selectRegion
+  selectRegion,
 }: {
   moduleName: string;
   regions: PositionedGenerateRegion[];
@@ -923,51 +1358,66 @@ function GenerateRegionOverlay({
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
 
-  const startDrag = useCallback((event: React.PointerEvent, region: PositionedGenerateRegion, kind: RegionDragState['kind'], side?: RegionDragSide) => {
-    event.preventDefault();
-    event.stopPropagation();
-    // Interacting with a selected region moves the whole selection; interacting with
-    // an unselected one selects just it (mirrors React Flow's node behavior — a
-    // click or drag highlights the region with the standard selection border).
-    const moveRoots = kind === 'move' && selectedRegionIds.has(region.id)
-      ? [...selectedRegionIds]
-      : [region.id];
-    if (!selectedRegionIds.has(region.id)) selectRegion(region.id);
-    const affectedRegionIds = kind === 'move'
-      ? new Set(moveRoots.flatMap((rootId) => [...descendantRegionIds(rootId, regions, true)]))
-      : new Set([region.id]);
-    const affectedNodeIds = kind === 'move'
-      ? nodeIdsForRegions(affectedRegionIds, regions)
-      : new Set<string>();
-    const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
-    if (kind === 'move') {
-      for (const edge of edges) {
-        const pts = edge.data?.routePoints as Array<{ x: number; y: number }> | undefined;
-        if (affectedNodeIds.has(edge.source) && affectedNodeIds.has(edge.target) && pts && pts.length > 0) {
-          startRoutes.set(edge.id, pts.map((pt) => ({ ...pt })));
+  const startDrag = useCallback(
+    (
+      event: React.PointerEvent,
+      region: PositionedGenerateRegion,
+      kind: RegionDragState['kind'],
+      side?: RegionDragSide,
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
+      // Interacting with a selected region moves the whole selection; interacting with
+      // an unselected one selects just it (mirrors React Flow's node behavior — a
+      // click or drag highlights the region with the standard selection border).
+      const moveRoots =
+        kind === 'move' && selectedRegionIds.has(region.id) ? [...selectedRegionIds] : [region.id];
+      if (!selectedRegionIds.has(region.id)) selectRegion(region.id);
+      const affectedRegionIds =
+        kind === 'move'
+          ? new Set(moveRoots.flatMap((rootId) => [...descendantRegionIds(rootId, regions, true)]))
+          : new Set([region.id]);
+      const affectedNodeIds =
+        kind === 'move' ? nodeIdsForRegions(affectedRegionIds, regions) : new Set<string>();
+      const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
+      if (kind === 'move') {
+        for (const edge of edges) {
+          const pts = edge.data?.routePoints as Array<{ x: number; y: number }> | undefined;
+          if (
+            affectedNodeIds.has(edge.source) &&
+            affectedNodeIds.has(edge.target) &&
+            pts &&
+            pts.length > 0
+          ) {
+            startRoutes.set(
+              edge.id,
+              pts.map((pt) => ({ ...pt })),
+            );
+          }
         }
       }
-    }
-    dragRef.current = {
-      kind,
-      regionId: region.id,
-      side,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startRegions: regions.map((item) => ({ ...item, bounds: { ...item.bounds } })),
-      startNodes: nodes.map((node) => ({
-        ...node,
-        position: { ...node.position },
-        data: {
-          ...node.data,
-          node: { ...node.data.node, position: { ...node.data.node.position } }
-        }
-      })),
-      affectedRegionIds,
-      affectedNodeIds,
-      startRoutes
-    };
-  }, [edges, nodes, regions, selectedRegionIds, selectRegion]);
+      dragRef.current = {
+        kind,
+        regionId: region.id,
+        side,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startRegions: regions.map((item) => ({ ...item, bounds: { ...item.bounds } })),
+        startNodes: nodes.map((node) => ({
+          ...node,
+          position: { ...node.position },
+          data: {
+            ...node.data,
+            node: { ...node.data.node, position: { ...node.data.node.position } },
+          },
+        })),
+        affectedRegionIds,
+        affectedNodeIds,
+        startRoutes,
+      };
+    },
+    [edges, nodes, regions, selectedRegionIds, selectRegion],
+  );
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -976,7 +1426,14 @@ function GenerateRegionOverlay({
       const update = applyRegionDrag(drag, event.clientX, event.clientY, viewport.zoom || 1);
       setRegions(update.regions);
       setNodes(update.nodes);
-      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, false);
+      applyRegionDragRoutes(
+        drag,
+        event.clientX,
+        event.clientY,
+        viewport.zoom || 1,
+        onRouteChange,
+        false,
+      );
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -997,7 +1454,7 @@ function GenerateRegionOverlay({
 
       const fixedRegions = update.regions.map((region) => ({
         ...region,
-        fixed: region.fixed || drag.affectedRegionIds.has(region.id)
+        fixed: region.fixed || drag.affectedRegionIds.has(region.id),
       }));
 
       if (drag.kind === 'resize') {
@@ -1006,8 +1463,20 @@ function GenerateRegionOverlay({
       }
 
       const positioned = flowNodesToPositioned(update.nodes, drag.affectedNodeIds);
-      vscode.postMessage({ type: 'layoutChanged', moduleName, nodes: positioned, regions: fixedRegions });
-      applyRegionDragRoutes(drag, event.clientX, event.clientY, viewport.zoom || 1, onRouteChange, true);
+      vscode.postMessage({
+        type: 'layoutChanged',
+        moduleName,
+        nodes: positioned,
+        regions: fixedRegions,
+      });
+      applyRegionDragRoutes(
+        drag,
+        event.clientX,
+        event.clientY,
+        viewport.zoom || 1,
+        onRouteChange,
+        true,
+      );
     };
 
     window.addEventListener('pointermove', onPointerMove);
@@ -1025,83 +1494,102 @@ function GenerateRegionOverlay({
       {[...regions]
         .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
         .map((region) => (
-        <div
-          key={region.id}
-          className={[
-            'generate-region',
-            region.isGenerateBlock ? 'generate-block' : '',
-            region.activeState === 'active' ? 'generate-region-active' : '',
-            region.activeState === 'inactive' ? 'generate-region-inactive' : '',
-            region.invalid ? 'generate-region-invalid' : '',
-            selectedRegionIds.has(region.id) ? 'generate-region-selected' : ''
-          ].filter(Boolean).join(' ')}
-          data-region-id={region.id}
-          data-region-kind={region.kind}
-          data-warning-note={region.warningNote || undefined}
-          style={{
-            left: region.bounds.x,
-            top: region.bounds.y,
-            width: region.bounds.width,
-            height: region.bounds.height
-          }}
-        >
-          <div className="generate-region-outline" />
-          {region.warningNote && (
-            <Tooltip content={region.warningNote}>
-              {(trigger) => (
-                <span
-                  {...trigger}
-                  className="generate-region-warning"
-                  role="img"
-                  aria-label={region.warningNote}
-                >
-                  ⚠
-                </span>
-              )}
-            </Tooltip>
-          )}
-          <button
-            type="button"
-            className="generate-region-title"
-            onPointerDown={(event) => startDrag(event, region, 'move')}
-            onClick={(event) => event.stopPropagation()}
-            onDoubleClick={() => {
-              const msg = {
-                type: 'navigateToRegion',
-                region: {
-                  kind: region.kind,
-                  isGenerateBlock: region.isGenerateBlock,
-                  source: region.source,
-                  bodySource: region.bodySource
-                }
-              } as const;
-              console.log('NAVIGATE:', JSON.stringify(msg));
-              vscode.postMessage(msg);
+          <div
+            key={region.id}
+            className={[
+              'generate-region',
+              region.isGenerateBlock ? 'generate-block' : '',
+              region.activeState === 'active' ? 'generate-region-active' : '',
+              region.activeState === 'inactive' ? 'generate-region-inactive' : '',
+              region.invalid ? 'generate-region-invalid' : '',
+              selectedRegionIds.has(region.id) ? 'generate-region-selected' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            data-region-id={region.id}
+            data-region-kind={region.kind}
+            data-warning-note={region.warningNote || undefined}
+            style={{
+              left: region.bounds.x,
+              top: region.bounds.y,
+              width: region.bounds.width,
+              height: region.bounds.height,
             }}
-            title={region.label}
           >
-            {region.label}
-          </button>
-          {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
+            <div className="generate-region-outline" />
+            {region.warningNote && (
+              <Tooltip content={region.warningNote}>
+                {(trigger) => (
+                  <span
+                    {...trigger}
+                    className="generate-region-warning"
+                    role="img"
+                    aria-label={region.warningNote}
+                  >
+                    ⚠
+                  </span>
+                )}
+              </Tooltip>
+            )}
             <button
-              key={side}
               type="button"
-              aria-label={`Resize ${region.label} ${side}`}
-              className={`generate-region-resize generate-region-resize-${side}`}
-              onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+              className="generate-region-title"
+              onPointerDown={(event) => startDrag(event, region, 'move')}
               onClick={(event) => event.stopPropagation()}
-            />
-          ))}
-        </div>
-      ))}
+              onDoubleClick={() => {
+                const msg = {
+                  type: 'navigateToRegion',
+                  region: {
+                    kind: region.kind,
+                    isGenerateBlock: region.isGenerateBlock,
+                    source: region.source,
+                    bodySource: region.bodySource,
+                  },
+                } as const;
+                console.log('NAVIGATE:', JSON.stringify(msg));
+                vscode.postMessage(msg);
+              }}
+              title={region.label}
+            >
+              {region.label}
+            </button>
+            {(['left', 'right', 'top', 'bottom'] as const).map((side) => (
+              <button
+                key={side}
+                type="button"
+                aria-label={`Resize ${region.label} ${side}`}
+                className={`generate-region-resize generate-region-resize-${side}`}
+                onPointerDown={(event) => startDrag(event, region, 'resize', side)}
+                onClick={(event) => event.stopPropagation()}
+              />
+            ))}
+          </div>
+        ))}
     </div>
   );
 }
 
+// Every non-cut-stub edge touching any selected non-netLabel block — shared
+// by the block-selection toolbar's "Cut out" button and the `c` keyboard
+// shortcut's block-selection fallback, since a cut stub's dangling end can't
+// be cut again.
+function cutOutEdgesForSelection(nodes: HdlFlowNode[], edges: Edge[]): Edge[] {
+  const selectedIds = new Set(
+    nodes
+      .filter((node) => node.selected && node.data.node.kind !== 'netLabel')
+      .map((node) => node.id),
+  );
+  if (selectedIds.size === 0) return [];
+  return edges.filter((edge) => {
+    if (!selectedIds.has(edge.source) && !selectedIds.has(edge.target)) return false;
+    const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
+    return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
+  });
+}
+
 // Floating toolbar shown above the bounding box of a block selection. "Auto
-// Layout" only makes sense once there's more than one block to re-place, but
-// "Cut out" is useful for a lone block too, so it appears from a single
-// selected block onward — as long as at least one connection remains to cut.
+// Layout" only makes sense once there's more than one block to re-place, while
+// "Revert Size" and "Cut out" can apply to a lone selected block.
 //
 // Auto Layout: releases just the selected blocks (and the routes of any edge
 // touching one of them) back to ELK's auto-layout — using their current
@@ -1122,7 +1610,7 @@ function NodeSelectionToolbar({
   moduleName,
   nodes,
   edges,
-  pendingReselectIdsRef
+  pendingReselectIdsRef,
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
@@ -1136,36 +1624,41 @@ function NodeSelectionToolbar({
   // whose actions only make sense for actual block selections.
   const selected = useMemo(
     () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel'),
-    [nodes]
+    [nodes],
   );
 
-  // Every non-cut-stub edge touching any selected block — same exclusion
-  // `selectedCuttableEdges` in OrthogonalEdge applies for the wire "Cut"
-  // control, since a cut stub's dangling end can't be cut again.
-  const cutOutEdges = useMemo(() => {
-    const selectedIds = new Set(selected.map((node) => node.id));
-    return edges.filter((edge) => {
-      if (!selectedIds.has(edge.source) && !selectedIds.has(edge.target)) return false;
-      const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
-      return diagramEdge !== undefined && diagramEdge.metadata?.cutStub === undefined;
-    });
-  }, [selected, edges]);
+  // Same exclusion `selectedCuttableEdges` in OrthogonalEdge applies for the
+  // wire "Cut" control — see cutOutEdgesForSelection.
+  const cutOutEdges = useMemo(() => cutOutEdgesForSelection(nodes, edges), [nodes, edges]);
 
-  // Nothing to offer: a lone block with every net already cut gets neither
-  // control, so skip rendering the (now empty) toolbar entirely.
-  if (!overlayPortalNode || selected.length < 1 || (selected.length < 2 && cutOutEdges.length === 0)) {
+  const resizedNodeIds = useMemo(
+    () =>
+      selected.filter((node) => node.data.node.sizeOverride !== undefined).map((node) => node.id),
+    [selected],
+  );
+
+  // Nothing to offer: a lone block with every net already cut and no resize
+  // override gets no control, so skip rendering the (now empty) toolbar entirely.
+  if (
+    !overlayPortalNode ||
+    selected.length < 1 ||
+    (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0)
+  ) {
     return null;
   }
 
-  const bounds = selected.reduce((acc, node) => {
-    const size = diagramNodeDimensions(node.data.node);
-    return {
-      x: Math.min(acc.x, node.position.x),
-      y: Math.min(acc.y, node.position.y),
-      right: Math.max(acc.right, node.position.x + size.width),
-      bottom: Math.max(acc.bottom, node.position.y + size.height)
-    };
-  }, { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity });
+  const bounds = selected.reduce(
+    (acc, node) => {
+      const size = resolvedNodeDimensions(node.data.node);
+      return {
+        x: Math.min(acc.x, node.position.x),
+        y: Math.min(acc.y, node.position.y),
+        right: Math.max(acc.right, node.position.x + size.width),
+        bottom: Math.max(acc.bottom, node.position.y + size.height),
+      };
+    },
+    { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity },
+  );
 
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -1183,10 +1676,10 @@ function NodeSelectionToolbar({
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
       const endpointIds = [edge.source, edge.target];
-      const touchesSelectedBlock = endpointIds.some((endpointId) => (
-        selectedIds.has(endpointId)
-        && nodesById.get(endpointId)?.data.node.kind !== 'netLabel'
-      ));
+      const touchesSelectedBlock = endpointIds.some(
+        (endpointId) =>
+          selectedIds.has(endpointId) && nodesById.get(endpointId)?.data.node.kind !== 'netLabel',
+      );
       if (!touchesSelectedBlock) continue;
       for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
@@ -1199,7 +1692,7 @@ function NodeSelectionToolbar({
       // Released nodes go free; every other real block is frozen in place —
       // but an unrelated net-cut label that's still tracking its port
       // dynamically must not be forced fixed just because it's on screen.
-      fixed: selectedIds.has(node.id) ? false : (node.kind === 'netLabel' ? node.fixed : true)
+      fixed: selectedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
     }));
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip
@@ -1209,7 +1702,7 @@ function NodeSelectionToolbar({
       type: 'relayoutSelection',
       moduleName,
       nodeIds: [...selectedIds],
-      nodes: positioned
+      nodes: positioned,
     });
   };
 
@@ -1229,7 +1722,7 @@ function NodeSelectionToolbar({
     const positioned = nodes.map((node) => ({
       ...node.data.node,
       position: node.position,
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true
+      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
     }));
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
@@ -1238,12 +1731,15 @@ function NodeSelectionToolbar({
     vscode.postMessage({ type: 'cutNets', moduleName, edges: diagramEdges, nodes: positioned });
   };
 
+  const handleRevertSize = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (resizedNodeIds.length === 0) return;
+    vscode.postMessage({ type: 'revertNodeSizes', moduleName, nodeIds: resizedNodeIds });
+  };
+
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
-      <div
-        className="svsch-selection-toolbar"
-        style={{ left: bounds.right, top: bounds.bottom }}
-      >
+      <div className="svsch-selection-toolbar" style={{ left: bounds.right, top: bounds.bottom }}>
         {selected.length >= 2 && (
           <button
             type="button"
@@ -1257,6 +1753,23 @@ function NodeSelectionToolbar({
             Auto Layout
           </button>
         )}
+        {resizedNodeIds.length > 0 && (
+          <button
+            type="button"
+            className="svsch-selection-revert-size-control"
+            title={
+              resizedNodeIds.length === 1
+                ? 'Revert the selected block to its canonical size'
+                : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
+            }
+            onClick={handleRevertSize}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            Revert Size
+          </button>
+        )}
         {cutOutEdges.length > 0 && (
           <button
             type="button"
@@ -1268,11 +1781,14 @@ function NodeSelectionToolbar({
             onPointerDown={(event) => event.stopPropagation()}
           >
             Cut out
+            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+              <span className="svsch-shortcut-glyph-letter">C</span>
+            </kbd>
           </button>
         )}
       </div>
     </div>,
-    overlayPortalNode
+    overlayPortalNode,
   );
 }
 
@@ -1284,19 +1800,24 @@ function applyRegionDragRoutes(
   clientY: number,
   zoom: number,
   onRouteChange: (changes: RouteChange[], commit: boolean) => void,
-  commit: boolean
+  commit: boolean,
 ): void {
   if (drag.kind !== 'move' || drag.startRoutes.size === 0) return;
   const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
   const changes: RouteChange[] = Array.from(drag.startRoutes.entries()).map(([edgeId, points]) => ({
     edgeId,
-    routePoints: points.map((point) => ({ x: point.x + dx, y: point.y + dy }))
+    routePoints: points.map((point) => ({ x: point.x + dx, y: point.y + dy })),
   }));
   onRouteChange(changes, commit);
 }
 
-function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number, zoom: number): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {
+function applyRegionDrag(
+  drag: RegionDragState,
+  clientX: number,
+  clientY: number,
+  zoom: number,
+): { regions: PositionedGenerateRegion[]; nodes: HdlFlowNode[] } {
   const dx = snapDelta((clientX - drag.startClientX) / Math.max(zoom, 0.01));
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
 
@@ -1306,12 +1827,12 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
       if (region.id !== drag.regionId) return region;
       return {
         ...region,
-        bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag)
+        bounds: resizeRegionBounds(region.bounds, drag.side!, dx, dy, drag),
       };
     });
     return {
       nodes,
-      regions: expandRegionsForFlowNodes(regions, nodes)
+      regions: expandRegionsForFlowNodes(regions, nodes),
     };
   }
 
@@ -1319,7 +1840,7 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
     if (!drag.affectedNodeIds.has(node.id)) return node;
     const position = {
       x: node.position.x + dx,
-      y: node.position.y + dy
+      y: node.position.y + dy,
     };
     return {
       ...node,
@@ -1328,9 +1849,9 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
         ...node.data,
         node: {
           ...node.data.node,
-          position
-        }
-      }
+          position,
+        },
+      },
     };
   });
   const regions = drag.startRegions.map((region) => {
@@ -1340,14 +1861,14 @@ function applyRegionDrag(drag: RegionDragState, clientX: number, clientY: number
       bounds: {
         ...region.bounds,
         x: region.bounds.x + dx,
-        y: region.bounds.y + dy
-      }
+        y: region.bounds.y + dy,
+      },
     };
   });
 
   return {
     nodes,
-    regions: expandRegionsForFlowNodes(regions, nodes)
+    regions: expandRegionsForFlowNodes(regions, nodes),
   };
 }
 
@@ -1356,13 +1877,13 @@ function resizeRegionBounds(
   side: RegionDragSide,
   dx: number,
   dy: number,
-  drag: RegionDragState
+  drag: RegionDragState,
 ): PositionedGenerateRegion['bounds'] {
   const minWidth = diagramSizing.gridSize * 8;
   const minHeight = diagramSizing.gridSize * 4;
   const inset = GENERATE_REGION_MIN_CONTENT_PADDING;
   const content = resizeContentBounds(drag.regionId, drag.startRegions, drag.startNodes);
-  let next = { ...bounds };
+  const next = { ...bounds };
 
   if (side === 'left') {
     const right = bounds.x + bounds.width;
@@ -1385,7 +1906,11 @@ function resizeRegionBounds(
   return snapRegionBounds(next);
 }
 
-function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion['bounds'] | undefined {
+function resizeContentBounds(
+  regionId: string,
+  regions: PositionedGenerateRegion[],
+  nodes: HdlFlowNode[],
+): PositionedGenerateRegion['bounds'] | undefined {
   const descendantIds = descendantRegionIds(regionId, regions, false);
   const nodeIds = nodeIdsForRegions(new Set([regionId, ...descendantIds]), regions);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -1394,7 +1919,7 @@ function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion
   for (const nodeId of nodeIds) {
     const node = nodeById.get(nodeId);
     if (!node) continue;
-    const size = diagramNodeDimensions(node.data.node);
+    const size = resolvedNodeDimensions(node.data.node);
     rects.push({ x: node.position.x, y: node.position.y, width: size.width, height: size.height });
   }
   for (const region of regions) {
@@ -1403,7 +1928,11 @@ function resizeContentBounds(regionId: string, regions: PositionedGenerateRegion
   return unionRegionBounds(rects);
 }
 
-function descendantRegionIds(regionId: string, regions: PositionedGenerateRegion[], includeSelf: boolean): Set<string> {
+function descendantRegionIds(
+  regionId: string,
+  regions: PositionedGenerateRegion[],
+  includeSelf: boolean,
+): Set<string> {
   const result = new Set<string>(includeSelf ? [regionId] : []);
   let changed = true;
   while (changed) {
@@ -1419,7 +1948,10 @@ function descendantRegionIds(regionId: string, regions: PositionedGenerateRegion
   return result;
 }
 
-function nodeIdsForRegions(regionIds: Set<string>, regions: PositionedGenerateRegion[]): Set<string> {
+function nodeIdsForRegions(
+  regionIds: Set<string>,
+  regions: PositionedGenerateRegion[],
+): Set<string> {
   const nodeIds = new Set<string>();
   for (const region of regions) {
     if (!regionIds.has(region.id)) continue;
@@ -1432,7 +1964,7 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
   return nodes.map((node) => ({
     ...node.data.node,
     position: node.position,
-    fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id)
+    fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id),
   }));
 }
 
@@ -1448,13 +1980,12 @@ function mergeDraggedFlowNodes(nodes: HdlFlowNode[], draggedNodes: HdlFlowNode[]
   return merged;
 }
 
-function annotateRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
-  return annotateGenerateRegionWarnings(regions, flowNodesToPositioned(nodes, new Set()));
-}
-
 // Expand (never shrink) each region to contain its moved/resized content, then annotate.
 // Used while dragging an arm so its parent generate block grows to keep surrounding it.
-function expandRegionsForFlowNodes(regions: PositionedGenerateRegion[], nodes: HdlFlowNode[]): PositionedGenerateRegion[] {
+function expandRegionsForFlowNodes(
+  regions: PositionedGenerateRegion[],
+  nodes: HdlFlowNode[],
+): PositionedGenerateRegion[] {
   return expandRegionsForNodes(regions, flowNodesToPositioned(nodes, new Set()));
 }
 
@@ -1464,32 +1995,43 @@ function translateRegions(
   regions: PositionedGenerateRegion[],
   selectedIds: Set<string>,
   dx: number,
-  dy: number
+  dy: number,
 ): PositionedGenerateRegion[] {
   if (selectedIds.size === 0 || (dx === 0 && dy === 0)) return regions;
-  return regions.map((region) => (selectedIds.has(region.id)
-    ? { ...region, bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy } }
-    : region));
+  return regions.map((region) =>
+    selectedIds.has(region.id)
+      ? {
+          ...region,
+          bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy },
+        }
+      : region,
+  );
 }
 
-function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: PositionedNode[]): PositionedGenerateRegion[] {
+function expandRegionsForNodes(
+  regions: PositionedGenerateRegion[],
+  nodes: PositionedNode[],
+): PositionedGenerateRegion[] {
   if (regions.length === 0) return regions;
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const childRegionsByParent = new Map<string, PositionedGenerateRegion[]>();
   for (const region of regions) {
-    const parent = region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
+    const parent =
+      region.parentRegionId && regionById.has(region.parentRegionId) ? region.parentRegionId : '';
     const list = childRegionsByParent.get(parent) ?? [];
     list.push(region);
     childRegionsByParent.set(parent, list);
   }
 
   const pad = GENERATE_REGION_MIN_CONTENT_PADDING;
-  const padRect = (rect: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] => ({
+  const padRect = (
+    rect: PositionedGenerateRegion['bounds'],
+  ): PositionedGenerateRegion['bounds'] => ({
     x: rect.x - pad,
     y: rect.y - pad,
     width: rect.width + pad * 2,
-    height: rect.height + pad * 2
+    height: rect.height + pad * 2,
   });
   const expandedById = new Map<string, PositionedGenerateRegion>();
 
@@ -1504,8 +2046,10 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
     for (const nodeId of region.nodeIds) {
       const node = nodeById.get(nodeId);
       if (!node) continue;
-      const size = diagramNodeDimensions(node);
-      contentRects.push(padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }));
+      const size = resolvedNodeDimensions(node);
+      contentRects.push(
+        padRect({ x: node.position.x, y: node.position.y, width: size.width, height: size.height }),
+      );
     }
     for (const child of childRegionsByParent.get(region.id) ?? []) {
       contentRects.push(padRect(expand(child).bounds));
@@ -1514,15 +2058,19 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
     const content = unionRegionBounds(contentRects);
     const result: PositionedGenerateRegion = content
       ? {
-        ...region,
-        bounds: snapRegionBounds({
-          x: Math.min(region.bounds.x, content.x),
-          y: Math.min(region.bounds.y, content.y),
-          width: Math.max(region.bounds.x + region.bounds.width, content.x + content.width) - Math.min(region.bounds.x, content.x),
-          height: Math.max(region.bounds.y + region.bounds.height, content.y + content.height) - Math.min(region.bounds.y, content.y)
-        }),
-        fixed: region.fixed
-      }
+          ...region,
+          bounds: snapRegionBounds({
+            x: Math.min(region.bounds.x, content.x),
+            y: Math.min(region.bounds.y, content.y),
+            width:
+              Math.max(region.bounds.x + region.bounds.width, content.x + content.width) -
+              Math.min(region.bounds.x, content.x),
+            height:
+              Math.max(region.bounds.y + region.bounds.height, content.y + content.height) -
+              Math.min(region.bounds.y, content.y),
+          }),
+          fixed: region.fixed,
+        }
       : region;
     expandedById.set(region.id, result);
     return result;
@@ -1532,7 +2080,9 @@ function expandRegionsForNodes(regions: PositionedGenerateRegion[], nodes: Posit
   return annotateGenerateRegionWarnings(expanded, nodes);
 }
 
-function unionRegionBounds(rects: PositionedGenerateRegion['bounds'][]): PositionedGenerateRegion['bounds'] | undefined {
+function unionRegionBounds(
+  rects: PositionedGenerateRegion['bounds'][],
+): PositionedGenerateRegion['bounds'] | undefined {
   if (rects.length === 0) return undefined;
   const minX = Math.min(...rects.map((rect) => rect.x));
   const minY = Math.min(...rects.map((rect) => rect.y));
@@ -1545,7 +2095,9 @@ function snapDelta(value: number): number {
   return Math.round(value / diagramSizing.gridSize) * diagramSizing.gridSize;
 }
 
-function snapRegionBounds(bounds: PositionedGenerateRegion['bounds']): PositionedGenerateRegion['bounds'] {
+function snapRegionBounds(
+  bounds: PositionedGenerateRegion['bounds'],
+): PositionedGenerateRegion['bounds'] {
   const grid = diagramSizing.gridSize;
   const x = Math.round(bounds.x / grid) * grid;
   const y = Math.round(bounds.y / grid) * grid;

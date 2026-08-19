@@ -1,0 +1,171 @@
+{
+  "nodes": [
+    {
+      "id": "bus:param_status_sink:level",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 144
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:level",
+            "name": "level",
+            "direction": "input"
+          },
+          {
+            "id": "out:level_15:8_",
+            "name": "level[15:8]",
+            "direction": "output"
+          },
+          {
+            "id": "out:level_7:0_",
+            "name": "level[7:0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface_modport:param_status_sink:bus",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 72
+      },
+      "width": 192,
+      "height": 173,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:sink",
+            "name": "sink",
+            "direction": "input"
+          },
+          {
+            "id": "out:clk",
+            "name": "clk",
+            "direction": "output"
+          },
+          {
+            "id": "out:level",
+            "name": "level",
+            "direction": "output"
+          },
+          {
+            "id": "out:alert",
+            "name": "alert",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:param_status_sink:bus",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 264,
+      "height": 24,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "out:sink",
+            "name": "sink",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_status_sink:hi_o",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 156
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:hi_o",
+            "name": "hi_o",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:param_status_sink:lo_o",
+      "type": "hdl",
+      "position": {
+        "x": 1248,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:lo_o",
+            "name": "lo_o",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:param_status_sink:level:port:param_status_sink:hi_o:bus.level_15:8_",
+      "source": "bus:param_status_sink:level",
+      "target": "port:param_status_sink:hi_o",
+      "sourceHandle": "out:level_15:8_",
+      "targetHandle": "port:hi_o",
+      "path": "M 1032 168 L 1056 168 L 1224 168 L 1248 168"
+    },
+    {
+      "id": "edge:bus:param_status_sink:level:port:param_status_sink:lo_o:bus.level_7:0_",
+      "source": "bus:param_status_sink:level",
+      "target": "port:param_status_sink:lo_o",
+      "sourceHandle": "out:level_7:0_",
+      "targetHandle": "port:lo_o",
+      "path": "M 1032 216 L 1056 216 L 1224 216 L 1248 216"
+    },
+    {
+      "id": "edge:interface_modport:param_status_sink:bus:bus:param_status_sink:level:bus.level:out:level:in:level",
+      "source": "interface_modport:param_status_sink:bus",
+      "target": "bus:param_status_sink:level",
+      "sourceHandle": "out:level",
+      "targetHandle": "in:level",
+      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
+    },
+    {
+      "id": "edge:interface_modport:param_status_sink:bus:bus:param_status_sink:level:bus.level:out:level:in:level",
+      "source": "interface_modport:param_status_sink:bus",
+      "target": "bus:param_status_sink:level",
+      "sourceHandle": "out:level",
+      "targetHandle": "in:level",
+      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
+    },
+    {
+      "id": "edge:interface:param_status_sink:bus:interface_modport:param_status_sink:bus:bus",
+      "source": "interface:param_status_sink:bus",
+      "target": "interface_modport:param_status_sink:bus",
+      "sourceHandle": "out:sink",
+      "targetHandle": "in:sink",
+      "path": "M 288 48 L 312 48 L 576 48 L 576 69"
+    }
+  ]
+}

@@ -384,6 +384,10 @@ private:
     std::string promoteMuxExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
     bool isInverterOperation(vpiHandle expr);
     std::string promoteInverterExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers);
+    bool isGateOperation(vpiHandle expr);
+    std::string gateOperationName(int opType, bool negateOutput);
+    void collectGateOperands(vpiHandle expr, int opType, const std::string& outputWidth, std::vector<vpiHandle>& leaves);
+    std::string promoteGateExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers, bool negate_output, vpiHandle display_expr);
     vpiHandle unwrapRef(vpiHandle handle);
     bool isLiteralExpr(vpiHandle handle);
     std::string getLiteralLabel(vpiHandle handle);

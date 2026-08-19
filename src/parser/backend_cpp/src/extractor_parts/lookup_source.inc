@@ -69,10 +69,22 @@ void DesignExtractor::buildEdges(Module& mod) {
 
         for (const auto& alias : mod.pendingArrayAliases) {
             if (alias.targetSignal != signal) continue;
-            for (const auto& n : mod.nodes) {
-                for (const auto& p : n.ports) {
-                    if (p.signal == alias.sourceSignal && (p.direction == "output" || p.direction == "inout")) {
-                        drivers.push_back({n.id, p.name});
+            // If the alias's source is itself a boundary `inout` array (a hub),
+            // its only representative driver is that hub port: internal nodes
+            // that drive it (e.g. the per-element mux outputs' array
+            // composition) already feed the hub through its own edge, so
+            // adding them here too would pair them with this alias's load a
+            // second time — the same net rendered as two overlapping wires.
+            bool sourceIsInoutHub = false;
+            for (const auto& p : mod.ports) {
+                if (p.name == alias.sourceSignal && p.direction == "inout") { sourceIsInoutHub = true; break; }
+            }
+            if (!sourceIsInoutHub) {
+                for (const auto& n : mod.nodes) {
+                    for (const auto& p : n.ports) {
+                        if (p.signal == alias.sourceSignal && (p.direction == "output" || p.direction == "inout")) {
+                            drivers.push_back({n.id, p.name});
+                        }
                     }
                 }
             }
@@ -82,7 +94,20 @@ void DesignExtractor::buildEdges(Module& mod) {
                 }
             }
         }
-        
+
+        // An `inout` endpoint on this signal (pushed into both `drivers` and
+        // `loads` above) is a hub: everything else driving the net drives
+        // *into* it, and everything else reading the net reads *out of* it.
+        // Without this, a real driver (e.g. a mux assigning an inout port)
+        // and a real load (e.g. an `assign y = <the inout port>;`) would
+        // also pair up directly, bypassing the inout endpoint and rendering
+        // as a wire overlapping the one that correctly routes through it.
+        std::set<std::pair<std::string, std::string>> hubs;
+        {
+            std::set<std::pair<std::string, std::string>> driverSet(drivers.begin(), drivers.end());
+            for (const auto& l : loads) if (driverSet.count(l)) hubs.insert(l);
+        }
+
         for (const auto& d : drivers) {
             std::string edge_width = "";
             if (d.first == "self") {
@@ -102,6 +127,7 @@ void DesignExtractor::buildEdges(Module& mod) {
 
             for (const auto& l : loads) {
                 if (d.first == l.first && d.second == l.second) continue;
+                if (!hubs.empty() && !hubs.count(d) && !hubs.count(l)) continue;
                 Edge e; e.source = d.first; e.sourcePort = d.second; e.target = l.first; e.targetPort = l.second; e.signal = signal;
                 e.width = edge_width;
                 if (mod.interfaceSignals.count(signal)) {
@@ -135,9 +161,29 @@ void DesignExtractor::buildEdges(Module& mod) {
                     || has_array_alias(signal);
 
                 bool duplicate = false;
-                for (const auto& existing : mod.edges) {
+                for (auto& existing : mod.edges) {
                     if (existing.source == e.source && existing.target == e.target &&
-                        existing.sourcePort == e.sourcePort && existing.targetPort == e.targetPort) { duplicate = true; break; }
+                        existing.sourcePort == e.sourcePort && existing.targetPort == e.targetPort &&
+                        existing.signal == e.signal) { duplicate = true; break; }
+                    // An `inout` endpoint is pushed into both `drivers` and `loads` above,
+                    // so a signal shared by two inout ports produces this same pair twice,
+                    // once in each direction — the same physical wire rendered as two
+                    // overlapping edges. Collapse it to one, preferring the direction where
+                    // the module boundary ("self") is the source, matching the convention
+                    // already used for scalar ports (boundary drives inward into instances).
+                    // Guarded on matching `signal` too: pendingArrayAliases can produce a
+                    // reversed pair of edges between the same endpoints for two *different*
+                    // signals (e.g. reciprocal aliases on a bus breakout), which must stay
+                    // as two distinct edges rather than collapsing into one.
+                    if (existing.source == e.target && existing.target == e.source &&
+                        existing.sourcePort == e.targetPort && existing.targetPort == e.sourcePort &&
+                        existing.signal == e.signal) {
+                        if (e.source == "self" && existing.source != "self") {
+                            existing = e;
+                        }
+                        duplicate = true;
+                        break;
+                    }
                 }
                 bool is_bus_selection_signal = (signal.find('[') != std::string::npos && signal.find(']') != std::string::npos);
 
@@ -155,8 +201,12 @@ void DesignExtractor::buildEdges(Module& mod) {
 
     removeUnconnectedLiteralNodes(mod);
     repairResolvedExplicitBusCompositions(mod);
-    repairResolvedBusCompositionSlices(mod);
+    // repairAggregateAssignmentBuses resolves replication output widths (via
+    // repairAggregateReplicationWidths) before repairResolvedBusCompositionSlices
+    // relabels promoted-concat bus inputs, so a symbolic replication nested in a
+    // procedural concatenation isn't still 1-bit wide when its concat sibling is labeled.
     repairAggregateAssignmentBuses(mod);
+    repairResolvedBusCompositionSlices(mod);
     collapseAliasCombNodes(mod);
     repairInterfaceAssignmentsC(mod);
     synthesizeBusCompositionNodes(mod);
@@ -1474,7 +1524,7 @@ std::string concatSliceLabel(int highBit, int size) {
 
 std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::string& signal) {
     if (signal.empty()) return "";
-    
+
     for (const auto& n : nodes) {
         for (const auto& p : n.ports) {
             if (p.direction == "output" && p.signal == signal && !p.width.empty()) {
@@ -1482,7 +1532,7 @@ std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::strin
             }
         }
     }
-    
+
     for (const auto& n : nodes) {
         for (const auto& p : n.ports) {
             if (p.direction == "output" && p.signal == signal) {
@@ -1491,6 +1541,20 @@ std::string findNodeOutputWidth(const std::vector<Node>& nodes, const std::strin
         }
     }
     return "";
+}
+
+// Extracts the normalized bit-width from a signal name that embeds a slice at
+// its tail, e.g. "foo[3:0]", "foo[2]", "foo[1:0]_next".  Returns "" when no
+// such slice is present.
+std::string widthFromSignalSlice(const std::string& signal) {
+    if (signal.empty()) return "";
+    std::regex re(R"(\[(-?\d+)(?::(-?\d+))?\](?:_\w+)?$)");
+    std::smatch m;
+    if (!std::regex_search(signal, m, re)) return "";
+    int hi = std::stoi(m[1].str());
+    int lo = m[2].matched ? std::stoi(m[2].str()) : hi;
+    int size = std::abs(hi - lo) + 1;
+    return widthFromBitSize(size);
 }
 
 void DesignExtractor::repairResolvedBusCompositionSlices(Module& mod) {
@@ -1520,6 +1584,10 @@ void DesignExtractor::repairResolvedBusCompositionSlices(Module& mod) {
                 }
                 if (width.empty() || width == "[0:0]") width = getDeclaredSignalWidth(mod, port->signal);
                 if (width.empty()) width = findNodeOutputWidth(mod.nodes, port->signal);
+                // A slice embedded in the signal name itself (e.g. "instr[3:0]") is a
+                // more reliable width source than the port's own possibly-stale width,
+                // which may still reflect the 1-bit default from initial extraction.
+                if (width.empty()) width = widthFromSignalSlice(port->signal);
                 if (width.empty()) width = port->width;
                 if (width.empty()) width = "[0:0]";
                 

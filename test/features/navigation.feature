@@ -54,11 +54,20 @@ Feature: Navigation
   Scenario: Navigating to combinational blocks
     Given I have the following files in my workspace:
       | file   | content |
-      | top.sv | module top(input a, input c, output wire b);\n  assign b = a & c;\nendmodule |
+      | top.sv | module top(input a, input c, output wire b);\n  assign b = (a == c);\nendmodule |
     When I open the "top" module in SVSCH
     And I double-click on the combinational block for "b"
     Then the editor pane for "top.sv" is opened and focused
-    And the editor should highlight the text "assign b = a & c;"
+    And the editor should highlight the text "assign b = (a == c);"
+
+  Scenario: Navigating to gate blocks
+    Given I have the following files in my workspace:
+      | file   | content |
+      | top.sv | module top(input a, input c, output wire b);\n  assign b = a & c;\nendmodule |
+    When I open the "top" module in SVSCH
+    And I double-click on the gate block for "b"
+    Then the editor pane for "top.sv" is opened and focused
+    And the editor should highlight the text "a & c"
 
   Scenario: Navigating to inverter nodes
     Given I have the following files in my workspace:

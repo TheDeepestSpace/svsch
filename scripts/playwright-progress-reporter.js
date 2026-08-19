@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 class PlaywrightProgressReporter {
-  constructor(options) {
+  constructor() {
     this.statusFile = process.env.SVSCH_TEST_STATUS_FILE;
     this.total = 0;
     this.passed = 0;
@@ -25,14 +25,16 @@ class PlaywrightProgressReporter {
     this.updateStatus();
   }
 
-  onEnd(result) {
+  onEnd() {
     this.updateStatus();
   }
 
   updateStatus() {
     if (!this.statusFile) return;
     const completed = this.passed + this.failed + this.skipped;
-    const runnerPid = process.env.SVSCH_RUNNER_PID ? parseInt(process.env.SVSCH_RUNNER_PID, 10) : process.pid;
+    const runnerPid = process.env.SVSCH_RUNNER_PID
+      ? parseInt(process.env.SVSCH_RUNNER_PID, 10)
+      : process.pid;
     const status = {
       total: this.total,
       completed: completed,
@@ -40,11 +42,11 @@ class PlaywrightProgressReporter {
       failed: this.failed,
       skipped: this.skipped,
       pid: runnerPid,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     try {
       fs.writeFileSync(this.statusFile, JSON.stringify(status, null, 2), 'utf8');
-    } catch (err) {
+    } catch {
       // Ignore write errors to prevent crashing test run
     }
   }

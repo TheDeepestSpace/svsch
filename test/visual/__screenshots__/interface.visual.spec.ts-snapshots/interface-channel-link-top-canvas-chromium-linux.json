@@ -1,0 +1,252 @@
+{
+  "nodes": [
+    {
+      "id": "instance:interface_channel_link:u_controller",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_channel_link:u_monitor",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 240
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          },
+          {
+            "id": "port:seen",
+            "name": "seen",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_channel_link:u_sink",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 120
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:interface_channel_link:u_source",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 120
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:bus",
+            "name": "bus",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "interface:interface_channel_link:link",
+      "type": "hdl",
+      "position": {
+        "x": 432,
+        "y": 96
+      },
+      "width": 240,
+      "height": 137,
+      "data": {
+        "kind": "interface",
+        "ports": [
+          {
+            "id": "in:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "in:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          },
+          {
+            "id": "out:consumer",
+            "name": "consumer",
+            "direction": "output"
+          },
+          {
+            "id": "in:controller",
+            "name": "controller",
+            "direction": "input"
+          },
+          {
+            "id": "out:monitor",
+            "name": "monitor",
+            "direction": "output"
+          },
+          {
+            "id": "in:producer",
+            "name": "producer",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_channel_link:clk",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_channel_link:rst_n",
+      "type": "hdl",
+      "position": {
+        "x": 96,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst_n",
+            "name": "rst_n",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:interface_channel_link:seen",
+      "type": "hdl",
+      "position": {
+        "x": 1296,
+        "y": 276
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:seen",
+            "name": "seen",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:interface_channel_link:u_controller:interface:interface_channel_link:link:link",
+      "source": "instance:interface_channel_link:u_controller",
+      "target": "interface:interface_channel_link:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:controller",
+      "path": "M 216 288 L 240 288 L 336 288 L 336 216 L 408 216 L 432 216"
+    },
+    {
+      "id": "edge:instance:interface_channel_link:u_monitor:port:interface_channel_link:seen:seen",
+      "source": "instance:interface_channel_link:u_monitor",
+      "target": "port:interface_channel_link:seen",
+      "sourceHandle": "port:seen",
+      "targetHandle": "port:seen",
+      "path": "M 1080 288 L 1104 288 L 1272 288 L 1296 288"
+    },
+    {
+      "id": "edge:instance:interface_channel_link:u_source:interface:interface_channel_link:link:link",
+      "source": "instance:interface_channel_link:u_source",
+      "target": "interface:interface_channel_link:link",
+      "sourceHandle": "port:bus",
+      "targetHandle": "in:producer",
+      "path": "M 216 168 L 240 168 L 408 168 L 432 168"
+    },
+    {
+      "id": "edge:interface:interface_channel_link:link:instance:interface_channel_link:u_monitor:link",
+      "source": "interface:interface_channel_link:link",
+      "target": "instance:interface_channel_link:u_monitor",
+      "sourceHandle": "out:monitor",
+      "targetHandle": "port:bus",
+      "path": "M 672 216 L 696 216 L 792 216 L 792 288 L 864 288 L 888 288"
+    },
+    {
+      "id": "edge:interface:interface_channel_link:link:instance:interface_channel_link:u_sink:link",
+      "source": "interface:interface_channel_link:link",
+      "target": "instance:interface_channel_link:u_sink",
+      "sourceHandle": "out:consumer",
+      "targetHandle": "port:bus",
+      "path": "M 672 168 L 696 168 L 864 168 L 888 168"
+    },
+    {
+      "id": "edge:port:interface_channel_link:clk:interface:interface_channel_link:link:clk",
+      "source": "port:interface_channel_link:clk",
+      "target": "interface:interface_channel_link:link",
+      "sourceHandle": "port:clk",
+      "targetHandle": "in:clk",
+      "path": "M 216 96 L 240 96 L 528 96 L 528 132"
+    },
+    {
+      "id": "edge:port:interface_channel_link:rst_n:interface:interface_channel_link:link:rst_n",
+      "source": "port:interface_channel_link:rst_n",
+      "target": "interface:interface_channel_link:link",
+      "sourceHandle": "port:rst_n",
+      "targetHandle": "in:rst_n",
+      "path": "M 216 48 L 240 48 L 576 48 L 576 96 L 576 132"
+    }
+  ]
+}

@@ -8,6 +8,21 @@ export function nodeOperation(node: DiagramNode): string | undefined {
   return node.operation ?? node.metadata?.operation;
 }
 
+/** Gate body shape ('and' | 'or' | 'xor') independent of whether the output is negated. */
+export function gateBodyOperation(node: DiagramNode): 'and' | 'or' | 'xor' {
+  const op = nodeOperation(node);
+  if (op === 'nand') return 'and';
+  if (op === 'nor') return 'or';
+  if (op === 'xnor') return 'xor';
+  if (op === 'and' || op === 'or' || op === 'xor') return op;
+  return 'and';
+}
+
+export function gateIsNegated(node: DiagramNode): boolean {
+  const op = nodeOperation(node);
+  return op === 'nand' || op === 'nor' || op === 'xnor';
+}
+
 export function nodeReason(node: DiagramNode): string | undefined {
   return node.reason ?? node.metadata?.reason;
 }
@@ -45,33 +60,46 @@ export function nodeIsInferred(node: DiagramNode): boolean {
 }
 
 export function registerClockSignal(node: DiagramNode): string | undefined {
-  return node.kind === 'register' ? node.clockSignal ?? node.metadata?.clockSignal : undefined;
+  return node.kind === 'register' ? (node.clockSignal ?? node.metadata?.clockSignal) : undefined;
 }
 
 export function registerResetSignal(node: DiagramNode): string | undefined {
-  return node.kind === 'register' ? node.resetSignal ?? node.metadata?.resetSignal : undefined;
+  return node.kind === 'register' ? (node.resetSignal ?? node.metadata?.resetSignal) : undefined;
 }
 
 export function registerResetActiveLow(node: DiagramNode): boolean {
-  return node.kind === 'register' && (node.resetActiveLow === true || node.metadata?.resetActiveLow === true);
+  return (
+    node.kind === 'register' &&
+    (node.resetActiveLow === true || node.metadata?.resetActiveLow === true)
+  );
 }
 
 export function structRole(node: DiagramNode): DiagramNodeMetadata['role'] {
-  return node.kind === 'struct' || node.kind === 'bus' || node.kind === 'interface' ? node.role ?? node.metadata?.role : undefined;
+  return node.kind === 'struct' || node.kind === 'bus' || node.kind === 'interface'
+    ? (node.role ?? node.metadata?.role)
+    : undefined;
 }
 
 export function structFields(node: DiagramNode): StructField[] {
   return node.kind === 'struct' || node.kind === 'interface'
-    ? (Array.isArray(node.fields) ? node.fields : Array.isArray(node.metadata?.fields) ? node.metadata.fields : [])
+    ? Array.isArray(node.fields)
+      ? node.fields
+      : Array.isArray(node.metadata?.fields)
+        ? node.metadata.fields
+        : []
     : [];
 }
 
 export function repeatExpression(node: DiagramNode): string | undefined {
-  return node.kind === 'replicate' ? node.repeatExpression ?? node.metadata?.repeatExpression : undefined;
+  return node.kind === 'replicate'
+    ? (node.repeatExpression ?? node.metadata?.repeatExpression)
+    : undefined;
 }
 
 export function repeatExpressionSource(node: DiagramNode): SourceRange | undefined {
-  return node.kind === 'replicate' ? node.repeatExpressionSource ?? node.metadata?.repeatExpressionSource : undefined;
+  return node.kind === 'replicate'
+    ? (node.repeatExpressionSource ?? node.metadata?.repeatExpressionSource)
+    : undefined;
 }
 
 export function nodeIsArrayNode(node: DiagramNode): boolean {
