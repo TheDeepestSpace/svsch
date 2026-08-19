@@ -914,6 +914,85 @@ Feature: Diagram Interaction
     And I click to select the block "u_mux"
     Then the "Expand" button should not be visible
 
+  Scenario: Moving an expanded instance moves its entire spliced content
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module leaf(input logic a, output logic y);
+        inner u_inner(.a(a), .y(y));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "a"
+    And I should see an instance node "u_inner" of module "inner"
+    And I note the position of the boundary port node "a"
+    And I note the position of the boundary port node "y"
+    And I note the position of the block "u_inner"
+    When I move the expanded instance "u1" by (2, -1) grid cells
+    Then the boundary port node "a" should have moved by (2, -1) grid cells
+    And the boundary port node "y" should have moved by (2, -1) grid cells
+    And the block "u_inner" should have moved by (2, -1) grid cells
+
+  Scenario: Moving a node inside an expanded instance grows its frame
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module leaf(input logic a, output logic y);
+        inner u_inner(.a(a), .y(y));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see an instance node "u_inner" of module "inner"
+    And I note the bounds of the block "u1"
+    When I move the block "u_inner" by (8, 0) grid cells
+    Then the "u1" block should have grown on the "right" side
+
+  Scenario: Expanding an instance inside an already-expanded instance nests two levels deep
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module leaf(input logic a, output logic y);
+        inner u_inner(.a(a), .y(y));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see an instance node "u_inner" of module "inner"
+    When I click to select the block "u_inner"
+    And I click the "Expand" button
+    Then I should see a dimmed instance node "u_inner"
+    When I collapse the expanded instance "u_inner"
+    Then I should see an instance node "u_inner" of module "inner"
+    And I should see a dimmed instance node "u1"
+    When I collapse the expanded instance "u1"
+    Then I should see an instance node "u1" of module "leaf"
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually

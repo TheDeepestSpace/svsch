@@ -669,6 +669,19 @@ When('I move the block {string} by \\({int}, {int}\\) grid cells', async functio
   await waitForLayoutChange(this, before, `After moving ${label}`);
 });
 
+// Moves an expanded instance's own dimmed frame (not a plain block — see
+// EXPAND_HEADER_GRAB_OFFSET for why this can't reuse "I move the block").
+// Every namespaced node the splice owns (boundary ports, internal blocks,
+// nested expands) is carried along, exactly like moving a generate region
+// carries its arms and blocks.
+When('I move the expanded instance {string} by \\({int}, {int}\\) grid cells', async function (this: BddWorld, instanceLabel: string, cellsX: number, cellsY: number) {
+  const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+  if (!id) throw new Error(`Could not find expanded instance "${instanceLabel}"`);
+  const before = JSON.stringify(await readExtensionLayout(this));
+  await dragNodeByGridCells(this, id, cellsX, cellsY, EXPAND_HEADER_GRAB_OFFSET);
+  await waitForLayoutChange(this, before, `After moving expanded instance ${instanceLabel}`);
+});
+
 When('I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells', async function (this: BddWorld, block: string, region: string, cellsX: number, cellsY: number) {
   this.notedRegionBounds.set(region, await getGenerateRegionBounds(this.webviewPage, region));
   await beginDraggingNodeByGridCells(this, block, cellsX, cellsY);
@@ -1047,6 +1060,45 @@ Then('the block {string} should not have moved', async function (this: BddWorld,
   if (!pos || !before) throw new Error(`Missing position data for ${name}`);
   expect(pos.x, `${name} should not have moved`).toBeCloseTo(before.x, 0);
   expect(pos.y, `${name} should not have moved`).toBeCloseTo(before.y, 0);
+});
+
+Then('the block {string} should have moved by \\({int}, {int}\\) grid cells', async function (this: BddWorld, name: string, cellsX: number, cellsY: number) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(name);
+  if (!pos || !before) throw new Error(`Missing position data for ${name}`);
+  expect(pos.x - before.x, `${name} x-delta`).toBeCloseTo(cellsX * diagramGrid.size, 0);
+  expect(pos.y - before.y, `${name} y-delta`).toBeCloseTo(cellsY * diagramGrid.size, 0);
+});
+
+When('I note the bounds of the block {string}', async function (this: BddWorld, label: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find block "${label}"`);
+  this.notedRegionBounds.set(label, await getNodeBounds(this.webviewPage, id));
+});
+
+// Boundary port nodes (see BoundaryPortNode.tsx) aren't matched by the
+// generic findNodeIdByLabel label-class list, so they get their own
+// note/assert pair instead of reusing "the block {string} ..." above — keyed
+// separately in notedPositions so a boundary port can share a name with an
+// ordinary port elsewhere in the diagram without colliding.
+When('I note the position of the boundary port node {string}', async function (this: BddWorld, label: string) {
+  const id = await findBoundaryPortNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find boundary port node "${label}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  if (!pos) throw new Error(`Missing position data for boundary port ${label}`);
+  this.notedPositions.set(`boundary-port:${label}`, pos);
+});
+
+Then('the boundary port node {string} should have moved by \\({int}, {int}\\) grid cells', async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+  const id = await findBoundaryPortNodeIdByLabel(this.webviewPage, label);
+  if (!id) throw new Error(`Could not find boundary port node "${label}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(`boundary-port:${label}`);
+  if (!pos || !before) throw new Error(`Missing position data for boundary port ${label}`);
+  expect(pos.x - before.x, `boundary port ${label} x-delta`).toBeCloseTo(cellsX * diagramGrid.size, 0);
+  expect(pos.y - before.y, `boundary port ${label} y-delta`).toBeCloseTo(cellsY * diagramGrid.size, 0);
 });
 
 Then('the port node {string} should still be fixed in the saved layout', async function (this: BddWorld, name: string) {
@@ -3179,12 +3231,16 @@ async function releasePendingNodeDrag(world: BddWorld): Promise<void> {
 }
 
 // One raw mouse drag of a node by a screen-space delta. React Flow needs a small
-// threshold nudge before it recognises the drag.
-async function rawDragNode(world: BddWorld, id: string, dxScreen: number, dyScreen: number): Promise<void> {
+// threshold nudge before it recognises the drag. `grabOffset` (from the node's
+// top-left corner) overrides the default center grab point — needed for an
+// expanded instance's dimmed frame, whose center can land on the boundary
+// port columns or spliced content stacked on top of it (see
+// EXPAND_HEADER_GRAB_OFFSET).
+async function rawDragNode(world: BddWorld, id: string, dxScreen: number, dyScreen: number, grabOffset?: { x: number; y: number }): Promise<void> {
   const box = await world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
   if (!box) throw new Error(`Could not get bounding box for node ${id}`);
-  const cx = box.x + box.width / 2;
-  const cy = box.y + box.height / 2;
+  const cx = grabOffset ? box.x + grabOffset.x : box.x + box.width / 2;
+  const cy = grabOffset ? box.y + grabOffset.y : box.y + box.height / 2;
   await world.workbox.mouse.move(cx, cy);
   await world.workbox.mouse.down();
   await world.workbox.mouse.move(cx + Math.sign(dxScreen || 1) * 2, cy + Math.sign(dyScreen || 1) * 2, { steps: 3 });
@@ -3208,7 +3264,7 @@ async function effectiveScreenPerFlow(world: BddWorld): Promise<number> {
 // but keeps the ratio within sane bounds and caps the per-drag distance so a
 // noisy measurement can never fling the node off-canvas (the bug that made the
 // reroute moves overshoot and hang). No cross-node state — each drag is fresh.
-async function dragNodeToFlowPosition(world: BddWorld, id: string, targetX: number, targetY: number): Promise<void> {
+async function dragNodeToFlowPosition(world: BddWorld, id: string, targetX: number, targetY: number, grabOffset?: { x: number; y: number }): Promise<void> {
   const base = await effectiveScreenPerFlow(world);
   const MIN_RATIO = base / 4;
   const MAX_RATIO = base * 4;
@@ -3224,7 +3280,7 @@ async function dragNodeToFlowPosition(world: BddWorld, id: string, targetX: numb
 
     const dxScreen = Math.max(-MAX_STEP, Math.min(MAX_STEP, remX * ratio));
     const dyScreen = Math.max(-MAX_STEP, Math.min(MAX_STEP, remY * ratio));
-    await rawDragNode(world, id, dxScreen, dyScreen);
+    await rawDragNode(world, id, dxScreen, dyScreen, grabOffset);
 
     // Refine the ratio from the dominant axis of this drag, clamped so a tiny
     // or noisy measured delta can't explode (or collapse) the next step.
@@ -3244,10 +3300,29 @@ async function dragNodeToFlowPosition(world: BddWorld, id: string, targetX: numb
 }
 
 // Drag a node a whole number of grid cells from where it started.
-async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, cellsY: number): Promise<void> {
+async function dragNodeByGridCells(world: BddWorld, id: string, cellsX: number, cellsY: number, grabOffset?: { x: number; y: number }): Promise<void> {
   const start = await getInternalPosition(world.webviewPage, id);
   if (!start) throw new Error(`Missing position data for node ${id}`);
-  await dragNodeToFlowPosition(world, id, start.x + cellsX * diagramGrid.size, start.y + cellsY * diagramGrid.size);
+  await dragNodeToFlowPosition(world, id, start.x + cellsX * diagramGrid.size, start.y + cellsY * diagramGrid.size, grabOffset);
+}
+
+// An expanded instance's dimmed frame (see EXPAND_GHOST_CLASS) can't be
+// grabbed from its center like a normal block — the boundary port columns
+// sit directly on top of it at their port rows, and its own spliced content
+// is stacked visually on top too. The header strip is reliably clear of both
+// (same offset the "Collapse" click already relies on).
+const EXPAND_HEADER_GRAB_OFFSET = { x: 30, y: 15 };
+
+async function findBoundaryPortNodeIdByLabel(webviewPage: FrameLocator, label: string): Promise<string | null> {
+  return webviewPage.locator('html').evaluate((_, text) => {
+    const nodes = Array.from(document.querySelectorAll('.react-flow__node'));
+    const match = nodes.find((node) => {
+      if (!node.querySelector('[data-node-kind="boundaryPort"]')) return false;
+      const textEl = node.querySelector('.hdl-boundary-port-text');
+      return textEl?.textContent?.trim() === text;
+    });
+    return match?.getAttribute('data-id') ?? null;
+  }, label);
 }
 
 // The extension persists each module's layout as its own file under
