@@ -2,14 +2,14 @@ export {
   buildLineJumpRender,
   buildLineJumpPath,
   defaultLineJumpOptions,
-  getEdgeOverlapHints
+  getEdgeOverlapHints,
 } from './geometry';
 export {
   LineJumpProvider,
   useEdgeOverlapHints,
   useLineJumpPath,
   useLineJumpRender,
-  useOptionalLineJumpContext
+  useOptionalLineJumpContext,
 } from './context';
 export type {
   LineJumpRender,
@@ -17,5 +17,5 @@ export type {
   OverlapHint,
   Point,
   PolylineEdgeGeometry,
-  LineJumpHalo
+  LineJumpHalo,
 } from './types';

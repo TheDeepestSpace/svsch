@@ -1,9 +1,21 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { DiagramEdge, DiagramNode, DiagramPort, DiagramViewModel, PositionedGenerateRegion, PositionedNode } from '../ir/types';
+import type {
+  DiagramEdge,
+  DiagramNode,
+  DiagramPort,
+  DiagramViewModel,
+  PositionedGenerateRegion,
+  PositionedNode,
+} from '../ir/types';
 import { compareEdgePaintOrder } from '../diagram/edgePaintOrder';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows, nodeWarningIconCenter, resolvedNodeDimensions } from '../diagram/nodeSizing';
+import {
+  diagramNodeDimensions,
+  instanceParameterRows,
+  nodeWarningIconCenter,
+  resolvedNodeDimensions,
+} from '../diagram/nodeSizing';
 import { visualHandleGeometry } from '../diagram/visualHandleGeometry';
 import { isInputSidePort } from '../diagram/portDirection';
 import { nodeIsArrayNode, structRole } from '../ir/nodeMetadata';
@@ -11,7 +23,12 @@ import { edgeNetKey } from '../ir/edgeNet';
 import { edgeIsThick, nodeStackIsWide } from '../ir/edgeStyle';
 import { elkSideToHandleSide, renderedPortGeometry } from '../layout/mergeLayout';
 import { HdlPosition } from '../webview/orthogonal/types';
-import { avoidFeedbackObstacles, normalizeRoutePoints, pointNearPathStart, type NodeObstacle } from '../webview/orthogonal/logic';
+import {
+  avoidFeedbackObstacles,
+  normalizeRoutePoints,
+  pointNearPathStart,
+  type NodeObstacle,
+} from '../webview/orthogonal/logic';
 import { findNetJunctions, type NetJunction } from '../webview/orthogonal/netGeometry';
 import { pathFromPoints, type OrthogonalPoint } from '../core/pathUtils';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../webview/arrayStackGeometry';
@@ -21,7 +38,7 @@ import {
   type LineJumpHalo,
   type LineJumpRender,
   type OverlapHint,
-  type PolylineEdgeGeometry
+  type PolylineEdgeGeometry,
 } from '../webview/react-flow-line-jumps';
 import {
   computeStackedEdgeLayerPoints,
@@ -32,7 +49,7 @@ import {
   stackedLayerEdgeClass,
   stackedLayerGradientStopClass,
   type ConvergingStackPath,
-  type PromotedStackFanout
+  type PromotedStackFanout,
 } from '../webview/orthogonal/stackedEdgeGeometry';
 import { themeCss, type SvgThemeName } from './theme';
 import { RegisterNodeSvg } from '../webview/nodes/register/RegisterNodeSvg';
@@ -156,7 +173,7 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     '</g>',
     '</g>',
     '</svg>',
-    ''
+    '',
   ].join('\n');
 }
 
@@ -168,13 +185,15 @@ function renderDefs(): string {
     '    <stop offset="50%" stop-color="var(--svsch-edge-stacked-middle)" />',
     '    <stop offset="100%" stop-color="var(--svsch-edge-stacked-front)" />',
     '  </linearGradient>',
+    // eslint-disable-next-line max-len
     '  <pattern id="svsch-interface-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
     '    <line class="svsch-interface-stripe" x1="5" y1="0" x2="5" y2="10" />',
     '  </pattern>',
+    // eslint-disable-next-line max-len
     '  <pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">',
     '    <line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10" />',
     '  </pattern>',
-    '</defs>'
+    '</defs>',
   ].join('\n');
 }
 
@@ -266,8 +285,10 @@ function renderGenerateRegion(region: PositionedGenerateRegion): string {
     region.isGenerateBlock ? 'svsch-generate-block' : '',
     region.activeState === 'active' ? 'svsch-generate-region-active' : '',
     region.activeState === 'inactive' ? 'svsch-generate-region-inactive' : '',
-    region.invalid ? 'svsch-generate-region-invalid' : ''
-  ].filter(Boolean).join(' ');
+    region.invalid ? 'svsch-generate-region-invalid' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const labelX = region.bounds.x + 8;
   const labelY = region.bounds.y + 8;
   // 20px out from the top-right corner on both axes, mirroring the webview icon.
@@ -281,11 +302,17 @@ function renderGenerateRegion(region: PositionedGenerateRegion): string {
     region.warningNote
       ? `<text class="svsch-generate-region-warning" x="${formatNumber(warningX)}" y="${formatNumber(warningY)}" text-anchor="end">⚠</text>`
       : '',
-    '</g>'
-  ].filter(Boolean).join('\n');
+    '</g>',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
-function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, PositionedNode>, obstacles: NodeObstacle[]): RenderedEdgeBase | undefined {
+function renderEdgeGeometry(
+  edge: DiagramEdge,
+  nodesById: Map<string, PositionedNode>,
+  obstacles: NodeObstacle[],
+): RenderedEdgeBase | undefined {
   const source = nodesById.get(edge.source);
   const target = nodesById.get(edge.target);
   if (!source || !target) {
@@ -300,11 +327,11 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
 
   const sourcePoint = {
     x: source.position.x + sourcePort.offset.x,
-    y: source.position.y + sourcePort.offset.y
+    y: source.position.y + sourcePort.offset.y,
   };
   const targetPoint = {
     x: target.position.x + targetPort.offset.x,
-    y: target.position.y + targetPort.offset.y
+    y: target.position.y + targetPort.offset.y,
   };
   const sourcePosition = sideToHdlPosition(sourcePort.side);
   const targetPosition = sideToHdlPosition(targetPort.side);
@@ -320,26 +347,37 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     edge.targetPort,
     true,
     source,
-    target
+    target,
   );
-  const officialPoints = edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
-    ? normalizedOfficialPoints
-    : avoidFeedbackObstacles(normalizedOfficialPoints, obstacles, sourcePosition, targetPosition);
+  const officialPoints =
+    edge.metadata?.forceStraight === true || (edge.routePoints && edge.routePoints.length > 0)
+      ? normalizedOfficialPoints
+      : avoidFeedbackObstacles(normalizedOfficialPoints, obstacles, sourcePosition, targetPosition);
   const forceStraight = edge.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourcePoint.x - targetPoint.x) < 1;
   const targetHdlPosition = forceStraight && isVertical ? HdlPosition.Top : targetPosition;
   const sourceHdlPosition = forceStraight && isVertical ? HdlPosition.Bottom : sourcePosition;
   // Pushes the final point past a curved-left gate's (OR/NOR/XOR/XNOR) concave edge — see
   // the matching comment in OrthogonalEdge.tsx and gateLeftEdgeWireReach for why this is safe.
-  const points = extendTargetIntoGate([{ ...sourcePoint }, ...officialPoints, { ...targetPoint }], target, targetHdlPosition);
+  const points = extendTargetIntoGate(
+    [{ ...sourcePoint }, ...officialPoints, { ...targetPoint }],
+    target,
+    targetHdlPosition,
+  );
   const sourceInputs = aggregateInputs(source);
   const sourceIsComposition = sourceInputs.length > 1;
-  const sourceIsArray = nodeIsArrayNode(source) || (source.kind === 'netLabel' && source.metadata?.cutNet?.isSourceStacked === true);
-  const sourceIsArrayComposition = source.kind === 'bus' && sourceIsComposition && source.metadata?.aggregateKind === 'array';
+  const sourceIsArray =
+    nodeIsArrayNode(source) ||
+    (source.kind === 'netLabel' && source.metadata?.cutNet?.isSourceStacked === true);
+  const sourceIsArrayComposition =
+    source.kind === 'bus' && sourceIsComposition && source.metadata?.aggregateKind === 'array';
   const targetInputs = aggregateInputs(target);
   const targetIsComposition = targetInputs.length > 1;
-  const targetIsArray = nodeIsArrayNode(target) || (target.kind === 'netLabel' && target.metadata?.cutNet?.isSourceStacked === true);
-  const targetIsArrayBreakout = target.kind === 'bus' && !targetIsComposition && target.metadata?.aggregateKind === 'array';
+  const targetIsArray =
+    nodeIsArrayNode(target) ||
+    (target.kind === 'netLabel' && target.metadata?.cutNet?.isSourceStacked === true);
+  const targetIsArrayBreakout =
+    target.kind === 'bus' && !targetIsComposition && target.metadata?.aggregateKind === 'array';
   const isStructAggregate = edge.metadata?.aggregate === 'struct';
   const isInterfaceAggregate = edge.metadata?.aggregate === 'interface';
   const isThickWire = edgeIsThick(edge, source, target);
@@ -354,7 +392,11 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
   const promotedStackWide = nodeStackIsWide(target);
   const convergingStackWide = nodeStackIsWide(source);
 
-  const { back: backStackPoints, middle: middleStackPoints, front: frontStackPoints } = computeStackedEdgeLayerPoints({
+  const {
+    back: backStackPoints,
+    middle: middleStackPoints,
+    front: frontStackPoints,
+  } = computeStackedEdgeLayerPoints({
     points,
     sourceHdlPosition,
     targetHdlPosition,
@@ -364,7 +406,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     targetIsArray,
     targetIsArrayBreakout,
     targetNode: target,
-    isThickWire
+    isThickWire,
   });
 
   const geometry: PolylineEdgeGeometry = {
@@ -378,7 +420,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     isStruct: isStructAggregate,
     isInterface: isInterfaceAggregate,
     isThick: isThickWire,
-    isStacked: isStacked && !isPromotedStack && !isConvergingStack
+    isStacked: isStacked && !isPromotedStack && !isConvergingStack,
   };
 
   return {
@@ -402,7 +444,7 @@ function renderEdgeGeometry(edge: DiagramEdge, nodesById: Map<string, Positioned
     geometry,
     backStackPoints,
     middleStackPoints,
-    frontStackPoints
+    frontStackPoints,
   };
 }
 
@@ -414,15 +456,23 @@ function sideToHdlPosition(side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST'): HdlPositi
   return HdlPosition.Bottom;
 }
 
-function connectionPortGeometry(node: PositionedNode, portId: string | undefined, role: 'source' | 'target'): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
+function connectionPortGeometry(
+  node: PositionedNode,
+  portId: string | undefined,
+  role: 'source' | 'target',
+): { offset: { x: number; y: number }; side: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST' } | undefined {
   if (node.kind === 'netLabel') {
     const { width, height } = diagramNodeDimensions(node);
     const handleSide = node.metadata?.cutNet?.handleSide ?? 'left';
     switch (handleSide) {
-      case 'top':    return { offset: { x: width / 2, y: 0 },          side: 'NORTH' };
-      case 'bottom': return { offset: { x: width / 2, y: height },      side: 'SOUTH' };
-      case 'right':  return { offset: { x: width,     y: height / 2 },  side: 'EAST'  };
-      default:       return { offset: { x: 0,          y: height / 2 }, side: 'WEST'  };
+      case 'top':
+        return { offset: { x: width / 2, y: 0 }, side: 'NORTH' };
+      case 'bottom':
+        return { offset: { x: width / 2, y: height }, side: 'SOUTH' };
+      case 'right':
+        return { offset: { x: width, y: height / 2 }, side: 'EAST' };
+      default:
+        return { offset: { x: 0, y: height / 2 }, side: 'WEST' };
     }
   }
   return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId, false, role);
@@ -436,38 +486,58 @@ function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
     const edgeRender = buildLineJumpRender(edge.geometry, geometries);
     const regularStack = edge.isStacked && !edge.isPromotedStack && !edge.isConvergingStack;
     const backRender = regularStack
-      ? buildLineJumpRender({ ...edge.geometry, points: edge.backStackPoints, isStacked: false }, geometries)
+      ? buildLineJumpRender(
+          { ...edge.geometry, points: edge.backStackPoints, isStacked: false },
+          geometries,
+        )
       : undefined;
     const middleRender = regularStack
-      ? buildLineJumpRender({ ...edge.geometry, points: edge.middleStackPoints, isStacked: false }, geometries)
+      ? buildLineJumpRender(
+          { ...edge.geometry, points: edge.middleStackPoints, isStacked: false },
+          geometries,
+        )
       : undefined;
     const frontRender = regularStack
-      ? buildLineJumpRender({ ...edge.geometry, points: edge.frontStackPoints, isStacked: false }, geometries)
+      ? buildLineJumpRender(
+          { ...edge.geometry, points: edge.frontStackPoints, isStacked: false },
+          geometries,
+        )
       : undefined;
     const jumpHalos = regularStack
       ? [
-        ...(backRender?.jumpHalos ?? []),
-        ...(middleRender?.jumpHalos ?? []),
-        ...(frontRender?.jumpHalos ?? [])
-      ]
+          ...(backRender?.jumpHalos ?? []),
+          ...(middleRender?.jumpHalos ?? []),
+          ...(frontRender?.jumpHalos ?? []),
+        ]
       : lineJumpHalos(edgeRender);
     const promotedFanout = edge.isPromotedStack
       ? promotedStackFanoutPath(
-        edge.points,
-        edge.targetPosition,
-        diagramSizing.gridSize * (edge.isMuxSelectorPromotion ? 2 : 1),
-        edge.promotedStackWide
-      )
+          edge.points,
+          edge.targetPosition,
+          diagramSizing.gridSize * (edge.isMuxSelectorPromotion ? 2 : 1),
+          edge.promotedStackWide,
+        )
       : undefined;
     const convergingStackPaths = edge.isConvergingStack
       ? (['back', 'middle', 'front'] as ArrayStackLayerId[])
-        .map((layerId) => convergingStackPath(edge.points, layerId, edge.sourceHdlPosition, edge.targetHdlPosition, edge.convergingStackWide))
-        .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
+          .map((layerId) =>
+            convergingStackPath(
+              edge.points,
+              layerId,
+              edge.sourceHdlPosition,
+              edge.targetHdlPosition,
+              edge.convergingStackWide,
+            ),
+          )
+          .filter((stackPath): stackPath is ConvergingStackPath => stackPath !== undefined)
       : [];
     const netEdgeIds = netEdgeIdsByNet.get(edge.netKey) ?? [];
     const isNetLeader = netEdgeIds[0] === edge.edge.id;
     const netGeometries = geometries.filter((geometry) => netEdgeIds.includes(geometry.edgeId));
-    const netJunctions = isNetLeader || edge.isInterfaceAggregate || edge.isStructAggregate ? findNetJunctions(netGeometries) : [];
+    const netJunctions =
+      isNetLeader || edge.isInterfaceAggregate || edge.isStructAggregate
+        ? findNetJunctions(netGeometries)
+        : [];
 
     return {
       ...edge,
@@ -481,7 +551,7 @@ function attachEdgeRendering(edges: RenderedEdgeBase[]): RenderedEdge[] {
       promotedFanoutGradientId: `svsch-stack-fanout-gradient-${stableFragmentId(edge.edge.id)}`,
       convergingStackPaths,
       netJunctions,
-      isNetLeader
+      isNetLeader,
     };
   });
 }
@@ -492,7 +562,14 @@ function renderEdge(rendered: RenderedEdge): string {
     ...renderEdgePaths(rendered),
     ...renderOverlapHints(rendered),
     ...renderNetJunctions(rendered),
-    rendered.edge.label ? renderEdgeLabel(rendered.edge.label, rendered.points, rendered.edge.metadata?.aliasNames, rendered.edge.metadata?.generateActiveState) : ''
+    rendered.edge.label
+      ? renderEdgeLabel(
+          rendered.edge.label,
+          rendered.points,
+          rendered.edge.metadata?.aliasNames,
+          rendered.edge.metadata?.generateActiveState,
+        )
+      : '',
   ].filter(Boolean);
   return `<g class="svsch-edge-group" data-edge-id="${escapeAttr(rendered.edge.id)}">${content.join('\n')}</g>`;
 }
@@ -501,13 +578,23 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
   if (rendered.isStacked && (rendered.sourceIsArray || rendered.targetIsArray)) {
     const paths: string[] = [];
     if (rendered.isInterfaceAggregate) {
-      paths.push(edgePath(rendered, 'svsch-edge svsch-edge-interface-bg', rendered.edgeRender.path, false));
+      paths.push(
+        edgePath(rendered, 'svsch-edge svsch-edge-interface-bg', rendered.edgeRender.path, false),
+      );
     }
     if (rendered.isStructAggregate) {
-      paths.push(edgePath(rendered, 'svsch-edge svsch-edge-struct-bg', rendered.edgeRender.path, false));
+      paths.push(
+        edgePath(rendered, 'svsch-edge svsch-edge-struct-bg', rendered.edgeRender.path, false),
+      );
     }
     if (!rendered.isPromotedStack && !rendered.isConvergingStack) {
-      paths.push(edgePath(rendered, `svsch-edge svsch-edge-stacked-back${rendered.isThickWire ? ' svsch-edge-thick' : ''}`, rendered.backRender?.path ?? pathFromPoints(rendered.backStackPoints)));
+      paths.push(
+        edgePath(
+          rendered,
+          `svsch-edge svsch-edge-stacked-back${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
+          rendered.backRender?.path ?? pathFromPoints(rendered.backStackPoints),
+        ),
+      );
     }
     if (rendered.promotedFanout) {
       paths.push(...renderPromotedStackFanout(rendered, rendered.promotedFanout));
@@ -519,12 +606,22 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
         rendered.isStacked ? 'svsch-edge-stacked' : '',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
         rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
-        rendered.isThickWire ? 'svsch-edge-thick' : ''
-      ].filter(Boolean).join(' ');
-      paths.push(edgePath(rendered, classes, rendered.middleRender?.path ?? rendered.edgeRender.path));
+        rendered.isThickWire ? 'svsch-edge-thick' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      paths.push(
+        edgePath(rendered, classes, rendered.middleRender?.path ?? rendered.edgeRender.path),
+      );
     }
     if (!rendered.isPromotedStack && !rendered.isConvergingStack) {
-      paths.push(edgePath(rendered, `svsch-edge svsch-edge-stacked-front${rendered.isThickWire ? ' svsch-edge-thick' : ''}`, rendered.frontRender?.path ?? pathFromPoints(rendered.frontStackPoints)));
+      paths.push(
+        edgePath(
+          rendered,
+          `svsch-edge svsch-edge-stacked-front${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
+          rendered.frontRender?.path ?? pathFromPoints(rendered.frontStackPoints),
+        ),
+      );
     }
     return paths;
   }
@@ -542,10 +639,12 @@ function renderEdgePaths(rendered: RenderedEdge): string[] {
         'svsch-edge',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
         rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
-        rendered.isThickWire ? 'svsch-edge-thick' : ''
-      ].filter(Boolean).join(' '),
-      rendered.edgeRender.path
-    )
+        rendered.isThickWire ? 'svsch-edge-thick' : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      rendered.edgeRender.path,
+    ),
   ].filter(Boolean);
 }
 
@@ -559,7 +658,7 @@ function renderPromotedStackFanout(rendered: RenderedEdge, fanout: PromotedStack
       '<stop offset="50%" class="svsch-stack-gradient-middle-stop" />',
       '<stop offset="100%" class="svsch-stack-gradient-back-stop" />',
       '</linearGradient>',
-      '</defs>'
+      '</defs>',
     ].join('\n'),
     edgePath(
       rendered,
@@ -567,16 +666,26 @@ function renderPromotedStackFanout(rendered: RenderedEdge, fanout: PromotedStack
         'svsch-edge',
         rendered.isStructAggregate ? 'svsch-edge-struct' : '',
         rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
-        rendered.isThickWire ? 'svsch-edge-thick' : ''
-      ].filter(Boolean).join(' '),
-      fanout.trunk
+        rendered.isThickWire ? 'svsch-edge-thick' : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+      fanout.trunk,
     ),
-    edgePath(rendered, 'svsch-edge svsch-edge-stacked-breakout', fanout.bar, false, `stroke: url(#${gradientId})`),
-    ...fanout.branches.map((branch) => edgePath(
+    edgePath(
       rendered,
-      `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
-      branch.path
-    ))
+      'svsch-edge svsch-edge-stacked-breakout',
+      fanout.bar,
+      false,
+      `stroke: url(#${gradientId})`,
+    ),
+    ...fanout.branches.map((branch) =>
+      edgePath(
+        rendered,
+        `svsch-edge svsch-edge-stacked-side svsch-edge-stacked-side-${branch.layerId} ${stackedLayerEdgeClass(branch.layerId)}${rendered.isThickWire ? ' svsch-edge-thick' : ''}`,
+        branch.path,
+      ),
+    ),
   ];
 }
 
@@ -591,76 +700,100 @@ function renderConvergingStackPaths(rendered: RenderedEdge): string[] {
           `<stop offset="0%" class="${stackedLayerGradientStopClass(stackPath.layerId)}" />`,
           '<stop offset="78%" class="svsch-stack-gradient-regular-stop" />',
           '<stop offset="100%" class="svsch-stack-gradient-regular-stop" />',
-          '</linearGradient>'
+          '</linearGradient>',
         ].join('\n');
       }),
-      '</defs>'
+      '</defs>',
     ].join('\n'),
-    ...rendered.convergingStackPaths.map((stackPath) => edgePath(
-      rendered,
-      [
-        'svsch-edge',
-        'svsch-edge-stacked-converge',
-        stackedLayerEdgeClass(stackPath.layerId),
-        rendered.isStructAggregate ? 'svsch-edge-struct' : '',
-        rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
-        rendered.isThickWire ? 'svsch-edge-thick' : ''
-      ].filter(Boolean).join(' '),
-      stackPath.path,
-      true,
-      `stroke: url(#${convergingStackGradientId(rendered, stackPath.layerId)})`
-    ))
+    ...rendered.convergingStackPaths.map((stackPath) =>
+      edgePath(
+        rendered,
+        [
+          'svsch-edge',
+          'svsch-edge-stacked-converge',
+          stackedLayerEdgeClass(stackPath.layerId),
+          rendered.isStructAggregate ? 'svsch-edge-struct' : '',
+          rendered.isInterfaceAggregate ? 'svsch-edge-interface' : '',
+          rendered.isThickWire ? 'svsch-edge-thick' : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        stackPath.path,
+        true,
+        `stroke: url(#${convergingStackGradientId(rendered, stackPath.layerId)})`,
+      ),
+    ),
   ];
 }
 
 function renderJumpHalos(rendered: RenderedEdge): string[] {
-  return rendered.jumpHalos.map((halo, index) => (
-    `<path class="svsch-edge-jump-halo" d="${escapeAttr(halo.path)}" style="stroke-width: ${formatNumber(halo.strokeWidth)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-jump-index="${index}" />`
-  ));
+  return rendered.jumpHalos.map(
+    (halo, index) =>
+      `<path class="svsch-edge-jump-halo" d="${escapeAttr(halo.path)}" style="stroke-width: ${formatNumber(halo.strokeWidth)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-jump-index="${index}" />`,
+  );
 }
 
 function renderOverlapHints(rendered: RenderedEdge): string[] {
-  return rendered.overlapHints.map((hint) => (
-    `<path class="svsch-edge-overlap-hint" d="${escapeAttr(hint.path)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-overlap-id="${escapeAttr(hint.id)}" />`
-  ));
+  return rendered.overlapHints.map(
+    (hint) =>
+      `<path class="svsch-edge-overlap-hint" d="${escapeAttr(hint.path)}" data-edge-id="${escapeAttr(rendered.edge.id)}" data-overlap-id="${escapeAttr(hint.id)}" />`,
+  );
 }
 
 function renderNetJunctions(rendered: RenderedEdge): string[] {
   if (rendered.netJunctions.length === 0) {
     return [];
   }
-  const useStackedJunctionDots = rendered.sourceIsArray && rendered.isNetLeader && !rendered.isInterfaceAggregate && !rendered.isStructAggregate;
+  const useStackedJunctionDots =
+    rendered.sourceIsArray &&
+    rendered.isNetLeader &&
+    !rendered.isInterfaceAggregate &&
+    !rendered.isStructAggregate;
   return rendered.netJunctions.map((junction) => {
     if (useStackedJunctionDots) {
       return [
         `<g class="svsch-edge-junction-stacked" data-junction-id="${escapeAttr(junction.id)}">`,
-        ...(() => { const junctionLayers = arrayStackLayersFor(rendered.isThickWire); return [
-          { layer: junctionLayers.front, opacity: 1 },
-          { layer: junctionLayers.middle, opacity: 0.75 },
-          { layer: junctionLayers.back, opacity: 0.5 }
-        ]; })().map(({ layer, opacity }) => (
-          `<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="${formatNumber(junction.x + layer.dx)}" cy="${formatNumber(junction.y + layer.dy)}" r="2.15" style="opacity: ${opacity}" />`
-        )),
-        '</g>'
+        ...(() => {
+          const junctionLayers = arrayStackLayersFor(rendered.isThickWire);
+          return [
+            { layer: junctionLayers.front, opacity: 1 },
+            { layer: junctionLayers.middle, opacity: 0.75 },
+            { layer: junctionLayers.back, opacity: 0.5 },
+          ];
+        })().map(
+          ({ layer, opacity }) =>
+            `<circle class="svsch-edge-junction svsch-edge-junction-stacked-dot" cx="${formatNumber(junction.x + layer.dx)}" cy="${formatNumber(junction.y + layer.dy)}" r="2.15" style="opacity: ${opacity}" />`,
+        ),
+        '</g>',
       ].join('\n');
     }
     return `<circle class="svsch-edge-junction${rendered.isInterfaceAggregate ? ' svsch-edge-junction-interface' : ''}${rendered.isStructAggregate ? ' svsch-edge-junction-struct' : ''}" cx="${formatNumber(junction.x)}" cy="${formatNumber(junction.y)}" r="${rendered.isInterfaceAggregate || rendered.isStructAggregate ? '6.5' : '4.75'}" data-junction-id="${escapeAttr(junction.id)}" />`;
   });
 }
 
-function edgePath(rendered: RenderedEdge, className: string, d: string, includeNetKey = true, style?: string): string {
+function edgePath(
+  rendered: RenderedEdge,
+  className: string,
+  d: string,
+  includeNetKey = true,
+  style?: string,
+): string {
   const classes = [
     className,
-    generateStateClass(rendered.edge.metadata?.generateActiveState, 'generate-edge')
-  ].filter(Boolean).join(' ');
+    generateStateClass(rendered.edge.metadata?.generateActiveState, 'generate-edge'),
+  ]
+    .filter(Boolean)
+    .join(' ');
   return [
     `<path class="${escapeAttr(classes)}"`,
     `data-edge-id="${escapeAttr(rendered.edge.id)}"`,
     includeNetKey ? `data-net-key="${escapeAttr(rendered.netKey)}"` : '',
     style ? `style="${escapeAttr(style)}"` : '',
     `d="${escapeAttr(d)}"`,
-    '/>'
-  ].filter(Boolean).join(' ');
+    '/>',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function generateStateClass(state: string | undefined, prefix: string): string | undefined {
@@ -692,7 +825,8 @@ function lineJumpHalos(render: LineJumpRender): LineJumpHalo[] {
 
 function jumpHaloPathsFromPath(path: string): string[] {
   const halos: string[] = [];
-  const pattern = /L (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) Q (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g;
+  const pattern =
+    /L (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) Q (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g;
   let match = pattern.exec(path);
 
   while (match) {
@@ -708,9 +842,7 @@ function convergingStackGradientId(rendered: RenderedEdge, layerId: ArrayStackLa
 }
 
 function aggregateInputs(node: PositionedNode): DiagramPort[] {
-  return node.ports
-    .filter(isInputSidePort)
-    .filter((port) => port.width !== 'interface');
+  return node.ports.filter(isInputSidePort).filter((port) => port.width !== 'interface');
 }
 
 function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
@@ -721,12 +853,17 @@ function nodeObstacles(nodes: PositionedNode[]): NodeObstacle[] {
       x: node.position.x,
       y: node.position.y,
       width: size.width,
-      height: size.height
+      height: size.height,
     };
   });
 }
 
-function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: string[], generateActiveState?: string): string {
+function renderEdgeLabel(
+  label: string,
+  points: OrthogonalPoint[],
+  aliasNames?: string[],
+  generateActiveState?: string,
+): string {
   const point = pointNearPathStart(points) ?? { x: 0, y: 0 };
   const hasAliases = aliasNames !== undefined && aliasNames.length > 0;
   const aliasMarker = hasAliases
@@ -736,7 +873,9 @@ function renderEdgeLabel(label: string, points: OrthogonalPoint[], aliasNames?: 
   // this text sits outside that per-path styling, so the same inactive-arm
   // dimming needs to be applied here directly to stay visually consistent
   // with the wire it labels.
-  const classes = ['svsch-edge-label', generateStateClass(generateActiveState, 'generate-edge')].filter(Boolean).join(' ');
+  const classes = ['svsch-edge-label', generateStateClass(generateActiveState, 'generate-edge')]
+    .filter(Boolean)
+    .join(' ');
   // Plain text sitting just above the wire, matching the cut-net label
   // convention (.hdl-net-label-text) — no box/background of its own.
   // Left-anchored at the lead point (matching the webview) rather than
@@ -758,18 +897,41 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const align = cutNet?.align as 'start' | 'end' | undefined;
     const role = cutNet?.role ?? 'sink';
     const isRenamed = cutNet?.isRenamed === true;
-    const midX = width / 2;
     const midY = height / 2;
 
     // Wire paths — reuses NetLabelWire.tsx's NetLabelWirePaths (single source of truth)
-    const wireEl = normalizeJsxNode(NetLabelWirePaths({ handleSide, edgeStyle: cutNet?.edgeStyle, align, isSourceStacked, width, height }));
-    const wirePaths = renderToStaticMarkup(React.createElement('svg', null, wireEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
+    const wireEl = normalizeJsxNode(
+      NetLabelWirePaths({
+        handleSide,
+        edgeStyle: cutNet?.edgeStyle,
+        align,
+        isSourceStacked,
+        width,
+        height,
+      }),
+    );
+    const wirePaths = renderToStaticMarkup(React.createElement('svg', null, wireEl))
+      .replace(/^<svg>/, '')
+      .replace(/<\/svg>$/, '');
 
     // Array stack leads
     let leadsHtml = '';
     if (isSourceStacked) {
-      const leadsEl = normalizeJsxNode(SvgArrayStackLeads({ side: handleSide, width, y: midY, trimSink: role === 'source', wide: cutNet?.edgeStyle?.thick === true, thick: cutNet?.edgeStyle?.thick === true }));
-      leadsHtml = '\n' + renderToStaticMarkup(React.createElement('svg', null, leadsEl)).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
+      const leadsEl = normalizeJsxNode(
+        SvgArrayStackLeads({
+          side: handleSide,
+          width,
+          y: midY,
+          trimSink: role === 'source',
+          wide: cutNet?.edgeStyle?.thick === true,
+          thick: cutNet?.edgeStyle?.thick === true,
+        }),
+      );
+      leadsHtml =
+        '\n' +
+        renderToStaticMarkup(React.createElement('svg', null, leadsEl))
+          .replace(/^<svg>/, '')
+          .replace(/<\/svg>$/, '');
     }
 
     // Label text above wire — matching webview CSS: align=start → left:0, align=end → right:0
@@ -782,18 +944,31 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     const textClass = `svsch-net-label${isRenamed ? ' hdl-net-label-text-synthetic' : ''}`;
     const textHtml = `<text class="${escapeAttr(textClass)}" x="${formatNumber(textX)}" y="${formatNumber(textY)}" text-anchor="${textAnchor}" dominant-baseline="middle">${escapeXml(node.label)}</text>`;
 
-    const content = wirePaths + leadsHtml + '\n' + textHtml + nodeErrorOutline(node, width, height) + nodeWarningIcon(node, width, height);
+    const content =
+      wirePaths +
+      leadsHtml +
+      '\n' +
+      textHtml +
+      nodeErrorOutline(node, width, height) +
+      nodeWarningIcon(node, width, height);
     const classes = [
       'svsch-node',
       'hdl-net-label',
       generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
-      node.invalid ? 'svsch-node-invalid' : ''
-    ].filter(Boolean).join(' ');
+      node.invalid ? 'svsch-node-invalid' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
     return `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">${content}</g>`;
   }
 
   const classes = nodeWrapperClasses(node);
-  const svgClasses = ['hdl-node-svg', node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '', node.kind === 'inverter' ? 'inverter-skin' : '', node.kind === 'gate' ? 'gate-skin' : '']
+  const svgClasses = [
+    'hdl-node-svg',
+    node.kind === 'mux' || node.kind === 'select' ? 'mux-skin' : '',
+    node.kind === 'inverter' ? 'inverter-skin' : '',
+    node.kind === 'gate' ? 'gate-skin' : '',
+  ]
     .filter(Boolean)
     .join(' ');
   const content = renderNodeComponent(node, width, height, arrayConnections);
@@ -804,8 +979,10 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
     '</svg>',
     nodeErrorOutline(node, width, height),
     nodeWarningIcon(node, width, height),
-    '</g>'
-  ].filter(Boolean).join('\n');
+    '</g>',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 // Error highlight for a block overlapping an unrelated generate arm. SVG-skinned
@@ -824,14 +1001,22 @@ function nodeWarningIcon(node: PositionedNode, width: number, height: number): s
     `<g class="svsch-node-warning" aria-label="${escapeAttr(node.warningNote)}">`,
     `<title>${escapeXml(node.warningNote)}</title>`,
     `<text x="${formatNumber(center.x)}" y="${formatNumber(center.y)}" text-anchor="middle">⚠</text>`,
-    '</g>'
+    '</g>',
   ].join('\n');
 }
 
 function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
   if (nodeIsArrayNode(node)) return false;
-  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return true;
-  if (node.kind === 'mux' || node.kind === 'select' || node.kind === 'alu' || node.kind === 'inverter' || node.kind === 'gate') return true;
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port'))
+    return true;
+  if (
+    node.kind === 'mux' ||
+    node.kind === 'select' ||
+    node.kind === 'alu' ||
+    node.kind === 'inverter' ||
+    node.kind === 'gate'
+  )
+    return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
 }
 
@@ -840,7 +1025,11 @@ function buildArrayConnectionsByNode(view: DiagramViewModel): Map<string, ArrayC
   const connectionsByNode = new Map<string, ArrayConnection[]>();
   const addConnection = (nodeId: string, connection: ArrayConnection) => {
     const connections = connectionsByNode.get(nodeId) ?? [];
-    if (!connections.some((existing) => existing.portId === connection.portId && existing.role === connection.role)) {
+    if (
+      !connections.some(
+        (existing) => existing.portId === connection.portId && existing.role === connection.role,
+      )
+    ) {
       connections.push(connection);
     }
     connectionsByNode.set(nodeId, connections);
@@ -873,7 +1062,12 @@ function buildArrayConnectionsByNode(view: DiagramViewModel): Map<string, ArrayC
 
 type NodeSvgComponent = (props: NodeSvgProps) => React.ReactNode;
 
-function renderNodeComponent(node: PositionedNode, width: number, height: number, arrayConnections: ArrayConnection[]): string {
+function renderNodeComponent(
+  node: PositionedNode,
+  width: number,
+  height: number,
+  arrayConnections: ArrayConnection[],
+): string {
   const Component = nodeSvgComponent(node);
   const rendered = normalizeJsxNode(Component({ node, width, height, arrayConnections }));
   const wrapped = renderToStaticMarkup(React.createElement('svg', null, rendered));
@@ -935,11 +1129,19 @@ interface PlaywrightJsxFragment {
 }
 
 function isPlaywrightJsx(value: unknown): value is PlaywrightJsxNode {
-  return typeof value === 'object' && value !== null && (value as { __pw_type?: unknown }).__pw_type === 'jsx';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { __pw_type?: unknown }).__pw_type === 'jsx'
+  );
 }
 
 function isPlaywrightFragment(value: unknown): value is PlaywrightJsxFragment {
-  return typeof value === 'object' && value !== null && (value as { __pw_jsx_fragment?: unknown }).__pw_jsx_fragment === true;
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { __pw_jsx_fragment?: unknown }).__pw_jsx_fragment === true
+  );
 }
 
 function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
@@ -949,7 +1151,8 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'replicate') return ReplicateNodeSvg;
   if (node.kind === 'inverter') return InverterNodeSvg;
   if (node.kind === 'gate') return GateNodeSvg;
-  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port')) return PortNodeSvg;
+  if (node.kind === 'port' || (node.kind === 'interface' && structRole(node) === 'port'))
+    return PortNodeSvg;
   if (node.kind === 'comb') return CombNodeSvg;
   if (node.kind === 'loop') return LoopNodeSvg;
   if (node.kind === 'mux') return MuxNodeSvg;
@@ -964,11 +1167,12 @@ function nodeWrapperClasses(node: PositionedNode): string {
     const port = node.ports[0];
     const direction = port?.direction ?? 'unknown';
     const isInterfacePort = Boolean(
-      port?.typeName && port.modportName !== undefined
-      || port?.typeName?.endsWith('_if')
-      || port?.typeName?.endsWith('if')
+      (port?.typeName && port.modportName !== undefined) ||
+      port?.typeName?.endsWith('_if') ||
+      port?.typeName?.endsWith('if'),
     );
-    const isSkinnedPort = direction === 'input' || direction === 'output' || direction === 'inout' || isInterfacePort;
+    const isSkinnedPort =
+      direction === 'input' || direction === 'output' || direction === 'inout' || isInterfacePort;
     return [
       'svsch-node',
       'hdl-node',
@@ -979,8 +1183,10 @@ function nodeWrapperClasses(node: PositionedNode): string {
       isInterfacePort ? 'hdl-port-interface' : '',
       nodeIsArrayNode(node) ? 'hdl-node-array' : '',
       generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
-      node.invalid ? 'svsch-node-invalid' : ''
-    ].filter(Boolean).join(' ');
+      node.invalid ? 'svsch-node-invalid' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 
   if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') {
@@ -995,29 +1201,38 @@ function nodeWrapperClasses(node: PositionedNode): string {
     node.kind === 'instance' && instanceParameterRows(node) > 0 ? 'hdl-node-has-params' : '',
     nodeIsArrayNode(node) ? 'hdl-node-array' : '',
     generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
-    node.invalid ? 'svsch-node-invalid' : ''
-  ].filter(Boolean).join(' ');
+    node.invalid ? 'svsch-node-invalid' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function busWrapperClasses(node: PositionedNode): string {
   const role = structRole(node);
   const isInterface = node.kind === 'interface';
   const isInterfaceModport = isInterface && role === 'modport';
-  const isInterfaceInstance = isInterface && role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
+  const isInterfaceInstance =
+    isInterface && role !== 'modport' && role !== 'port' && !node.id.startsWith('interface_type:');
   const aggregatePorts = isInterface
     ? node.ports.filter((port) => port.width !== 'interface' || port.preferredSide)
     : node.ports;
   const sidePorts = isInterfaceInstance
-    ? aggregatePorts.filter((port) => port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'))
+    ? aggregatePorts.filter(
+        (port) =>
+          port.width === 'interface' || (port.direction !== 'input' && port.direction !== 'output'),
+      )
     : aggregatePorts;
   const aggregateInputs = sidePorts.filter(isInputSidePort);
-  const isComposition = node.kind === 'struct'
-    ? role === 'composition'
-    : isInterface
-      ? false
-      : aggregateInputs.length > 1;
-  const isArrayComposition = node.kind === 'bus' && isComposition && node.metadata?.aggregateKind === 'array';
-  const isArrayBreakout = node.kind === 'bus' && !isComposition && node.metadata?.aggregateKind === 'array';
+  const isComposition =
+    node.kind === 'struct'
+      ? role === 'composition'
+      : isInterface
+        ? false
+        : aggregateInputs.length > 1;
+  const isArrayComposition =
+    node.kind === 'bus' && isComposition && node.metadata?.aggregateKind === 'array';
+  const isArrayBreakout =
+    node.kind === 'bus' && !isComposition && node.metadata?.aggregateKind === 'array';
 
   return [
     'svsch-node',
@@ -1031,17 +1246,23 @@ function busWrapperClasses(node: PositionedNode): string {
     isArrayBreakout ? 'hdl-bus-array-breakout' : '',
     nodeIsArrayNode(node) ? 'hdl-node-array' : '',
     generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
-    node.invalid ? 'svsch-node-invalid' : ''
-  ].filter(Boolean).join(' ');
+    node.invalid ? 'svsch-node-invalid' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
-
-function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: PositionedGenerateRegion[], padding: number): RectBounds {
+function diagramBounds(
+  nodes: PositionedNode[],
+  edges: RenderedEdge[],
+  regions: PositionedGenerateRegion[],
+  padding: number,
+): RectBounds {
   const bounds: RectBounds = {
     minX: Number.POSITIVE_INFINITY,
     minY: Number.POSITIVE_INFINITY,
     maxX: Number.NEGATIVE_INFINITY,
-    maxY: Number.NEGATIVE_INFINITY
+    maxY: Number.NEGATIVE_INFINITY,
   };
 
   for (const node of nodes) {
@@ -1061,7 +1282,11 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: 
 
   for (const region of regions) {
     includeBounds(bounds, region.bounds.x, region.bounds.y - diagramSizing.gridSize);
-    includeBounds(bounds, region.bounds.x + region.bounds.width, region.bounds.y + region.bounds.height);
+    includeBounds(
+      bounds,
+      region.bounds.x + region.bounds.width,
+      region.bounds.y + region.bounds.height,
+    );
     if (region.warningNote) {
       // The warning icon sits 20px out from the top-right corner; keep it in frame.
       includeBounds(bounds, region.bounds.x + region.bounds.width + 24, region.bounds.y - 24);
@@ -1079,7 +1304,7 @@ function diagramBounds(nodes: PositionedNode[], edges: RenderedEdge[], regions: 
     minX: bounds.minX - padding,
     minY: bounds.minY - padding,
     maxX: bounds.maxX + padding,
-    maxY: bounds.maxY + padding
+    maxY: bounds.maxY + padding,
   };
 }
 
@@ -1098,10 +1323,7 @@ function formatNumber(value: number): string {
 }
 
 function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function escapeAttr(value: string): string {

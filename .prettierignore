@@ -1,0 +1,16 @@
+dist
+media
+coverage
+test-results
+playwright-report
+.svsch
+build_sv*
+.vscode-test
+.bdd-generated
+src/parser/backend_cpp
+test/bdd-workspace
+node_modules
+package-lock.json
+CHANGELOG.md
+*.sv
+*.svh

@@ -9,7 +9,9 @@ test.describe('mixed select and breakout visual', () => {
     // Verify presence of both kinds of nodes
     await expect(page.locator('[data-node-kind="bus"]')).toBeVisible(); // The breakout/bus node
     await expect(page.locator('[data-node-kind="select"]')).toBeVisible(); // The variable select
-    await expect(page.locator('[data-node-kind="literal"] .svsch-literal-content', { hasText: 'P_WIDTH' })).toBeVisible(); // The P_WIDTH literal
+    await expect(
+      page.locator('[data-node-kind="literal"] .svsch-literal-content', { hasText: 'P_WIDTH' }),
+    ).toBeVisible(); // The P_WIDTH literal
 
     // Check labels on the select block
     // Input 'in' should have '[]'

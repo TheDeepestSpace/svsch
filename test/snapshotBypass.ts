@@ -16,7 +16,9 @@ interface SnapshotBypassFile {
 
 export const DEFAULT_SNAPSHOT_BYPASS_FILE = path.join(__dirname, 'snapshot-bypass.yml');
 
-export function loadSnapshotBypassEntries(filePath: string = DEFAULT_SNAPSHOT_BYPASS_FILE): SnapshotBypassEntry[] {
+export function loadSnapshotBypassEntries(
+  filePath: string = DEFAULT_SNAPSHOT_BYPASS_FILE,
+): SnapshotBypassEntry[] {
   if (!fs.existsSync(filePath)) return [];
   const parsed = load(fs.readFileSync(filePath, 'utf8')) as SnapshotBypassFile | undefined;
   const entries = parsed?.bypass_threshold_restriction;
@@ -30,16 +32,16 @@ export function loadSnapshotBypassEntries(filePath: string = DEFAULT_SNAPSHOT_BY
 function validateEntry(entry: unknown, index: number, filePath: string): SnapshotBypassEntry {
   const candidate = entry as Partial<SnapshotBypassEntry> | null;
   if (
-    !candidate
-    || typeof candidate.pr !== 'number'
-    || typeof candidate.date !== 'string'
-    || typeof candidate.path !== 'string'
-    || typeof candidate.diff_pixel_count !== 'number'
-    || typeof candidate.reason !== 'string'
+    !candidate ||
+    typeof candidate.pr !== 'number' ||
+    typeof candidate.date !== 'string' ||
+    typeof candidate.path !== 'string' ||
+    typeof candidate.diff_pixel_count !== 'number' ||
+    typeof candidate.reason !== 'string'
   ) {
     throw new Error(
-      `${filePath}: bypass_threshold_restriction[${index}] must set pr (number), date (string), `
-      + 'path (string), diff_pixel_count (number), and reason (string).'
+      `${filePath}: bypass_threshold_restriction[${index}] must set pr (number), date (string), ` +
+        'path (string), diff_pixel_count (number), and reason (string).',
     );
   }
   return candidate as SnapshotBypassEntry;
@@ -52,12 +54,13 @@ export function findSnapshotBypass(
   entries: SnapshotBypassEntry[],
   filePath: string,
   prNumber: number,
-  diffPixelCount: number
+  diffPixelCount: number,
 ): SnapshotBypassEntry | undefined {
   const normalizedFilePath = filePath.replaceAll('\\', '/');
   return entries.find(
-    (entry) => entry.path.replaceAll('\\', '/') === normalizedFilePath
-      && entry.pr === prNumber
-      && entry.diff_pixel_count === diffPixelCount
+    (entry) =>
+      entry.path.replaceAll('\\', '/') === normalizedFilePath &&
+      entry.pr === prNumber &&
+      entry.diff_pixel_count === diffPixelCount,
   );
 }

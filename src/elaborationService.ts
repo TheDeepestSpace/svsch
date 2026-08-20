@@ -19,7 +19,9 @@ export interface ElaborationRequest {
 export interface ElaborationServiceHost {
   build(options: ParserOptions): Promise<DesignGraph>;
   createParserOptions(request: ElaborationRequest): ParserOptions;
-  withProgress<T>(task: (onProgress: NonNullable<ParserOptions['onProgress']>) => Promise<T>): Promise<T>;
+  withProgress<T>(
+    task: (onProgress: NonNullable<ParserOptions['onProgress']>) => Promise<T>,
+  ): Promise<T>;
   watch(onDidInvalidate: (live: boolean) => void): InvalidationWatcher;
 }
 
@@ -45,7 +47,7 @@ export class ElaborationService implements Disposable {
   onDidInvalidate(listener: (live: boolean) => void): Disposable {
     this.invalidationListeners.add(listener);
     return {
-      dispose: () => this.invalidationListeners.delete(listener)
+      dispose: () => this.invalidationListeners.delete(listener),
     };
   }
 
@@ -66,21 +68,23 @@ export class ElaborationService implements Disposable {
     this.graphMode = undefined;
     this.modulePromises.clear();
     const buildPromise = this.buildFullGraph(live);
-    const promise: Promise<DesignGraph> = buildPromise.then((graph) => {
-      if (this.disposed) {
-        throw new Error('Elaboration service is disposed.');
-      }
-      if (generation === this.generation) {
-        this.graph = graph;
-        this.graphMode = live;
-      }
-      return graph;
-    }).finally(() => {
-      if (this.graphPromise === promise) {
-        this.graphPromise = undefined;
-        this.graphPromiseMode = undefined;
-      }
-    });
+    const promise: Promise<DesignGraph> = buildPromise
+      .then((graph) => {
+        if (this.disposed) {
+          throw new Error('Elaboration service is disposed.');
+        }
+        if (generation === this.generation) {
+          this.graph = graph;
+          this.graphMode = live;
+        }
+        return graph;
+      })
+      .finally(() => {
+        if (this.graphPromise === promise) {
+          this.graphPromise = undefined;
+          this.graphPromiseMode = undefined;
+        }
+      });
     this.graphPromise = promise;
     this.graphPromiseMode = live;
     return promise;
@@ -119,33 +123,36 @@ export class ElaborationService implements Disposable {
     }
 
     const generation = this.generation;
-    const promise: Promise<DesignGraph> = this.host.build(this.host.createParserOptions({ moduleName })).then((moduleGraph) => {
-      if (this.disposed) {
-        throw new Error('Elaboration service is disposed.');
-      }
-      if (generation !== this.generation) {
-        return this.getGraph();
-      }
+    const promise: Promise<DesignGraph> = this.host
+      .build(this.host.createParserOptions({ moduleName }))
+      .then((moduleGraph) => {
+        if (this.disposed) {
+          throw new Error('Elaboration service is disposed.');
+        }
+        if (generation !== this.generation) {
+          return this.getGraph();
+        }
 
-      const currentGraph = this.graph ?? graph;
-      const loadedModule = moduleGraph.modules[moduleName];
-      if (!loadedModule) {
-        return currentGraph;
-      }
+        const currentGraph = this.graph ?? graph;
+        const loadedModule = moduleGraph.modules[moduleName];
+        if (!loadedModule) {
+          return currentGraph;
+        }
 
-      const mergedGraph: DesignGraph = {
-        ...currentGraph,
-        modules: { ...currentGraph.modules, [moduleName]: loadedModule },
-        diagnostics: [...currentGraph.diagnostics, ...moduleGraph.diagnostics]
-      };
-      this.graph = mergedGraph;
-      this.graphMode = false;
-      return mergedGraph;
-    }).finally(() => {
-      if (this.modulePromises.get(moduleName) === promise) {
-        this.modulePromises.delete(moduleName);
-      }
-    });
+        const mergedGraph: DesignGraph = {
+          ...currentGraph,
+          modules: { ...currentGraph.modules, [moduleName]: loadedModule },
+          diagnostics: [...currentGraph.diagnostics, ...moduleGraph.diagnostics],
+        };
+        this.graph = mergedGraph;
+        this.graphMode = false;
+        return mergedGraph;
+      })
+      .finally(() => {
+        if (this.modulePromises.get(moduleName) === promise) {
+          this.modulePromises.delete(moduleName);
+        }
+      });
 
     this.modulePromises.set(moduleName, promise);
     return promise;
@@ -192,7 +199,9 @@ export class ElaborationService implements Disposable {
         return await this.host.build({ ...commonOptions, onProgress });
       } catch (error) {
         if (error instanceof Error && error.message.includes('maxBuffer length exceeded')) {
-          logger.warn('Full design too large for buffer, falling back to on-demand module loading.');
+          logger.warn(
+            'Full design too large for buffer, falling back to on-demand module loading.',
+          );
           return this.host.build({ ...commonOptions, listOnly: true, onProgress });
         }
         throw error;

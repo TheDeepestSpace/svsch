@@ -2,7 +2,13 @@ import { test } from '@playwright/test';
 import { openView, expectGraphAndScreenshot, fitGraphView, paddedAllNodesClip } from './helper';
 import { diagramNodeDimensions } from '../../src/diagram/nodeSizing';
 import { gateInputPortCenterY } from '../../src/diagram/muxGeometry';
-import type { DiagramViewModel, DiagramNode, DiagramEdge, PositionedNode, GateOperation } from '../../src/ir/types';
+import type {
+  DiagramViewModel,
+  DiagramNode,
+  DiagramEdge,
+  PositionedNode,
+  GateOperation,
+} from '../../src/ir/types';
 
 // Regression coverage for the curved-left-edge wire gap: OR/NOR/XOR/XNOR gates
 // have a concave back curve that recedes away from x=0 everywhere except the
@@ -41,7 +47,7 @@ function buildGateNode(op: GateOperation, count: number, id: string): DiagramNod
     kind: 'gate',
     label: `${op} ×${count}`,
     operation: op,
-    ports
+    ports,
   };
 }
 
@@ -53,7 +59,7 @@ function buildDriverPort(id: string, label: string): DiagramNode {
     id,
     kind: 'port',
     label,
-    ports: [{ id: 'p', name: label, direction: 'input' }]
+    ports: [{ id: 'p', name: label, direction: 'input' }],
   };
 }
 
@@ -79,14 +85,14 @@ function buildView(): DiagramViewModel {
         const sourceId = `${gateId}_src${i}`;
         nodes.push({
           ...buildDriverPort(sourceId, `${op}${count}i${i}`),
-          position: { x, y: targetHandleY - PORT_HANDLE_OFFSET }
+          position: { x, y: targetHandleY - PORT_HANDLE_OFFSET },
         });
         edges.push({
           id: `${sourceId}_edge`,
           source: sourceId,
           target: gateId,
           sourcePort: 'p',
-          targetPort: `in${i}`
+          targetPort: `in${i}`,
         });
       }
 
@@ -99,25 +105,28 @@ function buildView(): DiagramViewModel {
     moduleName: 'gate_curved_edge_grid',
     nodes,
     edges,
-    diagnostics: []
+    diagnostics: [],
   };
 }
 
 test.describe('gate curved-left-edge wire routing', () => {
   test.use({ viewport: { width: 1700, height: 1700 } });
 
-  test('wires reach the concave edge of OR/NOR/XOR/XNOR gates for 2, 3, 4, 5, and 10 inputs', async ({ page }) => {
-    const view = buildView();
+  test(
+    'wires reach the concave edge of OR/NOR/XOR/XNOR gates for 2, 3, 4, 5, ' + 'and 10 inputs',
+    async ({ page }) => {
+      const view = buildView();
 
-    await openView(page, view);
-    await page.waitForFunction(
-      (expected) => document.querySelectorAll('.react-flow__node').length >= expected,
-      view.nodes.length
-    );
-    await fitGraphView(page, 0.05);
+      await openView(page, view);
+      await page.waitForFunction(
+        (expected) => document.querySelectorAll('.react-flow__node').length >= expected,
+        view.nodes.length,
+      );
+      await fitGraphView(page, 0.05);
 
-    await expectGraphAndScreenshot(page, 'gate-curved-edge-grid.png', {
-      clip: await paddedAllNodesClip(page)
-    });
-  });
+      await expectGraphAndScreenshot(page, 'gate-curved-edge-grid.png', {
+        clip: await paddedAllNodesClip(page),
+      });
+    },
+  );
 });

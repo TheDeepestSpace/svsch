@@ -40,7 +40,10 @@ export function arrayBreakoutPipeCapPivot(node: DiagramNode): { x: number; y: nu
  * already compute that via diagramNodeDimensions (importing it here would
  * create a cycle: nodeSizing.ts imports isBusComposition from this module).
  */
-export function arrayCompositionPipeCapPivot(node: DiagramNode, width: number): { x: number; y: number } {
+export function arrayCompositionPipeCapPivot(
+  node: DiagramNode,
+  width: number,
+): { x: number; y: number } {
   const g = diagramSizing.gridSize;
   const tapCount = node.ports.filter(isInputSidePort).length;
   return pipeCapPivotFromTapCount(tapCount, width - g * 0.5 - 3);
