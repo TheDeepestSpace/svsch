@@ -208,6 +208,39 @@ cases:
       nodeKinds: [port, alu]
       selectedText: "a + b"
 
+  - id: zext-case-arm
+    title: Zero-Extension
+    description: A case arm whose driving signal is narrower than the mux's resolved output width gets an explicit zero-extension block inserted between the source and the mux input, instead of silently implying a same-width connection.
+    tags: [zext, mux, combinational, case, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [1:0] sel,
+          input logic a,
+          input logic b,
+          output logic [7:0] y
+        );
+          always_comb begin
+            case (sel)
+              2'b00: y = (a < b);
+              default: y = 8'h00;
+            endcase
+          end
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: zext
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator, zext, mux]
+      selectedText: |
+        case (sel)
+              2'b00: y = (a < b);
+              default: y = 8'h00;
+            endcase
+
   - id: inverter-expression
     title: Bitwise Inversion
     description: A bitwise NOT operator becomes an inverter gate.

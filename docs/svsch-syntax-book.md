@@ -660,6 +660,29 @@ endmodule
   <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
 </p>
 
+### Zero-Extension
+
+A case arm whose driving signal is narrower than the mux's resolved output width gets an explicit zero-extension block inserted between the source and the mux input, instead of silently implying a same-width connection.
+
+<pre><code>module top (
+  input logic [1:0] sel,
+  input logic a,
+  input logic b,
+  output logic [7:0] y
+);
+  always_comb begin
+    <mark>case (sel)
+      2&#39;b00: y = (a &lt; b);
+      default: y = 8&#39;h00;
+    endcase</mark>
+  end
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/zext-case-arm.svg" alt="Zero-Extension diagram" />
+</p>
+
 ### Bitwise Inversion
 
 A bitwise NOT operator becomes an inverter gate.
