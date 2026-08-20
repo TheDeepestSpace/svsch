@@ -4042,8 +4042,13 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outputEdge?.isStacked).toBeFalsy();
     });
 
+    // eslint-disable-next-line max-len -- descriptive test name
     it('emits a single read path for a continuous variable-index read of a locally written memory', async () => {
-      const graph = await runParser(backend, 'array_local_read_write.sv', fixture('array_local_read_write.sv'));
+      const graph = await runParser(
+        backend,
+        'array_local_read_write.sv',
+        fixture('array_local_read_write.sv'),
+      );
       const mod = graph.modules.array_local_read_write;
       expect(mod).toBeDefined();
 
@@ -4065,6 +4070,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(outputDrivers[0].source).toBe(readMux.id);
     });
 
+    // eslint-disable-next-line max-len -- descriptive test name
     it('dedupes a late-pass read mux against processAssign when the index needs sanitizing', async () => {
       const graph = await runParser(
         backend,
