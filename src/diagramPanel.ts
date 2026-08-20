@@ -26,6 +26,7 @@ import {
   mergeRerouteEdges,
   mergeRerouteLayout,
   mergeRerouteSingleEdge,
+  pushNodesClearOfExpandedInstance,
   removeNetCut,
   renameCutNet,
   resetCutLabelPosition,
@@ -1003,6 +1004,36 @@ export class DiagramPanel {
         : undefined;
     } catch (error) {
       logger.warn(`expand splice layout failed for ${childModuleName}: ${String(error)}`);
+    }
+
+    // Expanding grows the instance's on-canvas footprint (see
+    // buildExpandSpliceLayout's expandedSize) without re-running `moduleName`'s
+    // own layout — a sibling that used to sit clear of the collapsed instance
+    // can end up underneath the expanded frame. Nudge any such sibling below
+    // it and persist that as a normal pinned position, the same as a manual
+    // drag. Top-level only: a nested Expand's "siblings" are themselves
+    // spliced-in content the client caches independently (see
+    // ActiveSplice/spliceMapRef in webview/main.tsx) — postView() below only
+    // ever refreshes `this.currentModule` (the outer open module), so a push
+    // inside a nested child's own layout would persist but never actually
+    // reach the already-rendered splice.
+    if (topLevel && spliceLayout && this.graph) {
+      const moduleView = await buildViewModel(this.graph, moduleName, this.layout);
+      const positionedInstance = moduleView.nodes.find((node) => node.id === instanceId);
+      if (positionedInstance) {
+        const expandedRect = {
+          x: positionedInstance.position.x,
+          y: positionedInstance.position.y,
+          width: spliceLayout.expandedSize.width,
+          height: spliceLayout.expandedSize.height,
+        };
+        const moved = pushNodesClearOfExpandedInstance(moduleView.nodes, instanceId, expandedRect);
+        if (moved.length > 0) {
+          this.layout = mergeNodePositions(this.layout, moduleName, moved);
+          await this.persistModuleLayout(store, moduleName);
+          await this.postView();
+        }
+      }
     }
 
     const payload: ExpandInstancePayload = {

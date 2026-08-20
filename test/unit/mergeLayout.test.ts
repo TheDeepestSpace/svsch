@@ -17,6 +17,7 @@ import {
   mergeRelayoutSelection,
   mergeRerouteEdges,
   mergeRerouteLayout,
+  pushNodesClearOfExpandedInstance,
   removeNetCut,
   renameCutNet,
   resetCutLabelPosition,
@@ -986,6 +987,102 @@ describe('layout merge', () => {
     const doneTop = positions.get(done.id)!.y - doneGeometry.layoutOffset.y;
 
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
+  });
+
+  it('pushes a sibling clear of an instance freshly grown by Expand', () => {
+    const sibling: PositionedNode = {
+      id: 'sibling',
+      kind: 'bus',
+      label: 'BUSY',
+      ports: [],
+      position: { x: 200, y: 40 },
+    };
+    const expandedRect = { x: 0, y: 0, width: 400, height: 200 };
+
+    const moved = pushNodesClearOfExpandedInstance([sibling], 'u1', expandedRect);
+
+    expect(moved).toHaveLength(1);
+    expect(moved[0].id).toBe('sibling');
+    expect(moved[0].fixed).toBe(true);
+    expect(moved[0].position.y).toBeGreaterThanOrEqual(
+      expandedRect.y + expandedRect.height + diagramSizing.gridSize,
+    );
+    expect(moved[0].position.y % diagramSizing.gridSize).toBe(0);
+    // Only the overlapping x-span matters, so its x is left untouched.
+    expect(moved[0].position.x).toBe(sibling.position.x);
+  });
+
+  it('leaves a sibling alone when it does not overlap the expanded frame', () => {
+    const clear: PositionedNode = {
+      id: 'clear',
+      kind: 'bus',
+      label: 'DONE',
+      ports: [],
+      position: { x: 1000, y: 1000 },
+    };
+
+    const moved = pushNodesClearOfExpandedInstance(
+      [clear],
+      'u1',
+      { x: 0, y: 0, width: 400, height: 200 },
+    );
+
+    expect(moved).toHaveLength(0);
+  });
+
+  it('cascades a push past a sibling already moved clear this same pass', () => {
+    const first: PositionedNode = {
+      id: 'first',
+      kind: 'bus',
+      label: 'A',
+      ports: [],
+      position: { x: 100, y: 10 },
+    };
+    const second: PositionedNode = {
+      id: 'second',
+      kind: 'bus',
+      label: 'B',
+      ports: [],
+      position: { x: 100, y: 20 },
+    };
+    const expandedRect = { x: 0, y: 0, width: 400, height: 200 };
+
+    const moved = pushNodesClearOfExpandedInstance([first, second], 'u1', expandedRect);
+    const byId = new Map(moved.map((node) => [node.id, node]));
+
+    expect(byId.size).toBe(2);
+    const firstBottom = byId.get('first')!.position.y + diagramNodeDimensions(first).height;
+    expect(byId.get('second')!.position.y).toBeGreaterThanOrEqual(
+      firstBottom + diagramSizing.gridSize,
+    );
+  });
+
+  it('never moves the instance being expanded or non-block nodes', () => {
+    const port: PositionedNode = {
+      id: 'p',
+      kind: 'port',
+      label: 'clk',
+      ports: [],
+      position: { x: 100, y: 40 },
+    };
+    // Overlaps the expanded rect too — must still be excluded, since it *is*
+    // the instance the frame belongs to, not a sibling.
+    const instance: PositionedNode = {
+      id: 'u1',
+      kind: 'instance',
+      label: 'u1',
+      ports: [],
+      moduleName: 'child',
+      position: { x: 100, y: 40 },
+    };
+
+    const moved = pushNodesClearOfExpandedInstance(
+      [port, instance],
+      'u1',
+      { x: 0, y: 0, width: 400, height: 200 },
+    );
+
+    expect(moved).toHaveLength(0);
   });
 
   it('anchors a resized register reset port at the resolved bottom center', () => {
