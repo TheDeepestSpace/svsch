@@ -1531,6 +1531,7 @@ function DiagramApp(): React.ReactElement {
               snapGrid={[diagramSizing.gridSize, diagramSizing.gridSize]}
               zIndexMode="manual"
               proOptions={{ hideAttribution: true }}
+              minZoom={0.05}
             >
               <Background gap={diagramSizing.gridSize} />
               <ViewportPortal>
