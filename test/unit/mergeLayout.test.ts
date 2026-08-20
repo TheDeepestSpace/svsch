@@ -1021,11 +1021,12 @@ describe('layout merge', () => {
       position: { x: 1000, y: 1000 },
     };
 
-    const moved = pushNodesClearOfExpandedInstance(
-      [clear],
-      'u1',
-      { x: 0, y: 0, width: 400, height: 200 },
-    );
+    const moved = pushNodesClearOfExpandedInstance([clear], 'u1', {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 200,
+    });
 
     expect(moved).toHaveLength(0);
   });
@@ -1076,11 +1077,12 @@ describe('layout merge', () => {
       position: { x: 100, y: 40 },
     };
 
-    const moved = pushNodesClearOfExpandedInstance(
-      [port, instance],
-      'u1',
-      { x: 0, y: 0, width: 400, height: 200 },
-    );
+    const moved = pushNodesClearOfExpandedInstance([port, instance], 'u1', {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 200,
+    });
 
     expect(moved).toHaveLength(0);
   });
