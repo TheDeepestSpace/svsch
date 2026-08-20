@@ -284,14 +284,17 @@ const headers = {
   'Content-Type': 'application/json',
   'X-GitHub-Api-Version': '2022-11-28',
 };
-// GitHub's REST layer resolves the PR through its GraphQL node under the
-// hood, and that lookup can 404 for a few seconds right after the PR was
-// pushed to — even though the PR itself, and that exact node id, are fine.
-// Retry that specific transient shape instead of failing the whole job.
-const isTransientNodeLookupFailure = (status, text) =>
-  status === 404 && /Could not resolve to a node with the global id/.test(text);
+// GitHub occasionally hasn't finished replicating a just-created/updated PR
+// to the graph backing these REST endpoints yet, which surfaces as a 404
+// complaining it "Could not resolve to a node with the global id" of the PR
+// — purely a replication-lag blip, not a real 404. Retry that (and plain
+// 5xx flakiness) a few times with backoff before giving up.
+const isTransient = (status, text) =>
+  status >= 500 || (status === 404 && text.includes('Could not resolve to a node with the global id'));
+
 const request = async (method, apiPath, requestBody) => {
-  for (let attempt = 1; ; attempt += 1) {
+  const maxAttempts = 4;
+  for (let attempt = 1; ; attempt++) {
     const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
       method,
       headers,
@@ -300,9 +303,10 @@ const request = async (method, apiPath, requestBody) => {
     });
     if (response.ok) return response.json();
     const text = await response.text();
-    if (attempt >= 4 || !isTransientNodeLookupFailure(response.status, text)) {
+    if (attempt >= maxAttempts || !isTransient(response.status, text)) {
       throw new Error(`${method} ${apiPath} failed (${response.status}): ${text}`);
     }
+    console.warn(`${method} ${apiPath} failed (${response.status}), retrying (${attempt}/${maxAttempts})...`);
     await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
   }
 };
