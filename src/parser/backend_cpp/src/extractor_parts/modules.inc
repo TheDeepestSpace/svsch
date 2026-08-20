@@ -1192,7 +1192,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
             if (array_element_width.empty()) array_element_width = getWidth(rhs);
             read_mux.ports.push_back({"sel", "input", index_signal, index_width, sel_label});
             read_mux.ports.push_back({"in", "input", rhs_base, array_element_width, "in"});
-            read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs), out_signal});
+            read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs)});
             mod.nodes.push_back(read_mux);
             return;
         }
