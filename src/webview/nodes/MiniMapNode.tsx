@@ -13,6 +13,7 @@ import { busTapPortCenterY } from '../../diagram/busGeometry';
 import { andBodyPath, orBodyPath, xorBackCurvePath } from './gate/GateNodeSvg';
 import type { HdlFlowNode } from './types';
 import { isInputSidePort } from '../../diagram/portDirection';
+import { EXPAND_GHOST_CLASS } from '../expand/expandOverlay';
 
 export function MiniMapNode({
   id,
@@ -41,6 +42,15 @@ export function MiniMapNode({
   }
 
   if (node.kind === 'netLabel') {
+    return null;
+  }
+
+  // An expanded instance's own node is just the dimmed backdrop/frame for its
+  // spliced-in child diagram (see expandOverlay's dimAsExpandGhost) — like a
+  // generate block, it has no filled minimap shape of its own; only its
+  // region's outline (drawn by MiniMapRegionOutlines) and its now-visible
+  // internal blocks (each rendered normally by this component) represent it.
+  if (flowNode?.className?.split(' ').includes(EXPAND_GHOST_CLASS)) {
     return null;
   }
 
