@@ -557,7 +557,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             std::string index_width = getDeclaredSignalWidth(mod, index);
             int index_bits = bitSizeFromWidth(index_width);
             std::string sel_label = index_bits > 1 ? "s[]" : "s";
-            read_mux.ports.push_back({"sel", "input", index, "", sel_label});
+            read_mux.ports.push_back({"sel", "input", index, index_width, sel_label});
             read_mux.ports.push_back({"out", "output", sig, ""});
             mod.nodes.push_back(read_mux);
         }
