@@ -799,6 +799,26 @@ text {
   visibility: hidden;
 }
 
+/* The sub-diagram area inside the expanded frame behaves like ordinary
+   canvas: the ghost's whole wrapper is pointer-transparent (!important beats
+   React Flow's inline pointerEvents: all), so middle-drag pans and clicks
+   fall through to the pane there. The frame itself is only selectable/
+   draggable from the grab bands HdlNode lays over its reserved border ring
+   (header rows, boundary-label columns, bottom inset — see ExpandGrabBands),
+   plus its resize handles, which sit on that ring anyway. */
+.react-flow__node.hdl-node-expand-ghost {
+  pointer-events: none !important;
+}
+
+.hdl-node-expand-ghost .svsch-expand-grab-band {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.hdl-node-expand-ghost .svsch-node-resize-handle {
+  pointer-events: auto;
+}
+
 .hdl-node-has-params {
   grid-template-rows: 16px var(--svsch-instance-param-height) calc(var(--svsch-node-header-height) - 16px) 1fr;
 }
