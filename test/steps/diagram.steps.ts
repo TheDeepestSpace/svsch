@@ -891,6 +891,90 @@ When(
   },
 );
 
+// The sub-diagram area inside an expanded instance is deliberately NOT part
+// of the frame's own hit-area (the ghost wrapper is pointer-transparent and
+// only its border ring carries grab bands — see HdlNode's ExpandGrabBands and
+// the .hdl-node-expand-ghost rules in diagram.css): pointer events between
+// the spliced nodes fall through to the pane, so middle-drag pans there and a
+// left-drag can't grab the frame. Probes for an interior point that actually
+// falls through to the pane; the fall-through itself is the feature under
+// test, so finding no such point is a failure. Returns workbox (outer page)
+// coordinates, converted from the webview iframe's own client coordinates.
+async function findSubDiagramCanvasPoint(
+  world: BddWorld,
+  instanceLabel: string,
+): Promise<{ x: number; y: number }> {
+  const id = await findNodeIdByLabel(world.webviewPage, instanceLabel);
+  if (!id) throw new Error(`Could not find expanded instance "${instanceLabel}"`);
+  const ghost = world.webviewPage.locator(`.react-flow__node[data-id="${id}"]`);
+  const pageBox = await ghost.boundingBox();
+  if (!pageBox) throw new Error(`Could not get bounding box for ${instanceLabel}`);
+  const probe = await ghost.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    // Start below the header rows — the top grab band is supposed to catch
+    // the pointer there, so it can never be a fall-through point.
+    for (let y = rect.top + rect.height * 0.25; y < rect.bottom - 4; y += 4) {
+      for (let x = rect.left + 4; x < rect.right - 4; x += 4) {
+        const hit = document.elementFromPoint(x, y);
+        // The fall-through target must be the flow pane itself — a hit
+        // outside the flow container (scrolled/clipped away) can't pan.
+        if (hit?.classList.contains('react-flow__pane')) {
+          return { x: x - rect.left, y: y - rect.top };
+        }
+      }
+    }
+    return null;
+  });
+  if (!probe) {
+    throw new Error(
+      `No point inside the expanded instance "${instanceLabel}" falls through to the canvas — ` +
+        'the sub-diagram area is not pointer-transparent',
+    );
+  }
+  return { x: pageBox.x + probe.x, y: pageBox.y + probe.y };
+}
+
+async function readViewportTransform(world: BddWorld): Promise<string> {
+  return world.webviewPage
+    .locator('.react-flow__viewport')
+    .evaluate((el) => (el as HTMLElement).style.transform);
+}
+
+When(
+  'I middle-drag inside the sub-diagram area of the expanded instance {string}',
+  async function (this: BddWorld, instanceLabel: string) {
+    const { x, y } = await findSubDiagramCanvasPoint(this, instanceLabel);
+    this.notedViewportTransform = await readViewportTransform(this);
+    await this.workbox.mouse.move(x, y);
+    await this.workbox.mouse.down({ button: 'middle' });
+    await this.workbox.mouse.move(x + 3, y + 3, { steps: 3 });
+    await this.workbox.mouse.move(x + 90, y + 60, { steps: 10 });
+    await this.workbox.mouse.up({ button: 'middle' });
+    await this.workbox.waitForTimeout(150);
+  },
+);
+
+When(
+  'I left-drag inside the sub-diagram area of the expanded instance {string}',
+  async function (this: BddWorld, instanceLabel: string) {
+    const { x, y } = await findSubDiagramCanvasPoint(this, instanceLabel);
+    await this.workbox.mouse.move(x, y);
+    await this.workbox.mouse.down();
+    await this.workbox.mouse.move(x + 3, y + 3, { steps: 3 });
+    await this.workbox.mouse.move(x + 90, y + 60, { steps: 10 });
+    await this.workbox.mouse.up();
+    await this.workbox.waitForTimeout(150);
+  },
+);
+
+Then('the canvas should have panned', async function (this: BddWorld) {
+  if (this.notedViewportTransform === undefined) {
+    throw new Error('No viewport transform was noted before the pan');
+  }
+  const after = await readViewportTransform(this);
+  expect(after, 'the canvas viewport should have panned').not.toBe(this.notedViewportTransform);
+});
+
 When(
   // eslint-disable-next-line max-len
   'I begin moving the block {string} in the {string} generate region by \\({int}, {int}\\) grid cells',

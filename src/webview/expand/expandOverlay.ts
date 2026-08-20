@@ -119,6 +119,14 @@ function toFlowEdge(
 // is what surfaces the "Collapse" control in NodeSelectionToolbar). There is
 // no separate region outline: the node's own border is the boundary of the
 // expanded content.
+//
+// expandContentInsets confines those pointer interactions to the frame's
+// border ring: the ghost wrapper itself is pointer-transparent (see the
+// .hdl-node-expand-ghost rules in diagram.css) and HdlNode re-enables the
+// pointer only on grab bands covering the ring, so the sub-diagram area
+// inside behaves like ordinary canvas — middle-drag pans, clicks fall
+// through to the pane — while the spliced nodes/wires on top keep their own
+// interactions.
 function dimAsExpandGhost(node: HdlFlowNode, splice: ActiveSplice): HdlFlowNode {
   const grid = diagramSizing.gridSize;
   return {
@@ -127,6 +135,7 @@ function dimAsExpandGhost(node: HdlFlowNode, splice: ActiveSplice): HdlFlowNode 
     className: [node.className, EXPAND_GHOST_CLASS].filter(Boolean).join(' '),
     data: {
       ...node.data,
+      expandContentInsets: splice.contentInsets,
       node: {
         ...node.data.node,
         sizeOverride: {

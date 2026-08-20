@@ -72,6 +72,9 @@ export class BddWorld {
   // scenarios can assert the position was preserved.
   movedToPositions: Map<string, { x: number; y: number }> = new Map();
   notedRoutes: Map<string, string> = new Map();
+  // Viewport transform captured before a canvas pan, for "the canvas should
+  // have panned" assertions.
+  notedViewportTransform?: string;
 
   // -------------------------------------------------------------------------
   // Screenshot / snapshot helpers

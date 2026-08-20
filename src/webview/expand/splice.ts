@@ -138,10 +138,30 @@ export interface SpliceInput {
   hostLayout?: ExpandSpliceLayout;
 }
 
+/**
+ * Widths of the expanded frame's reserved border ring, in frame-local px:
+ * the header/parameter rows on top, a boundary-label column on each side and
+ * the content inset below. Everything inside this ring belongs to the spliced
+ * child diagram — the frame's own pointer interactions (select, drag) are
+ * confined to the ring so the interior behaves like ordinary canvas (see
+ * HdlNode's grab bands and the .hdl-node-expand-ghost pointer-events rules).
+ */
+export interface ExpandContentInsets {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}
+
 export interface SpliceResult {
   region: PositionedGenerateRegion;
   nodes: PositionedNode[];
   edges: DiagramEdge[];
+  /**
+   * The frame's reserved border ring — the only part of the dimmed instance
+   * node that reacts to the pointer while expanded.
+   */
+  contentInsets: ExpandContentInsets;
   /**
    * The size the instance's own node must grow to so its body fully contains
    * the spliced-in child diagram plus the label clearances (port-label
@@ -681,6 +701,22 @@ function assembleSpliceResult(
   const { namespace, childModule, instancePosition } = input;
   const internalNodes = childModule.nodes.filter((node) => node.kind !== 'port');
 
+  // Recomputed here (rather than threaded through from the two callers) so
+  // both splice paths agree by construction — the host layout derives its
+  // frame padding from these exact same functions and inputs (see
+  // buildExpandSpliceLayout in layout/expandLayout.ts).
+  const { inputColumn, outputColumn } = buildBoundaryColumns(
+    childModule,
+    input.instancePorts,
+    input.instanceId,
+  );
+  const contentInsets: ExpandContentInsets = {
+    top: expandTopPad(input.instanceParamRows),
+    left: boundaryColumnPad(inputColumn),
+    right: boundaryColumnPad(outputColumn),
+    bottom: EXPAND_CONTENT_INSET,
+  };
+
   // The region is pure machinery now (drag-sync membership, nesting,
   // persistence) — it's never rendered as its own frame. Its bounds are
   // exactly the expanded node's rect.
@@ -711,6 +747,7 @@ function assembleSpliceResult(
     nodes: allNodes,
     edges,
     expandedSize,
+    contentInsets,
     boundaryNodeIdByChildPortName,
     toSavedLayout(nodes, saveBounds, fixed, instanceOrigin) {
       const nodesById: Record<string, SavedNodeLayout> = {};

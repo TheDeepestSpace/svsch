@@ -35,6 +35,7 @@ import { NetLabelNode } from './NetLabelNode';
 import { BoundaryPortNode } from './BoundaryPortNode';
 import { InteractionContext, type NodeResizeHandle } from './shared/context';
 import type { HdlFlowNode } from './types';
+import type { ExpandContentInsets } from '../expand/splice';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
 import { LatchNodeSvg } from './latch/LatchNodeSvg';
 import { LiteralNodeSvg } from './literal/LiteralNodeSvg';
@@ -1123,9 +1124,41 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       ) : (
         <div className="hdl-node-selection-rect" aria-hidden="true" />
       )}
+      {data.expandContentInsets && <ExpandGrabBands insets={data.expandContentInsets} />}
       {node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
       {warningIcon}
     </button>
+  );
+}
+
+// While a node is an expanded instance's dimmed frame, its wrapper is
+// pointer-transparent (see the .hdl-node-expand-ghost rules in diagram.css)
+// so the sub-diagram area inside behaves like ordinary canvas — middle-drag
+// pans, clicks fall through to the pane. These four bands cover the frame's
+// reserved border ring (header/parameter rows, boundary-label columns,
+// bottom inset — see ExpandContentInsets in expand/splice.ts) and re-enable
+// the pointer there, so the ring is the only place the frame itself can be
+// selected or dragged from.
+function ExpandGrabBands({ insets }: { insets: ExpandContentInsets }): React.ReactElement {
+  return (
+    <React.Fragment>
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: 0, left: 0, right: 0, height: insets.top }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: insets.top, bottom: insets.bottom, left: 0, width: insets.left }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: insets.top, bottom: insets.bottom, right: 0, width: insets.right }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ bottom: 0, left: 0, right: 0, height: insets.bottom }}
+      />
+    </React.Fragment>
   );
 }
 

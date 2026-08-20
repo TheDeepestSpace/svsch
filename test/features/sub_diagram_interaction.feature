@@ -78,6 +78,38 @@ Feature: Sub-diagram interaction
     When I drag a wire segment between "la" and "u_inner" inside the expanded instance down by 6 grid cells
     Then all spliced content should stay inside the expanded instance "u1"
 
+  # The child spans several internal nodes so its unfolded diagram has real
+  # whitespace between them — the canvas the pointer is supposed to fall
+  # through to. A single-node child leaves (almost) no exposed interior: the
+  # frame is grown to hug its content plus the border ring.
+  Scenario: The sub-diagram area is pannable canvas, not a grab-area of the expanded instance
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic clk, input logic la, output logic ly);
+        logic s1, s2;
+        always_ff @(posedge clk) s1 <= la;
+        always_ff @(posedge clk) s2 <= s1;
+        assign ly = s2;
+      endmodule
+
+      module top(input logic clk, input logic a, output logic y);
+        leaf u1(.clk(clk), .la(a), .ly(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    When I note the position of the block "u1"
+    And I note the position of the block "s1"
+    And I middle-drag inside the sub-diagram area of the expanded instance "u1"
+    Then the canvas should have panned
+    And the block "u1" should not have moved
+    And the block "s1" should not have moved
+    When I left-drag inside the sub-diagram area of the expanded instance "u1"
+    Then the block "u1" should not have moved
+    And the block "s1" should not have moved
+
   Scenario: Drag-selection crossing the expanded instance selects only top-level nodes
     Given I have a file "top.sv" in my workspace:
       """

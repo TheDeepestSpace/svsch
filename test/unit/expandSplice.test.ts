@@ -6,6 +6,7 @@ import {
   namespacedId,
   expandRegionId,
   isExpandNamespacedId,
+  EXPAND_CONTENT_INSET,
 } from '../../src/webview/expand/splice';
 import { absorbSplicedEdgeRouteChanges } from '../../src/webview/expand/expandOverlay';
 import { boundaryPortLeadClassName } from '../../src/webview/nodes/BoundaryPortNode';
@@ -175,6 +176,39 @@ describe('spliceExpandedInstance', () => {
     expect(reg.position.y + regSize.height).toBeLessThanOrEqual(
       instancePosition.y + result.expandedSize.height,
     );
+  });
+
+  // eslint-disable-next-line max-len
+  it('reports the frame border ring as contentInsets, with the spliced content fully inside the ring', async () => {
+    // contentInsets drive the expand ghost's grab bands (see HdlNode's
+    // ExpandGrabBands): the frame is only selectable/draggable from the ring,
+    // and the area inside it is pointer-transparent canvas — so the ring
+    // must exactly clear the spliced content.
+    const result = await spliceExpandedInstance(baseInput());
+    const insets = result.contentInsets;
+
+    expect(insets.bottom).toBe(EXPAND_CONTENT_INSET);
+    expect(insets.top).toBeGreaterThan(0);
+
+    const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
+    const leftColumnWidths = boundaryNodes
+      .filter((n) => n.metadata?.boundaryPort?.outerSide === 'left')
+      .map((n) => resolvedNodeDimensions(n).width);
+    const rightColumnWidths = boundaryNodes
+      .filter((n) => n.metadata?.boundaryPort?.outerSide === 'right')
+      .map((n) => resolvedNodeDimensions(n).width);
+    // Each side's inset clears its whole boundary-label column.
+    expect(insets.left).toBeGreaterThanOrEqual(Math.max(...leftColumnWidths));
+    expect(insets.right).toBeGreaterThanOrEqual(Math.max(...rightColumnWidths));
+
+    // The internal content sits inside the ring, never under a grab band.
+    const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'))!;
+    const regSize = diagramNodeDimensions(reg);
+    expect(reg.position.x).toBeGreaterThanOrEqual(instancePosition.x + insets.left);
+    expect(reg.position.x + regSize.width).toBeLessThanOrEqual(
+      instancePosition.x + result.expandedSize.width - insets.right,
+    );
+    expect(reg.position.y).toBeGreaterThanOrEqual(instancePosition.y + insets.top);
   });
 
   // eslint-disable-next-line max-len
@@ -386,6 +420,13 @@ describe('spliceExpandedInstance', () => {
         width: 400,
         height: 200,
       });
+    });
+
+    // eslint-disable-next-line max-len
+    it('derives the same contentInsets as the webview-local path — the ring depends only on ports and header rows', async () => {
+      const fallback = await spliceExpandedInstance(baseInput());
+      const hosted = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+      expect(hosted.contentInsets).toEqual(fallback.contentInsets);
     });
 
     it("keeps the host's routes, translated with the content", async () => {
