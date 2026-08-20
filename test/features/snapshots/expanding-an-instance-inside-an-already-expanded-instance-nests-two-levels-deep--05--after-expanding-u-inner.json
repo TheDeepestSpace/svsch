@@ -8,7 +8,7 @@
         "y": 96
       },
       "width": 240,
-      "height": 96,
+      "height": 120,
       "data": {
         "kind": "instance",
         "ports": [
@@ -194,7 +194,7 @@
       "target": "expand:instance:top:u1::port:leaf:y",
       "sourceHandle": "outer",
       "targetHandle": "inner",
-      "path": "M 720 144 L 744 144 L 786 144 L 786 234 L 720 234 L 720 72 L 744 72"
+      "path": "M 720 144 L 744 144 L 786 144 L 786 72 L 720 72 L 744 72"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:a:instance:leaf:u_inner:a",

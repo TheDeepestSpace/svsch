@@ -322,6 +322,107 @@ describe('spliceExpandedInstance', () => {
     );
   });
 
+  // The host-computed frame-local layout (src/layout/expandLayout.ts — the
+  // child's standalone place-and-route with ports dropped and boundary stubs
+  // libavoid-routed) is authoritative for a fresh expand: the webview only
+  // translates it to the instance's canvas position and namespaces the ids.
+  describe('host-computed splice layout', () => {
+    const hostLayout = () => ({
+      nodes: [
+        {
+          id: 'port:a',
+          kind: 'boundaryPort' as const,
+          label: 'a',
+          ports: [aPort],
+          metadata: {
+            boundaryPort: {
+              instanceId: 'u0',
+              childModuleName: 'adder',
+              childPortId: 'port:a',
+              outerSide: 'left' as const,
+            },
+          },
+          position: { x: 0, y: 36 },
+        },
+        {
+          id: 'reg1',
+          kind: 'register' as const,
+          label: 'reg1',
+          ports: [],
+          position: { x: 120, y: 64 },
+        },
+      ],
+      edges: [
+        {
+          id: 'e-a-reg1',
+          source: 'port:a',
+          sourcePort: 'inner',
+          target: 'reg1',
+          targetPort: 'd',
+          routePoints: [
+            { x: 80, y: 44 },
+            { x: 80, y: 72 },
+          ],
+        },
+      ],
+      expandedSize: { width: 400, height: 200 },
+    });
+
+    // eslint-disable-next-line max-len
+    it('translates the frame-local layout to the instance position and namespaces the ids', async () => {
+      const result = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+
+      const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
+      expect(reg?.position).toEqual({ x: 120 + instancePosition.x, y: 64 + instancePosition.y });
+      const boundary = result.nodes.find((n) => n.id === namespacedId('u0', 'port:a'));
+      expect(boundary?.kind).toBe('boundaryPort');
+      expect(boundary?.position).toEqual({ x: instancePosition.x, y: 36 + instancePosition.y });
+      expect(result.boundaryNodeIdByChildPortName.get('a')).toBe(namespacedId('u0', 'port:a'));
+
+      expect(result.expandedSize).toEqual({ width: 400, height: 200 });
+      expect(result.region.bounds).toEqual({
+        x: instancePosition.x,
+        y: instancePosition.y,
+        width: 400,
+        height: 200,
+      });
+    });
+
+    it("keeps the host's routes, translated with the content", async () => {
+      const result = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+      const edge = result.edges.find((e) => e.id === namespacedId('u0', 'e-a-reg1'));
+      expect(edge?.source).toBe(namespacedId('u0', 'port:a'));
+      expect(edge?.sourcePort).toBe('inner');
+      expect(edge?.routePoints).toEqual([
+        { x: 80 + instancePosition.x, y: 44 + instancePosition.y },
+        { x: 80 + instancePosition.x, y: 72 + instancePosition.y },
+      ]);
+    });
+
+    // eslint-disable-next-line max-len
+    it('lets a covering saved snapshot win over the host layout, dropping its stale routes', async () => {
+      const savedLayout = {
+        childModuleName: 'adder',
+        nodes: { reg1: { x: 999, y: 111, fixed: true } },
+        instanceOrigin: instancePosition,
+      };
+      const result = await spliceExpandedInstance({
+        ...baseInput(),
+        savedLayout,
+        hostLayout: hostLayout(),
+      });
+
+      const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
+      expect(reg?.position).toEqual({ x: 999, y: 111 });
+      // The edge set still comes from the host layout (labels, cut stubs),
+      // but its routes are stale against the saved positions.
+      const edge = result.edges.find((e) => e.id === namespacedId('u0', 'e-a-reg1'));
+      expect(edge?.routePoints).toBeUndefined();
+      // Boundary nodes are re-derived locally in this path.
+      expect(result.nodes.some((n) => n.id === namespacedId('u0', 'port:a'))).toBe(true);
+    });
+  });
+
   // The lead stub a boundary-port node draws is a continuation of the wire
   // passing through the port — it must carry the same struct/interface/
   // multi-bit style as the child module's own annotated edges on that net.

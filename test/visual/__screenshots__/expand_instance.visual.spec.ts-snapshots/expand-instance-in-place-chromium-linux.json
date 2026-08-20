@@ -220,7 +220,7 @@
       "target": "expand:instance:top:u1::reg:leaf:y",
       "sourceHandle": "inner",
       "targetHandle": "clk",
-      "path": "M 432 72 L 456 72 L 480 72 L 480 168 L 504 168"
+      "path": "M 432 72 L 456 72 L 456 168 L 480 168 L 504 168"
     },
     {
       "id": "expand:instance:top:u1::edge:reg:leaf:y:port:leaf:y:y",

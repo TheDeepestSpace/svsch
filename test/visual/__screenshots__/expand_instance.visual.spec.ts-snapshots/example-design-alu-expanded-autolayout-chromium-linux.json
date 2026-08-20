@@ -1209,8 +1209,8 @@
       "id": "expand:instance:cpu_top:u_alu::comb:alu:zero:expr",
       "type": "hdl",
       "position": {
-        "x": 2952,
-        "y": 528
+        "x": 3096,
+        "y": 600
       },
       "width": 192,
       "height": 72,
@@ -1295,7 +1295,7 @@
       "type": "hdl",
       "position": {
         "x": 1896,
-        "y": 912
+        "y": 924
       },
       "width": 96,
       "height": 24,
@@ -1315,7 +1315,7 @@
       "type": "hdl",
       "position": {
         "x": 1896,
-        "y": 864
+        "y": 876
       },
       "width": 96,
       "height": 24,
@@ -1334,8 +1334,8 @@
       "id": "expand:instance:cpu_top:u_alu::literal:alu:result_default:_0",
       "type": "hdl",
       "position": {
-        "x": 2208,
-        "y": 432
+        "x": 2256,
+        "y": 972
       },
       "width": 96,
       "height": 24,
@@ -1354,8 +1354,8 @@
       "id": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "type": "hdl",
       "position": {
-        "x": 2160,
-        "y": 768
+        "x": 2208,
+        "y": 840
       },
       "width": 144,
       "height": 96,
@@ -1389,8 +1389,8 @@
       "id": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "type": "hdl",
       "position": {
-        "x": 2472,
-        "y": 432
+        "x": 2568,
+        "y": 456
       },
       "width": 288,
       "height": 192,
@@ -1504,7 +1504,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:result",
       "type": "hdl",
       "position": {
-        "x": 3216,
+        "x": 3360,
         "y": 216
       },
       "width": 96,
@@ -1524,7 +1524,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:zero",
       "type": "hdl",
       "position": {
-        "x": 3216,
+        "x": 3360,
         "y": 240
       },
       "width": 96,
@@ -1577,8 +1577,8 @@
         "x": 1632,
         "y": 168
       },
-      "width": 1680,
-      "height": 816,
+      "width": 1824,
+      "height": 888,
       "data": {
         "kind": "instance",
         "ports": [
@@ -2226,7 +2226,7 @@
       "target": "cut-label:instance:cpu_top:u_alu:port:result:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 3312 240 L 3336 240 L 3408 240 L 3408 312 L 1848 312 L 1848 240 L 1848 240"
+      "path": "M 3456 240 L 3480 240 L 3552 240 L 3552 312 L 1848 312 L 1848 240 L 1848 240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:zero:sink:edge:instance:cpu_top:u_alu:gate:cpu_top:pc_src:and:alu_zero",
@@ -2242,7 +2242,7 @@
       "target": "cut-label:instance:cpu_top:u_alu:port:zero:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 3312 264 L 3336 264 L 3408 264 L 3408 336 L 1944 336 L 1944 321 Q 1953 312 1944 303 L 1944 264 L 1944 264"
+      "path": "M 3456 264 L 3480 264 L 3552 264 L 3552 336 L 1944 336 L 1944 321 Q 1953 312 1944 303 L 1944 264 L 1944 264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_branch_adder:port:sum:sink:edge:instance:cpu_top:u_branch_adder:instance:cpu_top:u_pc_src_mux:branch_target",
@@ -2690,7 +2690,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b000",
       "targetHandle": "in:3_b000",
-      "path": "M 1920 312 L 1944 312 L 2208 312 L 2208 327 Q 2217 336 2208 345 L 2208 480 L 2448 480 L 2472 480"
+      "path": "M 1920 312 L 1944 312 L 2064 312 L 2064 327 Q 2073 336 2064 345 L 2064 504 L 2544 504 L 2568 504"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001",
@@ -2698,7 +2698,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b001",
       "targetHandle": "in:3_b001",
-      "path": "M 1920 432 L 1944 432 L 2208 432 L 2208 504 L 2448 504 L 2472 504"
+      "path": "M 1920 432 L 1944 432 L 2064 432 L 2064 528 L 2544 528 L 2568 528"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:comb:alu:result_3_b100_sel:expr:mux:alu:result_3_b100:ternary:result_3_b100_sel",
@@ -2706,7 +2706,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "out:result_3_b100_sel",
       "targetHandle": "sel",
-      "path": "M 1992 792 L 2016 792 L 2136 792 L 2136 744 L 2232 744 L 2232 792"
+      "path": "M 1992 792 L 2016 792 L 2280 792 L 2280 816 L 2280 864"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:comb:alu:zero:expr:port:alu:zero:zero",
@@ -2714,7 +2714,7 @@
       "target": "expand:instance:cpu_top:u_alu::port:alu:zero",
       "sourceHandle": "out:zero",
       "targetHandle": "inner",
-      "path": "M 3144 576 L 3168 576 L 3192 576 L 3192 343 Q 3199 336 3192 329 L 3192 321 Q 3201 312 3192 303 L 3192 264 L 3216 264"
+      "path": "M 3288 648 L 3312 648 L 3336 648 L 3336 343 Q 3343 336 3336 329 L 3336 321 Q 3345 312 3336 303 L 3336 264 L 3360 264"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:gate:alu:result_3_b010:and:mux:alu:result:alu_op:result:result_3_b010",
@@ -2722,7 +2722,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b010",
       "targetHandle": "in:3_b010",
-      "path": "M 1920 552 L 1944 552 L 2208 552 L 2208 528 L 2448 528 L 2472 528"
+      "path": "M 1920 552 L 1944 552 L 2544 552 L 2568 552"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011",
@@ -2730,7 +2730,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b011",
       "targetHandle": "in:3_b011",
-      "path": "M 1920 672 L 1944 672 L 2208 672 L 2208 552 L 2448 552 L 2472 552"
+      "path": "M 1920 672 L 1944 672 L 2256 672 L 2256 576 L 2544 576 L 2568 576"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0",
@@ -2738,7 +2738,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "port:8_b0",
       "targetHandle": "in:false",
-      "path": "M 1992 924 L 2016 924 L 2088 924 L 2088 840 L 2136 840 L 2160 840"
+      "path": "M 1992 936 L 2016 936 L 2112 936 L 2112 912 L 2184 912 L 2208 912"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:8_b1:8_b1:mux:alu:result_3_b100:ternary:8_b1",
@@ -2746,7 +2746,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "port:8_b1",
       "targetHandle": "in:true",
-      "path": "M 1992 876 L 2016 876 L 2088 876 L 2088 816 L 2136 816 L 2160 816"
+      "path": "M 1992 888 L 2016 888 L 2184 888 L 2208 888"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:result_default:_0:mux:alu:result:alu_op:result:result_default",
@@ -2754,7 +2754,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "port:result_default",
       "targetHandle": "in:default",
-      "path": "M 2304 444 L 2328 444 L 2400 444 L 2400 471 Q 2409 480 2400 489 L 2400 495 Q 2409 504 2400 513 L 2400 519 Q 2409 528 2400 537 L 2400 543 Q 2409 552 2400 561 L 2400 600 L 2448 600 L 2472 600"
+      "path": "M 2352 984 L 2376 984 L 2472 984 L 2472 624 L 2544 624 L 2568 624"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result_3_b100:ternary:mux:alu:result:alu_op:result:result_3_b100",
@@ -2762,7 +2762,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out",
       "targetHandle": "in:3_b100",
-      "path": "M 2304 816 L 2328 816 L 2400 816 L 2400 576 L 2448 576 L 2472 576"
+      "path": "M 2352 888 L 2376 888 L 2448 888 L 2448 600 L 2544 600 L 2568 600"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result:alu_op:result:comb:alu:zero:expr:result",
@@ -2770,7 +2770,7 @@
       "target": "expand:instance:cpu_top:u_alu::comb:alu:zero:expr",
       "sourceHandle": "out",
       "targetHandle": "port:result",
-      "path": "M 2760 528 L 2784 528 L 2856 528 L 2856 576 L 2928 576 L 2952 576"
+      "path": "M 2856 552 L 2880 552 L 3048 552 L 3048 648 L 3072 648 L 3096 648"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result:alu_op:result:port:alu:result:result",
@@ -2778,7 +2778,7 @@
       "target": "expand:instance:cpu_top:u_alu::port:alu:result",
       "sourceHandle": "out",
       "targetHandle": "inner",
-      "path": "M 2760 528 L 2784 528 L 3000 528 L 3000 345 Q 3009 336 3000 327 L 3000 321 Q 3009 312 3000 303 L 3000 240 L 3192 240 L 3216 240"
+      "path": "M 2856 552 L 2880 552 L 3120 552 L 3120 345 Q 3129 336 3120 327 L 3120 321 Q 3129 312 3120 303 L 3120 240 L 3336 240 L 3360 240"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:alu:alu:result_3_b000:expr:a",
@@ -2786,7 +2786,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b000:expr",
       "sourceHandle": "inner",
       "targetHandle": "lhs",
-      "path": "M 1728 240 L 1752 240 L 1776 240 L 1776 288 L 1800 288 L 1824 288"
+      "path": "M 1728 240 L 1752 240 L 1800 240 L 1800 288 L 1824 288"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:alu:alu:result_3_b001:expr:a",
@@ -2794,7 +2794,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b001:expr",
       "sourceHandle": "inner",
       "targetHandle": "lhs",
-      "path": "M 1728 240 L 1752 240 L 1776 240 L 1776 303 Q 1785 312 1776 321 L 1776 408 L 1800 408 L 1824 408"
+      "path": "M 1728 240 L 1752 240 L 1800 240 L 1800 303 Q 1809 312 1800 321 L 1800 408 L 1824 408"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:comb:alu:result_3_b100_sel:expr:a",
@@ -2810,7 +2810,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b010:and",
       "sourceHandle": "inner",
       "targetHandle": "port:in0",
-      "path": "M 1728 240 L 1752 240 L 1776 240 L 1776 303 Q 1785 312 1776 321 L 1776 528 L 1800 528 L 1824 528"
+      "path": "M 1728 240 L 1752 240 L 1800 240 L 1800 303 Q 1809 312 1800 321 L 1800 528 L 1824 528"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:gate:alu:result_3_b011:or:a",
@@ -2818,7 +2818,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b011:or",
       "sourceHandle": "inner",
       "targetHandle": "port:in0",
-      "path": "M 1728 240 L 1752 240 L 1776 240 L 1776 303 Q 1785 312 1776 321 L 1776 648 L 1800 648 L 1841.482 648"
+      "path": "M 1728 240 L 1752 240 L 1800 240 L 1800 303 Q 1809 312 1800 321 L 1800 648 L 1841.482 648"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:alu_op:mux:alu:result:alu_op:result:alu_op",
@@ -2826,7 +2826,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "inner",
       "targetHandle": "sel",
-      "path": "M 1728 288 L 1752 288 L 1767 288 Q 1776 279 1785 288 L 1839 288 Q 1848 279 1857 288 L 1935 288 Q 1944 279 1953 288 L 2184 288 L 2184 303 Q 2193 312 2184 321 L 2184 327 Q 2193 336 2184 345 L 2184 408 L 2199 408 Q 2208 399 2217 408 L 2616 408 L 2616 456"
+      "path": "M 1728 288 L 1752 288 L 1752 240 L 2712 240 L 2712 303 Q 2721 312 2712 321 L 2712 327 Q 2721 336 2712 345 L 2712 432 L 2712 480"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:alu:alu:result_3_b000:expr:b",
@@ -2834,7 +2834,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b000:expr",
       "sourceHandle": "inner",
       "targetHandle": "rhs",
-      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 279 Q 1785 288 1776 297 L 1776 303 Q 1785 312 1776 321 L 1776 336 L 1800 336 L 1824 336"
+      "path": "M 1728 264 L 1752 264 L 1767 264 Q 1776 255 1785 264 L 1800 264 L 1800 303 Q 1809 312 1800 321 L 1800 336 L 1824 336"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:alu:alu:result_3_b001:expr:b",
@@ -2842,7 +2842,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b001:expr",
       "sourceHandle": "inner",
       "targetHandle": "rhs",
-      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 279 Q 1785 288 1776 297 L 1776 303 Q 1785 312 1776 321 L 1776 456 L 1800 456 L 1824 456"
+      "path": "M 1728 264 L 1752 264 L 1767 264 Q 1776 255 1785 264 L 1800 264 L 1800 303 Q 1809 312 1800 321 L 1800 456 L 1824 456"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:comb:alu:result_3_b100_sel:expr:b",
@@ -2850,7 +2850,7 @@
       "target": "expand:instance:cpu_top:u_alu::comb:alu:result_3_b100_sel:expr",
       "sourceHandle": "inner",
       "targetHandle": "port:b",
-      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 279 Q 1785 288 1776 297 L 1776 303 Q 1785 312 1776 321 L 1776 816 L 1800 816"
+      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 303 Q 1785 312 1776 321 L 1776 816 L 1800 816"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:gate:alu:result_3_b010:and:b",
@@ -2858,7 +2858,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b010:and",
       "sourceHandle": "inner",
       "targetHandle": "port:in1",
-      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 279 Q 1785 288 1776 297 L 1776 303 Q 1785 312 1776 321 L 1776 576 L 1800 576 L 1824 576"
+      "path": "M 1728 264 L 1752 264 L 1767 264 Q 1776 255 1785 264 L 1800 264 L 1800 303 Q 1809 312 1800 321 L 1800 576 L 1824 576"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:gate:alu:result_3_b011:or:b",
@@ -2866,7 +2866,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b011:or",
       "sourceHandle": "inner",
       "targetHandle": "port:in1",
-      "path": "M 1728 264 L 1752 264 L 1776 264 L 1776 279 Q 1785 288 1776 297 L 1776 303 Q 1785 312 1776 321 L 1776 696 L 1800 696 L 1841.482 696"
+      "path": "M 1728 264 L 1752 264 L 1767 264 Q 1776 255 1785 264 L 1800 264 L 1800 303 Q 1809 312 1800 321 L 1800 696 L 1841.482 696"
     }
   ]
 }

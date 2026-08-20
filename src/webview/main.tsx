@@ -65,6 +65,7 @@ import {
   isExpandNamespacedId,
   namespacedId,
   spliceExpandedInstance,
+  type ExpandSpliceLayout,
   type SavedExpandedInstanceLayout,
   type SpliceInput,
 } from './expand/splice';
@@ -98,6 +99,7 @@ interface ExpandInstancePayload {
   childModuleName: string;
   module: DesignModule;
   savedLayout?: SavedExpandedInstanceLayout;
+  spliceLayout?: ExpandSpliceLayout;
 }
 
 interface ExpandInstanceDataMessage {
@@ -673,6 +675,7 @@ function DiagramApp(): React.ReactElement {
           instancePorts: pending.instancePorts,
           childModule: payload.module,
           savedLayout: payload.savedLayout,
+          hostLayout: payload.spliceLayout,
         };
         void spliceExpandedInstance(spliceInput).then((result) => {
           spliceMapRef.current.set(pending.namespace, {
@@ -750,6 +753,11 @@ function DiagramApp(): React.ReactElement {
         moduleName: parentModuleName,
         instanceId: localInstanceId,
         topLevel,
+        // The live rendered geometry — the host sizes the expanded frame
+        // with these (grow-only), keeping the border and boundary-port rows
+        // exactly where the collapsed node's are on screen right now.
+        instanceSize: resolvedNodeDimensions(node),
+        instanceParamRows: instanceParameterRows(node),
       });
     },
     [view],

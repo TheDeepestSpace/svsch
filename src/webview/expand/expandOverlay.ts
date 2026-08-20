@@ -21,6 +21,13 @@ export { isExpandNamespacedId };
 // backdrop that never competes with real content for paint order.
 const SPLICE_NODE_Z_INDEX = 2;
 const EXPAND_GHOST_Z_INDEX = 0;
+// Same layer as main.tsx's EDGE_Z_INDEX for ordinary wires. Without an
+// explicit zIndex a spliced edge defaults to 0 — the ghost node's own layer —
+// and nodes win over edges within a layer, so the ghost's (frame-sized!) body
+// would swallow every pointer event aimed at an inner wire: hover, segment
+// dragging, selection. At 1 the wires sit above the ghost backdrop and below
+// the spliced nodes, exactly like top-level wires relative to their blocks.
+const SPLICE_EDGE_Z_INDEX = 1;
 
 /**
  * CSS class marking an expanded instance's own node as a dimmed backdrop —
@@ -85,6 +92,7 @@ function toFlowEdge(
     targetHandle: edge.targetPort,
     label: edge.label,
     type: 'svsch',
+    zIndex: SPLICE_EDGE_Z_INDEX,
     data: {
       waypoint: edge.waypoint,
       routePoints: edge.routePoints,

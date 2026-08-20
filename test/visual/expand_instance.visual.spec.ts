@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { buildViewModel } from '../../src/layout/mergeLayout';
+import { buildExpandSpliceLayout } from '../../src/layout/expandLayout';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
@@ -46,12 +47,44 @@ async function capturedMessages(page: Page): Promise<any[]> {
   return page.evaluate(() => (window as any).__svschMessages ?? []);
 }
 
+// Mirrors diagramPanel.ts's requestExpandInstance response: the raw child
+// DesignModule plus the host-computed frame-local splice layout (the child's
+// standalone place-and-route dropped into the frame with its boundary ports
+// wired up by libavoid — see buildExpandSpliceLayout).
+async function expandPayloadFor(
+  graph: DesignGraph,
+  layout: SavedLayout,
+  request: any,
+  childModuleName: string,
+): Promise<Record<string, unknown>> {
+  const parentModule = graph.modules[request.moduleName];
+  const instanceNode = parentModule?.nodes.find((node: any) => node.id === request.instanceId);
+  if (!instanceNode) throw new Error(`No instance ${request.instanceId} in ${request.moduleName}`);
+  const spliceLayout = await buildExpandSpliceLayout({
+    graph,
+    layout,
+    childModuleName,
+    instanceId: request.instanceId,
+    instancePorts: instanceNode.ports,
+    instanceSize: request.instanceSize,
+    instanceParamRows: request.instanceParamRows,
+  });
+  return {
+    instanceId: request.instanceId,
+    childModuleName,
+    module: graph.modules[childModuleName],
+    spliceLayout,
+  };
+}
+
 // Select an instance node, click Expand, and answer the captured
 // requestExpandInstance the way diagramPanel.ts's handler would — with the
-// already-elaborated child DesignModule from the same graph.
+// already-elaborated child DesignModule from the same graph plus the
+// host-computed splice layout.
 async function expandInstanceOnPage(
   page: Page,
   graph: DesignGraph,
+  layout: SavedLayout,
   instanceLocator: ReturnType<Page['locator']>,
   childModuleName: string,
 ): Promise<void> {
@@ -71,18 +104,12 @@ async function expandInstanceOnPage(
   const request = (await capturedMessages(page)).find(
     (message: any) => message.type === 'requestExpandInstance',
   );
+  const payload = await expandPayloadFor(graph, layout, request, childModuleName);
   await page.evaluate(
     ({ moduleName, payload }) => {
       window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
     },
-    {
-      moduleName: request.moduleName,
-      payload: {
-        instanceId: request.instanceId,
-        childModuleName,
-        module: graph.modules[childModuleName],
-      },
-    },
+    { moduleName: request.moduleName, payload },
   );
   await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
 }
@@ -191,21 +218,14 @@ test.describe('expand instance in place visual', () => {
     expect(request.instanceId).toBe(instanceId);
     expect(request.topLevel).toBe(true);
 
-    // Mirrors diagramPanel.ts's requestExpandInstance response — the
-    // extension host has no logic of its own here beyond handing back the
-    // already-elaborated child DesignModule.
+    // Mirrors diagramPanel.ts's requestExpandInstance response — the raw
+    // child DesignModule plus the host-computed splice layout.
+    const payload = await expandPayloadFor(graph, emptyLayout, request, 'leaf');
     await page.evaluate(
       ({ moduleName, payload }) => {
         window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
       },
-      {
-        moduleName: request.moduleName,
-        payload: {
-          instanceId: request.instanceId,
-          childModuleName: 'leaf',
-          module: graph.modules.leaf,
-        },
-      },
+      { moduleName: request.moduleName, payload },
     );
 
     await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
@@ -282,7 +302,8 @@ test.describe('expand instance in place visual', () => {
     await installMessageCapture(page);
 
     const graph = await buildFixtureGraph('expand_instance_complex.sv');
-    const view = await buildViewModel(graph, 'top', { version: 1, modules: {} });
+    const emptyLayout: SavedLayout = { version: 1, modules: {} };
+    const view = await buildViewModel(graph, 'top', emptyLayout);
 
     await openView(page, view);
     await page.waitForSelector('[data-node-kind="instance"]', { state: 'attached' });
@@ -292,7 +313,7 @@ test.describe('expand instance in place visual', () => {
     await expect(instance).toHaveCount(1);
     const instanceId = await instance.getAttribute('data-node-id');
     if (!instanceId) throw new Error('Could not locate the "u_dp" instance node');
-    await expandInstanceOnPage(page, graph, instance, 'datapath');
+    await expandInstanceOnPage(page, graph, emptyLayout, instance, 'datapath');
 
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
     // Multiple internal nodes actually spliced in (registers + combs).
@@ -351,7 +372,7 @@ test.describe('expand instance in place visual', () => {
     if (!aluGraphNode) throw new Error('No alu instance in cpu_top');
     const aluNodeId = aluGraphNode.id;
     const aluInstance = page.locator(`[data-node-id="${aluNodeId}"]`);
-    await expandInstanceOnPage(page, graph, aluInstance, 'alu');
+    await expandInstanceOnPage(page, graph, layout, aluInstance, 'alu');
     await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
 
     // Border-crossing marquee across the whole diagram: top-level nodes only.

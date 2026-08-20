@@ -154,7 +154,7 @@
       "target": "expand:instance:top:u1::port:leaf:ly",
       "sourceHandle": "port:z",
       "targetHandle": "inner",
-      "path": "M 720 168 L 744 168 L 786 168 L 786 234 L 720 234 L 720 72 L 744 72"
+      "path": "M 720 168 L 744 168 L 720 168 L 720 72 L 744 72"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:la:instance:leaf:u_inner:la",
@@ -162,7 +162,7 @@
       "target": "expand:instance:top:u1::instance:leaf:u_inner",
       "sourceHandle": "inner",
       "targetHandle": "port:w",
-      "path": "M 408 72 L 432 72 L 480 72 L 480 168 L 504 168 L 528 168"
+      "path": "M 408 72 L 432 72 L 456 72 L 456 168 L 504 168 L 528 168"
     }
   ]
 }

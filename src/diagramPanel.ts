@@ -43,6 +43,9 @@ import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
 import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
 import { nodeIsArrayNode } from './ir/nodeMetadata';
+import { buildExpandSpliceLayout } from './layout/expandLayout';
+import type { ExpandSpliceLayout } from './webview/expand/splice';
+import { instanceParameterRows, resolvedNodeDimensions } from './diagram/nodeSizing';
 
 /** Sent to the webview in response to `requestExpandInstance`, and (ids only,
  * see `expandedInstanceIds` on the `graph` message) proactively fetched by the
@@ -54,6 +57,12 @@ export interface ExpandInstancePayload {
   childModuleName: string;
   module: DesignModule;
   savedLayout?: SavedExpandedInstanceLayout;
+  /**
+   * The child's standalone place-and-route result dropped into the frame
+   * (see buildExpandSpliceLayout) — absent when that pipeline failed, in
+   * which case the webview falls back to its own ELK-only placement.
+   */
+  spliceLayout?: ExpandSpliceLayout;
 }
 
 type WebviewMessage =
@@ -96,7 +105,20 @@ type WebviewMessage =
   | { type: 'tieNet'; moduleName: string; netKey: string }
   | { type: 'resetCutLabelPosition'; moduleName: string; nodeId: string }
   | { type: 'revertNodeSizes'; moduleName: string; nodeIds: string[] }
-  | { type: 'requestExpandInstance'; moduleName: string; instanceId: string; topLevel: boolean }
+  | {
+      type: 'requestExpandInstance';
+      moduleName: string;
+      instanceId: string;
+      topLevel: boolean;
+      /**
+       * The instance node's live rendered geometry — authoritative over the
+       * host's own derivation (it reflects unsaved local resizes, and for a
+       * nested expand the instance node only exists in the webview's splice
+       * state at all). Optional so a stale webview keeps working.
+       */
+      instanceSize?: { width: number; height: number };
+      instanceParamRows?: number;
+    }
   | { type: 'collapseInstance'; moduleName: string; instanceId: string; topLevel: boolean }
   | {
       type: 'saveExpandedInstanceLayout';
@@ -386,7 +408,13 @@ export class DiagramPanel {
       return;
     }
     if (message.type === 'requestExpandInstance') {
-      await this.requestExpandInstance(message.moduleName, message.instanceId, message.topLevel);
+      await this.requestExpandInstance(
+        message.moduleName,
+        message.instanceId,
+        message.topLevel,
+        message.instanceSize,
+        message.instanceParamRows,
+      );
       return;
     }
     if (message.type === 'collapseInstance') {
@@ -900,16 +928,21 @@ export class DiagramPanel {
     await this.postView();
   }
 
-  // Graph-splicing itself (ELK layout, boundary-port synthesis, drag-sync)
-  // happens entirely client-side in the webview (see webview/expand) — the
-  // host's job is only to hand over the child module's own IR/graph (the
-  // same data `openModule` already uses) plus any previously-saved splice
-  // snapshot for this specific instance, and to persist the `expanded` flag
-  // so a reopened module knows to re-request this on load.
+  // The host hands the webview the child module's own IR/graph (the same
+  // data `openModule` already uses), any previously-saved splice snapshot
+  // for this specific instance, and — the actual layout work — the child's
+  // standalone place-and-route result dropped into the frame with its
+  // boundary ports wired up by libavoid (see buildExpandSpliceLayout). It
+  // also persists the `expanded` flag so a reopened module knows to
+  // re-request this on load. Turning the frame-local layout into canvas
+  // nodes/edges (namespacing, translation, drag-sync) stays client-side in
+  // webview/expand.
   private async requestExpandInstance(
     moduleName: string,
     instanceId: string,
     topLevel: boolean,
+    instanceSize?: { width: number; height: number },
+    instanceParamRows?: number,
   ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
@@ -950,11 +983,34 @@ export class DiagramPanel {
     }
 
     const savedLayout = await store.readExpandedInstanceLayout(moduleName, instanceId);
+
+    // The child's normal standalone place-and-route, dropped into the frame
+    // with the boundary ports wired up by libavoid. Best-effort: on any
+    // failure the webview falls back to its own ELK-only placement, the same
+    // degraded mode an older host produces.
+    let spliceLayout: ExpandSpliceLayout | undefined;
+    try {
+      spliceLayout = this.graph
+        ? await buildExpandSpliceLayout({
+            graph: this.graph,
+            layout: this.layout,
+            childModuleName,
+            instanceId,
+            instancePorts: instanceNode.ports,
+            instanceSize: instanceSize ?? resolvedNodeDimensions(instanceNode),
+            instanceParamRows: instanceParamRows ?? instanceParameterRows(instanceNode),
+          })
+        : undefined;
+    } catch (error) {
+      logger.warn(`expand splice layout failed for ${childModuleName}: ${String(error)}`);
+    }
+
     const payload: ExpandInstancePayload = {
       instanceId,
       childModuleName,
       module: childModule,
       savedLayout,
+      spliceLayout,
     };
     await this.panel.webview.postMessage({ type: 'expandInstanceData', moduleName, payload });
   }
