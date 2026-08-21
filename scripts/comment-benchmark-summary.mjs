@@ -4,10 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   renderStackedSuiteChart,
+  renderHistoryTrendChart,
   renderDeltaTableMarkdown,
   renderStackedCsv,
   computeDeltaRows,
   computeAverageDelta,
+  computeBenchmarkHistory,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
@@ -211,6 +213,26 @@ for (const [key, group] of chartGroups) {
     csvFilenamesByKey.set(key, [{ filename }]);
   }
 }
+
+// The trend chart only exists for the visual suite — it's the only one with
+// per-master-run history to derive (see computeBenchmarkHistory).
+const visualGroup = chartGroups.get('visual');
+const elaborationMetric = visualGroup?.metrics.find((m) => m.name === 'visual-elaboration-diagram-generation-duration');
+const renderingMetric = visualGroup?.metrics.find((m) => m.name === 'visual-rendering-diagram-generation-duration');
+if (elaborationMetric && renderingMetric) {
+  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const currentRunAverages = {
+    elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
+    renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
+  };
+  const history = computeBenchmarkHistory(baselineData);
+  contentByFilename.set('visual-trend.svg', renderHistoryTrendChart({
+    title: 'Visual suite — historical average per master run',
+    history,
+    currentRunAverages,
+  }));
+}
+
 const chartCommitSha = publishFiles(contentByFilename);
 
 // A one-line "how'd it move" per tracked metric, surfaced right after the
@@ -262,6 +284,11 @@ for (const [key, group] of chartGroups) {
       );
     }
   }
+  if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
+    const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
+    lines.push('', `![Visual suite historical trend](${trendUrl})`);
+  }
+
   sections.push(lines.join('\n'));
 }
 
