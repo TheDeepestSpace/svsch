@@ -151,7 +151,9 @@ export interface SpliceInput {
  * *tighter* than the content padding (padLeft/padRight/padTop): the
  * label-column clearance gap and header gap belong to the sub-canvas, so a
  * boundary stub's vertical jog stays visible and selectable there instead of
- * being swallowed by a grab band.
+ * being swallowed by a grab band — and every side is pulled a further half
+ * grid toward the outer border so the drawn inner border stays off the wire
+ * grid (see EXPAND_RING_PULLBACK).
  */
 export interface ExpandContentInsets {
   top: number;
@@ -216,6 +218,18 @@ const LABEL_COLUMN_GAP = diagramSizing.gridSize * 3;
 const HEADER_GAP = diagramSizing.gridSize;
 /** Body inset used for a side with no ports at all, and below the diagram. */
 export const EXPAND_CONTENT_INSET = diagramSizing.gridSize * 2;
+/**
+ * How far the ring's inner boundary is pulled back toward the outer border,
+ * on every side. Label columns and content paddings are grid multiples, so
+ * without the pullback the drawn inner border sits exactly on a grid line —
+ * the same line a grid-snapped wire segment dragged flush against the ring
+ * lands on. Half a grid keeps the border (and the wire clamp / grab-band
+ * boundary with it) off the grid, so that segment sits visibly clear of the
+ * border instead of on top of it. Content placement (boundaryColumnPad /
+ * expandTopPad) deliberately does NOT shrink with it: node moves snap to
+ * full grid, so a half-grid gain would be unusable anyway.
+ */
+export const EXPAND_RING_PULLBACK = diagramSizing.gridSize / 2;
 
 /**
  * Wire style carried by the net passing through a boundary port, derived from
@@ -372,25 +386,31 @@ export function expandTopPad(instanceParamRows: number): number {
 }
 
 /**
- * Width of the frame's interactive/visible border ring on one side: exactly
- * the boundary label column (without the LABEL_COLUMN_GAP clearance, which
+ * Width of the frame's interactive/visible border ring on one side: the
+ * boundary label column (without the LABEL_COLUMN_GAP clearance, which
  * belongs to the sub-canvas — a stub's vertical jog there must stay
  * selectable, not sit under a grab band), or a plain inset for a side with
- * no ports at all.
+ * no ports at all — minus the half-grid pullback that keeps the inner
+ * border off the wire grid (see EXPAND_RING_PULLBACK).
  */
 export function boundaryColumnRingWidth(column: BoundaryColumnEntry[]): number {
-  return column.length > 0
-    ? Math.max(...column.map((entry) => entry.size.width))
-    : EXPAND_CONTENT_INSET;
+  return (
+    (column.length > 0
+      ? Math.max(...column.map((entry) => entry.size.width))
+      : EXPAND_CONTENT_INSET) - EXPAND_RING_PULLBACK
+  );
 }
 
 /**
  * Height of the ring's top band: the header text plus parameter rows, without
  * the HEADER_GAP clearance below them (same sub-canvas rule as
- * boundaryColumnRingWidth).
+ * boundaryColumnRingWidth), minus the same half-grid pullback.
  */
 export function expandRingTopHeight(instanceParamRows: number): number {
-  return snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize);
+  return (
+    snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize) -
+    EXPAND_RING_PULLBACK
+  );
 }
 
 /**
@@ -802,7 +822,7 @@ function assembleSpliceResult(
     top: expandRingTopHeight(input.instanceParamRows),
     left: boundaryColumnRingWidth(inputColumn),
     right: boundaryColumnRingWidth(outputColumn),
-    bottom: EXPAND_CONTENT_INSET,
+    bottom: EXPAND_CONTENT_INSET - EXPAND_RING_PULLBACK,
   };
 
   // The region is pure machinery now (drag-sync membership, nesting,

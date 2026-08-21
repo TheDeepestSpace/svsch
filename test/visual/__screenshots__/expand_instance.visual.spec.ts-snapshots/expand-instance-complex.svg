@@ -2702,7 +2702,7 @@ g.hdl-node-expand-ghost > svg.hdl-node-svg {
 <svg class="hdl-node-svg" width="1536" height="432" aria-hidden="true">
 <rect class="svsch-node-shape" width="1536" height="432"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">datapath</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u_dp</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">bus_in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">pkt_in<tspan class="svsch-port-type-suffix">{}</tspan></text><text class="svsch-port-label" x="1524" y="48" text-anchor="end" dominant-baseline="middle">bus_out<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="1524" y="72" text-anchor="end" dominant-baseline="middle">flag</text>
 </svg>
-<rect class="svsch-expand-content-border" x="96" y="48" width="1344" height="336" />
+<rect class="svsch-expand-content-border" x="84" y="36" width="1368" height="360" />
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:clk" data-node-kind="port" transform="translate(72 36)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">

@@ -2679,7 +2679,7 @@ g.hdl-node-expand-ghost > svg.hdl-node-svg {
 <svg class="hdl-node-svg" width="360" height="216" aria-hidden="true">
 <rect class="svsch-node-shape" width="360" height="216"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u1</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">a</text><text class="svsch-port-label" x="348" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>
-<rect class="svsch-expand-content-border" x="72" y="48" width="240" height="120" />
+<rect class="svsch-expand-content-border" x="60" y="36" width="264" height="144" />
 </g>
 <g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:clk" data-node-kind="port" transform="translate(24 60)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">

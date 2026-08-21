@@ -341,8 +341,8 @@ export function OrthogonalEdge({
   // itself sits outside the frame (an internal node dragged beyond the
   // not-yet-growing border — clamping only the route would break
   // orthogonality against the un-clamped handle endpoints). A boundary
-  // port's inner handle sits exactly on the ring's inner boundary, so its
-  // stub clamps without distortion.
+  // port's inner handle sits half a grid inside the ring's inner boundary
+  // (see EXPAND_RING_PULLBACK), so its stub clamps without distortion.
   const containerFlowNode = edgeData?.containerNodeId
     ? flowNodes.find((node) => node.id === edgeData.containerNodeId)
     : undefined;

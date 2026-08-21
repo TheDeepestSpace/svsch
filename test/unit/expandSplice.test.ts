@@ -7,6 +7,7 @@ import {
   expandRegionId,
   isExpandNamespacedId,
   EXPAND_CONTENT_INSET,
+  EXPAND_RING_PULLBACK,
 } from '../../src/webview/expand/splice';
 import { absorbSplicedEdgeRouteChanges } from '../../src/webview/expand/expandOverlay';
 import { boundaryPortLeadClassName } from '../../src/webview/nodes/BoundaryPortNode';
@@ -187,7 +188,7 @@ describe('spliceExpandedInstance', () => {
     const result = await spliceExpandedInstance(baseInput());
     const insets = result.contentInsets;
 
-    expect(insets.bottom).toBe(EXPAND_CONTENT_INSET);
+    expect(insets.bottom).toBe(EXPAND_CONTENT_INSET - EXPAND_RING_PULLBACK);
     expect(insets.top).toBeGreaterThan(0);
 
     const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
@@ -197,9 +198,14 @@ describe('spliceExpandedInstance', () => {
     const rightColumnWidths = boundaryNodes
       .filter((n) => n.metadata?.boundaryPort?.outerSide === 'right')
       .map((n) => resolvedNodeDimensions(n).width);
-    // Each side's inset clears its whole boundary-label column.
-    expect(insets.left).toBeGreaterThanOrEqual(Math.max(...leftColumnWidths));
-    expect(insets.right).toBeGreaterThanOrEqual(Math.max(...rightColumnWidths));
+    // Each side's inset clears its boundary-label column up to the half-grid
+    // pullback that keeps the drawn inner border off the wire grid.
+    expect(insets.left).toBeGreaterThanOrEqual(
+      Math.max(...leftColumnWidths) - EXPAND_RING_PULLBACK,
+    );
+    expect(insets.right).toBeGreaterThanOrEqual(
+      Math.max(...rightColumnWidths) - EXPAND_RING_PULLBACK,
+    );
 
     // The internal content sits inside the ring, never under a grab band.
     const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'))!;
@@ -225,7 +231,7 @@ describe('spliceExpandedInstance', () => {
         .filter((n) => n.metadata?.boundaryPort?.outerSide === 'left')
         .map((n) => resolvedNodeDimensions(n).width),
     );
-    expect(insets.left).toBe(leftColumnWidth);
+    expect(insets.left).toBe(leftColumnWidth - EXPAND_RING_PULLBACK);
 
     // The content itself sits clear of the ring with the jog gap in between.
     const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'))!;

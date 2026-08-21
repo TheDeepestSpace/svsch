@@ -162,7 +162,7 @@
       "target": "expand:instance:top:u1::instance:leaf:u_inner",
       "sourceHandle": "inner",
       "targetHandle": "port:w",
-      "path": "M 408 72 L 432 72 L 432 192 L 456 192 L 456 144 L 480 144"
+      "path": "M 408 72 L 432 72 L 432 204 L 456 204 L 456 144 L 480 144"
     }
   ]
 }
