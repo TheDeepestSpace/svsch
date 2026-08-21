@@ -392,6 +392,68 @@ test.describe('expand instance in place visual', () => {
     await expectGraphAndScreenshot(page, 'expand-instance-complex.png');
   });
 
+  // A parameter-overridden instance renders its own instance-parameter chip
+  // stacked atop its ports (see instanceParameterRows), and expandTopPad
+  // reserves that same header height inside the frame so the spliced child
+  // diagram never renders under/behind that chip. This is the same
+  // register-leaf shape as the very first test in this file (one register
+  // node, 3 boundary ports), just with the leaf's WIDTH parameter overridden
+  // at the instantiation site, so the check is purely about whether the
+  // splice's inner area clears the extra header row the chip needs, not
+  // about splicing content that wasn't already covered elsewhere.
+  // eslint-disable-next-line max-len
+  test('an instance with an overridden parameter expanded: spliced content clears the parameter chip row', async ({
+    page,
+  }) => {
+    await installMessageCapture(page);
+
+    const graph = await buildFixtureGraph('expand_instance_with_params.sv');
+    const emptyLayout: SavedLayout = { version: 1, modules: {} };
+    const view = await buildViewModel(graph, 'top', emptyLayout);
+
+    await openView(page, view);
+    await page.waitForSelector('[data-node-kind="instance"]', { state: 'attached' });
+    await waitForViewportTransformToSettle(page);
+
+    const instance = page.locator('[data-node-kind="instance"]');
+    await expect(instance).toHaveCount(1);
+    const instanceId = await instance.getAttribute('data-node-id');
+    if (!instanceId) throw new Error('Could not locate the "u1" instance node');
+    await expect(instance.locator('.instance-parameter-chip')).toHaveCount(1);
+
+    await expandInstanceOnPage(page, graph, emptyLayout, instance, 'param_leaf');
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(3);
+    // The register node from `always_ff` — real internal content, not just
+    // boundary ports, so the "clears the chip row" check below is
+    // meaningful.
+    expect(
+      await page.locator('[data-node-id^="expand:"]:not([data-node-kind="boundaryPort"])').count(),
+    ).toBeGreaterThanOrEqual(1);
+
+    const ghostInstance = page.locator(`[data-node-id="${instanceId}"]`);
+    const chip = ghostInstance.locator('.instance-parameter-chip');
+    await expect(chip).toHaveCount(1);
+    const chipBottom = await chip.evaluate((element) => element.getBoundingClientRect().bottom);
+    const tolerance = 4; // antialiasing/rounding slack, same as expectSplicedContentInsideFrame
+
+    // Every spliced node (boundary ports included, since their vertical
+    // anchor is offset by instanceParamRows too) must sit below the chip.
+    for (const spliced of await page.locator('[data-node-id^="expand:"]').all()) {
+      const box = await spliced.boundingBox();
+      if (!box) continue;
+      expect(
+        box.y,
+        `spliced node ${await spliced.getAttribute('data-node-id')}`,
+      ).toBeGreaterThanOrEqual(chipBottom - tolerance);
+    }
+
+    await expectSplicedContentInsideFrame(page, instanceId);
+
+    await fitGraphView(page, 0.2);
+    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
+    await expectGraphAndScreenshot(page, 'expand-instance-with-parameters.png');
+  });
+
   // The example design's cpu_top with its ALU expanded in place, then the
   // outer diagram auto-layouted from a border-crossing drag-selection — the
   // marquee must skip the sub-diagram's nodes, and the relayout round-trip
