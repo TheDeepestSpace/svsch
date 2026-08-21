@@ -93,6 +93,29 @@ cases:
       nodeKinds: [port, gate]
       selectedText: "a & b"
 
+  - id: gate-logical-and
+    title: Logical AND Gate
+    description: The logical AND operator (&&) reduces each operand to a boolean value first, so it renders with the same AND gate glyph as bitwise AND but always produces a single-bit result, even over multi-bit operands.
+    tags: [gate, logical, multi-bit, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] a,
+          input logic [3:0] b,
+          output logic y
+        );
+          assign y = a && b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a && b"
+
   - id: gate-or
     title: Boolean OR Gate
     description: A bitwise OR operator becomes an OR gate.
@@ -115,6 +138,29 @@ cases:
     expect:
       nodeKinds: [port, gate]
       selectedText: "a | b"
+
+  - id: gate-logical-or
+    title: Logical OR Gate
+    description: The logical OR operator (||) reduces each operand to a boolean value first, so it renders with the same OR gate glyph as bitwise OR but always produces a single-bit result, even over multi-bit operands.
+    tags: [gate, logical, multi-bit, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic [3:0] a,
+          input logic [3:0] b,
+          output logic y
+        );
+          assign y = a || b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: gate
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, gate]
+      selectedText: "a || b"
 
   - id: gate-xor
     title: Boolean XOR Gate

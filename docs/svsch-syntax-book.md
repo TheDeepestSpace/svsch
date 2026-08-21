@@ -575,6 +575,23 @@ endmodule
   <img src="syntax-book/assets/gate-multibit-and.svg" alt="Multi-bit Boolean AND Gate diagram" />
 </p>
 
+### Logical AND Gate
+
+The logical AND operator (&&) reduces each operand to a boolean value first, so it renders with the same AND gate glyph as bitwise AND but always produces a single-bit result, even over multi-bit operands.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic y
+);
+  assign y = <mark>a &amp;&amp; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-logical-and.svg" alt="Logical AND Gate diagram" />
+</p>
+
 ### Boolean OR Gate
 
 A bitwise OR operator becomes an OR gate.
@@ -590,6 +607,23 @@ endmodule
 
 <p align="center">
   <img src="syntax-book/assets/gate-or.svg" alt="Boolean OR Gate diagram" />
+</p>
+
+### Logical OR Gate
+
+The logical OR operator (||) reduces each operand to a boolean value first, so it renders with the same OR gate glyph as bitwise OR but always produces a single-bit result, even over multi-bit operands.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic y
+);
+  assign y = <mark>a || b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-logical-or.svg" alt="Logical OR Gate diagram" />
 </p>
 
 ### Boolean XOR Gate
