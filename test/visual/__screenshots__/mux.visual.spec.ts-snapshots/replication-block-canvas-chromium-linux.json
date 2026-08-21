@@ -8,7 +8,7 @@
         "y": 288
       },
       "width": 144,
-      "height": 148,
+      "height": 149,
       "data": {
         "kind": "bus",
         "ports": [
@@ -43,7 +43,7 @@
         "y": 168
       },
       "width": 144,
-      "height": 100,
+      "height": 101,
       "data": {
         "kind": "bus",
         "ports": [

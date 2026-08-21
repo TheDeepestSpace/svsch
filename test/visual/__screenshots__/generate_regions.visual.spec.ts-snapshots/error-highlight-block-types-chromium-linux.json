@@ -68,7 +68,7 @@
         "y": 1130
       },
       "width": 144,
-      "height": 124,
+      "height": 125,
       "data": {
         "kind": "bus",
         "ports": [
@@ -288,7 +288,7 @@
         "y": 710
       },
       "width": 144,
-      "height": 100,
+      "height": 101,
       "data": {
         "kind": "bus",
         "ports": [
@@ -318,7 +318,7 @@
         "y": 710
       },
       "width": 144,
-      "height": 100,
+      "height": 101,
       "data": {
         "kind": "bus",
         "ports": [
@@ -428,7 +428,7 @@
         "y": 920
       },
       "width": 192,
-      "height": 112,
+      "height": 113,
       "data": {
         "kind": "interface",
         "ports": [
@@ -463,7 +463,7 @@
         "y": 920
       },
       "width": 192,
-      "height": 124,
+      "height": 125,
       "data": {
         "kind": "interface",
         "ports": [
@@ -802,7 +802,7 @@
         "y": 710
       },
       "width": 144,
-      "height": 100,
+      "height": 101,
       "data": {
         "kind": "struct",
         "ports": [
@@ -832,7 +832,7 @@
         "y": 710
       },
       "width": 144,
-      "height": 100,
+      "height": 101,
       "data": {
         "kind": "struct",
         "ports": [

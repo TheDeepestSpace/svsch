@@ -2620,6 +2620,47 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/* Boundary-port node ("Expand instance in place", issue #232) — the DOM
+   version's .hdl-boundary-port rules are a flexbox layout with no equivalent
+   tree in the exported SVG (see BoundaryPortNodeSvg), so the label/lead are
+   drawn with plain SVG text/line elements and styled here instead. */
+.svsch-boundary-port-text {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+.svsch-boundary-port-lead {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  stroke-width: 1.5px;
+}
+.svsch-boundary-port-lead-thick {
+  stroke-width: 4.5px;
+}
+.svsch-boundary-port-lead-struct {
+  stroke: var(--vscode-editor-foreground);
+  stroke-dasharray: 2 2;
+}
+.svsch-boundary-port-lead-interface {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-dasharray: 2 2;
+}
+/* An expanded instance's own node, dimmed into a backdrop for its spliced-in
+   child diagram (see DiagramNodeMetadata.expandGhost) — same visual language
+   as the webview's .hdl-node-expand-ghost (dimmed + desaturated body, fully
+   transparent interior so spliced wires read at full brightness) minus the
+   DOM-only grab-band/resize-handle rules, which have no purpose in a static
+   export. */
+g.hdl-node-expand-ghost > svg.hdl-node-svg {
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+.svsch-expand-content-border {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-charts-blue);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
 /*]]>*/
 </style>
 <g transform="translate(216 24)">

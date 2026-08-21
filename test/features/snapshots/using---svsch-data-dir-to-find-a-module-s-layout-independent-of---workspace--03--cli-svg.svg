@@ -2604,4 +2604,45 @@ path.port-skin-body.port-skin-harness {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/* Boundary-port node ("Expand instance in place", issue #232) — the DOM
+   version's .hdl-boundary-port rules are a flexbox layout with no equivalent
+   tree in the exported SVG (see BoundaryPortNodeSvg), so the label/lead are
+   drawn with plain SVG text/line elements and styled here instead. */
+.svsch-boundary-port-text {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+.svsch-boundary-port-lead {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  stroke-width: 1.5px;
+}
+.svsch-boundary-port-lead-thick {
+  stroke-width: 4.5px;
+}
+.svsch-boundary-port-lead-struct {
+  stroke: var(--vscode-editor-foreground);
+  stroke-dasharray: 2 2;
+}
+.svsch-boundary-port-lead-interface {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-dasharray: 2 2;
+}
+/* An expanded instance's own node, dimmed into a backdrop for its spliced-in
+   child diagram (see DiagramNodeMetadata.expandGhost) — same visual language
+   as the webview's .hdl-node-expand-ghost (dimmed + desaturated body, fully
+   transparent interior so spliced wires read at full brightness) minus the
+   DOM-only grab-band/resize-handle rules, which have no purpose in a static
+   export. */
+g.hdl-node-expand-ghost > svg.hdl-node-svg {
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+.svsch-expand-content-border {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-charts-blue);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
 /*]]>*/</style><g transform="translate(24 60)"><g class="svsch-generate-regions"/><g class="svsch-edges"><g class="svsch-edge-group" data-edge-id="edge:port:top:a:port:top:y:y"><path d="M 144 0 L 168 0 L 264 0 L 264 48 L 336 48 L 360 48" class="svsch-edge" data-edge-id="edge:port:top:a:port:top:y:y" data-net-key="port:top:a:port:a"/></g></g><g class="svsch-nodes"><g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:a" data-node-kind="port" transform="translate(24 -12)"><svg width="120" height="24" aria-hidden="true" class="hdl-node-svg"><g class="port-skin port-skin-input"><path d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" class="port-skin-body svsch-array-layer-middle"/><path d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z" class="port-skin-selection"/><text x="60" y="12" class="svsch-port-label svsch-port-node-label" dominant-baseline="middle" font-size="12" font-weight="600" text-anchor="middle"><tspan class="svsch-port-node-name">a</tspan></text></g></svg></g><g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:y" data-node-kind="port" transform="translate(360 36)"><svg width="120" height="24" aria-hidden="true" class="hdl-node-svg"><g class="port-skin port-skin-output"><path d="M 12 0 H 120 V 24 H 12 L 0 12 Z" class="port-skin-body svsch-array-layer-middle"/><path d="M 12 0 H 120 V 24 H 12 L 0 12 Z" class="port-skin-selection"/><text x="60" y="12" class="svsch-port-label svsch-port-node-label" dominant-baseline="middle" font-size="12" font-weight="600" text-anchor="middle"><tspan class="svsch-port-node-name">y</tspan></text></g></svg></g></g></g></svg>
