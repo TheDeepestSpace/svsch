@@ -49,7 +49,7 @@ describe('snapshot update policy', () => {
       baselineThresholdFor(
         'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png',
       )?.maxDiffPixels,
-    ).toBe(200);
+    ).toBe(50);
   });
 
   it('rejects Playwright all mode', () => {
