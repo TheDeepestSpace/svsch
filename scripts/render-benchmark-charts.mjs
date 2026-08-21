@@ -91,6 +91,34 @@ export function extractBaseline(benchmarkData, suiteName) {
   return baseline;
 }
 
+// Derives the historical per-master-run averages directly from
+// github-action-benchmark's own gh-pages payload (dev/bench/data.js) rather
+// than a separately maintained file — every master push already appends one
+// entry per tracked suite there (see the `auto-push` steps in ci.yml), so
+// this just re-shapes that data into the {sha, date, elaborationAvgMs,
+// renderingAvgMs} points the trend chart wants. Entries are matched across
+// suites by commit id (both are tracked in the same job run, so a push that
+// recorded one recorded the other) and any commit missing one side is
+// dropped rather than plotted with a gap.
+export function computeBenchmarkHistory(benchmarkData) {
+  const elaborationEntries =
+    benchmarkData?.entries?.['visual-elaboration-diagram-generation-duration'] ?? [];
+  const renderingByCommit = new Map(
+    (benchmarkData?.entries?.['visual-rendering-diagram-generation-duration'] ?? []).map(
+      (entry) => [entry.commit.id, entry],
+    ),
+  );
+  const average = (benches) => benches.reduce((sum, bench) => sum + bench.value, 0) / benches.length;
+  return elaborationEntries
+    .filter((entry) => renderingByCommit.has(entry.commit.id))
+    .map((entry) => ({
+      sha: entry.commit.id,
+      date: new Date(entry.date).toISOString(),
+      elaborationAvgMs: average(entry.benches),
+      renderingAvgMs: average(renderingByCommit.get(entry.commit.id).benches),
+    }));
+}
+
 // Joins each current-run entry with its baseline (if any) into the shape both
 // the chart and the delta table consume.
 export function computeDeltaRows(entries, baselineByName) {
@@ -414,8 +442,8 @@ export function renderDeltaTableMarkdown(rows) {
 }
 
 // Line-chart trend data prep: turns persisted history (oldest→newest, as
-// stored in test/visual/benchmark-history.yaml) plus the current — not yet
-// merged — PR run's averages into the ordered point list both
+// computed by computeBenchmarkHistory) plus the current — not yet merged —
+// PR run's averages into the ordered point list both
 // renderHistoryTrendChart and its tests consume, so "which point is the PR
 // preview" can never disagree between them.
 export function computeHistoryTrendData(history, currentRunAverages) {

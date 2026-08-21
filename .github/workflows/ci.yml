@@ -228,16 +228,6 @@ jobs:
         with:
           suite: visual
 
-      - name: Reject benchmark-history.yaml edits in PRs
-        if: github.event_name == 'pull_request'
-        env:
-          BENCHMARK_HISTORY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          BENCHMARK_HISTORY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch --no-tags --depth=1 origin "$BENCHMARK_HISTORY_BASE_SHA" "$BENCHMARK_HISTORY_HEAD_SHA"
-          npm run benchmark:check-history-unchanged -- "$BENCHMARK_HISTORY_BASE_SHA" "$BENCHMARK_HISTORY_HEAD_SHA"
-
       - &pw_version_step
         name: Get Playwright version
         id: playwright-version
@@ -328,55 +318,6 @@ jobs:
             test-results/visual/**
             playwright-report/**
             test/visual/__screenshots__/**
-
-  append_benchmark_history:
-    # Appends this run's elaboration/rendering averages to
-    # test/visual/benchmark-history.yaml and pushes the commit directly to
-    # master — the same direct-push shape dependabot-changeset.yml uses for
-    # its own auto-commits (there, to a PR branch rather than master).
-    # CAVEAT verified via `gh api repos/.../rulesets`: master is covered by
-    # the "CI" ruleset (required_status_checks, no bypass actors listed), and
-    # GitHub's required-status-checks rule also gates direct pushes, not just
-    # PR merges — since this job's commit has no check-run history of its own
-    # yet, the push below may be rejected outright. If that happens, this
-    # job's failure is the signal a maintainer needs to either add
-    # github-actions[bot] as a ruleset bypass actor, or switch this step to
-    # open an auto-merged follow-up PR authored with a real PAT secret (a
-    # plain GITHUB_TOKEN-authored PR wouldn't retrigger this same `ci.yml`
-    # workflow's `pull_request` checks, so they could never complete either).
-    needs: [prep, build_ci_image, test_visual]
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    container: *container_config
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - *restore_npm_step
-
-      - name: Download benchmark results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: benchmark-visual
-          path: benchmarks
-
-      - name: Append benchmark history
-        run: >-
-          npm run benchmark:append-history --
-          benchmarks/benchmark-elaboration.json
-          benchmarks/benchmark-rendering.json
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-
-      - name: Commit and push
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test/visual/benchmark-history.yaml
-          git commit -m "chore: record benchmark history for ${GITHUB_SHA:0:7}"
-          git push
 
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -581,7 +522,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
   security_audit:
     needs: [prep, build_ci_image, setup]
