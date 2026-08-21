@@ -784,6 +784,12 @@ function DiagramApp(): React.ReactElement {
     if (!splice) return;
     removeSpliceAndDescendants(spliceMapRef.current, namespace);
     if (splice.topLevel) {
+      // Drop the id from the local expanded list too: the host persists the
+      // collapse but doesn't push a fresh graph message, so the auto-restore
+      // effect above would still see the stale flag on the very next nodes
+      // rebuild (triggered by the spliceVersion bump below) and immediately
+      // re-expand the instance the user just collapsed.
+      setExpandedInstanceIds((ids) => ids.filter((id) => id !== splice.instanceId));
       vscode.postMessage({
         type: 'collapseInstance',
         moduleName: splice.parentModuleName,

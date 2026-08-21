@@ -898,6 +898,14 @@ Feature: Diagram Interaction
     Then I should see a boundary port node named "a"
     When I close and reopen the diagram
     Then I should see a boundary port node named "a"
+    # Regression: collapsing an auto-restored instance used to bounce — the
+    # webview's expanded-instance list (delivered with the graph message on
+    # reopen) went stale on Collapse and the auto-restore effect immediately
+    # re-expanded it.
+    When I collapse the expanded instance "u1"
+    Then the instance "u1" should stay collapsed
+    And I should not see a boundary port node named "a"
+    And I should see an instance node "u1" of module "leaf"
 
   Scenario: The Expand button is not offered for a stacked instance array
     Given I have a file "top.sv" in my workspace:

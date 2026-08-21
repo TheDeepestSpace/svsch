@@ -1453,6 +1453,21 @@ When(
   },
 );
 
+// Guards against the collapse→re-expand bounce (issue reported on #233): the
+// bounce is an async round trip through the extension host (requestExpand →
+// expandInstanceData → re-splice), so an immediate not-visible assertion right
+// after Collapse passes even when the instance is about to spring back open.
+// Wait out the round-trip window first, then assert the ghost never returned.
+Then(
+  'the instance {string} should stay collapsed',
+  async function (this: BddWorld, instanceLabel: string) {
+    await this.workbox.waitForTimeout(1500);
+    await expect(this.webviewPage.locator('.hdl-node-expand-ghost')).toHaveCount(0);
+    const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+    if (!id) throw new Error(`Collapsed instance node "${instanceLabel}" is missing`);
+  },
+);
+
 // Nested counterpart to "I collapse the expanded instance" above — same
 // reasoning as "I click the Expand button to nest-expand": collapsing an
 // instance nested inside another expanded instance doesn't touch the
