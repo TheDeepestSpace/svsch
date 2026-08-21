@@ -237,9 +237,61 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle condition_rhs = vpi_scan(condition_operands);
     bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
     vpi_release_handle(condition_operands);
-    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var || !isLiteralExpr(condition_rhs)) return false;
+    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var) return false;
+    const auto parameter_values = generateParameterValues(mod);
+    std::vector<vpiHandle> bound_identifiers;
+    collectIdentifierHandlesRecursive(condition_rhs, bound_identifiers);
+    if (std::any_of(bound_identifiers.begin(), bound_identifiers.end(),
+        [&](vpiHandle identifier) {
+            return parameter_values.count(normalizedParameterName(identifier)) == 0;
+        })) return false;
     int expected_bound = descending ? 0 : (condition_op == vpiLtOp ? array_size : array_size - 1);
-    if (getConstantInt(condition_rhs) != expected_bound) return false;
+    std::function<std::optional<int>(vpiHandle)> evaluate_bound = [&](vpiHandle handle) -> std::optional<int> {
+        if (!handle) return std::nullopt;
+        vpiHandle actual = unwrapRef(handle);
+        if (!actual) actual = handle;
+        if (isLiteralExpr(actual)) return getConstantInt(actual);
+
+        std::string parameter_name = normalizedParameterName(handle);
+        auto parameter = parameter_values.find(parameter_name);
+        if (parameter != parameter_values.end()) return parameter->second;
+        if (vpi_get(vpiType, actual) != vpiOperation) return std::nullopt;
+
+        std::vector<int> operands;
+        vpiHandle operand_itr = vpi_iterate(vpiOperand, actual);
+        if (operand_itr) {
+            while (vpiHandle operand = vpi_scan(operand_itr)) {
+                auto value = evaluate_bound(operand);
+                if (!value) {
+                    vpi_release_handle(operand_itr);
+                    return std::nullopt;
+                }
+                operands.push_back(*value);
+            }
+            vpi_release_handle(operand_itr);
+        }
+
+        int op = vpi_get(vpiOpType, actual);
+        if (operands.size() == 1) {
+            if (op == vpiMinusOp) return -operands[0];
+            if (op == vpiPlusOp) return operands[0];
+        }
+        if (operands.size() != 2) return std::nullopt;
+        switch (op) {
+            case vpiAddOp: return operands[0] + operands[1];
+            case vpiSubOp: return operands[0] - operands[1];
+            case vpiMultOp: return operands[0] * operands[1];
+            case vpiDivOp: return operands[1] == 0 ? std::nullopt : std::optional<int>(operands[0] / operands[1]);
+            case vpiModOp: return operands[1] == 0 ? std::nullopt : std::optional<int>(operands[0] % operands[1]);
+            case vpiLShiftOp: return operands[1] < 0 || operands[1] >= static_cast<int>(sizeof(int) * 8)
+                ? std::nullopt : std::optional<int>(operands[0] << operands[1]);
+            case vpiRShiftOp: return operands[1] < 0 || operands[1] >= static_cast<int>(sizeof(int) * 8)
+                ? std::nullopt : std::optional<int>(operands[0] >> operands[1]);
+            default: return std::nullopt;
+        }
+    };
+    auto condition_bound = evaluate_bound(condition_rhs);
+    if (!condition_bound || *condition_bound != expected_bound) return false;
 
     vpiHandle increment = loop_control(vpiForIncStmt);
     if (!increment) return false;
@@ -746,58 +798,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
             }
 
-            // For the reset+enable case: also tag the existing mux created by lowerStatement.
             std::string d_signal_for_addr = d_signal;
-            if (is_reset_condition && else_branch_stmt) {
-                // Check if the else branch has a clock-enable if (write_en) condition
-                vpiHandle en_cond = nullptr;
-                if (vpi_get(vpiType, else_branch_stmt) == vpiIf || vpi_get(vpiType, else_branch_stmt) == vpiIfElse) {
-                    en_cond = vpi_handle(vpiCondition, else_branch_stmt);
-                }
-                if (en_cond) {
-                    std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
-                    std::string write_candidate = reg_base + "_write_candidate";
-                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + reg_name + "_next");
-                    bool write_en_mux_exists = false;
-                    for (auto& existing : mod.nodes) {
-                        if (existing.id == candidate_id) {
-                            // Tag the existing write_en mux as stacked and fix its false port
-                            existing.metadata.isArrayNode = true;
-                            existing.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                            existing.metadata.arraySize = arr_size;
-                            for (auto& p : existing.ports) {
-                                if (p.direction == "input" && (p.signal == reg_name || p.signal == reg_base + "_if_false")) {
-                                    p.signal = reg_base;
-                                }
-                            }
-                            // Use this mux output as the chain start
-                            for (const auto& p : existing.ports) {
-                                if (p.direction == "output") { d_signal_for_addr = p.signal; break; }
-                            }
-                            write_en_mux_exists = true;
-                            break;
-                        }
-                    }
-                    if (!write_en_mux_exists) {
-                        Node write_en_mux;
-                        write_en_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + write_candidate);
-                        write_en_mux.kind = "mux";
-                        write_en_mux.label = "if " + enable_signal;
-                        write_en_mux.source = n.source;
-                        write_en_mux.metadata.isArrayNode = true;
-                        write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                        write_en_mux.metadata.arraySize = arr_size;
-                        write_en_mux.metadata.isProcedural = true;
-                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
-                        write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
-                        write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
-                        write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
-                        write_en_mux.ports.push_back({"out", "output", write_candidate, reg_width});
-                        mod.nodes.push_back(write_en_mux);
-                        d_signal_for_addr = write_candidate;
-                    }
-                }
-            }
 
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.

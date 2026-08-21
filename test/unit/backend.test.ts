@@ -3703,6 +3703,92 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
+    it('keeps parameterized register-array reads and writes single-driven', async () => {
+      const graph = await runParser(backend, [
+        {
+          file: 'a_top.sv',
+          text: `
+            module a_top;
+              parameterized_register_file u_register_file();
+            endmodule
+          `,
+        },
+        {
+          file: 'parameterized_register_file.sv',
+          text: fixture('parameterized_register_file.sv'),
+        },
+      ]);
+      const mod = graph.modules.parameterized_register_file;
+      expect(mod).toBeDefined();
+
+      const arrayReg = mod.nodes.find((node) => node.id === 'reg:parameterized_register_file:regs');
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+      expect(arrayReg?.arrayDimension ?? arrayReg?.metadata?.arrayDimension).toBe('[0:3]');
+      expect(arrayReg?.arraySize ?? arrayReg?.metadata?.arraySize).toBe(4);
+      expect(
+        mod.edges.some(
+          (edge) =>
+            edge.source === 'port:parameterized_register_file:reset_n' &&
+            edge.target === arrayReg?.id &&
+            edge.targetPort === 'reset_n',
+        ),
+      ).toBe(true);
+
+      const addressMuxes = mod.nodes.filter((node) =>
+        node.id.startsWith('mux:parameterized_register_file:regs_addr'),
+      );
+      expect(addressMuxes).toHaveLength(1);
+      expect(addressMuxes[0].ports.find((port) => port.name === 'sel')?.connectedSignal).toBe(
+        'rd_addr',
+      );
+
+      for (const address of ['rs1_addr', 'rs2_addr']) {
+        const arrayReadSignal = `regs[${address}]`;
+        const readMux = mod.nodes.find(
+          (node) =>
+            node.kind === 'mux' &&
+            node.label === 'read' &&
+            node.ports.some(
+              (port) => port.direction === 'output' && port.connectedSignal === arrayReadSignal,
+            ),
+        );
+        const outputMux = mod.nodes.find(
+          (node) =>
+            node.kind === 'mux' &&
+            node.ports.some(
+              (port) =>
+                port.direction === 'output' &&
+                port.connectedSignal === address.replace('addr', 'data'),
+            ),
+        );
+
+        expect(readMux).toBeDefined();
+        expect(
+          mod.nodes.some((node) => node.kind === 'select' && node.label === arrayReadSignal),
+        ).toBe(false);
+        expect(
+          mod.edges.filter(
+            (edge) => edge.target === outputMux?.id && edge.targetPort === 'in:false',
+          ),
+        ).toEqual([
+          expect.objectContaining({
+            source: readMux?.id,
+            signal: arrayReadSignal,
+          }),
+        ]);
+      }
+
+      for (const node of mod.nodes) {
+        if (node.kind === 'port') continue;
+        for (const port of node.ports.filter((candidate) => candidate.direction === 'input')) {
+          const incoming = mod.edges.filter(
+            (edge) => edge.target === node.id && edge.targetPort === port.id,
+          );
+          expect(incoming, `${node.id}.${port.id}`).toHaveLength(1);
+        }
+      }
+    });
+
     it(
       'merges multiple normal index expressions into a chained address ' + 'mux for the same array',
       async () => {
