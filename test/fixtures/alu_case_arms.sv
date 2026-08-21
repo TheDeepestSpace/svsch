@@ -12,6 +12,7 @@ module alu_case_arms (
       3'b011:  result = a | b;
       3'b100:  result = (a < b);
       3'b101:  result = (a && b);
+      3'b110:  result = (a || b);
       default: result = '0;
     endcase
   end
