@@ -3305,8 +3305,8 @@ async function runCliCommand(world: BddWorld, command: string) {
   }
   fs.mkdirSync(binDir, { recursive: true });
   fs.symlinkSync(cliPath, svschBin);
-  let stdout = '';
-  let stderr = '';
+  let stdout: string;
+  let stderr: string;
   try {
     const result = await execAsync(command.trim(), {
       cwd: world.workspaceDir || worktreeRoot,

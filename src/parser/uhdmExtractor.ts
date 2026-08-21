@@ -1864,7 +1864,7 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
               if (shouldSuppressFields && p.width !== 'interface') {
                 return [];
               }
-              let portId = p.name;
+              let portId: string;
               if (n.kind === 'instance') {
                 portId = stableId('port', p.name);
               } else if (
