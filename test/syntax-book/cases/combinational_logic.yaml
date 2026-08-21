@@ -208,6 +208,190 @@ cases:
       nodeKinds: [port, alu]
       selectedText: "a + b"
 
+  - id: comparator-lt
+    title: Less-Than Comparator
+    description: A less-than operator becomes a comparator block, whose output is always 1 bit regardless of operand width.
+    tags: [comparator, relational, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a < b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a < b"
+
+  - id: comparator-le
+    title: Less-Than-or-Equal Comparator
+    description: A less-than-or-equal operator becomes a comparator block.
+    tags: [comparator, relational, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a <= b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a <= b"
+
+  - id: comparator-gt
+    title: Greater-Than Comparator
+    description: A greater-than operator becomes a comparator block.
+    tags: [comparator, relational, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a > b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a > b"
+
+  - id: comparator-ge
+    title: Greater-Than-or-Equal Comparator
+    description: A greater-than-or-equal operator becomes a comparator block.
+    tags: [comparator, relational, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a >= b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a >= b"
+
+  - id: comparator-eq
+    title: Equality Comparator
+    description: An equality operator becomes a comparator block.
+    tags: [comparator, equality, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a == b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a == b"
+
+  - id: comparator-neq
+    title: Inequality Comparator
+    description: An inequality operator becomes a comparator block.
+    tags: [comparator, equality, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a != b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a != b"
+
+  - id: comparator-case-eq
+    title: Case Equality Comparator
+    description: A case-equality operator becomes a comparator block.
+    tags: [comparator, equality, case, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a === b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a === b"
+
+  - id: comparator-case-neq
+    title: Case Inequality Comparator
+    description: A case-inequality operator becomes a comparator block.
+    tags: [comparator, equality, case, source-highlight]
+    files:
+      top.sv: |
+        module top (
+          input logic a,
+          input logic b,
+          output logic y
+        );
+          assign y = a !== b;
+        endmodule
+    module: top
+    target:
+      kind: node
+      nodeKind: comparator
+      nodeLabel: ""
+      action: doubleClick
+    expect:
+      nodeKinds: [port, comparator]
+      selectedText: "a !== b"
+
   - id: zext-case-arm
     title: Zero-Extension
     description: A case arm whose driving signal is narrower than the mux's resolved output width gets an explicit zero-extension block inserted between the source and the mux input, instead of silently implying a same-width connection.

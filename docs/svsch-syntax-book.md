@@ -660,6 +660,142 @@ endmodule
   <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
 </p>
 
+### Less-Than Comparator
+
+A less-than operator becomes a comparator block, whose output is always 1 bit regardless of operand width.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &lt; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-lt.svg" alt="Less-Than Comparator diagram" />
+</p>
+
+### Less-Than-or-Equal Comparator
+
+A less-than-or-equal operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &lt;= b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-le.svg" alt="Less-Than-or-Equal Comparator diagram" />
+</p>
+
+### Greater-Than Comparator
+
+A greater-than operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &gt; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-gt.svg" alt="Greater-Than Comparator diagram" />
+</p>
+
+### Greater-Than-or-Equal Comparator
+
+A greater-than-or-equal operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &gt;= b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-ge.svg" alt="Greater-Than-or-Equal Comparator diagram" />
+</p>
+
+### Equality Comparator
+
+An equality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a == b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-eq.svg" alt="Equality Comparator diagram" />
+</p>
+
+### Inequality Comparator
+
+An inequality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a != b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-neq.svg" alt="Inequality Comparator diagram" />
+</p>
+
+### Case Equality Comparator
+
+A case-equality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a === b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-case-eq.svg" alt="Case Equality Comparator diagram" />
+</p>
+
+### Case Inequality Comparator
+
+A case-inequality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a !== b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-case-neq.svg" alt="Case Inequality Comparator diagram" />
+</p>
+
 ### Zero-Extension
 
 A case arm whose driving signal is narrower than the mux's resolved output width gets an explicit zero-extension block inserted between the source and the mux input, instead of silently implying a same-width connection.
