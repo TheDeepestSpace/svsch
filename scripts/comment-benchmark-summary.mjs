@@ -4,10 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   renderStackedSuiteChart,
+  renderHistoryTrendChart,
   renderDeltaTableMarkdown,
   renderStackedCsv,
   computeDeltaRows,
   computeAverageDelta,
+  computeBenchmarkHistory,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
@@ -211,6 +213,26 @@ for (const [key, group] of chartGroups) {
     csvFilenamesByKey.set(key, [{ filename }]);
   }
 }
+
+// The trend chart only exists for the visual suite — it's the only one with
+// per-master-run history to derive (see computeBenchmarkHistory).
+const visualGroup = chartGroups.get('visual');
+const elaborationMetric = visualGroup?.metrics.find((m) => m.name === 'visual-elaboration-diagram-generation-duration');
+const renderingMetric = visualGroup?.metrics.find((m) => m.name === 'visual-rendering-diagram-generation-duration');
+if (elaborationMetric && renderingMetric) {
+  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const currentRunAverages = {
+    elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
+    renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
+  };
+  const history = computeBenchmarkHistory(baselineData);
+  contentByFilename.set('visual-trend.svg', renderHistoryTrendChart({
+    title: 'Visual suite — historical average per master run',
+    history,
+    currentRunAverages,
+  }));
+}
+
 const chartCommitSha = publishFiles(contentByFilename);
 
 // A one-line "how'd it move" per tracked metric, surfaced right after the
@@ -262,6 +284,11 @@ for (const [key, group] of chartGroups) {
       );
     }
   }
+  if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
+    const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
+    lines.push('', `![Visual suite historical trend](${trendUrl})`);
+  }
+
   sections.push(lines.join('\n'));
 }
 
@@ -284,14 +311,17 @@ const headers = {
   'Content-Type': 'application/json',
   'X-GitHub-Api-Version': '2022-11-28',
 };
-// GitHub's REST layer resolves the PR through its GraphQL node under the
-// hood, and that lookup can 404 for a few seconds right after the PR was
-// pushed to — even though the PR itself, and that exact node id, are fine.
-// Retry that specific transient shape instead of failing the whole job.
-const isTransientNodeLookupFailure = (status, text) =>
-  status === 404 && /Could not resolve to a node with the global id/.test(text);
+// GitHub occasionally hasn't finished replicating a just-created/updated PR
+// to the graph backing these REST endpoints yet, which surfaces as a 404
+// complaining it "Could not resolve to a node with the global id" of the PR
+// — purely a replication-lag blip, not a real 404. Retry that (and plain
+// 5xx flakiness) a few times with backoff before giving up.
+const isTransient = (status, text) =>
+  status >= 500 || (status === 404 && text.includes('Could not resolve to a node with the global id'));
+
 const request = async (method, apiPath, requestBody) => {
-  for (let attempt = 1; ; attempt += 1) {
+  const maxAttempts = 4;
+  for (let attempt = 1; ; attempt++) {
     const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
       method,
       headers,
@@ -300,9 +330,10 @@ const request = async (method, apiPath, requestBody) => {
     });
     if (response.ok) return response.json();
     const text = await response.text();
-    if (attempt >= 4 || !isTransientNodeLookupFailure(response.status, text)) {
+    if (attempt >= maxAttempts || !isTransient(response.status, text)) {
       throw new Error(`${method} ${apiPath} failed (${response.status}): ${text}`);
     }
+    console.warn(`${method} ${apiPath} failed (${response.status}), retrying (${attempt}/${maxAttempts})...`);
     await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
   }
 };

@@ -9,6 +9,8 @@ export type DiagramNodeKind =
   | 'alu'
   | 'inverter'
   | 'gate'
+  | 'comparator'
+  | 'zext'
   | 'bus'
   | 'struct'
   | 'interface'
@@ -249,6 +251,12 @@ export interface GateDiagramNode extends BaseDiagramNode {
   kind: 'gate';
   operation?: GateOperation | string;
 }
+export interface ComparatorDiagramNode extends BaseDiagramNode {
+  kind: 'comparator';
+}
+export interface ZextDiagramNode extends BaseDiagramNode {
+  kind: 'zext';
+}
 export interface CombDiagramNode extends BaseDiagramNode {
   kind: 'comb';
 }
@@ -301,6 +309,8 @@ export type DiagramNode =
   | AluDiagramNode
   | InverterDiagramNode
   | GateDiagramNode
+  | ComparatorDiagramNode
+  | ZextDiagramNode
   | CombDiagramNode
   | MuxDiagramNode
   | SelectDiagramNode

@@ -515,7 +515,7 @@ A combinational logic assignment expression that isn't a specialized shape becom
   input logic b,
   output logic decoded
 );
-  <mark>assign decoded = (a == b);</mark>
+  <mark>assign decoded = a * b;</mark>
 endmodule
 </code></pre>
 
@@ -575,6 +575,23 @@ endmodule
   <img src="syntax-book/assets/gate-multibit-and.svg" alt="Multi-bit Boolean AND Gate diagram" />
 </p>
 
+### Logical AND Gate
+
+The logical AND operator (&&) reduces each operand to a boolean value first, so it renders with the same AND gate glyph as bitwise AND but always produces a single-bit result, even over multi-bit operands.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic y
+);
+  assign y = <mark>a &amp;&amp; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-logical-and.svg" alt="Logical AND Gate diagram" />
+</p>
+
 ### Boolean OR Gate
 
 A bitwise OR operator becomes an OR gate.
@@ -590,6 +607,23 @@ endmodule
 
 <p align="center">
   <img src="syntax-book/assets/gate-or.svg" alt="Boolean OR Gate diagram" />
+</p>
+
+### Logical OR Gate
+
+The logical OR operator (||) reduces each operand to a boolean value first, so it renders with the same OR gate glyph as bitwise OR but always produces a single-bit result, even over multi-bit operands.
+
+<pre><code>module top (
+  input logic [3:0] a,
+  input logic [3:0] b,
+  output logic y
+);
+  assign y = <mark>a || b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/gate-logical-or.svg" alt="Logical OR Gate diagram" />
 </p>
 
 ### Boolean XOR Gate
@@ -658,6 +692,165 @@ endmodule
 
 <p align="center">
   <img src="syntax-book/assets/alu-addition.svg" alt="Arithmetic Addition diagram" />
+</p>
+
+### Less-Than Comparator
+
+A less-than operator becomes a comparator block, whose output is always 1 bit regardless of operand width.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &lt; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-lt.svg" alt="Less-Than Comparator diagram" />
+</p>
+
+### Less-Than-or-Equal Comparator
+
+A less-than-or-equal operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &lt;= b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-le.svg" alt="Less-Than-or-Equal Comparator diagram" />
+</p>
+
+### Greater-Than Comparator
+
+A greater-than operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &gt; b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-gt.svg" alt="Greater-Than Comparator diagram" />
+</p>
+
+### Greater-Than-or-Equal Comparator
+
+A greater-than-or-equal operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a &gt;= b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-ge.svg" alt="Greater-Than-or-Equal Comparator diagram" />
+</p>
+
+### Equality Comparator
+
+An equality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a == b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-eq.svg" alt="Equality Comparator diagram" />
+</p>
+
+### Inequality Comparator
+
+An inequality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a != b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-neq.svg" alt="Inequality Comparator diagram" />
+</p>
+
+### Case Equality Comparator
+
+A case-equality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a === b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-case-eq.svg" alt="Case Equality Comparator diagram" />
+</p>
+
+### Case Inequality Comparator
+
+A case-inequality operator becomes a comparator block.
+
+<pre><code>module top (
+  input logic a,
+  input logic b,
+  output logic y
+);
+  assign y = <mark>a !== b</mark>;
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/comparator-case-neq.svg" alt="Case Inequality Comparator diagram" />
+</p>
+
+### Zero-Extension
+
+A case arm whose driving signal is narrower than the mux's resolved output width gets an explicit zero-extension block inserted between the source and the mux input, instead of silently implying a same-width connection.
+
+<pre><code>module top (
+  input logic [1:0] sel,
+  input logic a,
+  input logic b,
+  output logic [7:0] y
+);
+  always_comb begin
+    <mark>case (sel)
+      2&#39;b00: y = (a &lt; b);
+      default: y = 8&#39;h00;
+    endcase</mark>
+  end
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/zext-case-arm.svg" alt="Zero-Extension diagram" />
 </p>
 
 ### Bitwise Inversion

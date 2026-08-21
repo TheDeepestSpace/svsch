@@ -207,7 +207,7 @@ export async function openFixture(
   return view;
 }
 
-const exampleDesignRoot = path.resolve(__dirname, '../../fixtures/example_designs/cpu');
+const exampleDesignRoot = path.resolve(__dirname, 'fixtures/example_designs/cpu');
 let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
 
 function exampleDesignGraph(): Promise<DesignGraph> {

@@ -297,7 +297,7 @@ function nodeHeightForKind(
     return muxHeightForPortRows(portRows);
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return muxHeightForPortRows(2);
   }
 
@@ -305,7 +305,7 @@ function nodeHeightForKind(
     return gateHeightForInputCount(portRows);
   }
 
-  if (node.kind === 'inverter') {
+  if (node.kind === 'inverter' || node.kind === 'zext') {
     return diagramSizing.gridSize * 2;
   }
 
@@ -528,7 +528,7 @@ function nodeWidthForKind(
     );
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return snappedWidth(diagramSizing.muxWidth, diagramSizing.gridSize * 3, snapUpToEvenGrid);
   }
 
@@ -543,6 +543,10 @@ function nodeWidthForKind(
 
   if (node.kind === 'inverter') {
     return snapUpToEvenGrid(inverterGeometryWidth());
+  }
+
+  if (node.kind === 'zext') {
+    return snappedWidth(diagramSizing.gridSize * 2, titleWidth + 8, snapUpToEvenGrid);
   }
 
   if (node.kind === 'register') {
@@ -652,12 +656,13 @@ function visiblePortLabels(
     node.kind === 'comb' ||
     node.kind === 'inverter' ||
     node.kind === 'loop' ||
-    node.kind === 'gate'
+    node.kind === 'gate' ||
+    node.kind === 'zext'
   ) {
     return [];
   }
 
-  if (node.kind === 'alu') {
+  if (node.kind === 'alu' || node.kind === 'comparator') {
     return outputs.map((port) => portLabel(port, true, showPortTypes));
   }
 
@@ -720,6 +725,8 @@ function nodeTitle(node: DiagramNode): string {
     node.kind !== 'alu' &&
     node.kind !== 'inverter' &&
     node.kind !== 'gate' &&
+    node.kind !== 'comparator' &&
+    node.kind !== 'zext' &&
     node.kind !== 'bus' &&
     node.kind !== 'struct' &&
     node.kind !== 'interface' &&
