@@ -481,6 +481,7 @@ jobs:
       pull-requests: write
     steps:
       - *checkout_step
+      - *restore_npm_step
 
       - name: Mark workspace as a safe git directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
