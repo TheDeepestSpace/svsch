@@ -4,7 +4,7 @@
       "id": "expand:instance:top:u1::instance:leaf:u_inner",
       "type": "hdl",
       "position": {
-        "x": 480,
+        "x": 408,
         "y": 96
       },
       "width": 192,
@@ -29,7 +29,7 @@
       "id": "expand:instance:top:u1::port:leaf:la",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 288,
         "y": 48
       },
       "width": 48,
@@ -49,7 +49,7 @@
       "id": "expand:instance:top:u1::port:leaf:ly",
       "type": "hdl",
       "position": {
-        "x": 744,
+        "x": 672,
         "y": 48
       },
       "width": 48,
@@ -69,7 +69,7 @@
       "id": "instance:top:u1",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 288,
         "y": 24
       },
       "width": 432,
@@ -94,7 +94,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": -48,
         "y": 60
       },
       "width": 120,
@@ -114,7 +114,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 936,
         "y": 60
       },
       "width": 120,
@@ -138,7 +138,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 792 72 L 816 72 L 888 72 L 888 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 720 72 L 744 72 L 912 72 L 936 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -146,7 +146,7 @@
       "target": "expand:instance:top:u1::port:leaf:la",
       "sourceHandle": "port:a",
       "targetHandle": "outer",
-      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+      "path": "M 72 72 L 96 72 L 264 72 L 288 72"
     },
     {
       "id": "expand:instance:top:u1::edge:instance:leaf:u_inner:port:leaf:ly:ly",
@@ -154,7 +154,7 @@
       "target": "expand:instance:top:u1::port:leaf:ly",
       "sourceHandle": "port:z",
       "targetHandle": "inner",
-      "path": "M 672 144 L 696 144 L 720 144 L 720 72 L 744 72"
+      "path": "M 600 144 L 624 144 L 648 144 L 648 72 L 672 72"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:la:instance:leaf:u_inner:la",
@@ -162,7 +162,7 @@
       "target": "expand:instance:top:u1::instance:leaf:u_inner",
       "sourceHandle": "inner",
       "targetHandle": "port:w",
-      "path": "M 408 72 L 432 72 L 456 72 L 456 144 L 480 144"
+      "path": "M 336 72 L 360 72 L 384 72 L 384 144 L 408 144"
     }
   ]
 }

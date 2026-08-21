@@ -781,10 +781,34 @@ text {
    expandOverlay's dimAsExpandGhost). Same lift-on-select convention as
    .generate-node-inactive above: selecting the ghost (to reveal the
    "Collapse" control) restores full brightness rather than fading the
-   selection outline along with the rest of it. */
+   selection outline along with the rest of it.
+
+   The interior (the sub-diagram area inside the border ring) is fully
+   transparent: the webview's stacking order paints every node above every
+   wire (see .react-flow__nodes in webview-chrome.css), so any body fill here
+   would veil the spliced wires under it and dim them relative to top-level
+   wires. Only the border-ring grab bands carry the translucent backdrop. */
 .hdl-node-expand-ghost .hdl-node {
+  background: transparent;
   filter: grayscale(0.4);
   opacity: 0.35;
+}
+
+.hdl-node-expand-ghost .hdl-node .svsch-node-shape {
+  fill: none;
+}
+
+.hdl-node-expand-ghost .svsch-expand-grab-band {
+  background: var(--vscode-editorWidget-background);
+}
+
+/* The ring's inner boundary, drawn so the user can see where the frame's own
+   grab/interaction area ends and the sub-canvas begins — wire routes are
+   clamped to stay inside it (see OrthogonalEdge's clampPointsToRect pass). */
+.hdl-node-expand-ghost .svsch-expand-content-border {
+  border: 1px dashed var(--vscode-charts-blue);
+  pointer-events: none;
+  position: absolute;
 }
 
 .react-flow__node.selected.hdl-node-expand-ghost .hdl-node {
@@ -810,8 +834,11 @@ text {
   pointer-events: none !important;
 }
 
-.hdl-node-expand-ghost .svsch-expand-grab-band {
+.svsch-expand-grab-band {
   position: absolute;
+}
+
+.hdl-node-expand-ghost .svsch-expand-grab-band {
   pointer-events: auto;
 }
 
