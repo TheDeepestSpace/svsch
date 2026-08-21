@@ -61,7 +61,10 @@ export default tseslint.config(
     rules: {
       ...react.configs.flat.recommended.rules,
       ...react.configs.flat['jsx-runtime'].rules,
-      ...reactHooks.configs.recommended.rules,
+      // eslint-plugin-react-hooks recommended (7.x) enables the full React
+      // Compiler rule set as errors; we only want the classic hooks rules.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'react/prop-types': 'off',
     },
   },
