@@ -229,6 +229,7 @@ function readExpandedInstanceSnapshotsSync(
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
         throw new Error(
           `Unable to read expanded-instance layout ${filePath}: ${(error as Error).message}`,
+          { cause: error },
         );
       }
     }
