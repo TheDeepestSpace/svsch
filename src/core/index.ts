@@ -3,8 +3,13 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
+import { applyExpandedInstances } from '../layout/expandSpliceView';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
-import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
+import type {
+  SavedExpandedInstanceLayout,
+  SavedLayout,
+  SavedModuleLayout,
+} from '../storage/layoutStore';
 
 export interface RenderDiagramOptions {
   layoutFile?: string;
@@ -88,8 +93,12 @@ export async function renderModuleFromGraph(
     }
   }
 
-  const { layout, source: layoutSource } = opts.noLayout
-    ? { layout: EMPTY_LAYOUT, source: undefined }
+  const {
+    layout,
+    source: layoutSource,
+    svschDir,
+  } = opts.noLayout
+    ? { layout: EMPTY_LAYOUT, source: undefined, svschDir: undefined }
     : readLayoutForFileSync(
         svFilePath,
         workspaceRoot,
@@ -98,7 +107,15 @@ export async function renderModuleFromGraph(
         opts.svschDataDir,
       );
 
-  const view = await buildViewModel(graph, moduleName, layout);
+  let view = await buildViewModel(graph, moduleName, layout);
+  if (svschDir) {
+    const expandedSnapshots = readExpandedInstanceSnapshotsSync(
+      svschDir,
+      moduleName,
+      layout.modules[moduleName]?.expanded ?? {},
+    );
+    view = await applyExpandedInstances({ graph, layout, view, expandedSnapshots });
+  }
   return { view, layoutSource };
 }
 
@@ -141,7 +158,7 @@ function readLayoutForFileSync(
   moduleName: string,
   explicitLayoutFile?: string,
   svschDataDir?: string,
-): { layout: SavedLayout; source?: string } {
+): { layout: SavedLayout; source?: string; svschDir?: string } {
   if (explicitLayoutFile) {
     const resolved = path.resolve(explicitLayoutFile);
     return { layout: readLayoutSync(resolved), source: resolved };
@@ -158,6 +175,7 @@ function readLayoutForFileSync(
     return {
       layout: readSplitModuleLayoutSync(splitLayoutPath, moduleName),
       source: splitLayoutPath,
+      svschDir,
     };
   }
 
@@ -172,11 +190,50 @@ function readLayoutForFileSync(
 
   for (const candidate of candidates) {
     if (fsSync.existsSync(candidate)) {
-      return { layout: readLayoutSync(candidate), source: candidate };
+      return { layout: readLayoutSync(candidate), source: candidate, svschDir };
     }
   }
 
-  return { layout: EMPTY_LAYOUT, source: undefined };
+  return { layout: EMPTY_LAYOUT, source: undefined, svschDir };
+}
+
+/**
+ * Sync counterpart of LayoutStore.readExpandedInstanceLayout, scoped to only
+ * the instances `renderModuleFromGraph` already knows are flagged expanded —
+ * matches the CLI's synchronous layout-loading style (see readLayoutSync).
+ */
+function readExpandedInstanceSnapshotsSync(
+  svschDir: string,
+  parentModuleName: string,
+  expandedFlags: Record<string, boolean>,
+): Map<string, SavedExpandedInstanceLayout> {
+  const snapshots = new Map<string, SavedExpandedInstanceLayout>();
+  for (const instanceId of Object.keys(expandedFlags)) {
+    if (!expandedFlags[instanceId]) continue;
+    const filePath = path.join(
+      svschDir,
+      'layouts',
+      'expanded',
+      `${encodeURIComponent(parentModuleName)}__${encodeURIComponent(instanceId)}.json`,
+    );
+    try {
+      const raw = fsSync.readFileSync(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as Partial<SavedExpandedInstanceLayout>;
+      if (!parsed.childModuleName) continue;
+      snapshots.set(instanceId, {
+        ...parsed,
+        childModuleName: parsed.childModuleName,
+        nodes: parsed.nodes ?? {},
+      });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw new Error(
+          `Unable to read expanded-instance layout ${filePath}: ${(error as Error).message}`,
+        );
+      }
+    }
+  }
+  return snapshots;
 }
 
 function readLayoutSync(layoutFile: string): SavedLayout {

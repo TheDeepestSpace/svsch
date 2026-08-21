@@ -145,6 +145,17 @@ export interface DiagramNodeMetadata {
       thick?: boolean;
     };
   };
+  /**
+   * Present only on an expanded instance's own node once
+   * `applyExpandedInstances`/`applyActiveSplices` has dimmed it into a
+   * backdrop for its spliced-in child diagram (see webview/expand). `insets`
+   * is the frame's reserved border ring (ExpandContentInsets in
+   * webview/expand/splice.ts) — the only part of the node's body that isn't
+   * covered by spliced content.
+   */
+  expandGhost?: {
+    insets: { top: number; left: number; right: number; bottom: number };
+  };
   cutNet?: {
     netKey: string;
     role: 'source' | 'sink';
