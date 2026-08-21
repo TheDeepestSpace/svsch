@@ -46,6 +46,8 @@ import { LoopNodeSvg } from './loop/LoopNodeSvg';
 import { MuxNodeSvg } from './mux/MuxNodeSvg';
 import { SelectNodeSvg } from './mux/SelectNodeSvg';
 import { AluNodeSvg } from './alu/AluNodeSvg';
+import { ComparatorNodeSvg } from './comparator/ComparatorNodeSvg';
+import { ZextNodeSvg } from './zext/ZextNodeSvg';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { InstanceNodeSvg } from './instance/InstanceNodeSvg';
 import { Tooltip } from '../Tooltip';
@@ -980,6 +982,96 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             position={Position.Right}
             style={{ top: nodeHeight / 2 }}
           />
+        ))}
+        {isArray && (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        )}
+        {warningIcon}
+      </button>
+    );
+  }
+
+  if (node.kind === 'comparator') {
+    const g = diagramSizing.gridSize;
+    return (
+      <button
+        className={`hdl-node hdl-node-${node.kind}${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
+        data-node-id={node.id}
+        data-node-kind={node.kind}
+        style={nodeStyle}
+        onDoubleClick={handleDoubleClick}
+      >
+        <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
+          <ComparatorNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+          />
+        </svg>
+        {sideInputs.slice(0, 2).map((port: DiagramPort, index: number) => (
+          <Handle
+            key={port.id}
+            type="target"
+            id={port.id}
+            position={Position.Left}
+            style={{ top: index === 0 ? g : g * 3 }}
+          />
+        ))}
+        {outputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle
+            key={port.id}
+            type="source"
+            id={port.id}
+            position={Position.Right}
+            style={{ top: nodeHeight / 2 }}
+          />
+        ))}
+        {isArray && (
+          <ArrayStackSelection
+            kind="rect"
+            width={nodeWidth}
+            height={nodeHeight}
+            wide={nodeStackIsWide(node)}
+          />
+        )}
+        {warningIcon}
+      </button>
+    );
+  }
+
+  if (node.kind === 'zext') {
+    return (
+      <button
+        className={`hdl-node hdl-node-zext${isArray ? ` hdl-node-array${nodeStackIsWide(node) ? ' hdl-node-array-wide' : ''}` : ''}`}
+        data-node-id={node.id}
+        data-node-kind={node.kind}
+        style={nodeStyle}
+        title={
+          node.source
+            ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
+            : node.kind
+        }
+        onDoubleClick={handleDoubleClick}
+      >
+        <svg className="hdl-node-svg" width={nodeWidth} height={nodeHeight} aria-hidden="true">
+          <ZextNodeSvg
+            node={node}
+            width={nodeWidth}
+            height={nodeHeight}
+            arrayConnections={arrayConnections}
+          />
+        </svg>
+        {sideInputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="target" id={port.id} position={Position.Left} />
+        ))}
+        {outputs.slice(0, 1).map((port: DiagramPort) => (
+          <Handle key={port.id} type="source" id={port.id} position={Position.Right} />
         ))}
         {isArray && (
           <ArrayStackSelection

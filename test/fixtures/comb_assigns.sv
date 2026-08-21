@@ -26,8 +26,11 @@ module assign_xnor(input logic a, input logic b, output logic y);
   assign y = ~(a ^ b);
 endmodule
 
-module assign_eq(input logic a, input logic b, output logic y);
-  assign y = (a == b);
+module assign_generic(input logic a, input logic b, output logic y);
+  // Multiplication isn't promoted to any dedicated node kind (gate/alu/
+  // comparator/mux/...), so this always falls back to a generic comb block —
+  // useful as a "none of the special shapes" fixture.
+  assign y = a * b;
 endmodule
 
 module assign_const_expr(input logic a, output logic y);
