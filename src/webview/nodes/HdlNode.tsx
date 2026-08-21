@@ -26,6 +26,8 @@ import { InverterNode } from './inverter/InverterNode';
 import { PortNode, InterfacePortNode } from './port/PortNode';
 import { MuxNode } from './mux/MuxNode';
 import { AluNode } from './alu/AluNode';
+import { ComparatorNode } from './comparator/ComparatorNode';
+import { ZextNode } from './zext/ZextNode';
 import { CombNode } from './comb/CombNode';
 import { InstanceNode } from './instance/InstanceNode';
 import { ArrayStackSelection } from './shared/skins';
@@ -443,6 +445,14 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
 
   if (node.kind === 'alu') {
     return <AluNode data={data} />;
+  }
+
+  if (node.kind === 'comparator') {
+    return <ComparatorNode data={data} />;
+  }
+
+  if (node.kind === 'zext') {
+    return <ZextNode data={data} />;
   }
 
   if (node.kind === 'comb' || node.kind === 'loop') {

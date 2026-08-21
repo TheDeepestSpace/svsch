@@ -22,6 +22,7 @@ import { combSizing } from './combSizing';
 import { replicateSizing } from './replicateSizing';
 import { literalSizing } from './literalSizing';
 import { gateSizing } from './gateSizing';
+import { zextSizing } from './zextSizing';
 import { defaultSizing } from './defaultSizing';
 import { inverterGeometryWidth } from './nodeSizingCommon';
 import type {
@@ -47,7 +48,9 @@ const sizingStrategies: Partial<Record<DiagramNode['kind'], NodeSizingStrategy>>
   mux: muxSizing,
   select: muxSizing,
   alu: aluSizing,
+  comparator: aluSizing,
   inverter: inverterSizing,
+  zext: zextSizing,
   gate: gateSizing,
   register: registerSizing,
   comb: combSizing,

@@ -51,6 +51,8 @@ export function nodeTitle(node: DiagramNode): string {
     node.kind !== 'alu' &&
     node.kind !== 'inverter' &&
     node.kind !== 'gate' &&
+    node.kind !== 'comparator' &&
+    node.kind !== 'zext' &&
     node.kind !== 'bus' &&
     node.kind !== 'struct' &&
     node.kind !== 'interface' &&
