@@ -1,6 +1,36 @@
 {
   "nodes": [
     {
+      "id": "mux:instr_mem:mem_read_addr",
+      "type": "hdl",
+      "position": {
+        "x": 456,
+        "y": 72
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
       "id": "port:instr_mem:addr",
       "type": "hdl",
       "position": {
@@ -24,7 +54,7 @@
       "id": "port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 816,
         "y": 108
       },
       "width": 240,
@@ -39,54 +69,24 @@
           }
         ]
       }
-    },
-    {
-      "id": "select:instr_mem:mem[addr]",
-      "type": "hdl",
-      "position": {
-        "x": 456,
-        "y": 72
-      },
-      "width": 96,
-      "height": 96,
-      "data": {
-        "kind": "select",
-        "ports": [
-          {
-            "id": "port:sel",
-            "name": "sel",
-            "direction": "input"
-          },
-          {
-            "id": "port:in",
-            "name": "in",
-            "direction": "input"
-          },
-          {
-            "id": "port:out",
-            "name": "out",
-            "direction": "output"
-          }
-        ]
-      }
     }
   ],
   "edges": [
     {
-      "id": "edge:port:instr_mem:addr:select:instr_mem:mem_addr_:addr",
-      "source": "port:instr_mem:addr",
-      "target": "select:instr_mem:mem[addr]",
-      "sourceHandle": "port:addr",
-      "targetHandle": "port:sel",
-      "path": "M 240 48 L 264 48 L 504 48 L 504 96"
+      "id": "edge:mux:instr_mem:mem_read_addr:port:instr_mem:instr:instr",
+      "source": "mux:instr_mem:mem_read_addr",
+      "target": "port:instr_mem:instr",
+      "sourceHandle": "out",
+      "targetHandle": "port:instr",
+      "path": "M 600 120 L 624 120 L 792 120 L 816 120"
     },
     {
-      "id": "edge:select:instr_mem:mem_addr_:port:instr_mem:instr:instr",
-      "source": "select:instr_mem:mem[addr]",
-      "target": "port:instr_mem:instr",
-      "sourceHandle": "port:out",
-      "targetHandle": "port:instr",
-      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
+      "id": "edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr",
+      "source": "port:instr_mem:addr",
+      "target": "mux:instr_mem:mem_read_addr",
+      "sourceHandle": "port:addr",
+      "targetHandle": "sel",
+      "path": "M 240 48 L 264 48 L 528 48 L 528 96"
     }
   ]
 }
