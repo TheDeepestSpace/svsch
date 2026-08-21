@@ -3900,6 +3900,49 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     );
 
     it(
+      'folds a full-range reset loop into the stacked array register reset ' +
+        'even when the loop bound is a parameterized expression',
+      async () => {
+        // Regression for #237: `(1<<ADDR_WIDTH)` doesn't constant-fold via UHDM's
+        // vpi_get_value from this loop-scoped use site the way a literal bound
+        // does, so the reset write was previously misdetected as an ordinary
+        // variable-index write keyed on the loop variable `a` — which has no
+        // driver — leaving the final write-address mux's selector unwired.
+        const graph = await runParser(
+          backend,
+          'array_multi_index_write_reset_parameterized_bound.sv',
+          fixture('array_multi_index_write_reset_parameterized_bound.sv'),
+        );
+        const mod =
+          graph.modules.array_multi_index_write_reset_parameterized_bound ??
+          Object.values(graph.modules)[0];
+        const arrayReg = mod.nodes.find(
+          (n) => n.id === 'reg:array_multi_index_write_reset_parameterized_bound:storage',
+        );
+        expect(arrayReg).toBeDefined();
+        expect(
+          arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset'),
+        ).toBe(true);
+        expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
+        const addressMuxes = mod.nodes.filter((n) =>
+          n.id.startsWith('mux:array_multi_index_write_reset_parameterized_bound:storage_addr'),
+        );
+        expect(addressMuxes).toHaveLength(1);
+        const finalMux = mod.nodes.find(
+          (n) => n.id === 'mux:array_multi_index_write_reset_parameterized_bound:storage_addr',
+        );
+        expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+        expect(
+          mod.edges.some(
+            (e) =>
+              e.signal === 'address' && e.target === finalMux?.id && e.targetPort === 'sel',
+          ),
+        ).toBe(true);
+      },
+    );
+
+    it(
       'promotes write_en mux to stacked and chains it upstream of the ' +
         'addr mux for conditional array writes',
       async () => {
