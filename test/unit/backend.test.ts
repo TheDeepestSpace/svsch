@@ -3935,8 +3935,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
         expect(
           mod.edges.some(
-            (e) =>
-              e.signal === 'address' && e.target === finalMux?.id && e.targetPort === 'sel',
+            (e) => e.signal === 'address' && e.target === finalMux?.id && e.targetPort === 'sel',
           ),
         ).toBe(true);
       },
