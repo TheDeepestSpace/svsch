@@ -101,7 +101,7 @@ export const selections: FixtureSelection[] = [
   },
   {
     fixture: 'comb_assigns.sv',
-    module: 'assign_eq',
+    module: 'assign_generic',
     picks: [{ label: 'comb', match: (n) => n.kind === 'comb' }],
   },
   {
@@ -133,6 +133,13 @@ export const selections: FixtureSelection[] = [
     fixture: 'comb_assigns.sv',
     module: 'assign_xnor',
     picks: [{ label: 'gate: xnor', match: (n) => n.kind === 'gate' }],
+  },
+  {
+    fixture: 'alu_case_arms.sv',
+    picks: [
+      { label: 'comparator', match: (n) => n.kind === 'comparator' },
+      { label: 'zext', match: (n) => n.kind === 'zext' },
+    ],
   },
   { fixture: 'var_bit_select.sv', picks: [{ label: 'select', match: (n) => n.kind === 'select' }] },
   {

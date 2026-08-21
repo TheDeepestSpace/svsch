@@ -1434,6 +1434,35 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
     return result;
 }
 
+std::string DesignExtractor::ensureZextNode(Module& mod, const std::string& input_signal, const std::string& input_width, const std::string& output_width, vpiHandle source_handle) {
+    for (const auto& n : mod.nodes) {
+        if (n.kind != "zext") continue;
+        const NodePort* in_port = nullptr;
+        const NodePort* out_port = nullptr;
+        for (const auto& port : n.ports) {
+            if (port.direction == "input") in_port = &port;
+            else if (port.direction == "output") out_port = &port;
+        }
+        if (in_port && out_port && in_port->signal == input_signal && in_port->width == input_width && out_port->width == output_width) {
+            return out_port->signal;
+        }
+    }
+
+    std::string out_signal = input_signal + "_zext_" + nextId();
+    std::string node_id = sanitizeId("zext:" + mod.name + ":" + input_signal + ":" + out_signal);
+
+    Node n;
+    n.id = node_id;
+    n.kind = "zext";
+    n.label = "";
+    n.source = getSourceInfo(source_handle);
+    n.metadata.isProcedural = true;
+    n.ports.push_back({"in", "input", input_signal, input_width, "in"});
+    n.ports.push_back({out_signal, "output", out_signal, output_width});
+    mod.nodes.push_back(n);
+    return out_signal;
+}
+
 std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     vpiHandle stmt,
     Module& mod,
@@ -1498,12 +1527,41 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
+    // Output-signal -> natural width, used below to detect branches narrower
+    // than the mux's resolved output width. Indexed once up front and
+    // refreshed only after ensureZextNode appends a node, instead of
+    // rescanning every node/port for every (target, item) pair.
+    std::map<std::string, std::string> node_output_widths;
+    size_t indexed_node_count = 0;
+    auto refreshNodeOutputWidths = [&]() {
+        for (; indexed_node_count < mod.nodes.size(); ++indexed_node_count) {
+            for (const auto& port : mod.nodes[indexed_node_count].ports) {
+                if (port.direction == "output") {
+                    node_output_widths[port.signal] = port.width;
+                }
+            }
+        }
+    };
+    refreshNodeOutputWidths();
+
     for (const auto& target : targets) {
         std::string target_width = getDeclaredSignalWidth(mod, target);
-        
+
+        // Resolve target_width across all case items up front so that the
+        // zext decision below cannot depend on the order items happen to be
+        // processed in.
+        if (target_width.empty()) {
+            for (vpiHandle item : items) {
+                auto const& branch_values = item_results[item];
+                if (!branch_values.count(target)) continue;
+                const std::string& w = branch_values.at(target).width;
+                if (!w.empty()) { target_width = w; break; }
+            }
+        }
+
         bool final_output = desired_outputs.count(target) > 0;
         std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
-        
+
         Node mux;
         mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
@@ -1518,9 +1576,36 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
             auto const& labels = item_labels[item];
             auto const& branch_values = item_results[item];
             LoweredValue branch_val = branch_values.count(target) ? branch_values.at(target) : (current_drivers.count(target) ? current_drivers.at(target) : LoweredValue{true, target, target_width});
-            
-            if (target_width.empty() && !branch_val.width.empty()) target_width = branch_val.width;
+
             if (branch_val.width.empty()) branch_val.width = target_width;
+
+            // A branch narrower than the mux's resolved output width (e.g. a
+            // comparator's 1-bit result feeding a multi-bit ALU-style mux) needs
+            // an explicit zero-extension node rather than silently implying a
+            // same-width connection. lowerAssignment already coerces branch_val.width
+            // to the target's declared width, so look up the branch's actual driving
+            // node/signal width to detect a real mismatch.
+            auto node_width_it = node_output_widths.find(branch_val.signal);
+            std::string branch_natural_width = node_width_it != node_output_widths.end()
+                ? node_width_it->second
+                : getDeclaredSignalWidth(mod, branch_val.signal);
+
+            // Only act when the branch's natural width is concretely known.
+            // An empty width means "unknown" (e.g. an unsized expression) —
+            // promoted 1-bit nodes (comparator, logical gate ops) encode
+            // their width explicitly as "[0:0]" rather than "", so this
+            // check does not need a special case for node outputs.
+            bool branch_width_known = !branch_natural_width.empty();
+            if (branch_width_known) {
+                int branch_bits = std::max(1, bitSizeFromWidth(branch_natural_width));
+                int target_bits = std::max(1, bitSizeFromWidth(target_width));
+                if (target_bits > branch_bits) {
+                    std::string zext_signal = ensureZextNode(mod, branch_val.signal, branch_natural_width, target_width, stmt);
+                    refreshNodeOutputWidths();
+                    branch_val.signal = zext_signal;
+                    branch_val.width = target_width;
+                }
+            }
 
             for (const auto& label : labels) {
                 mux.ports.push_back({label, "input", branch_val.signal, branch_val.width, label});
