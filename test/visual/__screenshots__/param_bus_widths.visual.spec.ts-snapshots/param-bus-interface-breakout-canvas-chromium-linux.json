@@ -8,7 +8,7 @@
         "y": 144
       },
       "width": 144,
-      "height": 101,
+      "height": 100,
       "data": {
         "kind": "bus",
         "ports": [
@@ -38,7 +38,7 @@
         "y": 72
       },
       "width": 192,
-      "height": 173,
+      "height": 172,
       "data": {
         "kind": "interface",
         "ports": [
