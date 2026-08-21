@@ -903,6 +903,66 @@ describe('layout merge', () => {
     expect(nodePortCenterOffset(1) - nodePortCenterOffset(0)).toBe(diagramSizing.gridSize);
   });
 
+  // The ELK placement pass must lay neighbors out against each node's
+  // *rendered* box, not its canonical size — a saved manual resize or the
+  // transient expanded-frame footprint of an "Expand instance in place"
+  // Auto Layout (BuildViewModelOptions.elkSizeOverrides) both grow the node.
+  describe('auto-layout node size awareness', () => {
+    const overrideGridSize = { width: 40, height: 20 };
+    const overridePx = {
+      width: overrideGridSize.width * diagramSizing.gridSize,
+      height: overrideGridSize.height * diagramSizing.gridSize,
+    };
+
+    function expandedBox(node: PositionedNode): {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } {
+      return { x: node.position.x, y: node.position.y, ...overridePx };
+    }
+
+    it('places released nodes clear of a transient elkSizeOverride footprint', async () => {
+      const view = await buildViewModel(
+        fanoutGraph,
+        'top',
+        { version: 1, modules: {} },
+        { elkSizeOverrides: { u1: overrideGridSize } },
+      );
+
+      const u1 = view.nodes.find((node) => node.id === 'u1')!;
+      const u2 = view.nodes.find((node) => node.id === 'u2')!;
+      expect(boxesOverlap(expandedBox(u1), boundsOf(u2))).toBe(false);
+      // Transient means transient: the override never echoes back on the
+      // view's own nodes (it would otherwise leak into the webview's splice
+      // bookkeeping as a persisted manual resize).
+      expect(u1.sizeOverride).toBeUndefined();
+    });
+
+    it('places released nodes clear of a saved manual resize', async () => {
+      const layout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {
+              u1: { x: 0, y: 0, ...overrideGridSize },
+            },
+          },
+        },
+      };
+
+      const view = await buildViewModel(fanoutGraph, 'top', layout);
+
+      const u1 = view.nodes.find((node) => node.id === 'u1')!;
+      const u2 = view.nodes.find((node) => node.id === 'u2')!;
+      expect(boxesOverlap(expandedBox(u1), boundsOf(u2))).toBe(false);
+      // A saved resize (unlike the transient override) is the node's real
+      // rendered size, and does flow onto the view.
+      expect(u1.sizeOverride).toEqual(overrideGridSize);
+    });
+  });
+
   it('preserves saved node positions on the snap grid', async () => {
     const layout: SavedLayout = {
       version: 1,

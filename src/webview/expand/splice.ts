@@ -144,7 +144,14 @@ export interface SpliceInput {
  * the content inset below. Everything inside this ring belongs to the spliced
  * child diagram — the frame's own pointer interactions (select, drag) are
  * confined to the ring so the interior behaves like ordinary canvas (see
- * HdlNode's grab bands and the .hdl-node-expand-ghost pointer-events rules).
+ * HdlNode's grab bands and the .hdl-node-expand-ghost pointer-events rules),
+ * the ring's inner boundary is drawn for the user (HdlNode's
+ * .svsch-expand-content-border), and derived wire routes are clamped to stay
+ * inside it (OrthogonalEdge's clampPointsToRect pass). Note the ring is
+ * *tighter* than the content padding (padLeft/padRight/padTop): the
+ * label-column clearance gap and header gap belong to the sub-canvas, so a
+ * boundary stub's vertical jog stays visible and selectable there instead of
+ * being swallowed by a grab band.
  */
 export interface ExpandContentInsets {
   top: number;
@@ -168,9 +175,18 @@ export interface SpliceResult {
    * columns on the left/right, header + parameter rows on top) — the node
    * itself becomes the expanded frame (there is no separate visible outline).
    * Applied to the dimmed instance node as a grow-only `sizeOverride`; the
-   * region's bounds are exactly this rect.
+   * region's bounds are exactly this rect. Grown further (never shrunk) to a
+   * previously-saved manual frame resize (`savedLayout.bounds`), and updated
+   * live by the webview when the user resizes the frame again (see
+   * main.tsx's ghost-resize commit).
    */
   expandedSize: { width: number; height: number };
+  /**
+   * The content-required frame size — `expandedSize` before any saved/manual
+   * enlargement is applied. The floor a manual frame resize can shrink back
+   * to (see main.tsx's startNodeResize for ghost nodes).
+   */
+  minExpandedSize: { width: number; height: number };
   /**
    * child-module-local node id -> namespaced boundary node id, for rewiring
    * the parent's edges that used to terminate on the instance itself.
@@ -353,6 +369,44 @@ export function expandTopPad(instanceParamRows: number): number {
     snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize) +
     HEADER_GAP
   );
+}
+
+/**
+ * Width of the frame's interactive/visible border ring on one side: exactly
+ * the boundary label column (without the LABEL_COLUMN_GAP clearance, which
+ * belongs to the sub-canvas — a stub's vertical jog there must stay
+ * selectable, not sit under a grab band), or a plain inset for a side with
+ * no ports at all.
+ */
+export function boundaryColumnRingWidth(column: BoundaryColumnEntry[]): number {
+  return column.length > 0
+    ? Math.max(...column.map((entry) => entry.size.width))
+    : EXPAND_CONTENT_INSET;
+}
+
+/**
+ * Height of the ring's top band: the header text plus parameter rows, without
+ * the HEADER_GAP clearance below them (same sub-canvas rule as
+ * boundaryColumnRingWidth).
+ */
+export function expandRingTopHeight(instanceParamRows: number): number {
+  return snapUpToGrid(diagramSizing.nodeHeaderHeight + instanceParamRows * diagramSizing.gridSize);
+}
+
+/**
+ * Grow-only merge of a saved manual frame resize (SavedExpandedInstanceLayout
+ * .bounds) into the content-computed frame size, so a user-enlarged frame
+ * survives a reload. Never shrinks below the content-required size.
+ */
+export function applySavedFrameSize(
+  computed: { width: number; height: number },
+  savedBounds?: { x: number; y: number; width: number; height: number },
+): { width: number; height: number } {
+  if (!savedBounds) return computed;
+  return {
+    width: Math.max(computed.width, savedBounds.width),
+    height: Math.max(computed.height, savedBounds.height),
+  };
 }
 
 /**
@@ -580,7 +634,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
   });
   const content = unionBounds(contentRects);
-  const expandedSize = expandedFrameSize({
+  const minExpandedSize = expandedFrameSize({
     instanceSize,
     padLeft,
     padRight,
@@ -588,6 +642,10 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       ? { ...content, x: content.x - instancePosition.x, y: content.y - instancePosition.y }
       : undefined,
   });
+  // A saved manual frame resize grows the frame past its content-required
+  // size — applied before boundary placement so the right label column lands
+  // on the (wider) border.
+  const expandedSize = applySavedFrameSize(minExpandedSize, input.savedLayout?.bounds);
 
   const boundaryNodes: PositionedNode[] = [];
   const boundaryNodeIdByChildPortName = new Map<string, string>();
@@ -648,7 +706,14 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     });
   }
 
-  return assembleSpliceResult(input, allNodes, edges, expandedSize, boundaryNodeIdByChildPortName);
+  return assembleSpliceResult(
+    input,
+    allNodes,
+    edges,
+    expandedSize,
+    minExpandedSize,
+    boundaryNodeIdByChildPortName,
+  );
 }
 
 /**
@@ -663,29 +728,51 @@ function spliceFromHostLayout(input: SpliceInput, hostLayout: ExpandSpliceLayout
   const ox = instancePosition.x;
   const oy = instancePosition.y;
 
+  // A saved manual frame resize (bounds without a full node snapshot — e.g.
+  // the design changed underneath the snapshot) still grows the frame; the
+  // host laid the right label column on its own computed border, so that
+  // column shifts right with the widened frame and its stub routes re-derive.
+  const expandedSize = applySavedFrameSize(hostLayout.expandedSize, input.savedLayout?.bounds);
+  const widthGrowth = expandedSize.width - hostLayout.expandedSize.width;
+
+  const shiftedBoundaryIds = new Set<string>();
   const boundaryNodeIdByChildPortName = new Map<string, string>();
   const nodes: PositionedNode[] = hostLayout.nodes.map((node) => {
     const id = namespacedId(namespace, node.id);
+    let dx = 0;
     if (node.kind === 'boundaryPort') {
       const name = node.ports[0]?.name ?? node.label;
       boundaryNodeIdByChildPortName.set(name, id);
+      if (widthGrowth > 0 && node.metadata?.boundaryPort?.outerSide === 'right') {
+        dx = widthGrowth;
+        shiftedBoundaryIds.add(id);
+      }
     }
-    return { ...node, id, position: { x: node.position.x + ox, y: node.position.y + oy } };
+    return { ...node, id, position: { x: node.position.x + ox + dx, y: node.position.y + oy } };
   });
 
-  const edges: DiagramEdge[] = hostLayout.edges.map((edge) => ({
-    ...edge,
-    id: namespacedId(namespace, edge.id),
-    source: namespacedId(namespace, edge.source),
-    target: namespacedId(namespace, edge.target),
-    waypoint: undefined,
-    routePoints: edge.routePoints?.map((point) => ({ x: point.x + ox, y: point.y + oy })),
-  }));
+  const edges: DiagramEdge[] = hostLayout.edges.map((edge) => {
+    const id = namespacedId(namespace, edge.id);
+    const source = namespacedId(namespace, edge.source);
+    const target = namespacedId(namespace, edge.target);
+    const touchesShiftedBoundary = shiftedBoundaryIds.has(source) || shiftedBoundaryIds.has(target);
+    return {
+      ...edge,
+      id,
+      source,
+      target,
+      waypoint: undefined,
+      routePoints: touchesShiftedBoundary
+        ? undefined
+        : edge.routePoints?.map((point) => ({ x: point.x + ox, y: point.y + oy })),
+    };
+  });
 
   return assembleSpliceResult(
     input,
     nodes,
     edges,
+    expandedSize,
     hostLayout.expandedSize,
     boundaryNodeIdByChildPortName,
   );
@@ -696,6 +783,7 @@ function assembleSpliceResult(
   allNodes: PositionedNode[],
   edges: DiagramEdge[],
   expandedSize: { width: number; height: number },
+  minExpandedSize: { width: number; height: number },
   boundaryNodeIdByChildPortName: Map<string, string>,
 ): SpliceResult {
   const { namespace, childModule, instancePosition } = input;
@@ -711,9 +799,9 @@ function assembleSpliceResult(
     input.instanceId,
   );
   const contentInsets: ExpandContentInsets = {
-    top: expandTopPad(input.instanceParamRows),
-    left: boundaryColumnPad(inputColumn),
-    right: boundaryColumnPad(outputColumn),
+    top: expandRingTopHeight(input.instanceParamRows),
+    left: boundaryColumnRingWidth(inputColumn),
+    right: boundaryColumnRingWidth(outputColumn),
     bottom: EXPAND_CONTENT_INSET,
   };
 
@@ -747,6 +835,7 @@ function assembleSpliceResult(
     nodes: allNodes,
     edges,
     expandedSize,
+    minExpandedSize,
     contentInsets,
     boundaryNodeIdByChildPortName,
     toSavedLayout(nodes, saveBounds, fixed, instanceOrigin) {

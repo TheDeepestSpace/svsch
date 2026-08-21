@@ -161,6 +161,98 @@ Feature: Sub-diagram interaction
     And all spliced content should stay inside the expanded instance "u1"
     And the saved layout should contain no sub-diagram entries
 
+  # Locks in the ELK size handoff: the host's Auto Layout pass must place the
+  # released blocks against the expanded instance's *frame* footprint (posted
+  # as transient expandedSizes with relayoutSelection), not the collapsed
+  # canonical size — otherwise re-placed siblings land underneath the frame.
+  Scenario: Auto Layout places outer blocks clear of the expanded frame
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        logic t1;
+        inner u_a(.w(la), .z(t1));
+        inner u_b(.w(t1), .z(ly));
+      endmodule
+
+      module top(input logic a, input logic b, output logic y, output logic z);
+        leaf u1(.la(a), .ly(y));
+        leaf u2(.la(b), .ly(z));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    When I fit the diagram in view
+    And I drag-select across the entire diagram
+    Then the "Auto Layout" button should be visible
+    When I click the "Auto Layout" button
+    Then the block "u1" should be re-placed and fixed in the saved layout
+    And no top-level block should overlap the expanded instance "u1"
+    And all spliced content should stay inside the expanded instance "u1"
+
+  # A manual enlargement of the expanded frame (dragging its right/bottom
+  # resize handles) must survive both a same-session reattachment (any commit
+  # rebuilds the overlay from the splice cache) and a full reload (via the
+  # per-instance snapshot's saved bounds).
+  Scenario: A manually enlarged expanded frame keeps its size across a move and a reload
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        inner u_inner(.w(la), .z(ly));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.la(a), .ly(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    And the expanded instance "u1" should show its inner content border
+    When I resize the expanded instance "u1" on the right side by 4 grid cells
+    And I note the bounds of the block "u1"
+    Then all spliced content should stay inside the expanded instance "u1"
+    When I move the expanded instance "u1" by (2, 1) grid cells
+    Then the block "u1" should have kept its noted size
+    When I close and reopen the diagram
+    Then I should see a boundary port node named "la"
+    And the block "u1" should have kept its noted size
+
+  # Boundary port nodes stay glued to the frame border — user-dragging them
+  # is the movable-port-labels follow-up (#218), disabled until that lands.
+  Scenario: Boundary port nodes on the expanded frame are not movable yet
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        inner u_inner(.w(la), .z(ly));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.la(a), .ly(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    When I note the position of the boundary port node "la"
+    And I try to drag the boundary port node "la" by (3, 2) grid cells
+    Then the boundary port node "la" should not have moved
+
   # TODO(#242): a drag that stays fully inside the expanded node's borders
   # should be a *local* selection — selecting only sub-diagram nodes, so
   # operations like Auto Layout apply within the sub-diagram without touching

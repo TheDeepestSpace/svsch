@@ -1125,7 +1125,9 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         <div className="hdl-node-selection-rect" aria-hidden="true" />
       )}
       {data.expandContentInsets && <ExpandGrabBands insets={data.expandContentInsets} />}
-      {node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
+      {node.kind === 'instance' && (
+        <NodeResizeControls nodeId={id} growOnlyCorner={Boolean(data.expandContentInsets)} />
+      )}
       {warningIcon}
     </button>
   );
@@ -1138,7 +1140,10 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
 // reserved border ring (header/parameter rows, boundary-label columns,
 // bottom inset — see ExpandContentInsets in expand/splice.ts) and re-enable
 // the pointer there, so the ring is the only place the frame itself can be
-// selected or dragged from.
+// selected or dragged from. The ring carries the ghost's translucent
+// backdrop and its inner boundary is drawn as a visible border (the
+// interior stays fully transparent so spliced wires render at full
+// brightness — see the .hdl-node-expand-ghost rules).
 function ExpandGrabBands({ insets }: { insets: ExpandContentInsets }): React.ReactElement {
   return (
     <React.Fragment>
@@ -1157,6 +1162,16 @@ function ExpandGrabBands({ insets }: { insets: ExpandContentInsets }): React.Rea
       <div
         className="svsch-expand-grab-band"
         style={{ bottom: 0, left: 0, right: 0, height: insets.bottom }}
+      />
+      <div
+        className="svsch-expand-content-border"
+        aria-hidden="true"
+        style={{
+          top: insets.top,
+          left: insets.left,
+          right: insets.right,
+          bottom: insets.bottom,
+        }}
       />
     </React.Fragment>
   );
@@ -1193,12 +1208,24 @@ const RESIZE_HANDLES: NodeResizeHandle[] = [
 // Edge/corner grow-only resize hit-zones shared by the instance and register
 // branches above. The drag itself is driven from DiagramApp (main.tsx) — see
 // startNodeResize on InteractionContext. Reverting a resize lives with the
-// other selected-block actions in NodeSelectionToolbar.
-function NodeResizeControls({ nodeId }: { nodeId: string }): React.ReactElement {
+// other selected-block actions in NodeSelectionToolbar. `growOnlyCorner`
+// (an expanded instance's frame) offers only the right/bottom handles: the
+// frame's origin is the anchor its spliced content and boundary columns are
+// placed from, so left/top resizes (which move the origin) aren't supported.
+function NodeResizeControls({
+  nodeId,
+  growOnlyCorner = false,
+}: {
+  nodeId: string;
+  growOnlyCorner?: boolean;
+}): React.ReactElement {
   const { startNodeResize } = useContext(InteractionContext);
+  const handles = growOnlyCorner
+    ? RESIZE_HANDLES.filter((handle) => ['right', 'bottom', 'bottom-right'].includes(handle))
+    : RESIZE_HANDLES;
   return (
     <React.Fragment>
-      {RESIZE_HANDLES.map((handle) => (
+      {handles.map((handle) => (
         <div
           key={handle}
           className={`nodrag svsch-node-resize-handle svsch-node-resize-${handle}`}

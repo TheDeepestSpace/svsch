@@ -1269,6 +1269,11 @@ function DiagramApp(): React.ReactElement {
       if (!node) return;
       const canonical = diagramNodeDimensions(node.data.node);
       const resolved = resolvedNodeDimensions(node.data.node);
+      // Resizing an expanded instance's frame: the floor is the splice's
+      // content-required size (never the collapsed canonical size — the frame
+      // must always contain its spliced content), and the right-side boundary
+      // column follows the moving right border.
+      const splice = [...spliceMapRef.current.values()].find((s) => s.flowInstanceId === nodeId);
       nodeResizeDragRef.current = {
         nodeId,
         handle,
@@ -1277,8 +1282,8 @@ function DiagramApp(): React.ReactElement {
         startPosition: { ...node.position },
         startWidth: resolved.width,
         startHeight: resolved.height,
-        canonicalWidth: canonical.width,
-        canonicalHeight: canonical.height,
+        canonicalWidth: splice ? splice.minExpandedSize.width : canonical.width,
+        canonicalHeight: splice ? splice.minExpandedSize.height : canonical.height,
         startNodes: nodes.map((n) => ({
           ...n,
           position: { ...n.position },
@@ -1288,6 +1293,20 @@ function DiagramApp(): React.ReactElement {
           ...region,
           bounds: { ...region.bounds },
         })),
+        expandFrame: splice
+          ? {
+              namespace: splice.namespace,
+              rightBoundaryStartPositions: new Map(
+                nodes
+                  .filter(
+                    (n) =>
+                      splice.region.nodeIds.includes(n.id) &&
+                      n.data.node.metadata?.boundaryPort?.outerSide === 'right',
+                  )
+                  .map((n) => [n.id, { ...n.position }]),
+              ),
+            }
+          : undefined,
       };
     },
     [nodes],
@@ -1319,6 +1338,47 @@ function DiagramApp(): React.ReactElement {
       if (dx === 0 && dy === 0) return;
 
       if (!view) return;
+
+      // Committing a resize of an expanded instance's frame: the new size
+      // lives in the splice cache (dimAsExpandGhost re-applies it on every
+      // reattachment, so it survives unrelated view refreshes) and persists
+      // through the splice's own snapshot bounds below — never through the
+      // module layout, where it would masquerade as a manual resize of the
+      // collapsed node. Stub routes of the carried right boundary column are
+      // cleared so they re-derive against the new geometry.
+      if (drag.expandFrame) {
+        const splice = spliceMapRef.current.get(drag.expandFrame.namespace);
+        const resized = update.nodes.find((n) => n.id === drag.nodeId);
+        if (splice && resized) {
+          const size = resolvedNodeDimensions(resized.data.node);
+          const widthChanged = size.width !== splice.expandedSize.width;
+          splice.expandedSize = { width: size.width, height: size.height };
+          if (widthChanged && drag.expandFrame.rightBoundaryStartPositions.size > 0) {
+            const shiftedIds = new Set(drag.expandFrame.rightBoundaryStartPositions.keys());
+            const rerouteEdgeIds = new Set(
+              splice.edges
+                .filter((edge) => shiftedIds.has(edge.source) || shiftedIds.has(edge.target))
+                .map((edge) => edge.id),
+            );
+            splice.edges = splice.edges.map((edge) =>
+              rerouteEdgeIds.has(edge.id)
+                ? { ...edge, routePoints: undefined, waypoint: undefined }
+                : edge,
+            );
+            // The live flow edges keep the stale routes until the next
+            // reattachment — clear them now so the stubs re-derive against
+            // the shifted boundary column immediately.
+            setEdges((current) =>
+              current.map((edge) =>
+                rerouteEdgeIds.has(edge.id)
+                  ? { ...edge, data: { ...edge.data, routePoints: undefined, waypoint: undefined } }
+                  : edge,
+              ),
+            );
+          }
+        }
+      }
+
       const positioned = flowNodesToPositioned(update.nodes, new Set([drag.nodeId]));
       vscode.postMessage({
         type: 'layoutChanged',
@@ -1361,7 +1421,7 @@ function DiagramApp(): React.ReactElement {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [setNodes, setRegions, view, viewport.zoom, updateNodeInternals]);
+  }, [setNodes, setEdges, setRegions, view, viewport.zoom, updateNodeInternals]);
 
   const rerouteLayout = useCallback(() => {
     if (!view) {
@@ -1609,11 +1669,21 @@ interface NodeResizeDragState {
   startWidth: number;
   startHeight: number;
   // Grow-only floor — this node's canonical auto-fit size, independent of any
-  // override already in effect at drag start.
+  // override already in effect at drag start. For an expanded instance's
+  // frame this is the splice's content-required size instead (see
+  // startNodeResize), so the frame can never shrink into its own content.
   canonicalWidth: number;
   canonicalHeight: number;
   startNodes: HdlFlowNode[];
   startRegions: PositionedGenerateRegion[];
+  // Present when the resized node is an expanded instance's frame (ghost):
+  // the right-side boundary-port nodes stay glued to the moving right border
+  // during the drag, and the commit writes the new size into the splice
+  // cache so it survives reattachments and persists (issue #232 follow-up).
+  expandFrame?: {
+    namespace: string;
+    rightBoundaryStartPositions: Map<string, { x: number; y: number }>;
+  };
 }
 
 // Pure geometry step for a node-resize drag: same shape as applyRegionDrag's
@@ -1630,21 +1700,39 @@ function applyNodeResizeDrag(
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
   const { position, width, height } = resizeNodeBounds(drag, dx, dy);
   const grid = diagramSizing.gridSize;
+  // An expanded frame's right-side boundary column is glued to the right
+  // border — carry it along as the border moves (the origin never moves:
+  // ghost frames only expose right/bottom handles, see NodeResizeControls).
+  const borderDx = drag.expandFrame ? width - drag.startWidth : 0;
 
   const nodes = drag.startNodes.map((node) => {
-    if (node.id !== drag.nodeId) return node;
-    return {
-      ...node,
-      position,
-      data: {
-        ...node.data,
-        node: {
-          ...node.data.node,
-          position,
-          sizeOverride: { width: width / grid, height: height / grid },
+    if (node.id === drag.nodeId) {
+      return {
+        ...node,
+        position,
+        data: {
+          ...node.data,
+          node: {
+            ...node.data.node,
+            position,
+            sizeOverride: { width: width / grid, height: height / grid },
+          },
         },
-      },
-    };
+      };
+    }
+    const boundaryStart = drag.expandFrame?.rightBoundaryStartPositions.get(node.id);
+    if (boundaryStart && borderDx !== 0) {
+      const boundaryPosition = { x: boundaryStart.x + borderDx, y: boundaryStart.y };
+      return {
+        ...node,
+        position: boundaryPosition,
+        data: {
+          ...node.data,
+          node: { ...node.data.node, position: boundaryPosition },
+        },
+      };
+    }
+    return node;
   });
 
   return {
@@ -2145,11 +2233,26 @@ function NodeSelectionToolbar({
     // incoming view, so these blocks stay selected across the round-trip
     // instead of losing selection once ELK re-places them.
     pendingReselectIdsRef.current = selectedIds;
+    // The host's ELK pass must place blocks against each expanded instance's
+    // *frame* size, not the collapsed size the stripped nodes payload
+    // carries (the expansion is a webview-only overlay the host's saved
+    // layout deliberately never records as a resize) — hand the frame sizes
+    // over as transient, layout-only overrides in sizeOverride grid units.
+    const expandedSizes: Record<string, { width: number; height: number }> = {};
+    for (const splice of spliceMapRef.current.values()) {
+      // Nested splices live inside another splice, not in this module.
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      expandedSizes[splice.flowInstanceId] = {
+        width: Math.ceil(splice.expandedSize.width / diagramSizing.gridSize),
+        height: Math.ceil(splice.expandedSize.height / diagramSizing.gridSize),
+      };
+    }
     vscode.postMessage({
       type: 'relayoutSelection',
       moduleName,
       nodeIds: [...selectedIds],
       nodes: stripExpandSplices(positioned, spliceMapRef.current),
+      expandedSizes,
     });
   };
 

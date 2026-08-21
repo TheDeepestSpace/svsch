@@ -212,6 +212,74 @@ describe('spliceExpandedInstance', () => {
   });
 
   // eslint-disable-next-line max-len
+  it('keeps the ring tighter than the content padding — the label-clearance gap is sub-canvas, not grab band', async () => {
+    // A boundary stub's vertical jog lives in the gap between the label
+    // column and the content; the ring (grab bands, visible border, wire
+    // clamp) must stop at the label column so that jog stays selectable.
+    const result = await spliceExpandedInstance(baseInput());
+    const insets = result.contentInsets;
+
+    const boundaryNodes = result.nodes.filter((n) => n.kind === 'boundaryPort');
+    const leftColumnWidth = Math.max(
+      ...boundaryNodes
+        .filter((n) => n.metadata?.boundaryPort?.outerSide === 'left')
+        .map((n) => resolvedNodeDimensions(n).width),
+    );
+    expect(insets.left).toBe(leftColumnWidth);
+
+    // The content itself sits clear of the ring with the jog gap in between.
+    const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'))!;
+    expect(reg.position.x).toBeGreaterThan(instancePosition.x + insets.left);
+  });
+
+  // A manual frame resize persists through the snapshot's bounds (see
+  // main.tsx's ghost-resize commit / persistActiveSplices): restoring the
+  // splice grows the frame back to the saved rect, never shrinking below the
+  // content-required size.
+  describe('saved manual frame resize', () => {
+    it('grows the restored frame to the saved bounds (fallback path)', async () => {
+      const base = await spliceExpandedInstance(baseInput());
+      const savedLayout = {
+        childModuleName: 'adder',
+        nodes: { reg1: { x: 400, y: 220, fixed: true } },
+        instanceOrigin: instancePosition,
+        bounds: {
+          x: instancePosition.x,
+          y: instancePosition.y,
+          width: base.minExpandedSize.width + 240,
+          height: base.minExpandedSize.height + 120,
+        },
+      };
+      const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
+
+      expect(result.expandedSize).toEqual({
+        width: savedLayout.bounds.width,
+        height: savedLayout.bounds.height,
+      });
+      // The floor stays the content-required size, so the user can shrink
+      // the frame back down to it later.
+      expect(result.minExpandedSize.width).toBeLessThan(result.expandedSize.width);
+      // The right boundary column sits on the *enlarged* border.
+      const right = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'right')!;
+      expect(right.position.x + resolvedNodeDimensions(right).width).toBe(
+        instancePosition.x + result.expandedSize.width,
+      );
+      expect(result.region.bounds.width).toBe(savedLayout.bounds.width);
+    });
+
+    it('never shrinks the frame below the content-required size', async () => {
+      const savedLayout = {
+        childModuleName: 'adder',
+        nodes: { reg1: { x: 400, y: 220, fixed: true } },
+        instanceOrigin: instancePosition,
+        bounds: { x: instancePosition.x, y: instancePosition.y, width: 24, height: 24 },
+      };
+      const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
+      expect(result.expandedSize).toEqual(result.minExpandedSize);
+    });
+  });
+
+  // eslint-disable-next-line max-len
   it('still widens the node enough to separate the boundary label columns when the child has no internal nodes at all', async () => {
     // e.g. `assign y = a` — every child node is a port, so the spliced
     // content is just the two boundary columns and a pass-through wire.
@@ -438,6 +506,72 @@ describe('spliceExpandedInstance', () => {
         { x: 80 + instancePosition.x, y: 44 + instancePosition.y },
         { x: 80 + instancePosition.x, y: 72 + instancePosition.y },
       ]);
+    });
+
+    // eslint-disable-next-line max-len
+    it('applies a saved manual frame enlargement on top of the host layout, carrying the right column to the wider border', async () => {
+      const withRightBoundary = {
+        ...hostLayout(),
+        nodes: [
+          ...hostLayout().nodes,
+          {
+            id: 'port:sum',
+            kind: 'boundaryPort' as const,
+            label: 'sum',
+            ports: [sumPort],
+            metadata: {
+              boundaryPort: {
+                instanceId: 'u0',
+                childModuleName: 'adder',
+                childPortId: 'port:sum',
+                outerSide: 'right' as const,
+              },
+            },
+            position: { x: 400 - 72, y: 36 },
+          },
+        ],
+        edges: [
+          ...hostLayout().edges,
+          {
+            id: 'e-reg1-sum',
+            source: 'reg1',
+            sourcePort: 'q',
+            target: 'port:sum',
+            targetPort: 'inner',
+            routePoints: [
+              { x: 300, y: 72 },
+              { x: 300, y: 44 },
+            ],
+          },
+        ],
+      };
+      const savedLayout = {
+        childModuleName: 'adder',
+        // Bounds only — no covering node snapshot, so the host layout stays
+        // authoritative for placement.
+        nodes: {},
+        instanceOrigin: instancePosition,
+        bounds: { x: instancePosition.x, y: instancePosition.y, width: 520, height: 200 },
+      };
+      const result = await spliceExpandedInstance({
+        ...baseInput(),
+        savedLayout,
+        hostLayout: withRightBoundary,
+      });
+
+      expect(result.expandedSize).toEqual({ width: 520, height: 200 });
+      expect(result.minExpandedSize).toEqual({ width: 400, height: 200 });
+      const right = result.nodes.find((n) => n.id === namespacedId('u0', 'port:sum'))!;
+      expect(right.position.x).toBe(instancePosition.x + 520 - 72);
+      // The left column doesn't move, and its host route survives.
+      const left = result.nodes.find((n) => n.id === namespacedId('u0', 'port:a'))!;
+      expect(left.position.x).toBe(instancePosition.x);
+      const leftEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-a-reg1'));
+      expect(leftEdge?.routePoints).toBeDefined();
+      // The shifted column's stub route is stale against the new border —
+      // dropped so it re-derives from the live handles.
+      const rightEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-reg1-sum'));
+      expect(rightEdge?.routePoints).toBeUndefined();
     });
 
     // eslint-disable-next-line max-len

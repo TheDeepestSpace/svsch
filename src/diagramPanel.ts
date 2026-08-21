@@ -100,7 +100,21 @@ type WebviewMessage =
   | { type: 'rerouteEdges'; moduleName: string; edgeIds: string[]; nodes: PositionedNode[] }
   | { type: 'cutNet'; moduleName: string; edge: DiagramEdge; nodes: PositionedNode[] }
   | { type: 'cutNets'; moduleName: string; edges: DiagramEdge[]; nodes: PositionedNode[] }
-  | { type: 'relayoutSelection'; moduleName: string; nodeIds: string[]; nodes: PositionedNode[] }
+  | {
+      type: 'relayoutSelection';
+      moduleName: string;
+      nodeIds: string[];
+      nodes: PositionedNode[];
+      /**
+       * Frame sizes of currently-expanded instances ("Expand instance in
+       * place", issue #232), in sizeOverride grid units. Transient,
+       * layout-only: ELK must place blocks against the expanded frame's
+       * footprint, but the expansion must never persist into the module's
+       * saved layout as a manual resize (see stripExpandSplices in
+       * webview/main.tsx). Optional so a stale webview keeps working.
+       */
+      expandedSizes?: Record<string, { width: number; height: number }>;
+    }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
@@ -357,7 +371,12 @@ export class DiagramPanel {
     }
     if (message.type === 'relayoutSelection') {
       this.currentModule = message.moduleName;
-      await this.relayoutSelection(message.moduleName, message.nodeIds, message.nodes);
+      await this.relayoutSelection(
+        message.moduleName,
+        message.nodeIds,
+        message.nodes,
+        message.expandedSizes,
+      );
       return;
     }
     if (message.type === 'layoutChanged') {
@@ -729,6 +748,7 @@ export class DiagramPanel {
     moduleName: string,
     nodeIds: string[],
     nodes: PositionedNode[],
+    expandedSizes?: Record<string, { width: number; height: number }>,
   ): Promise<void> {
     const store = this.getStore();
     const designModule = this.graph?.modules[moduleName];
@@ -752,7 +772,9 @@ export class DiagramPanel {
       // then rigidly translate the group so its centroid lands back on the
       // original selection's centroid, and commit that as the new fixed
       // position — the same as if the user had dragged it there by hand.
-      const relaidView = await buildViewModel(this.graph, moduleName, this.layout);
+      const relaidView = await buildViewModel(this.graph, moduleName, this.layout, {
+        elkSizeOverrides: expandedSizes,
+      });
       const relaidCentroid = centroidOfPositions(
         relaidView.nodes.filter((node) => selected.has(node.id)),
       );
@@ -1021,11 +1043,14 @@ export class DiagramPanel {
       const moduleView = await buildViewModel(this.graph, moduleName, this.layout);
       const positionedInstance = moduleView.nodes.find((node) => node.id === instanceId);
       if (positionedInstance) {
+        // A saved manual frame enlargement grows the restored frame past the
+        // content-computed size (see applySavedFrameSize in webview/expand) —
+        // push siblings clear of the size that will actually render.
         const expandedRect = {
           x: positionedInstance.position.x,
           y: positionedInstance.position.y,
-          width: spliceLayout.expandedSize.width,
-          height: spliceLayout.expandedSize.height,
+          width: Math.max(spliceLayout.expandedSize.width, savedLayout?.bounds?.width ?? 0),
+          height: Math.max(spliceLayout.expandedSize.height, savedLayout?.bounds?.height ?? 0),
         };
         const moved = pushNodesClearOfExpandedInstance(moduleView.nodes, instanceId, expandedRect);
         if (moved.length > 0) {

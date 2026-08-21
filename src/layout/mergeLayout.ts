@@ -81,10 +81,23 @@ interface ElkLayoutNode {
   properties?: Record<string, string>;
 }
 
+export interface BuildViewModelOptions {
+  /**
+   * Transient, layout-only node size overrides in sizeOverride grid units —
+   * used by the placement ELK pass alone, never persisted and never echoed
+   * back on the returned view's nodes. The one current use: an "Expand
+   * instance in place" frame's expanded footprint during Auto Layout (see
+   * relayoutSelection in diagramPanel.ts), which deliberately isn't stored
+   * in the module's saved layout.
+   */
+  elkSizeOverrides?: Record<string, { width: number; height: number }>;
+}
+
 export async function buildViewModel(
   graph: DesignGraph,
   moduleName: string,
   layout: SavedLayout,
+  options?: BuildViewModelOptions,
 ): Promise<DiagramViewModel> {
   const designModule = graph.modules[moduleName];
   if (!designModule) {
@@ -113,6 +126,7 @@ export async function buildViewModel(
     moduleLayout,
     armRegions,
     netCutPortMargins(designModule, activeCuts),
+    options?.elkSizeOverrides,
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
@@ -1445,16 +1459,35 @@ function netCutPortMargins(
 }
 
 async function autoLayoutMissingNodes(
-  nodes: DiagramNode[],
+  rawNodes: DiagramNode[],
   edges: DiagramEdge[],
   moduleLayout: SavedModuleLayout,
   generateRegions: GenerateRegion[] = [],
   netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
+  sizeOverrides?: Record<string, { width: number; height: number }>,
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
   const regionBounds = new Map<string, RegionBounds>();
   const routePositions = new Map<string, { x: number; y: number }>();
+  // ELK must place against each node's *rendered* box: a saved manual resize
+  // (SavedNodeLayout.width/height) or a caller-supplied transient override
+  // (e.g. an expanded instance's frame during Auto Layout — see
+  // BuildViewModelOptions.elkSizeOverrides) grows the node past its
+  // canonical size, and laying neighbors out against the canonical box would
+  // place them underneath it. Annotated once here so every geometry
+  // derivation below (ELK boxes, layout offsets, gap enforcement) agrees.
+  const nodes = rawNodes.map((node) => {
+    const override = sizeOverrides?.[node.id];
+    if (override) {
+      return { ...node, sizeOverride: { width: override.width, height: override.height } };
+    }
+    const saved = moduleLayout.nodes[node.id];
+    if (saved?.width !== undefined && saved?.height !== undefined) {
+      return { ...node, sizeOverride: { width: saved.width, height: saved.height } };
+    }
+    return node;
+  });
   const nodeIds = new Set(nodes.map((node) => node.id));
   const elkEdgeNodesById = new Map(nodes.map((node) => [node.id, node]));
   if (nodes.length === 0 && generateRegions.length === 0) {

@@ -8,7 +8,7 @@ import type {
 } from '../../ir/types';
 import type { HdlFlowNode } from '../nodes/types';
 import type { RouteChange } from '../orthogonal';
-import { isExpandNamespacedId, type SpliceResult } from './splice';
+import { isExpandNamespacedId, type ExpandContentInsets, type SpliceResult } from './splice';
 
 export { isExpandNamespacedId };
 
@@ -74,6 +74,12 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
     type: 'hdl',
     position: node.position,
     zIndex: SPLICE_NODE_Z_INDEX,
+    // Boundary-port nodes stay glued to the frame border — user-dragging
+    // them is a separate follow-up (movable port labels, issue #218), so
+    // it's disabled for now. Programmatic carries (dragging the frame moves
+    // the whole splice) still apply, since those go through onNodesChange
+    // position changes, not a drag started on the node itself.
+    draggable: node.kind === 'boundaryPort' ? false : undefined,
     data: { node, moduleName, arrayConnections: [] },
   };
 }
@@ -82,6 +88,7 @@ function toFlowEdge(
   edge: DiagramEdge,
   moduleName: string,
   containerNodeId: string,
+  contentInsets: ExpandContentInsets,
   onRouteChange: (changes: RouteChange[], commit: boolean) => void,
 ): Edge {
   return {
@@ -103,9 +110,11 @@ function toFlowEdge(
       netEdgeIds: [edge.id],
       // The expanded instance's own node is the frame the spliced content
       // lives in — OrthogonalEdge clamps this edge's derived route inside
-      // that node's live rect so an internal wire can never escape the
-      // expanded module's boundary (see clampPointsToRect).
+      // that node's live rect, minus the frame's border ring, so an internal
+      // wire can never escape the expanded module's boundary nor run under
+      // the ring's grab bands (see clampPointsToRect).
       containerNodeId,
+      contentInsets,
     },
   } as Edge;
 }
@@ -273,7 +282,7 @@ export function applyActiveSplices(
     edges = [
       ...edges,
       ...translatedEdges.map((edge) =>
-        toFlowEdge(edge, moduleName, splice.flowInstanceId, onRouteChange),
+        toFlowEdge(edge, moduleName, splice.flowInstanceId, splice.contentInsets, onRouteChange),
       ),
     ];
     extraRegions.push(region);

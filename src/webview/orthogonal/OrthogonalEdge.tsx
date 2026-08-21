@@ -36,7 +36,7 @@ import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
-import { isExpandNamespacedId } from '../expand/splice';
+import { isExpandNamespacedId, type ExpandContentInsets } from '../expand/splice';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
@@ -61,6 +61,13 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
    * officialPoints below).
    */
   containerNodeId?: string;
+  /**
+   * Set together with containerNodeId: the frame's border-ring widths (see
+   * ExpandContentInsets in expand/splice.ts). The clamp keeps this wire's
+   * derived route inside the ring's inner boundary, so no wire ever runs
+   * under the ring's grab bands (where it couldn't be hovered/selected).
+   */
+  contentInsets?: ExpandContentInsets;
 }
 
 import { getVscodeApi } from '../vscodeApi';
@@ -328,14 +335,18 @@ export function OrthogonalEdge({
   // A wire spliced inside an expanded instance must never escape that
   // instance's own border (the node IS the frame — see webview/expand):
   // clamp the whole derived route (feedback loops, obstacle detours, saved
-  // drags alike) into the container node's live rect, staying below its
-  // header strip and just inside the other three borders. Skipped while
-  // either handle itself sits outside the frame (an internal node dragged
-  // beyond the not-yet-growing border — clamping only the route would break
-  // orthogonality against the un-clamped handle endpoints).
+  // drags alike) into the container node's live rect minus its border ring
+  // (edgeData.contentInsets), so no wire runs under the ring's grab bands
+  // where it couldn't be hovered or selected. Skipped while either handle
+  // itself sits outside the frame (an internal node dragged beyond the
+  // not-yet-growing border — clamping only the route would break
+  // orthogonality against the un-clamped handle endpoints). A boundary
+  // port's inner handle sits exactly on the ring's inner boundary, so its
+  // stub clamps without distortion.
   const containerFlowNode = edgeData?.containerNodeId
     ? flowNodes.find((node) => node.id === edgeData.containerNodeId)
     : undefined;
+  const containerInsets = edgeData?.contentInsets;
   const officialPoints = React.useMemo(() => {
     const containerRect = containerFlowNode ? nodeObstacle(containerFlowNode) : undefined;
     if (!containerRect) return routedOfficialPoints;
@@ -351,13 +362,25 @@ export function OrthogonalEdge({
     );
     if (!handlesInside) return routedOfficialPoints;
     const inset = diagramSizing.gridSize / 4;
-    return clampPointsToRect(routedOfficialPoints, containerRect, {
-      top: diagramSizing.nodeHeaderHeight,
-      right: inset,
-      bottom: inset,
-      left: inset,
-    });
-  }, [routedOfficialPoints, containerFlowNode, sourceX, sourceY, targetX, targetY]);
+    return clampPointsToRect(
+      routedOfficialPoints,
+      containerRect,
+      containerInsets ?? {
+        top: diagramSizing.nodeHeaderHeight,
+        right: inset,
+        bottom: inset,
+        left: inset,
+      },
+    );
+  }, [
+    routedOfficialPoints,
+    containerFlowNode,
+    containerInsets,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+  ]);
 
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
