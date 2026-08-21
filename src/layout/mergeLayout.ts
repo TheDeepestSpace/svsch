@@ -84,11 +84,12 @@ interface ElkLayoutNode {
 export interface BuildViewModelOptions {
   /**
    * Transient, layout-only node size overrides in sizeOverride grid units —
-   * used by the placement ELK pass alone, never persisted and never echoed
-   * back on the returned view's nodes. The one current use: an "Expand
-   * instance in place" frame's expanded footprint during Auto Layout (see
-   * relayoutSelection in diagramPanel.ts), which deliberately isn't stored
-   * in the module's saved layout.
+   * used by the placement ELK pass, the net-cut projection, and the routing
+   * pass (all of which must see each node's *rendered* box), never persisted
+   * and never echoed back on the returned view's nodes. The one current use:
+   * an "Expand instance in place" frame's expanded footprint during Auto
+   * Layout (see relayoutSelection in diagramPanel.ts), which deliberately
+   * isn't stored in the module's saved layout.
    */
   elkSizeOverrides?: Record<string, { width: number; height: number }>;
 }
@@ -180,13 +181,30 @@ export async function buildViewModel(
   const nodesById = new Map<string, DiagramNode>(
     positionedWithWarnings.map((node) => [node.id, node]),
   );
-  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+  // The net-cut projection and the routing pass below derive geometry (port
+  // lead points, collision boxes, obstacles) from these nodes — like the ELK
+  // pass above, they must see each node at its rendered box, so a transient
+  // elkSizeOverride (an expanded instance's frame during Auto Layout) applies
+  // here too. Geometry-only: the returned view's nodes stay clean of it.
+  const withGeometryOverrides = (geometryNodes: PositionedNode[]): PositionedNode[] => {
+    const overrides = options?.elkSizeOverrides;
+    if (!overrides) return geometryNodes;
+    return geometryNodes.map((node) => {
+      const override = overrides[node.id];
+      return override ? { ...node, sizeOverride: override } : node;
+    });
+  };
+  const cutProjection = buildNetCutProjection(
+    designModule,
+    moduleLayout,
+    activeCuts,
+    withGeometryOverrides(positioned),
+  );
+  const routingNodes = [...withGeometryOverrides(positionedWithWarnings), ...cutProjection.nodes];
   const routingNodesById = new Map<string, DiagramNode>(
-    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node]),
+    routingNodes.map((node) => [node.id, node]),
   );
-  const routingNodePositions = new Map(
-    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node.position]),
-  );
+  const routingNodePositions = new Map(routingNodes.map((node) => [node.id, node.position]));
   const candidates = routedDesignEdges.filter(
     (edge) => !moduleLayout.edges?.[edge.id]?.routePoints,
   );
@@ -194,7 +212,7 @@ export async function buildViewModel(
     // Dangling ends are real visual obstacles too. Build them before routing
     // so ordinary nets cannot pass through a cut label that happens to land
     // in their otherwise-clear corridor.
-    [...positionedWithWarnings, ...cutProjection.nodes],
+    routingNodes,
     candidates,
     (nodeId, portId, includeLeadMargins, role) =>
       renderedLeadPoint(

@@ -195,6 +195,45 @@ Feature: Sub-diagram interaction
     And no top-level block should overlap the expanded instance "u1"
     And all spliced content should stay inside the expanded instance "u1"
 
+  # A cut net's dangling end is re-derived from its owning port's lead point —
+  # once the instance expands, that port sits on the *frame* border, well past
+  # the collapsed box the host's geometry pass would otherwise use. Auto Layout
+  # must release the label together with its (expanded) instance and re-anchor
+  # it against the frame, not leave it at the collapsed-size position inside
+  # the frame.
+  Scenario: Auto Layout re-anchors a cut net end to the expanded frame's border
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        logic t1;
+        inner u_a(.w(la), .z(t1));
+        inner u_b(.w(t1), .z(ly));
+      endmodule
+
+      module top(input logic a, input logic b, output logic y, output logic z);
+        leaf u1(.la(a), .ly(y));
+        leaf u2(.la(b), .ly(z));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I hover the connection between "u1" and "y" and click its Cut control
+    And I note the position of the cut net label attached to "u1"
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    When I fit the diagram in view
+    And I drag-select across the entire diagram
+    Then the "Auto Layout" button should be visible
+    When I click the "Auto Layout" button
+    Then the block "u1" should be re-placed and fixed in the saved layout
+    And the cut net label attached to "u1" should have moved
+    And no top-level block should overlap the expanded instance "u1"
+    And all spliced content should stay inside the expanded instance "u1"
+
   # A manual enlargement of the expanded frame (dragging its right/bottom
   # resize handles) must survive both a same-session reattachment (any commit
   # rebuilds the overlay from the splice cache) and a full reload (via the

@@ -1645,7 +1645,10 @@ Then(
 // Cut net labels are re-derived from geometry every render, so unlike a real
 // block they can't be resolved by their visible text alone (fanout cuts share
 // one label across several dangling ends). Resolve the one specific label
-// attached to a given block instead, by walking its stub edge.
+// attached to a given block instead, by walking its stub edge. When the block
+// is an expanded instance, its stub edges are rewired onto the frame's
+// boundary-port nodes (namespaced `expand:<instanceId>::...` ids — see
+// applyActiveSplices), so those endpoints count as "attached" too.
 async function cutLabelNodeIdAttachedTo(
   webviewPage: FrameLocator,
   blockLabel: string,
@@ -1655,14 +1658,19 @@ async function cutLabelNodeIdAttachedTo(
   const labelId = await webviewPage.locator('html').evaluate((_, id) => {
     const rf = (window as any).reactFlowInstance;
     const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const attaches = (endpointId: string) =>
+      endpointId === id ||
+      (endpointId.startsWith(`expand:${id}::`) &&
+        (nodesById.get(endpointId) as any)?.data?.node?.kind === 'boundaryPort');
     const stub = rf
       .getEdges()
       .find(
         (e: any) =>
-          (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined,
+          (attaches(e.source) || attaches(e.target)) &&
+          e.data?.edge?.metadata?.cutStub !== undefined,
       );
     if (!stub) return null;
-    const otherEndId = stub.source === id ? stub.target : stub.source;
+    const otherEndId = attaches(stub.source) ? stub.target : stub.source;
     const otherNode = nodesById.get(otherEndId) as any;
     return otherNode?.data?.node?.kind === 'netLabel' ? otherEndId : null;
   }, blockId);
@@ -1681,11 +1689,17 @@ async function cutStubEdgeIdAttachedTo(
   if (!blockId) throw new Error(`Could not find block "${blockLabel}"`);
   const edgeId = await webviewPage.locator('html').evaluate((_, id) => {
     const rf = (window as any).reactFlowInstance;
+    const nodesById = new Map(rf.getNodes().map((n: any) => [n.id, n]));
+    const attaches = (endpointId: string) =>
+      endpointId === id ||
+      (endpointId.startsWith(`expand:${id}::`) &&
+        (nodesById.get(endpointId) as any)?.data?.node?.kind === 'boundaryPort');
     const stub = rf
       .getEdges()
       .find(
         (e: any) =>
-          (e.source === id || e.target === id) && e.data?.edge?.metadata?.cutStub !== undefined,
+          (attaches(e.source) || attaches(e.target)) &&
+          e.data?.edge?.metadata?.cutStub !== undefined,
       );
     return stub?.id ?? null;
   }, blockId);
@@ -4989,10 +5003,22 @@ When('I drag-select across the entire diagram', async function (this: BddWorld) 
     if (box) boxes.push(box);
   }
   if (boxes.length === 0) throw new Error('No rendered nodes to drag-select across');
-  const startX = Math.min(...boxes.map((box) => box.x)) - 24;
-  const startY = Math.min(...boxes.map((box) => box.y)) - 24;
-  const endX = Math.max(...boxes.map((box) => box.x + box.width)) + 24;
-  const endY = Math.max(...boxes.map((box) => box.y + box.height)) + 24;
+  // Clamp to the webview's own bounds: a node hugging the viewport edge would
+  // otherwise push the marquee's mouse-down onto VS Code chrome outside the
+  // iframe, where it starts a different gesture (or none) depending on
+  // sub-pixel fit-view placement — a classic source of flaky selections.
+  const frame = await this.workbox.locator('iframe.webview').first().boundingBox();
+  if (!frame) throw new Error('Webview iframe not found');
+  const startX = Math.max(frame.x + 2, Math.min(...boxes.map((box) => box.x)) - 24);
+  const startY = Math.max(frame.y + 2, Math.min(...boxes.map((box) => box.y)) - 24);
+  const endX = Math.min(
+    frame.x + frame.width - 2,
+    Math.max(...boxes.map((box) => box.x + box.width)) + 24,
+  );
+  const endY = Math.min(
+    frame.y + frame.height - 2,
+    Math.max(...boxes.map((box) => box.y + box.height)) + 24,
+  );
 
   await this.workbox.mouse.move(startX, startY);
   await this.workbox.mouse.down();

@@ -2206,21 +2206,35 @@ function NodeSelectionToolbar({
     const selectedIds = new Set(selected.map((node) => node.id));
     // A cut net's dangling end is a `netLabel` node that ELK never places
     // directly — it's re-derived every render from the real block's current
-    // port position. Selecting the real block already selects its stub edge
-    // too (React Flow selects every edge touching a selected node), so pull
-    // that edge's netLabel endpoint into the release set even when the
-    // marquee never physically covered the label itself. A netLabel that's
-    // neither selected nor attached to a selected stub edge is left alone.
+    // port position. Releasing the block must release its dangling ends with
+    // it, so pull every stub edge's netLabel endpoint into the release set
+    // whenever the block on the stub's other end is selected — even when the
+    // marquee never physically covered the label (or the stub wire) itself.
+    // A netLabel whose block isn't selected is left alone.
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
+    // An expanded instance's stub edges no longer terminate on the instance
+    // id the release set carries — applyActiveSplices rewires them onto the
+    // frame's boundary-port nodes (expand-namespaced ids, never in
+    // `selected`). Resolve a boundary endpoint back to the top-level
+    // instance owning its splice so that instance's cut labels release with
+    // it, same as a collapsed block's would.
+    const boundaryOwner = new Map<string, string>();
+    for (const splice of spliceMapRef.current.values()) {
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      for (const boundaryId of splice.boundaryNodeIdByChildPortName.values()) {
+        boundaryOwner.set(boundaryId, splice.flowInstanceId);
+      }
+    }
     for (const edge of edges) {
-      if (edge.selected !== true) continue;
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
       const endpointIds = [edge.source, edge.target];
-      const touchesSelectedBlock = endpointIds.some(
-        (endpointId) =>
-          selectedIds.has(endpointId) && nodesById.get(endpointId)?.data.node.kind !== 'netLabel',
-      );
+      const touchesSelectedBlock = endpointIds.some((endpointId) => {
+        const resolvedId = boundaryOwner.get(endpointId) ?? endpointId;
+        return (
+          selectedIds.has(resolvedId) && nodesById.get(resolvedId)?.data.node.kind !== 'netLabel'
+        );
+      });
       if (!touchesSelectedBlock) continue;
       for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
