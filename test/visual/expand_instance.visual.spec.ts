@@ -4,8 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { buildViewModel } from '../../src/layout/mergeLayout';
 import { buildExpandSpliceLayout } from '../../src/layout/expandLayout';
+import { applyExpandedInstances } from '../../src/layout/expandSpliceView';
 import { buildDesignGraph } from '../../src/parser/backend';
-import type { DesignGraph } from '../../src/ir/types';
+import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import {
   buildExampleDesignViewWithGraph,
@@ -15,10 +16,53 @@ import {
   openView,
   paddedAllNodesClip,
   postView,
+  trackView,
   waitForViewportTransformToSettle,
 } from './helper';
 import { mergeNodePositions, mergeRelayoutSelection } from '../../src/layout/mergeLayout';
 import type { PositionedNode } from '../../src/ir/types';
+
+// `openView`/`postView` only ever track the flat/collapsed DiagramViewModel
+// actually posted to the page — the expand splice these tests drive in is
+// applied entirely client-side in React Flow state and never round-trips
+// back into a DiagramViewModel (see issue #248). Without this, the SVG half
+// of expectGraphAndScreenshot's regression check (renderSvg on the tracked
+// view) would silently keep comparing against the pre-expand diagram even
+// though the PNG screenshot shows the spliced content. This mirrors
+// applyExpandedInstances' real caller (svsch render, src/core/index.ts) by
+// flagging the given instances expanded on a throwaway copy of `layout` and
+// re-deriving their splice layout fresh — the same content the webview
+// itself spliced in from expandPayloadFor's buildExpandSpliceLayout call,
+// just re-anchored to wherever the instance ended up in `view`.
+async function trackSplicedView(
+  page: Page,
+  graph: DesignGraph,
+  layout: SavedLayout,
+  view: DiagramViewModel,
+  expandedInstanceIds: string[],
+): Promise<void> {
+  const moduleLayout = layout.modules[view.moduleName] ?? { nodes: {} };
+  const expandedLayout: SavedLayout = {
+    ...layout,
+    modules: {
+      ...layout.modules,
+      [view.moduleName]: {
+        ...moduleLayout,
+        expanded: {
+          ...(moduleLayout.expanded ?? {}),
+          ...Object.fromEntries(expandedInstanceIds.map((id) => [id, true])),
+        },
+      },
+    },
+  };
+  const splicedView = await applyExpandedInstances({
+    graph,
+    layout: expandedLayout,
+    view,
+    expandedSnapshots: new Map(),
+  });
+  trackView(page, splicedView);
+}
 
 // "Expand instance in place" (issue #232) is entirely client-side once the
 // host hands over the child module's IR (see webview/expand/splice.ts and
@@ -262,6 +306,7 @@ test.describe('expand instance in place visual', () => {
     }
 
     await fitGraphView(page, 0.2);
+    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
     await expectGraphAndScreenshot(page, 'expand-instance-in-place.png');
 
     // Re-selecting the (still-present, dimmed and enlarged) instance node
@@ -343,6 +388,7 @@ test.describe('expand instance in place visual', () => {
     await expectSplicedContentInsideFrame(page, instanceId);
 
     await fitGraphView(page, 0.15);
+    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
     await expectGraphAndScreenshot(page, 'expand-instance-complex.png');
   });
 
@@ -479,6 +525,7 @@ test.describe('expand instance in place visual', () => {
     await expect(page.locator('.svsch-selection-toolbar')).toHaveCount(0);
 
     await fitGraphView(page, 0.15);
+    await trackSplicedView(page, graph, hostLayout, finalView, [aluNodeId]);
     await expectGraphAndScreenshot(page, 'example-design-alu-expanded-autolayout.png');
   });
 });
