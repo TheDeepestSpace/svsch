@@ -7,7 +7,7 @@ export const SNAPSHOT_THRESHOLDS = {
       muxLongNames: 2,
     },
     system: 50,
-    pixelmatchThreshold: 0.2,
+    pixelmatchThreshold: 0.1,
   },
   pixelmatch: {
     bdd: 50,
