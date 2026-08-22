@@ -1399,31 +1399,6 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   await waitForLayoutChange(this, before, `After clicking ${label}`);
 });
 
-// A *nested* expand (expanding an instance that already lives inside another
-// expanded instance's spliced content) doesn't touch the top-level module's
-// own layout file the way a top-level expand does — see
-// SavedModuleLayout.expanded's docs on why a nested expand is deliberately
-// not tracked there. Only its content snapshot persists, under
-// .svsch/layouts/expanded/, which readExtensionLayout doesn't scan — so this
-// waits on the live DOM (the instance gaining its dimmed-ghost class, see
-// dimAsExpandGhost) instead of a layout-file diff.
-When(
-  'I click the "Expand" button to nest-expand {string}',
-  async function (this: BddWorld, instanceLabel: string) {
-    const button = this.webviewPage.locator('.svsch-selection-toolbar button', {
-      hasText: 'Expand',
-    });
-    await expect(button).toBeVisible();
-    await button.click();
-    const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
-    if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
-    await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).toHaveClass(
-      /hdl-node-expand-ghost/,
-    );
-    await waitForExtensionRenderedView(this, `After expanding ${instanceLabel}`);
-  },
-);
-
 // Collapses an "Expand instance in place" region (issue #232) by selecting
 // its own (dimmed-backdrop) instance node and clicking the "Collapse"
 // control that surfaces in the selection toolbar — the same toolbar
@@ -1466,31 +1441,6 @@ Then(
     await expect(this.webviewPage.locator('.hdl-node-expand-ghost')).toHaveCount(0);
     const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
     if (!id) throw new Error(`Collapsed instance node "${instanceLabel}" is missing`);
-  },
-);
-
-// Nested counterpart to "I collapse the expanded instance" above — same
-// reasoning as "I click the Expand button to nest-expand": collapsing an
-// instance nested inside another expanded instance doesn't touch the
-// top-level module's own layout file, so wait on the live DOM (the ghost
-// class disappearing) rather than a layout-file diff.
-When(
-  'I collapse the nested expanded instance {string}',
-  async function (this: BddWorld, instanceLabel: string) {
-    const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
-    if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
-    const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
-    if (!box) throw new Error(`Could not get bounding box for ${instanceLabel}`);
-    await this.workbox.mouse.click(box.x + 30, box.y + 15);
-    const button = this.webviewPage.locator('.svsch-selection-toolbar button', {
-      hasText: 'Collapse',
-    });
-    await expect(button).toBeVisible();
-    await button.click();
-    await expect(this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`)).not.toHaveClass(
-      /hdl-node-expand-ghost/,
-    );
-    await waitForExtensionRenderedView(this, `After collapsing ${instanceLabel}`);
   },
 );
 

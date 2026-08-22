@@ -989,7 +989,7 @@ Feature: Diagram Interaction
     When I move the node "u_inner" inside the expanded instance by (8, 0) grid cells
     Then the "u1" block should have grown on the right side
 
-  Scenario: Expanding an instance inside an already-expanded instance nests two levels deep
+  Scenario: An instance nested inside an already-expanded instance cannot be expanded directly
     Given I have a file "top.sv" in my workspace:
       """
       module inner(input logic a, output logic y);
@@ -1009,11 +1009,7 @@ Feature: Diagram Interaction
     And I click the "Expand" button
     Then I should see an instance node "u_inner" of module "inner"
     When I click to select the block "u_inner"
-    And I click the "Expand" button to nest-expand "u_inner"
-    Then I should see a dimmed instance node "u_inner"
-    When I collapse the nested expanded instance "u_inner"
-    Then I should see an instance node "u_inner" of module "inner"
-    And I should see a dimmed instance node "u1"
+    Then the "Expand" button should not be visible
     When I collapse the expanded instance "u1"
     Then I should see an instance node "u1" of module "leaf"
 

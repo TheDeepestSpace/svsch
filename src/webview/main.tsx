@@ -726,10 +726,11 @@ function DiagramApp(): React.ReactElement {
   // instance's current geometry, its namespace/parentRegionId in the splice
   // tree) to build a SpliceInput once the host responds — see the
   // `expandInstanceData` branch above. A no-op if this instance already has
-  // (or is already fetching) a splice. Self-resolves whether `instanceNode`
-  // is a top-level instance of the open module or a nested instance living
-  // inside an already-expanded splice (issue #232 decision 3 — no depth
-  // cap), by checking spliceMapRef for a splice that owns this node id.
+  // (or is already fetching) a splice. Both callers (the toolbar's Expand
+  // button and the auto-restore effect below) only ever pass a top-level
+  // instance of the currently open module as of #233 — nested expand is no
+  // longer reachable from the UI — but the enclosing-splice lookup is kept
+  // so this still resolves correctly if that ever changes.
   const requestExpand = useCallback(
     (instanceNode: HdlFlowNode) => {
       if (!view) return;
@@ -792,8 +793,10 @@ function DiagramApp(): React.ReactElement {
   // top-level instance the host has flagged expanded (see
   // SavedModuleLayout.expanded) that isn't already cached — a previously
   // expanded instance stays expanded across a reload without the user
-  // re-clicking Expand. Nested expands are not auto-restored (see
-  // diagramPanel.ts's `topLevel` guard) — a known v1 gap, noted in the PR.
+  // re-clicking Expand. Nested expands are never persisted (see
+  // diagramPanel.ts's `topLevel` guard) and, as of #233, can't be created at
+  // all — expand/collapse on a nested instance only happens from that
+  // instance's own module view — so there's nothing nested to restore here.
   useEffect(() => {
     if (!view) return;
     for (const instanceId of expandedInstanceIds) {
@@ -2089,23 +2092,25 @@ function NodeSelectionToolbar({
       .map((node) => node.id);
   }, [selected, spliceMapRef]);
 
-  // "Expand instance in place" (issue #232 decision 8): only for a single
-  // selected instance node, never a multi-select — and not for
-  // array-of-instances nodes (decision 7; #169 tracks that separately).
-  // Computed over the full block selection (not the `selected` narrowing):
-  // an instance living inside an already-expanded splice is itself
-  // expand/collapse-able (decision 3 — recursive, no depth cap).
+  // "Expand instance in place" (issue #232 decision 8, revised in #233): only
+  // for a single selected instance node, never a multi-select — and not for
+  // array-of-instances nodes (decision 7; #169 tracks that separately). Also
+  // excludes any instance living inside an already-expanded splice: nested
+  // expand/collapse is only ever done from that instance's own module view,
+  // never reached through an ancestor's — so a spliced-in (expand-namespaced)
+  // node offers neither control here.
   const singleInstance =
     selectedBlocks.length === 1 &&
     selectedBlocks[0].data.node.kind === 'instance' &&
-    !nodeIsArrayNode(selectedBlocks[0].data.node)
+    !nodeIsArrayNode(selectedBlocks[0].data.node) &&
+    !isExpandNamespacedId(selectedBlocks[0].id)
       ? selectedBlocks[0]
       : undefined;
 
   // If the selected instance is already expanded, its splice is keyed by
-  // this node's own id (the top-level case) or by the enclosing splice's
-  // namespaced id (nested) — either way `flowInstanceId` is exactly this
-  // node's id in the current `nodes` array (see ActiveSplice's doc).
+  // this node's own (non-namespaced, top-level) id — `flowInstanceId` is
+  // exactly this node's id in the current `nodes` array (see ActiveSplice's
+  // doc).
   const activeSplice = singleInstance
     ? [...spliceMapRef.current.values()].find(
         (splice) => splice.flowInstanceId === singleInstance.id,
