@@ -1048,7 +1048,6 @@ describe('layout merge', () => {
     expect(doneTop - registerBottom).toBeGreaterThanOrEqual(diagramSizing.gridSize);
   });
 
-
   it('anchors a resized register reset port at the resolved bottom center', () => {
     const register: DiagramNode = {
       id: 'register',
