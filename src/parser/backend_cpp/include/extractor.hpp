@@ -322,7 +322,7 @@ private:
     std::map<std::string, LoweredValue> lowerIfStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers);
     std::map<std::string, LoweredValue> lowerCaseStatement(vpiHandle stmt, Module& mod, bool is_clocked, const std::map<std::string, std::string>& desired_outputs, vpiHandle source_handle, const std::map<std::string, LoweredValue>& current_drivers);
     LoweredValue lowerAssignment(vpiHandle assign_handle, Module& mod, const std::string& preferred_signal, bool is_clocked, const std::map<std::string, LoweredValue>& current_drivers = {});
-    std::map<std::string, LoweredValue> lowerAggregateAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {}, const std::string& output_suffix = "");
+    std::map<std::string, LoweredValue> lowerAggregateAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers = {}, const std::string& output_suffix = "", const std::map<std::string, std::string>& desired_outputs = {});
     void ensureInferredLatch(Module& mod, const std::string& target, const std::string& input_signal, const std::string& width, vpiHandle source_handle);
     bool tryProcessArrayCompositionAssignment(vpiHandle assign_handle, Module& mod, bool is_procedural);
     std::string processBusSelect(vpiHandle select_handle, Module& mod);

@@ -184,7 +184,8 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
     Module& mod,
     bool is_procedural,
     const std::map<std::string, LoweredValue>& current_drivers,
-    const std::string& output_suffix
+    const std::string& output_suffix,
+    const std::map<std::string, std::string>& desired_outputs
 ) {
     std::map<std::string, LoweredValue> result = current_drivers;
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
@@ -248,7 +249,12 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
         auto seg = lhs_segments[i];
         if (seg.signal.empty()) continue;
         std::string target_signal = seg.signal;
-        if (is_procedural && !output_suffix.empty()) seg.signal += output_suffix;
+        auto desired_output = desired_outputs.find(target_signal);
+        if (is_procedural && desired_output != desired_outputs.end()) {
+            seg.signal = desired_output->second;
+        } else if (is_procedural && !output_suffix.empty()) {
+            seg.signal += output_suffix;
+        }
         int size = std::max(1, seg.size);
         std::string label = size > 1
             ? "[" + std::to_string(current_bit) + ":" + std::to_string(current_bit - size + 1) + "]"
