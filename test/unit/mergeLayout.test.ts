@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { runParser } from '../helper';
 import {
   buildViewModel,
@@ -7,12 +10,14 @@ import {
   elkRoutingNodeForDiagramNode,
   enforceMinimumBlockGaps,
   firstOpenAutoCutEdges,
+  markFirstOpenHandled,
   mergeEdgeRoutePoints,
   mergeEdgeWaypoint,
   mergeFirstOpenNetCuts,
   mergeNetCut,
   mergeNetCuts,
   mergeNodePositions,
+  mergeNodeSnapshot,
   mergeRegionBounds,
   mergeRelayoutSelection,
   mergeRerouteEdges,
@@ -34,7 +39,7 @@ import {
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
-import type { SavedLayout } from '../../src/storage/layoutStore';
+import { LayoutStore, type SavedLayout } from '../../src/storage/layoutStore';
 
 function boundsOf(node: PositionedNode): { x: number; y: number; width: number; height: number } {
   const { width, height } = diagramNodeDimensions(node);
@@ -4443,5 +4448,197 @@ describe('layout merge', () => {
     expect(route[0].x).toBe(sourceLeadX);
     expect(route[1].x).toBeGreaterThan(sourceLeadX);
     expect(route.some((point) => point.x === sourceLeadX && point.y !== route[0].y)).toBe(false);
+  });
+});
+
+describe('unconditional full-render layout snapshot', () => {
+  const chainModule = {
+    name: 'top',
+    file: 'top.sv',
+    ports: [],
+    nodes: [
+      {
+        id: 'a',
+        kind: 'port' as const,
+        label: 'a',
+        ports: [{ id: 'out', name: 'a', direction: 'input' as const }],
+      },
+      {
+        id: 'u',
+        kind: 'instance' as const,
+        label: 'u',
+        ports: [
+          { id: 'in', name: 'a', direction: 'input' as const },
+          { id: 'out', name: 'y', direction: 'output' as const },
+        ],
+      },
+      {
+        id: 'y',
+        kind: 'port' as const,
+        label: 'y',
+        ports: [{ id: 'y', name: 'y', direction: 'output' as const }],
+      },
+    ],
+    edges: [
+      {
+        id: 'a-u',
+        source: 'a',
+        sourcePort: 'out',
+        target: 'u',
+        targetPort: 'in',
+        metadata: { declaredNetName: 'a' },
+      },
+      {
+        id: 'u-y',
+        source: 'u',
+        sourcePort: 'out',
+        target: 'y',
+        targetPort: 'y',
+        metadata: { declaredNetName: 'y' },
+      },
+    ],
+  };
+  const chainGraph: DesignGraph = {
+    rootModules: ['top'],
+    generatedAt: 'now',
+    diagnostics: [],
+    modules: { top: chainModule },
+  };
+
+  it(
+    'mergeNodeSnapshot records every rendered position without marking anything fixed',
+    async () => {
+      const view = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
+
+      const snapshot = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', view.nodes);
+      const saved = snapshot.modules.top.nodes;
+
+      for (const node of view.nodes) {
+        expect(saved[node.id]).toEqual({
+          x: Math.round(node.position.x),
+          y: Math.round(node.position.y),
+        });
+        expect(saved[node.id].fixed).toBeUndefined();
+      }
+    },
+  );
+
+  it('mergeNodeSnapshot never overwrites an already-pinned node', () => {
+    const pinned: SavedLayout = {
+      version: 1,
+      modules: { top: { nodes: { a: { x: 999, y: 999, fixed: true } } } },
+    };
+
+    const snapshot = mergeNodeSnapshot(pinned, 'top', [
+      { ...chainModule.nodes[0], fixed: true, position: { x: 1, y: 2 } } as PositionedNode,
+    ]);
+
+    expect(snapshot.modules.top.nodes.a).toEqual({ x: 999, y: 999, fixed: true });
+  });
+
+  it('mergeNodeSnapshot skips synthetic net-cut label nodes', () => {
+    const snapshot = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', [
+      {
+        ...chainModule.nodes[0],
+        position: { x: 10, y: 10 },
+      } as PositionedNode,
+      {
+        id: 'cut-label:a:out:source',
+        kind: 'netLabel' as const,
+        label: 'a',
+        ports: [],
+        position: { x: 20, y: 20 },
+      } as unknown as PositionedNode,
+    ]);
+
+    expect(Object.keys(snapshot.modules.top.nodes)).toEqual(['a']);
+  });
+
+  it('markFirstOpenHandled sets the flag once and is idempotent', () => {
+    const empty: SavedLayout = { version: 1, modules: {} };
+    const handled = markFirstOpenHandled(empty, 'top');
+    expect(handled.modules.top.firstOpenHandled).toBe(true);
+
+    const handledAgain = markFirstOpenHandled(handled, 'top');
+    expect(handledAgain).toBe(handled);
+  });
+
+  it(
+    "a full-render snapshot doesn't opt an untouched module out of the " +
+      'pristine "free preset" columnizing once the module reopens',
+    async () => {
+      const cutEdges = firstOpenAutoCutEdges(chainModule, true);
+      const firstOpenLayout = mergeFirstOpenNetCuts(
+        { version: 1, modules: {} },
+        'top',
+        cutEdges,
+        chainModule,
+      );
+
+      const firstRender = await buildViewModel(chainGraph, 'top', firstOpenLayout);
+      // Simulate the per-render durability write: nothing was dragged, but the
+      // resolved positions get snapshotted into moduleLayout.nodes anyway.
+      const persistedAfterRender = mergeNodeSnapshot(firstOpenLayout, 'top', firstRender.nodes);
+      expect(Object.keys(persistedAfterRender.modules.top.nodes).length).toBeGreaterThan(0);
+
+      // Reopening the module ("reload") must still treat it as pristine —
+      // isPristineLayout has to key off `fixed`, not off `nodes` being empty.
+      const secondRender = await buildViewModel(chainGraph, 'top', persistedAfterRender);
+      const before = new Map(firstRender.nodes.map((node) => [node.id, node.position]));
+      for (const node of secondRender.nodes) {
+        expect(node.position).toEqual(before.get(node.id));
+      }
+    },
+  );
+
+  it('layout state (auto positions and a manual edit) survives a reload from disk', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'svsch-test-'));
+    try {
+      // "Open the diagram": render once with nothing saved yet.
+      const opened = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
+      let layout = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', opened.nodes);
+
+      // "Mutate layout": the user drags node 'u' to an explicit position.
+      // mergeNodePositions (the existing, unchanged interactive-edit path)
+      // only ever persists pinned nodes, so this alone drops the other,
+      // untouched nodes' snapshot entries again — that's expected and fine,
+      // since those nodes are still trivially recoverable via Auto Layout.
+      const draggedU = opened.nodes.map((node) =>
+        node.id === 'u' ? { ...node, position: { x: 768, y: 552 }, fixed: true } : node,
+      );
+      layout = mergeNodePositions(layout, 'top', draggedU);
+
+      // The diagram renders again at some point after the drag (switching
+      // tabs, a rebuild, simply reopening later) — that's the render-driven
+      // safety net restoring full coverage on top of the manual edit.
+      const rerendered = await buildViewModel(chainGraph, 'top', layout);
+      layout = mergeNodeSnapshot(layout, 'top', rerendered.nodes);
+
+      const store = new LayoutStore(tmpDir);
+      await store.writeModuleLayout('top', layout.modules.top);
+      await store.flush();
+
+      // "Reload": a fresh store instance reading straight from disk, as a new
+      // session would.
+      const reloadedStore = new LayoutStore(tmpDir);
+      const reloadedModuleLayout = await reloadedStore.readModuleLayout('top');
+      const reloadedLayout: SavedLayout = { version: 1, modules: { top: reloadedModuleLayout } };
+
+      // The manual pin survived exactly.
+      expect(reloadedModuleLayout.nodes.u).toEqual({ x: 768, y: 552, fixed: true });
+
+      // The auto-placed port node — never dragged — also survived, because
+      // the full-render snapshot wrote it, not just the manual edit.
+      const aBefore = rerendered.nodes.find((node) => node.id === 'a')!.position;
+      expect(reloadedModuleLayout.nodes.a).toEqual({
+        x: Math.round(aBefore.x),
+        y: Math.round(aBefore.y),
+      });
+
+      const reopened = await buildViewModel(chainGraph, 'top', reloadedLayout);
+      expect(reopened.nodes.find((node) => node.id === 'u')!.position).toEqual({ x: 768, y: 552 });
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });

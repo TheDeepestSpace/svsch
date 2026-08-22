@@ -83,6 +83,15 @@ export interface SavedModuleLayout {
   viewport?: SavedViewport;
   expanded?: Record<string, boolean>;
   netCuts?: Record<string, SavedNetCut>;
+  /**
+   * Set once the first-open auto net-cut decision has run for this module,
+   * whether or not it actually cut anything. This is the explicit signal for
+   * "genuinely first open" — since full-render snapshots (see
+   * mergeNodeSnapshot) now make `nodes` non-empty and the module file exist
+   * on disk well before any real user interaction, neither can be used as a
+   * stand-in for that check anymore.
+   */
+  firstOpenHandled?: boolean;
 }
 
 /**
@@ -102,6 +111,8 @@ interface PendingModuleWrite {
   syncTimer: NodeJS.Timeout | null;
   resolves: Array<() => void>;
   writeQueue: Promise<void>;
+  /** Serialized content of the last successful disk write, to skip no-op writes. */
+  lastWritten: string | null;
 }
 
 /**
@@ -123,20 +134,6 @@ export class LayoutStore {
 
   private modulePath(moduleName: string): string {
     return path.join(this.layoutsDir, `${encodeURIComponent(moduleName)}.json`);
-  }
-
-  async hasModuleLayout(moduleName: string): Promise<boolean> {
-    try {
-      await fs.access(this.modulePath(moduleName));
-      return true;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        console.warn(
-          `Unable to inspect SVSCH layout for module "${moduleName}": ${(error as Error).message}`,
-        );
-      }
-      return false;
-    }
   }
 
   async readModuleLayout(moduleName: string): Promise<SavedModuleLayout> {
@@ -194,6 +191,7 @@ export class LayoutStore {
       entry.syncTimer = null;
     }
     entry.layout = null;
+    entry.lastWritten = null;
     const resolves = entry.resolves;
     entry.resolves = [];
 
@@ -238,7 +236,13 @@ export class LayoutStore {
   private entryFor(moduleName: string): PendingModuleWrite {
     let entry = this.pending.get(moduleName);
     if (!entry) {
-      entry = { layout: null, syncTimer: null, resolves: [], writeQueue: Promise.resolve() };
+      entry = {
+        layout: null,
+        syncTimer: null,
+        resolves: [],
+        writeQueue: Promise.resolve(),
+        lastWritten: null,
+      };
       this.pending.set(moduleName, entry);
     }
     return entry;
@@ -252,14 +256,23 @@ export class LayoutStore {
     const layout = entry.layout;
     entry.layout = null;
 
+    const content = `${JSON.stringify(layout, null, 2)}\n`;
+    // Full-state snapshots (see mergeNodeSnapshot) call writeModuleLayout on
+    // every render, not just after a meaningful edit — skip the actual disk
+    // write when nothing has changed since the last write so an idle diagram
+    // doesn't churn the file (and git history) on every repaint.
+    if (content === entry.lastWritten) {
+      return;
+    }
+
     const filePath = this.modulePath(moduleName);
     const tmpPath = `${filePath}.tmp`;
 
     try {
       await fs.mkdir(this.layoutsDir, { recursive: true });
-      const content = `${JSON.stringify(layout, null, 2)}\n`;
       await fs.writeFile(tmpPath, content, 'utf8');
       await fs.rename(tmpPath, filePath);
+      entry.lastWritten = content;
     } catch (error) {
       console.error(
         `Failed to write SVSCH layout for module "${moduleName}": ${(error as Error).message}`,

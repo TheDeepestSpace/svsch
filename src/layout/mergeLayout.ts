@@ -139,10 +139,13 @@ export async function buildViewModel(
       : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
   // A pristine layout (nothing dragged, nothing released back to Auto Layout
   // yet — see mergeRelayoutSelection/mergeNodePositions, both of which always
-  // write a `moduleLayout.nodes` entry) is the only state this "free preset"
-  // columnizing applies to; touching the diagram at all opts a module out
-  // until a full Reset clears moduleLayout.nodes and restores it.
-  const isPristineLayout = Object.keys(moduleLayout.nodes).length === 0;
+  // write a `fixed` entry) is the only state this "free preset" columnizing
+  // applies to; touching the diagram at all opts a module out until a full
+  // Reset clears moduleLayout.nodes and restores it. This can no longer check
+  // for `moduleLayout.nodes` being empty: mergeNodeSnapshot now populates it
+  // with unfixed positions on every render as a durability snapshot, so
+  // presence alone no longer means "touched" — only `fixed` does.
+  const isPristineLayout = !Object.values(moduleLayout.nodes).some((node) => node.fixed);
   const positioned = isPristineLayout
     ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
     : packedGenerateLayout.nodes;
@@ -3612,6 +3615,27 @@ export function mergeFirstOpenNetCuts(
   return edges.reduce((acc, edge) => mergeNetCutState(acc, moduleName, edge, designModule), layout);
 }
 
+/**
+ * Marks that the first-open auto net-cut decision has run for this module,
+ * whether or not it found anything to cut. This is the explicit signal
+ * callers must check instead of "no saved layout exists" — full-render
+ * snapshots (mergeNodeSnapshot) make that condition true almost immediately,
+ * well before a module has genuinely been opened and decided on.
+ */
+export function markFirstOpenHandled(layout: SavedLayout, moduleName: string): SavedLayout {
+  const existing: SavedModuleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  if (existing.firstOpenHandled) {
+    return layout;
+  }
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: { ...existing, firstOpenHandled: true },
+    },
+  };
+}
+
 /** Nets that form the computed default for a module with no saved layout. */
 export function firstOpenAutoCutEdges(
   designModule: DesignModule,
@@ -3873,6 +3897,49 @@ export function mergeNodePositions(
           : {}),
       };
     }
+  }
+
+  next.modules[moduleName] = {
+    ...existing,
+    nodes: mergedNodes,
+  };
+  return next;
+}
+
+/**
+ * Full-render safety net: records every node's just-resolved position (not
+ * only the ones the user has explicitly pinned) so a module that's been
+ * looked at, but never dragged, still has a local record to recover from
+ * after a crash. Unlike mergeNodePositions, this never marks anything
+ * `fixed` — it only ever supplies a fallback position, never overriding Auto
+ * Layout on the next render (see the `saved?.fixed` check in buildViewModel).
+ * A node already pinned (`fixed: true`) is left untouched; synthetic net-cut
+ * label nodes are skipped entirely — those are only ever meaningful once
+ * pinned (see mergeNodePositions).
+ */
+export function mergeNodeSnapshot(
+  layout: SavedLayout,
+  moduleName: string,
+  nodes: PositionedNode[],
+): SavedLayout {
+  const next: SavedLayout = {
+    version: 1,
+    modules: { ...layout.modules },
+  };
+  const existing: SavedModuleLayout = next.modules[moduleName] ?? { nodes: {} };
+  const mergedNodes: SavedModuleLayout['nodes'] = {};
+
+  for (const [id, value] of Object.entries(existing.nodes)) {
+    if (value.fixed) {
+      mergedNodes[id] = value;
+    }
+  }
+
+  for (const node of nodes) {
+    if (mergedNodes[node.id]?.fixed || isCutLabelNodeId(node.id)) {
+      continue;
+    }
+    mergedNodes[node.id] = snapPosition(node.position, node.kind, structRole(node));
   }
 
   next.modules[moduleName] = {
