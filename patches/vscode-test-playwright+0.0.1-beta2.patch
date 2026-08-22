@@ -1,11 +1,57 @@
+diff --git a/node_modules/vscode-test-playwright/dist/index.d.ts b/node_modules/vscode-test-playwright/dist/index.d.ts
+index c7429ec..86cf70c 100644
+--- a/node_modules/vscode-test-playwright/dist/index.d.ts
++++ b/node_modules/vscode-test-playwright/dist/index.d.ts
+@@ -1,4 +1,4 @@
+-import { TraceMode, type ElectronApplication, type Page } from '@playwright/test';
++import { TraceMode, VideoMode, type ElectronApplication, type Page } from '@playwright/test';
+ import { ObjectHandle, VSCode, VSCodeEvaluator, VSCodeFunctionOn, VSCodeHandle } from './vscodeHandle';
+ export { expect } from '@playwright/test';
+ export type VSCodeWorkerOptions = {
+@@ -11,6 +11,9 @@ export type VSCodeWorkerOptions = {
+         sources?: boolean;
+         attachments?: boolean;
+     };
++    vscodeVideo: VideoMode | {
++        mode: VideoMode;
++    };
+     extensionsDir?: string;
+     userDataDir?: string;
+ };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..112eb5b 100644
+index 5570b9f..3229689 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
-@@ -66,8 +66,55 @@ function getTraceMode(trace) {
+@@ -66,8 +66,81 @@ function getTraceMode(trace) {
          return 'on-first-retry';
      return traceMode;
  }
++function getVideoMode(video) {
++    return typeof video === 'string' ? video : video.mode;
++}
++function shouldCaptureVideo(videoMode, testInfo) {
++    if (videoMode === 'on')
++        return true;
++    if (videoMode === 'retain-on-failure')
++        return true;
++    if (videoMode === 'on-first-retry' && testInfo.retry === 1)
++        return true;
++    if (videoMode === 'on-all-retries' && testInfo.retry > 0)
++        return true;
++    if (videoMode === 'retain-on-first-failure' && testInfo.retry === 0)
++        return true;
++    return false;
++}
++async function attachVideo(video, testInfo, videoName) {
++    try {
++        const videoPath = testInfo.outputPath(`${videoName}.webm`);
++        await video.saveAs(videoPath);
++        testInfo.attachments.push({ name: videoName, path: videoPath, contentType: 'video/webm' });
++    }
++    catch (error) {
++        console.warn(`[vscode-test-playwright] Failed to save video "${videoName}": ${error}`);
++    }
++}
 +async function closeElectronApp(electronApp, timeoutMs = 5000) {
 +    const proc = electronApp.process?.();
 +    if (!proc || proc.exitCode !== null || proc.signalCode) {
@@ -59,7 +105,7 @@ index 5570b9f..112eb5b 100644
      function addEventListener(emitter, eventName, handler) {
          emitter.on(eventName, handler);
          return { emitter, eventName, handler };
-@@ -80,6 +127,10 @@ function waitForLine(process, regex) {
+@@ -80,6 +153,10 @@ function waitForLine(process, regex) {
      return new Promise((resolve, reject) => {
          const rl = readline.createInterface({ input: process.stderr });
          const failError = new Error('Process failed to launch!');
@@ -70,7 +116,7 @@ index 5570b9f..112eb5b 100644
          const listeners = [
              addEventListener(rl, 'line', onLine),
              addEventListener(rl, 'close', reject.bind(null, failError)),
-@@ -95,6 +146,7 @@ function waitForLine(process, regex) {
+@@ -95,6 +172,7 @@ function waitForLine(process, regex) {
              resolve(match);
          }
          function cleanup() {
@@ -78,15 +124,35 @@ index 5570b9f..112eb5b 100644
              removeEventListeners(listeners);
          }
      });
-@@ -144,6 +196,7 @@ exports.test = test_1.test.extend({
+@@ -103,6 +181,7 @@ exports.test = test_1.test.extend({
+     vscodeVersion: ['insiders', { option: true, scope: 'worker' }],
+     extensions: [undefined, { option: true, scope: 'worker' }],
+     vscodeTrace: ['off', { option: true, scope: 'worker' }],
++    vscodeVideo: ['off', { option: true, scope: 'worker' }],
+     extensionDevelopmentPath: [undefined, { option: true }],
+     baseDir: [async ({ _createTempDir }, use) => await use(await _createTempDir()), { option: true }],
+     extensionsDir: [undefined, { option: true, scope: 'worker' }],
+@@ -135,7 +214,7 @@ exports.test = test_1.test.extend({
+             await use({ installPath, cachePath });
+         }, { timeout: 0, scope: 'worker' }],
+     // based on https://github.com/microsoft/playwright-vscode/blob/1d855b9a7aeca783223a7a9f8e3b01efbe8e16f2/tests-integration/tests/baseTest.ts
+-    electronApp: [async ({ extensionDevelopmentPath, baseDir, _vscodeInstall, vscodeTrace, trace, extensionsDir, userDataDir }, use, testInfo) => {
++    electronApp: [async ({ extensionDevelopmentPath, baseDir, _vscodeInstall, vscodeTrace, trace, vscodeVideo, extensionsDir, userDataDir }, use, testInfo) => {
+             const { installPath, cachePath } = _vscodeInstall;
+             // remove all VSCODE_* environment variables, otherwise it fails to load custom webviews with the following error:
+             // InvalidStateError: Failed to register a ServiceWorker: The document is in an invalid state
+@@ -144,13 +223,18 @@ exports.test = test_1.test.extend({
                  if (/^VSCODE_/i.test(prop))
                      delete env[prop];
              }
 +            env.ELECTRON_DISABLE_SANDBOX = '1';
++            const videoMode = getVideoMode(vscodeVideo);
++            const captureVideo = shouldCaptureVideo(videoMode, testInfo);
              const electronApp = await test_1._electron.launch({
                  executablePath: installPath,
                  env,
-@@ -151,6 +204,7 @@ exports.test = test_1.test.extend({
++                ...(captureVideo ? { recordVideo: { dir: testInfo.outputPath('video') } } : {}),
+                 args: [
                      // Stolen from https://github.com/microsoft/vscode-test/blob/0ec222ef170e102244569064a12898fb203e5bb7/lib/runTest.ts#L126-L160
                      // https://github.com/microsoft/vscode/issues/84238
                      '--no-sandbox',
@@ -94,16 +160,34 @@ index 5570b9f..112eb5b 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -184,7 +238,7 @@ exports.test = test_1.test.extend({
+@@ -173,6 +257,10 @@ exports.test = test_1.test.extend({
+                 await context.tracing.start({ screenshots, snapshots, title: testInfo.title });
+             }
+             await use(electronApp);
++            // Snapshot video handles before the process is torn down; video.saveAs()
++            // below waits for each page to close, which closeElectronApp() causes
++            // indirectly by killing the process (its CDP connection disconnects).
++            const videos = captureVideo ? electronApp.windows().map(page => page.video()).filter(Boolean) : [];
+             if (captureTrace) {
+                 const testFailed = testInfo.status !== testInfo.expectedStatus;
+                 const shouldAbandonTrace = !testFailed && (traceMode === 'retain-on-failure' || traceMode === 'retain-on-first-failure');
+@@ -184,7 +272,14 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
 -            await electronApp.close();
 +            await closeElectronApp(electronApp);
++            if (captureVideo) {
++                const testFailed = testInfo.status !== testInfo.expectedStatus;
++                const shouldAbandonVideo = !testFailed && (videoMode === 'retain-on-failure' || videoMode === 'retain-on-first-failure');
++                if (!shouldAbandonVideo) {
++                    await Promise.all(videos.map((video, index) => attachVideo(video, testInfo, videos.length > 1 ? `video-${index + 1}` : 'video')));
++                }
++            }
              const logPath = path.join(cachePath, 'user-data', 'logs');
              if (fs.existsSync(logPath)) {
                  const logOutputPath = exports.test.info().outputPath('vscode-logs');
-@@ -196,24 +250,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +291,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -138,7 +222,7 @@ index 5570b9f..112eb5b 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +305,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +346,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });

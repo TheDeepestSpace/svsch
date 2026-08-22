@@ -65,6 +65,7 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     deviceScaleFactor: 1,
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
+    vscodeVideo: 'on',
     viewport: { width: 1400, height: 1000 },
   },
 });
