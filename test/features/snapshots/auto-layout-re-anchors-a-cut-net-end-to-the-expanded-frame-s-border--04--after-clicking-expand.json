@@ -160,7 +160,7 @@
       "type": "hdl",
       "position": {
         "x": 360,
-        "y": 264
+        "y": 144
       },
       "width": 192,
       "height": 96,
@@ -284,7 +284,7 @@
       "target": "port:top:z",
       "sourceHandle": "port:ly",
       "targetHandle": "port:z",
-      "path": "M 552 312 L 576 312 L 672 312 L 672 192 L 744 192 L 768 192"
+      "path": "M 552 192 L 576 192 L 744 192 L 768 192"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -300,7 +300,7 @@
       "target": "instance:top:u2",
       "sourceHandle": "port:b",
       "targetHandle": "port:la",
-      "path": "M 144 192 L 168 192 L 264 192 L 264 312 L 336 312 L 360 312"
+      "path": "M 144 192 L 168 192 L 336 192 L 360 192"
     },
     {
       "id": "expand:instance:top:u1::edge:instance:leaf:u_a:instance:leaf:u_b:t1",

@@ -2629,64 +2629,6 @@ function horizontallyOverlaps(
   return a.x < b.x + b.width && b.x < a.x + a.width;
 }
 
-function rectsOverlap(a: RegionBounds, b: RegionBounds): boolean {
-  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-}
-
-/**
- * "Expand instance in place" (issue #232) grows an instance node's on-canvas
- * footprint past its collapsed size without re-running the module's own
- * layout (the splice is entirely client-side) — a sibling block that used to
- * sit clear of the collapsed instance can end up underneath the expanded
- * frame. Straight-down cascade in the same spirit as enforceMinimumBlockGaps,
- * just seeded with the expanded frame as a single fixed obstacle instead of
- * every node's own current position: any sibling that overlaps it (or a
- * sibling already pushed clear this same pass) is nudged below the lowest
- * thing it collides with and pinned there, exactly as if the user had
- * dragged it — everything else is left untouched.
- */
-export function pushNodesClearOfExpandedInstance(
-  nodes: PositionedNode[],
-  instanceId: string,
-  expandedRect: RegionBounds,
-): PositionedNode[] {
-  const minGap = diagramSizing.gridSize;
-  const candidates = nodes.filter(
-    (node) => node.id !== instanceId && isBlockSpacingNode(node) && node.kind !== 'netLabel',
-  );
-  const geometries = new Map(candidates.map((node) => [node.id, resolvedNodeDimensions(node)]));
-  const boundsFor = (node: PositionedNode): RegionBounds => {
-    const size = geometries.get(node.id)!;
-    return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
-  };
-
-  const ordered = [...candidates].sort((a, b) => a.position.y - b.position.y);
-  const placed: RegionBounds[] = [expandedRect];
-  const moved: PositionedNode[] = [];
-
-  for (const node of ordered) {
-    let bounds = boundsFor(node);
-    let didMove = false;
-    for (let guard = 0; guard <= placed.length; guard++) {
-      const blocker = placed.find((rect) => rectsOverlap(bounds, rect));
-      if (!blocker) break;
-      const y = snapToGridAtOrAfter(
-        blocker.y + blocker.height + minGap,
-        node.kind,
-        structRole(node),
-      );
-      bounds = { ...bounds, y };
-      didMove = true;
-    }
-    if (didMove) {
-      moved.push({ ...node, position: { x: bounds.x, y: bounds.y }, fixed: true });
-    }
-    placed.push(bounds);
-  }
-
-  return moved;
-}
-
 function genericNodePortTop(node: DiagramNode): number {
   return diagramSizing.nodeHeaderHeight + diagramSizing.gridSize * instanceParameterRows(node);
 }
