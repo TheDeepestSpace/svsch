@@ -4505,23 +4505,20 @@ describe('unconditional full-render layout snapshot', () => {
     modules: { top: chainModule },
   };
 
-  it(
-    'mergeNodeSnapshot records every rendered position without marking anything fixed',
-    async () => {
-      const view = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
+  it('mergeNodeSnapshot records every rendered position without marking anything fixed', async () => {
+    const view = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
 
-      const snapshot = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', view.nodes);
-      const saved = snapshot.modules.top.nodes;
+    const snapshot = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', view.nodes);
+    const saved = snapshot.modules.top.nodes;
 
-      for (const node of view.nodes) {
-        expect(saved[node.id]).toEqual({
-          x: Math.round(node.position.x),
-          y: Math.round(node.position.y),
-        });
-        expect(saved[node.id].fixed).toBeUndefined();
-      }
-    },
-  );
+    for (const node of view.nodes) {
+      expect(saved[node.id]).toEqual({
+        x: Math.round(node.position.x),
+        y: Math.round(node.position.y),
+      });
+      expect(saved[node.id].fixed).toBeUndefined();
+    }
+  });
 
   it('mergeNodeSnapshot never overwrites an already-pinned node', () => {
     const pinned: SavedLayout = {
