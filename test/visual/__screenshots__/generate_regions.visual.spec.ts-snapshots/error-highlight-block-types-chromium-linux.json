@@ -64,8 +64,8 @@
       "id": "err_array_bus",
       "type": "hdl",
       "position": {
-        "x": 890,
-        "y": 1130
+        "x": 350,
+        "y": 1340
       },
       "width": 144,
       "height": 125,
@@ -94,8 +94,8 @@
       "id": "err_array_comb",
       "type": "hdl",
       "position": {
-        "x": 1160,
-        "y": 920
+        "x": 620,
+        "y": 1130
       },
       "width": 192,
       "height": 96,
@@ -124,8 +124,8 @@
       "id": "err_array_instance",
       "type": "hdl",
       "position": {
-        "x": 620,
-        "y": 1130
+        "x": 80,
+        "y": 1340
       },
       "width": 192,
       "height": 96,
@@ -154,8 +154,8 @@
       "id": "err_array_literal",
       "type": "hdl",
       "position": {
-        "x": 1160,
-        "y": 1130
+        "x": 620,
+        "y": 1340
       },
       "width": 72,
       "height": 24,
@@ -174,7 +174,7 @@
       "id": "err_array_mux",
       "type": "hdl",
       "position": {
-        "x": 350,
+        "x": 1160,
         "y": 1130
       },
       "width": 96,
@@ -209,8 +209,8 @@
       "id": "err_array_port",
       "type": "hdl",
       "position": {
-        "x": 890,
-        "y": 920
+        "x": 350,
+        "y": 1130
       },
       "width": 120,
       "height": 24,
@@ -229,7 +229,7 @@
       "id": "err_array_register",
       "type": "hdl",
       "position": {
-        "x": 80,
+        "x": 890,
         "y": 1130
       },
       "width": 96,
@@ -259,7 +259,7 @@
       "id": "err_array_replicate",
       "type": "hdl",
       "position": {
-        "x": 80,
+        "x": 890,
         "y": 1340
       },
       "width": 72,
@@ -284,8 +284,8 @@
       "id": "err_bus_break",
       "type": "hdl",
       "position": {
-        "x": 620,
-        "y": 710
+        "x": 80,
+        "y": 920
       },
       "width": 144,
       "height": 101,
@@ -314,7 +314,7 @@
       "id": "err_bus_comp",
       "type": "hdl",
       "position": {
-        "x": 350,
+        "x": 1160,
         "y": 710
       },
       "width": 144,
@@ -371,6 +371,66 @@
       }
     },
     {
+      "id": "err_comparator",
+      "type": "hdl",
+      "position": {
+        "x": 350,
+        "y": 500
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "comparator",
+        "ports": [
+          {
+            "id": "comparator:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "comparator:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "comparator:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_gate",
+      "type": "hdl",
+      "position": {
+        "x": 80,
+        "y": 500
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "gate:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "gate:b",
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "id": "gate:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
       "id": "err_input_port",
       "type": "hdl",
       "position": {
@@ -394,8 +454,8 @@
       "id": "err_instance",
       "type": "hdl",
       "position": {
-        "x": 890,
-        "y": 500
+        "x": 350,
+        "y": 710
       },
       "width": 192,
       "height": 96,
@@ -424,7 +484,7 @@
       "id": "err_interface_inst",
       "type": "hdl",
       "position": {
-        "x": 80,
+        "x": 890,
         "y": 920
       },
       "width": 192,
@@ -459,7 +519,7 @@
       "id": "err_interface_modport",
       "type": "hdl",
       "position": {
-        "x": 350,
+        "x": 1160,
         "y": 920
       },
       "width": 192,
@@ -509,7 +569,7 @@
       "id": "err_inverter",
       "type": "hdl",
       "position": {
-        "x": 80,
+        "x": 620,
         "y": 500
       },
       "width": 48,
@@ -564,7 +624,7 @@
       "id": "err_literal",
       "type": "hdl",
       "position": {
-        "x": 350,
+        "x": 1160,
         "y": 500
       },
       "width": 48,
@@ -614,8 +674,8 @@
       "id": "err_module",
       "type": "hdl",
       "position": {
-        "x": 1160,
-        "y": 500
+        "x": 620,
+        "y": 710
       },
       "width": 192,
       "height": 96,
@@ -679,8 +739,8 @@
       "id": "err_net_label",
       "type": "hdl",
       "position": {
-        "x": 620,
-        "y": 920
+        "x": 80,
+        "y": 1130
       },
       "width": 96,
       "height": 48,
@@ -743,8 +803,8 @@
       "id": "err_replicate",
       "type": "hdl",
       "position": {
-        "x": 620,
-        "y": 500
+        "x": 80,
+        "y": 710
       },
       "width": 48,
       "height": 48,
@@ -798,8 +858,8 @@
       "id": "err_struct_break",
       "type": "hdl",
       "position": {
-        "x": 1160,
-        "y": 710
+        "x": 620,
+        "y": 920
       },
       "width": 144,
       "height": 101,
@@ -828,8 +888,8 @@
       "id": "err_struct_comp",
       "type": "hdl",
       "position": {
-        "x": 890,
-        "y": 710
+        "x": 350,
+        "y": 920
       },
       "width": 144,
       "height": 101,
@@ -858,7 +918,7 @@
       "id": "err_unknown",
       "type": "hdl",
       "position": {
-        "x": 80,
+        "x": 890,
         "y": 710
       },
       "width": 192,
@@ -879,6 +939,31 @@
           {
             "id": "unknown:y",
             "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "err_zext",
+      "type": "hdl",
+      "position": {
+        "x": 890,
+        "y": 500
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "zext",
+        "ports": [
+          {
+            "id": "zext:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "zext:out",
+            "name": "out",
             "direction": "output"
           }
         ]

@@ -191,7 +191,9 @@ function readLayoutSync(layoutFile: string): SavedLayout {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return EMPTY_LAYOUT;
     }
-    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`);
+    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`, {
+      cause: error,
+    });
   }
 }
 
@@ -207,7 +209,9 @@ function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): Save
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return EMPTY_LAYOUT;
     }
-    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`);
+    throw new Error(`Unable to read layout ${layoutFile}: ${(error as Error).message}`, {
+      cause: error,
+    });
   }
 }
 

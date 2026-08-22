@@ -1038,7 +1038,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(chain.nodes.filter((node) => node.kind === 'comb')).toHaveLength(1);
   });
 
-  it('keeps non-arithmetic subexpressions as gate nodes feeding ALU nodes', async () => {
+  it('keeps non-arithmetic subexpressions as dedicated gate nodes feeding ALU nodes', async () => {
     const graph = await runParser(backend, [
       {
         file: 'alu_complex.sv',
@@ -1052,10 +1052,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     const withComb = graph.modules.alu_with_comb;
     const alu = withComb.nodes.find((node) => node.kind === 'alu');
-    const comb = withComb.nodes.find((node) => node.kind === 'gate');
+    const gate = withComb.nodes.find((node) => node.kind === 'gate');
     expect(withComb.nodes.filter((node) => node.kind === 'alu')).toHaveLength(1);
     expect(withComb.nodes.filter((node) => node.kind === 'gate')).toHaveLength(1);
-    expect(comb?.metadata?.operation).toBe('or');
+    expect(withComb.nodes.filter((node) => node.kind === 'comb')).toHaveLength(0);
+    expect(gate?.metadata?.operation).toBe('or');
     expect(
       withComb.edges.some(
         (edge) =>
@@ -1066,17 +1067,17 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === comb?.id && edge.target === alu?.id && edge.targetPort === 'rhs',
+        (edge) => edge.source === gate?.id && edge.target === alu?.id && edge.targetPort === 'rhs',
       ),
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === 'port:alu_with_comb:b' && edge.target === comb?.id,
+        (edge) => edge.source === 'port:alu_with_comb:b' && edge.target === gate?.id,
       ),
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === 'port:alu_with_comb:c' && edge.target === comb?.id,
+        (edge) => edge.source === 'port:alu_with_comb:c' && edge.target === gate?.id,
       ),
     ).toBe(true);
   });
@@ -1345,16 +1346,17 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const mod = graph.modules.fsm_complex_latch;
     const latch = mod.nodes.find((n) => n.kind === 'latch' && n.label === 'q');
     const mux = mod.nodes.find((n) => n.kind === 'mux');
-    const comb = mod.nodes.find((n) => n.kind === 'gate');
+    // `en & sidekick` now gets a dedicated gate node instead of a generic comb block.
+    const gate = mod.nodes.find((n) => n.kind === 'gate');
 
     expect(latch).toBeDefined();
     expect(mux).toBeDefined();
-    expect(comb).toBeDefined();
-    expect(comb?.metadata?.operation).toBe('and');
+    expect(gate).toBeDefined();
+    expect(gate?.metadata?.operation).toBe('and');
     expect(mod.edges.some((e) => e.source === mux?.id && e.target === latch?.id)).toBe(true);
     expect(
       mod.edges.some(
-        (e) => e.source === comb?.id && e.target === mux?.id && e.targetPort === 'sel',
+        (e) => e.source === gate?.id && e.target === mux?.id && e.targetPort === 'sel',
       ),
     ).toBe(true);
   });
@@ -1494,6 +1496,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const graph = await runParser(backend, 'mux_selector_expr.sv', fixture('mux_selector_expr.sv'));
     const muxSelectorExpr = graph.modules.mux_selector_expr;
     const mux = muxSelectorExpr.nodes.find((node) => node.kind === 'mux');
+    // `sel & sidekick` now gets a dedicated gate node instead of a generic comb block.
     const selectorComb = muxSelectorExpr.nodes.find(
       (node) =>
         node.kind === 'gate' &&
@@ -1560,6 +1563,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     const instrPort = busSlices.nodes.find((node) => node.id === 'port:bus_slices:instr');
     const bus = busSlices.nodes.find((node) => node.kind === 'bus' && node.label === 'instr');
+    // `instr[6:0] & a` now gets a dedicated gate node instead of a generic comb block.
     const decodedComb = busSlices.nodes.find(
       (node) =>
         node.kind === 'gate' &&
@@ -1577,6 +1581,8 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       busSlices.nodes.find((node) => node.id === 'reg:bus_slices:funct3_q')?.metadata?.width,
     ).toBe('[2:0]');
 
+    // Gate node ports label a bracket-select input with its slice (e.g. "[6:0]"),
+    // matching how comb/inverter display bus-tap inputs.
     const instrPortInComb = decodedComb?.ports.find((port) =>
       port.connectedSignal?.endsWith('[6:0]'),
     );
@@ -2217,11 +2223,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         node.kind === 'gate' &&
         node.ports.some((p) => p.name === 'decoded' && p.direction === 'output'),
     );
+    // Gate nodes get a refined source range narrowed to just the expression
+    // ("instr[6:0] & a"), like ALU/inverter nodes — not the whole `assign` statement.
     expect(decodedComb?.source).toBeDefined();
     expect(decodedComb?.source?.file).toBe('bus_slices.sv');
     expect(decodedComb?.source?.startLine).toBe(15);
-    // Gate nodes get a refined source range narrowed to just the expression
-    // ("instr[6:0] & a"), like ALU/inverter nodes — not the whole `assign` statement.
     expect(decodedComb?.source?.startColumn).toBe(19);
     expect(decodedComb?.source?.endLine).toBe(15);
     expect(decodedComb?.source?.endColumn).toBe(33);
@@ -2656,6 +2662,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       `,
         );
         const top = graph.modules.top;
+        // `a & b` now gets a dedicated gate node instead of a generic comb block.
         const combNode = top.nodes.find((n) => n.kind === 'gate');
         expect(combNode).toBeDefined();
 
@@ -2683,6 +2690,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       `,
         );
         const top = graph.modules.top;
+        // `a & b` now gets a dedicated gate node instead of a generic comb block.
         const combNode = top.nodes.find((n) => n.kind === 'gate');
         expect(combNode).toBeDefined();
 
@@ -3038,7 +3046,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       // With parentheses, it should be "a + (b | c)"
       expect(alu.metadata.expression?.replace(/\s+/g, '')).toBe('a+(b|c)');
 
-      // Check that RHS of ALU is connected to a comb node
+      // Check that RHS of ALU is connected to a dedicated gate node
       const rhsPort = alu.ports.find((p) => p.name === 'rhs');
       expect(rhsPort).toBeDefined();
 
