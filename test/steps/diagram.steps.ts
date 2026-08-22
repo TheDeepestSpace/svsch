@@ -1456,6 +1456,37 @@ When(
   },
 );
 
+// Selects a nested expanded frame inherited from the child module's own
+// diagram (issue #233) — spliced read-only content, so unlike "I collapse
+// the expanded instance" there is no Collapse control to click afterwards;
+// the scenario asserts exactly that with 'the {string} button should not be
+// visible'. Same header-strip click as the collapse step: an expanded
+// frame's center is pointer-transparent sub-canvas, only its border ring
+// takes the pointer.
+When(
+  'I click to select the spliced expanded instance {string}',
+  async function (this: BddWorld, instanceLabel: string) {
+    const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
+    if (!id) throw new Error(`Could not find instance node "${instanceLabel}"`);
+    const box = await this.webviewPage.locator(`.react-flow__node[data-id="${id}"]`).boundingBox();
+    if (!box) throw new Error(`Could not get bounding box for ${instanceLabel}`);
+    await this.workbox.mouse.click(box.x + 30, box.y + 15);
+    await expect
+      .poll(
+        async () => {
+          return this.webviewPage.locator('html').evaluate((_el, targetId) => {
+            const rf = (window as any).reactFlowInstance;
+            const selected = rf.getNodes().filter((n: any) => n.selected);
+            return selected.length === 1 && selected[0].id === targetId;
+          }, id);
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
+    await this.takeScreenshot(`Selected spliced expanded instance ${instanceLabel}`);
+  },
+);
+
 // Guards against the collapse→re-expand bounce (issue reported on #233): the
 // bounce is an async round trip through the extension host (requestExpand →
 // expandInstanceData → re-splice), so an immediate not-visible assertion right

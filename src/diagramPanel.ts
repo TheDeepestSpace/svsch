@@ -193,6 +193,53 @@ export class DiagramPanel {
     await store.writeModuleLayout(moduleName, moduleLayout);
   }
 
+  /**
+   * Loads into memory the saved layout (and full elaboration) of a module
+   * plus, transitively, every module its diagram's own expanded instances
+   * point at. A spliced sub-diagram is a read-only mirror of the child
+   * module's own diagram — expansions included, recursively (see
+   * buildExpandSpliceLayout) — so the splice layout must see each of those
+   * modules' `SavedModuleLayout` even if the user never opened them this
+   * session.
+   */
+  private async ensureExpandedModuleClosure(store: LayoutStore, rootModule: string): Promise<void> {
+    const visited = new Set<string>();
+    const queue = [rootModule];
+    while (queue.length > 0) {
+      const moduleName = queue.shift()!;
+      if (visited.has(moduleName)) {
+        continue;
+      }
+      visited.add(moduleName);
+      let module = this.graph?.modules[moduleName];
+      if (module && isListOnlyPlaceholder(module)) {
+        await this.loadModule(moduleName);
+        module = this.graph?.modules[moduleName];
+      }
+      if (!module) {
+        continue;
+      }
+      // Only pull in layouts that actually exist on disk: caching a default
+      // empty layout for a never-persisted module would defeat postViewNow's
+      // first-open detection (and its auto-cut pass) when the user later
+      // opens that module directly — and a module with no layout file can't
+      // have expanded flags to inherit anyway.
+      if (!this.layout.modules[moduleName] && (await store.hasModuleLayout(moduleName))) {
+        await this.ensureModuleLayout(store, moduleName);
+      }
+      const expanded = this.layout.modules[moduleName]?.expanded ?? {};
+      for (const instanceId of Object.keys(expanded)) {
+        if (!expanded[instanceId]) {
+          continue;
+        }
+        const node = module.nodes.find((candidate) => candidate.id === instanceId);
+        if (node?.kind === 'instance' && node.moduleName) {
+          queue.push(node.moduleName);
+        }
+      }
+    }
+  }
+
   async open(): Promise<void> {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
@@ -960,6 +1007,12 @@ export class DiagramPanel {
       this.layout = setInstanceExpanded(this.layout, moduleName, instanceId, true);
       await this.persistModuleLayout(store, moduleName);
     }
+
+    // The spliced sub-diagram mirrors the child module's own diagram,
+    // expansions included (recursively) — pull in the saved layouts and
+    // elaborations of every module that chain reaches before computing the
+    // splice, or their `expanded` flags wouldn't even be in memory.
+    await this.ensureExpandedModuleClosure(store, childModuleName);
 
     // The child's normal standalone place-and-route, dropped into the frame
     // with the boundary ports wired up by libavoid. Best-effort: on any

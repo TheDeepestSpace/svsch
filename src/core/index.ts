@@ -105,7 +105,11 @@ export async function renderModuleFromGraph(
 
   let view = await buildViewModel(graph, moduleName, layout);
   if (svschDir) {
-    view = await applyExpandedInstances({ graph, layout, view });
+    // A spliced sub-diagram mirrors the child module's own saved diagram,
+    // expansions included (recursively) — pull in the layouts of every module
+    // the expand chain reaches, not just the top module's own file.
+    const closureLayout = loadExpandedLayoutClosureSync(layout, graph, svschDir, moduleName);
+    view = await applyExpandedInstances({ graph, layout: closureLayout, view });
   }
   return { view, layoutSource };
 }
@@ -222,6 +226,54 @@ function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): Save
       cause: error,
     });
   }
+}
+
+/**
+ * Extends an already-read layout with the saved layouts of every module the
+ * expand chain reaches: starting from the rendered module, each module whose
+ * `expanded` flags point at further child modules pulls those children's
+ * `<svschDir>/layouts/<module>.json` files in too, so
+ * `applyExpandedInstances`' recursion (see buildExpandSpliceLayout) sees the
+ * same per-module state the live extension holds in memory.
+ */
+function loadExpandedLayoutClosureSync(
+  layout: SavedLayout,
+  graph: DesignGraph,
+  svschDir: string,
+  rootModule: string,
+): SavedLayout {
+  const modules = { ...layout.modules };
+  const visited = new Set<string>();
+  const queue = [rootModule];
+  while (queue.length > 0) {
+    const moduleName = queue.shift()!;
+    if (visited.has(moduleName)) {
+      continue;
+    }
+    visited.add(moduleName);
+    const module = graph.modules[moduleName];
+    if (!module) {
+      continue;
+    }
+    if (!modules[moduleName]) {
+      const layoutFile = path.join(svschDir, 'layouts', `${encodeURIComponent(moduleName)}.json`);
+      const read = readSplitModuleLayoutSync(layoutFile, moduleName).modules[moduleName];
+      if (read) {
+        modules[moduleName] = read;
+      }
+    }
+    const expanded = modules[moduleName]?.expanded ?? {};
+    for (const instanceId of Object.keys(expanded)) {
+      if (!expanded[instanceId]) {
+        continue;
+      }
+      const node = module.nodes.find((candidate) => candidate.id === instanceId);
+      if (node?.kind === 'instance' && node.moduleName) {
+        queue.push(node.moduleName);
+      }
+    }
+  }
+  return { version: 1, modules };
 }
 
 function relativeProjectFolder(workspaceRoot: string, projectDir: string): string {

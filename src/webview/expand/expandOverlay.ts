@@ -69,11 +69,19 @@ export interface ActiveSplice extends SpliceResult {
 }
 
 function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
+  // A nested expand inside the spliced child arrives pre-flattened from the
+  // host (see buildExpandSpliceLayout's recursion): its instance node comes
+  // through as ordinary content, already grown and stamped with
+  // `metadata.expandGhost` by applyExpandedInstances. Give it the same dimmed
+  // backdrop treatment dimAsExpandGhost gives a live top-level frame so it
+  // reads (and layers) like one — just read-only, like everything spliced.
+  const nestedGhost = node.metadata?.expandGhost;
   return {
     id: node.id,
     type: 'hdl',
     position: node.position,
-    zIndex: SPLICE_NODE_Z_INDEX,
+    zIndex: nestedGhost ? EXPAND_GHOST_Z_INDEX : SPLICE_NODE_Z_INDEX,
+    className: nestedGhost ? EXPAND_GHOST_CLASS : undefined,
     // Every spliced node — boundary port or internal content — is
     // non-draggable: the only place a child module's own layout may be
     // edited is that module's own standalone view (see the product decision
@@ -81,7 +89,12 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
     // moves the whole splice) still apply, since those go through
     // onNodesChange position changes, not a drag started on the node itself.
     draggable: false,
-    data: { node, moduleName, arrayConnections: [] },
+    data: {
+      node,
+      moduleName,
+      arrayConnections: [],
+      ...(nestedGhost ? { expandContentInsets: nestedGhost.insets } : {}),
+    },
   };
 }
 

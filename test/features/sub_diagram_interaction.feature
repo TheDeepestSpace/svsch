@@ -343,3 +343,42 @@ Feature: Sub-diagram interaction
     And I move the block "u_b" by (-10, -6) grid cells
     And I select module "top" from the dropdown
     Then the block "u1" should have shrunk to fit its new content
+
+  # The sub-diagram mirrors the child module's own diagram *including which of
+  # its instances are expanded* (issue #233): expanding an instance in the
+  # child's standalone view shows it expanded inside every splice of that
+  # child too, recursively; the state lives only in the child module's own
+  # saved layout, so it survives leaving and reopening the outer diagram. And
+  # like everything spliced, the inherited nested frame is read-only — it
+  # offers no Expand/Collapse of its own.
+  Scenario: An expanded instance inherits the child module's own expanded instances
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        inner u_inner(.w(la), .z(ly));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.la(a), .ly(y));
+      endmodule
+      """
+    When I open the "leaf" module in SVSCH
+    And I click to select the block "u_inner"
+    And I click the "Expand" button
+    Then I should see a dimmed instance node "u_inner"
+    When I select module "top" from the dropdown
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a dimmed instance node "u1"
+    And I should see a dimmed instance node "u_inner"
+    And I should see a boundary port node named "w"
+    When I click to select the spliced expanded instance "u_inner"
+    Then the "Expand" button should not be visible
+    And the "Collapse" button should not be visible
+    When I close and reopen the diagram
+    Then I should see a dimmed instance node "u1"
+    And I should see a dimmed instance node "u_inner"

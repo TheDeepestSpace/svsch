@@ -763,7 +763,11 @@ function spliceFromHostLayout(input: SpliceInput, hostLayout: ExpandSpliceLayout
   const boundaryNodeIdByChildPortName = new Map<string, string>();
   const nodes: PositionedNode[] = hostLayout.nodes.map((node) => {
     const id = namespacedId(namespace, node.id);
-    if (node.kind === 'boundaryPort') {
+    // Only *this* frame's own boundary labels (child-local ids) belong in the
+    // port map — a nested expand inside the child contributes its own
+    // boundaryPort nodes too (already expand-namespaced), and a nested port
+    // name may collide with an outer one.
+    if (node.kind === 'boundaryPort' && !isExpandNamespacedId(node.id)) {
       const name = node.ports[0]?.name ?? node.label;
       boundaryNodeIdByChildPortName.set(name, id);
     }

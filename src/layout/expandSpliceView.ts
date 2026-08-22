@@ -15,16 +15,19 @@ import { spliceExpandedInstance } from '../webview/expand/splice';
  * content the live webview canvas does instead of just the flat collapsed
  * instance box (see issue #248).
  *
- * Only top-level expands round-trip through `SavedModuleLayout.expanded` in
- * the first place (a nested expand's auto-restore flag is deliberately never
- * persisted — see buildExpandSpliceLayout's doc comment and diagramPanel.ts's
- * `topLevel` guard), so there is nothing to recurse into here: whatever this
- * function splices in is exactly what a fresh page load would auto-restore.
+ * Recursion happens one level down, not here: each spliced child's content
+ * comes from `buildExpandSpliceLayout`, which takes the child's standalone
+ * view *with the child's own `SavedModuleLayout.expanded` applied* (via this
+ * very function), so a sub-diagram mirrors the child module's own diagram —
+ * expansions included, to any depth. `ancestorModules` carries the module
+ * names already being expanded up the chain so a recursive instantiation
+ * stays collapsed instead of looping (see buildExpandSpliceLayout).
  */
 export async function applyExpandedInstances(input: {
   graph: DesignGraph;
   layout: SavedLayout;
   view: DiagramViewModel;
+  ancestorModules?: ReadonlySet<string>;
 }): Promise<DiagramViewModel> {
   const { graph, layout, view } = input;
   const expandedFlags = layout.modules[view.moduleName]?.expanded ?? {};
@@ -47,6 +50,11 @@ export async function applyExpandedInstances(input: {
     if (!childModuleName) {
       continue;
     }
+    // A module that appears among its own expand ancestors (recursive
+    // instantiation) stays collapsed — no degraded fallback splice either.
+    if (input.ancestorModules?.has(childModuleName)) {
+      continue;
+    }
     const childModule = graph.modules[childModuleName];
     if (!childModule) {
       continue;
@@ -65,6 +73,7 @@ export async function applyExpandedInstances(input: {
         instancePorts: instanceNode.ports,
         instanceSize,
         instanceParamRows,
+        ancestorModules: input.ancestorModules,
       });
     } catch {
       hostLayout = undefined;

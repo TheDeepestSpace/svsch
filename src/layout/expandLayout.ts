@@ -17,6 +17,7 @@ import {
   elkSideToHandleSide,
   renderedLeadPoint,
 } from './mergeLayout';
+import { applyExpandedInstances } from './expandSpliceView';
 import { edgeNetKey } from '../ir/edgeNet';
 
 /**
@@ -37,6 +38,14 @@ import { edgeNetKey } from '../ir/edgeNet';
  * port-side stub and its dangling label vanish with the port, and the cut
  * ends on the content side were already there.
  *
+ * The standalone view is taken *with* the child module's own expanded
+ * instances applied (see applyExpandedInstances) — the spliced sub-diagram is
+ * a read-only mirror of the child's own diagram, so an instance the user
+ * expanded there stays expanded here too, recursively. `ancestorModules`
+ * carries the module names already being expanded up the chain; a child
+ * module that appears among its own ancestors (a recursive instantiation) is
+ * left collapsed instead of recursing forever.
+ *
  * Everything returned is in frame-local coordinates (the expanded node's
  * top-left corner is (0, 0)) with child-module-local ids — the webview's
  * spliceExpandedInstance translates to canvas space and namespaces the ids
@@ -53,17 +62,28 @@ export async function buildExpandSpliceLayout(input: {
   instancePorts: DiagramPort[];
   instanceSize: { width: number; height: number };
   instanceParamRows: number;
+  ancestorModules?: ReadonlySet<string>;
 }): Promise<ExpandSpliceLayout | undefined> {
   const { graph, layout, childModuleName, instanceId, instancePorts } = input;
   const childModule = graph.modules[childModuleName];
   if (!childModule) return undefined;
+  const ancestorModules = input.ancestorModules ?? new Set<string>();
+  if (ancestorModules.has(childModuleName)) return undefined;
 
   // 1. The child's own standalone place-and-route — including synthetic
   //    standalone-view content the raw IR doesn't carry (cut-net labels and
   //    their stub edges), so the unfolded diagram reads exactly like the
-  //    module opened on its own.
-  const childView = await buildViewModel(graph, childModuleName, layout);
+  //    module opened on its own — with the child's *own* expanded instances
+  //    spliced in on top: the sub-diagram mirrors the child's diagram
+  //    exactly, expansions included.
+  let childView = await buildViewModel(graph, childModuleName, layout);
   if (childView.nodes.length === 0) return undefined;
+  childView = await applyExpandedInstances({
+    graph,
+    layout,
+    view: childView,
+    ancestorModules: new Set([...ancestorModules, childModuleName]),
+  });
 
   const portNodeIds = new Set(
     childView.nodes.filter((node) => node.kind === 'port').map((node) => node.id),
