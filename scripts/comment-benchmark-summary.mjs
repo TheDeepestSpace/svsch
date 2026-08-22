@@ -99,11 +99,25 @@ function gitAuthed(args, opts = {}) {
   });
 }
 
+// dev/bench/data.js is github-action-benchmark's full history file, appended
+// to (never pruned) on every master push — it's grown well past git show's
+// default 1MB maxBuffer (see #258), so raise it generously and give it
+// headroom to keep growing between now and whenever trim-benchmark-history.mjs
+// next runs.
+const BASELINE_MAX_BUFFER = 20 * 1024 * 1024;
+
 const baselineData = (() => {
   try {
-    const script = git(['show', 'origin/gh-pages:dev/bench/data.js']);
+    const script = git(['show', 'origin/gh-pages:dev/bench/data.js'], {
+      maxBuffer: BASELINE_MAX_BUFFER,
+    });
     return JSON.parse(script.slice('window.BENCHMARK_DATA = '.length));
-  } catch {
+  } catch (err) {
+    // Surface the real failure (e.g. a future maxBuffer regression, or gh-pages
+    // truly missing the file) instead of silently falling back to "no
+    // baseline" — that failure mode renders every test as new with an empty
+    // trend chart and previously went unnoticed for days (#258).
+    console.error('Failed to read baseline benchmark data from gh-pages:dev/bench/data.js:', err);
     return undefined;
   }
 })();
