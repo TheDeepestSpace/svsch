@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="2376" height="576" viewBox="0 0 2376 576" class="svsch-diagram" role="img" aria-label="top diagram">
+<svg xmlns="http://www.w3.org/2000/svg" width="2712" height="552" viewBox="0 0 2712 552" class="svsch-diagram" role="img" aria-label="top diagram">
 <defs>
   <linearGradient id="svsch-bus-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="var(--svsch-edge-stacked-back)" />
@@ -2709,127 +2709,120 @@ g.hdl-node-expand-ghost > svg.hdl-node-svg {
 }
 /*]]>*/
 </style>
-<g transform="translate(24 48)">
+<g transform="translate(576 48)">
 <g class="svsch-generate-regions">
 </g>
 <g class="svsch-edges">
-<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_dp:port:top:bus_out:bus_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:instance:top:u_dp:port:top:bus_out:bus_out" data-net-key="expand:instance:top:u_dp::port:datapath:bus_out:outer" d="M 2256 72 L 2280 72 L 2304 72 L 2304 480 L 792 480 L 792 72 L 816 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag"><path class="svsch-edge" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag" data-net-key="expand:instance:top:u_dp::port:datapath:flag:outer" d="M 2256 96 L 2280 96 L 2304 96 L 2304 480 L 792 480 L 792 120 L 816 120" />
-<path class="svsch-edge-overlap-hint" d="M 2304 100 L 2304 476" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag" data-overlap-id="edge:instance:top:u_dp:port:top:flag:flag-overlap-2-edge:instance:top:u_dp:port:top:bus_out:bus_out-2" />
-<path class="svsch-edge-overlap-hint" d="M 796 480 L 2300 480" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag" data-overlap-id="edge:instance:top:u_dp:port:top:flag:flag-overlap-3-edge:instance:top:u_dp:port:top:bus_out:bus_out-3" />
-<path class="svsch-edge-overlap-hint" d="M 792 124 L 792 476" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag" data-overlap-id="edge:instance:top:u_dp:port:top:flag:flag-overlap-4-edge:instance:top:u_dp:port:top:bus_out:bus_out-4" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:bus_in:instance:top:u_dp:bus_in"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus_in:instance:top:u_dp:bus_in" data-net-key="port:top:bus_in:port:bus_in" d="M 192 96 L 216 96 L 384 96 L 408 96" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:clk:instance:top:u_dp:clk"><path class="svsch-edge" data-edge-id="edge:port:top:clk:instance:top:u_dp:clk" data-net-key="port:top:clk:port:clk" d="M 192 48 L 216 48 L 312 48 L 312 72 L 384 72 L 408 72" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in" d="M 192 144 L 216 144 L 312 144 L 312 120 L 384 120 L 408 120" />
-<path class="svsch-edge svsch-edge-struct" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in" data-net-key="port:top:pkt_in:port:pkt_in" d="M 192 144 L 216 144 L 312 144 L 312 120 L 384 120 L 408 120" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:comb:datapath:flag:expr:port:datapath:flag:flag"><path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:comb:datapath:flag:expr:port:datapath:flag:flag" data-net-key="expand:instance:top:u_dp::comb:datapath:flag:expr:out:flag" d="M 768 144 L 792 144 L 960 144 L 984 144" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:gate:datapath:bus_out:xor:port:datapath:bus_out:bus_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:gate:datapath:bus_out:xor:port:datapath:bus_out:bus_out" data-net-key="expand:instance:top:u_dp::gate:datapath:bus_out:xor:out:bus_out" d="M 1776 264 L 1800 264 L 1968 264 L 1992 264" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:bus_in:reg:datapath:stage:bus_in"><path class="svsch-edge-jump-halo" d="M 783 240 Q 792 231 801 240" style="stroke-width: 12" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:bus_in:reg:datapath:stage:bus_in" data-jump-index="0" />
-<path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:bus_in:reg:datapath:stage:bus_in" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_in:cut" d="M 744 240 L 768 240 L 783 240 Q 792 231 801 240 L 936 240 L 960 240" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:held:clk"><path class="svsch-edge-jump-halo" d="M 783 312 Q 792 303 801 312" style="stroke-width: 12" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:held:clk" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:held:clk" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut" d="M 744 312 L 768 312 L 783 312 Q 792 303 801 312 L 936 312 L 936 384 L 960 384" />
-<circle class="svsch-edge-junction" cx="936" cy="312" r="4.75" data-junction-id="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut:936:312" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:stage:clk"><path class="svsch-edge-jump-halo" d="M 783 312 Q 792 303 801 312" style="stroke-width: 12" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:stage:clk" data-jump-index="0" />
-<path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:stage:clk" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut" d="M 744 312 L 768 312 L 783 312 Q 792 303 801 312 L 936 312 L 936 264 L 960 264" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in"><path class="svsch-edge-jump-halo" d="M 780 360 Q 792 348 804 360" style="stroke-width: 12" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in" data-jump-index="0" />
-<path class="svsch-edge svsch-edge-struct-bg" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in" d="M 744 360 L 768 360 L 780 360 Q 792 348 804 360 L 936 360 L 960 360" />
-<path class="svsch-edge svsch-edge-struct" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:pkt_in:cut" d="M 744 360 L 768 360 L 780 360 Q 792 348 804 360 L 936 360 L 960 360" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held" d="M 1104 360 L 1128 360 L 1224 360 L 1224 288 L 1296 288 L 1320 288" />
-<path class="svsch-edge svsch-edge-struct" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held" data-net-key="expand:instance:top:u_dp::reg:datapath:held:q" d="M 1104 360 L 1128 360 L 1224 360 L 1224 288 L 1296 288 L 1320 288" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:stage:gate:datapath:bus_out:xor:stage"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:stage:gate:datapath:bus_out:xor:stage" data-net-key="expand:instance:top:u_dp::reg:datapath:stage:q" d="M 1104 240 L 1128 240 L 1656 240 L 1701.571 240" /></g>
-<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:struct:datapath:held:gate:datapath:bus_out:xor:held.lo"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:struct:datapath:held:gate:datapath:bus_out:xor:held.lo" data-net-key="expand:instance:top:u_dp::struct:datapath:held:out:held.lo" d="M 1464 288 L 1488 288 L 1656 288 L 1701.571 288" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_dp:port:top:bus_out:bus_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:instance:top:u_dp:port:top:bus_out:bus_out" data-net-key="expand:instance:top:u_dp::port:datapath:bus_out:outer" d="M 1704 72 L 1728 72 L 1896 72 L 1920 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag"><path class="svsch-edge" data-edge-id="edge:instance:top:u_dp:port:top:flag:flag" data-net-key="expand:instance:top:u_dp::port:datapath:flag:outer" d="M 1704 96 L 1728 96 L 1824 96 L 1824 120 L 1896 120 L 1920 120" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:bus_in:instance:top:u_dp:bus_in"><path class="svsch-edge svsch-edge-thick" data-edge-id="edge:port:top:bus_in:instance:top:u_dp:bus_in" data-net-key="port:top:bus_in:port:bus_in" d="M -360 96 L -336 96 L -168 96 L -144 96" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:clk:instance:top:u_dp:clk"><path class="svsch-edge" data-edge-id="edge:port:top:clk:instance:top:u_dp:clk" data-net-key="port:top:clk:port:clk" d="M -360 48 L -336 48 L -240 48 L -240 72 L -168 72 L -144 72" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in" d="M -360 144 L -336 144 L -240 144 L -240 120 L -168 120 L -144 120" />
+<path class="svsch-edge svsch-edge-struct" data-edge-id="edge:port:top:pkt_in:instance:top:u_dp:pkt_in" data-net-key="port:top:pkt_in:port:pkt_in" d="M -360 144 L -336 144 L -240 144 L -240 120 L -168 120 L -144 120" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:comb:datapath:flag:expr:port:datapath:flag:flag"><path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:comb:datapath:flag:expr:port:datapath:flag:flag" data-net-key="expand:instance:top:u_dp::comb:datapath:flag:expr:out:flag" d="M 216 144 L 240 144 L 408 144 L 432 144" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:gate:datapath:bus_out:xor:port:datapath:bus_out:bus_out"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:gate:datapath:bus_out:xor:port:datapath:bus_out:bus_out" data-net-key="expand:instance:top:u_dp::gate:datapath:bus_out:xor:out:bus_out" d="M 1224 264 L 1248 264 L 1416 264 L 1440 264" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:bus_in:reg:datapath:stage:bus_in"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:bus_in:reg:datapath:stage:bus_in" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_in:cut" d="M 192 240 L 216 240 L 384 240 L 408 240" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:held:clk"><path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:held:clk" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut" d="M 192 312 L 216 312 L 384 312 L 384 384 L 408 384" />
+<circle class="svsch-edge-junction" cx="384" cy="312" r="4.75" data-junction-id="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut:384:312" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:stage:clk"><path class="svsch-edge" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:clk:reg:datapath:stage:clk" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:clk:cut" d="M 192 312 L 216 312 L 384 312 L 384 264 L 408 264" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in" d="M 192 360 L 216 360 L 384 360 L 408 360" />
+<path class="svsch-edge svsch-edge-struct" data-edge-id="expand:instance:top:u_dp::edge:port:datapath:pkt_in:reg:datapath:held:pkt_in" data-net-key="expand:instance:top:u_dp::expand-port-label:port:datapath:pkt_in:cut" d="M 192 360 L 216 360 L 384 360 L 408 360" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held"><path class="svsch-edge svsch-edge-struct-bg" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held" d="M 552 360 L 576 360 L 672 360 L 672 288 L 744 288 L 768 288" />
+<path class="svsch-edge svsch-edge-struct" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:held:struct:datapath:held:held" data-net-key="expand:instance:top:u_dp::reg:datapath:held:q" d="M 552 360 L 576 360 L 672 360 L 672 288 L 744 288 L 768 288" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:stage:gate:datapath:bus_out:xor:stage"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:reg:datapath:stage:gate:datapath:bus_out:xor:stage" data-net-key="expand:instance:top:u_dp::reg:datapath:stage:q" d="M 552 240 L 576 240 L 1104 240 L 1149.571 240" /></g>
+<g class="svsch-edge-group" data-edge-id="expand:instance:top:u_dp::edge:struct:datapath:held:gate:datapath:bus_out:xor:held.lo"><path class="svsch-edge svsch-edge-thick" data-edge-id="expand:instance:top:u_dp::edge:struct:datapath:held:gate:datapath:bus_out:xor:held.lo" data-net-key="expand:instance:top:u_dp::struct:datapath:held:out:held.lo" d="M 912 288 L 936 288 L 1104 288 L 1149.571 288" /></g>
 </g>
 <g class="svsch-nodes">
-<g class="svsch-node hdl-node hdl-node-instance hdl-node-expand-ghost" data-node-id="instance:top:u_dp" data-node-kind="instance" transform="translate(408 24)">
+<g class="svsch-node hdl-node hdl-node-instance hdl-node-expand-ghost" data-node-id="instance:top:u_dp" data-node-kind="instance" transform="translate(-144 24)">
 <svg class="hdl-node-svg" width="1848" height="432" aria-hidden="true">
 <rect class="svsch-node-shape" width="1848" height="432"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">datapath</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u_dp</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">bus_in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">pkt_in<tspan class="svsch-port-type-suffix">{}</tspan></text><text class="svsch-port-label" x="1836" y="48" text-anchor="end" dominant-baseline="middle">bus_out<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="1836" y="72" text-anchor="end" dominant-baseline="middle">flag</text>
 </svg>
 <rect class="svsch-expand-content-border" x="84" y="36" width="1680" height="360" />
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:clk" data-node-kind="port" transform="translate(72 36)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:clk" data-node-kind="port" transform="translate(-480 36)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 108 L 120 12 L 108 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">clk</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:bus_in" data-node-kind="port" transform="translate(48 84)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:bus_in" data-node-kind="port" transform="translate(-504 84)">
 <svg class="hdl-node-svg" width="144" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 132 L 144 12 L 132 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 132 L 144 12 L 132 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="72" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">bus_in</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:pkt_in" data-node-kind="port" transform="translate(24 132)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-input hdl-port-skinned" data-node-id="port:top:pkt_in" data-node-kind="port" transform="translate(-528 132)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-input"><path class="port-skin-body svsch-array-layer-middle" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><path class="port-skin-selection" d="M 0 0 H 156 L 168 12 L 156 24 H 0 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">pkt_in</tspan><tspan> </tspan><tspan class="svsch-type-label svsch-port-type-label svsch-svg-link">word_t</tspan></text><line class="svsch-svg-link-underline svsch-port-type-link-underline" x1="89.952" x2="125.59200000000001" y1="18.696" y2="18.696"></line></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:bus_out" data-node-kind="port" transform="translate(816 60)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:bus_out" data-node-kind="port" transform="translate(1920 60)">
 <svg class="hdl-node-svg" width="168" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 168 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="84" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">bus_out</tspan><tspan class="svsch-port-width-suffix"> [7:0]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:flag" data-node-kind="port" transform="translate(816 108)">
+<g class="svsch-node hdl-node hdl-node-port hdl-port-output hdl-port-skinned" data-node-id="port:top:flag" data-node-kind="port" transform="translate(1920 108)">
 <svg class="hdl-node-svg" width="120" height="24" aria-hidden="true">
 <g class="port-skin port-skin-output"><path class="port-skin-body svsch-array-layer-middle" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><path class="port-skin-selection" d="M 12 0 H 120 V 24 H 12 L 0 12 Z"></path><text class="svsch-port-label svsch-port-node-label" x="60" y="12" text-anchor="middle" dominant-baseline="middle" font-weight="600" font-size="12"><tspan class="svsch-port-node-name">flag</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:clk" data-node-kind="boundaryPort" transform="translate(408 48)">
+<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:clk" data-node-kind="boundaryPort" transform="translate(-144 48)">
 <svg class="hdl-node-svg" width="96" height="48" aria-hidden="true">
 <g><line class="svsch-boundary-port-lead" x1="36.46" x2="96" y1="24" y2="24"></line><text class="svsch-boundary-port-text" x="12" y="24" text-anchor="start" dominant-baseline="middle">clk</text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:bus_in" data-node-kind="boundaryPort" transform="translate(408 72)">
+<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:bus_in" data-node-kind="boundaryPort" transform="translate(-144 72)">
 <svg class="hdl-node-svg" width="96" height="48" aria-hidden="true">
 <g><line class="svsch-boundary-port-lead svsch-boundary-port-lead-thick" x1="56.92" x2="96" y1="24" y2="24"></line><text class="svsch-boundary-port-text" x="12" y="24" text-anchor="start" dominant-baseline="middle">bus_in</text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:pkt_in" data-node-kind="boundaryPort" transform="translate(408 96)">
+<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-left" data-node-id="expand:instance:top:u_dp::port:datapath:pkt_in" data-node-kind="boundaryPort" transform="translate(-144 96)">
 <svg class="hdl-node-svg" width="96" height="48" aria-hidden="true">
 <g><line class="svsch-boundary-port-lead svsch-boundary-port-lead-struct" x1="56.92" x2="96" y1="24" y2="24"></line><text class="svsch-boundary-port-text" x="12" y="24" text-anchor="start" dominant-baseline="middle">pkt_in</text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-right" data-node-id="expand:instance:top:u_dp::port:datapath:bus_out" data-node-kind="boundaryPort" transform="translate(2160 48)">
+<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-right" data-node-id="expand:instance:top:u_dp::port:datapath:bus_out" data-node-kind="boundaryPort" transform="translate(1608 48)">
 <svg class="hdl-node-svg" width="96" height="48" aria-hidden="true">
 <g><line class="svsch-boundary-port-lead svsch-boundary-port-lead-thick" x1="0" x2="32.26" y1="24" y2="24"></line><text class="svsch-boundary-port-text" x="84" y="24" text-anchor="end" dominant-baseline="middle">bus_out</text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-right" data-node-id="expand:instance:top:u_dp::port:datapath:flag" data-node-kind="boundaryPort" transform="translate(2160 72)">
+<g class="svsch-node hdl-node hdl-node-boundaryPort svsch-boundary-port-outer-right" data-node-id="expand:instance:top:u_dp::port:datapath:flag" data-node-kind="boundaryPort" transform="translate(1608 72)">
 <svg class="hdl-node-svg" width="96" height="48" aria-hidden="true">
 <g><line class="svsch-boundary-port-lead" x1="0" x2="52.72" y1="24" y2="24"></line><text class="svsch-boundary-port-text" x="84" y="24" text-anchor="end" dominant-baseline="middle">flag</text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-bus-node hdl-struct-node hdl-bus-breakout" data-node-id="expand:instance:top:u_dp::struct:datapath:held" data-node-kind="struct" transform="translate(1320 264)">
+<g class="svsch-node hdl-bus-node hdl-struct-node hdl-bus-breakout" data-node-id="expand:instance:top:u_dp::struct:datapath:held" data-node-kind="struct" transform="translate(768 264)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
 <defs><pattern id="svsch-struct-stripes" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)"><line class="svsch-struct-stripe" x1="5" y1="0" x2="5" y2="10"></line></pattern></defs><rect class="svsch-bus-pipe-struct-bg" x="0" y="12" width="8" height="24" rx="3"></rect><rect class="svsch-bus-pipe-struct" x="0" y="12" width="8" height="24" rx="3"></rect><g class="svsch-bus-tap" data-port-id="out:held.lo"><line class="svsch-bus-tap-line svsch-bus-tap-line-thick" x1="8" y1="24" x2="144" y2="24"></line><rect x="20" y="16" width="87" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:held.lo" x="30" y="24" dominant-baseline="middle">lo<tspan class="svsch-struct-field-annotation"> [15:8]</tspan></text></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-gate" data-node-id="expand:instance:top:u_dp::gate:datapath:bus_out:xor" data-node-kind="gate" transform="translate(1680 216)">
+<g class="svsch-node hdl-node hdl-node-gate" data-node-id="expand:instance:top:u_dp::gate:datapath:bus_out:xor" data-node-kind="gate" transform="translate(1128 216)">
 <svg class="hdl-node-svg gate-skin" width="96" height="96" aria-hidden="true">
 <path class="svsch-node-shape hdl-node-gate node-skin-body gate-back-curve" d="M 0 0 C 16.571479169699998 29.095999996799996 16.571479169699998 66.9040000032 0 96" fill="none"></path><path class="svsch-node-shape hdl-node-gate node-skin-body" d="M 5 0 C 21.571479169699998 29.095999996799996 21.571479169699998 66.9040000032 5 96 C 42.85884375 93.8050000032 74.35053125 84.9889999968 96 48 C 74.35053125 11.011000003199996 42.85884375 2.194999996799993 5 0 Z"></path><path class="node-skin-selection" d="M 0 0 C 17.4820000032 29.095999996799996 17.4820000032 66.9040000032 0 96 C 39.939 93.8050000032 73.161 84.9889999968 96 48 C 73.161 11.011000003199996 39.939 2.194999996799993 0 0 Z"></path>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-comb" data-node-id="expand:instance:top:u_dp::comb:datapath:flag:expr" data-node-kind="comb" transform="translate(576 96)">
+<g class="svsch-node hdl-node hdl-node-comb" data-node-id="expand:instance:top:u_dp::comb:datapath:flag:expr" data-node-kind="comb" transform="translate(24 96)">
 <svg class="hdl-node-svg" width="192" height="72" aria-hidden="true">
 <rect class="svsch-node-shape" width="192" height="72"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">COMBINATIONAL</text>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="expand:instance:top:u_dp::reg:datapath:stage" data-node-kind="register" transform="translate(960 192)">
+<g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="expand:instance:top:u_dp::reg:datapath:stage" data-node-kind="register" transform="translate(408 192)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>stage</tspan><tspan class="svsch-register-width-suffix" dx="4">[7:0]</tspan></text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="0" y="66" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g>
 </svg>
 </g>
-<g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="expand:instance:top:u_dp::reg:datapath:held" data-node-kind="register" transform="translate(960 312)">
+<g class="svsch-node hdl-node hdl-node-register hdl-register-node" data-node-id="expand:instance:top:u_dp::reg:datapath:held" data-node-kind="register" transform="translate(408 312)">
 <svg class="hdl-node-svg" width="144" height="96" aria-hidden="true">
 <rect class="svsch-node-shape" width="144" height="96"></rect><text class="svsch-node-kind" x="10" y="14" text-anchor="start" dominant-baseline="middle">REGISTER</text><text class="svsch-node-title" x="10" y="26" text-anchor="start" dominant-baseline="middle"><tspan>held</tspan><tspan class="svsch-type-label svsch-register-type-label svsch-svg-link" dx="4">word_t</tspan></text><line class="svsch-svg-link-underline svsch-register-type-link-underline" x1="48.72" x2="90.3" y1="33.812" y2="33.812"></line><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">D</text><text class="svsch-port-label" x="132" y="48" text-anchor="end" dominant-baseline="middle">Q</text><g class="svsch-register-clock-port"><svg x="0" y="66" width="12" height="12" viewBox="0 0 12 12" class="register-clock-glyph" aria-hidden="true"><path d="M 1 1.5 L 9 6 L 1 10.5"></path></svg></g>
 </svg>
 </g>
-<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:flag" data-node-kind="netLabel" transform="translate(984 120)"><path class="svsch-edge" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:flag" data-node-kind="netLabel" transform="translate(432 120)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">flag</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_out" data-node-kind="netLabel" transform="translate(1992 240)"><path class="svsch-edge svsch-edge-thick" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_out" data-node-kind="netLabel" transform="translate(1440 240)"><path class="svsch-edge svsch-edge-thick" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="93" y="15.5" text-anchor="end" dominant-baseline="middle">bus_out</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_in" data-node-kind="netLabel" transform="translate(648 216)"><path class="svsch-edge svsch-edge-thick" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:bus_in" data-node-kind="netLabel" transform="translate(96 216)"><path class="svsch-edge svsch-edge-thick" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">bus_in</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:clk" data-node-kind="netLabel" transform="translate(648 288)"><path class="svsch-edge" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:clk" data-node-kind="netLabel" transform="translate(96 288)"><path class="svsch-edge" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="3" y="15.5" text-anchor="start" dominant-baseline="middle">clk</text></g>
-<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:pkt_in" data-node-kind="netLabel" transform="translate(648 336)"><path class="svsch-edge svsch-edge-struct-bg" d="M 0 24 H 96"></path><path class="svsch-edge svsch-edge-struct" d="M 0 24 H 96"></path>
+<g class="svsch-node hdl-net-label" data-node-id="expand:instance:top:u_dp::expand-port-label:port:datapath:pkt_in" data-node-kind="netLabel" transform="translate(96 336)"><path class="svsch-edge svsch-edge-struct-bg" d="M 0 24 H 96"></path><path class="svsch-edge svsch-edge-struct" d="M 0 24 H 96"></path>
 <text class="svsch-net-label" x="3" y="12.5" text-anchor="start" dominant-baseline="middle">pkt_in</text></g>
 </g>
 </g>

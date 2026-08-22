@@ -189,6 +189,35 @@ async function expectSplicedContentInsideFrame(page: Page, instanceId: string): 
   expect(violations, 'spliced content escaping the expanded frame').toEqual([]);
 }
 
+// After Auto Layout, no top-level node may sit under the expanded frame —
+// a node landing there means ELK only saw the collapsed instance size (the
+// replay dropped relayoutSelection's expandedSizes). Mirrors the BDD step
+// "no top-level block should overlap the expanded instance".
+async function expectOuterNodesClearOfFrame(page: Page, instanceId: string): Promise<void> {
+  const violations = await page.evaluate((ghostId) => {
+    const ghost = document.querySelector(`.react-flow__node[data-id="${ghostId}"]`);
+    if (!ghost) return [`expanded instance node ${ghostId} not found`];
+    const frame = ghost.getBoundingClientRect();
+    // Nodes may legitimately touch the frame edge-to-edge; only a real
+    // incursion (beyond stroke-width/antialiasing slack) counts.
+    const tolerance = 4;
+    const bad: string[] = [];
+    for (const el of Array.from(document.querySelectorAll('.react-flow__node'))) {
+      const elId = el.getAttribute('data-id') ?? '';
+      if (!elId || elId === ghostId || elId.startsWith('expand:')) continue;
+      const rect = el.getBoundingClientRect();
+      const overlaps =
+        rect.left < frame.right - tolerance &&
+        frame.left + tolerance < rect.right &&
+        rect.top < frame.bottom - tolerance &&
+        frame.top + tolerance < rect.bottom;
+      if (overlaps) bad.push(`node ${elId}`);
+    }
+    return bad;
+  }, instanceId);
+  expect(violations, 'top-level nodes overlapping the expanded frame').toEqual([]);
+}
+
 // Marquee-selects every top-level node, clicks the selection toolbar's
 // "Auto Layout", then replays the extension host's own role for that
 // request (the same merge + build + re-anchor sequence
@@ -253,7 +282,14 @@ async function runManualAutoLayout(
     designModule,
   );
   const originalCentroid = centroid(relayout.nodes);
-  const relaidView = await buildViewModel(graph, view.moduleName, hostLayout);
+  // The webview hands the expanded frames' true footprints along with the
+  // request (relayoutSelection's expandedSizes) — the host feeds them to ELK
+  // as elkSizeOverrides so released blocks are placed clear of the *expanded*
+  // frame, not the collapsed size the stripped nodes payload carries. The
+  // replay must do the same or output-side ports land inside the frame.
+  const relaidView = await buildViewModel(graph, view.moduleName, hostLayout, {
+    elkSizeOverrides: relayout.expandedSizes,
+  });
   const relaidCentroid = centroid(relaidView.nodes);
   if (originalCentroid && relaidCentroid) {
     const dx = originalCentroid.x - relaidCentroid.x;
@@ -486,6 +522,7 @@ test.describe('expand instance in place visual', () => {
       /hdl-node-expand-ghost/,
     );
     await expectSplicedContentInsideFrame(page, instanceId);
+    await expectOuterNodesClearOfFrame(page, instanceId);
 
     await fitGraphView(page, 0.15);
     await trackSplicedView(page, graph, hostLayout, finalView, [instanceId]);
@@ -652,7 +689,12 @@ test.describe('expand instance in place visual', () => {
       designModule,
     );
     const originalCentroid = centroid(relayout.nodes);
-    const relaidView = await buildViewModel(graph, 'cpu_top', hostLayout);
+    // Same as runManualAutoLayout: ELK must see the expanded frame's true
+    // footprint (relayoutSelection's expandedSizes), or released blocks get
+    // placed against the collapsed size and land under the frame.
+    const relaidView = await buildViewModel(graph, 'cpu_top', hostLayout, {
+      elkSizeOverrides: relayout.expandedSizes,
+    });
     const relaidCentroid = centroid(relaidView.nodes);
     if (originalCentroid && relaidCentroid) {
       const dx = originalCentroid.x - relaidCentroid.x;
@@ -676,6 +718,7 @@ test.describe('expand instance in place visual', () => {
       /hdl-node-expand-ghost/,
     );
     await expectSplicedContentInsideFrame(page, aluNodeId);
+    await expectOuterNodesClearOfFrame(page, aluNodeId);
 
     // Auto Layout intentionally keeps the relaid blocks selected — drop the
     // selection before the screenshot so the baseline shows the diagram, not
