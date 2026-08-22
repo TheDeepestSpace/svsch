@@ -9,7 +9,6 @@ import {
   renderStackedCsv,
   computeDeltaRows,
   computeAverageDelta,
-  computeBenchmarkHistory,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
@@ -122,6 +121,24 @@ const baselineData = (() => {
   }
 })();
 
+// dev/bench/history-averages.json holds the visual suite's per-run
+// {sha, date, elaborationAvgMs, renderingAvgMs} averages, kept indefinitely by
+// trim-benchmark-history.mjs even as it prunes the raw per-test entries in
+// dev/bench/data.js those averages were derived from — so the trend chart
+// below reads its history from here rather than recomputing it from
+// baselineData, which only ever holds the most recent MAX_ENTRIES_PER_SUITE
+// runs. Missing (e.g. before trim-benchmark-history.mjs first runs post
+// deploy) or unparseable just means no history yet, not a hard failure.
+const historyAverages = (() => {
+  try {
+    const json = git(['show', 'origin/gh-pages:dev/bench/history-averages.json']);
+    return JSON.parse(json);
+  } catch (err) {
+    console.error('No benchmark history-averages.json on gh-pages yet (or failed to read it):', err);
+    return [];
+  }
+})();
+
 const chartGroups = new Map();
 for (const { name, file } of suiteArgs) {
   const meta = METRIC_META[name];
@@ -229,7 +246,7 @@ for (const [key, group] of chartGroups) {
 }
 
 // The trend chart only exists for the visual suite — it's the only one with
-// per-master-run history to derive (see computeBenchmarkHistory).
+// per-master-run history to derive (see historyAverages above).
 const visualGroup = chartGroups.get('visual');
 const elaborationMetric = visualGroup?.metrics.find((m) => m.name === 'visual-elaboration-diagram-generation-duration');
 const renderingMetric = visualGroup?.metrics.find((m) => m.name === 'visual-rendering-diagram-generation-duration');
@@ -239,10 +256,9 @@ if (elaborationMetric && renderingMetric) {
     elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
     renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
   };
-  const history = computeBenchmarkHistory(baselineData);
   contentByFilename.set('visual-trend.svg', renderHistoryTrendChart({
     title: 'Visual suite — historical average per master run',
-    history,
+    history: historyAverages,
     currentRunAverages,
   }));
 }

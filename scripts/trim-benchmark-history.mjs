@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { computeBenchmarkHistory, mergeBenchmarkHistory } from './render-benchmark-charts.mjs';
 
 // dev/bench/data.js is github-action-benchmark's own history file on
 // gh-pages: it appends one entry per tracked suite on every master push and
@@ -13,6 +14,12 @@ import path from 'node:path';
 const MAX_ENTRIES_PER_SUITE = 200;
 
 const DATA_FILE = 'dev/bench/data.js';
+// The visual suite's per-run averages, derived from DATA_FILE before it's
+// trimmed — kept indefinitely (never pruned) since a handful of numbers per
+// run stays cheap forever, unlike the per-test breakdown they're computed
+// from. See computeBenchmarkHistory/mergeBenchmarkHistory in
+// render-benchmark-charts.mjs.
+const HISTORY_AVERAGES_FILE = 'dev/bench/history-averages.json';
 const PREFIX = 'window.BENCHMARK_DATA = ';
 const NETWORK_TIMEOUT_MS = 60_000;
 
@@ -67,14 +74,41 @@ async function main() {
       const dataPath = path.join(worktreeDir, DATA_FILE);
       const raw = fs.readFileSync(dataPath, 'utf8');
       const data = JSON.parse(raw.slice(PREFIX.length));
+
+      // Derive averages from the full (not yet trimmed) data before pruning
+      // it, so nothing is lost the moment its raw per-test entry ages out.
+      const historyAveragesPath = path.join(worktreeDir, HISTORY_AVERAGES_FILE);
+      const existingAverages = fs.existsSync(historyAveragesPath)
+        ? JSON.parse(fs.readFileSync(historyAveragesPath, 'utf8'))
+        : [];
+      const mergedAverages = mergeBenchmarkHistory(existingAverages, computeBenchmarkHistory(data));
+      const addedAverages = mergedAverages.length - existingAverages.length;
+
       const dropped = trimToRetention(data);
-      if (dropped === 0) {
-        console.log(`${DATA_FILE} already within retention (<=${MAX_ENTRIES_PER_SUITE} entries/suite); nothing to trim.`);
+      if (dropped === 0 && addedAverages === 0) {
+        console.log(`${DATA_FILE} already within retention (<=${MAX_ENTRIES_PER_SUITE} entries/suite) and no new averages to record; nothing to do.`);
         return;
       }
-      fs.writeFileSync(dataPath, PREFIX + JSON.stringify(data), 'utf8');
 
-      git(['add', DATA_FILE], { cwd: worktreeDir });
+      const changedFiles = [];
+      if (dropped > 0) {
+        fs.writeFileSync(dataPath, PREFIX + JSON.stringify(data), 'utf8');
+        changedFiles.push(DATA_FILE);
+      }
+      if (addedAverages > 0) {
+        fs.writeFileSync(historyAveragesPath, JSON.stringify(mergedAverages), 'utf8');
+        changedFiles.push(HISTORY_AVERAGES_FILE);
+      }
+
+      const messageParts = [];
+      if (dropped > 0) {
+        messageParts.push(`trim ${DATA_FILE} to last ${MAX_ENTRIES_PER_SUITE} entries/suite (-${dropped})`);
+      }
+      if (addedAverages > 0) {
+        messageParts.push(`record ${addedAverages} new average(s) in ${HISTORY_AVERAGES_FILE}`);
+      }
+
+      git(['add', ...changedFiles], { cwd: worktreeDir });
       git(
         [
           '-c',
@@ -83,13 +117,13 @@ async function main() {
           'user.email=github-actions[bot]@users.noreply.github.com',
           'commit',
           '-m',
-          `Trim ${DATA_FILE} to last ${MAX_ENTRIES_PER_SUITE} entries/suite (-${dropped})`,
+          messageParts.join('; '),
         ],
         { cwd: worktreeDir },
       );
       try {
         gitAuthed(['push', 'origin', 'HEAD:gh-pages'], { cwd: worktreeDir });
-        console.log(`Trimmed ${dropped} old entries from ${DATA_FILE}.`);
+        console.log(`${messageParts.join('; ')}.`);
         return;
       } catch (err) {
         if (attempt === 3) throw err;

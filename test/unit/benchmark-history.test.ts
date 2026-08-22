@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
+  mergeBenchmarkHistory,
 } from '../../scripts/render-benchmark-charts.mjs';
 
 function benchmarkEntry(commitId: string, date: number, values: number[]) {
@@ -66,6 +67,28 @@ describe('computeBenchmarkHistory', () => {
         renderingAvgMs: 50,
       },
     ]);
+  });
+});
+
+describe('mergeBenchmarkHistory', () => {
+  const older = { sha: 'aaaa', date: '2026-01-01T00:00:00.000Z', elaborationAvgMs: 100, renderingAvgMs: 50 };
+  const newer = { sha: 'bbbb', date: '2026-01-02T00:00:00.000Z', elaborationAvgMs: 90, renderingAvgMs: 40 };
+
+  it('appends fresh entries not already present, sorted oldest-first', () => {
+    expect(mergeBenchmarkHistory([older], [older, newer])).toEqual([older, newer]);
+  });
+
+  it('keeps the existing entry on a sha collision rather than the fresh one', () => {
+    const staleOlder = { ...older, elaborationAvgMs: 999 };
+    expect(mergeBenchmarkHistory([older], [staleOlder, newer])).toEqual([older, newer]);
+  });
+
+  it('returns the fresh history unchanged when there is nothing persisted yet', () => {
+    expect(mergeBenchmarkHistory([], [older, newer])).toEqual([older, newer]);
+  });
+
+  it('is a no-op when the fresh history has nothing new', () => {
+    expect(mergeBenchmarkHistory([older, newer], [older])).toEqual([older, newer]);
   });
 });
 
