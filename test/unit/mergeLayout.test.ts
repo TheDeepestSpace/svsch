@@ -4505,7 +4505,7 @@ describe('unconditional full-render layout snapshot', () => {
     modules: { top: chainModule },
   };
 
-  it('mergeNodeSnapshot records every rendered position without marking anything fixed', async () => {
+  it('mergeNodeSnapshot records every position without marking anything fixed', async () => {
     const view = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
 
     const snapshot = mergeNodeSnapshot({ version: 1, modules: {} }, 'top', view.nodes);
