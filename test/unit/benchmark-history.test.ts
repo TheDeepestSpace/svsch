@@ -72,10 +72,16 @@ describe('computeBenchmarkHistory', () => {
 
 describe('mergeBenchmarkHistory', () => {
   const older = {
-    sha: 'aaaa', date: '2026-01-01T00:00:00.000Z', elaborationAvgMs: 100, renderingAvgMs: 50,
+    sha: 'aaaa',
+    date: '2026-01-01T00:00:00.000Z',
+    elaborationAvgMs: 100,
+    renderingAvgMs: 50,
   };
   const newer = {
-    sha: 'bbbb', date: '2026-01-02T00:00:00.000Z', elaborationAvgMs: 90, renderingAvgMs: 40,
+    sha: 'bbbb',
+    date: '2026-01-02T00:00:00.000Z',
+    elaborationAvgMs: 90,
+    renderingAvgMs: 40,
   };
 
   it('appends fresh entries not already present, sorted oldest-first', () => {
