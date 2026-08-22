@@ -1,6 +1,46 @@
 {
   "nodes": [
     {
+      "id": "expand:instance:top:u1::expand-port-label:port:inner:a",
+      "type": "hdl",
+      "position": {
+        "x": 480,
+        "y": 96
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::expand-port-label:port:inner:y",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 96
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "expand:instance:top:u1::port:inner:a",
       "type": "hdl",
       "position": {
@@ -24,7 +64,7 @@
       "id": "expand:instance:top:u1::port:inner:y",
       "type": "hdl",
       "position": {
-        "x": 552,
+        "x": 960,
         "y": 48
       },
       "width": 48,
@@ -47,8 +87,8 @@
         "x": 360,
         "y": 24
       },
-      "width": 240,
-      "height": 120,
+      "width": 648,
+      "height": 168,
       "data": {
         "kind": "instance",
         "ports": [
@@ -113,7 +153,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 600 72 L 624 72 L 744 72 L 768 72"
+      "path": "M 1008 72 L 1032 72 L 1104 72 L 1104 144 L 744 144 L 744 72 L 768 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -125,11 +165,11 @@
     },
     {
       "id": "expand:instance:top:u1::edge:port:inner:a:port:inner:y:y",
-      "source": "expand:instance:top:u1::port:inner:a",
-      "target": "expand:instance:top:u1::port:inner:y",
-      "sourceHandle": "inner",
-      "targetHandle": "inner",
-      "path": "M 408 72 L 432 72 L 528 72 L 552 72"
+      "source": "expand:instance:top:u1::expand-port-label:port:inner:a",
+      "target": "expand:instance:top:u1::expand-port-label:port:inner:y",
+      "sourceHandle": "cut",
+      "targetHandle": "cut",
+      "path": "M 576 120 L 600 120 L 737 120 Q 744 113 751 120 L 768 120 L 792 120"
     }
   ]
 }

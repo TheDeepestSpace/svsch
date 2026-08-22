@@ -20,6 +20,29 @@ export const SNAPSHOT_THRESHOLDS = {
 
 export type SnapshotSuite = 'visual' | 'bdd' | 'system';
 
+/**
+ * BDD scenarios whose screenshots are pixel-compare-exempt for the whole
+ * scenario (the JSON graph regression still fully covers their structural
+ * correctness — see BddWorld.takeScreenshot). Both current entries trace to
+ * renderer/viewport nondeterminism around an expanded instance's frame, not
+ * an application or test-logic bug:
+ * - "re-anchors": dashed frame border at a non-integer fit-view zoom leaves
+ *   ~9k px of antialiasing/dash-phase jitter between byte-identical layouts.
+ * - every scenario with an "I drag-select across the entire diagram" step:
+ *   the marquee sweeps to the viewport edge; with the frame mirroring the
+ *   child's full standalone width the drag rides the canvas auto-pan, whose
+ *   distance is timing-dependent, and the shifted pan persists into every
+ *   later screenshot of the scenario.
+ * See PR #233.
+ */
+export const SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS = new Set([
+  "Auto Layout re-anchors a cut net end to the expanded frame's border",
+  'Auto Layout on a border-crossing drag-selection re-lays out the outer diagram and ' +
+    'carries the sub-diagram along',
+  'Auto Layout places outer blocks clear of the expanded frame',
+  'Drag-selection crossing the expanded instance selects only top-level nodes',
+]);
+
 export interface BaselineThreshold {
   suite: SnapshotSuite;
   maxDiffPixels: number;

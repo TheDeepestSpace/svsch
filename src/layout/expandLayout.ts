@@ -1,23 +1,23 @@
 import type { DesignGraph, DiagramEdge, DiagramPort, PositionedNode } from '../ir/types';
 import type { SavedLayout } from '../storage/layoutStore';
-import { diagramSizing } from '../diagram/constants';
 import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import {
   boundaryColumnPad,
   buildBoundaryColumns,
-  EXPAND_CONTENT_INSET,
   expandTopPad,
   expandedFrameSize,
+  makeExpandPortLabel,
   placeBoundaryEntries,
   unionBounds,
   type ExpandSpliceLayout,
 } from '../webview/expand/splice';
-import { buildViewModel, renderedLeadPoint } from './mergeLayout';
 import {
-  routeDiagramWithLibavoid,
-  type RoutingLeadPoint,
-  type RoutingLeadResolver,
-} from './libavoidRouter';
+  buildViewModel,
+  cutLabelEdgeStyle,
+  elkSideToHandleSide,
+  renderedLeadPoint,
+} from './mergeLayout';
+import { edgeNetKey } from '../ir/edgeNet';
 
 /**
  * Builds the frame-local layout for "Expand instance in place" (issue #232)
@@ -25,11 +25,17 @@ import {
  * #233): take the child module's *normal standalone* place-and-route result —
  * the exact `buildViewModel` pipeline `openModule` renders with, ELK
  * placement plus libavoid routing plus any saved standalone arrangement the
- * user already made — then drop its port nodes, translate the remaining
- * design into the expanded node's body, and ask libavoid to wire the
- * boundary ports up to the placed content. The expanded diagram therefore
- * looks exactly like the standalone module diagram, give or take the port
- * columns being replaced by boundary labels on the frame border.
+ * user already made — then replace its port nodes in place with cut net ends
+ * (netLabel nodes anchored exactly where each port's handle sat) and
+ * translate the design into the expanded node's body. The boundary-port
+ * labels on the frame border deliberately get *no* routed wire into the
+ * content: the signal reads through the matching cut net end, so the child's
+ * own standalone routes are kept verbatim instead of being bent toward
+ * whatever row the frame's port labels happen to occupy.
+ *
+ * A net the user had already cut at a port collapses to a no-op: the
+ * port-side stub and its dangling label vanish with the port, and the cut
+ * ends on the content side were already there.
  *
  * Everything returned is in frame-local coordinates (the expanded node's
  * top-left corner is (0, 0)) with child-module-local ids — the webview's
@@ -62,18 +68,94 @@ export async function buildExpandSpliceLayout(input: {
   const portNodeIds = new Set(
     childView.nodes.filter((node) => node.kind === 'port').map((node) => node.id),
   );
-  const internalNodes = childView.nodes.filter((node) => !portNodeIds.has(node.id));
-  const internalEdges = childView.edges.filter(
-    (edge) => !portNodeIds.has(edge.source) && !portNodeIds.has(edge.target),
-  );
-  const boundaryEdges = childView.edges.filter(
-    (edge) => portNodeIds.has(edge.source) || portNodeIds.has(edge.target),
-  );
+  const nodesById = new Map(childView.nodes.map((node) => [node.id, node]));
+  const nodePositions = new Map(childView.nodes.map((node) => [node.id, node.position]));
 
-  // 2. Drop the ports, keep the design: translate the standalone content so
-  //    its bounding box (nodes plus every kept internal route, so no wire
-  //    detour pokes past the frame padding) lands one label column in from
-  //    the left border and just below the header/parameter rows.
+  // 2. Replace the ports with cut net ends, in standalone coordinates. Each
+  //    port-touching wire keeps its standalone route and simply ends in a
+  //    netLabel whose 'cut' handle sits exactly where the port's own handle
+  //    sat — and a port whose net was already cut (its only edge is a cut
+  //    stub to a dangling label) collapses to a no-op instead: stub, label
+  //    and port all vanish together.
+  const droppedLabelIds = new Set<string>();
+  const labelByPortNodeId = new Map<string, PositionedNode>();
+
+  const labelForPort = (
+    portNodeId: string,
+    edge: DiagramEdge,
+    portIsSource: boolean,
+  ): PositionedNode => {
+    const existing = labelByPortNodeId.get(portNodeId);
+    if (existing) return existing;
+    const portNode = nodesById.get(portNodeId)!;
+    const lead = renderedLeadPoint(
+      portNodeId,
+      portIsSource ? edge.sourcePort : edge.targetPort,
+      nodesById,
+      nodePositions,
+      false,
+      portIsSource ? 'source' : 'target',
+    );
+    const size = resolvedNodeDimensions(portNode);
+    const position = nodePositions.get(portNodeId)!;
+    const label = makeExpandPortLabel({
+      portNode,
+      moduleName: childModule.name,
+      portIsSource,
+      netKey: edgeNetKey(edge),
+      originalEdgeId: edge.id,
+      handleSide: lead ? elkSideToHandleSide(lead.side) : portIsSource ? 'right' : 'left',
+      handlePoint: lead?.point ?? {
+        x: portIsSource ? position.x + size.width : position.x,
+        y: position.y + size.height / 2,
+      },
+      edgeStyle: cutLabelEdgeStyle(edge, nodesById),
+    });
+    labelByPortNodeId.set(portNodeId, label);
+    return label;
+  };
+
+  const contentEdges: DiagramEdge[] = [];
+  // Deterministic label metadata for a fanout port: the same (sorted-first)
+  // edge always seeds the label, regardless of IR edge order.
+  const sortedEdges = [...childView.edges].sort((a, b) => a.id.localeCompare(b.id));
+  for (const edge of sortedEdges) {
+    const sourceIsPort = portNodeIds.has(edge.source);
+    const targetIsPort = portNodeIds.has(edge.target);
+    if (!sourceIsPort && !targetIsPort) {
+      contentEdges.push(edge);
+      continue;
+    }
+    if (edge.metadata?.cutStub) {
+      // Already cut at the port — the port-side stub and its dangling label
+      // collapse with the port.
+      const labelEndId = sourceIsPort ? edge.target : edge.source;
+      if (nodesById.get(labelEndId)?.kind === 'netLabel') {
+        droppedLabelIds.add(labelEndId);
+      }
+      continue;
+    }
+    let { source, sourcePort, target, targetPort } = edge;
+    if (sourceIsPort) {
+      source = labelForPort(edge.source, edge, true).id;
+      sourcePort = 'cut';
+    }
+    if (targetIsPort) {
+      target = labelForPort(edge.target, edge, false).id;
+      targetPort = 'cut';
+    }
+    contentEdges.push({ ...edge, source, sourcePort, target, targetPort });
+  }
+
+  const contentNodes = [
+    ...childView.nodes.filter((node) => !portNodeIds.has(node.id) && !droppedLabelIds.has(node.id)),
+    ...labelByPortNodeId.values(),
+  ];
+
+  // 3. Translate the standalone content so its bounding box (nodes — cut net
+  //    ends included — plus every kept route, so no wire detour pokes past
+  //    the frame padding) lands one label column in from the left border and
+  //    just below the header/parameter rows.
   const { inputColumn, outputColumn } = buildBoundaryColumns(
     childModule,
     instancePorts,
@@ -84,11 +166,11 @@ export async function buildExpandSpliceLayout(input: {
   const padTop = expandTopPad(input.instanceParamRows);
 
   const contentRects = [
-    ...internalNodes.map((node) => {
+    ...contentNodes.map((node) => {
       const size = resolvedNodeDimensions(node);
       return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
     }),
-    ...internalEdges.flatMap(
+    ...contentEdges.flatMap(
       (edge) =>
         edge.routePoints?.map((point) => ({ x: point.x, y: point.y, width: 0, height: 0 })) ?? [],
     ),
@@ -101,20 +183,21 @@ export async function buildExpandSpliceLayout(input: {
     y: point.y + dy,
   });
 
-  const placedInternalNodes: PositionedNode[] = internalNodes.map((node) => ({
+  const placedContentNodes: PositionedNode[] = contentNodes.map((node) => ({
     ...node,
     position: translatePoint(node.position),
   }));
-  const placedInternalEdges: DiagramEdge[] = internalEdges.map((edge) => ({
+  const placedContentEdges: DiagramEdge[] = contentEdges.map((edge) => ({
     ...edge,
     waypoint: edge.waypoint ? translatePoint(edge.waypoint) : undefined,
     routePoints: edge.routePoints?.map(translatePoint),
   }));
 
-  // 3. Place the design into the outer node: the frame grows around the
+  // 4. Place the design into the outer node: the frame grows around the
   //    translated content (grow-only against the instance's pre-expand
-  //    size), and the boundary ports land on its border at the instance's
-  //    own port rows.
+  //    size), and the boundary-port labels land on its border at the
+  //    instance's own port rows — pure labels, with no routed wire into the
+  //    content.
   const expandedSize = expandedFrameSize({
     instanceSize: input.instanceSize,
     padLeft,
@@ -138,129 +221,9 @@ export async function buildExpandSpliceLayout(input: {
     position,
   }));
 
-  // 4. Tell libavoid to wire up the ports: every edge that used to touch a
-  //    dropped port node is retargeted at the matching boundary node's inner
-  //    handle and re-routed against the placed content — the boundary node
-  //    ids are the child's own port-node ids, so only the port id changes.
-  const rewrittenBoundaryEdges: DiagramEdge[] = boundaryEdges.map((edge) => ({
-    ...edge,
-    sourcePort: portNodeIds.has(edge.source) ? 'inner' : edge.sourcePort,
-    targetPort: portNodeIds.has(edge.target) ? 'inner' : edge.targetPort,
-    waypoint: undefined,
-    routePoints: undefined,
-  }));
-
-  const boundaryIds = new Set(boundaryNodes.map((node) => node.id));
-  // The routing view of a boundary node exposes exactly one pin, named after
-  // the 'inner' handle the rewritten edges terminate on (the outer handle
-  // faces the parent diagram — never routed here).
-  const routingBoundaryNodes: PositionedNode[] = boundaryNodes.map((node) => ({
-    ...node,
-    ports: node.ports.map((port) => ({ ...port, id: 'inner' })),
-  }));
-  const routingContentNodes = [...placedInternalNodes, ...routingBoundaryNodes];
-  const routingNodes = [...routingContentNodes, ...frameWallNodes(expandedSize)];
-  const routingNodesById = new Map(routingContentNodes.map((node) => [node.id, node]));
-  const routingNodePositions = new Map(routingContentNodes.map((node) => [node.id, node.position]));
-
-  const resolveLead: RoutingLeadResolver = (nodeId, portId, includeLeadMargins, role) => {
-    const node = routingNodesById.get(nodeId);
-    if (node && boundaryIds.has(nodeId)) {
-      return boundaryInnerLead(node, includeLeadMargins);
-    }
-    return renderedLeadPoint(
-      nodeId,
-      portId,
-      routingNodesById,
-      routingNodePositions,
-      includeLeadMargins,
-      role,
-    );
-  };
-
-  const routed = await routeDiagramWithLibavoid(routingNodes, rewrittenBoundaryEdges, resolveLead);
-  const routedBoundaryEdges = rewrittenBoundaryEdges.map((edge) => ({
-    ...edge,
-    // A rejected route stays undefined — the webview's OrthogonalEdge then
-    // derives its usual default path, same as any freshly-cut net.
-    routePoints: routed.routes.get(edge.id),
-  }));
-
   return {
-    nodes: [...boundaryNodes, ...placedInternalNodes],
-    edges: [...routedBoundaryEdges, ...placedInternalEdges],
+    nodes: [...boundaryNodes, ...placedContentNodes],
+    edges: placedContentEdges,
     expandedSize,
   };
-}
-
-/**
- * The inner-handle lead of a boundary-port node: the handle sits centered on
- * the node's inner edge (see BoundaryPortNode's inner Handle), facing into
- * the frame; with margins it reserves one grid past the handle, the same
- * clearance a netLabel's lead reserves (see elkNodeForDiagramNode's
- * leadOverride) and the same lead length OrthogonalEdge re-derives when it
- * renders the route.
- */
-function boundaryInnerLead(node: PositionedNode, includeLeadMargins: boolean): RoutingLeadPoint {
-  const size = resolvedNodeDimensions(node);
-  const outerSide = node.metadata?.boundaryPort?.outerSide ?? 'left';
-  const innerFacesEast = outerSide === 'left';
-  const lead = includeLeadMargins ? diagramSizing.gridSize : 0;
-  return {
-    point: {
-      x: node.position.x + (innerFacesEast ? size.width + lead : -lead),
-      y: node.position.y + size.height / 2,
-    },
-    side: innerFacesEast ? 'EAST' : 'WEST',
-  };
-}
-
-/**
- * Four obstacle "walls" hugging the outside of the expanded frame, so
- * libavoid can only wire the boundary ports up *through the frame's
- * interior* — without them the router happily swings a stub around the
- * outside of the border, which the webview's clamp-to-frame would then
- * smash flat onto the border line. Each wall is placed by its resolved
- * (grow-only) size so any canonical-minimum bloat always extends *away*
- * from the frame, and the walls overlap at the corners so no diagonal
- * gap remains.
- */
-function frameWallNodes(expandedSize: { width: number; height: number }): PositionedNode[] {
-  const grid = diagramSizing.gridSize;
-  const overshoot = EXPAND_CONTENT_INSET;
-  const wall = (
-    id: string,
-    requested: { width: number; height: number },
-    place: (resolved: { width: number; height: number }) => { x: number; y: number },
-  ): PositionedNode => {
-    const node: PositionedNode = {
-      id: `expand-frame-wall:${id}`,
-      kind: 'bus',
-      label: '',
-      ports: [],
-      sizeOverride: { width: requested.width / grid, height: requested.height / grid },
-      position: { x: 0, y: 0 },
-    };
-    return { ...node, position: place(resolvedNodeDimensions(node)) };
-  };
-  const sideHeight = expandedSize.height + overshoot * 2;
-  const spanWidth = expandedSize.width + overshoot * 2;
-  return [
-    wall('left', { width: grid, height: sideHeight }, (resolved) => ({
-      x: -resolved.width,
-      y: -overshoot,
-    })),
-    wall('right', { width: grid, height: sideHeight }, () => ({
-      x: expandedSize.width,
-      y: -overshoot,
-    })),
-    wall('top', { width: spanWidth, height: grid }, (resolved) => ({
-      x: -overshoot,
-      y: -resolved.height,
-    })),
-    wall('bottom', { width: spanWidth, height: grid }, () => ({
-      x: -overshoot,
-      y: expandedSize.height,
-    })),
-  ];
 }

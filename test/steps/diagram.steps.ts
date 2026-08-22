@@ -1395,6 +1395,25 @@ When('I click the {string} button', async function (this: BddWorld, label: strin
   const before = JSON.stringify(await readExtensionLayout(this));
   const button = this.webviewPage.locator('.svsch-selection-toolbar button', { hasText: label });
   await expect(button).toBeVisible();
+  // An expanded instance's frame mirrors the child's full standalone width,
+  // so a selection containing one can push the toolbar — anchored at the
+  // selection's bottom-right corner — past the viewport edge, where the
+  // click lands on the selection rect instead. Fit the view first when that
+  // happens; the selection (and with it the toolbar) survives a fit.
+  const box = await button.boundingBox();
+  const viewport = this.workbox.viewportSize();
+  const offScreen =
+    !box ||
+    box.x < 0 ||
+    box.y < 0 ||
+    (viewport !== null &&
+      (box.x + box.width > viewport.width || box.y + box.height > viewport.height));
+  if (offScreen) {
+    await this.webviewPage
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.fitView({ padding: 0.1, duration: 0 }));
+    await this.workbox.waitForTimeout(300);
+  }
   await button.click();
   await waitForLayoutChange(this, before, `After clicking ${label}`);
 });
@@ -1420,6 +1439,14 @@ When(
     // something other than the ghost's own body. The header strip, inset from
     // both, is always clear.
     await this.workbox.mouse.click(box.x + 30, box.y + 15);
+    // The expanded frame mirrors the child's full standalone width, so its
+    // bottom-right corner — where the selection toolbar anchors — can sit
+    // outside the viewport. Fit the view (the selection survives) so the
+    // Collapse control is actually clickable.
+    await this.webviewPage
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.fitView({ padding: 0.1, duration: 0 }));
+    await this.workbox.waitForTimeout(300);
     const button = this.webviewPage.locator('.svsch-selection-toolbar button', {
       hasText: 'Collapse',
     });
@@ -4074,9 +4101,7 @@ async function waitForExtensionRenderedView(
   await world.webviewPage.locator('.react-flow__node').first().waitFor({ timeout: 15_000 });
   await waitForViewportTransformToSettle(world.webviewPage);
   await world.workbox.waitForTimeout(500);
-  await world.takeScreenshot(screenshotLabel, {
-    skipPixelCompare: SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS.has(world.scenarioName ?? ''),
-  });
+  await world.takeScreenshot(screenshotLabel);
 }
 
 function isRegionSide(side: string): side is RegionSide {
@@ -4951,18 +4976,6 @@ async function getWorkspaceState(dir: string): Promise<string[]> {
 // Sub-diagram interaction ("Expand instance in place", issue #232) — steps
 // backing test/features/sub_diagram_interaction.feature.
 
-// This scenario's expanded-instance frames render with a dashed border at a
-// non-integer fit-view zoom; repeated local runs show the fit-view transform
-// and the JSON graph regression are byte-identical between a passing and a
-// failing attempt of the same screenshot, so the leftover pixel diff (~9k
-// px) is renderer-level antialiasing/dash-phase jitter in the VS Code test
-// host, not an application or test-logic bug. Skip pixel comparison only for
-// this scenario's screenshots; the JSON graph regression still fully covers
-// its structural correctness. See PR #233.
-const SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS = new Set([
-  "Auto Layout re-anchors a cut net end to the expanded frame's border",
-]);
-
 // Draw the marquee across every rendered node — guaranteed to cross the
 // expanded instance's border, which per the border-scoped selection semantics
 // (#242) makes it a top-level selection: sub-diagram content is exempt.
@@ -5009,9 +5022,7 @@ When('I drag-select across the entire diagram', async function (this: BddWorld) 
     )
     .toBeGreaterThan(0);
 
-  await this.takeScreenshot('Drag-selected across the entire diagram', {
-    skipPixelCompare: SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS.has(this.scenarioName ?? ''),
-  });
+  await this.takeScreenshot('Drag-selected across the entire diagram');
 });
 
 Then('no sub-diagram nodes should be selected', async function (this: BddWorld) {
@@ -5078,21 +5089,47 @@ Then(
   },
 );
 
+// A spliced-in cut net end (the netLabel node standing in for a dropped
+// child IO port — see makeExpandPortLabel in webview/expand/splice.ts) by
+// its label text. Only expand-namespaced labels match, so a same-named
+// parent-side cut end never shadows the sub-diagram's own.
+async function findSplicedNetLabelNodeIdByLabel(
+  webviewPage: FrameLocator,
+  label: string,
+): Promise<string | null> {
+  return webviewPage.locator('html').evaluate((_, text) => {
+    const nodes = Array.from(document.querySelectorAll('.react-flow__node'));
+    const match = nodes.find((node) => {
+      if (!(node.getAttribute('data-id') ?? '').startsWith('expand:')) return false;
+      if (!node.querySelector('[data-node-kind="netLabel"]')) return false;
+      const textEl = node.querySelector('.hdl-net-label-text-value');
+      return textEl?.textContent?.trim() === text;
+    });
+    return match?.getAttribute('data-id') ?? null;
+  }, label);
+}
+
 // Finds the spliced (namespace-prefixed) edge id between two nodes inside an
-// expanded instance — either endpoint may be a boundary-port node, whose
-// label lives in its own .hdl-boundary-port-text element that
-// findNodeIdByLabel doesn't scan, so the boundary-port finder is tried first.
-// Spliced edge ids namespace the child module's own edge ids, which don't
-// embed the namespaced node ids, so this resolves through React Flow state.
+// expanded instance. A name may refer to a regular node, the cut net end
+// standing in for a child IO port, or a boundary-port label on the frame
+// (whose text lives in its own .hdl-boundary-port-text element that
+// findNodeIdByLabel doesn't scan) — a port's wire terminates on the cut net
+// end, not the same-named boundary label, so every match is collected and
+// whichever candidate actually carries the wire wins. Spliced edge ids
+// namespace the child module's own edge ids, which don't embed the
+// namespaced node ids, so this resolves through React Flow state.
 async function findSplicedEdgeId(world: BddWorld, source: string, target: string): Promise<string> {
-  const sourceId =
-    (await findBoundaryPortNodeIdByLabel(world.webviewPage, source)) ??
-    (await findNodeIdByLabel(world.webviewPage, source));
-  const targetId =
-    (await findBoundaryPortNodeIdByLabel(world.webviewPage, target)) ??
-    (await findNodeIdByLabel(world.webviewPage, target));
-  if (!sourceId || !targetId)
-    throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const candidatesFor = async (name: string): Promise<string[]> => {
+    const ids = [
+      await findSplicedNetLabelNodeIdByLabel(world.webviewPage, name),
+      await findBoundaryPortNodeIdByLabel(world.webviewPage, name),
+      await findNodeIdByLabel(world.webviewPage, name),
+    ].filter((id): id is string => id !== null);
+    if (ids.length === 0) throw new Error(`Node not found: ${name}`);
+    return ids;
+  };
+  const sourceIds = await candidatesFor(source);
+  const targetIds = await candidatesFor(target);
   const edgeId: string | null = await world.webviewPage.locator('html').evaluate(
     (_el, { s, t }) => {
       const rf = (window as any).reactFlowInstance;
@@ -5101,11 +5138,12 @@ async function findSplicedEdgeId(world: BddWorld, source: string, target: string
         .find(
           (e: any) =>
             e.id.startsWith('expand:') &&
-            ((e.source === s && e.target === t) || (e.source === t && e.target === s)),
+            ((s.includes(e.source) && t.includes(e.target)) ||
+              (t.includes(e.source) && s.includes(e.target))),
         );
       return found?.id ?? null;
     },
-    { s: sourceId, t: targetId },
+    { s: sourceIds, t: targetIds },
   );
   if (!edgeId) throw new Error(`No spliced wire between ${source} and ${target}`);
   return edgeId;

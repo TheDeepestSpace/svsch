@@ -124,7 +124,13 @@ describe('buildExpandSpliceLayout', () => {
     expect(layout).toBeDefined();
 
     const internals = layout!.nodes.filter((node) => node.kind !== 'boundaryPort');
-    expect(internals.map((node) => node.id).sort()).toEqual(['comb1', 'reg1']);
+    expect(internals.map((node) => node.id).sort()).toEqual([
+      'comb1',
+      'expand-port-label:port:a',
+      'expand-port-label:port:clk',
+      'expand-port-label:port:sum',
+      'reg1',
+    ]);
     for (const node of internals) {
       const size = resolvedNodeDimensions(node);
       expect(node.position.x).toBeGreaterThan(0);
@@ -150,15 +156,37 @@ describe('buildExpandSpliceLayout', () => {
   });
 
   // eslint-disable-next-line max-len
-  it('rewires port-touching edges onto boundary inner handles and routes them inside the frame', async () => {
+  it('replaces each port with a cut net end and rewires the port-touching edges onto it, keeping the standalone routes inside the frame', async () => {
     const layout = await buildExpandSpliceLayout(baseInput());
     expect(layout).toBeDefined();
 
-    const stub = layout!.edges.find((edge) => edge.id === 'e-a-reg1')!;
-    expect(stub.source).toBe('port:a');
-    expect(stub.sourcePort).toBe('inner');
-    expect(stub.targetPort).toBe('d');
+    // The former port endpoint now terminates on the cut net end's 'cut'
+    // handle — there is no routed wire to the boundary label on the frame.
+    const aEdge = layout!.edges.find((edge) => edge.id === 'e-a-reg1')!;
+    expect(aEdge.source).toBe('expand-port-label:port:a');
+    expect(aEdge.sourcePort).toBe('cut');
+    expect(aEdge.targetPort).toBe('d');
+    const sumEdge = layout!.edges.find((edge) => edge.id === 'e-comb1-sum')!;
+    expect(sumEdge.target).toBe('expand-port-label:port:sum');
+    expect(sumEdge.targetPort).toBe('cut');
+    expect(
+      layout!.edges.some((edge) => edge.sourcePort === 'inner' || edge.targetPort === 'inner'),
+    ).toBe(false);
 
+    // An input port drives the net inward — its stand-in is a 'sink'-role cut
+    // end (the label is the wire's source); an output port receives — a
+    // 'source'-role cut end. Port names are declared, never renameable.
+    const aLabel = layout!.nodes.find((node) => node.id === 'expand-port-label:port:a')!;
+    expect(aLabel.kind).toBe('netLabel');
+    expect(aLabel.label).toBe('a');
+    expect(aLabel.metadata?.cutNet?.role).toBe('sink');
+    expect(aLabel.metadata?.cutNet?.handleSide).toBe('right');
+    expect(aLabel.metadata?.cutNet?.origin).toBe('declared');
+    const sumLabel = layout!.nodes.find((node) => node.id === 'expand-port-label:port:sum')!;
+    expect(sumLabel.metadata?.cutNet?.role).toBe('source');
+    expect(sumLabel.metadata?.cutNet?.handleSide).toBe('left');
+
+    // The kept standalone routes stay orthogonal and inside the frame.
     for (const edgeId of ['e-clk-reg1', 'e-a-reg1', 'e-comb1-sum']) {
       const edge = layout!.edges.find((candidate) => candidate.id === edgeId)!;
       expect(edge.routePoints, edgeId).toBeDefined();
@@ -170,6 +198,82 @@ describe('buildExpandSpliceLayout', () => {
         expect(point.y).toBeLessThanOrEqual(layout!.expandedSize.height);
       }
     }
+  });
+
+  // eslint-disable-next-line max-len
+  it("anchors each cut net end's handle exactly where the port's own handle sat in the standalone layout", async () => {
+    const [standalone, layout] = [
+      await buildViewModel(graph, 'adder', emptyLayout),
+      await buildExpandSpliceLayout(baseInput()),
+    ];
+
+    // Derive the rigid content translation from a node present in both views.
+    const standaloneReg = standalone.nodes.find((node) => node.id === 'reg1')!;
+    const placedReg = layout!.nodes.find((node) => node.id === 'reg1')!;
+    const dx = placedReg.position.x - standaloneReg.position.x;
+    const dy = placedReg.position.y - standaloneReg.position.y;
+
+    const standalonePortA = standalone.nodes.find((node) => node.id === 'port:a')!;
+    const portASize = resolvedNodeDimensions(standalonePortA);
+    const aLabel = layout!.nodes.find((node) => node.id === 'expand-port-label:port:a')!;
+    const aLabelSize = resolvedNodeDimensions(aLabel);
+    // handleSide 'right': the label's right edge midpoint is the handle.
+    expect(aLabel.position.x + aLabelSize.width).toBeCloseTo(
+      standalonePortA.position.x + portASize.width + dx,
+    );
+    expect(aLabel.position.y + aLabelSize.height / 2).toBeCloseTo(
+      standalonePortA.position.y + portASize.height / 2 + dy,
+    );
+  });
+
+  // eslint-disable-next-line max-len
+  it('collapses a net the user already cut at a port to a no-op — port, stub and dangling label all vanish, content-side cut ends stay', async () => {
+    // Cut the a -> reg1 net at its source (the input port), the way the Cut
+    // control saves it: the standalone view then shows
+    //   "port a --- cut end a"   and   "cut end a --- reg1".
+    const cutLayout = {
+      version: 1,
+      modules: {
+        adder: {
+          nodes: {},
+          netCuts: {
+            'port:a:p:a': {
+              label: 'a',
+              source: { nodeId: 'port:a', portId: 'p:a' },
+            },
+          },
+        },
+      },
+    };
+    const standalone = await buildViewModel(graph, 'adder', cutLayout);
+    const standaloneLabelIds = standalone.nodes
+      .filter((node) => node.kind === 'netLabel')
+      .map((node) => node.id)
+      .sort();
+    // Sanity: the standalone view really carries both dangling ends.
+    expect(standaloneLabelIds).toEqual([
+      'cut-label:port:a:p:a:sink:e-a-reg1',
+      'cut-label:port:a:p:a:source',
+    ]);
+
+    const layout = await buildExpandSpliceLayout({ ...baseInput(), layout: cutLayout });
+    const labelIds = layout!.nodes
+      .filter((node) => node.kind === 'netLabel')
+      .map((node) => node.id)
+      .sort();
+    // The port-side source label vanished with the port; no synthesized
+    // stand-in was added for the already-cut port. The reg1-side sink label
+    // stays, and the other two (uncut) ports still get their stand-ins.
+    expect(labelIds).toEqual([
+      'cut-label:port:a:p:a:sink:e-a-reg1',
+      'expand-port-label:port:clk',
+      'expand-port-label:port:sum',
+    ]);
+    // The port-side stub collapsed entirely; the content-side stub survives.
+    expect(layout!.edges.some((edge) => edge.id === 'cut-stub:port:a:p:a:source')).toBe(false);
+    const sinkStub = layout!.edges.find((edge) => edge.id === 'cut-stub:port:a:p:a:sink:e-a-reg1');
+    expect(sinkStub).toBeDefined();
+    expect(sinkStub!.target).toBe('reg1');
   });
 
   it('grows the frame grow-only against the instance size', async () => {

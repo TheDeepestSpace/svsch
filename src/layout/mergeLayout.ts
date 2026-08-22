@@ -1291,7 +1291,7 @@ function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string)
     : `cut-stub:${netKey}:sink:${edgeId ?? ''}`;
 }
 
-function cutLabelEdgeStyle(
+export function cutLabelEdgeStyle(
   edge: DiagramEdge,
   nodesById: Map<string, DiagramNode>,
 ): NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'] | undefined {

@@ -307,13 +307,13 @@ describe('spliceExpandedInstance', () => {
   });
 
   // eslint-disable-next-line max-len
-  it("rewires internal edges onto the namespaced nodes, pointing a former child-port endpoint at the boundary node's inner handle", async () => {
+  it('rewires internal edges onto the namespaced nodes, pointing a former child-port endpoint at a cut net end standing in for the port', async () => {
     const result = await spliceExpandedInstance(baseInput());
 
     const clkEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-clk-reg1'));
     expect(clkEdge).toBeDefined();
-    expect(clkEdge?.source).toBe(namespacedId('u0', 'port:clk'));
-    expect(clkEdge?.sourcePort).toBe('inner');
+    expect(clkEdge?.source).toBe(namespacedId('u0', 'expand-port-label:port:clk'));
+    expect(clkEdge?.sourcePort).toBe('cut');
     expect(clkEdge?.target).toBe(namespacedId('u0', 'reg1'));
     expect(clkEdge?.targetPort).toBe('clk'); // untouched — real node ports aren't namespaced
     // No stale absolute-coordinate route carried over from the child's own
@@ -324,8 +324,29 @@ describe('spliceExpandedInstance', () => {
 
     const sumEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-reg1-sum'));
     expect(sumEdge?.source).toBe(namespacedId('u0', 'reg1'));
-    expect(sumEdge?.target).toBe(namespacedId('u0', 'port:sum'));
-    expect(sumEdge?.targetPort).toBe('inner');
+    expect(sumEdge?.target).toBe(namespacedId('u0', 'expand-port-label:port:sum'));
+    expect(sumEdge?.targetPort).toBe('cut');
+
+    // No spliced edge terminates on a boundary label's inner handle — the
+    // boundary labels on the frame are pure labels now.
+    expect(result.edges.some((e) => e.sourcePort === 'inner' || e.targetPort === 'inner')).toBe(
+      false,
+    );
+
+    // The stand-ins are namespaced netLabel nodes: an input port's cut end
+    // drives the wire ('sink' role), an output port's receives it ('source').
+    const clkLabel = result.nodes.find(
+      (n) => n.id === namespacedId('u0', 'expand-port-label:port:clk'),
+    )!;
+    expect(clkLabel.kind).toBe('netLabel');
+    expect(clkLabel.label).toBe('clk');
+    expect(clkLabel.metadata?.cutNet?.role).toBe('sink');
+    expect(clkLabel.metadata?.cutNet?.handleSide).toBe('right');
+    const sumLabel = result.nodes.find(
+      (n) => n.id === namespacedId('u0', 'expand-port-label:port:sum'),
+    )!;
+    expect(sumLabel.metadata?.cutNet?.role).toBe('source');
+    expect(sumLabel.metadata?.cutNet?.handleSide).toBe('left');
   });
 
   // eslint-disable-next-line max-len

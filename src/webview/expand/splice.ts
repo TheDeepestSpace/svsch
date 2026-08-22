@@ -10,17 +10,18 @@ import { diagramSizing, nodePortCenterOffset, snapUpToGrid } from '../../diagram
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
 import { edgeIsThick, portSuggestsThickWire } from '../../ir/edgeStyle';
+import { edgeNetKey } from '../../ir/edgeNet';
 
 /**
  * "Expand instance in place" (issue #232) splices a child module's own graph
  * into the parent module's canvas. The heavy lifting — the child's own
  * standalone place-and-route (the exact same ELK + libavoid pipeline
- * `openModule` renders with), dropping the port nodes, and libavoid-routing
- * the boundary-port stubs into the placed content — happens host-side in
- * src/layout/expandLayout.ts, because libavoid's wasm runtime isn't loadable
- * under the webview's CSP sandbox. This module turns that frame-local result
- * into canvas-space spliced nodes/edges (and still owns the fallback
- * ELK-only placement used when the host couldn't produce a layout).
+ * `openModule` renders with), then dropping the port nodes and replacing
+ * them with cut net ends at the ports' own spots (see makeExpandPortLabel) —
+ * happens host-side in src/layout/expandLayout.ts. This module turns that
+ * frame-local result into canvas-space spliced nodes/edges (and still owns
+ * the fallback ELK-only placement used when the host couldn't produce a
+ * layout).
  *
  * This module is deliberately framework-free (no React, no vscode API) so
  * the splicing/layout math is unit-testable in isolation — main.tsx owns
@@ -59,9 +60,9 @@ export function expandRegionId(namespace: string): string {
 
 /**
  * The host-computed splice layout (see src/layout/expandLayout.ts): the child
- * module's standalone place-and-route result with its port nodes replaced by
- * placed boundary-port nodes and the port-touching wires re-routed by
- * libavoid against the placed content. Everything is in frame-local
+ * module's standalone place-and-route result with boundary-port labels placed
+ * on the frame border and every IO-port node replaced in place by a cut net
+ * end, keeping the standalone routes verbatim. Everything is in frame-local
  * coordinates — the expanded node's own top-left corner is (0, 0) — and
  * child-module-local ids; `spliceExpandedInstance` translates it to canvas
  * space and namespaces the ids.
@@ -220,6 +221,85 @@ export function boundaryPortEdgeStyle(
       : portSuggestsThickWire(port));
   if (!aggregate && !thick) return undefined;
   return { aggregate, thick: thick || undefined };
+}
+
+/** Child-local node id of the cut-net-end label standing in for a dropped IO-port node. */
+export function expandPortLabelId(portNodeId: string): string {
+  return `expand-port-label:${portNodeId}`;
+}
+
+/**
+ * Positions a netLabel node so its 'cut' handle sits exactly on `point` —
+ * the same anchoring rule the net-cut projection uses for a freshly cut
+ * net's dangling ends (see labelPositionForHandlePoint in
+ * layout/mergeLayout.ts).
+ */
+export function netLabelPositionForHandle(
+  point: { x: number; y: number },
+  handleSide: 'left' | 'right' | 'top' | 'bottom',
+  label: string,
+): { x: number; y: number } {
+  const dimensions = diagramNodeDimensions({ id: 'label', kind: 'netLabel', label, ports: [] });
+  if (handleSide === 'left') {
+    return { x: point.x, y: point.y - dimensions.height / 2 };
+  }
+  if (handleSide === 'right') {
+    return { x: point.x - dimensions.width, y: point.y - dimensions.height / 2 };
+  }
+  if (handleSide === 'top') {
+    return { x: point.x - dimensions.width / 2, y: point.y };
+  }
+  return { x: point.x - dimensions.width / 2, y: point.y - dimensions.height };
+}
+
+/**
+ * The cut-net-end (netLabel) node that replaces a child module's IO-port node
+ * when the module is spliced into a parent canvas ("Expand instance in
+ * place"): instead of auto-routing a wire from the frame's boundary label to
+ * the spliced content, the content's wire simply ends in a cut net end
+ * sitting exactly where the port's own handle sat in the child's standalone
+ * layout — so the standalone routes stay valid verbatim, and a net the user
+ * had already cut at the port collapses to a no-op (the port-side stub and
+ * its label vanish, the content-side cut ends were already there).
+ *
+ * A port that drives the net inward (an input) becomes a 'sink'-role cut end
+ * (the label is the wire's source); a port that receives (an output) becomes
+ * a 'source'-role cut end — the same role semantics the net-cut projection
+ * assigns a manual cut's two dangling ends.
+ */
+export function makeExpandPortLabel(input: {
+  portNode: DiagramNode;
+  moduleName: string;
+  portIsSource: boolean;
+  netKey: string;
+  originalEdgeId?: string;
+  handleSide: 'left' | 'right' | 'top' | 'bottom';
+  handlePoint: { x: number; y: number };
+  edgeStyle?: NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'];
+}): PositionedNode {
+  const port = input.portNode.ports[0];
+  const label = port?.label ?? port?.name ?? input.portNode.label;
+  const role = input.portIsSource ? 'sink' : 'source';
+  return {
+    id: expandPortLabelId(input.portNode.id),
+    kind: 'netLabel',
+    label,
+    parentModule: input.moduleName,
+    ports: [{ id: 'cut', name: 'cut', direction: role === 'source' ? 'input' : 'output' }],
+    metadata: {
+      cutNet: {
+        netKey: input.netKey,
+        role,
+        align: role === 'source' ? 'end' : 'start',
+        originalEdgeId: input.originalEdgeId,
+        handleSide: input.handleSide,
+        edgeStyle: input.edgeStyle,
+        // The label carries the port's real declared name — never renameable.
+        origin: 'declared',
+      },
+    },
+    position: netLabelPositionForHandle(input.handlePoint, input.handleSide, label),
+  };
 }
 
 async function loadElk(): Promise<any> {
@@ -519,9 +599,46 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   // No host layout at all (older host, or its layout pipeline failed) — the
   // webview-local ELK-only placement fallback below.
   const elkPositions = await layoutInternalNodes(childModule);
-  const elkRects = internalNodes
+
+  // Each connected IO-port node becomes a cut net end at the spot ELK placed
+  // the port — the wire into the content simply ends there, with no routed
+  // connection to the frame's boundary label (see makeExpandPortLabel).
+  const portLabelsInElkSpace: PositionedNode[] = [];
+  const portLabelIdByPortNodeId = new Map<string, string>();
+  childModule.nodes.forEach((node, index) => {
+    if (node.kind !== 'port') return;
+    const touching = childModule.edges.filter(
+      (edge) => edge.source === node.id || edge.target === node.id,
+    );
+    const firstEdge = [...touching].sort((a, b) => a.id.localeCompare(b.id))[0];
+    if (!firstEdge) return;
+    const portIsSource = touching.some((edge) => edge.source === node.id);
+    const pos = elkPositions.get(node.id) ?? {
+      x: index * diagramSizing.gridSize * 4,
+      y: index * diagramSizing.gridSize * 4,
+    };
+    const size = resolvedNodeDimensions(node);
+    const port = node.ports[0];
+    const label = makeExpandPortLabel({
+      portNode: node,
+      moduleName: childModule.name,
+      portIsSource,
+      netKey: edgeNetKey(firstEdge),
+      originalEdgeId: firstEdge.id,
+      handleSide: portIsSource ? 'right' : 'left',
+      handlePoint: portIsSource
+        ? { x: pos.x + size.width, y: pos.y + size.height / 2 }
+        : { x: pos.x, y: pos.y + size.height / 2 },
+      edgeStyle: port ? boundaryPortEdgeStyle(childModule, node, port) : undefined,
+    });
+    portLabelsInElkSpace.push(label);
+    portLabelIdByPortNodeId.set(node.id, label.id);
+  });
+
+  const elkRects = [...internalNodes, ...portLabelsInElkSpace]
     .map((node) => {
-      const pos = elkPositions.get(node.id);
+      const pos =
+        node.kind === 'netLabel' ? (node as PositionedNode).position : elkPositions.get(node.id);
       if (!pos) return undefined;
       const size = resolvedNodeDimensions(node);
       return { x: pos.x, y: pos.y, width: size.width, height: size.height };
@@ -557,7 +674,16 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     position: internalPositions.get(node.id) ?? { x: instancePosition.x, y: instancePosition.y },
   }));
 
-  const contentRects = internalPositionedNodes.map((node) => {
+  // Deliberately unsnapped: a label's position keeps its 'cut' handle exactly
+  // on the (snapped) port box's edge midpoint, same as the net-cut
+  // projection's lead anchoring.
+  const portLabelNodes: PositionedNode[] = portLabelsInElkSpace.map((node) => ({
+    ...node,
+    id: namespacedId(namespace, node.id),
+    position: { x: node.position.x + translateX, y: node.position.y + translateY },
+  }));
+
+  const contentRects = [...internalPositionedNodes, ...portLabelNodes].map((node) => {
     const size = resolvedNodeDimensions(node);
     return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
   });
@@ -584,21 +710,22 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     boundaryNodeIdByChildPortName.set(entry.port.name, namespacedNodeId);
   }
 
-  const allNodes = [...boundaryNodes, ...internalPositionedNodes];
+  const allNodes = [...boundaryNodes, ...internalPositionedNodes, ...portLabelNodes];
 
   // No host layout at this point (the hostLayout case already returned via
   // spliceFromHostLayout above) — rewrite the raw IR's own port endpoints
-  // onto the placed boundary nodes.
+  // onto the cut net ends standing in for the dropped port nodes. There is
+  // deliberately no routed wire between a boundary label on the frame and
+  // the spliced content (see makeExpandPortLabel).
   const rewritePortEndpoint = (
     nodeId: string,
     portId: string | undefined,
   ): { nodeId: string; portId: string | undefined } => {
-    const portNode = childModule.nodes.find((n) => n.id === nodeId && n.kind === 'port');
-    if (!portNode) {
+    const labelId = portLabelIdByPortNodeId.get(nodeId);
+    if (!labelId) {
       return { nodeId: namespacedId(namespace, nodeId), portId };
     }
-    const namespacedBoundaryId = namespacedId(namespace, portNode.id);
-    return { nodeId: namespacedBoundaryId, portId: 'inner' };
+    return { nodeId: namespacedId(namespace, labelId), portId: 'cut' };
   };
 
   const edges: DiagramEdge[] = childModule.edges.map((edge) => {

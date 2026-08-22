@@ -633,6 +633,7 @@ export function OrthogonalEdge({
     diagramEdge !== undefined &&
     edgeData?.moduleName !== undefined &&
     cutLabelNodeId !== undefined &&
+    !isExpandSplicedEdge &&
     isEdgeHovered;
   const netGeometries =
     context && edgeData?.netEdgeIds
@@ -823,6 +824,12 @@ export function OrthogonalEdge({
             for (const fn of flowNodes) {
               const dn = fn.data?.node;
               if (dn?.kind !== 'netLabel' || dn.metadata?.cutNet?.netKey !== netKey) {
+                continue;
+              }
+              // A spliced (expand-namespaced) label's netKey is child-local —
+              // it only belongs to this net's halo if this edge is spliced
+              // too, not when a parent net happens to share the same key.
+              if (isExpandNamespacedId(fn.id) !== isExpandSplicedEdge) {
                 continue;
               }
               const pos = (fn as any).positionAbsolute ?? fn.position;
