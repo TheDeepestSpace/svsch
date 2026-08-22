@@ -11,31 +11,6 @@ import { diagramNodeDimensions, resolvedNodeDimensions } from '../../diagram/nod
 import { isInputSidePort } from '../../diagram/portDirection';
 import { edgeIsThick, portSuggestsThickWire } from '../../ir/edgeStyle';
 
-// Mirrors SavedNodeLayout / SavedExpandedInstanceLayout in
-// src/storage/layoutStore.ts (not imported directly — that file imports
-// `node:fs`/`node:path` and lives outside the webview tsconfig project,
-// which has no Node types configured; see ExpandInstancePayload in
-// main.tsx for the same reason applied to diagramPanel.ts). Extension-host
-// code (diagramPanel.ts) round-trips these as plain JSON over postMessage,
-// so keeping the two declarations in sync by hand is the cost of that
-// boundary — same tradeoff GraphMessage/StatusMessage already accept.
-export interface SavedNodeLayout {
-  x: number;
-  y: number;
-  stale?: boolean;
-  fixed?: boolean;
-  width?: number;
-  height?: number;
-}
-
-export interface SavedExpandedInstanceLayout {
-  childModuleName: string;
-  nodes: Record<string, SavedNodeLayout>;
-  bounds?: { x: number; y: number; width: number; height: number };
-  fixed?: boolean;
-  instanceOrigin?: { x: number; y: number };
-}
-
 /**
  * "Expand instance in place" (issue #232) splices a child module's own graph
  * into the parent module's canvas. The heavy lifting — the child's own
@@ -116,9 +91,9 @@ export interface SpliceInput {
    * Name of the module whose own node graph directly contains `instanceId` —
    * the real open module for a top-level Expand, or the enclosing splice's
    * `childModule.name` for a nested one (expand-of-an-expanded-instance).
-   * This is also the `moduleName` key `requestExpandInstance` /
-   * `saveExpandedInstanceLayout` persist under, so nested snapshots stay
-   * scoped to their own instance rather than the top-level module.
+   * This is also the `moduleName` key `requestExpandInstance` persists under,
+   * so nested splices stay scoped to their own instance rather than the
+   * top-level module.
    */
   parentModuleName: string;
   instanceId: string;
@@ -128,7 +103,6 @@ export interface SpliceInput {
   instanceParamRows: number;
   instancePorts: DiagramPort[];
   childModule: DesignModule;
-  savedLayout?: SavedExpandedInstanceLayout;
   /**
    * Host-computed frame-local layout — present whenever the extension host
    * managed to run the child's standalone place-and-route (see
@@ -176,34 +150,20 @@ export interface SpliceResult {
    * the spliced-in child diagram plus the label clearances (port-label
    * columns on the left/right, header + parameter rows on top) — the node
    * itself becomes the expanded frame (there is no separate visible outline).
-   * Applied to the dimmed instance node as a grow-only `sizeOverride`; the
-   * region's bounds are exactly this rect. Grown further (never shrunk) to a
-   * previously-saved manual frame resize (`savedLayout.bounds`), and updated
-   * live by the webview when the user resizes the frame again (see
-   * main.tsx's ghost-resize commit).
+   * Applied to the dimmed instance node as a `sizeOverride`; the region's
+   * bounds are exactly this rect. Always freshly derived from the child
+   * module's *current* layout (see `expandedFrameSize`) — there is no manual
+   * override to grow past or shrink back to (see the product decision in
+   * issue #232's PR review: only the child module's own standalone view may
+   * edit its layout, so every expand of it must just reflect that layout
+   * as-is, growing or shrinking to match).
    */
   expandedSize: { width: number; height: number };
-  /**
-   * The content-required frame size — `expandedSize` before any saved/manual
-   * enlargement is applied. The floor a manual frame resize can shrink back
-   * to (see main.tsx's startNodeResize for ghost nodes).
-   */
-  minExpandedSize: { width: number; height: number };
   /**
    * child-module-local node id -> namespaced boundary node id, for rewiring
    * the parent's edges that used to terminate on the instance itself.
    */
   boundaryNodeIdByChildPortName: Map<string, string>;
-  /**
-   * Snapshot suitable for persisting via `saveExpandedInstanceLayout` (keyed
-   * by the child module's own local node ids, not namespaced).
-   */
-  toSavedLayout(
-    nodes: PositionedNode[],
-    bounds: PositionedGenerateRegion['bounds'],
-    fixed: boolean,
-    instanceOrigin: { x: number; y: number },
-  ): SavedExpandedInstanceLayout;
 }
 
 /**
@@ -414,22 +374,6 @@ export function expandRingTopHeight(instanceParamRows: number): number {
 }
 
 /**
- * Grow-only merge of a saved manual frame resize (SavedExpandedInstanceLayout
- * .bounds) into the content-computed frame size, so a user-enlarged frame
- * survives a reload. Never shrinks below the content-required size.
- */
-export function applySavedFrameSize(
-  computed: { width: number; height: number },
-  savedBounds?: { x: number; y: number; width: number; height: number },
-): { width: number; height: number } {
-  if (!savedBounds) return computed;
-  return {
-    width: Math.max(computed.width, savedBounds.width),
-    height: Math.max(computed.height, savedBounds.height),
-  };
-}
-
-/**
  * The size the instance's own node grows to — the user's mental model is
  * "the dashed outline is the side of the outer node now": the placed
  * diagram's extents plus the label paddings, snapped up to the grid, and
@@ -554,15 +498,12 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   } = input;
 
   const internalNodes = childModule.nodes.filter((node) => node.kind !== 'port');
-  const savedCoversAllNodes =
-    input.savedLayout !== undefined &&
-    internalNodes.every((node) => input.savedLayout!.nodes[node.id] !== undefined);
 
-  // The host's frame-local layout is authoritative whenever there's no saved
-  // snapshot overriding the node positions: it is the child's real standalone
-  // place-and-route (ELK + libavoid) dropped into the frame, with the
-  // boundary stubs re-routed by libavoid — translate, namespace, done.
-  if (input.hostLayout && !savedCoversAllNodes) {
+  // The host's frame-local layout is authoritative whenever it's present: it
+  // is the child's real standalone place-and-route (ELK + libavoid) dropped
+  // into the frame, with the boundary stubs re-routed by libavoid —
+  // translate, namespace, done.
+  if (input.hostLayout) {
     return spliceFromHostLayout(input, input.hostLayout);
   }
 
@@ -575,75 +516,42 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
   const padRight = boundaryColumnPad(outputColumn);
   const padTop = expandTopPad(instanceParamRows);
 
-  // The content node set: the host layout's non-boundary nodes when
-  // available (the standalone view — includes synthetic nodes like cut-net
-  // labels the raw IR doesn't have), the raw IR's non-port nodes otherwise.
-  const contentNodes: DiagramNode[] = input.hostLayout
-    ? input.hostLayout.nodes.filter((node) => node.kind !== 'boundaryPort')
-    : internalNodes;
-  const hostLocalPositions = new Map<string, { x: number; y: number }>(
-    (input.hostLayout?.nodes ?? [])
-      .filter((node) => node.kind !== 'boundaryPort')
-      .map((node) => [node.id, (node as PositionedNode).position]),
+  // No host layout at all (older host, or its layout pipeline failed) — the
+  // webview-local ELK-only placement fallback below.
+  const elkPositions = await layoutInternalNodes(childModule);
+  const elkRects = internalNodes
+    .map((node) => {
+      const pos = elkPositions.get(node.id);
+      if (!pos) return undefined;
+      const size = resolvedNodeDimensions(node);
+      return { x: pos.x, y: pos.y, width: size.width, height: size.height };
+    })
+    .filter(
+      (rect): rect is { x: number; y: number; width: number; height: number } => rect !== undefined,
+    );
+  const elkBounds = unionBounds(elkRects) ?? { x: 0, y: 0, width: 0, height: 0 };
+
+  // Place the child diagram inside the (about-to-be-expanded) node body:
+  // its top-left corner lands one label-column in from the left border and
+  // just below the header/parameter rows.
+  const translateX = instancePosition.x + padLeft - elkBounds.x;
+  const translateY = instancePosition.y + padTop - elkBounds.y;
+
+  // Fallback for any node ELK didn't return a position for (most commonly
+  // every node at once, if the dynamic import of elkjs itself failed —
+  // see layoutInternalNodes's catch) — stack diagonally by index rather
+  // than collapsing every missing node onto the same point.
+  const internalPositions = new Map(
+    internalNodes.map((node, index) => {
+      const pos = elkPositions.get(node.id) ?? {
+        x: index * diagramSizing.gridSize * 4,
+        y: index * diagramSizing.gridSize * 4,
+      };
+      return [node.id, { x: snap(pos.x + translateX), y: snap(pos.y + translateY) }];
+    }),
   );
 
-  let internalPositions: Map<string, { x: number; y: number }>;
-  if (savedCoversAllNodes && input.savedLayout) {
-    const origin = input.savedLayout.instanceOrigin ?? instancePosition;
-    const dx = instancePosition.x - origin.x;
-    const dy = instancePosition.y - origin.y;
-    internalPositions = new Map(
-      contentNodes.map((node) => {
-        const saved = input.savedLayout!.nodes[node.id];
-        if (saved) {
-          return [node.id, { x: saved.x + dx, y: saved.y + dy }];
-        }
-        // A synthetic standalone-view node (e.g. a cut-net label) the
-        // snapshot doesn't cover — carry its host frame-local position over.
-        const hostLocal = hostLocalPositions.get(node.id) ?? { x: padLeft, y: padTop };
-        return [
-          node.id,
-          { x: instancePosition.x + hostLocal.x, y: instancePosition.y + hostLocal.y },
-        ];
-      }),
-    );
-  } else {
-    const elkPositions = await layoutInternalNodes(childModule);
-    const elkRects = contentNodes
-      .map((node) => {
-        const pos = elkPositions.get(node.id);
-        if (!pos) return undefined;
-        const size = resolvedNodeDimensions(node);
-        return { x: pos.x, y: pos.y, width: size.width, height: size.height };
-      })
-      .filter(
-        (rect): rect is { x: number; y: number; width: number; height: number } =>
-          rect !== undefined,
-      );
-    const elkBounds = unionBounds(elkRects) ?? { x: 0, y: 0, width: 0, height: 0 };
-
-    // Place the child diagram inside the (about-to-be-expanded) node body:
-    // its top-left corner lands one label-column in from the left border and
-    // just below the header/parameter rows.
-    const translateX = instancePosition.x + padLeft - elkBounds.x;
-    const translateY = instancePosition.y + padTop - elkBounds.y;
-
-    // Fallback for any node ELK didn't return a position for (most commonly
-    // every node at once, if the dynamic import of elkjs itself failed —
-    // see layoutInternalNodes's catch) — stack diagonally by index rather
-    // than collapsing every missing node onto the same point.
-    internalPositions = new Map(
-      contentNodes.map((node, index) => {
-        const pos = elkPositions.get(node.id) ?? {
-          x: index * diagramSizing.gridSize * 4,
-          y: index * diagramSizing.gridSize * 4,
-        };
-        return [node.id, { x: snap(pos.x + translateX), y: snap(pos.y + translateY) }];
-      }),
-    );
-  }
-
-  const internalPositionedNodes: PositionedNode[] = contentNodes.map((node) => ({
+  const internalPositionedNodes: PositionedNode[] = internalNodes.map((node) => ({
     ...node,
     id: namespacedId(namespace, node.id),
     position: internalPositions.get(node.id) ?? { x: instancePosition.x, y: instancePosition.y },
@@ -654,7 +562,7 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     return { x: node.position.x, y: node.position.y, width: size.width, height: size.height };
   });
   const content = unionBounds(contentRects);
-  const minExpandedSize = expandedFrameSize({
+  const expandedSize = expandedFrameSize({
     instanceSize,
     padLeft,
     padRight,
@@ -662,10 +570,6 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
       ? { ...content, x: content.x - instancePosition.x, y: content.y - instancePosition.y }
       : undefined,
   });
-  // A saved manual frame resize grows the frame past its content-required
-  // size — applied before boundary placement so the right label column lands
-  // on the (wider) border.
-  const expandedSize = applySavedFrameSize(minExpandedSize, input.savedLayout?.bounds);
 
   const boundaryNodes: PositionedNode[] = [];
   const boundaryNodeIdByChildPortName = new Map<string, string>();
@@ -682,117 +586,76 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
 
   const allNodes = [...boundaryNodes, ...internalPositionedNodes];
 
-  // Edge set: the host layout's edges are already rewritten onto boundary
-  // 'inner' handles (and carry standalone niceties like net labels and
-  // cut-net stubs) — only their routes are stale against saved/ELK node
-  // positions, so those are dropped and re-derived client-side. The raw IR
-  // fallback rewrites the port endpoints itself.
-  let edges: DiagramEdge[];
-  if (input.hostLayout) {
-    edges = input.hostLayout.edges.map((edge) => ({
+  // No host layout at this point (the hostLayout case already returned via
+  // spliceFromHostLayout above) — rewrite the raw IR's own port endpoints
+  // onto the placed boundary nodes.
+  const rewritePortEndpoint = (
+    nodeId: string,
+    portId: string | undefined,
+  ): { nodeId: string; portId: string | undefined } => {
+    const portNode = childModule.nodes.find((n) => n.id === nodeId && n.kind === 'port');
+    if (!portNode) {
+      return { nodeId: namespacedId(namespace, nodeId), portId };
+    }
+    const namespacedBoundaryId = namespacedId(namespace, portNode.id);
+    return { nodeId: namespacedBoundaryId, portId: 'inner' };
+  };
+
+  const edges: DiagramEdge[] = childModule.edges.map((edge) => {
+    const src = rewritePortEndpoint(edge.source, edge.sourcePort);
+    const tgt = rewritePortEndpoint(edge.target, edge.targetPort);
+    return {
       ...edge,
       id: namespacedId(namespace, edge.id),
-      source: namespacedId(namespace, edge.source),
-      target: namespacedId(namespace, edge.target),
+      source: src.nodeId,
+      target: tgt.nodeId,
+      sourcePort: src.portId,
+      targetPort: tgt.portId,
       waypoint: undefined,
       routePoints: undefined,
-    }));
-  } else {
-    const rewritePortEndpoint = (
-      nodeId: string,
-      portId: string | undefined,
-    ): { nodeId: string; portId: string | undefined } => {
-      const portNode = childModule.nodes.find((n) => n.id === nodeId && n.kind === 'port');
-      if (!portNode) {
-        return { nodeId: namespacedId(namespace, nodeId), portId };
-      }
-      const namespacedBoundaryId = namespacedId(namespace, portNode.id);
-      return { nodeId: namespacedBoundaryId, portId: 'inner' };
     };
+  });
 
-    edges = childModule.edges.map((edge) => {
-      const src = rewritePortEndpoint(edge.source, edge.sourcePort);
-      const tgt = rewritePortEndpoint(edge.target, edge.targetPort);
-      return {
-        ...edge,
-        id: namespacedId(namespace, edge.id),
-        source: src.nodeId,
-        target: tgt.nodeId,
-        sourcePort: src.portId,
-        targetPort: tgt.portId,
-        waypoint: undefined,
-        routePoints: undefined,
-      };
-    });
-  }
-
-  return assembleSpliceResult(
-    input,
-    allNodes,
-    edges,
-    expandedSize,
-    minExpandedSize,
-    boundaryNodeIdByChildPortName,
-  );
+  return assembleSpliceResult(input, allNodes, edges, expandedSize, boundaryNodeIdByChildPortName);
 }
 
 /**
- * The direct path for a fresh (no saved snapshot) expand with a host layout:
- * the frame-local standalone place-and-route is translated to the instance's
- * canvas position and namespaced, keeping every route — the standalone
- * libavoid routes between internal nodes, and the boundary-stub routes
- * libavoid computed against the placed content.
+ * The direct path for an expand with a host layout: the frame-local
+ * standalone place-and-route is translated to the instance's canvas position
+ * and namespaced, keeping every route — the standalone libavoid routes
+ * between internal nodes, and the boundary-stub routes libavoid computed
+ * against the placed content. `hostLayout.expandedSize` is used exactly as
+ * computed — no manual override to grow past or shrink back to (see
+ * SpliceResult.expandedSize).
  */
 function spliceFromHostLayout(input: SpliceInput, hostLayout: ExpandSpliceLayout): SpliceResult {
   const { namespace, instancePosition } = input;
   const ox = instancePosition.x;
   const oy = instancePosition.y;
 
-  // A saved manual frame resize (bounds without a full node snapshot — e.g.
-  // the design changed underneath the snapshot) still grows the frame; the
-  // host laid the right label column on its own computed border, so that
-  // column shifts right with the widened frame and its stub routes re-derive.
-  const expandedSize = applySavedFrameSize(hostLayout.expandedSize, input.savedLayout?.bounds);
-  const widthGrowth = expandedSize.width - hostLayout.expandedSize.width;
-
-  const shiftedBoundaryIds = new Set<string>();
   const boundaryNodeIdByChildPortName = new Map<string, string>();
   const nodes: PositionedNode[] = hostLayout.nodes.map((node) => {
     const id = namespacedId(namespace, node.id);
-    let dx = 0;
     if (node.kind === 'boundaryPort') {
       const name = node.ports[0]?.name ?? node.label;
       boundaryNodeIdByChildPortName.set(name, id);
-      if (widthGrowth > 0 && node.metadata?.boundaryPort?.outerSide === 'right') {
-        dx = widthGrowth;
-        shiftedBoundaryIds.add(id);
-      }
     }
-    return { ...node, id, position: { x: node.position.x + ox + dx, y: node.position.y + oy } };
+    return { ...node, id, position: { x: node.position.x + ox, y: node.position.y + oy } };
   });
 
-  const edges: DiagramEdge[] = hostLayout.edges.map((edge) => {
-    const id = namespacedId(namespace, edge.id);
-    const source = namespacedId(namespace, edge.source);
-    const target = namespacedId(namespace, edge.target);
-    const touchesShiftedBoundary = shiftedBoundaryIds.has(source) || shiftedBoundaryIds.has(target);
-    return {
-      ...edge,
-      id,
-      source,
-      target,
-      waypoint: undefined,
-      routePoints: touchesShiftedBoundary
-        ? undefined
-        : edge.routePoints?.map((point) => ({ x: point.x + ox, y: point.y + oy })),
-    };
-  });
+  const edges: DiagramEdge[] = hostLayout.edges.map((edge) => ({
+    ...edge,
+    id: namespacedId(namespace, edge.id),
+    source: namespacedId(namespace, edge.source),
+    target: namespacedId(namespace, edge.target),
+    waypoint: undefined,
+    routePoints: edge.routePoints?.map((point) => ({ x: point.x + ox, y: point.y + oy })),
+  }));
 
   return assembleSpliceResult(
     input,
     nodes,
     edges,
-    expandedSize,
     hostLayout.expandedSize,
     boundaryNodeIdByChildPortName,
   );
@@ -803,11 +666,9 @@ function assembleSpliceResult(
   allNodes: PositionedNode[],
   edges: DiagramEdge[],
   expandedSize: { width: number; height: number },
-  minExpandedSize: { width: number; height: number },
   boundaryNodeIdByChildPortName: Map<string, string>,
 ): SpliceResult {
   const { namespace, childModule, instancePosition } = input;
-  const internalNodes = childModule.nodes.filter((node) => node.kind !== 'port');
 
   // Recomputed here (rather than threaded through from the two callers) so
   // both splice paths agree by construction — the host layout derives its
@@ -825,9 +686,9 @@ function assembleSpliceResult(
     bottom: EXPAND_CONTENT_INSET - EXPAND_RING_PULLBACK,
   };
 
-  // The region is pure machinery now (drag-sync membership, nesting,
-  // persistence) — it's never rendered as its own frame. Its bounds are
-  // exactly the expanded node's rect.
+  // The region is pure machinery now (drag-sync membership, nesting) — it's
+  // never rendered as its own frame. Its bounds are exactly the expanded
+  // node's rect.
   const bounds = {
     x: instancePosition.x,
     y: instancePosition.y,
@@ -842,7 +703,6 @@ function assembleSpliceResult(
     parentRegionId: input.parentRegionId,
     nodeIds: allNodes.map((n) => n.id),
     bounds,
-    fixed: input.savedLayout?.fixed,
     expandedInstance: {
       instanceId: input.instanceId,
       childModuleName: childModule.name,
@@ -855,29 +715,7 @@ function assembleSpliceResult(
     nodes: allNodes,
     edges,
     expandedSize,
-    minExpandedSize,
     contentInsets,
     boundaryNodeIdByChildPortName,
-    toSavedLayout(nodes, saveBounds, fixed, instanceOrigin) {
-      const nodesById: Record<string, SavedNodeLayout> = {};
-      for (const node of nodes) {
-        const localId = node.id.startsWith(namespacedId(namespace, ''))
-          ? node.id.slice(namespacedId(namespace, '').length)
-          : undefined;
-        if (localId === undefined) continue;
-        // Only the child module's own internal (non-port) nodes are saved —
-        // boundary nodes are re-derived from the instance's current ports
-        // every time, never persisted themselves.
-        if (!internalNodes.some((n) => n.id === localId)) continue;
-        nodesById[localId] = { x: node.position.x, y: node.position.y, fixed: true };
-      }
-      return {
-        childModuleName: childModule.name,
-        nodes: nodesById,
-        bounds: saveBounds,
-        fixed,
-        instanceOrigin,
-      };
-    },
   };
 }

@@ -59,7 +59,6 @@ async function trackSplicedView(
     graph,
     layout: expandedLayout,
     view,
-    expandedSnapshots: new Map(),
   });
   trackView(page, splicedView);
 }
@@ -312,12 +311,13 @@ test.describe('expand instance in place visual', () => {
     // Re-selecting the (still-present, dimmed and enlarged) instance node
     // surfaces a "Collapse" control in the same selection toolbar "Expand"
     // used. Click inside its header strip, offset from the top-left corner
-    // rather than dead-center or right on the corner: the spliced-in child
-    // diagram now sits on top of the node's body (by design — the node is
-    // the frame) and its corner/edge resize handles sit right at its border,
-    // so either a center click or a corner click risks landing on something
-    // other than the node's own body. The node header strip, comfortably
-    // inset from both, is always clear.
+    // rather than dead-center: the spliced-in child diagram now sits on top
+    // of the node's body (by design — the node is the frame), so a center
+    // click risks landing on something other than the node's own body. The
+    // node header strip, comfortably clear of the spliced content, is always
+    // clickable (and, unlike an ordinary instance node, offers no resize
+    // handles of its own to land on instead — see NodeResizeControls's call
+    // site in HdlNode.tsx).
     const ghostBox = await ghostInstance.boundingBox();
     if (!ghostBox) throw new Error('Could not locate the dimmed "u1" instance node');
     await page.mouse.click(ghostBox.x + 30, ghostBox.y + 15);

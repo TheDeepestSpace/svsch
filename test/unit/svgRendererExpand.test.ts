@@ -108,7 +108,6 @@ describe('renderSvg with an expanded instance', () => {
       graph,
       layout,
       view: baseView,
-      expandedSnapshots: new Map(),
     });
 
     const svg = renderSvg(view, { theme: 'dark' });
@@ -139,7 +138,6 @@ describe('renderSvg with an expanded instance', () => {
       graph,
       layout,
       view: baseView,
-      expandedSnapshots: new Map(),
     });
     const svg = renderSvg(view, { theme: 'dark' });
 

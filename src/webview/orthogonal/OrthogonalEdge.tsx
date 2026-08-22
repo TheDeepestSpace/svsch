@@ -1020,49 +1020,54 @@ export function OrthogonalEdge({
           />
         ),
       )}
-      {points.slice(0, -1).map((point, index) => {
-        const next = points[index + 1];
-        const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
-        if (index === 0 || index === points.length - 2) {
-          return null;
-        }
-        return (
-          <React.Fragment key={`${id}-segment-${index}`}>
-            {hoveredSegmentIndex === index && (
+      {/* A spliced edge's route comes from the child module's own standalone
+          layout, like its nodes' positions — no segment-drag handles are
+          offered for one (isExpandSplicedEdge), mirroring how its nodes are
+          non-draggable (see expandOverlay's toFlowNode). */}
+      {!isExpandSplicedEdge &&
+        points.slice(0, -1).map((point, index) => {
+          const next = points[index + 1];
+          const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
+          if (index === 0 || index === points.length - 2) {
+            return null;
+          }
+          return (
+            <React.Fragment key={`${id}-segment-${index}`}>
+              {hoveredSegmentIndex === index && (
+                <path
+                  className="svsch-edge-segment-highlight"
+                  d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
+                />
+              )}
               <path
-                className="svsch-edge-segment-highlight"
+                key={`${id}-segment-${index}`}
+                className={`svsch-edge-segment-handle svsch-edge-segment-${orientation}`}
                 d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
-              />
-            )}
-            <path
-              key={`${id}-segment-${index}`}
-              className={`svsch-edge-segment-handle svsch-edge-segment-${orientation}`}
-              d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                setHoveredSegmentIndex(index);
-                moveSegment(event, index, false);
-              }}
-              onPointerMove={(event) => {
-                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  moveSegment(event, activeSegmentIndexRef.current, false);
-                }
-              }}
-              onPointerUp={(event) => {
-                moveSegment(event, activeSegmentIndexRef.current, true);
-                setHoveredSegmentIndex(null);
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
-              onMouseEnter={() => setHoveredSegmentIndex(index)}
-              onMouseLeave={() => {
-                if (!isDragging) {
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  setHoveredSegmentIndex(index);
+                  moveSegment(event, index, false);
+                }}
+                onPointerMove={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    moveSegment(event, activeSegmentIndexRef.current, false);
+                  }
+                }}
+                onPointerUp={(event) => {
+                  moveSegment(event, activeSegmentIndexRef.current, true);
                   setHoveredSegmentIndex(null);
-                }
-              }}
-            />
-          </React.Fragment>
-        );
-      })}
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                }}
+                onMouseEnter={() => setHoveredSegmentIndex(index)}
+                onMouseLeave={() => {
+                  if (!isDragging) {
+                    setHoveredSegmentIndex(null);
+                  }
+                }}
+              />
+            </React.Fragment>
+          );
+        })}
       {showCutButton && (
         <foreignObject
           width={110}

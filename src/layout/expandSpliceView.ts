@@ -1,5 +1,5 @@
 import type { DesignGraph, DiagramViewModel, PositionedNode } from '../ir/types';
-import type { SavedExpandedInstanceLayout, SavedLayout } from '../storage/layoutStore';
+import type { SavedLayout } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { instanceParameterRows, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
@@ -25,9 +25,8 @@ export async function applyExpandedInstances(input: {
   graph: DesignGraph;
   layout: SavedLayout;
   view: DiagramViewModel;
-  expandedSnapshots: Map<string, SavedExpandedInstanceLayout>;
 }): Promise<DiagramViewModel> {
-  const { graph, layout, view, expandedSnapshots } = input;
+  const { graph, layout, view } = input;
   const expandedFlags = layout.modules[view.moduleName]?.expanded ?? {};
   const instanceIds = Object.keys(expandedFlags).filter((id) => expandedFlags[id]);
   if (instanceIds.length === 0) {
@@ -55,7 +54,6 @@ export async function applyExpandedInstances(input: {
 
     const instanceSize = resolvedNodeDimensions(instanceNode);
     const instanceParamRows = instanceParameterRows(instanceNode);
-    const savedLayout = expandedSnapshots.get(instanceId);
 
     let hostLayout;
     try {
@@ -83,7 +81,6 @@ export async function applyExpandedInstances(input: {
       instanceParamRows,
       instancePorts: instanceNode.ports,
       childModule,
-      savedLayout,
       hostLayout,
     });
 

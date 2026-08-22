@@ -5,11 +5,7 @@ import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
 import { applyExpandedInstances } from '../layout/expandSpliceView';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
-import type {
-  SavedExpandedInstanceLayout,
-  SavedLayout,
-  SavedModuleLayout,
-} from '../storage/layoutStore';
+import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
 
 export interface RenderDiagramOptions {
   layoutFile?: string;
@@ -109,12 +105,7 @@ export async function renderModuleFromGraph(
 
   let view = await buildViewModel(graph, moduleName, layout);
   if (svschDir) {
-    const expandedSnapshots = readExpandedInstanceSnapshotsSync(
-      svschDir,
-      moduleName,
-      layout.modules[moduleName]?.expanded ?? {},
-    );
-    view = await applyExpandedInstances({ graph, layout, view, expandedSnapshots });
+    view = await applyExpandedInstances({ graph, layout, view });
   }
   return { view, layoutSource };
 }
@@ -195,46 +186,6 @@ function readLayoutForFileSync(
   }
 
   return { layout: EMPTY_LAYOUT, source: undefined, svschDir };
-}
-
-/**
- * Sync counterpart of LayoutStore.readExpandedInstanceLayout, scoped to only
- * the instances `renderModuleFromGraph` already knows are flagged expanded —
- * matches the CLI's synchronous layout-loading style (see readLayoutSync).
- */
-function readExpandedInstanceSnapshotsSync(
-  svschDir: string,
-  parentModuleName: string,
-  expandedFlags: Record<string, boolean>,
-): Map<string, SavedExpandedInstanceLayout> {
-  const snapshots = new Map<string, SavedExpandedInstanceLayout>();
-  for (const instanceId of Object.keys(expandedFlags)) {
-    if (!expandedFlags[instanceId]) continue;
-    const filePath = path.join(
-      svschDir,
-      'layouts',
-      'expanded',
-      `${encodeURIComponent(parentModuleName)}__${encodeURIComponent(instanceId)}.json`,
-    );
-    try {
-      const raw = fsSync.readFileSync(filePath, 'utf8');
-      const parsed = JSON.parse(raw) as Partial<SavedExpandedInstanceLayout>;
-      if (!parsed.childModuleName) continue;
-      snapshots.set(instanceId, {
-        ...parsed,
-        childModuleName: parsed.childModuleName,
-        nodes: parsed.nodes ?? {},
-      });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw new Error(
-          `Unable to read expanded-instance layout ${filePath}: ${(error as Error).message}`,
-          { cause: error },
-        );
-      }
-    }
-  }
-  return snapshots;
 }
 
 function readLayoutSync(layoutFile: string): SavedLayout {

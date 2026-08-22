@@ -1,11 +1,36 @@
 {
   "nodes": [
     {
-      "id": "expand:instance:top:u1::instance:leaf:u_inner",
+      "id": "expand:instance:top:u1::instance:leaf:u_a",
       "type": "hdl",
       "position": {
-        "x": 528,
-        "y": 120
+        "x": 480,
+        "y": 96
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:w",
+            "name": "w",
+            "direction": "input"
+          },
+          {
+            "id": "port:z",
+            "name": "z",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::instance:leaf:u_b",
+      "type": "hdl",
+      "position": {
+        "x": 888,
+        "y": 96
       },
       "width": 192,
       "height": 96,
@@ -49,7 +74,7 @@
       "id": "expand:instance:top:u1::port:leaf:ly",
       "type": "hdl",
       "position": {
-        "x": 744,
+        "x": 1152,
         "y": 48
       },
       "width": 48,
@@ -72,7 +97,7 @@
         "x": 360,
         "y": 24
       },
-      "width": 432,
+      "width": 840,
       "height": 216,
       "data": {
         "kind": "instance",
@@ -138,7 +163,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 792 72 L 816 72 L 888 72 L 888 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 1200 72 L 1224 72 L 1296 72 L 1296 144 L 744 144 L 744 72 L 768 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -149,20 +174,28 @@
       "path": "M 144 72 L 168 72 L 336 72 L 360 72"
     },
     {
-      "id": "expand:instance:top:u1::edge:instance:leaf:u_inner:port:leaf:ly:ly",
-      "source": "expand:instance:top:u1::instance:leaf:u_inner",
+      "id": "expand:instance:top:u1::edge:instance:leaf:u_a:instance:leaf:u_b:t1",
+      "source": "expand:instance:top:u1::instance:leaf:u_a",
+      "target": "expand:instance:top:u1::instance:leaf:u_b",
+      "sourceHandle": "port:z",
+      "targetHandle": "port:w",
+      "path": "M 672 144 L 696 144 L 864 144 L 888 144"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:instance:leaf:u_b:port:leaf:ly:ly",
+      "source": "expand:instance:top:u1::instance:leaf:u_b",
       "target": "expand:instance:top:u1::port:leaf:ly",
       "sourceHandle": "port:z",
       "targetHandle": "inner",
-      "path": "M 720 168 L 744 168 L 720 168 L 720 72 L 744 72"
+      "path": "M 1080 144 L 1104 144 L 1128 144 L 1128 72 L 1152 72"
     },
     {
-      "id": "expand:instance:top:u1::edge:port:leaf:la:instance:leaf:u_inner:la",
+      "id": "expand:instance:top:u1::edge:port:leaf:la:instance:leaf:u_a:la",
       "source": "expand:instance:top:u1::port:leaf:la",
-      "target": "expand:instance:top:u1::instance:leaf:u_inner",
+      "target": "expand:instance:top:u1::instance:leaf:u_a",
       "sourceHandle": "inner",
       "targetHandle": "port:w",
-      "path": "M 408 72 L 432 72 L 456 72 L 456 168 L 504 168 L 528 168"
+      "path": "M 408 72 L 432 72 L 456 72 L 456 144 L 480 144"
     }
   ]
 }

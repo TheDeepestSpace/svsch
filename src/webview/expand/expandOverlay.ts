@@ -74,12 +74,13 @@ function toFlowNode(node: PositionedNode, moduleName: string): HdlFlowNode {
     type: 'hdl',
     position: node.position,
     zIndex: SPLICE_NODE_Z_INDEX,
-    // Boundary-port nodes stay glued to the frame border — user-dragging
-    // them is a separate follow-up (movable port labels, issue #218), so
-    // it's disabled for now. Programmatic carries (dragging the frame moves
-    // the whole splice) still apply, since those go through onNodesChange
-    // position changes, not a drag started on the node itself.
-    draggable: node.kind === 'boundaryPort' ? false : undefined,
+    // Every spliced node — boundary port or internal content — is
+    // non-draggable: the only place a child module's own layout may be
+    // edited is that module's own standalone view (see the product decision
+    // in issue #232's PR review). Programmatic carries (dragging the frame
+    // moves the whole splice) still apply, since those go through
+    // onNodesChange position changes, not a drag started on the node itself.
+    draggable: false,
     data: { node, moduleName, arrayConnections: [] },
   };
 }
@@ -89,7 +90,6 @@ function toFlowEdge(
   moduleName: string,
   containerNodeId: string,
   contentInsets: ExpandContentInsets,
-  onRouteChange: (changes: RouteChange[], commit: boolean) => void,
 ): Edge {
   return {
     id: edge.id,
@@ -103,7 +103,11 @@ function toFlowEdge(
     data: {
       waypoint: edge.waypoint,
       routePoints: edge.routePoints,
-      onRouteChange,
+      // No onRouteChange: a spliced wire's routing, like its nodes'
+      // positions, comes from the child module's own standalone layout —
+      // OrthogonalEdge doesn't offer segment-drag handles for a
+      // namespace-prefixed edge id at all (see isExpandSplicedEdge there),
+      // so there is nothing left to wire this up to.
       edge,
       moduleName,
       isNetLeader: true,
@@ -184,7 +188,6 @@ export function applyActiveSplices(
   baseRegions: PositionedGenerateRegion[],
   splices: Map<string, ActiveSplice>,
   moduleName: string,
-  onRouteChange: (changes: RouteChange[], commit: boolean) => void,
 ): { nodes: HdlFlowNode[]; edges: Edge[]; regions: PositionedGenerateRegion[] } {
   if (splices.size === 0) {
     return { nodes: baseNodes, edges: baseEdges, regions: baseRegions };
@@ -282,7 +285,7 @@ export function applyActiveSplices(
     edges = [
       ...edges,
       ...translatedEdges.map((edge) =>
-        toFlowEdge(edge, moduleName, splice.flowInstanceId, splice.contentInsets, onRouteChange),
+        toFlowEdge(edge, moduleName, splice.flowInstanceId, splice.contentInsets),
       ),
     ];
     extraRegions.push(region);

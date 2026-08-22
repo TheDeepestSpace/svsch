@@ -238,51 +238,24 @@ describe('spliceExpandedInstance', () => {
     expect(reg.position.x).toBeGreaterThan(instancePosition.x + insets.left);
   });
 
-  // A manual frame resize persists through the snapshot's bounds (see
-  // main.tsx's ghost-resize commit / persistActiveSplices): restoring the
-  // splice grows the frame back to the saved rect, never shrinking below the
-  // content-required size.
-  describe('saved manual frame resize', () => {
-    it('grows the restored frame to the saved bounds (fallback path)', async () => {
-      const base = await spliceExpandedInstance(baseInput());
-      const savedLayout = {
-        childModuleName: 'adder',
-        nodes: { reg1: { x: 400, y: 220, fixed: true } },
-        instanceOrigin: instancePosition,
-        bounds: {
-          x: instancePosition.x,
-          y: instancePosition.y,
-          width: base.minExpandedSize.width + 240,
-          height: base.minExpandedSize.height + 120,
-        },
-      };
-      const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
-
-      expect(result.expandedSize).toEqual({
-        width: savedLayout.bounds.width,
-        height: savedLayout.bounds.height,
-      });
-      // The floor stays the content-required size, so the user can shrink
-      // the frame back down to it later.
-      expect(result.minExpandedSize.width).toBeLessThan(result.expandedSize.width);
-      // The right boundary column sits on the *enlarged* border.
-      const right = result.nodes.find((n) => n.metadata?.boundaryPort?.outerSide === 'right')!;
-      expect(right.position.x + resolvedNodeDimensions(right).width).toBe(
-        instancePosition.x + result.expandedSize.width,
-      );
-      expect(result.region.bounds.width).toBe(savedLayout.bounds.width);
+  // There is no manual frame resize left to persist (see the product
+  // decision in issue #232's PR review) — expandedSize is always freshly
+  // recomputed from the current content on every call, independent of any
+  // earlier computation, so a splice is never held at an earlier (larger)
+  // size once its content shrinks back down.
+  // eslint-disable-next-line max-len
+  it('recomputes the frame size fresh on every call — a later smaller instanceSize is not held at an earlier larger one', async () => {
+    const grown = await spliceExpandedInstance({
+      ...baseInput(),
+      instanceSize: { width: 960, height: 480 },
     });
+    expect(grown.expandedSize).toEqual({ width: 960, height: 480 });
 
-    it('never shrinks the frame below the content-required size', async () => {
-      const savedLayout = {
-        childModuleName: 'adder',
-        nodes: { reg1: { x: 400, y: 220, fixed: true } },
-        instanceOrigin: instancePosition,
-        bounds: { x: instancePosition.x, y: instancePosition.y, width: 24, height: 24 },
-      };
-      const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
-      expect(result.expandedSize).toEqual(result.minExpandedSize);
-    });
+    const shrunk = await spliceExpandedInstance(baseInput());
+    // Back to the plain content-required size — nothing carried over from
+    // the earlier, larger call.
+    expect(shrunk.expandedSize.width).toBeLessThan(grown.expandedSize.width);
+    expect(shrunk.expandedSize.height).toBeLessThan(grown.expandedSize.height);
   });
 
   // eslint-disable-next-line max-len
@@ -375,43 +348,6 @@ describe('spliceExpandedInstance', () => {
       width: result.expandedSize.width,
       height: result.expandedSize.height,
     });
-  });
-
-  // eslint-disable-next-line max-len
-  it("round-trips through toSavedLayout keyed by the child module's own (unnamespaced) node ids, boundary nodes excluded", async () => {
-    const result = await spliceExpandedInstance(baseInput());
-    const saved = result.toSavedLayout(result.nodes, result.region.bounds, true, instancePosition);
-
-    expect(saved.childModuleName).toBe('adder');
-    expect(Object.keys(saved.nodes)).toEqual(['reg1']);
-    expect(saved.instanceOrigin).toEqual(instancePosition);
-    expect(saved.fixed).toBe(true);
-  });
-
-  // eslint-disable-next-line max-len
-  it("reuses a saved snapshot verbatim when the instance hasn't moved since it was saved", async () => {
-    const savedLayout = {
-      childModuleName: 'adder',
-      nodes: { reg1: { x: 999, y: 111, fixed: true } },
-      instanceOrigin: instancePosition,
-    };
-    const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
-    const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
-    expect(reg?.position).toEqual({ x: 999, y: 111 });
-  });
-
-  // eslint-disable-next-line max-len
-  it('rigidly translates a saved snapshot when the instance has moved since it was saved', async () => {
-    const savedLayout = {
-      childModuleName: 'adder',
-      nodes: { reg1: { x: 100, y: 50, fixed: true } },
-      instanceOrigin: { x: 0, y: 0 },
-    };
-    // Instance is now at (240, 120) — 240 right, 120 down from where it was
-    // when this snapshot was saved.
-    const result = await spliceExpandedInstance({ ...baseInput(), savedLayout });
-    const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
-    expect(reg?.position).toEqual({ x: 340, y: 170 });
   });
 
   it('namespaces recursively for a nested Expand (expand-of-an-expanded-instance)', async () => {
@@ -514,93 +450,15 @@ describe('spliceExpandedInstance', () => {
       ]);
     });
 
-    // eslint-disable-next-line max-len
-    it('applies a saved manual frame enlargement on top of the host layout, carrying the right column to the wider border', async () => {
-      const withRightBoundary = {
-        ...hostLayout(),
-        nodes: [
-          ...hostLayout().nodes,
-          {
-            id: 'port:sum',
-            kind: 'boundaryPort' as const,
-            label: 'sum',
-            ports: [sumPort],
-            metadata: {
-              boundaryPort: {
-                instanceId: 'u0',
-                childModuleName: 'adder',
-                childPortId: 'port:sum',
-                outerSide: 'right' as const,
-              },
-            },
-            position: { x: 400 - 72, y: 36 },
-          },
-        ],
-        edges: [
-          ...hostLayout().edges,
-          {
-            id: 'e-reg1-sum',
-            source: 'reg1',
-            sourcePort: 'q',
-            target: 'port:sum',
-            targetPort: 'inner',
-            routePoints: [
-              { x: 300, y: 72 },
-              { x: 300, y: 44 },
-            ],
-          },
-        ],
-      };
-      const savedLayout = {
-        childModuleName: 'adder',
-        // Bounds only — no covering node snapshot, so the host layout stays
-        // authoritative for placement.
-        nodes: {},
-        instanceOrigin: instancePosition,
-        bounds: { x: instancePosition.x, y: instancePosition.y, width: 520, height: 200 },
-      };
-      const result = await spliceExpandedInstance({
-        ...baseInput(),
-        savedLayout,
-        hostLayout: withRightBoundary,
-      });
-
-      expect(result.expandedSize).toEqual({ width: 520, height: 200 });
-      expect(result.minExpandedSize).toEqual({ width: 400, height: 200 });
-      const right = result.nodes.find((n) => n.id === namespacedId('u0', 'port:sum'))!;
-      expect(right.position.x).toBe(instancePosition.x + 520 - 72);
-      // The left column doesn't move, and its host route survives.
-      const left = result.nodes.find((n) => n.id === namespacedId('u0', 'port:a'))!;
-      expect(left.position.x).toBe(instancePosition.x);
-      const leftEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-a-reg1'));
-      expect(leftEdge?.routePoints).toBeDefined();
-      // The shifted column's stub route is stale against the new border —
-      // dropped so it re-derives from the live handles.
-      const rightEdge = result.edges.find((e) => e.id === namespacedId('u0', 'e-reg1-sum'));
-      expect(rightEdge?.routePoints).toBeUndefined();
-    });
-
-    // eslint-disable-next-line max-len
-    it('lets a covering saved snapshot win over the host layout, dropping its stale routes', async () => {
-      const savedLayout = {
-        childModuleName: 'adder',
-        nodes: { reg1: { x: 999, y: 111, fixed: true } },
-        instanceOrigin: instancePosition,
-      };
-      const result = await spliceExpandedInstance({
-        ...baseInput(),
-        savedLayout,
-        hostLayout: hostLayout(),
-      });
-
-      const reg = result.nodes.find((n) => n.id === namespacedId('u0', 'reg1'));
-      expect(reg?.position).toEqual({ x: 999, y: 111 });
-      // The edge set still comes from the host layout (labels, cut stubs),
-      // but its routes are stale against the saved positions.
-      const edge = result.edges.find((e) => e.id === namespacedId('u0', 'e-a-reg1'));
-      expect(edge?.routePoints).toBeUndefined();
-      // Boundary nodes are re-derived locally in this path.
-      expect(result.nodes.some((n) => n.id === namespacedId('u0', 'port:a'))).toBe(true);
+    // The host layout is used exactly as computed — no saved/manual override
+    // exists to grow or shrink it (see the product decision in issue #232's
+    // PR review): calling with the same hostLayout twice must produce the
+    // exact same expandedSize both times.
+    it("uses the host layout's expandedSize as-is, with no override path", async () => {
+      const first = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+      const second = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+      expect(first.expandedSize).toEqual({ width: 400, height: 200 });
+      expect(second.expandedSize).toEqual(first.expandedSize);
     });
   });
 

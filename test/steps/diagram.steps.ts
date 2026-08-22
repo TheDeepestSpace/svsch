@@ -873,14 +873,13 @@ When(
   },
 );
 
-// A node inside an expanded instance's spliced content persists through a
-// separate per-instance snapshot (LayoutStore.writeExpandedInstanceLayout,
-// under .svsch/layouts/expanded/<parent>__<instance>.json), not the parent
-// module's own layout file — so this can't reuse "I move the block ... grid
-// cells", which waits for the parent module's own layout file to change
-// (see waitForLayoutChange/readExtensionLayout). dragNodeByGridCells already
-// polls the live React Flow position to convergence, which is what the
-// bounds/position assertions read too, so that's enough to wait on here.
+// Historical: a node inside an expanded instance's spliced content is no
+// longer draggable at all (see the product decision in issue #232's PR
+// review — only the child module's own standalone view may edit its layout;
+// "I try to drag the node ... inside the expanded instance by ..." below is
+// the current, locked-down-behavior step). Still referenced by a @skip
+// scenario in diagram_interaction.feature tracking a separate, still-pending
+// concern — kept so that scenario's steps keep resolving.
 When(
   'I move the node {string} inside the expanded instance by \\({int}, {int}\\) grid cells',
   async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
@@ -5113,87 +5112,104 @@ Then(
   },
 );
 
-// Reshape a wire inside the sub-diagram by dragging one of its horizontal
-// segment handles. Unlike adjustConnectionByGridCells this waits only for the
-// rendered route to change, not for the module layout file — spliced wire
-// routes deliberately live in the webview's splice cache, never in the host's
-// layout (see absorbSplicedEdgeRouteChanges).
+// Finds the spliced (namespace-prefixed) edge id between two nodes inside an
+// expanded instance — either endpoint may be a boundary-port node, whose
+// label lives in its own .hdl-boundary-port-text element that
+// findNodeIdByLabel doesn't scan, so the boundary-port finder is tried first.
+// Spliced edge ids namespace the child module's own edge ids, which don't
+// embed the namespaced node ids, so this resolves through React Flow state.
+async function findSplicedEdgeId(world: BddWorld, source: string, target: string): Promise<string> {
+  const sourceId =
+    (await findBoundaryPortNodeIdByLabel(world.webviewPage, source)) ??
+    (await findNodeIdByLabel(world.webviewPage, source));
+  const targetId =
+    (await findBoundaryPortNodeIdByLabel(world.webviewPage, target)) ??
+    (await findNodeIdByLabel(world.webviewPage, target));
+  if (!sourceId || !targetId)
+    throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
+  const edgeId: string | null = await world.webviewPage.locator('html').evaluate(
+    (_el, { s, t }) => {
+      const rf = (window as any).reactFlowInstance;
+      const found = rf
+        .getEdges()
+        .find(
+          (e: any) =>
+            e.id.startsWith('expand:') &&
+            ((e.source === s && e.target === t) || (e.source === t && e.target === s)),
+        );
+      return found?.id ?? null;
+    },
+    { s: sourceId, t: targetId },
+  );
+  if (!edgeId) throw new Error(`No spliced wire between ${source} and ${target}`);
+  return edgeId;
+}
+
+// Attempts to reshape a wire inside the sub-diagram by dragging one of its
+// horizontal segment handles — a spliced edge offers none at all (see
+// isExpandSplicedEdge in OrthogonalEdge.tsx: routing, like node positions,
+// comes from the child module's own standalone layout, not user edits made
+// inside the parent's sub-diagram view), so this notes the route beforehand
+// and, if a handle is somehow present anyway (defense in depth against a
+// partial fix), attempts the drag; "should not have rerouted" below is what
+// actually asserts nothing changed. Unlike the plain block-resize/reroute
+// helpers, this never waits for (or requires) a change.
 When(
   // eslint-disable-next-line max-len
-  'I drag a wire segment between {string} and {string} inside the expanded instance down by {int} grid cells',
+  'I try to drag a wire segment between {string} and {string} inside the expanded instance down by {int} grid cells',
   async function (this: BddWorld, source: string, target: string, cellsDown: number) {
-    // Either endpoint may be a boundary-port node, whose label lives in its
-    // own .hdl-boundary-port-text element that findNodeIdByLabel doesn't
-    // scan — try the boundary-port finder first.
-    const sourceId =
-      (await findBoundaryPortNodeIdByLabel(this.webviewPage, source)) ??
-      (await findNodeIdByLabel(this.webviewPage, source));
-    const targetId =
-      (await findBoundaryPortNodeIdByLabel(this.webviewPage, target)) ??
-      (await findNodeIdByLabel(this.webviewPage, target));
-    if (!sourceId || !targetId)
-      throw new Error(`Nodes not found: ${source}=${sourceId}, ${target}=${targetId}`);
-    // Spliced edge ids namespace the child module's own edge ids, which don't
-    // embed the namespaced node ids — resolve through React Flow state.
-    const edgeId: string | null = await this.webviewPage.locator('html').evaluate(
-      (_el, { s, t }) => {
-        const rf = (window as any).reactFlowInstance;
-        const found = rf
-          .getEdges()
-          .find(
-            (e: any) =>
-              e.id.startsWith('expand:') &&
-              ((e.source === s && e.target === t) || (e.source === t && e.target === s)),
-          );
-        return found?.id ?? null;
-      },
-      { s: sourceId, t: targetId },
-    );
-    if (!edgeId) throw new Error(`No spliced wire between ${source} and ${target}`);
-
+    const edgeId = await findSplicedEdgeId(this, source, target);
     const edgeLocator = this.webviewPage.locator(`.react-flow__edge[data-id="${edgeId}"]`);
     const before = await edgeLocator.locator('path.svsch-edge').first().getAttribute('d');
+    if (!before) throw new Error(`Route path not found for spliced wire ${source} -> ${target}`);
+    this.notedRoutes.set(routeKey(source, target), before);
+
     await edgeLocator.locator('path.svsch-edge-bridge').hover({ force: true });
     await this.workbox.waitForTimeout(200);
 
     const handles = edgeLocator.locator('path.svsch-edge-segment-horizontal');
     const handleCount = await handles.count();
-    if (handleCount === 0)
-      throw new Error(`No horizontal segment handle on spliced wire ${source} -> ${target}`);
-    let longestHandle = handles.first();
-    let bestWidth = -1;
-    for (let i = 0; i < handleCount; i += 1) {
-      const candidate = handles.nth(i);
-      const candidateBox = await candidate.boundingBox();
-      if (candidateBox && candidateBox.width > bestWidth) {
-        bestWidth = candidateBox.width;
-        longestHandle = candidate;
+    if (handleCount > 0) {
+      let longestHandle = handles.first();
+      let bestWidth = -1;
+      for (let i = 0; i < handleCount; i += 1) {
+        const candidate = handles.nth(i);
+        const candidateBox = await candidate.boundingBox();
+        if (candidateBox && candidateBox.width > bestWidth) {
+          bestWidth = candidateBox.width;
+          longestHandle = candidate;
+        }
+      }
+      const handleBox = await longestHandle.boundingBox();
+      if (handleBox) {
+        const screenPerFlow = await effectiveScreenPerFlow(this);
+        const gx = handleBox.x + handleBox.width / 2;
+        const gy = handleBox.y + handleBox.height / 2;
+        await this.workbox.mouse.move(gx, gy);
+        await this.workbox.mouse.down();
+        await this.workbox.mouse.move(gx, gy + Math.sign(cellsDown) * 3, { steps: 3 });
+        await this.workbox.mouse.move(gx, gy + cellsDown * diagramGrid.size * screenPerFlow, {
+          steps: 20,
+        });
+        await this.workbox.mouse.up();
       }
     }
-    const handleBox = await longestHandle.boundingBox();
-    if (!handleBox) throw new Error('Could not measure the segment handle');
+    await this.workbox.waitForTimeout(200);
+    await this.takeScreenshot(`Attempted to drag spliced wire ${source} -> ${target}`);
+  },
+);
 
-    const screenPerFlow = await effectiveScreenPerFlow(this);
-    const gx = handleBox.x + handleBox.width / 2;
-    const gy = handleBox.y + handleBox.height / 2;
-    await this.workbox.mouse.move(gx, gy);
-    await this.workbox.mouse.down();
-    await this.workbox.mouse.move(gx, gy + Math.sign(cellsDown) * 3, { steps: 3 });
-    await this.workbox.mouse.move(gx, gy + cellsDown * diagramGrid.size * screenPerFlow, {
-      steps: 20,
-    });
-    await this.workbox.mouse.up();
-
-    await expect
-      .poll(
-        async () => {
-          const current = await edgeLocator.locator('path.svsch-edge').first().getAttribute('d');
-          return current !== before;
-        },
-        { timeout: 5000 },
-      )
-      .toBe(true);
-    await this.takeScreenshot(`Dragged spliced wire ${source} -> ${target}`);
+Then(
+  'the wire between {string} and {string} inside the expanded instance should not have rerouted',
+  async function (this: BddWorld, source: string, target: string) {
+    const before = this.notedRoutes.get(routeKey(source, target));
+    if (!before) throw new Error(`Missing noted route for spliced wire ${source} -> ${target}`);
+    const edgeId = await findSplicedEdgeId(this, source, target);
+    const after = await this.webviewPage
+      .locator(`.react-flow__edge[data-id="${edgeId}"] path.svsch-edge`)
+      .first()
+      .getAttribute('d');
+    expect(after, `spliced wire ${source} -> ${target} should not have rerouted`).toBe(before);
   },
 );
 
@@ -5255,52 +5271,46 @@ Then(
   },
 );
 
-// Reads every per-instance splice snapshot under .svsch/layouts/expanded/ —
-// the store a manual frame resize persists through (bounds), separate from
-// the module layout files readExtensionLayout reassembles.
-async function readExpandedInstanceSnapshots(world: BddWorld): Promise<Record<string, unknown>> {
-  const dir = path.join(
-    world.workspaceDir || BddWorld.BDD_WORKSPACE,
-    '.svsch',
-    'layouts',
-    'expanded',
-  );
-  const snapshots: Record<string, unknown> = {};
-  let entries: string[];
-  try {
-    entries = await fs.promises.readdir(dir);
-  } catch {
-    return snapshots;
-  }
-  for (const entry of entries) {
-    if (!entry.endsWith('.json')) continue;
-    try {
-      snapshots[entry] = JSON.parse(await fs.promises.readFile(path.join(dir, entry), 'utf8'));
-    } catch {
-      // Mid-write; the poll loops calling this retry.
-    }
-  }
-  return snapshots;
-}
-
-// Resizes an expanded instance's frame by its right-side handle. The new
-// frame size persists through the per-instance splice snapshot's bounds
-// (never the module layout, where it would masquerade as a resize of the
-// collapsed node) — so this waits on that snapshot file, not the module
-// layout file the plain block-resize step polls.
+// Attempts to resize an expanded instance's frame by its right-side handle —
+// there is none: HdlNode renders no resize handles at all for an expand
+// ghost node (see NodeResizeControls's call site), since the frame's size is
+// always derived fresh from the child module's own current layout (see
+// splice.ts's expandedFrameSize). If the handle isn't there, this is a no-op;
+// "should have kept its noted size" below is what actually asserts nothing
+// changed (also covering a partial fix that left some handle rendered).
 When(
-  'I resize the expanded instance {string} on the right side by {int} grid cells',
+  'I try to resize the expanded instance {string} on the right side by {int} grid cells',
   async function (this: BddWorld, instanceLabel: string, cells: number) {
     const id = await findNodeIdByLabel(this.webviewPage, instanceLabel);
     if (!id) throw new Error(`Could not find expanded instance "${instanceLabel}"`);
-    const before = JSON.stringify(await readExpandedInstanceSnapshots(this));
-    await dragNodeSideByGridCells(this, id, 'right', cells);
-    await expect
-      .poll(async () => JSON.stringify(await readExpandedInstanceSnapshots(this)) !== before, {
-        timeout: 10_000,
-      })
-      .toBe(true);
-    await this.takeScreenshot(`After resizing expanded instance ${instanceLabel}`);
+    await centerViewOnNode(this, id);
+    const handle = this.webviewPage.locator(
+      `.react-flow__node[data-id="${id}"] .svsch-node-resize-right`,
+    );
+    // count() resolves immediately (no polling/waiting) unlike boundingBox(),
+    // which would otherwise time out waiting for an element that — this is
+    // the expected, locked-down state — is never going to appear.
+    if ((await handle.count()) === 0) {
+      await this.takeScreenshot(`No resize handle on expanded instance ${instanceLabel}`);
+      return;
+    }
+    const box = await handle.boundingBox();
+    if (!box) {
+      await this.takeScreenshot(`No resize handle on expanded instance ${instanceLabel}`);
+      return;
+    }
+    const zoom = await this.webviewPage
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.getViewport()?.zoom ?? 1);
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+    await this.workbox.mouse.move(startX, startY);
+    await this.workbox.mouse.down();
+    await this.workbox.mouse.move(startX + 2, startY + 2, { steps: 3 });
+    await this.workbox.mouse.move(startX + cells * diagramGrid.size * zoom, startY, { steps: 12 });
+    await this.workbox.mouse.up();
+    await this.workbox.waitForTimeout(300);
+    await this.takeScreenshot(`Attempted to resize expanded instance ${instanceLabel}`);
   },
 );
 
@@ -5361,5 +5371,86 @@ Then(
     const before = this.notedPositions.get(`boundary-port:${label}`);
     if (!pos || !before) throw new Error(`Missing position data for boundary port ${label}`);
     expect(pos, `boundary port ${label} must stay glued to the frame border`).toEqual(before);
+  },
+);
+
+// A node inside an expanded instance's spliced content is not draggable — the
+// only place its layout can be edited is the child module's own standalone
+// view (see the product decision in issue #232's PR review). Mirrors "I try
+// to drag the boundary port node": a raw drag attempt without polling for
+// convergence, since the node is expected NOT to move.
+When(
+  'I try to drag the node {string} inside the expanded instance by \\({int}, {int}\\) grid cells',
+  async function (this: BddWorld, label: string, cellsX: number, cellsY: number) {
+    const id = await findNodeIdByLabel(this.webviewPage, label);
+    if (!id) throw new Error(`Could not find node "${label}"`);
+    const screenPerFlow = await effectiveScreenPerFlow(this);
+    await rawDragNode(
+      this,
+      id,
+      cellsX * diagramGrid.size * screenPerFlow,
+      cellsY * diagramGrid.size * screenPerFlow,
+    );
+  },
+);
+
+// Plain (non-delta) "did it move at all" check — same comparison style as
+// "the cut net label attached to X should have moved", for scenarios (e.g.
+// a child module's own layout changing underneath an expanded instance of
+// it) where the exact delta isn't meaningful to assert because the spliced
+// content's placement also depends on the frame's own padding/translation,
+// not just a rigid carry of the raw delta.
+Then('the block {string} should have moved', async function (this: BddWorld, name: string) {
+  const id = await findNodeIdByLabel(this.webviewPage, name);
+  if (!id) throw new Error(`Could not find block "${name}"`);
+  const pos = await getInternalPosition(this.webviewPage, id);
+  const before = this.notedPositions.get(name);
+  if (!pos || !before) throw new Error(`Missing position data for ${name}`);
+  const distance = Math.hypot(pos.x - before.x, pos.y - before.y);
+  expect(
+    distance,
+    `expected ${name} to move from (${before.x}, ${before.y}), but it stayed there`,
+  ).toBeGreaterThan(1);
+});
+
+// Locks in the "expand instance in place" product decision that an expanded
+// frame's size is always derived from the child module's *current* layout
+// (see splice.ts's expandedFrameSize): once that layout's content grows past
+// what it needed before, the frame must grow to fit it — never held at
+// whatever size a previous computation (or, before this change, a manual
+// resize) left it at.
+Then(
+  'the block {string} should have grown to fit its new content',
+  async function (this: BddWorld, label: string) {
+    const id = await findNodeIdByLabel(this.webviewPage, label);
+    if (!id) throw new Error(`Could not find block "${label}"`);
+    const before = this.notedRegionBounds.get(label);
+    if (!before) throw new Error(`No noted bounds for block ${label}`);
+    const after = await getNodeBounds(this.webviewPage, id);
+    expect(
+      after.width > before.width || after.height > before.height,
+      `expected ${label} to grow past its noted size ${JSON.stringify(before)}, got ` +
+        JSON.stringify({ width: after.width, height: after.height }),
+    ).toBe(true);
+  },
+);
+
+// Mirror of "should have grown to fit its new content" for the shrink
+// direction — the frame is recomputed fresh every time, so it must also
+// shrink back down once the child module's content does, not stay inflated
+// by a size it happened to reach earlier.
+Then(
+  'the block {string} should have shrunk to fit its new content',
+  async function (this: BddWorld, label: string) {
+    const id = await findNodeIdByLabel(this.webviewPage, label);
+    if (!id) throw new Error(`Could not find block "${label}"`);
+    const before = this.notedRegionBounds.get(label);
+    if (!before) throw new Error(`No noted bounds for block ${label}`);
+    const after = await getNodeBounds(this.webviewPage, id);
+    expect(
+      after.width < before.width || after.height < before.height,
+      `expected ${label} to shrink below its noted size ${JSON.stringify(before)}, got ` +
+        JSON.stringify({ width: after.width, height: after.height }),
+    ).toBe(true);
   },
 );

@@ -33,12 +33,7 @@ import {
   revertCutNetLabel,
   revertNodeSizes,
 } from './layout/mergeLayout';
-import {
-  LayoutStore,
-  type SavedExpandedInstanceLayout,
-  type SavedLayout,
-  type SavedNodeLayout,
-} from './storage/layoutStore';
+import { LayoutStore, type SavedLayout } from './storage/layoutStore';
 import { renderSvg } from './cli/svgRenderer';
 import { minifySvg } from './cli/svgMinify';
 import { generateArmSpan } from './diagram/generateArmSpan';
@@ -52,12 +47,11 @@ import { instanceParameterRows, resolvedNodeDimensions } from './diagram/nodeSiz
  * see `expandedInstanceIds` on the `graph` message) proactively fetched by the
  * webview for any instance the module layout already had flagged expanded —
  * see the `expanded` field on SavedModuleLayout for why the flag and the
- * actual child IR/snapshot are split like this. */
+ * actual child IR are split like this. */
 export interface ExpandInstancePayload {
   instanceId: string;
   childModuleName: string;
   module: DesignModule;
-  savedLayout?: SavedExpandedInstanceLayout;
   /**
    * The child's standalone place-and-route result dropped into the frame
    * (see buildExpandSpliceLayout) — absent when that pipeline failed, in
@@ -135,16 +129,6 @@ type WebviewMessage =
       instanceParamRows?: number;
     }
   | { type: 'collapseInstance'; moduleName: string; instanceId: string; topLevel: boolean }
-  | {
-      type: 'saveExpandedInstanceLayout';
-      moduleName: string;
-      instanceId: string;
-      childModuleName: string;
-      nodes: Record<string, SavedNodeLayout>;
-      bounds?: { x: number; y: number; width: number; height: number };
-      fixed?: boolean;
-      instanceOrigin?: { x: number; y: number };
-    }
   | { type: 'navigateToSource'; source: SourceRange }
   | {
       type: 'navigateToRegion';
@@ -307,20 +291,6 @@ export class DiagramPanel {
     if (!store) {
       return;
     }
-    // Every instance this module currently has flagged expanded also has its
-    // own saved splice snapshot (see SavedModuleLayout.expanded /
-    // SavedExpandedInstanceLayout) — "Reset Layout" should clear those too,
-    // not just leave them as orphaned files a future re-expand of the same
-    // instance would silently pick back up.
-    const moduleLayout =
-      this.layout.modules[this.currentModule] ?? (await store.readModuleLayout(this.currentModule));
-    const expandedInstanceIds = Object.keys(moduleLayout.expanded ?? {});
-    await Promise.all(
-      expandedInstanceIds.map((instanceId) =>
-        store.resetExpandedInstanceLayout(this.currentModule!, instanceId),
-      ),
-    );
-
     await store.resetModuleLayout(this.currentModule);
     const { [this.currentModule]: _removed, ...remainingModules } = this.layout.modules;
     this.layout = { version: 1, modules: remainingModules };
@@ -439,18 +409,6 @@ export class DiagramPanel {
     }
     if (message.type === 'collapseInstance') {
       await this.collapseInstance(message.moduleName, message.instanceId, message.topLevel);
-      return;
-    }
-    if (message.type === 'saveExpandedInstanceLayout') {
-      await this.saveExpandedInstanceLayout(
-        message.moduleName,
-        message.instanceId,
-        message.childModuleName,
-        message.nodes,
-        message.bounds,
-        message.fixed,
-        message.instanceOrigin,
-      );
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -952,12 +910,13 @@ export class DiagramPanel {
   }
 
   // The host hands the webview the child module's own IR/graph (the same
-  // data `openModule` already uses), any previously-saved splice snapshot
-  // for this specific instance, and — the actual layout work — the child's
-  // standalone place-and-route result dropped into the frame with its
-  // boundary ports wired up by libavoid (see buildExpandSpliceLayout). It
-  // also persists the `expanded` flag so a reopened module knows to
-  // re-request this on load. Turning the frame-local layout into canvas
+  // data `openModule` already uses) and — the actual layout work — the
+  // child's standalone place-and-route result dropped into the frame with
+  // its boundary ports wired up by libavoid (see buildExpandSpliceLayout),
+  // always freshly derived from the child module's *current* SavedModuleLayout
+  // (this.layout, already in-memory and current — no separate snapshot to go
+  // stale). It also persists the `expanded` flag so a reopened module knows
+  // to re-request this on load. Turning the frame-local layout into canvas
   // nodes/edges (namespacing, translation, drag-sync) stays client-side in
   // webview/expand.
   private async requestExpandInstance(
@@ -996,16 +955,12 @@ export class DiagramPanel {
     // whichever module is opened *directly* — a nested Expand (inside an
     // already-expanded instance) must not flag the intermediate child module
     // itself, or opening that module standalone later would incorrectly
-    // auto-expand it too. Nested splices still get their own saved layout
-    // snapshot either way (see readExpandedInstanceLayout below), just not
-    // the auto-restore-on-open flag.
+    // auto-expand it too.
     if (topLevel) {
       await this.ensureModuleLayout(store, moduleName);
       this.layout = setInstanceExpanded(this.layout, moduleName, instanceId, true);
       await this.persistModuleLayout(store, moduleName);
     }
-
-    const savedLayout = await store.readExpandedInstanceLayout(moduleName, instanceId);
 
     // The child's normal standalone place-and-route, dropped into the frame
     // with the boundary ports wired up by libavoid. Best-effort: on any
@@ -1043,14 +998,11 @@ export class DiagramPanel {
       const moduleView = await buildViewModel(this.graph, moduleName, this.layout);
       const positionedInstance = moduleView.nodes.find((node) => node.id === instanceId);
       if (positionedInstance) {
-        // A saved manual frame enlargement grows the restored frame past the
-        // content-computed size (see applySavedFrameSize in webview/expand) —
-        // push siblings clear of the size that will actually render.
         const expandedRect = {
           x: positionedInstance.position.x,
           y: positionedInstance.position.y,
-          width: Math.max(spliceLayout.expandedSize.width, savedLayout?.bounds?.width ?? 0),
-          height: Math.max(spliceLayout.expandedSize.height, savedLayout?.bounds?.height ?? 0),
+          width: spliceLayout.expandedSize.width,
+          height: spliceLayout.expandedSize.height,
         };
         const moved = pushNodesClearOfExpandedInstance(moduleView.nodes, instanceId, expandedRect);
         if (moved.length > 0) {
@@ -1065,7 +1017,6 @@ export class DiagramPanel {
       instanceId,
       childModuleName,
       module: childModule,
-      savedLayout,
       spliceLayout,
     };
     await this.panel.webview.postMessage({ type: 'expandInstanceData', moduleName, payload });
@@ -1086,28 +1037,6 @@ export class DiagramPanel {
     await this.ensureModuleLayout(store, moduleName);
     this.layout = setInstanceExpanded(this.layout, moduleName, instanceId, false);
     await this.persistModuleLayout(store, moduleName);
-  }
-
-  private async saveExpandedInstanceLayout(
-    moduleName: string,
-    instanceId: string,
-    childModuleName: string,
-    nodes: Record<string, SavedNodeLayout>,
-    bounds?: { x: number; y: number; width: number; height: number },
-    fixed?: boolean,
-    instanceOrigin?: { x: number; y: number },
-  ): Promise<void> {
-    const store = this.getStore();
-    if (!store) {
-      return;
-    }
-    await store.writeExpandedInstanceLayout(moduleName, instanceId, {
-      childModuleName,
-      nodes,
-      bounds,
-      fixed,
-      instanceOrigin,
-    });
   }
 
   private postView(): Promise<void> {

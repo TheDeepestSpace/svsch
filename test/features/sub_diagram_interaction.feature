@@ -1,13 +1,17 @@
 Feature: Sub-diagram interaction
   Interacting with the sub-diagram spliced inside an expanded instance
-  ("Expand instance in place", issue #232). Mirrors the applicable basics of
-  diagram_interaction.feature in the sub-diagram context: node movement, wire
-  reshaping and the containment invariant (nothing inside the expanded module
-  may escape its border), plus how top-level drag-selection and Auto Layout
-  behave while an instance is expanded. Scenarios that depend on behavior
-  tracked by follow-up issues are stubbed here with @skip and a reference.
+  ("Expand instance in place", issue #232). The spliced content is read-only:
+  its layout — node positions and wire routes — always comes from the child
+  module's own standalone view, the only place it can be edited, and the
+  expanded frame's size always follows that layout as-is (never a manual
+  override). This mirrors the applicable basics of diagram_interaction.feature
+  in the sub-diagram context: the containment invariant (nothing inside the
+  expanded module may escape its border), plus how top-level drag-selection
+  and Auto Layout behave while an instance is expanded. Scenarios that depend
+  on behavior tracked by follow-up issues are stubbed here with @skip and a
+  reference.
 
-  Scenario: Moving a node inside the sub-diagram moves it and every wire stays inside the frame
+  Scenario: A node inside the sub-diagram cannot be moved
     Given I have a file "top.sv" in my workspace:
       """
       module inner(input logic w, output logic z);
@@ -27,11 +31,11 @@ Feature: Sub-diagram interaction
     And I click the "Expand" button
     Then I should see an instance node "u_inner" of module "inner"
     When I note the position of the block "u_inner"
-    And I move the node "u_inner" inside the expanded instance by (2, 1) grid cells
-    Then the block "u_inner" should have moved by (2, 1) grid cells
+    And I try to drag the node "u_inner" inside the expanded instance by (2, 1) grid cells
+    Then the block "u_inner" should not have moved
     And all spliced content should stay inside the expanded instance "u1"
 
-  Scenario: A moved sub-diagram node keeps its position across a diagram reload
+  Scenario: A wire inside the sub-diagram cannot be rerouted
     Given I have a file "top.sv" in my workspace:
       """
       module inner(input logic w, output logic z);
@@ -50,33 +54,9 @@ Feature: Sub-diagram interaction
     And I click to select the block "u1"
     And I click the "Expand" button
     Then I should see an instance node "u_inner" of module "inner"
-    When I move the node "u_inner" inside the expanded instance by (2, 1) grid cells
-    And I note the position of the block "u_inner"
-    And I close and reopen the diagram
-    Then I should see a boundary port node named "la"
-    And the block "u_inner" should not have moved
-
-  Scenario: Dragging a wire inside the sub-diagram reroutes it but it never escapes the frame
-    Given I have a file "top.sv" in my workspace:
-      """
-      module inner(input logic w, output logic z);
-        assign z = w;
-      endmodule
-
-      module leaf(input logic la, output logic ly);
-        inner u_inner(.w(la), .z(ly));
-      endmodule
-
-      module top(input logic a, output logic y);
-        leaf u1(.la(a), .ly(y));
-      endmodule
-      """
-    When I open the "top" module in SVSCH
-    And I click to select the block "u1"
-    And I click the "Expand" button
-    Then I should see an instance node "u_inner" of module "inner"
-    When I drag a wire segment between "la" and "u_inner" inside the expanded instance down by 6 grid cells
-    Then all spliced content should stay inside the expanded instance "u1"
+    When I try to drag a wire segment between "la" and "u_inner" inside the expanded instance down by 6 grid cells
+    Then the wire between "la" and "u_inner" inside the expanded instance should not have rerouted
+    And all spliced content should stay inside the expanded instance "u1"
 
   # The child spans several internal nodes so its unfolded diagram has real
   # whitespace between them — the canvas the pointer is supposed to fall
@@ -234,11 +214,11 @@ Feature: Sub-diagram interaction
     And no top-level block should overlap the expanded instance "u1"
     And all spliced content should stay inside the expanded instance "u1"
 
-  # A manual enlargement of the expanded frame (dragging its right/bottom
-  # resize handles) must survive both a same-session reattachment (any commit
-  # rebuilds the overlay from the splice cache) and a full reload (via the
-  # per-instance snapshot's saved bounds).
-  Scenario: A manually enlarged expanded frame keeps its size across a move and a reload
+  # The expanded frame's size always comes from the child module's own
+  # current layout (see splice.ts's expandedFrameSize) — there is no manual
+  # resize affordance on it at all (see NodeResizeControls's call site in
+  # HdlNode.tsx, which skips rendering resize handles for an expand ghost).
+  Scenario: The expanded frame cannot be manually resized
     Given I have a file "top.sv" in my workspace:
       """
       module inner(input logic w, output logic z);
@@ -258,14 +238,9 @@ Feature: Sub-diagram interaction
     And I click the "Expand" button
     Then I should see a boundary port node named "la"
     And the expanded instance "u1" should show its inner content border
-    When I resize the expanded instance "u1" on the right side by 4 grid cells
-    And I note the bounds of the block "u1"
-    Then all spliced content should stay inside the expanded instance "u1"
-    When I move the expanded instance "u1" by (2, 1) grid cells
+    When I note the bounds of the block "u1"
+    And I try to resize the expanded instance "u1" on the right side by 4 grid cells
     Then the block "u1" should have kept its noted size
-    When I close and reopen the diagram
-    Then I should see a boundary port node named "la"
-    And the block "u1" should have kept its noted size
 
   # Boundary port nodes stay glued to the frame border — user-dragging them
   # is the movable-port-labels follow-up (#218), disabled until that lands.
@@ -319,13 +294,19 @@ Feature: Sub-diagram interaction
     And I click the "Expand" button
     Then I should see an instance node "u_inner" of module "inner"
 
-  # TODO(#241): reshaped sub-diagram wire routes currently live only in the
-  # webview's splice cache — they survive splice reattachments within a
-  # session but are not part of SavedExpandedInstanceLayout, so a reload
-  # resets them to the default route. Lock persistence in here once #241
-  # adds them to the per-instance snapshot.
-  @skip
-  Scenario: A reshaped sub-diagram wire keeps its route across a diagram reload
+  # Locks in the product decision: only a child module's own standalone view
+  # can edit its layout, and every expanded instance of it must reflect
+  # whatever that layout currently is — growing or shrinking the frame to
+  # fit — the next time the diagram containing the expanded instance is shown
+  # (this app has a single diagram panel; "shown again" is exactly navigating
+  # back to it via the module dropdown/double-click, or a reload). Growing
+  # and shrinking are both exercised here by moving the same node out and
+  # back. Needs two internal nodes wired to each other (not just port-to-port
+  # through a single node): with only one node whose edges both touch the
+  # module's own ports, the frame's content-relative translation and size are
+  # translation-invariant in that node's own position, so moving it changes
+  # nothing observable — see u_a/u_b's internal net "t1" below.
+  Scenario: An expanded instance's sub-diagram and frame follow the child module's own layout
     Given I have a file "top.sv" in my workspace:
       """
       module inner(input logic w, output logic z);
@@ -333,7 +314,9 @@ Feature: Sub-diagram interaction
       endmodule
 
       module leaf(input logic la, output logic ly);
-        inner u_inner(.w(la), .z(ly));
+        logic t1;
+        inner u_a(.w(la), .z(t1));
+        inner u_b(.w(t1), .z(ly));
       endmodule
 
       module top(input logic a, output logic y);
@@ -343,4 +326,20 @@ Feature: Sub-diagram interaction
     When I open the "top" module in SVSCH
     And I click to select the block "u1"
     And I click the "Expand" button
-    Then I should see an instance node "u_inner" of module "inner"
+    Then I should see an instance node "u_a" of module "inner"
+    When I note the position of the block "u_b"
+    And I note the bounds of the block "u1"
+    # Edit the child module's own layout directly — the only place it can be
+    # edited (see the header comment) — then navigate back to "top" the same
+    # way a user would (the module dropdown, mirroring double-clicking the
+    # instance to open its module and back).
+    And I select module "leaf" from the dropdown
+    And I move the block "u_b" by (10, 6) grid cells
+    And I select module "top" from the dropdown
+    Then the block "u_b" should have moved
+    And the block "u1" should have grown to fit its new content
+    When I note the bounds of the block "u1"
+    And I select module "leaf" from the dropdown
+    And I move the block "u_b" by (-10, -6) grid cells
+    And I select module "top" from the dropdown
+    Then the block "u1" should have shrunk to fit its new content

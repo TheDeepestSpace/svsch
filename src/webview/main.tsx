@@ -66,7 +66,6 @@ import {
   namespacedId,
   spliceExpandedInstance,
   type ExpandSpliceLayout,
-  type SavedExpandedInstanceLayout,
   type SpliceInput,
 } from './expand/splice';
 import {
@@ -98,7 +97,6 @@ interface ExpandInstancePayload {
   instanceId: string;
   childModuleName: string;
   module: DesignModule;
-  savedLayout?: SavedExpandedInstanceLayout;
   spliceLayout?: ExpandSpliceLayout;
 }
 
@@ -225,6 +223,11 @@ function DiagramApp(): React.ReactElement {
   // contents) whenever the ref's contents change outside of a `view` update
   // — e.g. right after a new splice is computed, or on collapse.
   const [spliceVersion, setSpliceVersion] = useState(0);
+  // The module name spliceMapRef's current contents were computed against —
+  // see the "graph" message handler below, which clears the whole cache on a
+  // real navigation to a different module (not just an unrelated refresh of
+  // the same one).
+  const spliceMapModuleNameRef = useRef<string | undefined>(undefined);
   const pendingSpliceRequestsRef = useRef<Map<string, PendingExpandRequest>>(new Map());
   const onNodesChange = useCallback(
     (changes: any[]) => {
@@ -633,6 +636,29 @@ function DiagramApp(): React.ReactElement {
     ) => {
       if (event.data.type === 'graph') {
         const view = event.data.view;
+        // An expanded instance's spliced content must always reflect the
+        // child module's *current* standalone layout (see the product
+        // decision in issue #232's PR review) — a splice cached from before
+        // this navigation may be stale if the user just edited that child
+        // module's own layout directly (e.g. double-clicked into it, moved a
+        // node, and navigated back). Since this app has a single diagram
+        // panel, "navigated back" is exactly a graph message whose
+        // moduleName differs from the one spliceMapRef's contents were last
+        // computed against — clear the whole cache so every expanded
+        // instance re-fetches fresh (cheap: one host round-trip each,
+        // reusing already-in-memory layout data) rather than silently
+        // reattaching outdated content. An unrelated refresh of the *same*
+        // module (e.g. another edit) must NOT clear it, or every such splice
+        // would re-fetch on every keystroke.
+        if (
+          spliceMapModuleNameRef.current !== undefined &&
+          spliceMapModuleNameRef.current !== view.moduleName &&
+          spliceMapRef.current.size > 0
+        ) {
+          spliceMapRef.current.clear();
+          setSpliceVersion((v) => v + 1);
+        }
+        spliceMapModuleNameRef.current = view.moduleName;
         setView(view);
         setModules(event.data.modules);
         setExpandedInstanceIds(event.data.expandedInstanceIds ?? []);
@@ -674,7 +700,6 @@ function DiagramApp(): React.ReactElement {
           instanceParamRows: pending.instanceParamRows,
           instancePorts: pending.instancePorts,
           childModule: payload.module,
-          savedLayout: payload.savedLayout,
           hostLayout: payload.spliceLayout,
         };
         void spliceExpandedInstance(spliceInput).then((result) => {
@@ -1075,7 +1100,6 @@ function DiagramApp(): React.ReactElement {
       baseRegions,
       spliceMapRef.current,
       view.moduleName,
-      handleRouteChange,
     );
     setNodes(merged.nodes);
     setRegions(merged.regions);
@@ -1241,7 +1265,6 @@ function DiagramApp(): React.ReactElement {
       });
       if (spliceMapRef.current.size > 0) {
         syncSpliceCache(spliceMapRef.current, allFlowNodes, expandedRegions, reactFlow.getEdges());
-        persistActiveSplices(spliceMapRef.current);
       }
 
       if (!state || state.originalRoutes.size === 0) return;
@@ -1275,11 +1298,6 @@ function DiagramApp(): React.ReactElement {
       if (!node) return;
       const canonical = diagramNodeDimensions(node.data.node);
       const resolved = resolvedNodeDimensions(node.data.node);
-      // Resizing an expanded instance's frame: the floor is the splice's
-      // content-required size (never the collapsed canonical size — the frame
-      // must always contain its spliced content), and the right-side boundary
-      // column follows the moving right border.
-      const splice = [...spliceMapRef.current.values()].find((s) => s.flowInstanceId === nodeId);
       nodeResizeDragRef.current = {
         nodeId,
         handle,
@@ -1288,8 +1306,8 @@ function DiagramApp(): React.ReactElement {
         startPosition: { ...node.position },
         startWidth: resolved.width,
         startHeight: resolved.height,
-        canonicalWidth: splice ? splice.minExpandedSize.width : canonical.width,
-        canonicalHeight: splice ? splice.minExpandedSize.height : canonical.height,
+        canonicalWidth: canonical.width,
+        canonicalHeight: canonical.height,
         startNodes: nodes.map((n) => ({
           ...n,
           position: { ...n.position },
@@ -1299,20 +1317,6 @@ function DiagramApp(): React.ReactElement {
           ...region,
           bounds: { ...region.bounds },
         })),
-        expandFrame: splice
-          ? {
-              namespace: splice.namespace,
-              rightBoundaryStartPositions: new Map(
-                nodes
-                  .filter(
-                    (n) =>
-                      splice.region.nodeIds.includes(n.id) &&
-                      n.data.node.metadata?.boundaryPort?.outerSide === 'right',
-                  )
-                  .map((n) => [n.id, { ...n.position }]),
-              ),
-            }
-          : undefined,
       };
     },
     [nodes],
@@ -1345,46 +1349,12 @@ function DiagramApp(): React.ReactElement {
 
       if (!view) return;
 
-      // Committing a resize of an expanded instance's frame: the new size
-      // lives in the splice cache (dimAsExpandGhost re-applies it on every
-      // reattachment, so it survives unrelated view refreshes) and persists
-      // through the splice's own snapshot bounds below — never through the
-      // module layout, where it would masquerade as a manual resize of the
-      // collapsed node. Stub routes of the carried right boundary column are
-      // cleared so they re-derive against the new geometry.
-      if (drag.expandFrame) {
-        const splice = spliceMapRef.current.get(drag.expandFrame.namespace);
-        const resized = update.nodes.find((n) => n.id === drag.nodeId);
-        if (splice && resized) {
-          const size = resolvedNodeDimensions(resized.data.node);
-          const widthChanged = size.width !== splice.expandedSize.width;
-          splice.expandedSize = { width: size.width, height: size.height };
-          if (widthChanged && drag.expandFrame.rightBoundaryStartPositions.size > 0) {
-            const shiftedIds = new Set(drag.expandFrame.rightBoundaryStartPositions.keys());
-            const rerouteEdgeIds = new Set(
-              splice.edges
-                .filter((edge) => shiftedIds.has(edge.source) || shiftedIds.has(edge.target))
-                .map((edge) => edge.id),
-            );
-            splice.edges = splice.edges.map((edge) =>
-              rerouteEdgeIds.has(edge.id)
-                ? { ...edge, routePoints: undefined, waypoint: undefined }
-                : edge,
-            );
-            // The live flow edges keep the stale routes until the next
-            // reattachment — clear them now so the stubs re-derive against
-            // the shifted boundary column immediately.
-            setEdges((current) =>
-              current.map((edge) =>
-                rerouteEdgeIds.has(edge.id)
-                  ? { ...edge, data: { ...edge.data, routePoints: undefined, waypoint: undefined } }
-                  : edge,
-              ),
-            );
-          }
-        }
-      }
-
+      // This commit can never be resizing an expanded instance's frame —
+      // HdlNode doesn't render resize handles for one (see
+      // NodeResizeControls's call site) — so it's always a plain top-level
+      // instance/register resize; syncSpliceCache below only re-syncs any
+      // *other* active splices' bookkeeping (region bounds etc.) that this
+      // node's own regrow may have shifted.
       const positioned = flowNodesToPositioned(update.nodes, new Set([drag.nodeId]));
       vscode.postMessage({
         type: 'layoutChanged',
@@ -1394,7 +1364,6 @@ function DiagramApp(): React.ReactElement {
       });
       if (spliceMapRef.current.size > 0) {
         syncSpliceCache(spliceMapRef.current, update.nodes, update.regions);
-        persistActiveSplices(spliceMapRef.current);
       }
 
       // React Flow's own dimension tracking (node.measured, read by
@@ -1675,21 +1644,11 @@ interface NodeResizeDragState {
   startWidth: number;
   startHeight: number;
   // Grow-only floor — this node's canonical auto-fit size, independent of any
-  // override already in effect at drag start. For an expanded instance's
-  // frame this is the splice's content-required size instead (see
-  // startNodeResize), so the frame can never shrink into its own content.
+  // override already in effect at drag start.
   canonicalWidth: number;
   canonicalHeight: number;
   startNodes: HdlFlowNode[];
   startRegions: PositionedGenerateRegion[];
-  // Present when the resized node is an expanded instance's frame (ghost):
-  // the right-side boundary-port nodes stay glued to the moving right border
-  // during the drag, and the commit writes the new size into the splice
-  // cache so it survives reattachments and persists (issue #232 follow-up).
-  expandFrame?: {
-    namespace: string;
-    rightBoundaryStartPositions: Map<string, { x: number; y: number }>;
-  };
 }
 
 // Pure geometry step for a node-resize drag: same shape as applyRegionDrag's
@@ -1706,39 +1665,21 @@ function applyNodeResizeDrag(
   const dy = snapDelta((clientY - drag.startClientY) / Math.max(zoom, 0.01));
   const { position, width, height } = resizeNodeBounds(drag, dx, dy);
   const grid = diagramSizing.gridSize;
-  // An expanded frame's right-side boundary column is glued to the right
-  // border — carry it along as the border moves (the origin never moves:
-  // ghost frames only expose right/bottom handles, see NodeResizeControls).
-  const borderDx = drag.expandFrame ? width - drag.startWidth : 0;
 
   const nodes = drag.startNodes.map((node) => {
-    if (node.id === drag.nodeId) {
-      return {
-        ...node,
-        position,
-        data: {
-          ...node.data,
-          node: {
-            ...node.data.node,
-            position,
-            sizeOverride: { width: width / grid, height: height / grid },
-          },
+    if (node.id !== drag.nodeId) return node;
+    return {
+      ...node,
+      position,
+      data: {
+        ...node.data,
+        node: {
+          ...node.data.node,
+          position,
+          sizeOverride: { width: width / grid, height: height / grid },
         },
-      };
-    }
-    const boundaryStart = drag.expandFrame?.rightBoundaryStartPositions.get(node.id);
-    if (boundaryStart && borderDx !== 0) {
-      const boundaryPosition = { x: boundaryStart.x + borderDx, y: boundaryStart.y };
-      return {
-        ...node,
-        position: boundaryPosition,
-        data: {
-          ...node.data,
-          node: { ...node.data.node, position: boundaryPosition },
-        },
-      };
-    }
-    return node;
+      },
+    };
   });
 
   return {
@@ -1926,7 +1867,6 @@ function GenerateRegionOverlay({
 
       if (spliceMapRef.current.size > 0) {
         syncSpliceCache(spliceMapRef.current, update.nodes, fixedRegions);
-        persistActiveSplices(spliceMapRef.current);
       }
 
       if (drag.kind === 'resize') {
@@ -2578,9 +2518,9 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
 // nodes/regions state the rest of the app already reads. The extension host
 // has never heard of these ids — every message that hands a `nodes`/
 // `regions` payload back to it (layoutChanged, relayoutSelection, cutNet(s),
-// edgeRoutesChanged, ...) must strip them first; spliced content instead
-// gets its own dedicated `saveExpandedInstanceLayout` message (see
-// persistActiveSplices).
+// edgeRoutesChanged, ...) must strip them first. Spliced content itself is
+// never separately persisted (see splice.ts's SpliceResult doc) — it is
+// always re-derived from the child module's own standalone layout.
 function stripExpandSplices(
   nodes: PositionedNode[],
   splices: Map<string, ActiveSplice>,
@@ -2634,34 +2574,6 @@ function deselectSplicedContent(
     });
     return changed ? next : current;
   });
-}
-
-// Persists every currently-active splice's own snapshot (separate from —
-// and posted independently of — the enclosing module's ordinary
-// layoutChanged message; see issue #232 decision 5). Call after
-// syncSpliceCache so `splice.nodes`/`region`/`anchorInstancePosition` are
-// already current. Cheap enough to call unconditionally after any commit
-// that might have touched expanded content — writes are per-instance small
-// JSON files, not debounced against each other.
-function persistActiveSplices(splices: Map<string, ActiveSplice>): void {
-  for (const splice of splices.values()) {
-    const saved = splice.toSavedLayout(
-      splice.nodes,
-      splice.region.bounds,
-      true,
-      splice.anchorInstancePosition,
-    );
-    vscode.postMessage({
-      type: 'saveExpandedInstanceLayout',
-      moduleName: splice.parentModuleName,
-      instanceId: splice.instanceId,
-      childModuleName: saved.childModuleName,
-      nodes: saved.nodes,
-      bounds: saved.bounds,
-      fixed: saved.fixed,
-      instanceOrigin: saved.instanceOrigin,
-    });
-  }
 }
 
 function mergeDraggedFlowNodes(nodes: HdlFlowNode[], draggedNodes: HdlFlowNode[]): HdlFlowNode[] {

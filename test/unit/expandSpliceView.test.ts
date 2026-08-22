@@ -102,7 +102,6 @@ describe('applyExpandedInstances', () => {
       graph,
       layout,
       view,
-      expandedSnapshots: new Map(),
     });
     expect(result).toBe(view);
   });
@@ -114,7 +113,6 @@ describe('applyExpandedInstances', () => {
       graph,
       layout,
       view,
-      expandedSnapshots: new Map(),
     });
 
     const boundaryNodes = result.nodes.filter((node) => node.kind === 'boundaryPort');
@@ -145,7 +143,6 @@ describe('applyExpandedInstances', () => {
       graph,
       layout,
       view,
-      expandedSnapshots: new Map(),
     });
 
     const ghost = result.nodes.find((node) => node.id === 'u1')!;
@@ -162,7 +159,6 @@ describe('applyExpandedInstances', () => {
       graph,
       layout,
       view,
-      expandedSnapshots: new Map(),
     });
 
     const inbound = result.edges.find((edge) => edge.id === 'e-top-a-u1')!;

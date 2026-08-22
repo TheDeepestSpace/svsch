@@ -1217,9 +1217,12 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
         <div className="hdl-node-selection-rect" aria-hidden="true" />
       )}
       {data.expandContentInsets && <ExpandGrabBands insets={data.expandContentInsets} />}
-      {node.kind === 'instance' && (
-        <NodeResizeControls nodeId={id} growOnlyCorner={Boolean(data.expandContentInsets)} />
-      )}
+      {/* An expanded instance's frame (data.expandContentInsets set — see
+          expandOverlay's dimAsExpandGhost) offers no resize handles at all:
+          its size is always derived fresh from the child module's own
+          current layout (see splice.ts's expandedFrameSize), never a manual
+          override (see the product decision in issue #232's PR review). */}
+      {node.kind === 'instance' && !data.expandContentInsets && <NodeResizeControls nodeId={id} />}
       {warningIcon}
     </button>
   );
@@ -1300,24 +1303,14 @@ const RESIZE_HANDLES: NodeResizeHandle[] = [
 // Edge/corner grow-only resize hit-zones shared by the instance and register
 // branches above. The drag itself is driven from DiagramApp (main.tsx) — see
 // startNodeResize on InteractionContext. Reverting a resize lives with the
-// other selected-block actions in NodeSelectionToolbar. `growOnlyCorner`
-// (an expanded instance's frame) offers only the right/bottom handles: the
-// frame's origin is the anchor its spliced content and boundary columns are
-// placed from, so left/top resizes (which move the origin) aren't supported.
-function NodeResizeControls({
-  nodeId,
-  growOnlyCorner = false,
-}: {
-  nodeId: string;
-  growOnlyCorner?: boolean;
-}): React.ReactElement {
+// other selected-block actions in NodeSelectionToolbar. Never rendered for an
+// expanded instance's frame (see its call site above) — that size is always
+// derived from the child module's own layout, not manually resizable.
+function NodeResizeControls({ nodeId }: { nodeId: string }): React.ReactElement {
   const { startNodeResize } = useContext(InteractionContext);
-  const handles = growOnlyCorner
-    ? RESIZE_HANDLES.filter((handle) => ['right', 'bottom', 'bottom-right'].includes(handle))
-    : RESIZE_HANDLES;
   return (
     <React.Fragment>
-      {handles.map((handle) => (
+      {RESIZE_HANDLES.map((handle) => (
         <div
           key={handle}
           className={`nodrag svsch-node-resize-handle svsch-node-resize-${handle}`}
