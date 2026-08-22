@@ -189,6 +189,99 @@ async function expectSplicedContentInsideFrame(page: Page, instanceId: string): 
   expect(violations, 'spliced content escaping the expanded frame').toEqual([]);
 }
 
+// Marquee-selects every top-level node, clicks the selection toolbar's
+// "Auto Layout", then replays the extension host's own role for that
+// request (the same merge + build + re-anchor sequence
+// diagramPanel.relayoutSelection runs) and posts the resulting view back.
+// Used before screenshotting so the baseline shows a settled, non-overlapping
+// layout rather than whatever raw splice/first-open placement fell out.
+async function runManualAutoLayout(
+  page: Page,
+  graph: DesignGraph,
+  layout: SavedLayout,
+  view: DiagramViewModel,
+): Promise<{ hostLayout: SavedLayout; finalView: DiagramViewModel }> {
+  const clip = await paddedAllNodesClip(page);
+  const paneBox = await page.locator('.react-flow__pane').boundingBox();
+  if (!paneBox) throw new Error('No React Flow pane to drag-select on');
+  const startX = Math.max(clip.x, paneBox.x + 2);
+  const startY = Math.max(clip.y, paneBox.y + 2);
+  const endX = Math.min(clip.x + clip.width, paneBox.x + paneBox.width - 2);
+  const endY = Math.min(clip.y + clip.height, paneBox.y + paneBox.height - 2);
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
+  await page.mouse.move(endX, endY, { steps: 8 });
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as any).reactFlowInstance.getNodes().filter((n: any) => n.selected).length,
+      ),
+    )
+    .toBeGreaterThan(1);
+
+  const autoLayoutButton = page.locator('.svsch-selection-toolbar button', {
+    hasText: 'Auto Layout',
+  });
+  await expect(autoLayoutButton).toBeVisible();
+  await autoLayoutButton.click();
+  await expect
+    .poll(async () =>
+      (await capturedMessages(page)).some((message: any) => message.type === 'relayoutSelection'),
+    )
+    .toBe(true);
+  const relayout = (await capturedMessages(page)).find(
+    (message: any) => message.type === 'relayoutSelection',
+  );
+
+  const designModule = graph.modules[view.moduleName];
+  const selected = new Set<string>(relayout.nodeIds);
+  const centroid = (nodes: PositionedNode[]) => {
+    const inSelection = nodes.filter((node) => selected.has(node.id));
+    if (inSelection.length === 0) return undefined;
+    return {
+      x: inSelection.reduce((sum, node) => sum + node.position.x, 0) / inSelection.length,
+      y: inSelection.reduce((sum, node) => sum + node.position.y, 0) / inSelection.length,
+    };
+  };
+  let hostLayout = mergeRelayoutSelection(
+    layout,
+    view.moduleName,
+    relayout.nodeIds,
+    relayout.nodes,
+    designModule,
+  );
+  const originalCentroid = centroid(relayout.nodes);
+  const relaidView = await buildViewModel(graph, view.moduleName, hostLayout);
+  const relaidCentroid = centroid(relaidView.nodes);
+  if (originalCentroid && relaidCentroid) {
+    const dx = originalCentroid.x - relaidCentroid.x;
+    const dy = originalCentroid.y - relaidCentroid.y;
+    const anchoredNodes = relaidView.nodes
+      .filter((node) => selected.has(node.id))
+      .map((node) => ({
+        ...node,
+        position: { x: node.position.x + dx, y: node.position.y + dy },
+        fixed: true,
+      }));
+    hostLayout = mergeNodePositions(hostLayout, view.moduleName, anchoredNodes);
+  }
+  const finalView = await buildViewModel(graph, view.moduleName, hostLayout);
+  await postView(page, finalView);
+
+  // Auto Layout intentionally keeps the relaid blocks selected — drop the
+  // selection before the screenshot so the baseline shows the diagram, not
+  // the selection styling.
+  await page.evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    rf.setNodes(rf.getNodes().map((n: any) => (n.selected ? { ...n, selected: false } : n)));
+  });
+  await expect(page.locator('.svsch-selection-toolbar')).toHaveCount(0);
+
+  return { hostLayout, finalView };
+}
+
 async function buildFixtureGraph(fixtureName: string): Promise<DesignGraph> {
   const fixturePath = path.join(fixtureRoot, fixtureName);
   const text = fs.readFileSync(fixturePath, 'utf8');
@@ -387,8 +480,15 @@ test.describe('expand instance in place visual', () => {
 
     await expectSplicedContentInsideFrame(page, instanceId);
 
+    const { hostLayout, finalView } = await runManualAutoLayout(page, graph, emptyLayout, view);
+    await expect(page.locator('[data-node-kind="boundaryPort"]')).toHaveCount(5);
+    await expect(page.locator(`.react-flow__node[data-id="${instanceId}"]`)).toHaveClass(
+      /hdl-node-expand-ghost/,
+    );
+    await expectSplicedContentInsideFrame(page, instanceId);
+
     await fitGraphView(page, 0.15);
-    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
+    await trackSplicedView(page, graph, hostLayout, finalView, [instanceId]);
     await expectGraphAndScreenshot(page, 'expand-instance-complex.png');
   });
 
