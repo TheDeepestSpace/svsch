@@ -80,7 +80,10 @@ export class BddWorld {
   // Screenshot / snapshot helpers
   // -------------------------------------------------------------------------
 
-  async takeScreenshot(label: string): Promise<Buffer | null> {
+  async takeScreenshot(
+    label: string,
+    options?: { skipPixelCompare?: boolean },
+  ): Promise<Buffer | null> {
     await this._settleWorkbenchForScreenshot();
     const screenshot = await this.workbox.screenshot();
     await this._attachBuffer(screenshot, 'image/png');
@@ -193,6 +196,7 @@ export class BddWorld {
           graphState,
           snapshotName,
           await this._webviewCompareBox(),
+          options?.skipPixelCompare,
         );
       }
     }
@@ -234,6 +238,7 @@ export class BddWorld {
     actualGraph: any,
     snapshotName: string,
     compareBox: PngCompareBox | null = null,
+    skipPixelCompare = false,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
     const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
@@ -248,6 +253,8 @@ export class BddWorld {
       updateSnapshots,
       () => {},
     );
+
+    if (skipPixelCompare) return;
 
     const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
     const snapshotMissing = !fs.existsSync(snapshotPath);
