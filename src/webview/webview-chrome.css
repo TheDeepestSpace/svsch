@@ -77,14 +77,12 @@ select {
   display: flex;
   gap: 12px;
   min-height: 40px;
-  overflow: hidden;
   padding: 6px 12px;
 }
 
 /* Shared VS Code Control Styles */
 .vscode-control {
   border-radius: var(--vscode-button-borderRadius, 4px);
-  flex: none;
   font-size: 13px;
   min-height: 26px;
   outline: none;
@@ -99,17 +97,6 @@ select {
   cursor: pointer;
   padding: 2px 6px;
   border-radius: var(--vscode-input-borderRadius, 4px);
-  /* Long module names (e.g. from generated/parameterized fixtures) must not
-     grow the native <select> past the toolbar's available width — that pushes
-     the buttons off-screen and forces a scrollbar on the whole webview host.
-     Keep the basis content-sized (auto) so short names render at their
-     natural width; only cap the upper bound via max-width. */
-  flex: 0 1 auto;
-  max-width: 320px;
-  min-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .vscode-select:focus {
