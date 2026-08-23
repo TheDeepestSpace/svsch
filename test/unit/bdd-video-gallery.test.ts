@@ -19,6 +19,8 @@ describe('generateBddVideoGallery', () => {
     const input = path.join(root, 'bdd');
     const output = path.join(root, 'gallery');
     const videoDirectory = path.join(input, 'playwright-output', 'scenario', 'videos');
+    const mergedVideoPath = (digit: string) =>
+      `/tmp/blob-report/resources/${digit.repeat(40)}.webm`;
     fs.mkdirSync(videoDirectory, { recursive: true });
     fs.writeFileSync(path.join(videoDirectory, 'first.webm'), 'video-one');
     fs.writeFileSync(path.join(videoDirectory, 'second.webm'), 'video-two');
@@ -44,8 +46,16 @@ describe('generateBddVideoGallery', () => {
                             retry: 0,
                             duration: 1200,
                             attachments: [
-                              { contentType: 'video/webm', path: '/tmp/results/first.webm' },
-                              { contentType: 'video/webm', path: '/tmp/results/second.webm' },
+                              {
+                                name: 'video:first.webm',
+                                contentType: 'video/webm',
+                                path: mergedVideoPath('1'),
+                              },
+                              {
+                                name: 'video:second.webm',
+                                contentType: 'video/webm',
+                                path: mergedVideoPath('2'),
+                              },
                             ],
                           },
                         ],
@@ -61,18 +71,20 @@ describe('generateBddVideoGallery', () => {
     );
 
     const videos = generateBddVideoGallery(input, output, {
-      mediaBaseUrl: 'https://example.test/media/',
       prNumber: '275',
       repository: 'TheDeepestSpace/svsch',
       sha: '1234567890abcdef',
     });
 
     expect(videos).toHaveLength(2);
+    expect(videos.every((video) => video.feature === 'Diagram <interaction>')).toBe(true);
+    expect(videos.every((video) => video.scenario === 'selects & moves a node')).toBe(true);
+    expect(videos.every((video) => video.url.startsWith('videos/'))).toBe(true);
     expect(fs.readdirSync(path.join(output, 'videos'))).toHaveLength(2);
     const html = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
     expect(html).toContain('Diagram &lt;interaction&gt;');
     expect(html).toContain('selects &amp; moves a node');
-    expect(html).toContain('https://example.test/media/videos/');
+    expect(html).toContain('src="videos/');
     expect(html).toContain('12345678');
   });
 });

@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..7eb0b90 100644
+index 5570b9f..b20f11f 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,114 @@ function getTraceMode(trace) {
@@ -212,12 +212,13 @@ index 5570b9f..7eb0b90 100644
                      `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
                      `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
                      `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
-@@ -184,11 +309,76 @@ exports.test = test_1.test.extend({
+@@ -184,11 +309,68 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
 -            await electronApp.close();
 -            const logPath = path.join(cachePath, 'user-data', 'logs');
++            const context = electronApp.context();
 +            const videos = captureVideo ? context.pages().map(p => p.video()).filter(Boolean) : [];
 +            // Capture the process handle before context.close() — it disposes
 +            // the client-side app object, after which electronApp.process() throws.
@@ -231,21 +232,12 @@ index 5570b9f..7eb0b90 100644
 +            // longer has a live pipe into the runner logger.
 +            appProcess.stdout?.destroy();
 +            appProcess.stderr?.destroy();
-+            // Sweep detached utility helpers as soon as the main process exits,
-+            // rather than after video flushing finishes. closeElectronApp runs
-+            // the same idempotent sweep once more as a backstop.
-+            const sweepOnExit = () => killSessionProcesses(userDataPath, installPath);
-+            appProcess.once('exit', sweepOnExit);
 +            if (captureVideo) {
 +                // context.close() waits for the video recorder to flush the
-+                // .webm files to disk; killing the app without it leaves the
-+                // videos empty. Bounded so a hanging close cannot stall teardown.
-+                await Promise.race([
-+                    context.close().catch(() => { }),
-+                    new Promise(resolve => setTimeout(resolve, 15000)),
-+                ]);
++                // .webm files to disk. Do not terminate Electron or call
++                // video.path() until recording finalization completes.
++                await context.close().catch(err => console.warn(`[vscode-test-playwright] Failed to close video context: ${err}`));
 +            }
-+            appProcess.off('exit', sweepOnExit);
 +            await closeElectronApp(appProcess, userDataPath, installPath);
 +            if (captureVideo) {
 +                const testFailed = testInfo.status !== testInfo.expectedStatus;
@@ -257,7 +249,7 @@ index 5570b9f..7eb0b90 100644
 +                    else {
 +                        const videoPath = await video.path().catch(() => undefined);
 +                        if (videoPath)
-+                            testInfo.attachments.push({ name: 'video', path: videoPath, contentType: 'video/webm' });
++                            testInfo.attachments.push({ name: `video:${path.basename(videoPath)}`, path: videoPath, contentType: 'video/webm' });
 +                    }
 +                }
 +            }
@@ -293,7 +285,7 @@ index 5570b9f..7eb0b90 100644
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +386,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +378,25 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -306,7 +298,8 @@ index 5570b9f..7eb0b90 100644
 -        const recentLogs = electronAppImpl._nodeConnection._browserLogsCollector.recentLogs();
 -        let [match] = recentLogs.map(s => s.match(vscodeTestServerRegExp)).filter(Boolean);
 +    _evaluator: async ({ electronApp, workbox, vscodeTrace }, use, testInfo) => {
-+        // Use the public Playwright API — playwright._toImpl() was removed in Playwright 1.48+.
++        // playwright._toImpl() was removed in Playwright 1.48+; convert through
++        // each object's owning connection instead.
 +        const vscodeTestServerRegExp = /VSCodeTestServer listening on (http:\/\/\S+)/;
 +        const proc = electronApp.process();
 +        const electronAppImpl = electronApp._connection?.toImpl?.(electronApp);
@@ -316,7 +309,7 @@ index 5570b9f..7eb0b90 100644
 -            match = await waitForLine(process, vscodeTestServerRegExp);
 +            match = await waitForLine(proc, vscodeTestServerRegExp);
          }
-+        const pageImpl = undefined;
++        const pageImpl = workbox._connection.toImpl(workbox);
          const ws = new ws_1.WebSocket(match[1]);
          await new Promise(r => ws.once('open', r));
          const traceMode = getTraceMode(vscodeTrace);
@@ -328,7 +321,7 @@ index 5570b9f..7eb0b90 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +441,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +434,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });

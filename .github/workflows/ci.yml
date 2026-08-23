@@ -666,27 +666,14 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -eu
-          media_branch="bdd-videos-pr-${PR_NUMBER}"
           gallery_path="dev/bdd-videos/pr-${PR_NUMBER}"
 
           git -C bdd-pages config user.name "github-actions[bot]"
           git -C bdd-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Keep large, frequently-replaced WebMs out of gh-pages history. Each
-          # open PR gets one orphan media commit, force-replaced on a rerun and
-          # deleted after close; the small HTML/manifest live on gh-pages.
-          git -C bdd-pages switch --orphan publish-bdd-media
-          cp -R bdd-video-gallery/videos bdd-pages/videos
-          cp bdd-video-gallery/manifest.json bdd-pages/manifest.json
-          git -C bdd-pages add videos manifest.json
-          git -C bdd-pages commit -m "Update BDD videos for PR #${PR_NUMBER}"
-          git -C bdd-pages push --force origin "HEAD:refs/heads/${media_branch}"
-
-          git -C bdd-pages fetch origin gh-pages
-          git -C bdd-pages switch --detach origin/gh-pages
           git -C bdd-pages rm -r --ignore-unmatch "${gallery_path}"
           mkdir -p "bdd-pages/${gallery_path}"
-          cp bdd-video-gallery/index.html bdd-video-gallery/manifest.json "bdd-pages/${gallery_path}/"
+          cp -R bdd-video-gallery/. "bdd-pages/${gallery_path}/"
           git -C bdd-pages add "${gallery_path}"
           git -C bdd-pages commit -m "Update BDD video gallery for PR #${PR_NUMBER}"
 

@@ -17,7 +17,7 @@ function findFiles(root, predicate) {
   return files;
 }
 
-function videoMetadataByBasename(report) {
+function videoMetadataBySourceName(report) {
   const metadata = new Map();
 
   function visitSuite(suite, parents) {
@@ -27,7 +27,10 @@ function videoMetadataByBasename(report) {
         for (const result of test.results ?? []) {
           for (const attachment of result.attachments ?? []) {
             if (attachment.contentType !== 'video/webm' || !attachment.path) continue;
-            metadata.set(path.basename(attachment.path), {
+            const sourceName = attachment.name?.startsWith('video:')
+              ? attachment.name.slice('video:'.length)
+              : path.basename(attachment.path);
+            metadata.set(sourceName, {
               feature: titles.at(-1) ?? 'BDD scenario',
               scenario: spec.title,
               status: result.status ?? 'unknown',
@@ -143,7 +146,7 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
   const report = fs.existsSync(reportPath)
     ? JSON.parse(fs.readFileSync(reportPath, 'utf8'))
     : undefined;
-  const metadata = videoMetadataByBasename(report);
+  const metadata = videoMetadataBySourceName(report);
   const sourceVideos = findFiles(inputDir, (file) => file.endsWith('.webm')).sort();
   if (!sourceVideos.length) throw new Error(`No WebM videos found under ${inputDir}`);
 
@@ -194,12 +197,7 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
     process.exitCode = 2;
   } else {
     const prNumber = process.env.PR_NUMBER;
-    const mediaBranch = `bdd-videos-pr-${prNumber}`;
-    const mediaBaseUrl = process.env.GITHUB_REPOSITORY
-      ? `https://raw.githubusercontent.com/${process.env.GITHUB_REPOSITORY}/${mediaBranch}`
-      : undefined;
     const videos = generateBddVideoGallery(inputDir, outputDir, {
-      mediaBaseUrl,
       prNumber,
       repository: process.env.GITHUB_REPOSITORY,
       sha: process.env.GITHUB_SHA,
