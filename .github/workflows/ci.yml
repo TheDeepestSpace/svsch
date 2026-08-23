@@ -78,16 +78,12 @@ jobs:
       # container's view of "/", or something else. Remove after diagnosis.
       - name: TEMP disk probe
         run: |
-          echo "--- free -h ---"
-          free -h || true
-          echo "--- du -xhd1 / (top-level, same fs only) ---"
-          du -xhd1 / 2>/dev/null | sort -rh | head -30 || true
-          echo "--- ls /usr/share/dotnet /opt/hostedtoolcache /usr/local/lib/android 2>&1 ---"
-          ls -la /usr/share/dotnet /opt/hostedtoolcache /usr/local/lib/android 2>&1 || true
-          echo "--- du -xhd1 /var/lib/docker ---"
-          du -xhd1 /var/lib/docker 2>&1 | sort -rh | head -20 || true
-          echo "--- mount ---"
-          mount | grep -E ' / | /var/lib/docker ' || true
+          echo "--- df -h ---"
+          df -h || true
+          echo "--- du -xhd1 /__t (hostedtoolcache bind mount) ---"
+          du -xhd1 /__t 2>&1 | sort -rh | head -30 || true
+          echo "--- du -xhd2 /__w (workspace bind mount) ---"
+          du -xhd2 /__w 2>&1 | sort -rh | head -30 || true
 
       - &restore_npm_step
         name: Restore node modules
