@@ -513,6 +513,23 @@ jobs:
         # a single report via `playwright merge-reports`.
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
+      # A scenario whose Electron app hangs on close falls back to killing
+      # its whole process tree (see closeElectronApp in our vscode-test-playwright
+      # patch), but a PID-reuse race or a double-forked helper can still slip
+      # past that walk. A survivor like that keeps running — and writing —
+      # for the rest of the job, past every step below, which is consistent
+      # with runs where the test step itself, the results copy, and the
+      # artifact upload all succeed and disk only runs out later, in a
+      # trailing cache-save Post step (see #275). Belt-and-suspenders: sweep
+      # for anything still running under the per-test VS Code install dir
+      # before continuing.
+      - name: Kill stray VS Code processes
+        if: always()
+        run: |
+          echo "--- processes still running under .vscode-test/ ---"
+          pgrep -fa '\.vscode-test/' || echo "(none)"
+          pkill -9 -f '\.vscode-test/' || true
+
       # TEMPORARY: instrumentation to find the ENOSPC source on shards 1/2 (see
       # #275). Remove once root-caused.
       - name: Diagnose disk usage
@@ -520,6 +537,8 @@ jobs:
         run: |
           echo "--- df -h ---"
           df -h
+          echo "--- top processes by RSS ---"
+          ps aux --sort=-rss 2>/dev/null | head -20 || true
           echo "--- du -sh /home/dev/tmp/* ---"
           du -sh /home/dev/tmp/* 2>/dev/null | sort -rh || true
           echo "--- du -sh (top) under bdd-playwright-results ---"
