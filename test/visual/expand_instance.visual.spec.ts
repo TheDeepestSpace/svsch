@@ -588,8 +588,10 @@ test.describe('expand instance in place visual', () => {
 
     await expectSplicedContentInsideFrame(page, instanceId);
 
+    const { hostLayout, finalView } = await runManualAutoLayout(page, graph, emptyLayout, view);
+
     await fitGraphView(page, 0.2);
-    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
+    await trackSplicedView(page, graph, hostLayout, finalView, [instanceId]);
     await expectGraphAndScreenshot(page, 'expand-instance-with-parameters.png');
   });
 
