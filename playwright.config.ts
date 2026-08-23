@@ -31,7 +31,11 @@ export default defineConfig({
   testDir: './test/visual',
   outputDir: './test-results/visual',
   snapshotDir: './test/visual/__screenshots__',
-  fullyParallel: false,
+  // --shard splits whole spec files by default; with fullyParallel: false,
+  // mux.visual.spec.ts alone (59 of 117 tests) would land entirely in one
+  // shard, badly skewing CI sharding. fullyParallel: true makes --shard split
+  // individual tests instead, same fix as #277 needed for the BDD suite.
+  fullyParallel: true,
   timeout: 90_000,
   reporter: reporters,
   expect: {
