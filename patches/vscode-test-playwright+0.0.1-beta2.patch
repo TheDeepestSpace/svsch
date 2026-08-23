@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..789bf55 100644
+index 5570b9f..003efb9 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,73 @@ function getTraceMode(trace) {
@@ -157,7 +157,7 @@ index 5570b9f..789bf55 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -184,11 +261,52 @@ exports.test = test_1.test.extend({
+@@ -184,11 +261,62 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
@@ -209,12 +209,22 @@ index 5570b9f..789bf55 100644
 +            // unbounded over a long sequential run and exhausts CI disk with
 +            // ENOSPC (see #275); wipe it after every test so each session
 +            // only ever contributes its own footprint.
++            //
++            // Best-effort: closeElectronApp() above doesn't guarantee every
++            // child process (GPU/utility/crash-handler) has released its
++            // file handles yet, so an immediate recursive rm can transiently
++            // race with a straggler still writing into the tree (ENOTEMPTY).
++            // maxRetries/retryDelay absorb that; if it still fails, don't
++            // fail the test over a disk-hygiene step — just leave it for the
++            // next test's cleanup to catch up on.
 +            if (fs.existsSync(userDataPath)) {
-+                await fs.promises.rm(userDataPath, { recursive: true, force: true });
++                await fs.promises
++                    .rm(userDataPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 })
++                    .catch(err => console.warn(`[vscode-test-playwright] Failed to clean up ${userDataPath}: ${err}`));
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +314,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +324,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -249,7 +259,7 @@ index 5570b9f..789bf55 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +369,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +379,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });
