@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..8250ae5 100644
+index 5570b9f..b3a8323 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,114 @@ function getTraceMode(trace) {
@@ -329,3 +329,16 @@ index 5570b9f..8250ae5 100644
                  closePromise = new Promise(resolve => contextImpl.recorderAppForTest.once('close', resolve));
              }
              await use();
+diff --git a/node_modules/vscode-test-playwright/dist/vscodeHandle.js b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
+index 7c12088..dee0634 100644
+--- a/node_modules/vscode-test-playwright/dist/vscodeHandle.js
++++ b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
+@@ -115,7 +115,7 @@ class VSCodeEvaluator {
+     async _sendAndWaitWithTrace(op, data) {
+         if (!this._page)
+             return await this._sendAndWait(op, data);
+-        const { monotonicTime, createGuid } = require('playwright-core/lib/utils');
++        const { iso: { monotonicTime }, utils: { createGuid } } = require('playwright-core/lib/coreBundle');
+         const tracing = this._page.context().tracing;
+         const frame = this._page.mainFrame();
+         const metadata = {
