@@ -162,6 +162,24 @@ jobs:
       - name: Run Backend Tests
         run: npm run test:backend
 
+  test_backend_coverage:
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Run Backend Test Coverage
+        run: npm run test:backend:coverage
+
+      - name: Upload Backend Coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-coverage
+          path: coverage/backend/lcov.info
+
   test_unit:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest

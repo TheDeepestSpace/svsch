@@ -117,6 +117,7 @@
     "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
     "test": "vitest run",
     "test:backend": "node scripts/run-backend-tests.js",
+    "test:backend:coverage": "node scripts/run-backend-coverage.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots=changed",
     "test:visual:merge-reports": "playwright merge-reports --config playwright.config.ts blob-report",
