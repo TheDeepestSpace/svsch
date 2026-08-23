@@ -65,11 +65,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     deviceScaleFactor: 1,
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
-    // Record a video of every scenario on CI so the bdd-artifacts bundle can
-    // be reviewed visually (see #270); locally only keep failure videos.
+    // Only keep videos for failing scenarios. Recording every one of the
+    // ~110 CI scenarios (see #270) filled the runner's disk (ENOSPC) partway
+    // through a full run; revisit 'on' if CI gets a larger/dedicated volume.
     // Provided by our vscode-test-playwright patch — upstream has no video
     // support (recordVideo is passed to the Electron launch).
-    vscodeVideo: process.env.CI ? 'on' : 'retain-on-failure',
+    vscodeVideo: 'retain-on-failure',
     viewport: { width: 1400, height: 1000 },
   },
 });
