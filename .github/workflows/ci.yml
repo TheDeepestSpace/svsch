@@ -384,7 +384,13 @@ jobs:
 
       - name: Copy Playwright Results
         if: always()
-        run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
+        # Playwright's outputDir (traces, videos, vscode logs) lives under the
+        # test step's TMPDIR (/home/dev/tmp) to dodge v9fs ENOSPC, so it must
+        # be copied back into the workspace for the artifact upload below.
+        run: |
+          for dir in /home/dev/tmp/bdd-playwright-results-*/; do
+            [ -d "$dir" ] && cp -r "$dir" test-results/bdd/playwright-output || true
+          done
 
       - *mark_workspace_safe_step
 
