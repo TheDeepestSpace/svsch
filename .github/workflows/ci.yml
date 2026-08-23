@@ -301,6 +301,15 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
+      - name: Trim benchmark history retention
+        # github-action-benchmark's auto-push above never prunes dev/bench/data.js,
+        # so it grows forever (#258) — cap it to the most recent runs per suite
+        # right after the pushes that just grew it.
+        if: github.ref == 'refs/heads/master'
+        run: node scripts/trim-benchmark-history.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload benchmark result (visual)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -351,6 +360,10 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+      fail-fast: false
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -379,8 +392,11 @@ jobs:
           chmod 755 /__w /__w/svsch
           chown -R dev:dev . /home/dev/tmp
 
-      - name: Run BDD Tests
-        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd
+      - name: Run BDD Tests (shard ${{ matrix.shard }}/8)
+        # --reporter=blob defers cucumber/JSON/HTML report generation: each shard
+        # just records raw results, and merge_bdd_reports below combines them into
+        # a single report via `playwright merge-reports`.
+        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
       - name: Copy Playwright Results
         if: always()
@@ -392,13 +408,91 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          name: bdd-artifacts-${{ matrix.shard }}
+          path: |
+            test-results/bdd/**
+            test/features/snapshots/**
+
+      - name: Upload BDD Blob Report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bdd-blob-report-${{ matrix.shard }}
+          path: blob-report/**
+
+  merge_bdd_reports:
+    # Combines the per-shard blob reports into the same single-report shape
+    # (test-results/bdd/cucumber/**, test-results/bdd/playwright-report.json,
+    # test-results/bdd/step-attachments.json) that generate_bdd_docs and a
+    # non-sharded run both already expect, so downstream steps need no changes.
+    needs: [prep, build_ci_image, setup, test_bdd]
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # Needed to delete the per-shard artifacts below once they're merged.
+      contents: read
+      actions: write
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Download BDD Blob Reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: bdd-blob-report-*
+          path: blob-report
+          merge-multiple: true
+
+      - name: Download BDD Test Artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: bdd-artifacts-*
+          path: .
+          merge-multiple: true
+
+      - name: Regenerate BDD spec files
+        # `playwright merge-reports` doesn't run globalSetup (which normally
+        # invokes bddgen before `playwright test`), and merging happens in a
+        # fresh container without each shard's generated spec files under
+        # /tmp — regenerate them here so the HTML/JSON reporters can resolve
+        # source paths while merging.
+        run: npx bddgen --config test/bdd/playwright.config.ts
+
+      - name: Merge BDD Reports
+        run: npm run test:bdd:merge-reports
+
+      - name: Upload Merged BDD Artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
           name: bdd-artifacts
           path: |
             test-results/bdd/**
             test/features/snapshots/**
 
+      - name: Delete per-shard BDD artifacts
+        # Once merged into the combined bdd-artifacts / bdd-blob-report-*
+        # inputs above, the raw per-shard uploads from test_bdd are just
+        # clutter in the artifacts list; delete them now that they've been
+        # consumed. Only reached if every prior step in this job succeeded.
+        if: success()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: context.runId }
+            );
+            const perShard = artifacts.filter(
+              (a) => a.name.startsWith('bdd-artifacts-') || a.name.startsWith('bdd-blob-report-')
+            );
+            for (const artifact of perShard) {
+              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+            }
+            core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
+
   generate_bdd_docs:
-    needs: [prep, build_ci_image, setup, test_bdd]
+    needs: [prep, build_ci_image, setup, merge_bdd_reports]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
