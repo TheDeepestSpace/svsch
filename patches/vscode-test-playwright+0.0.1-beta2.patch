@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..b20f11f 100644
+index 5570b9f..8250ae5 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,114 @@ function getTraceMode(trace) {
@@ -212,13 +212,12 @@ index 5570b9f..b20f11f 100644
                      `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
                      `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
                      `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
-@@ -184,11 +309,68 @@ exports.test = test_1.test.extend({
+@@ -184,11 +309,67 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
 -            await electronApp.close();
 -            const logPath = path.join(cachePath, 'user-data', 'logs');
-+            const context = electronApp.context();
 +            const videos = captureVideo ? context.pages().map(p => p.video()).filter(Boolean) : [];
 +            // Capture the process handle before context.close() — it disposes
 +            // the client-side app object, after which electronApp.process() throws.
@@ -285,7 +284,7 @@ index 5570b9f..b20f11f 100644
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +378,25 @@ exports.test = test_1.test.extend({
+@@ -196,24 +377,25 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -321,7 +320,7 @@ index 5570b9f..b20f11f 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +434,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +433,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });
