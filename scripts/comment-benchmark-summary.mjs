@@ -9,6 +9,8 @@ import {
   renderStackedCsv,
   computeDeltaRows,
   computeAverageDelta,
+  computeBenchmarkHistory,
+  mergeBenchmarkHistory,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
 
@@ -125,19 +127,35 @@ const baselineData = (() => {
 // {sha, date, elaborationAvgMs, renderingAvgMs} averages, kept indefinitely by
 // trim-benchmark-history.mjs even as it prunes the raw per-test entries in
 // dev/bench/data.js those averages were derived from — so the trend chart
-// below reads its history from here rather than recomputing it from
+// below prefers reading its history from here rather than recomputing it from
 // baselineData, which only ever holds the most recent MAX_ENTRIES_PER_SUITE
-// runs. Missing (e.g. before trim-benchmark-history.mjs first runs post
-// deploy) or unparseable just means no history yet, not a hard failure.
-const historyAverages = (() => {
+// runs. Missing (e.g. before trim-benchmark-history.mjs has ever run — it's
+// master-push-only, so a brand new gh-pages branch or a PR opened before the
+// first post-merge master run since this file was introduced won't have it
+// yet) or unparseable just means nothing persisted yet, not a hard failure.
+const persistedHistory = (() => {
   try {
     const json = git(['show', 'origin/gh-pages:dev/bench/history-averages.json']);
     return JSON.parse(json);
   } catch (err) {
-    console.error('No benchmark history-averages.json on gh-pages yet (or failed to read it):', err);
+    console.error(
+      'No benchmark history-averages.json on gh-pages yet (or failed to read it):',
+      err,
+    );
     return [];
   }
 })();
+// Merged with history freshly derived from baselineData (already fetched
+// above) rather than used alone: right after this persistence was introduced,
+// or if trim-benchmark-history.mjs's master-only step ever fails to run, the
+// persisted file lags or is missing entirely and the trend chart would
+// otherwise render as a single dangling "this PR" point with no history.
+// mergeBenchmarkHistory dedups by sha with the persisted entry winning, so
+// this never disagrees with the persisted file once it catches up.
+const historyAverages = mergeBenchmarkHistory(
+  persistedHistory,
+  computeBenchmarkHistory(baselineData),
+);
 
 const chartGroups = new Map();
 for (const { name, file } of suiteArgs) {
@@ -248,19 +266,26 @@ for (const [key, group] of chartGroups) {
 // The trend chart only exists for the visual suite — it's the only one with
 // per-master-run history to derive (see historyAverages above).
 const visualGroup = chartGroups.get('visual');
-const elaborationMetric = visualGroup?.metrics.find((m) => m.name === 'visual-elaboration-diagram-generation-duration');
-const renderingMetric = visualGroup?.metrics.find((m) => m.name === 'visual-rendering-diagram-generation-duration');
+const elaborationMetric = visualGroup?.metrics.find(
+  (m) => m.name === 'visual-elaboration-diagram-generation-duration',
+);
+const renderingMetric = visualGroup?.metrics.find(
+  (m) => m.name === 'visual-rendering-diagram-generation-duration',
+);
 if (elaborationMetric && renderingMetric) {
   const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
   const currentRunAverages = {
     elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
     renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
   };
-  contentByFilename.set('visual-trend.svg', renderHistoryTrendChart({
-    title: 'Visual suite — historical average per master run',
-    history: historyAverages,
-    currentRunAverages,
-  }));
+  contentByFilename.set(
+    'visual-trend.svg',
+    renderHistoryTrendChart({
+      title: 'Visual suite — historical average per master run',
+      history: historyAverages,
+      currentRunAverages,
+    }),
+  );
 }
 
 const chartCommitSha = publishFiles(contentByFilename);
@@ -347,7 +372,8 @@ const headers = {
 // — purely a replication-lag blip, not a real 404. Retry that (and plain
 // 5xx flakiness) a few times with backoff before giving up.
 const isTransient = (status, text) =>
-  status >= 500 || (status === 404 && text.includes('Could not resolve to a node with the global id'));
+  status >= 500 ||
+  (status === 404 && text.includes('Could not resolve to a node with the global id'));
 
 const request = async (method, apiPath, requestBody) => {
   const maxAttempts = 4;
@@ -363,7 +389,9 @@ const request = async (method, apiPath, requestBody) => {
     if (attempt >= maxAttempts || !isTransient(response.status, text)) {
       throw new Error(`${method} ${apiPath} failed (${response.status}): ${text}`);
     }
-    console.warn(`${method} ${apiPath} failed (${response.status}), retrying (${attempt}/${maxAttempts})...`);
+    console.warn(
+      `${method} ${apiPath} failed (${response.status}), retrying (${attempt}/${maxAttempts})...`,
+    );
     await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
   }
 };
