@@ -339,6 +339,7 @@ index 7c12088..dee0634 100644
              return await this._sendAndWait(op, data);
 -        const { monotonicTime, createGuid } = require('playwright-core/lib/utils');
 +        const { iso: { monotonicTime }, utils: { createGuid } } = require('playwright-core/lib/coreBundle');
-         const tracing = this._page.context().tracing;
+-        const tracing = this._page.context().tracing;
++        const tracing = this._page.browserContext.tracing;
          const frame = this._page.mainFrame();
          const metadata = {
