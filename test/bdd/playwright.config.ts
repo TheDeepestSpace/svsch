@@ -71,9 +71,10 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     deviceScaleFactor: 1,
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
-    // Only keep videos for failing scenarios. Recording every one of the
-    // ~110 CI scenarios (see #270) filled the runner's disk (ENOSPC) partway
-    // through a full run; revisit 'on' if CI gets a larger/dedicated volume.
+    // Keep every CI video for the review gallery. The earlier ENOSPC failures
+    // were caused by an orphaned VS Code utility process flooding its inherited
+    // runner log pipe, not by the videos (a complete run is about 40 MiB at
+    // this size). Local runs keep only failures to avoid leaving routine debris.
     // Provided by our vscode-test-playwright patch — upstream has no video
     // support (recordVideo is passed to the Electron launch).
     //
@@ -85,7 +86,10 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // renderer keep emitting video frames for that whole window before being
     // killed. A smaller frame bounds how much a single stuck scenario can
     // write in that window; still plenty to see what a failure looked like.
-    vscodeVideo: { mode: 'retain-on-failure', size: { width: 640, height: 460 } },
+    vscodeVideo: {
+      mode: process.env.CI ? 'on' : 'retain-on-failure',
+      size: { width: 640, height: 460 },
+    },
     viewport: { width: 1400, height: 1000 },
   },
 });

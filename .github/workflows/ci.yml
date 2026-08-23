@@ -511,54 +511,17 @@ jobs:
         # --reporter=blob defers cucumber/JSON/HTML report generation: each shard
         # just records raw results, and merge_bdd_reports below combines them into
         # a single report via `playwright merge-reports`.
-        #
-        # The disk-watch loop runs in the background of *this* step so its
-        # output interleaves with the test run's own live log instead of
-        # sitting in a later step — every ENOSPC failure so far has killed
-        # the runner process itself mid-job (see #275), which skips every
-        # later step (including "Diagnose disk usage" below) entirely and
-        # has even lost the job's log blob outright once or twice. A step
-        # that runs after the crash can't tell us anything; this can.
-        run: |
-          ( while true; do echo "[disk-watch $(date -u +%H:%M:%S)] $(df -h / | tail -1)"; sleep 15; done ) &
-          watcher_pid=$!
-          trap 'kill "$watcher_pid" 2>/dev/null || true' EXIT
-          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
+        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
-      # A scenario whose Electron app hangs on close falls back to killing
-      # its whole process tree (see closeElectronApp in our vscode-test-playwright
-      # patch), but a PID-reuse race or a double-forked helper can still slip
-      # past that walk. A survivor like that keeps running — and writing —
-      # for the rest of the job, past every step below, which is consistent
-      # with runs where the test step itself, the results copy, and the
-      # artifact upload all succeed and disk only runs out later, in a
-      # trailing cache-save Post step (see #275). Belt-and-suspenders: sweep
-      # for anything still running under the per-test VS Code install dir
-      # before continuing.
+      # closeElectronApp sweeps detached NodeService helpers after every test.
+      # Keep a shard-end sweep as an invariant/backstop so a future VS Code
+      # process shape cannot survive into artifact/cache post-steps (#275).
       - name: Kill stray VS Code processes
         if: always()
         run: |
           echo "--- processes still running under .vscode-test/ ---"
           pgrep -fa '\.vscode-test/' || echo "(none)"
           pkill -9 -f '\.vscode-test/' || true
-
-      # TEMPORARY: instrumentation to find the ENOSPC source on shards 1/2 (see
-      # #275). Remove once root-caused.
-      - name: Diagnose disk usage
-        if: always()
-        run: |
-          echo "--- df -h ---"
-          df -h
-          echo "--- top processes by RSS ---"
-          ps aux --sort=-rss 2>/dev/null | head -20 || true
-          echo "--- du -sh /home/dev/tmp/* ---"
-          du -sh /home/dev/tmp/* 2>/dev/null | sort -rh || true
-          echo "--- du -sh (top) under bdd-playwright-results ---"
-          du -sh /home/dev/tmp/bdd-playwright-results-*/* 2>/dev/null | sort -rh | head -30 || true
-          echo "--- du -sh /__w/svsch/svsch/* ---"
-          du -sh /__w/svsch/svsch/* 2>/dev/null | sort -rh || true
-          echo "--- du -sh .vscode-test ---"
-          du -sh /__w/svsch/svsch/.vscode-test 2>/dev/null || true
 
       - name: Copy Playwright Results
         if: always()
@@ -581,6 +544,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts-${{ matrix.shard }}
+          retention-days: 1
           path: |
             test-results/bdd/**
             test/features/snapshots/**
@@ -590,6 +554,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-blob-report-${{ matrix.shard }}
+          retention-days: 1
           path: blob-report/**
 
   merge_bdd_reports:
@@ -637,6 +602,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts
+          retention-days: 7
           path: |
             test-results/bdd/**
             test/features/snapshots/**
@@ -663,6 +629,101 @@ jobs:
             }
             core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
 
+  publish_bdd_videos:
+    needs: [merge_bdd_reports]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: bdd-video-gallery-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - *checkout_step
+
+      - name: Download merged BDD artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bdd-artifacts
+          path: gallery-input
+
+      - name: Generate BDD video gallery
+        run: node scripts/generate-bdd-video-gallery.mjs gallery-input/test-results/bdd bdd-video-gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: bdd-pages
+
+      - name: Publish BDD videos and gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          media_branch="bdd-videos-pr-${PR_NUMBER}"
+          gallery_path="dev/bdd-videos/pr-${PR_NUMBER}"
+
+          git -C bdd-pages config user.name "github-actions[bot]"
+          git -C bdd-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Keep large, frequently-replaced WebMs out of gh-pages history. Each
+          # open PR gets one orphan media commit, force-replaced on a rerun and
+          # deleted after close; the small HTML/manifest live on gh-pages.
+          git -C bdd-pages switch --orphan publish-bdd-media
+          cp -R bdd-video-gallery/videos bdd-pages/videos
+          cp bdd-video-gallery/manifest.json bdd-pages/manifest.json
+          git -C bdd-pages add videos manifest.json
+          git -C bdd-pages commit -m "Update BDD videos for PR #${PR_NUMBER}"
+          git -C bdd-pages push --force origin "HEAD:refs/heads/${media_branch}"
+
+          git -C bdd-pages fetch origin gh-pages
+          git -C bdd-pages switch --detach origin/gh-pages
+          git -C bdd-pages rm -r --ignore-unmatch "${gallery_path}"
+          mkdir -p "bdd-pages/${gallery_path}"
+          cp bdd-video-gallery/index.html bdd-video-gallery/manifest.json "bdd-pages/${gallery_path}/"
+          git -C bdd-pages add "${gallery_path}"
+          git -C bdd-pages commit -m "Update BDD video gallery for PR #${PR_NUMBER}"
+
+          attempt=1
+          while ! git -C bdd-pages push origin HEAD:gh-pages; do
+            if [ "$attempt" -ge 3 ]; then
+              echo "Failed to publish gh-pages after ${attempt} attempts" >&2
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            git -C bdd-pages fetch origin gh-pages
+            git -C bdd-pages rebase origin/gh-pages
+          done
+
+      - name: Link BDD video gallery from the PR
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const marker = '<!-- bdd-video-gallery -->';
+            const { owner, repo } = context.repo;
+            const pr = context.issue.number;
+            const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/bdd-videos/pr-${pr}/`;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\n[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})\n\n` +
+              `_If the gallery is 404, enable GitHub Pages from the \`gh-pages\` branch root._`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+            }
+
   generate_bdd_docs:
     needs: [prep, build_ci_image, setup, merge_bdd_reports]
     runs-on: ubuntu-latest
@@ -684,6 +745,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-html-docs
+          retention-days: 7
           path: |
             test-results/bdd/**
 
