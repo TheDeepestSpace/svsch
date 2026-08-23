@@ -513,6 +513,22 @@ jobs:
         # a single report via `playwright merge-reports`.
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
+      # TEMPORARY: instrumentation to find the ENOSPC source on shards 1/2 (see
+      # #275). Remove once root-caused.
+      - name: Diagnose disk usage
+        if: always()
+        run: |
+          echo "--- df -h ---"
+          df -h
+          echo "--- du -sh /home/dev/tmp/* ---"
+          du -sh /home/dev/tmp/* 2>/dev/null | sort -rh || true
+          echo "--- du -sh (top) under bdd-playwright-results ---"
+          du -sh /home/dev/tmp/bdd-playwright-results-*/* 2>/dev/null | sort -rh | head -30 || true
+          echo "--- du -sh /__w/svsch/svsch/* ---"
+          du -sh /__w/svsch/svsch/* 2>/dev/null | sort -rh || true
+          echo "--- du -sh .vscode-test ---"
+          du -sh /__w/svsch/svsch/.vscode-test 2>/dev/null || true
+
       - name: Copy Playwright Results
         if: always()
         # Playwright's outputDir (traces, videos, vscode logs, visual-diff
