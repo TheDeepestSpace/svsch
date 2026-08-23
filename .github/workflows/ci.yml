@@ -351,6 +351,11 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    # Historical runs complete in 20-90m; a run that exceeds this has hung
+    # (observed: 4+ hours stuck on "Run BDD Tests" with zero step progress)
+    # rather than just running slow, so fail fast instead of eating the
+    # default 6h job timeout.
+    timeout-minutes: 120
     steps:
       - *checkout_step
       - *restore_npm_step
