@@ -23,10 +23,10 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..3135047 100644
+index 5570b9f..a13174b 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
-@@ -66,8 +66,73 @@ function getTraceMode(trace) {
+@@ -66,8 +66,90 @@ function getTraceMode(trace) {
          return 'on-first-retry';
      return traceMode;
  }
@@ -49,20 +49,37 @@ index 5570b9f..3135047 100644
 +        return 'on-first-retry';
 +    return videoMode;
 +}
-+async function closeElectronApp(proc, timeoutMs = 5000) {
-+    if (!proc || proc.exitCode !== null || proc.signalCode) {
-+        return;
++async function closeElectronApp(proc, userDataPath, timeoutMs = 5000) {
++    if (proc && proc.exitCode === null && !proc.signalCode) {
++        const processTree = collectProcessTree(proc.pid);
++        const waitForExit = new Promise(resolve => proc.once('exit', resolve));
++        killProcessTree(processTree, 'SIGTERM');
++        const exited = await Promise.race([
++            waitForExit.then(() => true),
++            new Promise(resolve => setTimeout(() => resolve(false), timeoutMs)),
++        ]);
++        if (!exited && proc.exitCode === null && !proc.signalCode) {
++            killProcessTree(processTree, 'SIGKILL');
++            console.warn(`[vscode-test-playwright] Timed out after ${timeoutMs}ms closing VSCode Electron app; killed process ${proc.pid}`);
++        }
 +    }
-+    const processTree = collectProcessTree(proc.pid);
-+    const waitForExit = new Promise(resolve => proc.once('exit', resolve));
-+    killProcessTree(processTree, 'SIGTERM');
-+    const exited = await Promise.race([
-+        waitForExit.then(() => true),
-+        new Promise(resolve => setTimeout(() => resolve(false), timeoutMs)),
-+    ]);
-+    if (!exited && proc.exitCode === null && !proc.signalCode) {
-+        killProcessTree(processTree, 'SIGKILL');
-+        console.warn(`[vscode-test-playwright] Timed out after ${timeoutMs}ms closing VSCode Electron app; killed process ${proc.pid}`);
++    // collectProcessTree() above only walks proc's *current* descendants via
++    // pgrep -P (parent PID) at the moment we start closing. VS Code spawns at
++    // least one Node debug utility helper (--type=utility, node.mojom.NodeService)
++    // that is reparented away from that tree — observed surviving 100% of the
++    // time in CI (see #275), one per test, each still holding this test's
++    // user-data-dir open. Deferring cleanup to an end-of-shard sweep let up to
++    // a whole shard's worth of these accumulate concurrently before anything
++    // killed them, which is consistent with disk exhausting near the end of a
++    // long run. Sweep by this session's own --user-data-dir instead of by
++    // process tree, since that value is unique per test and unambiguously
++    // identifies only this session's stragglers.
++    if (userDataPath) {
++        try {
++            cp.execFileSync('pkill', ['-9', '-f', `--user-data-dir=${userDataPath}`]);
++        }
++        catch {
++        }
 +    }
 +}
 +function collectProcessTree(rootPid) {
@@ -101,7 +118,7 @@ index 5570b9f..3135047 100644
      function addEventListener(emitter, eventName, handler) {
          emitter.on(eventName, handler);
          return { emitter, eventName, handler };
-@@ -80,6 +145,10 @@ function waitForLine(process, regex) {
+@@ -80,6 +162,10 @@ function waitForLine(process, regex) {
      return new Promise((resolve, reject) => {
          const rl = readline.createInterface({ input: process.stderr });
          const failError = new Error('Process failed to launch!');
@@ -112,7 +129,7 @@ index 5570b9f..3135047 100644
          const listeners = [
              addEventListener(rl, 'line', onLine),
              addEventListener(rl, 'close', reject.bind(null, failError)),
-@@ -95,6 +164,7 @@ function waitForLine(process, regex) {
+@@ -95,6 +181,7 @@ function waitForLine(process, regex) {
              resolve(match);
          }
          function cleanup() {
@@ -120,7 +137,7 @@ index 5570b9f..3135047 100644
              removeEventListeners(listeners);
          }
      });
-@@ -103,6 +173,7 @@ exports.test = test_1.test.extend({
+@@ -103,6 +190,7 @@ exports.test = test_1.test.extend({
      vscodeVersion: ['insiders', { option: true, scope: 'worker' }],
      extensions: [undefined, { option: true, scope: 'worker' }],
      vscodeTrace: ['off', { option: true, scope: 'worker' }],
@@ -128,7 +145,7 @@ index 5570b9f..3135047 100644
      extensionDevelopmentPath: [undefined, { option: true }],
      baseDir: [async ({ _createTempDir }, use) => await use(await _createTempDir()), { option: true }],
      extensionsDir: [undefined, { option: true, scope: 'worker' }],
-@@ -135,7 +206,7 @@ exports.test = test_1.test.extend({
+@@ -135,7 +223,7 @@ exports.test = test_1.test.extend({
              await use({ installPath, cachePath });
          }, { timeout: 0, scope: 'worker' }],
      // based on https://github.com/microsoft/playwright-vscode/blob/1d855b9a7aeca783223a7a9f8e3b01efbe8e16f2/tests-integration/tests/baseTest.ts
@@ -137,7 +154,7 @@ index 5570b9f..3135047 100644
              const { installPath, cachePath } = _vscodeInstall;
              // remove all VSCODE_* environment variables, otherwise it fails to load custom webviews with the following error:
              // InvalidStateError: Failed to register a ServiceWorker: The document is in an invalid state
-@@ -144,13 +215,19 @@ exports.test = test_1.test.extend({
+@@ -144,13 +232,19 @@ exports.test = test_1.test.extend({
                  if (/^VSCODE_/i.test(prop))
                      delete env[prop];
              }
@@ -157,7 +174,7 @@ index 5570b9f..3135047 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -158,6 +235,13 @@ exports.test = test_1.test.extend({
+@@ -158,6 +252,13 @@ exports.test = test_1.test.extend({
                      '--skip-welcome',
                      '--skip-release-notes',
                      '--disable-workspace-trust',
@@ -171,7 +188,7 @@ index 5570b9f..3135047 100644
                      `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
                      `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
                      `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
-@@ -184,11 +268,62 @@ exports.test = test_1.test.extend({
+@@ -184,11 +285,62 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
@@ -181,6 +198,7 @@ index 5570b9f..3135047 100644
 +            // Capture the process handle before context.close() — it disposes
 +            // the client-side app object, after which electronApp.process() throws.
 +            const appProcess = electronApp.process();
++            const userDataPath = userDataDir ?? path.join(cachePath, 'user-data');
 +            if (captureVideo) {
 +                // context.close() waits for the video recorder to flush the
 +                // .webm files to disk; killing the app without it leaves the
@@ -190,7 +208,7 @@ index 5570b9f..3135047 100644
 +                    new Promise(resolve => setTimeout(resolve, 15000)),
 +                ]);
 +            }
-+            await closeElectronApp(appProcess);
++            await closeElectronApp(appProcess, userDataPath);
 +            if (captureVideo) {
 +                const testFailed = testInfo.status !== testInfo.expectedStatus;
 +                const abandonVideo = !testFailed && (videoMode === 'retain-on-failure' || videoMode === 'retain-on-first-failure');
@@ -205,7 +223,6 @@ index 5570b9f..3135047 100644
 +                    }
 +                }
 +            }
-+            const userDataPath = userDataDir ?? path.join(cachePath, 'user-data');
 +            const logPath = path.join(userDataPath, 'logs');
              if (fs.existsSync(logPath)) {
 -                const logOutputPath = exports.test.info().outputPath('vscode-logs');
@@ -238,7 +255,7 @@ index 5570b9f..3135047 100644
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +331,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +348,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -273,7 +290,7 @@ index 5570b9f..3135047 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +386,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +403,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });

@@ -71,20 +71,6 @@ jobs:
         with:
           persist-credentials: false
 
-      # TEMPORARY: one-off probe for the test_bdd ENOSPC investigation (#275).
-      # df -h inside this container already shows ~117G used / 29G free before
-      # any test artifacts exist, which doesn't match this image's real
-      # contents. Find out whether that's host-side bloat leaking into the
-      # container's view of "/", or something else. Remove after diagnosis.
-      - name: TEMP disk probe
-        run: |
-          echo "--- df -h ---"
-          df -h || true
-          echo "--- du -xhd1 /__t (hostedtoolcache bind mount) ---"
-          du -xhd1 /__t 2>&1 | sort -rh | head -30 || true
-          echo "--- du -xhd2 /__w (workspace bind mount) ---"
-          du -xhd2 /__w 2>&1 | sort -rh | head -30 || true
-
       - &restore_npm_step
         name: Restore node modules
         id: cache-npm
