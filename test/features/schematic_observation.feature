@@ -33,7 +33,7 @@ Feature: Schematic Observation
     Given I have a file "top.sv" in my workspace:
       """
       module top(input a, input b, output y);
-        assign y = (a == b);
+        assign y = a * b;
       endmodule
       """
     When I open the "top" module in SVSCH

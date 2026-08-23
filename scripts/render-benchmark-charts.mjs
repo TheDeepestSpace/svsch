@@ -119,6 +119,25 @@ export function computeBenchmarkHistory(benchmarkData) {
     }));
 }
 
+// dev/bench/data.js only keeps the most recent MAX_ENTRIES_PER_SUITE raw
+// per-test entries per suite (trim-benchmark-history.mjs prunes the rest to
+// stay under git show's maxBuffer), but the {sha, date, elaborationAvgMs,
+// renderingAvgMs} points computeBenchmarkHistory derives from those entries
+// are tiny and worth keeping forever — so they're persisted separately, in
+// dev/bench/history-averages.json, and merged into rather than replaced on
+// every run. Existing entries win on sha collision (an average, once
+// computed, never changes); anything new is appended. Result stays
+// oldest-first, matching computeBenchmarkHistory's own ordering.
+export function mergeBenchmarkHistory(existingHistory, freshHistory) {
+  const bySha = new Map(existingHistory.map((entry) => [entry.sha, entry]));
+  for (const entry of freshHistory) {
+    if (!bySha.has(entry.sha)) {
+      bySha.set(entry.sha, entry);
+    }
+  }
+  return [...bySha.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
 // Joins each current-run entry with its baseline (if any) into the shape both
 // the chart and the delta table consume.
 export function computeDeltaRows(entries, baselineByName) {

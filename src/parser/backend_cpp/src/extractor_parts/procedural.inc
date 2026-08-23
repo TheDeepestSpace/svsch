@@ -194,6 +194,59 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
         return control;
     };
 
+    // UHDM's constant-value evaluator (getConstantInt/isLiteralExpr) reliably
+    // folds a plain literal, but a parameterized loop bound like
+    // `(1<<ADDR_WIDTH)` comes back as an unresolved vpiOperation, and neither
+    // it nor its parameter-reference operand carries decompiled source text
+    // or resolves through vpiActual from this local (loop-scoped) use site.
+    // Walk the operand tree ourselves: recurse through binary/unary
+    // arithmetic operations, and for a leaf that isn't itself a literal,
+    // resolve its bare identifier name against the module's own already-known
+    // parameter defaults (the same defaults generateParameterValues() feeds
+    // to the generate-region and replication-width constant folders).
+    std::function<std::optional<int>(vpiHandle)> constExprValue = [&](vpiHandle expr) -> std::optional<int> {
+        if (!expr) return std::nullopt;
+        vpiHandle actual = unwrapRef(expr);
+        if (!actual) actual = expr;
+        if (isLiteralExpr(actual)) return getConstantInt(actual);
+        if (vpi_get(vpiType, actual) == vpiOperation) {
+            int op_type = vpi_get(vpiOpType, actual);
+            vpiHandle op_itr = vpi_iterate(vpiOperand, actual);
+            if (!op_itr) return std::nullopt;
+            std::vector<vpiHandle> operands;
+            while (vpiHandle op = vpi_scan(op_itr)) operands.push_back(op);
+            if (operands.size() == 1) {
+                auto v = constExprValue(operands[0]);
+                if (!v) return std::nullopt;
+                if (op_type == vpiMinusOp) return -*v;
+                if (op_type == vpiPlusOp) return *v;
+                return std::nullopt;
+            }
+            if (operands.size() == 2) {
+                auto l = constExprValue(operands[0]);
+                auto r = constExprValue(operands[1]);
+                if (!l || !r) return std::nullopt;
+                switch (op_type) {
+                    case vpiAddOp: return *l + *r;
+                    case vpiSubOp: return *l - *r;
+                    case vpiMultOp: return *l * *r;
+                    case vpiDivOp: return *r != 0 ? std::optional<int>(*l / *r) : std::nullopt;
+                    case vpiLShiftOp:
+                    case vpiArithLShiftOp: return *l << *r;
+                    case vpiRShiftOp:
+                    case vpiArithRShiftOp: return *l >> *r;
+                    default: return std::nullopt;
+                }
+            }
+            return std::nullopt;
+        }
+        std::string name = getSignalName(expr);
+        if (name.empty()) return std::nullopt;
+        auto params = generateParameterValues(mod);
+        auto it = params.find(name);
+        return it != params.end() ? std::optional<int>(it->second) : std::nullopt;
+    };
+
     // The loop body must do exactly one thing: assign one uniform value to array[index].
     std::vector<vpiHandle> loop_assignments;
     findAssignments(loop, loop_assignments);
@@ -203,11 +256,12 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle init_lhs = init ? vpi_handle(vpiLhs, init) : nullptr;
     vpiHandle init_rhs = init ? vpi_handle(vpiRhs, init) : nullptr;
     std::string loop_var = getSignalName(init_lhs);
-    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs)) return false;
+    auto init_bound = init_rhs ? constExprValue(init_rhs) : std::nullopt;
+    if (loop_var.empty() || loop_var != index_expr || !init_bound) return false;
 
     // A loop that visits every address 0..N-1 covers the full array regardless of direction:
     // ascending (init 0, counts up) or descending (init N-1, counts down). Either is canonical.
-    int init_value = getConstantInt(init_rhs);
+    int init_value = *init_bound;
     bool descending;
     if (init_value == 0) {
         descending = false;
@@ -237,9 +291,11 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle condition_rhs = vpi_scan(condition_operands);
     bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
     vpi_release_handle(condition_operands);
-    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var || !isLiteralExpr(condition_rhs)) return false;
+    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var) return false;
+    auto condition_bound = constExprValue(condition_rhs);
+    if (!condition_bound) return false;
     int expected_bound = descending ? 0 : (condition_op == vpiLtOp ? array_size : array_size - 1);
-    if (getConstantInt(condition_rhs) != expected_bound) return false;
+    if (*condition_bound != expected_bound) return false;
 
     vpiHandle increment = loop_control(vpiForIncStmt);
     if (!increment) return false;
@@ -1434,6 +1490,35 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerIfStatement(
     return result;
 }
 
+std::string DesignExtractor::ensureZextNode(Module& mod, const std::string& input_signal, const std::string& input_width, const std::string& output_width, vpiHandle source_handle) {
+    for (const auto& n : mod.nodes) {
+        if (n.kind != "zext") continue;
+        const NodePort* in_port = nullptr;
+        const NodePort* out_port = nullptr;
+        for (const auto& port : n.ports) {
+            if (port.direction == "input") in_port = &port;
+            else if (port.direction == "output") out_port = &port;
+        }
+        if (in_port && out_port && in_port->signal == input_signal && in_port->width == input_width && out_port->width == output_width) {
+            return out_port->signal;
+        }
+    }
+
+    std::string out_signal = input_signal + "_zext_" + nextId();
+    std::string node_id = sanitizeId("zext:" + mod.name + ":" + input_signal + ":" + out_signal);
+
+    Node n;
+    n.id = node_id;
+    n.kind = "zext";
+    n.label = "";
+    n.source = getSourceInfo(source_handle);
+    n.metadata.isProcedural = true;
+    n.ports.push_back({"in", "input", input_signal, input_width, "in"});
+    n.ports.push_back({out_signal, "output", out_signal, output_width});
+    mod.nodes.push_back(n);
+    return out_signal;
+}
+
 std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     vpiHandle stmt,
     Module& mod,
@@ -1498,12 +1583,41 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
     std::string sel_width = getDeclaredSignalWidth(mod, sel_signal);
     if (sel_width.empty()) sel_width = getWidth(cond);
 
+    // Output-signal -> natural width, used below to detect branches narrower
+    // than the mux's resolved output width. Indexed once up front and
+    // refreshed only after ensureZextNode appends a node, instead of
+    // rescanning every node/port for every (target, item) pair.
+    std::map<std::string, std::string> node_output_widths;
+    size_t indexed_node_count = 0;
+    auto refreshNodeOutputWidths = [&]() {
+        for (; indexed_node_count < mod.nodes.size(); ++indexed_node_count) {
+            for (const auto& port : mod.nodes[indexed_node_count].ports) {
+                if (port.direction == "output") {
+                    node_output_widths[port.signal] = port.width;
+                }
+            }
+        }
+    };
+    refreshNodeOutputWidths();
+
     for (const auto& target : targets) {
         std::string target_width = getDeclaredSignalWidth(mod, target);
-        
+
+        // Resolve target_width across all case items up front so that the
+        // zext decision below cannot depend on the order items happen to be
+        // processed in.
+        if (target_width.empty()) {
+            for (vpiHandle item : items) {
+                auto const& branch_values = item_results[item];
+                if (!branch_values.count(target)) continue;
+                const std::string& w = branch_values.at(target).width;
+                if (!w.empty()) { target_width = w; break; }
+            }
+        }
+
         bool final_output = desired_outputs.count(target) > 0;
         std::string output_signal = final_output ? desired_outputs.at(target) : target + "_case_" + nextId();
-        
+
         Node mux;
         mux.id = sanitizeId("mux:" + mod.name + ":" + target + ":" + sel_signal + ":" + output_signal);
         mux.kind = "mux";
@@ -1518,9 +1632,36 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerCaseStatement(
             auto const& labels = item_labels[item];
             auto const& branch_values = item_results[item];
             LoweredValue branch_val = branch_values.count(target) ? branch_values.at(target) : (current_drivers.count(target) ? current_drivers.at(target) : LoweredValue{true, target, target_width});
-            
-            if (target_width.empty() && !branch_val.width.empty()) target_width = branch_val.width;
+
             if (branch_val.width.empty()) branch_val.width = target_width;
+
+            // A branch narrower than the mux's resolved output width (e.g. a
+            // comparator's 1-bit result feeding a multi-bit ALU-style mux) needs
+            // an explicit zero-extension node rather than silently implying a
+            // same-width connection. lowerAssignment already coerces branch_val.width
+            // to the target's declared width, so look up the branch's actual driving
+            // node/signal width to detect a real mismatch.
+            auto node_width_it = node_output_widths.find(branch_val.signal);
+            std::string branch_natural_width = node_width_it != node_output_widths.end()
+                ? node_width_it->second
+                : getDeclaredSignalWidth(mod, branch_val.signal);
+
+            // Only act when the branch's natural width is concretely known.
+            // An empty width means "unknown" (e.g. an unsized expression) —
+            // promoted 1-bit nodes (comparator, logical gate ops) encode
+            // their width explicitly as "[0:0]" rather than "", so this
+            // check does not need a special case for node outputs.
+            bool branch_width_known = !branch_natural_width.empty();
+            if (branch_width_known) {
+                int branch_bits = std::max(1, bitSizeFromWidth(branch_natural_width));
+                int target_bits = std::max(1, bitSizeFromWidth(target_width));
+                if (target_bits > branch_bits) {
+                    std::string zext_signal = ensureZextNode(mod, branch_val.signal, branch_natural_width, target_width, stmt);
+                    refreshNodeOutputWidths();
+                    branch_val.signal = zext_signal;
+                    branch_val.width = target_width;
+                }
+            }
 
             for (const auto& label : labels) {
                 mux.ports.push_back({label, "input", branch_val.signal, branch_val.width, label});

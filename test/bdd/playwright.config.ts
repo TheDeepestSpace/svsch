@@ -41,6 +41,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
+  // Required for `--shard` to split individual scenarios across shards. Without
+  // it, Playwright treats each spec file as an atomic unit when sharding, and
+  // playwright-bdd compiles each .feature file into a single spec file — with
+  // only 5 feature files, shards beyond the 5th would sit empty. workers stays
+  // 1, so this doesn't change execution concurrency within a shard.
+  fullyParallel: true,
   // The resize/persist round-trip (CSS custom property -> React Flow's
   // ResizeObserver-driven `measured` size) occasionally takes longer than a
   // scenario's poll timeout to converge on CI runners; one retry absorbs

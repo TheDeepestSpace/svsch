@@ -1038,7 +1038,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     expect(chain.nodes.filter((node) => node.kind === 'comb')).toHaveLength(1);
   });
 
-  it('keeps non-arithmetic subexpressions as gate nodes feeding ALU nodes', async () => {
+  it('keeps non-arithmetic subexpressions as dedicated gate nodes feeding ALU nodes', async () => {
     const graph = await runParser(backend, [
       {
         file: 'alu_complex.sv',
@@ -1052,10 +1052,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     const withComb = graph.modules.alu_with_comb;
     const alu = withComb.nodes.find((node) => node.kind === 'alu');
-    const comb = withComb.nodes.find((node) => node.kind === 'gate');
+    const gate = withComb.nodes.find((node) => node.kind === 'gate');
     expect(withComb.nodes.filter((node) => node.kind === 'alu')).toHaveLength(1);
     expect(withComb.nodes.filter((node) => node.kind === 'gate')).toHaveLength(1);
-    expect(comb?.metadata?.operation).toBe('or');
+    expect(withComb.nodes.filter((node) => node.kind === 'comb')).toHaveLength(0);
+    expect(gate?.metadata?.operation).toBe('or');
     expect(
       withComb.edges.some(
         (edge) =>
@@ -1066,17 +1067,17 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === comb?.id && edge.target === alu?.id && edge.targetPort === 'rhs',
+        (edge) => edge.source === gate?.id && edge.target === alu?.id && edge.targetPort === 'rhs',
       ),
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === 'port:alu_with_comb:b' && edge.target === comb?.id,
+        (edge) => edge.source === 'port:alu_with_comb:b' && edge.target === gate?.id,
       ),
     ).toBe(true);
     expect(
       withComb.edges.some(
-        (edge) => edge.source === 'port:alu_with_comb:c' && edge.target === comb?.id,
+        (edge) => edge.source === 'port:alu_with_comb:c' && edge.target === gate?.id,
       ),
     ).toBe(true);
   });
@@ -1345,16 +1346,17 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const mod = graph.modules.fsm_complex_latch;
     const latch = mod.nodes.find((n) => n.kind === 'latch' && n.label === 'q');
     const mux = mod.nodes.find((n) => n.kind === 'mux');
-    const comb = mod.nodes.find((n) => n.kind === 'gate');
+    // `en & sidekick` now gets a dedicated gate node instead of a generic comb block.
+    const gate = mod.nodes.find((n) => n.kind === 'gate');
 
     expect(latch).toBeDefined();
     expect(mux).toBeDefined();
-    expect(comb).toBeDefined();
-    expect(comb?.metadata?.operation).toBe('and');
+    expect(gate).toBeDefined();
+    expect(gate?.metadata?.operation).toBe('and');
     expect(mod.edges.some((e) => e.source === mux?.id && e.target === latch?.id)).toBe(true);
     expect(
       mod.edges.some(
-        (e) => e.source === comb?.id && e.target === mux?.id && e.targetPort === 'sel',
+        (e) => e.source === gate?.id && e.target === mux?.id && e.targetPort === 'sel',
       ),
     ).toBe(true);
   });
@@ -1494,6 +1496,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     const graph = await runParser(backend, 'mux_selector_expr.sv', fixture('mux_selector_expr.sv'));
     const muxSelectorExpr = graph.modules.mux_selector_expr;
     const mux = muxSelectorExpr.nodes.find((node) => node.kind === 'mux');
+    // `sel & sidekick` now gets a dedicated gate node instead of a generic comb block.
     const selectorComb = muxSelectorExpr.nodes.find(
       (node) =>
         node.kind === 'gate' &&
@@ -1560,6 +1563,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
 
     const instrPort = busSlices.nodes.find((node) => node.id === 'port:bus_slices:instr');
     const bus = busSlices.nodes.find((node) => node.kind === 'bus' && node.label === 'instr');
+    // `instr[6:0] & a` now gets a dedicated gate node instead of a generic comb block.
     const decodedComb = busSlices.nodes.find(
       (node) =>
         node.kind === 'gate' &&
@@ -1577,6 +1581,8 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       busSlices.nodes.find((node) => node.id === 'reg:bus_slices:funct3_q')?.metadata?.width,
     ).toBe('[2:0]');
 
+    // Gate node ports label a bracket-select input with its slice (e.g. "[6:0]"),
+    // matching how comb/inverter display bus-tap inputs.
     const instrPortInComb = decodedComb?.ports.find((port) =>
       port.connectedSignal?.endsWith('[6:0]'),
     );
@@ -2217,11 +2223,11 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
         node.kind === 'gate' &&
         node.ports.some((p) => p.name === 'decoded' && p.direction === 'output'),
     );
+    // Gate nodes get a refined source range narrowed to just the expression
+    // ("instr[6:0] & a"), like ALU/inverter nodes — not the whole `assign` statement.
     expect(decodedComb?.source).toBeDefined();
     expect(decodedComb?.source?.file).toBe('bus_slices.sv');
     expect(decodedComb?.source?.startLine).toBe(15);
-    // Gate nodes get a refined source range narrowed to just the expression
-    // ("instr[6:0] & a"), like ALU/inverter nodes — not the whole `assign` statement.
     expect(decodedComb?.source?.startColumn).toBe(19);
     expect(decodedComb?.source?.endLine).toBe(15);
     expect(decodedComb?.source?.endColumn).toBe(33);
@@ -2656,6 +2662,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       `,
         );
         const top = graph.modules.top;
+        // `a & b` now gets a dedicated gate node instead of a generic comb block.
         const combNode = top.nodes.find((n) => n.kind === 'gate');
         expect(combNode).toBeDefined();
 
@@ -2683,6 +2690,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       `,
         );
         const top = graph.modules.top;
+        // `a & b` now gets a dedicated gate node instead of a generic comb block.
         const combNode = top.nodes.find((n) => n.kind === 'gate');
         expect(combNode).toBeDefined();
 
@@ -3038,7 +3046,7 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       // With parentheses, it should be "a + (b | c)"
       expect(alu.metadata.expression?.replace(/\s+/g, '')).toBe('a+(b|c)');
 
-      // Check that RHS of ALU is connected to a comb node
+      // Check that RHS of ALU is connected to a dedicated gate node
       const rhsPort = alu.ports.find((p) => p.name === 'rhs');
       expect(rhsPort).toBeDefined();
 
@@ -3900,6 +3908,48 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     );
 
     it(
+      'folds a full-range reset loop into the stacked array register reset ' +
+        'even when the loop bound is a parameterized expression',
+      async () => {
+        // Regression for #237: `(1<<ADDR_WIDTH)` doesn't constant-fold via UHDM's
+        // vpi_get_value from this loop-scoped use site the way a literal bound
+        // does, so the reset write was previously misdetected as an ordinary
+        // variable-index write keyed on the loop variable `a` — which has no
+        // driver — leaving the final write-address mux's selector unwired.
+        const graph = await runParser(
+          backend,
+          'array_multi_index_write_reset_parameterized_bound.sv',
+          fixture('array_multi_index_write_reset_parameterized_bound.sv'),
+        );
+        const mod =
+          graph.modules.array_multi_index_write_reset_parameterized_bound ??
+          Object.values(graph.modules)[0];
+        const arrayReg = mod.nodes.find(
+          (n) => n.id === 'reg:array_multi_index_write_reset_parameterized_bound:storage',
+        );
+        expect(arrayReg).toBeDefined();
+        expect(
+          arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset'),
+        ).toBe(true);
+        expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
+        const addressMuxes = mod.nodes.filter((n) =>
+          n.id.startsWith('mux:array_multi_index_write_reset_parameterized_bound:storage_addr'),
+        );
+        expect(addressMuxes).toHaveLength(1);
+        const finalMux = mod.nodes.find(
+          (n) => n.id === 'mux:array_multi_index_write_reset_parameterized_bound:storage_addr',
+        );
+        expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+        expect(
+          mod.edges.some(
+            (e) => e.signal === 'address' && e.target === finalMux?.id && e.targetPort === 'sel',
+          ),
+        ).toBe(true);
+      },
+    );
+
+    it(
       'promotes write_en mux to stacked and chains it upstream of the ' +
         'addr mux for conditional array writes',
       async () => {
@@ -4040,6 +4090,53 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(selectorEdge?.isStacked).toBeFalsy();
       expect(outputEdge).toBeDefined();
       expect(outputEdge?.isStacked).toBeFalsy();
+    });
+
+    // eslint-disable-next-line max-len -- descriptive test name
+    it('emits a single read path for a continuous variable-index read of a locally written memory', async () => {
+      const graph = await runParser(
+        backend,
+        'array_local_read_write.sv',
+        fixture('array_local_read_write.sv'),
+      );
+      const mod = graph.modules.array_local_read_write;
+      expect(mod).toBeDefined();
+
+      // One scalar read mux, and no parallel select node duplicating the same read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
+      expect(mod.nodes.some((n) => n.kind === 'select')).toBe(false);
+
+      const readMux = readMuxes[0];
+      expect(readMux.isArrayNode ?? readMux.metadata?.isArrayNode).toBeFalsy();
+      expect(readMux.ports.find((p) => p.name === 'in')?.connectedSignal).toBe('ram');
+      expect(readMux.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('addr');
+      expect(readMux.ports.find((p) => p.name === 'out')?.connectedSignal).toBe('read_data');
+
+      // The read mux is the only driver of the output port.
+      const outputPort = mod.nodes.find((n) => n.id === 'port:array_local_read_write:read_data');
+      const outputDrivers = mod.edges.filter((e) => e.target === outputPort?.id);
+      expect(outputDrivers).toHaveLength(1);
+      expect(outputDrivers[0].source).toBe(readMux.id);
+    });
+
+    // eslint-disable-next-line max-len -- descriptive test name
+    it('dedupes a late-pass read mux against processAssign when the index needs sanitizing', async () => {
+      const graph = await runParser(
+        backend,
+        'array_local_read_write_sanitized_index.sv',
+        fixture('array_local_read_write_sanitized_index.sv'),
+      );
+      const mod = graph.modules.array_local_read_write_sanitized_index;
+      expect(mod).toBeDefined();
+
+      // The continuous `read_data` assignment (lowered by processAssign) and the
+      // `u_reader` instance port (lowered by the late-pass array-read synthesis)
+      // both read `ram[\addr#sel ]`. Without sanitizing the late-pass mux id the
+      // same way processAssign does, the `#` produces a second, differently-ID'd
+      // mux for the identical read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
     });
 
     it('marks edges between stacked nodes as isStacked', async () => {
