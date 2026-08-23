@@ -25,7 +25,7 @@ const NETWORK_TIMEOUT_MS = 60_000;
 // rather than duplicating the same merge-by-sha logic here.
 export { mergeBenchmarkHistory as mergeCiDurationHistory };
 
-const DURATION_SERIES = [{ key: 'durationSec', color: COLORS.blue, label: 'CI duration (s)' }];
+const DURATION_SERIES = [{ key: 'durationMin', color: COLORS.blue, label: 'CI duration (min)' }];
 
 // A GitHub Actions run's wall-clock duration: run_started_at (when a runner
 // actually picked it up, not when it sat queued) to updated_at (its last
@@ -46,15 +46,21 @@ export function computeRunDurationEntry(run) {
   };
 }
 
+// Persisted history/currentPoint entries carry `durationSec` (matching the
+// GitHub Actions API's own second-granularity timestamps), but a multi-hour
+// axis reads more naturally in minutes — so the chart-facing points get a
+// derived `durationMin` alongside it rather than changing the stored unit.
+const withDurationMin = (entry) => ({ ...entry, durationMin: entry.durationSec / 60 });
+
 // The single-series form of render-benchmark-charts.mjs's trend chart —
 // reuses that renderer (generalized in the same change that introduced this
 // module) rather than hand-rolling a second SVG line chart.
 export function renderCiDurationTrendChart({ history, currentPoint, currentLabel }) {
   return renderHistoryTrendChart({
     title: 'CI workflow duration — per master push',
-    valueLabel: 'CI workflow duration per master push (seconds)',
-    history,
-    currentPoint,
+    valueLabel: 'CI workflow duration per master push (minutes)',
+    history: history.map(withDurationMin),
+    currentPoint: currentPoint ? withDurationMin(currentPoint) : currentPoint,
     currentLabel,
     series: DURATION_SERIES,
   });
