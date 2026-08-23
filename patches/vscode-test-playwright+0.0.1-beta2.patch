@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..003efb9 100644
+index 5570b9f..3135047 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,73 @@ function getTraceMode(trace) {
@@ -157,7 +157,21 @@ index 5570b9f..003efb9 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -184,11 +261,62 @@ exports.test = test_1.test.extend({
+@@ -158,6 +235,13 @@ exports.test = test_1.test.extend({
+                     '--skip-welcome',
+                     '--skip-release-notes',
+                     '--disable-workspace-trust',
++                    // Headless CI has no GPU, so the GPU process crashes on every
++                    // launch; Crashpad then writes a dump for each one under
++                    // user-data/Crashpad, which we never inspect. Over a long
++                    // sequential BDD run those dumps are the difference between
++                    // fitting on the runner's disk and ENOSPC (see #275) — skip
++                    // generating them entirely.
++                    '--disable-crash-reporter',
+                     `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
+                     `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
+                     `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
+@@ -184,11 +268,62 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
@@ -224,7 +238,7 @@ index 5570b9f..003efb9 100644
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +324,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +331,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -259,7 +273,7 @@ index 5570b9f..003efb9 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +379,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +386,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });
