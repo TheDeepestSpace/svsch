@@ -419,6 +419,10 @@ jobs:
     needs: [prep, build_ci_image, setup, test_bdd]
     runs-on: ubuntu-latest
     container: *container_config
+    permissions:
+      # Needed to delete the per-shard artifacts below once they're merged.
+      contents: read
+      actions: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -455,6 +459,28 @@ jobs:
           path: |
             test-results/bdd/**
             test/features/snapshots/**
+
+      - name: Delete per-shard BDD artifacts
+        # Once merged into the combined bdd-artifacts / bdd-blob-report-*
+        # inputs above, the raw per-shard uploads from test_bdd are just
+        # clutter in the artifacts list; delete them now that they've been
+        # consumed. Only reached if every prior step in this job succeeded.
+        if: success()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: context.runId }
+            );
+            const perShard = artifacts.filter(
+              (a) => a.name.startsWith('bdd-artifacts-') || a.name.startsWith('bdd-blob-report-')
+            );
+            for (const artifact of perShard) {
+              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+            }
+            core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
 
   generate_bdd_docs:
     needs: [prep, build_ci_image, setup, merge_bdd_reports]
