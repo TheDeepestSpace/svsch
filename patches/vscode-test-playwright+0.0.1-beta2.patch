@@ -23,7 +23,7 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..1c16cdc 100644
+index 5570b9f..5dc48d4 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
 @@ -66,8 +66,73 @@ function getTraceMode(trace) {
@@ -157,7 +157,7 @@ index 5570b9f..1c16cdc 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -184,7 +261,34 @@ exports.test = test_1.test.extend({
+@@ -184,11 +261,46 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
@@ -192,8 +192,22 @@ index 5570b9f..1c16cdc 100644
 +            }
              const logPath = path.join(cachePath, 'user-data', 'logs');
              if (fs.existsSync(logPath)) {
-                 const logOutputPath = exports.test.info().outputPath('vscode-logs');
-@@ -196,24 +300,24 @@ exports.test = test_1.test.extend({
+-                const logOutputPath = exports.test.info().outputPath('vscode-logs');
+-                await fs.promises.cp(logPath, logOutputPath, { recursive: true });
++                const testFailed = testInfo.status !== testInfo.expectedStatus;
++                if (testFailed) {
++                    const logOutputPath = exports.test.info().outputPath('vscode-logs');
++                    await fs.promises.cp(logPath, logOutputPath, { recursive: true });
++                }
++                // user-data-dir (and therefore its logs) is shared across every
++                // test in the worker; without clearing it here each test's
++                // teardown re-copies every prior session's logs too, growing
++                // O(n^2) with the number of tests and exhausting CI disk (see #275).
++                await fs.promises.rm(logPath, { recursive: true, force: true });
+             }
+         }, { timeout: 0 }],
+     workbox: async ({ electronApp }, use) => {
+@@ -196,24 +308,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -228,7 +242,7 @@ index 5570b9f..1c16cdc 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +355,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +363,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });
