@@ -7,7 +7,6 @@ export const SNAPSHOT_THRESHOLDS = {
       muxLongNames: 2,
     },
     system: 50,
-    pixelmatchThreshold: 0.05,
   },
   pixelmatch: {
     bdd: 50,
@@ -15,6 +14,11 @@ export const SNAPSHOT_THRESHOLDS = {
     threshold: 0.05,
   },
 } as const;
+
+// toHaveScreenshot() doesn't set a threshold, so it runs with Playwright's own
+// default. The gate below re-derives numDiffPixels via pixelmatch directly, so
+// it must match that default to reject at the same sensitivity as the live test.
+const PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD = 0.2;
 
 export type SnapshotSuite = 'visual' | 'bdd' | 'system';
 
@@ -44,7 +48,7 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
     return {
       suite: 'visual',
       maxDiffPixels,
-      pixelmatchThreshold: SNAPSHOT_THRESHOLDS.playwright.pixelmatchThreshold,
+      pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }
 
@@ -62,7 +66,7 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
     return {
       suite: 'system',
       maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
-      pixelmatchThreshold: SNAPSHOT_THRESHOLDS.playwright.pixelmatchThreshold,
+      pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }
 
