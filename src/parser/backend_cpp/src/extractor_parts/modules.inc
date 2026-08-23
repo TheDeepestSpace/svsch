@@ -152,8 +152,19 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         int lft_last = vpiUndefined, rgt_last = vpiUndefined;
         int range_count = 0;
         while (vpiHandle r = vpi_scan(range_itr)) {
-            int l = vpi_get(vpiLeftRange, r);
-            int ri = vpi_get(vpiRightRange, r);
+            // The int properties only carry literal bounds; a parameterized extent like
+            // [0:(1<<ADDR_WIDTH)-1] reports 0/0 there even though Surelog has elaborated
+            // it — the resolved constants live behind the expression handles.
+            int l = vpiUndefined, ri = vpiUndefined;
+            vpiHandle l_h = vpi_handle(vpiLeftRange, r);
+            vpiHandle r_h = vpi_handle(vpiRightRange, r);
+            if (l_h && r_h) {
+                l = getConstantInt(l_h);
+                ri = getConstantInt(r_h);
+            } else {
+                l = vpi_get(vpiLeftRange, r);
+                ri = vpi_get(vpiRightRange, r);
+            }
             if (l != vpiUndefined && ri != vpiUndefined) {
                 if (range_count == 0) { lft_first = l; rgt_first = ri; }
                 lft_last = l; rgt_last = ri;
@@ -182,7 +193,12 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
         if (!arr_itr) continue;
         bool need_two = (arr_type == vpiVariables);
         while (vpiHandle arr_handle = vpi_scan(arr_itr)) {
-            recordArrayDim(arr_handle, need_two);
+            // Surelog surfaces array vars through the generic vpiVariables iterator too
+            // (the dedicated 3010 iteration can come back empty); an array-var handle
+            // carries only its unpacked range, so the packed+unpacked requirement would
+            // wrongly skip it.
+            bool is_array_var = vpi_get(vpiType, arr_handle) == 3010 /* vpiArrayVar */;
+            recordArrayDim(arr_handle, need_two && !is_array_var);
         }
     }
 
@@ -523,8 +539,17 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
 
         bool is_constant = !index.empty() && std::all_of(index.begin(), index.end(), [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
         if (!is_constant && !index.empty() && index != "?" && index != "idx" && index != "bit") {
+            // processAssign lowers a continuous `out = base[index]` to this same mux id;
+            // don't emit a second copy of it here.
+            std::string read_mux_id = sanitizeId("mux:" + mod.name + ":" + base + "_read_" + index);
+            bool already_lowered = false;
+            for (const auto& n : mod.nodes) {
+                if (n.id == read_mux_id) { already_lowered = true; break; }
+            }
+            if (already_lowered) continue;
+
             Node read_mux;
-            read_mux.id = "mux:" + mod.name + ":" + base + "_read_" + index;
+            read_mux.id = read_mux_id;
             read_mux.kind = "mux";
             read_mux.label = "read";
             // Read mux is NOT stacked: it consumes the stacked array input but outputs a scalar.
@@ -536,7 +561,7 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             std::string index_width = getDeclaredSignalWidth(mod, index);
             int index_bits = bitSizeFromWidth(index_width);
             std::string sel_label = index_bits > 1 ? "s[]" : "s";
-            read_mux.ports.push_back({"sel", "input", index, "", sel_label});
+            read_mux.ports.push_back({"sel", "input", index, index_width, sel_label});
             read_mux.ports.push_back({"out", "output", sig, ""});
             mod.nodes.push_back(read_mux);
         }
@@ -1175,7 +1200,7 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
             read_mux_in.arrayDimension = mod.arrayDimensions.count(rhs_base) ? mod.arrayDimensions[rhs_base] : "";
             read_mux_in.arraySize = mod.arraySizes.count(rhs_base) ? mod.arraySizes[rhs_base] : 0;
             read_mux.ports.push_back(read_mux_in);
-            read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs), out_signal});
+            read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs)});
             mod.nodes.push_back(read_mux);
             return;
         }
