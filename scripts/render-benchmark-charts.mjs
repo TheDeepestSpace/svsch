@@ -23,6 +23,7 @@ const COLORS = {
   good: '#0ca30c',
   goodText: '#006300',
   critical: '#d03b3b',
+  highlight: '#e8890c',
 };
 
 // Bars fill the whole plot width regardless of how many there are — a
@@ -499,20 +500,53 @@ export function computeHistoryTrendData(
   return points;
 }
 
+// Forced to a fixed canvas regardless of how much history has piled up —
+// dozens (or, after a backfill, hundreds) of master-run points would
+// otherwise stretch the SVG to an unreadable multi-thousand-pixel width, one
+// hairline-thin bar-pitch per commit. Squishing every point into a fixed
+// 2000x500 window instead keeps the shape of the trend legible; individual
+// values are still in the underlying history.json for anyone who needs them.
+const TREND_WIDTH = 2000;
+const TREND_HEIGHT = 500;
 const TREND_LEFT_MARGIN = 60;
 const TREND_RIGHT_MARGIN = 24;
 const TREND_TOP_MARGIN = 92;
-const TREND_PANEL_HEIGHT = 220;
-const TREND_LABEL_AREA_HEIGHT = 40;
-const TREND_POINT_PITCH = 64;
+const TREND_BOTTOM_MARGIN = 28;
 
-// One line per series across every recorded master run, each point a filled
-// dot; the final segment — into the current, not yet merged, run — is
-// dashed and its point drawn hollow rather than filled, the same "texture
+// A light smoothing pass through a series of {x, y} points: each interior
+// point becomes the control of a quadratic curve into the midpoint of it and
+// its neighbor, so the path passes near every point without the sharp
+// elbows a plain polyline would have at each one — cheap to compute and
+// good enough for a trend line where the shape matters more than any single
+// point's exact position.
+function smoothPath(coords) {
+  if (coords.length === 0) return '';
+  if (coords.length <= 2) {
+    return coords.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  }
+  let d = `M ${coords[0].x} ${coords[0].y}`;
+  for (let i = 1; i < coords.length - 1; i += 1) {
+    const midX = (coords[i].x + coords[i + 1].x) / 2;
+    const midY = (coords[i].y + coords[i + 1].y) / 2;
+    d += ` Q ${coords[i].x} ${coords[i].y} ${midX} ${midY}`;
+  }
+  const last = coords.length - 1;
+  d += ` Q ${coords[last - 1].x} ${coords[last - 1].y} ${coords[last].x} ${coords[last].y}`;
+  return d;
+}
+
+// One smoothed curve per series across every recorded master run — no
+// per-point dots, since with hundreds of squished-together points a dot per
+// entry is just noise. The only marker drawn is the current, not yet
+// merged, point (if any), filled in a dedicated highlight color rather than
+// the series' own so it reads as "the new one" regardless of which series
+// it belongs to; the segment leading into it is dashed, the same "texture
 // cue, not color alone" convention the stacked chart above uses for its own
-// "new" bars, so the preview point reads as unconfirmed even in grayscale.
-// `series` defaults to the visual suite's elaboration/rendering pair;
-// passing a single-entry array (e.g. CI duration) draws one line instead.
+// "new" bars. `series` defaults to the visual suite's elaboration/rendering
+// pair; passing a single-entry array (e.g. CI duration) draws one line
+// instead. Per-point labels (commit shas) are dropped — squished into a
+// fixed-width canvas they'd just overlap — except the current point keeps
+// its label, since which point is "not yet merged" is worth calling out.
 export function renderHistoryTrendChart({
   title,
   history,
@@ -524,19 +558,16 @@ export function renderHistoryTrendChart({
 }) {
   const points = computeHistoryTrendData(history, currentPoint, series, currentLabel);
   const legendItems = series.map(({ color, label }) => ({ fill: color, label }));
-  const plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
-  const width = Math.max(
-    TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
-    legendWidth(24, legendItems),
-    estimateTextWidth(title, 18) + 48,
-  );
-  const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
-  const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
+  const width = TREND_WIDTH;
+  const height = TREND_HEIGHT;
+  const plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
+  const panelHeight = height - TREND_TOP_MARGIN - TREND_BOTTOM_MARGIN;
+  const originY = TREND_TOP_MARGIN + panelHeight;
 
   const maxValue = Math.max(1, ...points.flatMap((p) => series.map(({ key }) => p[key])));
   const step = niceStep(maxValue);
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
-  const scale = TREND_PANEL_HEIGHT / chartMax;
+  const scale = panelHeight / chartMax;
 
   const xFor = (index) =>
     points.length <= 1
@@ -550,7 +581,7 @@ export function renderHistoryTrendChart({
     : valueLabel;
   const parts = [];
   parts.push(
-    `<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(subtitle)}</text>`,
+    `<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - panelHeight - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(subtitle)}</text>`,
   );
 
   for (let tick = 0; tick <= chartMax; tick += step) {
@@ -566,43 +597,38 @@ export function renderHistoryTrendChart({
     `<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
   );
 
+  let currentLabelText = null;
   const drawSeries = (key, color) => {
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const isPreviewSegment = points[i + 1].isCurrent;
-      const x1 = xFor(i);
-      const y1 = yFor(points[i][key]);
-      const x2 = xFor(i + 1);
-      const y2 = yFor(points[i + 1][key]);
+    const coords = points.map((p, i) => ({ x: xFor(i), y: yFor(p[key]), isCurrent: p.isCurrent }));
+    const historyCoords = coords.filter((c) => !c.isCurrent);
+    const currentCoord = coords.find((c) => c.isCurrent);
+
+    if (historyCoords.length > 0) {
       parts.push(
-        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
+        `<path d="${smoothPath(historyCoords)}" fill="none" stroke="${color}" stroke-width="2" />`,
       );
     }
-    points.forEach((p, i) => {
-      const x = xFor(i);
-      const y = yFor(p[key]);
-      if (p.isCurrent) {
+    if (currentCoord) {
+      if (historyCoords.length > 0) {
+        const prev = historyCoords[historyCoords.length - 1];
         parts.push(
-          `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+          `<path d="M ${prev.x} ${prev.y} L ${currentCoord.x} ${currentCoord.y}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" />`,
         );
-      } else {
-        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
       }
-    });
+      parts.push(
+        `<circle cx="${currentCoord.x}" cy="${currentCoord.y}" r="5" fill="${COLORS.highlight}" stroke="${color}" stroke-width="2" />`,
+      );
+      currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
+    }
   };
   for (const { key, color } of series) drawSeries(key, color);
-
-  const labelParts = points.map((p, i) => {
-    const x = xFor(i);
-    const label = p.isCurrent ? currentLabel : p.label;
-    return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
-  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
   <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, legendItems)}
   ${parts.join('\n')}
-  ${labelParts.join('\n')}
+  ${currentLabelText ?? ''}
 </svg>`;
 }
 
