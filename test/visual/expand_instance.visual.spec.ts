@@ -306,6 +306,24 @@ async function runManualAutoLayout(
   const finalView = await buildViewModel(graph, view.moduleName, hostLayout);
   await postView(page, finalView);
 
+  // postView only dispatches a postMessage — it does not wait for React to
+  // process it and commit the relaid positions. Reading node rects (as the
+  // overlap/containment checks that follow this helper do) before that
+  // commit lands sees stale, pre-auto-layout positions and can produce
+  // spurious "overlap" failures, especially once a large expanded frame
+  // grows past where an outer node used to sit.
+  await page.waitForFunction((expected) => {
+    const rf = (window as any).reactFlowInstance;
+    if (!rf) return false;
+    const byId = new Map<string, { x: number; y: number }>(
+      rf.getNodes().map((n: any) => [n.id, n.position]),
+    );
+    return expected.every(({ id, x, y }) => {
+      const pos = byId.get(id);
+      return pos !== undefined && Math.abs(pos.x - x) < 0.5 && Math.abs(pos.y - y) < 0.5;
+    });
+  }, finalView.nodes.map((node) => ({ id: node.id, x: node.position.x, y: node.position.y })));
+
   // Auto Layout intentionally keeps the relaid blocks selected — drop the
   // selection before the screenshot so the baseline shows the diagram, not
   // the selection styling.
