@@ -3,6 +3,7 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { threadId } from 'node:worker_threads';
 import type {
   DesignGraph,
   DesignModule,
@@ -24,6 +25,37 @@ import { extractDesignFromText } from './textExtractor';
 import { logger } from '../logger';
 
 const execFileAsync = promisify(execFile);
+
+// Set only by CI coverage jobs, pointing at a scratch directory to collect
+// per-invocation gcov output. Unset in production, so normal spawns are
+// untouched.
+const backendCoverageRoot = process.env.SVSCH_BACKEND_GCOV_ROOT;
+let backendInvocationCounter = 0;
+
+// Unit/BDD/visual CI jobs run many concurrent workers, each spawning its own
+// backend subprocess against the same coverage-instrumented binary. Without
+// isolation, concurrent processes would race writing the same .gcda files.
+// Giving every single invocation its own GCOV_PREFIX subdirectory (keyed by
+// pid + thread id + a per-module counter, so it's unique across worker
+// processes, worker threads, and concurrent calls within one thread) makes
+// each write target distinct — no invocation ever shares a target with
+// another, so there's nothing to race on. The collect_backend_coverage CI
+// job is responsible for merging these many per-invocation directories back
+// into one coverage report.
+function backendExecOptions(): { maxBuffer: number; env?: NodeJS.ProcessEnv } {
+  const options = { maxBuffer: 100 * 1024 * 1024 };
+  if (!backendCoverageRoot) {
+    return options;
+  }
+  const invocationId = `${process.pid}-${threadId}-${backendInvocationCounter++}`;
+  return {
+    ...options,
+    env: {
+      ...process.env,
+      GCOV_PREFIX: path.join(backendCoverageRoot, invocationId),
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // UHDM cache helpers
@@ -248,9 +280,7 @@ export async function extractDesignWithUhdm(
     }
     backendArgs.push(workspaceRoot);
 
-    const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, {
-      maxBuffer: 100 * 1024 * 1024,
-    });
+    const { stdout, stderr } = await execFileAsync(backendPath, backendArgs, backendExecOptions());
     if (stderr) {
       logger.error(`Backend Stderr: ${stderr}`);
     }

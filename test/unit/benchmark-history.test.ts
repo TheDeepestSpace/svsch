@@ -3,6 +3,7 @@ import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
   mergeBenchmarkHistory,
+  renderHistoryTrendChart,
 } from '../../scripts/render-benchmark-charts.mjs';
 
 function benchmarkEntry(commitId: string, date: number, values: number[]) {
@@ -141,5 +142,46 @@ describe('computeHistoryTrendData', () => {
     expect(points).toEqual([
       { label: 'this PR', elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
     ]);
+  });
+});
+
+describe('renderHistoryTrendChart milestones', () => {
+  const entryA = {
+    sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    elaborationAvgMs: 120,
+    renderingAvgMs: 80,
+  };
+  const entryB = {
+    sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    elaborationAvgMs: 110,
+    renderingAvgMs: 90,
+  };
+  const currentRunAverages = { elaborationAvgMs: 100, renderingAvgMs: 70 };
+
+  it('draws a dashed marker and label for a milestone matching a history sha', () => {
+    const svg = renderHistoryTrendChart({
+      title: 'test',
+      history: [entryA, entryB],
+      currentRunAverages,
+      milestones: [{ sha: entryB.sha, label: 'Coverage instrumentation introduced' }],
+    });
+    expect(svg).toContain('stroke-dasharray="3,3"');
+    expect(svg).toContain('Coverage instrumentation introduced');
+  });
+
+  it('omits the marker when no milestone matches a history sha', () => {
+    const svg = renderHistoryTrendChart({
+      title: 'test',
+      history: [entryA, entryB],
+      currentRunAverages,
+      milestones: [{ sha: 'unknown-sha', label: 'Should not appear' }],
+    });
+    expect(svg).not.toContain('stroke-dasharray="3,3"');
+    expect(svg).not.toContain('Should not appear');
+  });
+
+  it('defaults to no markers when milestones is omitted', () => {
+    const svg = renderHistoryTrendChart({ title: 'test', history: [entryA], currentRunAverages });
+    expect(svg).not.toContain('stroke-dasharray="3,3"');
   });
 });

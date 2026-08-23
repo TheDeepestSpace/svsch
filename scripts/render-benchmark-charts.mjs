@@ -108,7 +108,8 @@ export function computeBenchmarkHistory(benchmarkData) {
       (entry) => [entry.commit.id, entry],
     ),
   );
-  const average = (benches) => benches.reduce((sum, bench) => sum + bench.value, 0) / benches.length;
+  const average = (benches) =>
+    benches.reduce((sum, bench) => sum + bench.value, 0) / benches.length;
   return elaborationEntries
     .filter((entry) => renderingByCommit.has(entry.commit.id))
     .map((entry) => ({
@@ -455,7 +456,9 @@ export function renderDeltaTableMarkdown(rows) {
 
   const avgSignNominal = avg.avgNominal > 0 ? '+' : '';
   const avgSignPct = avg.avgPct > 0 ? '+' : '';
-  lines.push(`| **Avg** — across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms (${avgSignPct}${avg.avgPct.toFixed(1)}%) |`);
+  lines.push(
+    `| **Avg** — across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms (${avgSignPct}${avg.avgPct.toFixed(1)}%) |`,
+  );
 
   return lines.join('\n');
 }
@@ -498,13 +501,20 @@ const TREND_LEGEND_ITEMS = [
 // filled, the same "texture cue, not color alone" convention the stacked
 // chart above uses for its own "new" bars, so the preview point reads as
 // unconfirmed even in grayscale.
-export function renderHistoryTrendChart({ title, history, currentRunAverages }) {
+//
+// `milestones` (optional, from dev/bench/milestones.json — see
+// trim-benchmark-history.mjs) annotates one-off events that shift the trend
+// discontinuously (e.g. the backend binary gaining coverage instrumentation
+// and becoming permanently slower) — a dashed vertical marker + label at the
+// matching history point, so a step-change reads as "explained" rather than
+// as an unflagged regression.
+export function renderHistoryTrendChart({ title, history, currentRunAverages, milestones = [] }) {
   const points = computeHistoryTrendData(history, currentRunAverages);
   const plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
   const width = Math.max(
     TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
     legendWidth(24, TREND_LEGEND_ITEMS),
-    estimateTextWidth(title, 18) + 48
+    estimateTextWidth(title, 18) + 48,
   );
   const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
   const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
@@ -514,20 +524,44 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = TREND_PANEL_HEIGHT / chartMax;
 
-  const xFor = (index) => (points.length <= 1
-    ? TREND_LEFT_MARGIN + plotWidth / 2
-    : TREND_LEFT_MARGIN + (index / (points.length - 1)) * plotWidth);
+  const xFor = (index) =>
+    points.length <= 1
+      ? TREND_LEFT_MARGIN + plotWidth / 2
+      : TREND_LEFT_MARGIN + (index / (points.length - 1)) * plotWidth;
   const yFor = (value) => originY - value * scale;
 
   const parts = [];
-  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>`);
+  parts.push(
+    `<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>`,
+  );
 
   for (let tick = 0; tick <= chartMax; tick += step) {
     const y = originY - tick * scale;
-    parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${y}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
-    parts.push(`<text x="${TREND_LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
+    parts.push(
+      `<line x1="${TREND_LEFT_MARGIN}" y1="${y}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`,
+    );
+    parts.push(
+      `<text x="${TREND_LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`,
+    );
   }
-  parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+  parts.push(
+    `<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
+  );
+
+  // Matched against `history` (not `points`) by full sha, since points only
+  // carry the truncated 7-char label — index alignment with `history` holds
+  // for every non-"this PR" point, which is all a milestone can ever land on.
+  const milestoneMarks = milestones
+    .map((milestone) => {
+      const index = history.findIndex((entry) => entry.sha === milestone.sha);
+      return index === -1 ? null : { x: xFor(index), label: milestone.label };
+    })
+    .filter((mark) => mark !== null);
+  for (const mark of milestoneMarks) {
+    parts.push(
+      `<line x1="${mark.x}" y1="${TREND_TOP_MARGIN - 16}" x2="${mark.x}" y2="${originY}" stroke="${COLORS.inkMuted}" stroke-width="1.5" stroke-dasharray="3,3" />`,
+    );
+  }
 
   const drawSeries = (key, color) => {
     for (let i = 0; i < points.length - 1; i += 1) {
@@ -536,13 +570,17 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
       const y1 = yFor(points[i][key]);
       const x2 = xFor(i + 1);
       const y2 = yFor(points[i + 1][key]);
-      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`);
+      parts.push(
+        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
+      );
     }
     points.forEach((p, i) => {
       const x = xFor(i);
       const y = yFor(p[key]);
       if (p.isCurrent) {
-        parts.push(`<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`);
+        parts.push(
+          `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+        );
       } else {
         parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
       }
@@ -557,12 +595,20 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
     return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
   });
 
+  // Drawn last (on top of the series lines) so the label text stays legible
+  // regardless of where the data happens to cross it.
+  const milestoneLabelParts = milestoneMarks.map(
+    (mark) =>
+      `<text x="${mark.x + 4}" y="${TREND_TOP_MARGIN - 6}" font-size="10" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(mark.label)}</text>`,
+  );
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
   <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, TREND_LEGEND_ITEMS)}
   ${parts.join('\n')}
   ${labelParts.join('\n')}
+  ${milestoneLabelParts.join('\n')}
 </svg>`;
 }
 

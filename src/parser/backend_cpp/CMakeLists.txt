@@ -4,7 +4,7 @@ project(svsch_backend)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_COVERAGE "Build svsch_test with --coverage instrumentation" OFF)
+option(ENABLE_COVERAGE "Build svsch_backend and svsch_test with --coverage instrumentation" OFF)
 
 # Find UHDM
 find_package(UHDM REQUIRED)
@@ -35,6 +35,8 @@ target_link_libraries(svsch_test PRIVATE uhdm::uhdm GTest::gtest_main)
 add_test(NAME svsch_test COMMAND svsch_test)
 
 if(ENABLE_COVERAGE)
+  target_compile_options(svsch_backend PRIVATE --coverage -O0 -g)
+  target_link_options(svsch_backend PRIVATE --coverage)
   target_compile_options(svsch_test PRIVATE --coverage -O0 -g)
   target_link_options(svsch_test PRIVATE --coverage)
 endif()

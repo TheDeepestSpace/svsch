@@ -103,6 +103,35 @@ jobs:
           name: backend-binary
           path: dist/svsch_backend
 
+  build_backend_coverage:
+    # Builds svsch_backend a second time with --coverage instrumentation, in
+    # parallel with the plain build_backend above — that job keeps feeding
+    # package_extension/pack_npm an untouched production binary; this one
+    # feeds test_unit/test_bdd/test_visual an instrumented binary so their
+    # existing runs (not new ones) double as backend coverage collection.
+    # Uploads the whole build tree, not just the binary: gcov ties a .gcda's
+    # output location to the *build-time absolute path* of its .gcno, so
+    # collect_backend_coverage needs that .gcno tree downloaded back to the
+    # identical path to pair with the .gcda files those jobs produce.
+    needs: [prep, build_ci_image, setup]
+    if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Compile Backend (coverage-instrumented)
+        run: npm run compile:backend:coverage
+
+      - name: Upload Coverage-Instrumented Backend Build Tree
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-binary-coverage
+          path: |
+            src/parser/backend_cpp/build-coverage/svsch_backend
+            src/parser/backend_cpp/build-coverage/**/*.gcno
+
   build_extension:
     needs: [prep, build_ci_image, setup]
     if: always() && (needs.build_ci_image.result == 'success' || needs.build_ci_image.result == 'skipped')
@@ -181,7 +210,7 @@ jobs:
           path: coverage/backend/lcov.info
 
   test_unit:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend_coverage, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -195,12 +224,18 @@ jobs:
           name: extension-dist
           path: .
 
-      - &download_backend_step
-        name: Download Backend
+      - &download_backend_coverage_step
+        name: Download Coverage-Instrumented Backend
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: backend-binary
-          path: dist
+          name: backend-binary-coverage
+          path: src/parser/backend_cpp/build-coverage
+
+      - &stage_backend_coverage_step
+        name: Stage Coverage-Instrumented Backend Binary
+        run: |
+          mkdir -p dist
+          cp src/parser/backend_cpp/build-coverage/svsch_backend dist/svsch_backend
 
       - &download_cli_step
         name: Download CLI
@@ -217,9 +252,19 @@ jobs:
 
       - name: Run Unit Tests
         run: npm test
+        env:
+          SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/unit
+
+      - name: Upload Backend Coverage Data (unit)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-gcda-unit
+          path: coverage-raw
+          if-no-files-found: ignore
 
   test_visual:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend_coverage, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     strategy:
@@ -230,7 +275,8 @@ jobs:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-      - *download_backend_step
+      - *download_backend_coverage_step
+      - *stage_backend_coverage_step
       - *download_cli_step
       - *fix_perms_step
 
@@ -263,6 +309,16 @@ jobs:
         # records raw results, and merge_visual_reports below combines them
         # into a single report via `playwright merge-reports`.
         run: npm run test:visual -- --shard=${{ matrix.shard }}/6 --reporter=blob
+        env:
+          SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/visual-${{ matrix.shard }}
+
+      - name: Upload Backend Coverage Data (visual, shard ${{ matrix.shard }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-gcda-visual-${{ matrix.shard }}
+          path: coverage-raw
+          if-no-files-found: ignore
 
       - name: Rename benchmark result for this shard
         # Every shard writes its subset of samples to the same relative path
@@ -464,7 +520,14 @@ jobs:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-      - *download_backend_step
+
+      - &download_backend_step
+        name: Download Backend
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-binary
+          path: dist
+
       - *download_cli_step
       - *fix_perms_step
       - *pw_version_step
@@ -485,7 +548,7 @@ jobs:
             playwright-report/**
 
   test_bdd:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend_coverage, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     strategy:
@@ -496,7 +559,8 @@ jobs:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-      - *download_backend_step
+      - *download_backend_coverage_step
+      - *stage_backend_coverage_step
       - *download_cli_step
       - *fix_perms_step
 
@@ -525,12 +589,22 @@ jobs:
         # just records raw results, and merge_bdd_reports below combines them into
         # a single report via `playwright merge-reports`.
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
+        env:
+          SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/bdd-${{ matrix.shard }}
 
       - name: Copy Playwright Results
         if: always()
         run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
 
       - *mark_workspace_safe_step
+
+      - name: Upload Backend Coverage Data (bdd, shard ${{ matrix.shard }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-gcda-bdd-${{ matrix.shard }}
+          path: coverage-raw
+          if-no-files-found: ignore
 
       - name: Upload BDD Artifacts
         if: always()
@@ -757,6 +831,56 @@ jobs:
 
       - name: Run npm audit
         uses: ./.github/actions/security-audit
+
+  collect_backend_coverage:
+    # Merges the many per-invocation .gcda trees test_unit/test_bdd/test_visual
+    # produced while running against the coverage-instrumented backend (see
+    # SVSCH_BACKEND_GCOV_ROOT above) into one number, combined with the
+    # gtest-only capture from test_backend_coverage. Non-blocking — not in
+    # package_extension/pack_npm's `needs` — same "visibility only" contract
+    # as test_backend_coverage already had.
+    needs: [prep, build_ci_image, setup, build_backend_coverage, test_backend_coverage, test_unit, test_bdd, test_visual]
+    if: always() && needs.build_backend_coverage.result == 'success'
+    runs-on: ubuntu-latest
+    container: *container_config
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Download Coverage-Instrumented Backend Build Tree
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-binary-coverage
+          path: src/parser/backend_cpp/build-coverage
+
+      - name: Download Backend Runtime Coverage Data
+        # A `pattern:` download with zero matches (e.g. every test_* job
+        # failed before uploading its coverage-raw) succeeds with nothing
+        # downloaded, unlike a `name:`-only download of a missing artifact.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: backend-gcda-*
+          path: coverage-raw
+          merge-multiple: true
+
+      - name: Download gtest Backend Coverage
+        # test_backend_coverage only uploads on success (no `if: always()`),
+        # so this artifact may not exist — collect-backend-coverage.mjs treats
+        # a missing file as "no gtest contribution" rather than a hard error.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true
+        with:
+          name: backend-coverage
+          path: gtest-coverage
+
+      - name: Collect and merge backend coverage
+        run: node scripts/collect-backend-coverage.mjs gtest-coverage/lcov.info
+
+      - name: Upload Final Backend Coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-coverage-final
+          path: coverage/backend/lcov.info
 
   package_extension:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, merge_visual_reports, test_syntax, test_bdd, test_system, security_audit]
