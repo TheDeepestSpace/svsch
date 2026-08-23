@@ -1,8 +1,9 @@
 // Merges the many per-invocation .gcda trees written by the coverage-
 // instrumented svsch_backend (see backendExecOptions in
 // src/parser/uhdmExtractor.ts) — one directory per backend invocation across
-// test_unit/test_bdd/test_visual, isolated via GCOV_PREFIX so concurrent
-// workers never race on the same counters file — into a single lcov.info,
+// test_unit/test_bdd/test_visual/test_syntax/test_system, isolated via
+// GCOV_PREFIX so concurrent workers never race on the same counters file —
+// into a single lcov.info,
 // optionally combined with other already-captured lcov tracefiles (e.g. the
 // gtest-only capture from `npm run test:backend:coverage`).
 //

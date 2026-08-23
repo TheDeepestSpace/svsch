@@ -107,8 +107,9 @@ jobs:
     # Builds svsch_backend a second time with --coverage instrumentation, in
     # parallel with the plain build_backend above — that job keeps feeding
     # package_extension/pack_npm an untouched production binary; this one
-    # feeds test_unit/test_bdd/test_visual an instrumented binary so their
-    # existing runs (not new ones) double as backend coverage collection.
+    # feeds test_unit/test_bdd/test_visual/test_syntax/test_system an
+    # instrumented binary so their existing runs (not new ones) double as
+    # backend coverage collection.
     # Uploads the whole build tree, not just the binary: gcov ties a .gcda's
     # output location to the *build-time absolute path* of its .gcno, so
     # collect_backend_coverage needs that .gcno tree downloaded back to the
@@ -513,21 +514,15 @@ jobs:
             core.info(`Deleted ${perShard.length} per-shard visual artifact(s)`);
 
   test_syntax:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend_coverage, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-
-      - &download_backend_step
-        name: Download Backend
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: backend-binary
-          path: dist
-
+      - *download_backend_coverage_step
+      - *stage_backend_coverage_step
       - *download_cli_step
       - *fix_perms_step
       - *pw_version_step
@@ -536,6 +531,16 @@ jobs:
 
       - name: Run Syntax Book Tests
         run: npm run test:syntax
+        env:
+          SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/syntax
+
+      - name: Upload Backend Coverage Data (syntax)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-gcda-syntax
+          path: coverage-raw
+          if-no-files-found: ignore
 
       - name: Upload Playwright artifacts
         if: always()
@@ -718,7 +723,7 @@ jobs:
             test-results/bdd/**
 
   test_system:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
+    needs: [prep, build_ci_image, setup, build_extension, build_backend_coverage, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
     strategy:
@@ -729,7 +734,8 @@ jobs:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-      - *download_backend_step
+      - *download_backend_coverage_step
+      - *stage_backend_coverage_step
       - *download_cli_step
       - *fix_perms_step
 
@@ -748,6 +754,15 @@ jobs:
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:system:single
         env:
           VSCODE_VERSION: ${{ matrix.vscode_version }}
+          SVSCH_BACKEND_GCOV_ROOT: ${{ github.workspace }}/coverage-raw/system-${{ matrix.vscode_version }}
+
+      - name: Upload Backend Coverage Data (system, ${{ matrix.vscode_version }})
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-gcda-system-${{ matrix.vscode_version }}
+          path: coverage-raw
+          if-no-files-found: ignore
 
       - name: Upload System Test Artifacts
         if: always()
@@ -833,13 +848,14 @@ jobs:
         uses: ./.github/actions/security-audit
 
   collect_backend_coverage:
-    # Merges the many per-invocation .gcda trees test_unit/test_bdd/test_visual
-    # produced while running against the coverage-instrumented backend (see
+    # Merges the many per-invocation .gcda trees test_unit/test_bdd/test_visual/
+    # test_syntax/test_system produced while running against the
+    # coverage-instrumented backend (see
     # SVSCH_BACKEND_GCOV_ROOT above) into one number, combined with the
     # gtest-only capture from test_backend_coverage. Non-blocking — not in
     # package_extension/pack_npm's `needs` — same "visibility only" contract
     # as test_backend_coverage already had.
-    needs: [prep, build_ci_image, setup, build_backend_coverage, test_backend_coverage, test_unit, test_bdd, test_visual]
+    needs: [prep, build_ci_image, setup, build_backend_coverage, test_backend_coverage, test_unit, test_bdd, test_visual, test_syntax, test_system]
     if: always() && needs.build_backend_coverage.result == 'success'
     runs-on: ubuntu-latest
     container: *container_config
@@ -890,7 +906,14 @@ jobs:
       - *checkout_step
       - *restore_npm_step
       - *download_dist_step
-      - *download_backend_step
+
+      - &download_backend_step
+        name: Download Backend
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-binary
+          path: dist
+
       - *download_cli_step
       - *fix_perms_step
 
