@@ -125,6 +125,7 @@
     "test:bdd": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts",
     "test:bdd:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/bdd/playwright.config.ts --update-snapshots=changed",
     "test:bdd:headed": "scripts/start-vnc.sh",
+    "test:bdd:merge-reports": "playwright merge-reports --config test/bdd/playwright.config.ts blob-report",
     "test:system:single": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts",
     "test:system:single:update": "env -u ELECTRON_RUN_AS_NODE xvfb-run --auto-servernum playwright test --config test/system/playwright.config.ts --update-snapshots=changed",
     "test:system": "node scripts/run-system-tests.js",
