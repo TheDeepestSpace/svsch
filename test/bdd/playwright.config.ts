@@ -76,7 +76,16 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // through a full run; revisit 'on' if CI gets a larger/dedicated volume.
     // Provided by our vscode-test-playwright patch — upstream has no video
     // support (recordVideo is passed to the Electron launch).
-    vscodeVideo: 'retain-on-failure',
+    //
+    // Downscaled well below the 1400x1000 viewport: every scenario records
+    // (even passing ones — we don't know a test failed until it's over, so
+    // the in-progress recording is deleted afterwards rather than skipped),
+    // and a hung close (see closeElectronApp's 5s force-kill path, and the
+    // 15s context.close() budget above it in the patch) lets a still-running
+    // renderer keep emitting video frames for that whole window before being
+    // killed. A smaller frame bounds how much a single stuck scenario can
+    // write in that window; still plenty to see what a failure looked like.
+    vscodeVideo: { mode: 'retain-on-failure', size: { width: 640, height: 460 } },
     viewport: { width: 1400, height: 1000 },
   },
 });
