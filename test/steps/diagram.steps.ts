@@ -2638,7 +2638,9 @@ Then(
     if (!this.workspaceDir) throw new Error('No open workspace');
     const content = await fs.promises.readFile(path.join(this.workspaceDir, filename), 'utf8');
     if (!content.includes(expected)) {
-      throw new Error(`File "${filename}" does not contain "${expected}" (${content.length} bytes)`);
+      throw new Error(
+        `File "${filename}" does not contain "${expected}" (${content.length} bytes)`,
+      );
     }
   },
 );
