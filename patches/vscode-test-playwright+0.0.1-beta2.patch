@@ -23,10 +23,10 @@ index c7429ec..96638bf 100644
      userDataDir?: string;
  };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..a13174b 100644
+index 5570b9f..d5ec625 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
-@@ -66,8 +66,90 @@ function getTraceMode(trace) {
+@@ -66,8 +66,105 @@ function getTraceMode(trace) {
          return 'on-first-retry';
      return traceMode;
  }
@@ -49,7 +49,7 @@ index 5570b9f..a13174b 100644
 +        return 'on-first-retry';
 +    return videoMode;
 +}
-+async function closeElectronApp(proc, userDataPath, timeoutMs = 5000) {
++async function closeElectronApp(proc, userDataPath, installPath, timeoutMs = 5000) {
 +    if (proc && proc.exitCode === null && !proc.signalCode) {
 +        const processTree = collectProcessTree(proc.pid);
 +        const waitForExit = new Promise(resolve => proc.once('exit', resolve));
@@ -71,12 +71,27 @@ index 5570b9f..a13174b 100644
 +    // user-data-dir open. Deferring cleanup to an end-of-shard sweep let up to
 +    // a whole shard's worth of these accumulate concurrently before anything
 +    // killed them, which is consistent with disk exhausting near the end of a
-+    // long run. Sweep by this session's own --user-data-dir instead of by
-+    // process tree, since that value is unique per test and unambiguously
-+    // identifies only this session's stragglers.
++    // long run. Sweep by this session's own --user-data-dir first.
 +    if (userDataPath) {
 +        try {
 +            cp.execFileSync('pkill', ['-9', '-f', `--user-data-dir=${userDataPath}`]);
++        }
++        catch {
++        }
++    }
++    // Belt-and-suspenders: Electron's utilityProcess API (which backs the
++    // node.mojom.NodeService helper above) builds its own argv rather than
++    // inheriting the browser process's full Chromium command line, so it is
++    // not guaranteed to carry --user-data-dir= — the sweep above can miss it
++    // (see #275, still observed leaking after the userDataPath-only sweep).
++    // Every process for this worker's VS Code session, helper or otherwise,
++    // does still run the same installed binary, so also sweep by that path.
++    // Safe to run every test: within a worker, installPath is reused
++    // sequentially, and this only runs after this test's own app is already
++    // being torn down above, before the next test launches anything there.
++    if (installPath) {
++        try {
++            cp.execFileSync('pkill', ['-9', '-f', installPath]);
 +        }
 +        catch {
 +        }
@@ -118,7 +133,7 @@ index 5570b9f..a13174b 100644
      function addEventListener(emitter, eventName, handler) {
          emitter.on(eventName, handler);
          return { emitter, eventName, handler };
-@@ -80,6 +162,10 @@ function waitForLine(process, regex) {
+@@ -80,6 +177,10 @@ function waitForLine(process, regex) {
      return new Promise((resolve, reject) => {
          const rl = readline.createInterface({ input: process.stderr });
          const failError = new Error('Process failed to launch!');
@@ -129,7 +144,7 @@ index 5570b9f..a13174b 100644
          const listeners = [
              addEventListener(rl, 'line', onLine),
              addEventListener(rl, 'close', reject.bind(null, failError)),
-@@ -95,6 +181,7 @@ function waitForLine(process, regex) {
+@@ -95,6 +196,7 @@ function waitForLine(process, regex) {
              resolve(match);
          }
          function cleanup() {
@@ -137,7 +152,7 @@ index 5570b9f..a13174b 100644
              removeEventListeners(listeners);
          }
      });
-@@ -103,6 +190,7 @@ exports.test = test_1.test.extend({
+@@ -103,6 +205,7 @@ exports.test = test_1.test.extend({
      vscodeVersion: ['insiders', { option: true, scope: 'worker' }],
      extensions: [undefined, { option: true, scope: 'worker' }],
      vscodeTrace: ['off', { option: true, scope: 'worker' }],
@@ -145,7 +160,7 @@ index 5570b9f..a13174b 100644
      extensionDevelopmentPath: [undefined, { option: true }],
      baseDir: [async ({ _createTempDir }, use) => await use(await _createTempDir()), { option: true }],
      extensionsDir: [undefined, { option: true, scope: 'worker' }],
-@@ -135,7 +223,7 @@ exports.test = test_1.test.extend({
+@@ -135,7 +238,7 @@ exports.test = test_1.test.extend({
              await use({ installPath, cachePath });
          }, { timeout: 0, scope: 'worker' }],
      // based on https://github.com/microsoft/playwright-vscode/blob/1d855b9a7aeca783223a7a9f8e3b01efbe8e16f2/tests-integration/tests/baseTest.ts
@@ -154,7 +169,7 @@ index 5570b9f..a13174b 100644
              const { installPath, cachePath } = _vscodeInstall;
              // remove all VSCODE_* environment variables, otherwise it fails to load custom webviews with the following error:
              // InvalidStateError: Failed to register a ServiceWorker: The document is in an invalid state
-@@ -144,13 +232,19 @@ exports.test = test_1.test.extend({
+@@ -144,13 +247,19 @@ exports.test = test_1.test.extend({
                  if (/^VSCODE_/i.test(prop))
                      delete env[prop];
              }
@@ -174,7 +189,7 @@ index 5570b9f..a13174b 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -158,6 +252,13 @@ exports.test = test_1.test.extend({
+@@ -158,6 +267,13 @@ exports.test = test_1.test.extend({
                      '--skip-welcome',
                      '--skip-release-notes',
                      '--disable-workspace-trust',
@@ -188,7 +203,7 @@ index 5570b9f..a13174b 100644
                      `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
                      `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
                      `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
-@@ -184,11 +285,62 @@ exports.test = test_1.test.extend({
+@@ -184,11 +300,62 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
@@ -208,7 +223,7 @@ index 5570b9f..a13174b 100644
 +                    new Promise(resolve => setTimeout(resolve, 15000)),
 +                ]);
 +            }
-+            await closeElectronApp(appProcess, userDataPath);
++            await closeElectronApp(appProcess, userDataPath, installPath);
 +            if (captureVideo) {
 +                const testFailed = testInfo.status !== testInfo.expectedStatus;
 +                const abandonVideo = !testFailed && (videoMode === 'retain-on-failure' || videoMode === 'retain-on-first-failure');
@@ -255,7 +270,7 @@ index 5570b9f..a13174b 100644
              }
          }, { timeout: 0 }],
      workbox: async ({ electronApp }, use) => {
-@@ -196,24 +348,24 @@ exports.test = test_1.test.extend({
+@@ -196,24 +363,24 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -290,7 +305,7 @@ index 5570b9f..a13174b 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +403,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +418,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });

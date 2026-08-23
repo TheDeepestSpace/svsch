@@ -511,7 +511,19 @@ jobs:
         # --reporter=blob defers cucumber/JSON/HTML report generation: each shard
         # just records raw results, and merge_bdd_reports below combines them into
         # a single report via `playwright merge-reports`.
-        run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
+        #
+        # The disk-watch loop runs in the background of *this* step so its
+        # output interleaves with the test run's own live log instead of
+        # sitting in a later step — every ENOSPC failure so far has killed
+        # the runner process itself mid-job (see #275), which skips every
+        # later step (including "Diagnose disk usage" below) entirely and
+        # has even lost the job's log blob outright once or twice. A step
+        # that runs after the crash can't tell us anything; this can.
+        run: |
+          ( while true; do echo "[disk-watch $(date -u +%H:%M:%S)] $(df -h / | tail -1)"; sleep 15; done ) &
+          watcher_pid=$!
+          trap 'kill "$watcher_pid" 2>/dev/null || true' EXIT
+          sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
       # A scenario whose Electron app hangs on close falls back to killing
       # its whole process tree (see closeElectronApp in our vscode-test-playwright
