@@ -710,8 +710,7 @@ jobs:
             const pr = context.issue.number;
             const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/bdd-videos/pr-${pr}/`;
             const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const body = `${marker}\n[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})\n\n` +
-              `_If the gallery is 404, enable GitHub Pages from the \`gh-pages\` branch root._`;
+            const body = `${marker}\n[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})`;
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
               repo,
