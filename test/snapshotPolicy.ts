@@ -113,7 +113,11 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
 // already-redirected results dir means the existing CI copy step picks them
 // up for free.
 export function bddVisualDiffsDir(): string {
-  return path.join(os.tmpdir(), `bdd-playwright-results-${path.basename(process.cwd())}`, 'visual-diffs');
+  return path.join(
+    os.tmpdir(),
+    `bdd-playwright-results-${path.basename(process.cwd())}`,
+    'visual-diffs',
+  );
 }
 
 // UPDATE_SNAPSHOTS is the update switch used by the custom comparators. Keep
