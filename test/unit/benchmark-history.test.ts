@@ -143,3 +143,37 @@ describe('computeHistoryTrendData', () => {
     ]);
   });
 });
+
+describe('computeHistoryTrendData with a custom series', () => {
+  const CUSTOM_SERIES = [{ key: 'durationSec', color: '#000000', label: 'Duration' }];
+  const historyEntry = {
+    sha: 'cccccccccccccccccccccccccccccccccccccccc',
+    date: '2026-01-01T00:00:00.000Z',
+    durationSec: 500,
+  };
+
+  it('only copies the given series keys onto each point (not the whole entry)', () => {
+    const points = computeHistoryTrendData([historyEntry], { durationSec: 480 }, CUSTOM_SERIES);
+    expect(points).toEqual([
+      { label: historyEntry.sha.slice(0, 7), durationSec: 500, isCurrent: false },
+      { label: 'this PR', durationSec: 480, isCurrent: true },
+    ]);
+  });
+
+  it('omits the preview point entirely when currentPoint is nullish', () => {
+    const points = computeHistoryTrendData([historyEntry], undefined, CUSTOM_SERIES);
+    expect(points).toEqual([
+      { label: historyEntry.sha.slice(0, 7), durationSec: 500, isCurrent: false },
+    ]);
+  });
+
+  it('labels the preview point with a custom currentLabel', () => {
+    const points = computeHistoryTrendData(
+      [],
+      { durationSec: 10 },
+      CUSTOM_SERIES,
+      'this run (so far)',
+    );
+    expect(points).toEqual([{ label: 'this run (so far)', durationSec: 10, isCurrent: true }]);
+  });
+});

@@ -13,6 +13,7 @@ import {
   mergeBenchmarkHistory,
   extractBaseline,
 } from './render-benchmark-charts.mjs';
+import { renderCiDurationTrendChart, fetchRun } from './ci-duration.mjs';
 
 // visual (one column per spec file/test) can run into the dozens of entries,
 // so its chart drops x-axis labels and per-bar delta text in favor of showing
@@ -22,11 +23,11 @@ import {
 const CHART_KEYS_WITH_LABELS = new Set();
 const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
-// One review comment covering every diagram-generation benchmark suite, with
-// a real "master vs. this run" bar chart (hosted on gh-pages, since GitHub
-// comments can't embed raw <svg>) plus a worst/best delta table per suite.
-// Args are "<benchmark-name>=<benchmark-file>" pairs — one per individually
-// tracked benchmark (visual has two: elaboration and rendering).
+// One review comment covering every tracked CI stat (diagram-generation
+// benchmarks, CI workflow duration, and whatever gets added after those) —
+// see SECTIONS below. Args are "<benchmark-name>=<benchmark-file>" pairs,
+// one per individually tracked benchmark (visual has two: elaboration and
+// rendering).
 const suiteArgs = process.argv.slice(2).map((arg) => {
   const [name, file] = arg.split('=');
   if (!name || !file) {
@@ -39,18 +40,19 @@ const {
   GITHUB_API_URL = 'https://api.github.com',
   GITHUB_REPOSITORY,
   GITHUB_SHA,
+  GITHUB_RUN_ID,
   GITHUB_TOKEN,
   PR_NUMBER,
 } = process.env;
 
-if (suiteArgs.length === 0) {
-  throw new Error(
-    'Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]',
-  );
-}
+// Only what's needed to post a comment at all — a section's own data source
+// (e.g. missing suiteArgs, or no GITHUB_RUN_ID for the CI Duration section)
+// fails just that section instead of the whole script; see runSection below.
 if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
   throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, and PR_NUMBER must be set');
 }
+
+const [owner, repo] = GITHUB_REPOSITORY.split('/');
 
 // Which chart each benchmark suite belongs to, and how it's labeled there.
 // visual's two suites share one stacked chart (elaboration segment drawn
@@ -100,94 +102,17 @@ function gitAuthed(args, opts = {}) {
   });
 }
 
-// dev/bench/data.js is github-action-benchmark's full history file, appended
-// to (never pruned) on every master push — it's grown well past git show's
-// default 1MB maxBuffer (see #258), so raise it generously and give it
-// headroom to keep growing between now and whenever trim-benchmark-history.mjs
-// next runs.
-const BASELINE_MAX_BUFFER = 20 * 1024 * 1024;
-
-const baselineData = (() => {
-  try {
-    const script = git(['show', 'origin/gh-pages:dev/bench/data.js'], {
-      maxBuffer: BASELINE_MAX_BUFFER,
-    });
-    return JSON.parse(script.slice('window.BENCHMARK_DATA = '.length));
-  } catch (err) {
-    // Surface the real failure (e.g. a future maxBuffer regression, or gh-pages
-    // truly missing the file) instead of silently falling back to "no
-    // baseline" — that failure mode renders every test as new with an empty
-    // trend chart and previously went unnoticed for days (#258).
-    console.error('Failed to read baseline benchmark data from gh-pages:dev/bench/data.js:', err);
-    return undefined;
-  }
-})();
-
-// dev/bench/history-averages.json holds the visual suite's per-run
-// {sha, date, elaborationAvgMs, renderingAvgMs} averages, kept indefinitely by
-// trim-benchmark-history.mjs even as it prunes the raw per-test entries in
-// dev/bench/data.js those averages were derived from — so the trend chart
-// below prefers reading its history from here rather than recomputing it from
-// baselineData, which only ever holds the most recent MAX_ENTRIES_PER_SUITE
-// runs. Missing (e.g. before trim-benchmark-history.mjs has ever run — it's
-// master-push-only, so a brand new gh-pages branch or a PR opened before the
-// first post-merge master run since this file was introduced won't have it
-// yet) or unparseable just means nothing persisted yet, not a hard failure.
-const persistedHistory = (() => {
-  try {
-    const json = git(['show', 'origin/gh-pages:dev/bench/history-averages.json']);
-    return JSON.parse(json);
-  } catch (err) {
-    console.error(
-      'No benchmark history-averages.json on gh-pages yet (or failed to read it):',
-      err,
-    );
-    return [];
-  }
-})();
-// Merged with history freshly derived from baselineData (already fetched
-// above) rather than used alone: right after this persistence was introduced,
-// or if trim-benchmark-history.mjs's master-only step ever fails to run, the
-// persisted file lags or is missing entirely and the trend chart would
-// otherwise render as a single dangling "this PR" point with no history.
-// mergeBenchmarkHistory dedups by sha with the persisted entry winning, so
-// this never disagrees with the persisted file once it catches up.
-const historyAverages = mergeBenchmarkHistory(
-  persistedHistory,
-  computeBenchmarkHistory(baselineData),
-);
-
-const chartGroups = new Map();
-for (const { name, file } of suiteArgs) {
-  const meta = METRIC_META[name];
-  if (!meta) {
-    throw new Error(
-      `Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`,
-    );
-  }
-  const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const baselineByName = extractBaseline(baselineData, name);
-  const group = chartGroups.get(meta.chartKey) ?? { title: meta.chartTitle, metrics: [] };
-  group.metrics.push({
-    name,
-    order: meta.order,
-    label: meta.label,
-    unit: entries[0]?.unit ?? 'ms',
-    entries,
-    baselineByName,
-  });
-  chartGroups.set(meta.chartKey, group);
-}
-
-// Publishes chart SVGs (and, for CHART_KEYS_WITH_CSV, per-metric CSVs) to
-// gh-pages (dev/bench-charts/pr-<N>/<file>) via a throwaway worktree, so
-// they're reachable at a raw.githubusercontent URL for the PR comment —
-// GitHub markdown can't render inline <svg>, only <img>/link references to a
-// hosted file. Same branch github-action-benchmark already publishes
-// benchmark history to; this just adds a few static files there rather than
-// a second place to manage. Retries a few times since concurrent PR runs can
-// race to push.
-function publishFiles(contentByFilename) {
+// Publishes files to gh-pages (dev/<baseDir>/pr-<N>/<filename>) via a
+// throwaway worktree, so they're reachable at a raw.githubusercontent URL for
+// the PR comment — GitHub markdown can't render inline <svg>, only
+// <img>/link references to a hosted file. Same branch github-action-benchmark
+// (and record-ci-duration.mjs) already publish to; this just adds a few
+// static files there rather than a second place to manage. `baseDir` keeps
+// each section's files in their own directory so two sections publishing
+// concurrently never race on the same files. Retries a few times since
+// concurrent PR runs (or the CI-duration capture workflow, on master pushes)
+// can race to push.
+function publishFiles(baseDir, contentByFilename) {
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-charts-'));
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -197,7 +122,7 @@ function publishFiles(contentByFilename) {
       }
       git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
 
-      const chartsDir = path.join(worktreeDir, 'dev', 'bench-charts', `pr-${PR_NUMBER}`);
+      const chartsDir = path.join(worktreeDir, 'dev', baseDir, `pr-${PR_NUMBER}`);
       fs.mkdirSync(chartsDir, { recursive: true });
       for (const [filename, content] of contentByFilename) {
         fs.writeFileSync(path.join(chartsDir, filename), content, 'utf8');
@@ -217,7 +142,7 @@ function publishFiles(contentByFilename) {
           'user.email=github-actions[bot]@users.noreply.github.com',
           'commit',
           '-m',
-          `Update benchmark charts for PR #${PR_NUMBER}`,
+          `Update ${baseDir} for PR #${PR_NUMBER}`,
         ],
         { cwd: worktreeDir },
       );
@@ -229,7 +154,7 @@ function publishFiles(contentByFilename) {
         // Someone else pushed to gh-pages first — refetch and retry.
       }
     }
-    throw new Error('Failed to publish benchmark charts after 3 attempts');
+    throw new Error(`Failed to publish ${baseDir} after 3 attempts`);
   } finally {
     try {
       git(['worktree', 'remove', '--force', worktreeDir]);
@@ -239,126 +164,288 @@ function publishFiles(contentByFilename) {
   }
 }
 
-const [owner, repo] = GITHUB_REPOSITORY.split('/');
-const contentByFilename = new Map();
-const csvFilenamesByKey = new Map();
-for (const [key, group] of chartGroups) {
-  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
-  const showLabels = CHART_KEYS_WITH_LABELS.has(key);
-  const svg = renderStackedSuiteChart({
-    suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`,
-    metrics,
-    showLabels,
-  });
-  contentByFilename.set(`${key}.svg`, svg);
-
-  if (CHART_KEYS_WITH_CSV.has(key)) {
-    // One row per test with both elaboration and rendering values plus their
-    // sum, ordered fastest-to-slowest by that sum — same order
-    // computeStackedData sorts the chart's bars in, so the CSV never
-    // disagrees with what the chart shows.
-    const filename = `${key}.csv`;
-    contentByFilename.set(filename, renderStackedCsv(metrics));
-    csvFilenamesByKey.set(key, [{ filename }]);
-  }
-}
-
-// The trend chart only exists for the visual suite — it's the only one with
-// per-master-run history to derive (see historyAverages above).
-const visualGroup = chartGroups.get('visual');
-const elaborationMetric = visualGroup?.metrics.find(
-  (m) => m.name === 'visual-elaboration-diagram-generation-duration',
-);
-const renderingMetric = visualGroup?.metrics.find(
-  (m) => m.name === 'visual-rendering-diagram-generation-duration',
-);
-if (elaborationMetric && renderingMetric) {
-  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
-  const currentRunAverages = {
-    elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
-    renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
-  };
-  contentByFilename.set(
-    'visual-trend.svg',
-    renderHistoryTrendChart({
-      title: 'Visual suite — historical average per master run',
-      history: historyAverages,
-      currentRunAverages,
-    }),
-  );
-}
-
-const chartCommitSha = publishFiles(contentByFilename);
-
-// A one-line "how'd it move" per tracked metric, surfaced right after the
-// report header — so the headline number is visible without expanding any
-// suite's collapsed delta table first. Same order as METRIC_META.
-const summaryLines = [];
-for (const [, group] of chartGroups) {
-  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
-  for (const metric of metrics) {
-    const rows = computeDeltaRows(metric.entries, metric.baselineByName);
-    const avg = computeAverageDelta(rows);
-    if (!avg) continue;
-    const signMs = avg.avgNominal > 0 ? '+' : '';
-    const signPct = avg.avgPct > 0 ? '+' : '';
-    summaryLines.push(
-      `- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`,
+// --- Section: diagram-generation benchmark (visual suite) --------------
+//
+// A "master vs. this run" bar chart per suite plus a worst/best delta table,
+// and (for the visual suite) a historical trend line. Self-contained: reads
+// its own gh-pages baseline, publishes its own chart assets, and returns
+// ready-to-embed markdown, so a failure anywhere in here (a suite file
+// missing, gh-pages unreachable, ...) only takes out this section — see
+// runSection below.
+async function generateBenchmarkSection() {
+  if (suiteArgs.length === 0) {
+    throw new Error(
+      'no benchmark suite arguments given (usage: <name>=<file> [<name>=<file> ...])',
     );
+  }
+
+  // dev/bench/data.js is github-action-benchmark's full history file,
+  // appended to (never pruned) on every master push — it's grown well past
+  // git show's default 1MB maxBuffer (see #258), so raise it generously and
+  // give it headroom to keep growing between now and whenever
+  // trim-benchmark-history.mjs next runs.
+  const BASELINE_MAX_BUFFER = 20 * 1024 * 1024;
+  const baselineData = (() => {
+    try {
+      const script = git(['show', 'origin/gh-pages:dev/bench/data.js'], {
+        maxBuffer: BASELINE_MAX_BUFFER,
+      });
+      return JSON.parse(script.slice('window.BENCHMARK_DATA = '.length));
+    } catch (err) {
+      // Surface the real failure (e.g. a future maxBuffer regression, or
+      // gh-pages truly missing the file) instead of silently falling back to
+      // "no baseline" — that failure mode renders every test as new with an
+      // empty trend chart and previously went unnoticed for days (#258).
+      console.error('Failed to read baseline benchmark data from gh-pages:dev/bench/data.js:', err);
+      return undefined;
+    }
+  })();
+
+  // dev/bench/history-averages.json holds the visual suite's per-run
+  // {sha, date, elaborationAvgMs, renderingAvgMs} averages, kept
+  // indefinitely by trim-benchmark-history.mjs even as it prunes the raw
+  // per-test entries in dev/bench/data.js those averages were derived from —
+  // so the trend chart below prefers reading its history from here rather
+  // than recomputing it from baselineData, which only ever holds the most
+  // recent MAX_ENTRIES_PER_SUITE runs. Missing (e.g. before
+  // trim-benchmark-history.mjs has ever run) or unparseable just means
+  // nothing persisted yet, not a hard failure.
+  const persistedHistory = (() => {
+    try {
+      const json = git(['show', 'origin/gh-pages:dev/bench/history-averages.json']);
+      return JSON.parse(json);
+    } catch (err) {
+      console.error(
+        'No benchmark history-averages.json on gh-pages yet (or failed to read it):',
+        err,
+      );
+      return [];
+    }
+  })();
+  // Merged with history freshly derived from baselineData (already fetched
+  // above) rather than used alone: right after this persistence was
+  // introduced, or if trim-benchmark-history.mjs's master-only step ever
+  // fails to run, the persisted file lags or is missing entirely and the
+  // trend chart would otherwise render as a single dangling "this PR" point
+  // with no history. mergeBenchmarkHistory dedups by sha with the persisted
+  // entry winning, so this never disagrees with the persisted file once it
+  // catches up.
+  const historyAverages = mergeBenchmarkHistory(
+    persistedHistory,
+    computeBenchmarkHistory(baselineData),
+  );
+
+  const chartGroups = new Map();
+  for (const { name, file } of suiteArgs) {
+    const meta = METRIC_META[name];
+    if (!meta) {
+      throw new Error(
+        `Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`,
+      );
+    }
+    const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const baselineByName = extractBaseline(baselineData, name);
+    const group = chartGroups.get(meta.chartKey) ?? { title: meta.chartTitle, metrics: [] };
+    group.metrics.push({
+      name,
+      order: meta.order,
+      label: meta.label,
+      unit: entries[0]?.unit ?? 'ms',
+      entries,
+      baselineByName,
+    });
+    chartGroups.set(meta.chartKey, group);
+  }
+
+  const contentByFilename = new Map();
+  const csvFilenamesByKey = new Map();
+  for (const [key, group] of chartGroups) {
+    const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+    const showLabels = CHART_KEYS_WITH_LABELS.has(key);
+    const svg = renderStackedSuiteChart({
+      suiteTitle: `${group.title} — baseline vs. this run, fastest to slowest`,
+      metrics,
+      showLabels,
+    });
+    contentByFilename.set(`${key}.svg`, svg);
+
+    if (CHART_KEYS_WITH_CSV.has(key)) {
+      // One row per test with both elaboration and rendering values plus
+      // their sum, ordered fastest-to-slowest by that sum — same order
+      // computeStackedData sorts the chart's bars in, so the CSV never
+      // disagrees with what the chart shows.
+      const filename = `${key}.csv`;
+      contentByFilename.set(filename, renderStackedCsv(metrics));
+      csvFilenamesByKey.set(key, [{ filename }]);
+    }
+  }
+
+  // The trend chart only exists for the visual suite — it's the only one
+  // with per-master-run history to derive (see historyAverages above).
+  const visualGroup = chartGroups.get('visual');
+  const elaborationMetric = visualGroup?.metrics.find(
+    (m) => m.name === 'visual-elaboration-diagram-generation-duration',
+  );
+  const renderingMetric = visualGroup?.metrics.find(
+    (m) => m.name === 'visual-rendering-diagram-generation-duration',
+  );
+  if (elaborationMetric && renderingMetric) {
+    const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+    const currentRunAverages = {
+      elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
+      renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
+    };
+    contentByFilename.set(
+      'visual-trend.svg',
+      renderHistoryTrendChart({
+        title: 'Visual suite — historical average per master run',
+        history: historyAverages,
+        currentRunAverages,
+      }),
+    );
+  }
+
+  const chartCommitSha = publishFiles('bench-charts', contentByFilename);
+
+  // A one-line "how'd it move" per tracked metric, surfaced right after the
+  // section header — so the headline number is visible without expanding
+  // any suite's collapsed delta table first. Same order as METRIC_META.
+  const summaryLines = [];
+  for (const [, group] of chartGroups) {
+    const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+    for (const metric of metrics) {
+      const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+      const avg = computeAverageDelta(rows);
+      if (!avg) continue;
+      const signMs = avg.avgNominal > 0 ? '+' : '';
+      const signPct = avg.avgPct > 0 ? '+' : '';
+      summaryLines.push(
+        `- **${metric.label}:** ${signMs}${avg.avgNominal.toFixed(0)} ms (${signPct}${avg.avgPct.toFixed(1)}%) avg across ${avg.count} test${avg.count === 1 ? '' : 's'}`,
+      );
+    }
+  }
+
+  const suiteSections = [];
+  for (const [key, group] of chartGroups) {
+    const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
+    const chartUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${key}.svg`;
+    const lines = [`### ${group.title}`, '', `![${group.title} chart](${chartUrl})`];
+
+    const csvFilenames = csvFilenamesByKey.get(key);
+    if (csvFilenames?.length) {
+      const csvLinks = csvFilenames.map(({ label, filename }) => {
+        const csvUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${filename}`;
+        const linkLabel = csvFilenames.length > 1 ? `${label} CSV` : 'CSV';
+        return `[${linkLabel}](${csvUrl})`;
+      });
+      lines.push('', `Full data (chart omits labels above ~10 entries): ${csvLinks.join(' · ')}`);
+    }
+
+    for (const metric of metrics) {
+      const rows = computeDeltaRows(metric.entries, metric.baselineByName);
+      const table = renderDeltaTableMarkdown(rows);
+      if (table) {
+        const heading = metrics.length > 1 ? `${metric.label} delta` : 'Delta summary';
+        lines.push(
+          '',
+          `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`,
+          '',
+          table,
+          '',
+          '</details>',
+        );
+      }
+    }
+    if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
+      const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
+      lines.push('', `![Visual suite historical trend](${trendUrl})`);
+    }
+
+    suiteSections.push(lines.join('\n'));
+  }
+
+  return [
+    '## Diagram generation benchmark',
+    ...(summaryLines.length ? [summaryLines.join('\n')] : []),
+    ...suiteSections,
+  ].join('\n\n');
+}
+
+// --- Section: CI workflow duration --------------------------------------
+//
+// This run's elapsed wall-clock time so far, plus the recent per-master-push
+// trend recorded by record-ci-duration.mjs (see #282 and
+// .github/workflows/ci-duration.yml). "So far" rather than a final total:
+// this section runs as one job partway through the workflow graph, before
+// several other jobs (package_extension, pack_npm, ...) have even started,
+// so the true total isn't knowable yet from inside the run itself.
+async function generateCiDurationSection() {
+  if (!GITHUB_RUN_ID) {
+    throw new Error('GITHUB_RUN_ID not set');
+  }
+
+  const persistedHistory = (() => {
+    try {
+      const json = git(['show', 'origin/gh-pages:dev/ci-duration/history.json']);
+      return JSON.parse(json);
+    } catch (err) {
+      console.error('No CI duration history.json on gh-pages yet (or failed to read it):', err);
+      return [];
+    }
+  })();
+
+  const run = await fetchRun({ owner, repo, runId: GITHUB_RUN_ID, githubToken: GITHUB_TOKEN });
+  const startedMs = new Date(run.run_started_at).getTime();
+  if (Number.isNaN(startedMs)) {
+    throw new Error(`run ${GITHUB_RUN_ID} has no run_started_at yet`);
+  }
+  const elapsedSec = Math.max(0, Math.round((Date.now() - startedMs) / 1000));
+
+  const svg = renderCiDurationTrendChart({
+    history: persistedHistory,
+    currentPoint: { durationSec: elapsedSec },
+    currentLabel: 'this run (so far)',
+  });
+  const chartCommitSha = publishFiles('ci-duration-charts', new Map([['trend.svg', svg]]));
+  const chartUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/ci-duration-charts/pr-${PR_NUMBER}/trend.svg`;
+
+  return [
+    '## CI Duration',
+    `**This run so far:** ${elapsedSec}s elapsed since the workflow started — not the final total, since other jobs (including this one) are still running.`,
+    `![CI workflow duration trend](${chartUrl})`,
+  ].join('\n\n');
+}
+
+// Each section is independent: a failure fetching its data, rendering its
+// chart, or publishing its assets only replaces that section's own content
+// with an "unavailable" note, rather than aborting the whole comment. This
+// is what keeps adding a new stat additive — a new section function here,
+// nothing else at risk.
+const SECTIONS = [
+  { title: 'Diagram generation benchmark', generate: generateBenchmarkSection },
+  { title: 'CI Duration', generate: generateCiDurationSection },
+];
+
+async function runSection({ title, generate }) {
+  try {
+    return await generate();
+  } catch (err) {
+    console.error(`"${title}" section failed:`, err);
+    return `## ${title}\n\n_Unavailable: ${err.message}_`;
   }
 }
 
 const sections = [];
-for (const [key, group] of chartGroups) {
-  const metrics = [...group.metrics].sort((a, b) => a.order - b.order);
-  const chartUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${key}.svg`;
-  const lines = [`### ${group.title}`, '', `![${group.title} chart](${chartUrl})`];
-
-  const csvFilenames = csvFilenamesByKey.get(key);
-  if (csvFilenames?.length) {
-    const csvLinks = csvFilenames.map(({ label, filename }) => {
-      const csvUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/${filename}`;
-      const linkLabel = csvFilenames.length > 1 ? `${label} CSV` : 'CSV';
-      return `[${linkLabel}](${csvUrl})`;
-    });
-    lines.push('', `Full data (chart omits labels above ~10 entries): ${csvLinks.join(' · ')}`);
-  }
-
-  for (const metric of metrics) {
-    const rows = computeDeltaRows(metric.entries, metric.baselineByName);
-    const table = renderDeltaTableMarkdown(rows);
-    if (table) {
-      const heading = metrics.length > 1 ? `${metric.label} delta` : 'Delta summary';
-      lines.push(
-        '',
-        `<details><summary>${heading} (worst 5 / best 5 / average)</summary>`,
-        '',
-        table,
-        '',
-        '</details>',
-      );
-    }
-  }
-  if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
-    const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
-    lines.push('', `![Visual suite historical trend](${trendUrl})`);
-  }
-
-  sections.push(lines.join('\n'));
+for (const section of SECTIONS) {
+  sections.push(await runSection(section));
 }
 
 const commentId = 'diagram-generation-benchmark Summary';
 const startTag = `<!-- github-benchmark-action-comment(start): ${commentId} -->`;
 const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
-const body = [
-  startTag,
-  `# Diagram generation benchmark — ${GITHUB_SHA.slice(0, 7)}`,
-  ...(summaryLines.length ? [summaryLines.join('\n')] : []),
-  '',
-  ...sections,
-  '',
-  endTag,
-].join('\n\n');
+const body = [startTag, `# CI report — ${GITHUB_SHA.slice(0, 7)}`, ...sections, '', endTag].join(
+  '\n\n',
+);
 
 const headers = {
   Accept: 'application/vnd.github+json',

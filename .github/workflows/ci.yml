@@ -667,9 +667,10 @@ jobs:
             test/system/__screenshots__/**
 
   report_benchmarks:
-    # Posts one PR comment covering diagram-generation benchmark suites
-    # (visual), instead of test_visual posting its own. BDD no longer tracks a
-    # perf benchmark — see #167 tracking its re-introduction once the
+    # Posts one PR comment covering every tracked CI stat — diagram-generation
+    # benchmark suites (visual) and CI workflow duration (#282) so far —
+    # instead of each stat posting its own. BDD no longer tracks a perf
+    # benchmark — see #167 tracking its re-introduction once the
     # busy-indicator timing artifact is fixed.
     needs: [prep, build_ci_image, merge_visual_reports, test_system]
     if: >
@@ -683,6 +684,9 @@ jobs:
       # already publishes there) before posting the PR comment.
       contents: write
       pull-requests: write
+      # The CI Duration section looks up this run's own timing (Actions API)
+      # for its "so far" preview point.
+      actions: read
     steps:
       - *checkout_step
       - *restore_npm_step
