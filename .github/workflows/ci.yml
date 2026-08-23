@@ -437,6 +437,14 @@ jobs:
           path: .
           merge-multiple: true
 
+      - name: Regenerate BDD spec files
+        # `playwright merge-reports` doesn't run globalSetup (which normally
+        # invokes bddgen before `playwright test`), and merging happens in a
+        # fresh container without each shard's generated spec files under
+        # /tmp — regenerate them here so the HTML/JSON reporters can resolve
+        # source paths while merging.
+        run: npx bddgen --config test/bdd/playwright.config.ts
+
       - name: Merge BDD Reports
         run: npm run test:bdd:merge-reports
 
