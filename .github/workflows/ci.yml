@@ -71,6 +71,24 @@ jobs:
         with:
           persist-credentials: false
 
+      # TEMPORARY: one-off probe for the test_bdd ENOSPC investigation (#275).
+      # df -h inside this container already shows ~117G used / 29G free before
+      # any test artifacts exist, which doesn't match this image's real
+      # contents. Find out whether that's host-side bloat leaking into the
+      # container's view of "/", or something else. Remove after diagnosis.
+      - name: TEMP disk probe
+        run: |
+          echo "--- free -h ---"
+          free -h || true
+          echo "--- du -xhd1 / (top-level, same fs only) ---"
+          du -xhd1 / 2>/dev/null | sort -rh | head -30 || true
+          echo "--- ls /usr/share/dotnet /opt/hostedtoolcache /usr/local/lib/android 2>&1 ---"
+          ls -la /usr/share/dotnet /opt/hostedtoolcache /usr/local/lib/android 2>&1 || true
+          echo "--- du -xhd1 /var/lib/docker ---"
+          du -xhd1 /var/lib/docker 2>&1 | sort -rh | head -20 || true
+          echo "--- mount ---"
+          mount | grep -E ' / | /var/lib/docker ' || true
+
       - &restore_npm_step
         name: Restore node modules
         id: cache-npm
