@@ -119,6 +119,7 @@
     "test:backend": "node scripts/run-backend-tests.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots=changed",
+    "test:visual:merge-reports": "playwright merge-reports --config playwright.config.ts blob-report",
     "bundle-surelog": "node scripts/bundle-surelog.js --src \"$SURELOG_SRC\"",
     "install-surelog": "node scripts/install-surelog.js",
     "prepare": "node scripts/install-surelog.js || true && patch-package && node scripts/setup-eslint-ts-shim.js",
