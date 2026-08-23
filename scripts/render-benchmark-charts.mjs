@@ -284,7 +284,7 @@ function renderXLabels(names, originY, barPitch) {
   return parts.join('\n');
 }
 
-// Shared by renderStackedSuiteChart and the CSV export (comment-benchmark-summary.mjs)
+// Shared by renderStackedSuiteChart and the CSV export (generate-benchmark-stats.mjs)
 // so the CSV's row order always matches the chart's left-to-right bar order:
 // fastest-to-slowest by total (elaboration + rendering), not by name.
 export function computeStackedData(metrics) {

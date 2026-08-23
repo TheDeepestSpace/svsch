@@ -7,7 +7,7 @@ import { computeBenchmarkHistory, mergeBenchmarkHistory } from './render-benchma
 // dev/bench/data.js is github-action-benchmark's own history file on
 // gh-pages: it appends one entry per tracked suite on every master push and
 // never prunes anything, so left alone it grows forever (see #258 — it
-// crossed 1MB and broke the baseline read in comment-benchmark-summary.mjs).
+// crossed 1MB and broke the baseline read in generate-benchmark-stats.mjs).
 // Run this right after benchmark-action's own auto-push (same job, same
 // master-only condition) to cap each suite's history to its most recent
 // MAX_ENTRIES_PER_SUITE runs.
@@ -32,7 +32,7 @@ function git(args, opts = {}) {
   return execFileSync('git', args, { encoding: 'utf8', timeout: NETWORK_TIMEOUT_MS, ...opts });
 }
 
-// See comment-benchmark-summary.mjs's identical helper for why auth is
+// See generate-benchmark-stats.mjs's identical helper for why auth is
 // passed via GIT_CONFIG_* env vars rather than a `-c` argv flag.
 const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${GITHUB_TOKEN}`).toString('base64')}`;
 function gitAuthed(args, opts = {}) {
