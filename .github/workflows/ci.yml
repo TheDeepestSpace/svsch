@@ -387,6 +387,15 @@ jobs:
           comment-on-alert: false
           fail-on-alert: false
 
+      - name: Trim benchmark history retention
+        # github-action-benchmark's auto-push above never prunes dev/bench/data.js,
+        # so it grows forever (#258) — cap it to the most recent runs per suite
+        # right after the pushes that just grew it.
+        if: github.ref == 'refs/heads/master'
+        run: node scripts/trim-benchmark-history.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload benchmark result (visual)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
