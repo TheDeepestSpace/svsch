@@ -194,6 +194,59 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
         return control;
     };
 
+    // UHDM's constant-value evaluator (getConstantInt/isLiteralExpr) reliably
+    // folds a plain literal, but a parameterized loop bound like
+    // `(1<<ADDR_WIDTH)` comes back as an unresolved vpiOperation, and neither
+    // it nor its parameter-reference operand carries decompiled source text
+    // or resolves through vpiActual from this local (loop-scoped) use site.
+    // Walk the operand tree ourselves: recurse through binary/unary
+    // arithmetic operations, and for a leaf that isn't itself a literal,
+    // resolve its bare identifier name against the module's own already-known
+    // parameter defaults (the same defaults generateParameterValues() feeds
+    // to the generate-region and replication-width constant folders).
+    std::function<std::optional<int>(vpiHandle)> constExprValue = [&](vpiHandle expr) -> std::optional<int> {
+        if (!expr) return std::nullopt;
+        vpiHandle actual = unwrapRef(expr);
+        if (!actual) actual = expr;
+        if (isLiteralExpr(actual)) return getConstantInt(actual);
+        if (vpi_get(vpiType, actual) == vpiOperation) {
+            int op_type = vpi_get(vpiOpType, actual);
+            vpiHandle op_itr = vpi_iterate(vpiOperand, actual);
+            if (!op_itr) return std::nullopt;
+            std::vector<vpiHandle> operands;
+            while (vpiHandle op = vpi_scan(op_itr)) operands.push_back(op);
+            if (operands.size() == 1) {
+                auto v = constExprValue(operands[0]);
+                if (!v) return std::nullopt;
+                if (op_type == vpiMinusOp) return -*v;
+                if (op_type == vpiPlusOp) return *v;
+                return std::nullopt;
+            }
+            if (operands.size() == 2) {
+                auto l = constExprValue(operands[0]);
+                auto r = constExprValue(operands[1]);
+                if (!l || !r) return std::nullopt;
+                switch (op_type) {
+                    case vpiAddOp: return *l + *r;
+                    case vpiSubOp: return *l - *r;
+                    case vpiMultOp: return *l * *r;
+                    case vpiDivOp: return *r != 0 ? std::optional<int>(*l / *r) : std::nullopt;
+                    case vpiLShiftOp:
+                    case vpiArithLShiftOp: return *l << *r;
+                    case vpiRShiftOp:
+                    case vpiArithRShiftOp: return *l >> *r;
+                    default: return std::nullopt;
+                }
+            }
+            return std::nullopt;
+        }
+        std::string name = getSignalName(expr);
+        if (name.empty()) return std::nullopt;
+        auto params = generateParameterValues(mod);
+        auto it = params.find(name);
+        return it != params.end() ? std::optional<int>(it->second) : std::nullopt;
+    };
+
     // The loop body must do exactly one thing: assign one uniform value to array[index].
     std::vector<vpiHandle> loop_assignments;
     findAssignments(loop, loop_assignments);
@@ -203,11 +256,12 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle init_lhs = init ? vpi_handle(vpiLhs, init) : nullptr;
     vpiHandle init_rhs = init ? vpi_handle(vpiRhs, init) : nullptr;
     std::string loop_var = getSignalName(init_lhs);
-    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs)) return false;
+    auto init_bound = init_rhs ? constExprValue(init_rhs) : std::nullopt;
+    if (loop_var.empty() || loop_var != index_expr || !init_bound) return false;
 
     // A loop that visits every address 0..N-1 covers the full array regardless of direction:
     // ascending (init 0, counts up) or descending (init N-1, counts down). Either is canonical.
-    int init_value = getConstantInt(init_rhs);
+    int init_value = *init_bound;
     bool descending;
     if (init_value == 0) {
         descending = false;
@@ -238,60 +292,10 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
     vpi_release_handle(condition_operands);
     if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var) return false;
-    const auto parameter_values = generateParameterValues(mod);
-    std::vector<vpiHandle> bound_identifiers;
-    collectIdentifierHandlesRecursive(condition_rhs, bound_identifiers);
-    if (std::any_of(bound_identifiers.begin(), bound_identifiers.end(),
-        [&](vpiHandle identifier) {
-            return parameter_values.count(normalizedParameterName(identifier)) == 0;
-        })) return false;
+    auto condition_bound = constExprValue(condition_rhs);
+    if (!condition_bound) return false;
     int expected_bound = descending ? 0 : (condition_op == vpiLtOp ? array_size : array_size - 1);
-    std::function<std::optional<int>(vpiHandle)> evaluate_bound = [&](vpiHandle handle) -> std::optional<int> {
-        if (!handle) return std::nullopt;
-        vpiHandle actual = unwrapRef(handle);
-        if (!actual) actual = handle;
-        if (isLiteralExpr(actual)) return getConstantInt(actual);
-
-        std::string parameter_name = normalizedParameterName(handle);
-        auto parameter = parameter_values.find(parameter_name);
-        if (parameter != parameter_values.end()) return parameter->second;
-        if (vpi_get(vpiType, actual) != vpiOperation) return std::nullopt;
-
-        std::vector<int> operands;
-        vpiHandle operand_itr = vpi_iterate(vpiOperand, actual);
-        if (operand_itr) {
-            while (vpiHandle operand = vpi_scan(operand_itr)) {
-                auto value = evaluate_bound(operand);
-                if (!value) {
-                    vpi_release_handle(operand_itr);
-                    return std::nullopt;
-                }
-                operands.push_back(*value);
-            }
-            vpi_release_handle(operand_itr);
-        }
-
-        int op = vpi_get(vpiOpType, actual);
-        if (operands.size() == 1) {
-            if (op == vpiMinusOp) return -operands[0];
-            if (op == vpiPlusOp) return operands[0];
-        }
-        if (operands.size() != 2) return std::nullopt;
-        switch (op) {
-            case vpiAddOp: return operands[0] + operands[1];
-            case vpiSubOp: return operands[0] - operands[1];
-            case vpiMultOp: return operands[0] * operands[1];
-            case vpiDivOp: return operands[1] == 0 ? std::nullopt : std::optional<int>(operands[0] / operands[1]);
-            case vpiModOp: return operands[1] == 0 ? std::nullopt : std::optional<int>(operands[0] % operands[1]);
-            case vpiLShiftOp: return operands[1] < 0 || operands[1] >= static_cast<int>(sizeof(int) * 8)
-                ? std::nullopt : std::optional<int>(operands[0] << operands[1]);
-            case vpiRShiftOp: return operands[1] < 0 || operands[1] >= static_cast<int>(sizeof(int) * 8)
-                ? std::nullopt : std::optional<int>(operands[0] >> operands[1]);
-            default: return std::nullopt;
-        }
-    };
-    auto condition_bound = evaluate_bound(condition_rhs);
-    if (!condition_bound || *condition_bound != expected_bound) return false;
+    if (*condition_bound != expected_bound) return false;
 
     vpiHandle increment = loop_control(vpiForIncStmt);
     if (!increment) return false;
