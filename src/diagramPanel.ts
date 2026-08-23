@@ -39,6 +39,7 @@ import { generateArmSpan } from './diagram/generateArmSpan';
 import { ElaborationService, isListOnlyPlaceholder, type Disposable } from './elaborationService';
 import { nodeIsArrayNode } from './ir/nodeMetadata';
 import { buildExpandSpliceLayout } from './layout/expandLayout';
+import { applyExpandedInstances } from './layout/expandSpliceView';
 import type { ExpandSpliceLayout } from './webview/expand/splice';
 import { instanceParameterRows, resolvedNodeDimensions } from './diagram/nodeSizing';
 
@@ -483,6 +484,12 @@ export class DiagramPanel {
       const store = this.getStore();
       if (store) {
         await this.ensureModuleLayout(store, this.currentModule);
+        // A spliced sub-diagram mirrors the child module's own saved diagram,
+        // expansions included (recursively) — pull in the layouts and
+        // elaborations of every module the expand chain reaches before
+        // building the view, same as `svsch render` (see
+        // loadExpandedLayoutClosureSync in core/index.ts).
+        await this.ensureExpandedModuleClosure(store, this.currentModule);
       }
 
       let reactFlowCss = '';
@@ -541,7 +548,19 @@ export class DiagramPanel {
         logger.log(`Warning: Could not load extension CSS for export: ${err}`);
       }
 
-      const viewModel = await buildViewModel(this.graph, this.currentModule, this.layout);
+      // Re-read after the closure pass above: loading a placeholder module
+      // replaces this.graph.
+      const graph = this.graph;
+      const baseView = await buildViewModel(graph, this.currentModule, this.layout);
+      // Splice every expanded instance's sub-diagram into the exported view,
+      // exactly like the live canvas (applyActiveSplices) and `svsch render`
+      // (core/index.ts) do — without this the export draws just the flat
+      // collapsed instance box.
+      const viewModel = await applyExpandedInstances({
+        graph,
+        layout: this.layout,
+        view: baseView,
+      });
       let svg = renderSvg(viewModel, {
         theme:
           vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ? 'light' : 'dark',

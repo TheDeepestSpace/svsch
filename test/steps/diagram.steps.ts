@@ -2632,6 +2632,17 @@ Then(
   },
 );
 
+Then(
+  'the workspace file {string} should contain {string}',
+  async function (this: BddWorld, filename: string, expected: string) {
+    if (!this.workspaceDir) throw new Error('No open workspace');
+    const content = await fs.promises.readFile(path.join(this.workspaceDir, filename), 'utf8');
+    if (!content.includes(expected)) {
+      throw new Error(`File "${filename}" does not contain "${expected}" (${content.length} bytes)`);
+    }
+  },
+);
+
 Then('I should see a loop block', async function (this: BddWorld) {
   await expect(this.webviewPage.locator('[data-node-kind="loop"]')).toBeVisible();
 });
