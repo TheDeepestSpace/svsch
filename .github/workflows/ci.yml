@@ -197,8 +197,16 @@ jobs:
           chmod +x dist/svsch_backend
           chmod +x dist/surelog/bin/surelog
 
-      - name: Run Unit Tests
-        run: npm test
+      - name: Run Unit Tests With Coverage
+        run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-coverage
+          path: coverage/lcov.info
+          if-no-files-found: warn
 
   test_visual:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
