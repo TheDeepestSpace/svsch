@@ -143,6 +143,29 @@ Feature: Diagram Interaction
     And the port node "y" should not have moved
     And the route of the connection between "a" and "y" should have changed
 
+  Scenario: Auto Layout All re-places every block using current positions as hints
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, input logic b, output logic x, output logic y);
+        leaf u1(.a(a), .y(x));
+        leaf u2(.a(b), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I move the block "u1" by (2, 0) grid cells
+    And I move the block "u2" by (3, 5) grid cells
+    And I note the position of the block "u1"
+    And I note the position of the block "u2"
+    And I click "Auto Layout All" in the diagram toolbar
+    Then the block "u1" should be re-placed and fixed in the saved layout
+    And the block "u1" should stay near its pre-auto-layout position
+    And the block "u2" should be re-placed and fixed in the saved layout
+    And the block "u2" should stay near its pre-auto-layout position
+
   Scenario: Declared nets are automatically cut on first open
     Given I have a file "top.sv" in my workspace:
       """
