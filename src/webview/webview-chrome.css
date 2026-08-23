@@ -77,6 +77,13 @@ select {
   display: flex;
   gap: 12px;
   min-height: 40px;
+  /* Without this, a flex row that can't fit its buttons forces this grid
+     row's implicit min-content width past the viewport, stretching the
+     whole .shell grid (including the canvas row) wider than what's visible
+     — see the "Auto Layout All" button regression on narrow VS Code
+     windows where the toolbar just barely stopped fitting. */
+  min-width: 0;
+  overflow-x: auto;
   padding: 6px 12px;
 }
 
