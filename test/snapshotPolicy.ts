@@ -3,7 +3,7 @@ import type { FullConfig } from '@playwright/test';
 export const SNAPSHOT_THRESHOLDS = {
   playwright: {
     visual: {
-      default: 50,
+      default: 20,
       generateRegions: 120,
       muxLongNames: 2,
     },
