@@ -4,7 +4,7 @@
       "id": "expand:instance:top:u1::expand-port-label:port:leaf:a",
       "type": "hdl",
       "position": {
-        "x": 504,
+        "x": 312,
         "y": 120
       },
       "width": 96,
@@ -24,7 +24,7 @@
       "id": "expand:instance:top:u1::expand-port-label:port:leaf:clk",
       "type": "hdl",
       "position": {
-        "x": 504,
+        "x": 312,
         "y": 168
       },
       "width": 96,
@@ -44,7 +44,7 @@
       "id": "expand:instance:top:u1::expand-port-label:port:leaf:y",
       "type": "hdl",
       "position": {
-        "x": 1128,
+        "x": 936,
         "y": 120
       },
       "width": 96,
@@ -64,7 +64,7 @@
       "id": "expand:instance:top:u1::port:leaf:a",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 168,
         "y": 72
       },
       "width": 72,
@@ -84,7 +84,7 @@
       "id": "expand:instance:top:u1::port:leaf:clk",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 168,
         "y": 48
       },
       "width": 72,
@@ -104,7 +104,7 @@
       "id": "expand:instance:top:u1::port:leaf:y",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1104,
         "y": 48
       },
       "width": 48,
@@ -124,7 +124,7 @@
       "id": "expand:instance:top:u1::reg:leaf:y",
       "type": "hdl",
       "position": {
-        "x": 816,
+        "x": 624,
         "y": 96
       },
       "width": 96,
@@ -154,7 +154,7 @@
       "id": "instance:top:u1",
       "type": "hdl",
       "position": {
-        "x": 360,
+        "x": 168,
         "y": 24
       },
       "width": 984,
@@ -184,7 +184,7 @@
       "id": "port:top:a",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": -168,
         "y": 108
       },
       "width": 120,
@@ -204,7 +204,7 @@
       "id": "port:top:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
+        "x": -168,
         "y": 60
       },
       "width": 120,
@@ -224,7 +224,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 1368,
         "y": 60
       },
       "width": 120,
@@ -248,7 +248,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 1344 72 L 1368 72 L 1440 72 L 1440 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 1152 72 L 1176 72 L 1344 72 L 1368 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",
@@ -256,7 +256,7 @@
       "target": "expand:instance:top:u1::port:leaf:a",
       "sourceHandle": "port:a",
       "targetHandle": "outer",
-      "path": "M 144 120 L 168 120 L 264 120 L 264 96 L 336 96 L 360 96"
+      "path": "M -48 120 L -24 120 L 72 120 L 72 96 L 144 96 L 168 96"
     },
     {
       "id": "edge:port:top:clk:instance:top:u1:clk",
@@ -264,7 +264,7 @@
       "target": "expand:instance:top:u1::port:leaf:clk",
       "sourceHandle": "port:clk",
       "targetHandle": "outer",
-      "path": "M 144 72 L 168 72 L 336 72 L 360 72"
+      "path": "M -48 72 L -24 72 L 144 72 L 168 72"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:a:reg:leaf:y:a",
@@ -272,7 +272,7 @@
       "target": "expand:instance:top:u1::reg:leaf:y",
       "sourceHandle": "cut",
       "targetHandle": "d",
-      "path": "M 600 144 L 624 144 L 792 144 L 816 144"
+      "path": "M 408 144 L 432 144 L 600 144 L 624 144"
     },
     {
       "id": "expand:instance:top:u1::edge:port:leaf:clk:reg:leaf:y:clk",
@@ -280,7 +280,7 @@
       "target": "expand:instance:top:u1::reg:leaf:y",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 600 192 L 624 192 L 720 192 L 720 168 L 792 168 L 816 168"
+      "path": "M 408 192 L 432 192 L 528 192 L 528 168 L 600 168 L 624 168"
     },
     {
       "id": "expand:instance:top:u1::edge:reg:leaf:y:port:leaf:y:y",
@@ -288,7 +288,7 @@
       "target": "expand:instance:top:u1::expand-port-label:port:leaf:y",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 912 144 L 936 144 L 1104 144 L 1128 144"
+      "path": "M 720 144 L 744 144 L 912 144 L 936 144"
     }
   ]
 }

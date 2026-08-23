@@ -433,8 +433,10 @@ test.describe('expand instance in place visual', () => {
       );
     }
 
+    const { hostLayout, finalView } = await runManualAutoLayout(page, graph, emptyLayout, view);
+
     await fitGraphView(page, 0.2);
-    await trackSplicedView(page, graph, emptyLayout, view, [instanceId]);
+    await trackSplicedView(page, graph, hostLayout, finalView, [instanceId]);
     await expectGraphAndScreenshot(page, 'expand-instance-in-place.png');
 
     // Re-selecting the (still-present, dimmed and enlarged) instance node
