@@ -2067,8 +2067,12 @@ export function elkNodeForDiagramNode(
         portY = height;
       }
     } else if (node.kind === 'mux') {
+      // Mirrors MuxNodeSvg's own muxTopPorts/sideInputs split: the port named
+      // `sel` renders on top regardless of its position in `node.ports`,
+      // falling back to the first input only when nothing is named `sel`.
       const inputs = node.ports.filter(isInputSidePort);
-      const isSelect = port.id === inputs[0]?.id;
+      const selectPort = inputs.find((candidate) => candidate.name === 'sel') ?? inputs[0];
+      const isSelect = port.id === selectPort?.id;
       if (isSelect) {
         side = 'NORTH';
         portX = width / 2;
@@ -2076,7 +2080,8 @@ export function elkNodeForDiagramNode(
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
-        const sideInputIndex = inputs.indexOf(port) - 1;
+        const sideInputs = inputs.filter((candidate) => candidate.id !== selectPort?.id);
+        const sideInputIndex = sideInputs.indexOf(port);
         const heightUnits = Math.max(1, Math.round(height / grid));
         const startUnit = Math.max(1, Math.ceil((heightUnits - (inputs.length - 1) + 1) / 2));
         portY = grid * (startUnit + sideInputIndex);
