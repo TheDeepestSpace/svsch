@@ -78,6 +78,7 @@ export class BddWorld {
   // -------------------------------------------------------------------------
 
   async takeScreenshot(label: string): Promise<Buffer | null> {
+    await this._fitDiagramIfClipped();
     await this._settleWorkbenchForScreenshot();
     const screenshot = await this.workbox.screenshot();
     await this._attachBuffer(screenshot, 'image/png');
@@ -562,6 +563,46 @@ export class BddWorld {
     }
 
     await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
+    await this._waitForViewportTransformToSettle();
+  }
+
+  // Cheap in-page check so screenshots are self-correcting when a prior
+  // action (drag, cut-net tie-back, module switch) pushed a node outside the
+  // visible pane: only pay for a fit-view click + settle-wait when something
+  // is actually clipped, not on every screenshot.
+  async _fitDiagramIfClipped(): Promise<void> {
+    const isFullyInView = await this.webviewPage
+      .locator('body')
+      .evaluate(() => {
+        const rf = (window as any).reactFlowInstance;
+        const pane = document.querySelector('.react-flow__pane');
+        if (!rf || !pane) return true;
+        const { x: vx, y: vy, zoom } = rf.getViewport();
+        const paneRect = (pane as HTMLElement).getBoundingClientRect();
+        const epsilon = 0.5;
+        return rf.getNodes().every((n: any) => {
+          const w = n.measured?.width ?? n.width ?? 0;
+          const h = n.measured?.height ?? n.height ?? 0;
+          if (!w || !h) return true;
+          const left = n.position.x * zoom + vx;
+          const top = n.position.y * zoom + vy;
+          return (
+            left >= -epsilon &&
+            top >= -epsilon &&
+            left + w * zoom <= paneRect.width + epsilon &&
+            top + h * zoom <= paneRect.height + epsilon
+          );
+        });
+      })
+      .catch(() => true);
+
+    if (isFullyInView) return;
+
+    await this.webviewPage.locator('.react-flow__controls-fitview').click();
+    await this._waitForViewportTransformToSettle();
+  }
+
+  async _waitForViewportTransformToSettle(): Promise<void> {
     await this.webviewPage
       .locator('body')
       .evaluate(async () => {
