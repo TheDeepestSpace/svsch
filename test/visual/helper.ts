@@ -207,6 +207,26 @@ export async function openFixture(
   return view;
 }
 
+// The cpu example design's full module list, top included — shared by every
+// spec that needs to iterate "every module of the example design" so there's
+// a single source of truth (and so no spec file has to import another
+// *.visual.spec.ts file just to reuse this array: Playwright registers a
+// spec's top-level test()/test.describe() calls against whichever file
+// caused them to run, so importing one spec from another attributes its
+// tests to the importer and breaks baseline snapshot lookup).
+export const EXAMPLE_DESIGN_MODULES = [
+  'adder',
+  'alu',
+  'control_unit',
+  'cpu_top',
+  'data_mem',
+  'imm_gen',
+  'instr_mem',
+  'mux2',
+  'pc_reg',
+  'register_file',
+];
+
 const exampleDesignRoot = path.resolve(__dirname, 'fixtures/example_designs/cpu');
 let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
 

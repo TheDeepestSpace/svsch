@@ -1,0 +1,120 @@
+{
+  "nodes": [
+    {
+      "id": "alu:adder:sum:expr",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "alu",
+        "ports": [
+          {
+            "id": "lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "out:sum",
+            "name": "sum",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:adder:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:adder:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:adder:sum",
+      "type": "hdl",
+      "position": {
+        "x": 720,
+        "y": 60
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:sum",
+            "name": "sum",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:alu:adder:sum:expr:port:adder:sum:sum",
+      "source": "alu:adder:sum:expr",
+      "target": "port:adder:sum",
+      "sourceHandle": "out:sum",
+      "targetHandle": "port:sum",
+      "path": "M 504 72 L 528 72 L 696 72 L 720 72"
+    },
+    {
+      "id": "edge:port:adder:a:alu:adder:sum:expr:a",
+      "source": "port:adder:a",
+      "target": "alu:adder:sum:expr",
+      "sourceHandle": "port:a",
+      "targetHandle": "lhs",
+      "path": "M 192 48 L 216 48 L 384 48 L 408 48"
+    },
+    {
+      "id": "edge:port:adder:b:alu:adder:sum:expr:b",
+      "source": "port:adder:b",
+      "target": "alu:adder:sum:expr",
+      "sourceHandle": "port:b",
+      "targetHandle": "rhs",
+      "path": "M 192 96 L 216 96 L 384 96 L 408 96"
+    }
+  ]
+}

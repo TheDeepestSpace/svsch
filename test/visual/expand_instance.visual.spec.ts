@@ -10,9 +10,11 @@ import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 import {
   buildExampleDesignViewWithGraph,
+  EXAMPLE_DESIGN_MODULES,
   fixtureRoot,
   fitGraphView,
   expectGraphAndScreenshot,
+  installStableTheme,
   openView,
   paddedAllNodesClip,
   postView,
@@ -155,6 +157,90 @@ async function expandInstanceOnPage(
     { moduleName: request.moduleName, payload },
   );
   await page.waitForSelector('[data-node-kind="boundaryPort"]', { state: 'attached' });
+}
+
+// Opens `view` the way openView() does, but also flags every one of the
+// module's own top-level instances as expanded in the posted graph message —
+// mirroring what a real reload of a module with previously-expanded
+// instances sends (see main.tsx's `expandedInstanceIds` auto-restore
+// effect). The webview fires one requestExpandInstance per flagged instance
+// on its own, all at once, so the caller only needs to answer them (see
+// answerExpandRequests below) rather than drive N sequential
+// select-then-click-Expand round trips — which would also risk a later
+// click landing on an already-expanded frame that grew over an
+// still-collapsed sibling. Returns the instance ids requested so the caller
+// can wait on their replies.
+async function openViewWithAllInstancesExpanding(
+  page: Page,
+  graph: DesignGraph,
+  view: DiagramViewModel,
+): Promise<string[]> {
+  const designModule = graph.modules[view.moduleName];
+  const instanceIds = designModule.nodes
+    .filter((node) => node.kind === 'instance')
+    .map((node) => node.id);
+
+  trackView(page, view);
+  await page.goto('/');
+  await installStableTheme(page);
+  await page.waitForTimeout(500);
+  await page.evaluate(
+    ({ view, expandedInstanceIds }) => {
+      window.postMessage(
+        { type: 'graph', view, modules: [view.moduleName], expandedInstanceIds },
+        '*',
+      );
+    },
+    { view, expandedInstanceIds: instanceIds },
+  );
+  return instanceIds;
+}
+
+// Answers every requestExpandInstance the auto-restore effect fired (see
+// openViewWithAllInstancesExpanding) the way diagramPanel.ts's handler
+// would, then waits for each instance's node to actually carry the
+// "expanded" ghost styling before returning.
+async function answerExpandRequests(
+  page: Page,
+  graph: DesignGraph,
+  layout: SavedLayout,
+  instanceIds: string[],
+): Promise<void> {
+  if (instanceIds.length === 0) return;
+  await expect
+    .poll(async () =>
+      (await capturedMessages(page)).filter(
+        (message: any) => message.type === 'requestExpandInstance',
+      ).length,
+    )
+    .toBe(instanceIds.length);
+  const requests = (await capturedMessages(page)).filter(
+    (message: any) => message.type === 'requestExpandInstance',
+  );
+  for (const request of requests) {
+    const parentModule = graph.modules[request.moduleName];
+    const instanceNode = parentModule?.nodes.find(
+      (node): node is Extract<typeof node, { kind: 'instance' }> =>
+        node.kind === 'instance' && node.id === request.instanceId,
+    );
+    if (!instanceNode) throw new Error(`No instance ${request.instanceId} in ${request.moduleName}`);
+    const childModuleName = instanceNode.moduleName;
+    if (!childModuleName) {
+      throw new Error(`Instance ${request.instanceId} has no moduleName`);
+    }
+    const payload = await expandPayloadFor(graph, layout, request, childModuleName);
+    await page.evaluate(
+      ({ moduleName, payload }) => {
+        window.postMessage({ type: 'expandInstanceData', moduleName, payload }, '*');
+      },
+      { moduleName: request.moduleName, payload },
+    );
+  }
+  for (const instanceId of instanceIds) {
+    await expect(page.locator(`.react-flow__node[data-id="${instanceId}"]`)).toHaveClass(
+      /hdl-node-expand-ghost/,
+    );
+  }
 }
 
 // Every spliced non-boundary node and every spliced wire path must lie inside
@@ -758,4 +844,41 @@ test.describe('expand instance in place visual', () => {
     await trackSplicedView(page, graph, hostLayout, finalView, [aluNodeId]);
     await expectGraphAndScreenshot(page, 'example-design-alu-expanded-autolayout.png');
   });
+});
+
+// One scenario per module of the example design (top included): every
+// top-level instance the module directly contains gets expanded (recursively
+// in principle — see openViewWithAllInstancesExpanding/answerExpandRequests,
+// which just flag-and-answer whatever instances exist — but the cpu example
+// design is only two levels deep and none of its leaf modules instantiate
+// anything themselves, so in practice this bottoms out after one level), then
+// the outer diagram is auto-layouted the same way runManualAutoLayout does
+// for the single-instance scenarios above.
+test.describe('expand instance in place visual: full design, every instance expanded', () => {
+  for (const moduleName of EXAMPLE_DESIGN_MODULES) {
+    const title = `example design: ${moduleName} with every instance expanded, outer auto-layout applied`;
+    test(title, async ({ page }) => {
+      await installMessageCapture(page);
+
+      const { graph, layout, view } = await buildExampleDesignViewWithGraph(moduleName);
+      const instanceIds = await openViewWithAllInstancesExpanding(page, graph, view);
+      await page.waitForSelector('.react-flow__node', { state: 'attached' });
+      await waitForViewportTransformToSettle(page);
+      await answerExpandRequests(page, graph, layout, instanceIds);
+
+      // Fit the (now possibly much larger, if any instance expanded) diagram
+      // into view before marquee-selecting it — runManualAutoLayout's own
+      // drag-select clip is computed against whatever's currently on screen.
+      await fitGraphView(page, 0.15);
+
+      const { hostLayout, finalView } = await runManualAutoLayout(page, graph, layout, view);
+
+      await fitGraphView(page, 0.15);
+      await trackSplicedView(page, graph, hostLayout, finalView, instanceIds);
+      await expectGraphAndScreenshot(
+        page,
+        `example-design-${moduleName}-all-expanded-autolayout.png`,
+      );
+    });
+  }
 });
