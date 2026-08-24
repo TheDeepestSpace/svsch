@@ -208,10 +208,11 @@ async function answerExpandRequests(
 ): Promise<void> {
   if (instanceIds.length === 0) return;
   await expect
-    .poll(async () =>
-      (await capturedMessages(page)).filter(
-        (message: any) => message.type === 'requestExpandInstance',
-      ).length,
+    .poll(
+      async () =>
+        (await capturedMessages(page)).filter(
+          (message: any) => message.type === 'requestExpandInstance',
+        ).length,
     )
     .toBe(instanceIds.length);
   const requests = (await capturedMessages(page)).filter(
@@ -223,7 +224,8 @@ async function answerExpandRequests(
       (node): node is Extract<typeof node, { kind: 'instance' }> =>
         node.kind === 'instance' && node.id === request.instanceId,
     );
-    if (!instanceNode) throw new Error(`No instance ${request.instanceId} in ${request.moduleName}`);
+    if (!instanceNode)
+      throw new Error(`No instance ${request.instanceId} in ${request.moduleName}`);
     const childModuleName = instanceNode.moduleName;
     if (!childModuleName) {
       throw new Error(`Instance ${request.instanceId} has no moduleName`);
