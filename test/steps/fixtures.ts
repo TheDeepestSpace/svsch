@@ -9,11 +9,7 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
-import {
-  SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS,
-  SNAPSHOT_THRESHOLDS,
-  bddVisualDiffsDir,
-} from '../snapshotPolicy';
+import { SNAPSHOT_THRESHOLDS, bddVisualDiffsDir } from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -201,11 +197,7 @@ export class BddWorld {
           graphState,
           snapshotName,
           await this._webviewCompareBox(),
-          // Scenario-wide exemption: viewport/renderer nondeterminism (e.g. a
-          // timing-dependent marquee auto-pan) taints every later screenshot
-          // of the scenario, not just the one taken mid-interaction.
-          options?.skipPixelCompare ||
-            SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS.has(this.scenarioName),
+          options?.skipPixelCompare,
         );
       }
     }

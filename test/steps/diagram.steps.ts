@@ -5047,6 +5047,16 @@ When('I drag-select across the entire diagram', async function (this: BddWorld) 
     Math.max(...boxes.map((box) => box.y + box.height)) + 24,
   );
 
+  // The marquee ends within a couple of pixels of the webview edge, inside
+  // React Flow's auto-pan activation zone, and the auto-panned distance is
+  // timing-dependent. Capture the viewport now so it can be restored to this
+  // exact transform after the gesture — otherwise the run-varying
+  // (sub-pixel) pan taints every later screenshot of the scenario.
+  const viewportBeforeDrag = await this.webviewPage.locator('html').evaluate(() => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.getViewport() as { x: number; y: number; zoom: number };
+  });
+
   await this.workbox.mouse.move(startX, startY);
   await this.workbox.mouse.down();
   await this.workbox.mouse.move((startX + endX) / 2, (startY + endY) / 2, { steps: 8 });
@@ -5065,6 +5075,13 @@ When('I drag-select across the entire diagram', async function (this: BddWorld) 
       { timeout: 5000 },
     )
     .toBeGreaterThan(0);
+
+  // Selection lives in flow space, so undoing the auto-pan cannot deselect
+  // anything; it only makes the viewport deterministic again.
+  await this.webviewPage.locator('html').evaluate((_el, viewport) => {
+    const rf = (window as any).reactFlowInstance;
+    return rf.setViewport(viewport);
+  }, viewportBeforeDrag);
 
   await this.takeScreenshot('Drag-selected across the entire diagram');
 });
