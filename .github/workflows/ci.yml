@@ -637,7 +637,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     concurrency:
       group: bdd-video-gallery-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -687,28 +686,6 @@ jobs:
             git -C bdd-pages fetch origin gh-pages
             git -C bdd-pages rebase origin/gh-pages
           done
-
-      - name: Link BDD video gallery from the PR
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            const marker = '<!-- bdd-video-gallery -->';
-            const { owner, repo } = context.repo;
-            const pr = context.issue.number;
-            const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/bdd-videos/pr-${pr}/`;
-            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const body = `${marker}\n[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})`;
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number: pr,
-            });
-            const existing = comments.find((comment) => comment.body?.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
-            }
 
   generate_bdd_docs:
     needs: [prep, build_ci_image, setup, merge_bdd_reports]
@@ -790,7 +767,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     concurrency:
       group: system-video-gallery-${{ github.event.pull_request.number }}
       cancel-in-progress: true
@@ -858,16 +834,44 @@ jobs:
             git -C system-pages rebase origin/gh-pages
           done
 
-      - name: Link system video gallery from the PR
+  comment_video_galleries:
+    # Posts one PR comment linking both video galleries, instead of
+    # publish_bdd_videos and publish_system_videos each posting their own
+    # (mirrors the report_benchmarks pattern below for combining suites into
+    # a single comment).
+    needs: [publish_bdd_videos, publish_system_videos]
+    if: >
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (needs.publish_bdd_videos.result == 'success' || needs.publish_system_videos.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Link video galleries from the PR
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          BDD_SUCCEEDED: ${{ needs.publish_bdd_videos.result == 'success' }}
+          SYSTEM_SUCCEEDED: ${{ needs.publish_system_videos.result == 'success' }}
         with:
           script: |
-            const marker = '<!-- system-video-gallery -->';
+            const marker = '<!-- test-video-galleries -->';
             const { owner, repo } = context.repo;
             const pr = context.issue.number;
-            const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/system-videos/pr-${pr}/`;
             const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
-            const body = `${marker}\n[Browse all system test videos](${gallery}) · [download artifact](${run})`;
+
+            const lines = [];
+            if (process.env.BDD_SUCCEEDED === 'true') {
+              const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/bdd-videos/pr-${pr}/`;
+              lines.push(`[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})`);
+            }
+            if (process.env.SYSTEM_SUCCEEDED === 'true') {
+              const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/system-videos/pr-${pr}/`;
+              lines.push(`[Browse all system test videos](${gallery}) · [download artifact](${run})`);
+            }
+
+            const body = `${marker}\n${lines.join('\n')}`;
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
               repo,
