@@ -2706,6 +2706,9 @@ g.hdl-node-expand-ghost > svg.hdl-node-svg {
   filter: grayscale(0.4);
   opacity: 0.35;
 }
+g.hdl-node-expand-ghost .svsch-node-shape {
+  fill: none;
+}
 .svsch-expand-content-border {
   fill: none;
   pointer-events: none;
