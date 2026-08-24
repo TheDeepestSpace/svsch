@@ -224,7 +224,10 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
     : undefined;
   const metadata = videoMetadataBySourceName(report);
   const sourceVideos = findFiles(inputDir, (file) => file.endsWith('.webm')).sort();
-  if (!sourceVideos.length) throw new Error(`No WebM videos found under ${inputDir}`);
+  const removed = removedScenarioEntries(options.changeStatus);
+  if (!sourceVideos.length && !removed.length) {
+    throw new Error(`No WebM videos or removed scenarios found under ${inputDir}`);
+  }
 
   fs.rmSync(outputDir, { recursive: true, force: true });
   const videosDir = path.join(outputDir, 'videos');
@@ -254,7 +257,7 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
     };
   });
 
-  const allEntries = [...videos, ...removedScenarioEntries(options.changeStatus)];
+  const allEntries = [...videos, ...removed];
   allEntries.sort((a, b) =>
     `${a.feature}\0${a.scenario}\0${a.retry}`.localeCompare(
       `${b.feature}\0${b.scenario}\0${b.retry}`,
