@@ -15,6 +15,8 @@ import path from 'node:path';
 const WORKSPACE_ROOT = process.cwd();
 const BUILD_COVERAGE_DIR = path.resolve(WORKSPACE_ROOT, 'src/parser/backend_cpp/build-coverage');
 const COVERAGE_RAW_DIR = path.resolve(WORKSPACE_ROOT, 'coverage-raw');
+const MERGED_RAW_DIR = path.resolve(WORKSPACE_ROOT, 'coverage-raw-merged');
+const MERGE_STEP_DIR = path.resolve(WORKSPACE_ROOT, 'coverage-raw-merge-step');
 const OUT_DIR = path.resolve(WORKSPACE_ROOT, 'coverage/backend');
 const RUNTIME_INFO = path.join(OUT_DIR, 'lcov-runtime.info');
 const COMBINED_INFO = path.join(OUT_DIR, 'lcov-combined.info');
@@ -78,12 +80,34 @@ if (invocationDirs.length === 0) {
   );
 }
 
+// `lcov --capture` re-parses and re-merges its whole in-memory model on every
+// directory it visits, so pointing it at thousands of invocation directories
+// (one per backend invocation — see uhdmExtractor.ts) directly never finishes:
+// verified locally, capturing over just test_syntax's 69 invocation dirs alone
+// already exceeds two minutes, and a real run across unit/bdd/visual/syntax/
+// system produces thousands of them. gcov-tool merge instead sums the raw
+// counter files pairwise with no text parsing, so fold every invocation
+// directory's .gcda tree down into one directory first — that fold is
+// O(invocations) with a tiny constant factor (~1s for the 69-dir case above)
+// — and only ask lcov to capture that single merged tree.
+fs.rmSync(MERGED_RAW_DIR, { recursive: true, force: true });
+if (invocationDirs.length > 0) {
+  fs.cpSync(invocationDirs[0], MERGED_RAW_DIR, { recursive: true });
+  for (const invocationDir of invocationDirs.slice(1)) {
+    fs.rmSync(MERGE_STEP_DIR, { recursive: true, force: true });
+    execFileSync('gcov-tool', ['merge', MERGED_RAW_DIR, invocationDir, '-o', MERGE_STEP_DIR], {
+      stdio: 'inherit',
+    });
+    fs.rmSync(MERGED_RAW_DIR, { recursive: true, force: true });
+    fs.renameSync(MERGE_STEP_DIR, MERGED_RAW_DIR);
+  }
+}
+
 // gcov pairs a .gcda with a .gcno co-located in the same directory — GCOV_PREFIX
 // only relocates where the (tiny, static) .gcno never travels with it, so mirror
-// the whole .gcno tree into every invocation directory that actually wrote .gcda
-// output before running lcov over it.
-for (const invocationDir of invocationDirs) {
-  const mirroredBuildDir = path.join(invocationDir, BUILD_COVERAGE_DIR);
+// the whole .gcno tree into the merged directory before running lcov over it.
+if (invocationDirs.length > 0) {
+  const mirroredBuildDir = path.join(MERGED_RAW_DIR, BUILD_COVERAGE_DIR);
   for (const gcno of gcnoFiles) {
     const rel = path.relative(BUILD_COVERAGE_DIR, gcno);
     const dest = path.join(mirroredBuildDir, rel);
@@ -95,12 +119,9 @@ for (const invocationDir of invocationDirs) {
 const infoFiles = [];
 
 if (invocationDirs.length > 0) {
-  // A single `lcov --capture --directory <tree>` walking many gcda/gcno pairs
-  // for the same source file (one pair per invocation) sums their hit counts
-  // into one result — this is the actual merge across every worker/shard.
   execFileSync(
     'lcov',
-    ['--capture', '--directory', COVERAGE_RAW_DIR, '--output-file', RUNTIME_INFO],
+    ['--capture', '--directory', MERGED_RAW_DIR, '--output-file', RUNTIME_INFO],
     { stdio: 'inherit' },
   );
   infoFiles.push(RUNTIME_INFO);
