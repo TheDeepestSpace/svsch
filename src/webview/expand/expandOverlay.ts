@@ -263,6 +263,17 @@ export function applyActiveSplices(
               y: splice.region.bounds.y + dy,
             },
           };
+    // Regions belonging to generate blocks / already-expanded instances
+    // living inside this splice's own content (see SpliceResult.nestedRegions)
+    // ride along with the same rigid translation as the region itself.
+    const nestedRegions = splice.nestedRegions ?? [];
+    const translatedNestedRegions =
+      dx === 0 && dy === 0
+        ? nestedRegions
+        : nestedRegions.map((nested) => ({
+            ...nested,
+            bounds: { ...nested.bounds, x: nested.bounds.x + dx, y: nested.bounds.y + dy },
+          }));
 
     const boundaryIdByPortName = splice.boundaryNodeIdByChildPortName;
     const instancePortNames = portNameById(instanceNode.data.node.ports);
@@ -301,7 +312,7 @@ export function applyActiveSplices(
         toFlowEdge(edge, moduleName, splice.flowInstanceId, splice.contentInsets),
       ),
     ];
-    extraRegions.push(region);
+    extraRegions.push(region, ...translatedNestedRegions);
   }
 
   return { nodes, edges, regions: [...baseRegions, ...extraRegions] };
@@ -350,6 +361,14 @@ export function syncSpliceCache(
           return { ...edge, routePoints: routePoints?.map((point) => ({ ...point })) };
         })
       : splice.edges;
+    // Unlike the region above, a nested region's bounds have no fixed formula
+    // relative to the instance — re-capture them from the live regions array
+    // (already carrying whatever translation the last applyActiveSplices pass
+    // applied), same as updatedNodes captures live node positions above.
+    const updatedNestedRegions = (splice.nestedRegions ?? []).map((nested) => {
+      const live = regionsById.get(nested.id);
+      return live ? { ...nested, bounds: { ...live.bounds } } : nested;
+    });
     splices.set(namespace, {
       ...splice,
       edges: updatedEdges,
@@ -365,6 +384,7 @@ export function syncSpliceCache(
           height: splice.expandedSize.height,
         },
       },
+      nestedRegions: updatedNestedRegions,
       nodes: updatedNodes,
       anchorInstancePosition: { ...instanceNode.position },
     });

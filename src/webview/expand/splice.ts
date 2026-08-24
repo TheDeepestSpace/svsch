@@ -72,6 +72,14 @@ export interface ExpandSpliceLayout {
   nodes: PositionedNode[];
   edges: DiagramEdge[];
   expandedSize: { width: number; height: number };
+  /**
+   * Generate-block regions and (recursively) already-expanded instances'
+   * `kind: 'expand'` regions that live inside the child's own diagram,
+   * translated into this same frame-local coordinate space — so, e.g., a
+   * child module's own already-expanded instance keeps its minimap outline
+   * once it's spliced in here too (see MiniMapRegionOutlines).
+   */
+  nestedRegions?: PositionedGenerateRegion[];
 }
 
 export interface SpliceInput {
@@ -165,6 +173,14 @@ export interface SpliceResult {
    * the parent's edges that used to terminate on the instance itself.
    */
   boundaryNodeIdByChildPortName: Map<string, string>;
+  /**
+   * This splice's own generate-block/nested-expand regions, translated to
+   * canvas space and namespaced — see ExpandSpliceLayout.nestedRegions.
+   * Optional/absent is equivalent to empty — every real splice path sets it
+   * (to `[]` when there's nothing to carry), left optional here only so
+   * hand-built fixtures elsewhere don't need to know about it.
+   */
+  nestedRegions?: PositionedGenerateRegion[];
 }
 
 /**
@@ -743,7 +759,14 @@ export async function spliceExpandedInstance(input: SpliceInput): Promise<Splice
     };
   });
 
-  return assembleSpliceResult(input, allNodes, edges, expandedSize, boundaryNodeIdByChildPortName);
+  return assembleSpliceResult(
+    input,
+    allNodes,
+    edges,
+    expandedSize,
+    boundaryNodeIdByChildPortName,
+    [],
+  );
 }
 
 /**
@@ -783,12 +806,30 @@ function spliceFromHostLayout(input: SpliceInput, hostLayout: ExpandSpliceLayout
     routePoints: edge.routePoints?.map((point) => ({ x: point.x + ox, y: point.y + oy })),
   }));
 
+  // Same translate+namespace treatment as `nodes` above, so a generate block
+  // or an already-expanded instance living inside the child's own diagram
+  // (see ExpandSpliceLayout.nestedRegions) keeps a matching region here too —
+  // this is what gives it its own minimap outline once spliced in.
+  const nestedRegions: PositionedGenerateRegion[] = (hostLayout.nestedRegions ?? []).map(
+    (region) => ({
+      ...region,
+      id: namespacedId(namespace, region.id),
+      parentRegionId:
+        region.parentRegionId !== undefined
+          ? namespacedId(namespace, region.parentRegionId)
+          : undefined,
+      nodeIds: region.nodeIds.map((id) => namespacedId(namespace, id)),
+      bounds: { ...region.bounds, x: region.bounds.x + ox, y: region.bounds.y + oy },
+    }),
+  );
+
   return assembleSpliceResult(
     input,
     nodes,
     edges,
     hostLayout.expandedSize,
     boundaryNodeIdByChildPortName,
+    nestedRegions,
   );
 }
 
@@ -798,6 +839,7 @@ function assembleSpliceResult(
   edges: DiagramEdge[],
   expandedSize: { width: number; height: number },
   boundaryNodeIdByChildPortName: Map<string, string>,
+  nestedRegions: PositionedGenerateRegion[],
 ): SpliceResult {
   const { namespace, childModule, instancePosition } = input;
 
@@ -848,5 +890,6 @@ function assembleSpliceResult(
     expandedSize,
     contentInsets,
     boundaryNodeIdByChildPortName,
+    nestedRegions,
   };
 }

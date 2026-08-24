@@ -9,7 +9,10 @@ import type { HdlFlowNode } from '../../src/webview/nodes/types';
 
 const insets = { top: 20, left: 30, right: 30, bottom: 10 };
 
-function makeSplice(nodes: PositionedNode[]): ActiveSplice {
+function makeSplice(
+  nodes: PositionedNode[],
+  nestedRegions: PositionedGenerateRegion[] = [],
+): ActiveSplice {
   const region: PositionedGenerateRegion = {
     id: 'expand:region::u_mid',
     kind: 'expand',
@@ -32,6 +35,7 @@ function makeSplice(nodes: PositionedNode[]): ActiveSplice {
     contentInsets: insets,
     expandedSize: { width: 400, height: 300 },
     boundaryNodeIdByChildPortName: new Map(),
+    nestedRegions,
   };
 }
 
@@ -87,5 +91,40 @@ describe('applyActiveSplices (nested inheritance)', () => {
     // The nested frame layers as a backdrop below its own spliced content,
     // same as a live top-level ghost.
     expect(ghostFlow.zIndex).toBeLessThan(plainFlow.zIndex!);
+  });
+
+  it("surfaces a nested splice's own region so it gets a minimap outline too", () => {
+    const nestedGhost: PositionedNode = {
+      id: 'expand:u_mid::u_leaf',
+      kind: 'instance',
+      label: 'u_leaf',
+      moduleName: 'leaf',
+      ports: [],
+      sizeOverride: { width: 10, height: 8 },
+      metadata: { expandGhost: { insets } },
+      position: { x: 60, y: 40 },
+    };
+    const nestedRegion: PositionedGenerateRegion = {
+      id: 'expand:region::u_mid::expand:region::u_leaf',
+      kind: 'expand',
+      label: 'u_leaf : leaf',
+      nodeIds: ['expand:u_mid::expand:u_leaf::lcomb'],
+      bounds: { x: 60, y: 40, width: 120, height: 90 },
+      expandedInstance: { instanceId: 'u_leaf', childModuleName: 'leaf', parentModuleName: 'mid' },
+    };
+    const splices = new Map([['u_mid', makeSplice([nestedGhost], [nestedRegion])]]);
+
+    const atRest = applyActiveSplices([instanceFlowNode], [], [], splices, 'top');
+    expect(atRest.regions).toContainEqual(nestedRegion);
+
+    // Dragging the outer instance rigidly translates its own region *and*
+    // the nested region riding along inside it, by the same delta.
+    const movedInstance: HdlFlowNode = {
+      ...instanceFlowNode,
+      position: { x: 25, y: 15 },
+    };
+    const moved = applyActiveSplices([movedInstance], [], [], splices, 'top');
+    const movedNested = moved.regions.find((region) => region.id === nestedRegion.id)!;
+    expect(movedNested.bounds).toEqual({ x: 85, y: 55, width: 120, height: 90 });
   });
 });

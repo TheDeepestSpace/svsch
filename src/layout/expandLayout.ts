@@ -1,4 +1,10 @@
-import type { DesignGraph, DiagramEdge, DiagramPort, PositionedNode } from '../ir/types';
+import type {
+  DesignGraph,
+  DiagramEdge,
+  DiagramPort,
+  PositionedGenerateRegion,
+  PositionedNode,
+} from '../ir/types';
 import type { SavedLayout } from '../storage/layoutStore';
 import { resolvedNodeDimensions } from '../diagram/nodeSizing';
 import {
@@ -213,6 +219,18 @@ export async function buildExpandSpliceLayout(input: {
     routePoints: edge.routePoints?.map(translatePoint),
   }));
 
+  // The child's own generate-block regions and, recursively, any of its own
+  // already-expanded instances (see applyExpandedInstances, which is what
+  // populates childView.generateRegions with the latter) — translated the
+  // same as content so a nested "Expand" keeps its own minimap outline once
+  // it's spliced into this frame (see ExpandSpliceLayout.nestedRegions).
+  const nestedRegions: PositionedGenerateRegion[] = (childView.generateRegions ?? []).map(
+    (region) => ({
+      ...region,
+      bounds: { ...region.bounds, ...translatePoint(region.bounds) },
+    }),
+  );
+
   // 4. Place the design into the outer node: the frame grows around the
   //    translated content (grow-only against the instance's pre-expand
   //    size), and the boundary-port labels land on its border at the
@@ -245,5 +263,6 @@ export async function buildExpandSpliceLayout(input: {
     nodes: [...boundaryNodes, ...placedContentNodes],
     edges: placedContentEdges,
     expandedSize,
+    nestedRegions,
   };
 }

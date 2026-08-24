@@ -481,6 +481,49 @@ describe('spliceExpandedInstance', () => {
       expect(first.expandedSize).toEqual({ width: 400, height: 200 });
       expect(second.expandedSize).toEqual(first.expandedSize);
     });
+
+    // A generate block or an already-expanded instance living inside the
+    // child's own diagram (see ExpandSpliceLayout.nestedRegions) must keep
+    // its own region here too — this is what gives it its own minimap
+    // outline (issue #233 follow-up) once it's spliced into this frame.
+    it('translates and namespaces nested regions from the host layout', async () => {
+      const result = await spliceExpandedInstance({
+        ...baseInput(),
+        hostLayout: {
+          ...hostLayout(),
+          nestedRegions: [
+            {
+              id: 'expand:region::u_inner',
+              kind: 'expand' as const,
+              label: 'u_inner : inner',
+              nodeIds: ['expand:u_inner::reg2'],
+              bounds: { x: 40, y: 20, width: 100, height: 60 },
+              expandedInstance: {
+                instanceId: 'u_inner',
+                childModuleName: 'inner',
+                parentModuleName: 'adder',
+              },
+            },
+          ],
+        },
+      });
+
+      expect(result.nestedRegions).toHaveLength(1);
+      const nested = result.nestedRegions![0];
+      expect(nested.id).toBe(namespacedId('u0', 'expand:region::u_inner'));
+      expect(nested.nodeIds).toEqual([namespacedId('u0', 'expand:u_inner::reg2')]);
+      expect(nested.bounds).toEqual({
+        x: 40 + instancePosition.x,
+        y: 20 + instancePosition.y,
+        width: 100,
+        height: 60,
+      });
+    });
+
+    it('defaults to an empty nestedRegions list when the host layout has none', async () => {
+      const result = await spliceExpandedInstance({ ...baseInput(), hostLayout: hostLayout() });
+      expect(result.nestedRegions).toEqual([]);
+    });
   });
 
   // The lead stub a boundary-port node draws is a continuation of the wire
