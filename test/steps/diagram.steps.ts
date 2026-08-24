@@ -5066,6 +5066,13 @@ When('I drag-select across the entire diagram', async function (this: BddWorld) 
     )
     .toBeGreaterThan(0);
 
+  // The sweep's edge-hugging endpoint triggers the canvas auto-pan, whose
+  // distance is timing-dependent, so the viewport the drag leaves behind is
+  // nondeterministic — and would persist into every later screenshot of the
+  // scenario. Re-fit to a deterministic viewport before capturing.
+  await this.webviewPage.locator('.react-flow__controls-fitview').click();
+  await waitForViewportTransformToSettle(this.webviewPage);
+
   await this.takeScreenshot('Drag-selected across the entire diagram');
 });
 
