@@ -8,7 +8,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
 import { comparePngBuffers } from '../pngSnapshotComparison';
-import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import { SNAPSHOT_THRESHOLDS, bddVisualDiffsDir } from '../snapshotPolicy';
 
 const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
@@ -3580,7 +3580,7 @@ async function persistCliPngSnapshot(world: BddWorld, pngBuffer: Buffer) {
     return;
   }
 
-  const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+  const resultsDir = bddVisualDiffsDir();
   fs.mkdirSync(resultsDir, { recursive: true });
   fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.png`), expectedBuffer);
   fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.png`), pngBuffer);
@@ -3620,7 +3620,7 @@ async function persistSvgSnapshot(world: BddWorld, svgContent: string) {
     return;
   }
   if (expected !== svgContent) {
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    const resultsDir = bddVisualDiffsDir();
     fs.mkdirSync(resultsDir, { recursive: true });
     fs.writeFileSync(path.join(resultsDir, `${snapshotName}-expected.svg`), expected, 'utf8');
     fs.writeFileSync(path.join(resultsDir, `${snapshotName}-actual.svg`), svgContent, 'utf8');

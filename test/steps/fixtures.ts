@@ -9,7 +9,11 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
-import { SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import {
+  SCENARIOS_WITH_FLAKY_SCREENSHOT_PIXELS,
+  SNAPSHOT_THRESHOLDS,
+  bddVisualDiffsDir,
+} from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -246,7 +250,7 @@ export class BddWorld {
     skipPixelCompare = false,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    const resultsDir = bddVisualDiffsDir();
     if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
     const updateSnapshots = this.updateSnapshots || !!process.env.UPDATE_SNAPSHOTS;
 
