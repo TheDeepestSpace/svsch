@@ -775,6 +775,110 @@ jobs:
           path: |
             playwright-report/system/**
             test/system/__screenshots__/**
+            test-results/system/**
+
+  publish_system_videos:
+    # Unlike BDD's shards (disjoint scenarios that merge_bdd_reports combines
+    # into one report before publishing), each vscode_version matrix leg here
+    # reruns the same 5 tests, so there's no cross-leg report merge step to
+    # depend on — this job downloads all 3 legs directly and merges them
+    # itself (see scripts/merge-system-video-reports.mjs).
+    needs: [test_system]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: system-video-gallery-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - *checkout_step
+
+      - name: Download system test artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: system-test-results-*
+          path: system-input
+
+      - name: Merge system video reports across VS Code versions
+        run: |
+          set -eu
+          args=()
+          for artifact_dir in system-input/system-test-results-*/; do
+            name=$(basename "$artifact_dir")
+            version="${name#system-test-results-}"
+            results_dir="${artifact_dir%/}/test-results/system"
+            if [ -d "$results_dir" ]; then
+              args+=("${version}=${results_dir}")
+            fi
+          done
+          node scripts/merge-system-video-reports.mjs merged-system-input "${args[@]}"
+
+      - name: Generate system video gallery
+        run: node scripts/generate-bdd-video-gallery.mjs merged-system-input system-video-gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GALLERY_TITLE: System videos
+          GALLERY_HEADING: System test videos
+          GALLERY_FEATURE_LABEL: System scenario
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: system-pages
+
+      - name: Publish system videos and gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          gallery_path="dev/system-videos/pr-${PR_NUMBER}"
+
+          git -C system-pages config user.name "github-actions[bot]"
+          git -C system-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git -C system-pages rm -r --ignore-unmatch "${gallery_path}"
+          mkdir -p "system-pages/${gallery_path}"
+          cp -R system-video-gallery/. "system-pages/${gallery_path}/"
+          git -C system-pages add "${gallery_path}"
+          git -C system-pages commit -m "Update system video gallery for PR #${PR_NUMBER}"
+
+          attempt=1
+          while ! git -C system-pages push origin HEAD:gh-pages; do
+            if [ "$attempt" -ge 3 ]; then
+              echo "Failed to publish gh-pages after ${attempt} attempts" >&2
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            git -C system-pages fetch origin gh-pages
+            git -C system-pages rebase origin/gh-pages
+          done
+
+      - name: Link system video gallery from the PR
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const marker = '<!-- system-video-gallery -->';
+            const { owner, repo } = context.repo;
+            const pr = context.issue.number;
+            const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/system-videos/pr-${pr}/`;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\n[Browse all system test videos](${gallery}) · [download artifact](${run})`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+            }
 
   report_benchmarks:
     # Posts one PR comment covering diagram-generation benchmark suites

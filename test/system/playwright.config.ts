@@ -8,6 +8,7 @@ const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
 
 const reporters: any[] = [
   ['list'],
+  ['json', { outputFile: path.join(root, 'test-results/system/playwright-report.json') }],
   ['html', { open: 'never', outputFolder: path.join(root, 'playwright-report/system') }],
 ];
 
@@ -20,6 +21,10 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: __dirname,
+  // Playwright's default (<rootDir>/test-results, flat per-test) doesn't
+  // match the CI upload glob (test-results/system/**) that the video
+  // gallery job reads from — keep everything (videos, traces) nested here.
+  outputDir: path.join(root, 'test-results/system/playwright-output'),
   snapshotDir: path.join(__dirname, '__screenshots__', vscodeVersion),
   workers: 1,
   timeout: 240_000,
@@ -44,5 +49,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     // drops --remote-debugging-port=0 support that Playwright 1.59 requires.
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
+    // Same downscaled-recording rationale as test/bdd/playwright.config.ts —
+    // see the comment there. System's suite is much smaller (5 tests x 3
+    // versions), so keeping every CI video is cheap here too.
+    vscodeVideo: {
+      mode: process.env.CI ? 'on' : 'retain-on-failure',
+      size: { width: 640, height: 460 },
+    },
   },
 });

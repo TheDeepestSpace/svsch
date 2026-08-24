@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateBddVideoGallery } from '../../scripts/generate-bdd-video-gallery.mjs';
+import { generateVideoGallery } from '../../scripts/generate-bdd-video-gallery.mjs';
 
 const temporaryDirectories: string[] = [];
 
@@ -12,7 +12,7 @@ afterEach(() => {
   }
 });
 
-describe('generateBddVideoGallery', () => {
+describe('generateVideoGallery', () => {
   it('copies every WebM and labels it from the merged Playwright report', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bdd-video-gallery-test-'));
     temporaryDirectories.push(root);
@@ -70,7 +70,7 @@ describe('generateBddVideoGallery', () => {
       }),
     );
 
-    const videos = generateBddVideoGallery(input, output, {
+    const videos = generateVideoGallery(input, output, {
       prNumber: '275',
       repository: 'TheDeepestSpace/svsch',
       sha: '1234567890abcdef',
@@ -86,5 +86,30 @@ describe('generateBddVideoGallery', () => {
     expect(html).toContain('selects &amp; moves a node');
     expect(html).toContain('src="videos/');
     expect(html).toContain('12345678');
+  });
+
+  it('honors a custom title/heading/feature-fallback for non-BDD suites', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'video-gallery-test-'));
+    temporaryDirectories.push(root);
+    const input = path.join(root, 'system');
+    const output = path.join(root, 'gallery');
+    const videoDirectory = path.join(input, 'playwright-output', 'scenario', 'videos');
+    fs.mkdirSync(videoDirectory, { recursive: true });
+    fs.writeFileSync(path.join(videoDirectory, 'only.webm'), 'video');
+
+    const videos = generateVideoGallery(input, output, {
+      prNumber: '294',
+      title: 'System videos',
+      heading: 'System test videos',
+      defaultFeatureLabel: 'System scenario',
+    });
+
+    // No playwright-report.json present, so metadata falls back to the
+    // configured default label rather than the BDD-specific one.
+    expect(videos).toHaveLength(1);
+    expect(videos[0].feature).toBe('System scenario');
+    const html = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
+    expect(html).toContain('<title>System videos · PR #294</title>');
+    expect(html).toContain('<h1>System test videos · PR #294</h1>');
   });
 });
