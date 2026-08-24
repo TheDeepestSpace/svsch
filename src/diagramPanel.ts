@@ -109,6 +109,21 @@ type WebviewMessage =
        */
       expandedSizes?: Record<string, { width: number; height: number }>;
     }
+  | {
+      type: 'expandedFrameSizesChanged';
+      moduleName: string;
+      /**
+       * Frame sizes of every currently-expanded top-level instance in this
+       * module ("Expand instance in place", issue #232), in sizeOverride
+       * grid units — same shape and purpose as relayoutSelection's
+       * `expandedSizes`, but kept live on the panel so *every* view
+       * rebuild (not just an explicit Auto Layout) routes other wires
+       * around the expanded frame's real footprint instead of the
+       * collapsed instance's saved size. Sent whenever the webview's
+       * splice set changes (expand, collapse, or module navigation).
+       */
+      sizes: Record<string, { width: number; height: number }>;
+    }
   | { type: 'renameCutNet'; moduleName: string; netKey: string; label: string }
   | { type: 'revertCutNetLabel'; moduleName: string; netKey: string }
   | { type: 'tieNet'; moduleName: string; netKey: string }
@@ -151,6 +166,15 @@ export class DiagramPanel {
   private currentModule?: string;
   private store?: LayoutStore;
   private postViewQueue: Promise<void> = Promise.resolve();
+  // Per-module, transient (never persisted) expanded-instance frame sizes —
+  // see the `expandedFrameSizesChanged` message. Kept live so every
+  // buildViewModel call for a module with an active "Expand instance in
+  // place" routes the rest of the diagram around the expanded frame's real
+  // on-screen footprint, not the collapsed instance's saved size.
+  private expandedFrameSizesByModule = new Map<
+    string,
+    Record<string, { width: number; height: number }>
+  >();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -394,6 +418,10 @@ export class DiagramPanel {
         message.nodes,
         message.expandedSizes,
       );
+      return;
+    }
+    if (message.type === 'expandedFrameSizesChanged') {
+      await this.setExpandedFrameSizes(message.moduleName, message.sizes);
       return;
     }
     if (message.type === 'layoutChanged') {
@@ -819,6 +847,30 @@ export class DiagramPanel {
     await this.postView();
   }
 
+  // See `expandedFrameSizesChanged` and `expandedFrameSizesByModule` for
+  // why this exists: an "Expand instance in place" frame's real footprint
+  // only lives in the webview (never persisted), so the panel has to be
+  // told about it out-of-band to route the rest of the module's wires
+  // around it on every rebuild, not just during an explicit Auto Layout.
+  private async setExpandedFrameSizes(
+    moduleName: string,
+    sizes: Record<string, { width: number; height: number }>,
+  ): Promise<void> {
+    const previous = this.expandedFrameSizesByModule.get(moduleName);
+    const next = Object.keys(sizes).length > 0 ? sizes : undefined;
+    if (next) {
+      this.expandedFrameSizesByModule.set(moduleName, next);
+    } else {
+      this.expandedFrameSizesByModule.delete(moduleName);
+    }
+    if (JSON.stringify(previous) === JSON.stringify(next)) {
+      return;
+    }
+    if (this.currentModule === moduleName) {
+      await this.postView();
+    }
+  }
+
   private async saveEdgeLayout(
     moduleName: string,
     edgeId: string,
@@ -1061,7 +1113,8 @@ export class DiagramPanel {
     // free overlap, same as any other manual edit — and resolved by the user
     // running Auto Layout on the diagram afterward (which places released
     // blocks against the frame's real footprint; see relayoutSelection's
-    // elkSizeOverrides).
+    // elkSizeOverrides). *Wire* routing around the expanded frame is handled
+    // separately and automatically — see expandedFrameSizesByModule.
 
     const payload: ExpandInstancePayload = {
       instanceId,
@@ -1129,7 +1182,9 @@ export class DiagramPanel {
         }
       }
     }
-    const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout);
+    const view: DiagramViewModel = await buildViewModel(graph, moduleName, this.layout, {
+      elkSizeOverrides: this.expandedFrameSizesByModule.get(moduleName),
+    });
     if (!isCurrentView()) {
       return;
     }

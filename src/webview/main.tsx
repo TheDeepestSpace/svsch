@@ -807,6 +807,34 @@ function DiagramApp(): React.ReactElement {
     }
   }, [view, expandedInstanceIds, nodes, requestExpand]);
 
+  // Keeps the host's DiagramPanel.expandedFrameSizesByModule in sync with
+  // every top-level "Expand instance in place" frame's real on-screen size
+  // — otherwise the host's own libavoid routing pass (which runs on *every*
+  // view rebuild, not just an explicit Auto Layout) only ever sees the
+  // collapsed instance's saved size, so an unrelated wire whose route
+  // happens to pass near the instance can end up cutting straight through
+  // the expanded frame instead of routing around it. Keyed on spliceVersion
+  // alone (not `view`) so a routine view refresh doesn't re-send this and
+  // re-trigger a host-side postView in a loop; spliceMapModuleNameRef tracks
+  // the module these sizes belong to without adding `view` as a dependency.
+  useEffect(() => {
+    const sizesModuleName = spliceMapModuleNameRef.current;
+    if (!sizesModuleName) return;
+    const sizes: Record<string, { width: number; height: number }> = {};
+    for (const splice of spliceMapRef.current.values()) {
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      sizes[splice.flowInstanceId] = {
+        width: Math.ceil(splice.expandedSize.width / diagramSizing.gridSize),
+        height: Math.ceil(splice.expandedSize.height / diagramSizing.gridSize),
+      };
+    }
+    vscode.postMessage({
+      type: 'expandedFrameSizesChanged',
+      moduleName: sizesModuleName,
+      sizes,
+    });
+  }, [spliceVersion]);
+
   const collapseInstance = useCallback((namespace: string) => {
     const splice = spliceMapRef.current.get(namespace);
     if (!splice) return;
