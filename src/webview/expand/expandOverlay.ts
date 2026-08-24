@@ -184,11 +184,11 @@ function portNameById(ports: DiagramPort[]): Map<string, string> {
  * outline — just faded and pushed behind everything else, see
  * EXPAND_GHOST_CLASS/EXPAND_GHOST_Z_INDEX), splices in its boundary+internal
  * nodes/edges, rewires whichever base edges used to terminate on the
- * instance so they land on the matching boundary node instead (clearing
- * their route so it re-derives from the new geometry — see splice.ts's
- * module doc for why no explicit route is needed at all), and appends the
- * splice's region (reusing the exact same `regions` array/overlay/drag-sync
- * GenerateRegionOverlay already provides — see
+ * instance so they land on the matching boundary node instead (retaining
+ * the host's obstacle-aware route: once the host knows the expanded frame
+ * sizes, its route endpoints already coincide with these boundary handles),
+ * and appends the splice's region (reusing the exact same `regions`
+ * array/overlay/drag-sync GenerateRegionOverlay already provides — see
  * PositionedGenerateRegion.expandedInstance in ir/types.ts for why).
  *
  * Applied both (a) every time a fresh server `view` rebuilds the base
@@ -292,7 +292,6 @@ export function applyActiveSplices(
         target: targetMatches ? boundaryId : edge.target,
         sourceHandle: sourceMatches ? 'outer' : edge.sourceHandle,
         targetHandle: targetMatches ? 'outer' : edge.targetHandle,
-        data: { ...edge.data, routePoints: undefined, waypoint: undefined },
       };
     });
 

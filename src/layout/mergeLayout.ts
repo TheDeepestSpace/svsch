@@ -248,7 +248,16 @@ export async function buildViewModel(
             ? undefined
             : elkLayout.routes.get(edge.id)),
       })),
-      ...cutProjection.edges,
+      ...cutProjection.edges.map((edge) => ({
+        ...edge,
+        routePoints:
+          cutStubRouteAroundSizeOverrides(
+            edge,
+            options?.elkSizeOverrides,
+            routingNodesById,
+            routingNodePositions,
+          ) ?? edge.routePoints,
+      })),
     ],
     generateRegions: positionedRegions,
     diagnostics: graph.diagnostics,
@@ -2876,6 +2885,92 @@ function directRenderedLeadRoute(
     return undefined;
   }
   return directLeadRoute(sourceLead, targetLead);
+}
+
+// A cut stub normally has no explicit route: its label is derived beside the
+// owning port and `forceStraight` makes the two look like a wire split in
+// place. An expanded instance can grow between a previously pinned label and
+// that port, though, or over another stub's straight corridor. In that one
+// case synthesize the shortest single-lane detour around the transient frame
+// rectangles. Keeping this scoped to size overrides preserves the ordinary
+// cut appearance everywhere else.
+function cutStubRouteAroundSizeOverrides(
+  edge: DiagramEdge,
+  sizeOverrides: Record<string, { width: number; height: number }> | undefined,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>,
+): Array<{ x: number; y: number }> | undefined {
+  if (!sizeOverrides || Object.keys(sizeOverrides).length === 0) return undefined;
+  const sourceNode = nodesById.get(edge.source);
+  const targetNode = nodesById.get(edge.target);
+  // Match normalizeRoutePoints' forceStraight cut-stub convention exactly:
+  // the real block keeps its outward lead, while the cut label terminates at
+  // the label handle itself. If the synthesized route started one grid past
+  // a label, endpoint reconciliation would discard its first detour leg.
+  const sourceLead = renderedLeadPoint(
+    edge.source,
+    edge.sourcePort,
+    nodesById,
+    nodePositions,
+    sourceNode?.kind !== 'netLabel',
+    'source',
+  );
+  const targetLead = renderedLeadPoint(
+    edge.target,
+    edge.targetPort,
+    nodesById,
+    nodePositions,
+    targetNode?.kind !== 'netLabel',
+    'target',
+  );
+  if (!sourceLead || !targetLead) return undefined;
+  const direct = directLeadRoute(sourceLead, targetLead);
+
+  const obstacles = Object.keys(sizeOverrides).flatMap((nodeId) => {
+    const node = nodesById.get(nodeId);
+    const position = nodePositions.get(nodeId);
+    if (!node || !position) return [];
+    const dimensions = resolvedNodeDimensions(node);
+    return [{ ...position, ...dimensions }];
+  });
+  const intersects = (route: Array<{ x: number; y: number }>) =>
+    route
+      .slice(0, -1)
+      .some((point, index) =>
+        obstacles.some((rect) => segmentIntersectsRectInterior(point, route[index + 1], rect)),
+      );
+  const currentRoute = edge.routePoints?.length ? edge.routePoints : direct;
+  if (!intersects(currentRoute)) return undefined;
+
+  const source = direct[0];
+  const target = direct[direct.length - 1];
+  const grid = diagramSizing.gridSize;
+  const laneYs = uniqueNumbers(
+    obstacles.flatMap((rect) => [
+      snapToGrid(rect.y - grid),
+      snapToGrid(rect.y + rect.height + grid),
+    ]),
+  );
+  const laneXs = uniqueNumbers(
+    obstacles.flatMap((rect) => [
+      snapToGrid(rect.x - grid),
+      snapToGrid(rect.x + rect.width + grid),
+    ]),
+  );
+  const candidates = [
+    ...laneYs.map((y) =>
+      removeRedundantRoutePoints(
+        makeOrthogonalRoute([source, { x: source.x, y }, { x: target.x, y }, target]),
+      ),
+    ),
+    ...laneXs.map((x) =>
+      removeRedundantRoutePoints(
+        makeOrthogonalRoute([source, { x, y: source.y }, { x, y: target.y }, target]),
+      ),
+    ),
+  ].sort((a, b) => routeManhattanLength(a) - routeManhattanLength(b));
+
+  return candidates.find((candidate) => !intersects(candidate));
 }
 
 function directLeadRoute(

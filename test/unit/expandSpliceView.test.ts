@@ -9,6 +9,7 @@ import type {
 import { applyExpandedInstances } from '../../src/layout/expandSpliceView';
 import { setLibavoidRuntimeForTests } from '../../src/layout/libavoidRouter';
 import { buildViewModel } from '../../src/layout/mergeLayout';
+import { edgeNetKey } from '../../src/ir/edgeNet';
 import type { SavedLayout } from '../../src/storage/layoutStore';
 
 beforeAll(async () => {
@@ -164,11 +165,56 @@ describe('applyExpandedInstances', () => {
     const inbound = result.edges.find((edge) => edge.id === 'e-top-a-u1')!;
     expect(inbound.target).toBe('expand:u1::port:a');
     expect(inbound.targetPort).toBe('outer');
-    expect(inbound.routePoints).toBeUndefined();
+    expect(inbound.routePoints).toBeDefined();
 
     const outbound = result.edges.find((edge) => edge.id === 'e-u1-top-y')!;
     expect(outbound.source).toBe('expand:u1::port:y');
     expect(outbound.sourcePort).toBe('outer');
+  });
+
+  it('keeps an expanded-size obstacle route on a rewired cut stub', async () => {
+    const cutEdge = topModule.edges[0];
+    const netKey = edgeNetKey(cutEdge);
+    const sinkLabelId = `cut-label:${netKey}:sink:${cutEdge.id}`;
+    const sinkStubId = `cut-stub:${netKey}:sink:${cutEdge.id}`;
+    const staleStraightRoute = [
+      { x: 1_296, y: 24 },
+      { x: 216, y: 24 },
+    ];
+    const layout: SavedLayout = {
+      version: 1,
+      modules: {
+        top: {
+          nodes: {
+            'port:top:a': { x: 0, y: 0, fixed: true },
+            u1: { x: 240, y: 0, fixed: true },
+            // Pin the dangling sink beyond the instance's far side: once u1
+            // expands, a default straight stub would cut through its frame.
+            [sinkLabelId]: { x: 1_200, y: 0, fixed: true },
+          },
+          expanded: { u1: true },
+          netCuts: {
+            [netKey]: {
+              label: 'a',
+              source: { nodeId: cutEdge.source, portId: cutEdge.sourcePort },
+            },
+          },
+          edges: { [sinkStubId]: { routePoints: staleStraightRoute } },
+        },
+      },
+    };
+    const base = await buildViewModel(graph, 'top', layout);
+    const result = await applyExpandedInstances({ graph, layout, view: base });
+    const sinkStub = result.edges.find(
+      (edge) =>
+        edge.metadata?.cutStub?.role === 'sink' &&
+        edge.metadata.cutStub.originalEdgeId === cutEdge.id,
+    );
+
+    expect(sinkStub?.target).toBe('expand:u1::port:a');
+    expect(sinkStub?.routePoints).toBeDefined();
+    expect(sinkStub!.routePoints!.length).toBeGreaterThan(1);
+    expect(sinkStub?.routePoints).not.toEqual(staleStraightRoute);
   });
 });
 

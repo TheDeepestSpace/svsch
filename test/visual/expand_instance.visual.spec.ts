@@ -8,6 +8,7 @@ import { applyExpandedInstances } from '../../src/layout/expandSpliceView';
 import { buildDesignGraph } from '../../src/parser/backend';
 import type { DesignGraph, DiagramViewModel } from '../../src/ir/types';
 import type { SavedLayout } from '../../src/storage/layoutStore';
+import { diagramSizing } from '../../src/diagram/constants';
 import {
   buildExampleDesignViewWithGraph,
   EXAMPLE_DESIGN_MODULES,
@@ -306,6 +307,111 @@ async function expectOuterNodesClearOfFrame(page: Page, instanceId: string): Pro
   expect(violations, 'top-level nodes overlapping the expanded frame').toEqual([]);
 }
 
+function segmentIntersectsRectInterior(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  rect: { x: number; y: number; width: number; height: number },
+): boolean {
+  const epsilon = 0.5;
+  if (Math.abs(start.y - end.y) < epsilon) {
+    return (
+      start.y > rect.y + epsilon &&
+      start.y < rect.y + rect.height - epsilon &&
+      Math.min(start.x, end.x) < rect.x + rect.width - epsilon &&
+      Math.max(start.x, end.x) > rect.x + epsilon
+    );
+  }
+  if (Math.abs(start.x - end.x) < epsilon) {
+    return (
+      start.x > rect.x + epsilon &&
+      start.x < rect.x + rect.width - epsilon &&
+      Math.min(start.y, end.y) < rect.y + rect.height - epsilon &&
+      Math.max(start.y, end.y) > rect.y + epsilon
+    );
+  }
+  return false;
+}
+
+// Locks the actual routing invariant behind the screenshot: every final
+// host route must clear every expanded frame's interior. A pixel baseline
+// alone made the previous regression easy to miss at cpu_top's fitted scale.
+function expectOuterRoutesClearOfExpandedFrames(
+  view: DiagramViewModel,
+  expandedSizes: Record<string, { width: number; height: number }> | undefined,
+): void {
+  if (!expandedSizes) return;
+  const nodeById = new Map(view.nodes.map((node) => [node.id, node]));
+  const violations: string[] = [];
+  for (const edge of view.edges) {
+    if (!edge.routePoints || edge.routePoints.length < 2) continue;
+    for (const [instanceId, size] of Object.entries(expandedSizes)) {
+      const instance = nodeById.get(instanceId);
+      if (!instance) continue;
+      const rect = {
+        x: instance.position.x,
+        y: instance.position.y,
+        width: size.width * diagramSizing.gridSize,
+        height: size.height * diagramSizing.gridSize,
+      };
+      if (
+        edge.routePoints
+          .slice(0, -1)
+          .some((point, index) =>
+            segmentIntersectsRectInterior(point, edge.routePoints![index + 1], rect),
+          )
+      ) {
+        violations.push(`${edge.id} through ${instanceId}`);
+      }
+    }
+  }
+  expect(violations, 'outer wire routes crossing expanded frames').toEqual([]);
+}
+
+async function expectRenderedOuterRoutesClearOfExpandedFrames(
+  page: Page,
+  instanceIds: string[],
+): Promise<void> {
+  const violations = await page.evaluate((expandedIds) => {
+    const rf = (window as any).reactFlowInstance;
+    const nodes = new Map<string, any>(rf.getNodes().map((node: any) => [node.id, node]));
+    const frames = expandedIds.flatMap((id) => {
+      const node = nodes.get(id);
+      const width = node?.measured?.width ?? node?.width;
+      const height = node?.measured?.height ?? node?.height;
+      return node && typeof width === 'number' && typeof height === 'number'
+        ? [{ id, x: node.position.x, y: node.position.y, width, height }]
+        : [];
+    });
+    const bad: string[] = [];
+    for (const edge of rf.getEdges()) {
+      if (edge.id.startsWith('expand:')) continue;
+      const element = document.querySelector(
+        `.react-flow__edge[data-id="${CSS.escape(edge.id)}"] path.svsch-edge`,
+      ) as SVGPathElement | null;
+      if (!element) continue;
+      const length = element.getTotalLength();
+      for (const frame of frames) {
+        let crosses = false;
+        for (let distance = 0; distance <= length; distance += 2) {
+          const point = element.getPointAtLength(distance);
+          if (
+            point.x > frame.x + 0.5 &&
+            point.x < frame.x + frame.width - 0.5 &&
+            point.y > frame.y + 0.5 &&
+            point.y < frame.y + frame.height - 0.5
+          ) {
+            crosses = true;
+            break;
+          }
+        }
+        if (crosses) bad.push(`${edge.id} through ${frame.id}`);
+      }
+    }
+    return bad;
+  }, instanceIds);
+  expect(violations, 'rendered outer wires crossing expanded frames').toEqual([]);
+}
+
 // Marquee-selects every top-level node, clicks the selection toolbar's
 // "Auto Layout", then replays the extension host's own role for that
 // request (the same merge + build + re-anchor sequence
@@ -391,7 +497,10 @@ async function runManualAutoLayout(
       }));
     hostLayout = mergeNodePositions(hostLayout, view.moduleName, anchoredNodes);
   }
-  const finalView = await buildViewModel(graph, view.moduleName, hostLayout);
+  const finalView = await buildViewModel(graph, view.moduleName, hostLayout, {
+    elkSizeOverrides: relayout.expandedSizes,
+  });
+  expectOuterRoutesClearOfExpandedFrames(finalView, relayout.expandedSizes);
   await postView(page, finalView);
 
   // postView only dispatches a postMessage — it does not wait for React to
@@ -413,6 +522,10 @@ async function runManualAutoLayout(
       });
     },
     finalView.nodes.map((node) => ({ id: node.id, x: node.position.x, y: node.position.y })),
+  );
+  await expectRenderedOuterRoutesClearOfExpandedFrames(
+    page,
+    Object.keys(relayout.expandedSizes ?? {}),
   );
 
   // Auto Layout intentionally keeps the relaid blocks selected — drop the
@@ -821,7 +934,10 @@ test.describe('expand instance in place visual', () => {
         }));
       hostLayout = mergeNodePositions(hostLayout, 'cpu_top', anchoredNodes);
     }
-    const finalView = await buildViewModel(graph, 'cpu_top', hostLayout);
+    const finalView = await buildViewModel(graph, 'cpu_top', hostLayout, {
+      elkSizeOverrides: relayout.expandedSizes,
+    });
+    expectOuterRoutesClearOfExpandedFrames(finalView, relayout.expandedSizes);
     await postView(page, finalView);
 
     // The splice reattaches to the re-laid-out diagram: boundary ports ride
@@ -832,6 +948,7 @@ test.describe('expand instance in place visual', () => {
     );
     await expectSplicedContentInsideFrame(page, aluNodeId);
     await expectOuterNodesClearOfFrame(page, aluNodeId);
+    await expectRenderedOuterRoutesClearOfExpandedFrames(page, [aluNodeId]);
 
     // Auto Layout intentionally keeps the relaid blocks selected — drop the
     // selection before the screenshot so the baseline shows the diagram, not

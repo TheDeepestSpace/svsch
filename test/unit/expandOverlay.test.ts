@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Edge } from '@xyflow/react';
 import type { PositionedGenerateRegion, PositionedNode } from '../../src/ir/types';
 import {
   applyActiveSplices,
@@ -58,6 +59,49 @@ const instanceFlowNode: HdlFlowNode = {
 };
 
 describe('applyActiveSplices (nested inheritance)', () => {
+  it('retains the host-routed path when rewiring an outer edge to a boundary port', () => {
+    const boundaryId = 'expand:u_mid::port:a';
+    const splice = makeSplice([]);
+    splice.boundaryNodeIdByChildPortName.set('a', boundaryId);
+    const routedInstance: HdlFlowNode = {
+      ...instanceFlowNode,
+      data: {
+        ...instanceFlowNode.data,
+        node: {
+          ...instanceFlowNode.data.node,
+          ports: [{ id: 'u_mid:a', name: 'a', direction: 'input' }],
+        },
+      },
+    };
+    const routePoints = [
+      { x: -120, y: 24 },
+      { x: -48, y: 24 },
+      { x: -48, y: 96 },
+      { x: 0, y: 96 },
+    ];
+    const edge: Edge = {
+      id: 'outer-a',
+      source: 'source',
+      target: 'u_mid',
+      sourceHandle: 'out',
+      targetHandle: 'u_mid:a',
+      data: { routePoints, waypoint: { x: -48, y: 96 } },
+    };
+
+    const result = applyActiveSplices(
+      [routedInstance],
+      [edge],
+      [],
+      new Map([['u_mid', splice]]),
+      'top',
+    );
+    const rewired = result.edges.find((candidate) => candidate.id === edge.id)!;
+    expect(rewired.target).toBe(boundaryId);
+    expect(rewired.targetHandle).toBe('outer');
+    expect(rewired.data?.routePoints).toEqual(routePoints);
+    expect(rewired.data?.waypoint).toEqual({ x: -48, y: 96 });
+  });
+
   it('renders a spliced node stamped with metadata.expandGhost as a dimmed frame', () => {
     const nestedGhost: PositionedNode = {
       id: 'expand:u_mid::u_leaf',

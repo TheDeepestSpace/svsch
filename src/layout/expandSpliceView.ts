@@ -1,10 +1,48 @@
-import type { DesignGraph, DiagramViewModel, PositionedNode } from '../ir/types';
+import type {
+  DesignGraph,
+  DiagramViewModel,
+  PositionedGenerateRegion,
+  PositionedNode,
+} from '../ir/types';
 import type { SavedLayout } from '../storage/layoutStore';
 import { diagramSizing } from '../diagram/constants';
 import { instanceParameterRows, resolvedNodeDimensions } from '../diagram/nodeSizing';
 import { nodeIsArrayNode } from '../ir/nodeMetadata';
 import { buildExpandSpliceLayout } from './expandLayout';
-import { spliceExpandedInstance } from '../webview/expand/splice';
+import { buildViewModel } from './mergeLayout';
+import { spliceExpandedInstance, type SpliceResult } from '../webview/expand/splice';
+
+function translateRegion(
+  region: PositionedGenerateRegion,
+  dx: number,
+  dy: number,
+): PositionedGenerateRegion {
+  return {
+    ...region,
+    bounds: { ...region.bounds, x: region.bounds.x + dx, y: region.bounds.y + dy },
+  };
+}
+
+function translateSplice(result: SpliceResult, dx: number, dy: number): SpliceResult {
+  if (dx === 0 && dy === 0) return result;
+  return {
+    ...result,
+    region: translateRegion(result.region, dx, dy),
+    nodes: result.nodes.map((node) => ({
+      ...node,
+      position: { x: node.position.x + dx, y: node.position.y + dy },
+    })),
+    edges: result.edges.map((edge) => ({
+      ...edge,
+      waypoint: edge.waypoint ? { x: edge.waypoint.x + dx, y: edge.waypoint.y + dy } : undefined,
+      routePoints: edge.routePoints?.map((point) => ({
+        x: point.x + dx,
+        y: point.y + dy,
+      })),
+    })),
+    nestedRegions: result.nestedRegions?.map((region) => translateRegion(region, dx, dy)),
+  };
+}
 
 /**
  * Server-side counterpart of the webview's `applyActiveSplices`
@@ -36,13 +74,16 @@ export async function applyExpandedInstances(input: {
     return view;
   }
 
-  let nodes = [...view.nodes];
-  let edges = [...view.edges];
-  const regions = [...(view.generateRegions ?? [])];
   const grid = diagramSizing.gridSize;
+  const prepared: Array<{
+    instanceId: string;
+    anchor: { x: number; y: number };
+    result: SpliceResult;
+  }> = [];
+  const expandedSizes: Record<string, { width: number; height: number }> = {};
 
   for (const instanceId of instanceIds) {
-    const instanceNode = nodes.find((node) => node.id === instanceId);
+    const instanceNode = view.nodes.find((node) => node.id === instanceId);
     if (!instanceNode || instanceNode.kind !== 'instance' || nodeIsArrayNode(instanceNode)) {
       continue;
     }
@@ -93,6 +134,44 @@ export async function applyExpandedInstances(input: {
       hostLayout,
     });
 
+    prepared.push({
+      instanceId,
+      anchor: { ...instanceNode.position },
+      result: spliceResult,
+    });
+    expandedSizes[instanceId] = {
+      width: Math.ceil(spliceResult.expandedSize.width / grid),
+      height: Math.ceil(spliceResult.expandedSize.height / grid),
+    };
+  }
+
+  if (prepared.length === 0) {
+    return view;
+  }
+
+  // `buildViewModel` originally produced `view` while every instance still
+  // had its collapsed footprint. Re-run the outer placement/routing pass
+  // with the computed frame sizes before splicing: otherwise a route that
+  // touches another expanded instance (and therefore gets rewired below)
+  // can retain a path straight through this frame. This is the non-live
+  // counterpart of DiagramPanel.expandedFrameSizesByModule.
+  const routedView = await buildViewModel(graph, view.moduleName, layout, {
+    elkSizeOverrides: expandedSizes,
+  });
+  let nodes = [...routedView.nodes];
+  let edges = [...routedView.edges];
+  const regions = [...(routedView.generateRegions ?? [])];
+
+  for (const preparedSplice of prepared) {
+    const { instanceId } = preparedSplice;
+    const instanceNode = nodes.find((node) => node.id === instanceId);
+    if (!instanceNode || instanceNode.kind !== 'instance') continue;
+    const spliceResult = translateSplice(
+      preparedSplice.result,
+      instanceNode.position.x - preparedSplice.anchor.x,
+      instanceNode.position.y - preparedSplice.anchor.y,
+    );
+
     const portNameByHandle = new Map(instanceNode.ports.map((port) => [port.id, port.name]));
     edges = edges.map((edge) => {
       const sourceMatches = edge.source === instanceId;
@@ -110,8 +189,6 @@ export async function applyExpandedInstances(input: {
         target: targetMatches ? boundaryId : edge.target,
         sourcePort: sourceMatches ? 'outer' : edge.sourcePort,
         targetPort: targetMatches ? 'outer' : edge.targetPort,
-        waypoint: undefined,
-        routePoints: undefined,
       };
     });
 
@@ -132,5 +209,5 @@ export async function applyExpandedInstances(input: {
     regions.push(spliceResult.region);
   }
 
-  return { ...view, nodes, edges, generateRegions: regions };
+  return { ...routedView, nodes, edges, generateRegions: regions };
 }
