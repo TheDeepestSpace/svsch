@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scenarioKey } from './diff-bdd-scenarios.mjs';
 
 function findFiles(root, predicate) {
   if (!fs.existsSync(root)) return [];
@@ -70,6 +71,8 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 }
 
+const CHANGE_STATUS_BADGES = { new: 'NEW', modified: 'MODIFIED' };
+
 function renderIndex(videos, options) {
   const totalBytes = videos.reduce((sum, video) => sum + video.bytes, 0);
   const repository = options.repository ?? 'TheDeepestSpace/svsch';
@@ -84,11 +87,16 @@ function renderIndex(videos, options) {
       const duration = video.duration ? ` · ${(video.duration / 1000).toFixed(1)}s` : '';
       const empty = video.bytes === 0 ? '<strong class="bad">empty video</strong> · ' : '';
       const search = `${video.feature} ${video.scenario} ${video.status}`.toLowerCase();
-      return `<article class="card" data-search="${escapeHtml(search)}">
+      const changeStatus = video.changeStatus ?? 'unchanged';
+      const badgeText = CHANGE_STATUS_BADGES[changeStatus];
+      const badge = badgeText
+        ? `<span class="badge badge-${changeStatus}">${badgeText}</span>`
+        : '';
+      return `<article class="card" data-search="${escapeHtml(search)}" data-status="${escapeHtml(changeStatus)}">
   <video controls preload="none" src="${escapeHtml(video.url)}"></video>
   <div class="details">
     <p class="feature">${escapeHtml(video.feature)}</p>
-    <h2>${escapeHtml(video.scenario)}</h2>
+    <h2>${escapeHtml(video.scenario)}${badge}</h2>
     <p>${empty}${escapeHtml(video.status)}${attempt}${duration} · ${formatBytes(video.bytes)}</p>
     <a href="${escapeHtml(video.url)}">open video</a>
   </div>
@@ -110,13 +118,19 @@ function renderIndex(videos, options) {
     h1 { font-size: 1.6rem; }
     h2 { font-size: 1rem; margin: .25rem 0 .5rem; }
     .summary, .feature { color: #777; }
-    input { min-width: min(22rem, 100%); padding: .7rem; font: inherit; }
+    input, select { min-width: min(14rem, 100%); padding: .7rem; font: inherit; }
+    .controls { display: flex; gap: .5rem; flex-wrap: wrap; }
     main { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    .card { border: 1px solid #8886; border-radius: .5rem; overflow: hidden; background: #8881; }
+    .card { border: 1px solid #8886; border-radius: .5rem; overflow: hidden; background: #8881; border-left-width: 4px; }
+    .card[data-status="new"] { border-left-color: #2ea043; background: rgba(46, 160, 67, .12); }
+    .card[data-status="modified"] { border-left-color: #d29922; background: rgba(210, 153, 34, .12); }
     video { display: block; width: 100%; aspect-ratio: 32 / 23; background: #111; }
     .details { padding: .8rem; }
     .feature { font-size: .8rem; }
     .bad { color: #d33; }
+    .badge { display: inline-block; margin-left: .5rem; padding: .1rem .4rem; border-radius: .25rem; font-size: .65rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
+    .badge-new { background: #2ea043; color: #fff; }
+    .badge-modified { background: #d29922; color: #1a1a1a; }
     [hidden] { display: none; }
   </style>
 </head>
@@ -126,19 +140,42 @@ function renderIndex(videos, options) {
       <h1>BDD scenario videos · PR #${escapeHtml(options.prNumber ?? '?')}</h1>
       <p class="summary">${videos.length} videos · ${formatBytes(totalBytes)} · commit ${commitLink}</p>
     </div>
-    <input id="filter" type="search" placeholder="Filter scenarios" aria-label="Filter scenarios">
+    <div class="controls">
+      <input id="filter" type="search" placeholder="Filter scenarios" aria-label="Filter scenarios">
+      <select id="statusFilter" aria-label="Filter by change status">
+        <option value="all">All</option>
+        <option value="new">New</option>
+        <option value="modified">Modified</option>
+        <option value="unchanged">Unchanged</option>
+      </select>
+    </div>
   </header>
   <main>${cards}</main>
   <script>
     const filter = document.querySelector('#filter');
+    const statusFilter = document.querySelector('#statusFilter');
     const cards = [...document.querySelectorAll('.card')];
-    filter.addEventListener('input', () => {
+    function applyFilters() {
       const query = filter.value.trim().toLowerCase();
-      for (const card of cards) card.hidden = !card.dataset.search.includes(query);
-    });
+      const status = statusFilter.value;
+      for (const card of cards) {
+        const matchesQuery = card.dataset.search.includes(query);
+        const matchesStatus = status === 'all' || card.dataset.status === status;
+        card.hidden = !(matchesQuery && matchesStatus);
+      }
+    }
+    filter.addEventListener('input', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
   </script>
 </body>
 </html>`;
+}
+
+function lookupChangeStatus(changeStatus, feature, scenario) {
+  if (!changeStatus) return 'unchanged';
+  const key = scenarioKey(feature, scenario);
+  const status = changeStatus instanceof Map ? changeStatus.get(key) : changeStatus[key];
+  return status ?? 'unchanged';
 }
 
 export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
@@ -169,6 +206,7 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
     const relativeUrl = `videos/${filename}`;
     return {
       ...info,
+      changeStatus: lookupChangeStatus(options.changeStatus, info.feature, info.scenario),
       bytes: fs.statSync(destination).size,
       filename,
       url: options.mediaBaseUrl
@@ -197,10 +235,16 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
     process.exitCode = 2;
   } else {
     const prNumber = process.env.PR_NUMBER;
+    const statusFile = process.env.BDD_SCENARIO_STATUS_FILE;
+    const changeStatus =
+      statusFile && fs.existsSync(statusFile)
+        ? JSON.parse(fs.readFileSync(statusFile, 'utf8'))
+        : undefined;
     const videos = generateBddVideoGallery(inputDir, outputDir, {
       prNumber,
       repository: process.env.GITHUB_REPOSITORY,
       sha: process.env.GITHUB_SHA,
+      changeStatus,
     });
     const totalBytes = videos.reduce((sum, video) => sum + video.bytes, 0);
     console.log(`Generated gallery for ${videos.length} videos (${formatBytes(totalBytes)})`);
