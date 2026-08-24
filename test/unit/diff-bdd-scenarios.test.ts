@@ -8,6 +8,7 @@ import {
   diffScenarioBlocks,
   diffBddScenarios,
   scenarioKey,
+  splitScenarioKey,
 } from '../../scripts/diff-bdd-scenarios.mjs';
 
 const temporaryDirectories: string[] = [];
@@ -114,11 +115,22 @@ describe('diffScenarioBlocks', () => {
     expect(diffScenarioBlocks(base, head).get(scenarioKey('F', 'A'))).toBe('modified');
   });
 
-  it('does not report scenarios removed at head', () => {
+  it('classifies scenarios present only at base as removed', () => {
     const base = new Map([[scenarioKey('F', 'A'), 'Scenario: A\nGiven x']]);
     const head = new Map();
 
-    expect(diffScenarioBlocks(base, head).size).toBe(0);
+    const status = diffScenarioBlocks(base, head);
+    expect(status.get(scenarioKey('F', 'A'))).toBe('removed');
+    expect(status.size).toBe(1);
+  });
+});
+
+describe('splitScenarioKey', () => {
+  it('recovers the feature/scenario pair encoded by scenarioKey', () => {
+    expect(splitScenarioKey(scenarioKey('Widgets', 'First'))).toEqual({
+      feature: 'Widgets',
+      scenario: 'First',
+    });
   });
 });
 
@@ -135,6 +147,18 @@ describe('diffBddScenarios (filesystem integration)', () => {
     expect(status.get(scenarioKey('A', 'Unchanged'))).toBe('unchanged');
     expect(status.get(scenarioKey('A', 'WillChange'))).toBe('modified');
     expect(status.get(scenarioKey('A', 'Added'))).toBe('new');
+  });
+
+  it('marks a scenario present only in the base checkout as removed', () => {
+    const base = makeFeaturesDir({
+      'a.feature': `Feature: A\n\n  Scenario: Gone\n    Given x\n`,
+    });
+    const head = makeFeaturesDir({
+      'a.feature': `Feature: A\n`,
+    });
+
+    const status = diffBddScenarios(base, head);
+    expect(status.get(scenarioKey('A', 'Gone'))).toBe('removed');
   });
 
   it('treats a missing base directory as every head scenario being new', () => {

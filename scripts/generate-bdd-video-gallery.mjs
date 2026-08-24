@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { scenarioKey } from './diff-bdd-scenarios.mjs';
+import { scenarioKey, splitScenarioKey } from './diff-bdd-scenarios.mjs';
 
 function findFiles(root, predicate) {
   if (!fs.existsSync(root)) return [];
@@ -71,7 +71,7 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MiB`;
 }
 
-const CHANGE_STATUS_BADGES = { new: 'NEW', modified: 'MODIFIED' };
+const CHANGE_STATUS_BADGES = { new: 'NEW', modified: 'MODIFIED', removed: 'REMOVED' };
 
 function renderIndex(videos, options) {
   const totalBytes = videos.reduce((sum, video) => sum + video.bytes, 0);
@@ -83,15 +83,26 @@ function renderIndex(videos, options) {
     : 'local run';
   const cards = videos
     .map((video) => {
-      const attempt = video.retry > 0 ? ` · retry ${video.retry}` : '';
-      const duration = video.duration ? ` · ${(video.duration / 1000).toFixed(1)}s` : '';
-      const empty = video.bytes === 0 ? '<strong class="bad">empty video</strong> · ' : '';
-      const search = `${video.feature} ${video.scenario} ${video.status}`.toLowerCase();
       const changeStatus = video.changeStatus ?? 'unchanged';
       const badgeText = CHANGE_STATUS_BADGES[changeStatus];
       const badge = badgeText
         ? `<span class="badge badge-${changeStatus}">${badgeText}</span>`
         : '';
+      if (changeStatus === 'removed') {
+        const search = `${video.feature} ${video.scenario} removed`.toLowerCase();
+        return `<article class="card" data-search="${escapeHtml(search)}" data-status="removed">
+  <div class="removed-placeholder">Scenario removed — no recording</div>
+  <div class="details">
+    <p class="feature">${escapeHtml(video.feature)}</p>
+    <h2>${escapeHtml(video.scenario)}${badge}</h2>
+    <p>Removed in this PR</p>
+  </div>
+</article>`;
+      }
+      const attempt = video.retry > 0 ? ` · retry ${video.retry}` : '';
+      const duration = video.duration ? ` · ${(video.duration / 1000).toFixed(1)}s` : '';
+      const empty = video.bytes === 0 ? '<strong class="bad">empty video</strong> · ' : '';
+      const search = `${video.feature} ${video.scenario} ${video.status}`.toLowerCase();
       return `<article class="card" data-search="${escapeHtml(search)}" data-status="${escapeHtml(changeStatus)}">
   <video controls preload="none" src="${escapeHtml(video.url)}"></video>
   <div class="details">
@@ -124,13 +135,16 @@ function renderIndex(videos, options) {
     .card { border: 1px solid #8886; border-radius: .5rem; overflow: hidden; background: #8881; border-left-width: 4px; }
     .card[data-status="new"] { border-left-color: #2ea043; background: rgba(46, 160, 67, .12); }
     .card[data-status="modified"] { border-left-color: #d29922; background: rgba(210, 153, 34, .12); }
+    .card[data-status="removed"] { border-left-color: #cf222e; background: rgba(207, 34, 46, .12); }
     video { display: block; width: 100%; aspect-ratio: 32 / 23; background: #111; }
+    .removed-placeholder { display: flex; align-items: center; justify-content: center; text-align: center; aspect-ratio: 32 / 23; background: rgba(207, 34, 46, .2); color: #cf222e; font-size: .85rem; padding: 1rem; }
     .details { padding: .8rem; }
     .feature { font-size: .8rem; }
     .bad { color: #d33; }
     .badge { display: inline-block; margin-left: .5rem; padding: .1rem .4rem; border-radius: .25rem; font-size: .65rem; font-weight: 700; letter-spacing: .03em; vertical-align: middle; }
     .badge-new { background: #2ea043; color: #fff; }
     .badge-modified { background: #d29922; color: #1a1a1a; }
+    .badge-removed { background: #cf222e; color: #fff; }
     [hidden] { display: none; }
   </style>
 </head>
@@ -147,6 +161,7 @@ function renderIndex(videos, options) {
         <option value="new">New</option>
         <option value="modified">Modified</option>
         <option value="unchanged">Unchanged</option>
+        <option value="removed">Removed</option>
       </select>
     </div>
   </header>
@@ -176,6 +191,30 @@ function lookupChangeStatus(changeStatus, feature, scenario) {
   const key = scenarioKey(feature, scenario);
   const status = changeStatus instanceof Map ? changeStatus.get(key) : changeStatus[key];
   return status ?? 'unchanged';
+}
+
+// Scenarios removed at head never ran, so they have no video — synthesize a
+// placeholder entry per `removed` key so the gallery can still surface them.
+function removedScenarioEntries(changeStatus) {
+  if (!changeStatus) return [];
+  const entries = changeStatus instanceof Map ? changeStatus : Object.entries(changeStatus);
+  const removed = [];
+  for (const [key, status] of entries) {
+    if (status !== 'removed') continue;
+    const { feature, scenario } = splitScenarioKey(key);
+    removed.push({
+      feature,
+      scenario,
+      status: 'removed',
+      changeStatus: 'removed',
+      retry: 0,
+      duration: 0,
+      bytes: 0,
+      filename: '',
+      url: '',
+    });
+  }
+  return removed;
 }
 
 export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
@@ -215,14 +254,18 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
     };
   });
 
-  videos.sort((a, b) =>
+  const allEntries = [...videos, ...removedScenarioEntries(options.changeStatus)];
+  allEntries.sort((a, b) =>
     `${a.feature}\0${a.scenario}\0${a.retry}`.localeCompare(
       `${b.feature}\0${b.scenario}\0${b.retry}`,
     ),
   );
-  fs.writeFileSync(path.join(outputDir, 'index.html'), renderIndex(videos, options));
-  fs.writeFileSync(path.join(outputDir, 'manifest.json'), `${JSON.stringify(videos, null, 2)}\n`);
-  return videos;
+  fs.writeFileSync(path.join(outputDir, 'index.html'), renderIndex(allEntries, options));
+  fs.writeFileSync(
+    path.join(outputDir, 'manifest.json'),
+    `${JSON.stringify(allEntries, null, 2)}\n`,
+  );
+  return allEntries;
 }
 
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : '';

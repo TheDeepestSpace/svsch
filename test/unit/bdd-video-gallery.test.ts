@@ -147,5 +147,35 @@ describe('generateBddVideoGallery', () => {
     expect(html).toContain('<option value="new">New</option>');
     expect(html).toContain('<option value="modified">Modified</option>');
     expect(html).toContain('<option value="unchanged">Unchanged</option>');
+    expect(html).toContain('<option value="removed">Removed</option>');
+  });
+
+  it('renders a video-less red card for a scenario removed at head', () => {
+    const { input, output } = makeGalleryInput('a surviving scenario');
+    const changeStatus = new Map([
+      [scenarioKey('Diagram <interaction>', 'a surviving scenario'), 'unchanged'],
+      [scenarioKey('Diagram <interaction>', 'a deleted scenario'), 'removed'],
+    ]);
+
+    const videos = generateBddVideoGallery(input, output, { prNumber: '292', changeStatus });
+
+    expect(videos.some((video) => video.scenario === 'a deleted scenario')).toBe(true);
+    const removedEntry = videos.find((video) => video.scenario === 'a deleted scenario');
+    expect(removedEntry?.changeStatus).toBe('removed');
+    expect(removedEntry?.bytes).toBe(0);
+
+    const html = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
+    expect(html).toContain('data-status="removed"');
+    expect(html).toContain('class="badge badge-removed">REMOVED</span>');
+    expect(html).toContain('Scenario removed');
+    expect(html).toContain('a deleted scenario');
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(output, 'manifest.json'), 'utf8'));
+    expect(
+      manifest.some(
+        (video: { scenario: string; changeStatus: string }) =>
+          video.scenario === 'a deleted scenario' && video.changeStatus === 'removed',
+      ),
+    ).toBe(true);
   });
 });

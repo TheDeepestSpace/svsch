@@ -73,7 +73,9 @@ export function collectScenarioBlocks(featuresDir) {
   return blocks;
 }
 
-// Diffs two key -> block-text maps and classifies every key present at head.
+// Diffs two key -> block-text maps and classifies every key present at
+// either side: head-only is `new`, changed-on-both-sides is `modified`,
+// present-on-both-unchanged is `unchanged`, base-only is `removed`.
 export function diffScenarioBlocks(baseBlocks, headBlocks) {
   const status = new Map();
   for (const [key, headBlock] of headBlocks) {
@@ -81,16 +83,27 @@ export function diffScenarioBlocks(baseBlocks, headBlocks) {
     else if (baseBlocks.get(key) !== headBlock) status.set(key, 'modified');
     else status.set(key, 'unchanged');
   }
+  for (const key of baseBlocks.keys()) {
+    if (!headBlocks.has(key)) status.set(key, 'removed');
+  }
   return status;
 }
 
 // Convenience wrapper: reads `.feature` files under both directories and
-// returns the classification map for every scenario present at head.
+// returns the classification map for every scenario present at head or base.
 export function diffBddScenarios(baseFeaturesDir, headFeaturesDir) {
   return diffScenarioBlocks(
     collectScenarioBlocks(baseFeaturesDir),
     collectScenarioBlocks(headFeaturesDir),
   );
+}
+
+// Recovers the feature/scenario pair encoded by scenarioKey(), for consumers
+// (like the gallery generator) that need to display a scenario they only
+// have the key for — e.g. a `removed` scenario, which has no head-side data.
+export function splitScenarioKey(key) {
+  const [feature, scenario] = key.split('\0');
+  return { feature, scenario };
 }
 
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
@@ -105,10 +118,10 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
     const status = diffBddScenarios(baseFeaturesDir, headFeaturesDir);
     fs.mkdirSync(path.dirname(outputFile), { recursive: true });
     fs.writeFileSync(outputFile, `${JSON.stringify(Object.fromEntries(status), null, 2)}\n`);
-    const counts = { new: 0, modified: 0, unchanged: 0 };
+    const counts = { new: 0, modified: 0, unchanged: 0, removed: 0 };
     for (const value of status.values()) counts[value]++;
     console.log(
-      `Diffed ${status.size} scenarios: ${counts.new} new, ${counts.modified} modified, ${counts.unchanged} unchanged`,
+      `Diffed ${status.size} scenarios: ${counts.new} new, ${counts.modified} modified, ${counts.unchanged} unchanged, ${counts.removed} removed`,
     );
   }
 }
