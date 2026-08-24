@@ -28,34 +28,6 @@ Feature: Command Line Interface
       """
     And the CLI stderr should be empty
 
-  Scenario: Help command output (temporary #292 gallery verification)
-    When I run the CLI command:
-      """
-      svsch --help
-      """
-    Then the CLI stdout should be exactly:
-      """
-      SVSCH CLI
-
-      Usage:
-        svsch render <file.sv> [--output <file.svg>] [--top <module>] [--layout <json>] [--no-layout]
-        svsch render "<glob>" --output-dir <dir>
-
-      Options:
-        -o, --output <file>       Write a single SVG to this path
-            --output-dir <dir>    Write one SVG per input into this directory
-            --top <module>        Render a specific module
-            --layout <json>       Use an explicit saved layout file
-            --no-layout           Ignore saved layout and run auto-layout
-            --no-minify           Skip SVGO minification of the exported SVG
-            --theme <dark|light>  Fixed SVG color theme (default: dark)
-            --workspace <dir>     Workspace root used for parser cache and relative paths
-            --project-folder <d>  Project folder relative to workspace
-            --svsch-data-dir <d>  Directory containing layouts/<module>.json (default: <workspace>/.svsch)
-      """
-    And the CLI stderr should be empty
-
-  @bdd-292-verify
   Scenario: Basic schematic rendering
     Given I have a file "top.sv" in my workspace:
       """sv
