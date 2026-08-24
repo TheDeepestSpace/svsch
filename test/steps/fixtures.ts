@@ -9,7 +9,11 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
-import { SNAPSHOT_THRESHOLDS, bddVisualDiffsDir } from '../snapshotPolicy';
+import {
+  SNAPSHOT_THRESHOLDS,
+  bddPixelmatchMaxDiffPixels,
+  bddVisualDiffsDir,
+} from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -80,10 +84,7 @@ export class BddWorld {
   // Screenshot / snapshot helpers
   // -------------------------------------------------------------------------
 
-  async takeScreenshot(
-    label: string,
-    options?: { skipPixelCompare?: boolean },
-  ): Promise<Buffer | null> {
+  async takeScreenshot(label: string): Promise<Buffer | null> {
     await this._fitDiagramIfClipped();
     await this._settleWorkbenchForScreenshot();
     const screenshot = await this.workbox.screenshot();
@@ -197,7 +198,6 @@ export class BddWorld {
           graphState,
           snapshotName,
           await this._webviewCompareBox(),
-          options?.skipPixelCompare,
         );
       }
     }
@@ -239,7 +239,6 @@ export class BddWorld {
     actualGraph: any,
     snapshotName: string,
     compareBox: PngCompareBox | null = null,
-    skipPixelCompare = false,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
     const resultsDir = bddVisualDiffsDir();
@@ -255,8 +254,6 @@ export class BddWorld {
       () => {},
     );
 
-    if (skipPixelCompare) return;
-
     const snapshotPath = path.join(snapshotsDir, `${snapshotName}.png`);
     const snapshotMissing = !fs.existsSync(snapshotPath);
     if (snapshotMissing) {
@@ -271,7 +268,7 @@ export class BddWorld {
     const comparison = comparePngBuffers(
       expectedBuffer,
       actualBuffer,
-      SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+      bddPixelmatchMaxDiffPixels(snapshotName),
       SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
       compareBox,
     );

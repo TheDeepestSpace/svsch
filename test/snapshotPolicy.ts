@@ -45,6 +45,16 @@ function isPlaywrightSnapshotNamed(filePath: string, snapshotName: string): bool
   return fileName === `${snapshotName}.png` || fileName.startsWith(`${snapshotName}-`);
 }
 
+// Per-screenshot maxDiffPixels overrides for BDD pixelmatch baselines, keyed
+// by snapshot name (basename without .png). Scoped to individual screenshots
+// only — never exempt a whole scenario or skip comparison outright (issue
+// #302: a whole-scenario skip let a stale minimap baseline ship undetected).
+const bddPixelmatchOverrides: Record<string, number> = {};
+
+export function bddPixelmatchMaxDiffPixels(snapshotName: string): number {
+  return bddPixelmatchOverrides[snapshotName] ?? SNAPSHOT_THRESHOLDS.pixelmatch.bdd;
+}
+
 export function baselineThresholdFor(filePath: string): BaselineThreshold | undefined {
   const normalizedPath = filePath.replaceAll('\\', '/').replace(/^\.\//, '');
   if (!normalizedPath.endsWith('.png')) return undefined;
@@ -85,11 +95,14 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   }
 
   if (normalizedPath.startsWith('test/features/snapshots/')) {
+    const snapshotName = normalizedPath
+      .slice(normalizedPath.lastIndexOf('/') + 1)
+      .replace(/\.png$/, '');
     return {
       suite: 'bdd',
       maxDiffPixels: normalizedPath.endsWith('--cli-png.png')
         ? SNAPSHOT_THRESHOLDS.pixelmatch.cli
-        : SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+        : bddPixelmatchMaxDiffPixels(snapshotName),
       pixelmatchThreshold: SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
     };
   }
