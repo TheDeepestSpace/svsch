@@ -2725,6 +2725,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance hdl-node-has-params hdl-node-expand-ghost" data-node-id="instance:top:u1" data-node-kind="instance" transform="translate(144 24)">
+<path class="svsch-expand-ring-backdrop" d="M0 0H1080V264H0ZM60 60H1044V228H60Z" fill="var(--vscode-editorWidget-background)" fill-rule="evenodd" opacity="0.35" style="filter:grayscale(0.4)" aria-hidden="true" />
 <svg class="hdl-node-svg" width="1080" height="264" aria-hidden="true">
 <rect class="svsch-node-shape" width="1080" height="264"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">param_leaf</text><g class="svsch-instance-param-chip"><rect class="svsch-instance-param-chip-bg" x="12" y="20" width="60.6" height="16" rx="4"></rect><text class="svsch-instance-param" x="16" y="28" dominant-baseline="middle" font-size="10"><tspan class="svsch-instance-param-name">WIDTH</tspan><tspan class="svsch-instance-param-equals">=</tspan><tspan class="svsch-instance-param-value">16</tspan></text></g><text class="svsch-node-title" x="12" y="50" text-anchor="start" dominant-baseline="middle">u1</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">a<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="1068" y="72" text-anchor="end" dominant-baseline="middle">y<tspan class="svsch-port-type-suffix">[]</tspan></text>
 </svg>

@@ -2725,6 +2725,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance hdl-node-expand-ghost" data-node-id="instance:top:u1" data-node-kind="instance" transform="translate(168 24)">
+<path class="svsch-expand-ring-backdrop" d="M0 0H984V240H0ZM60 36H948V204H60Z" fill="var(--vscode-editorWidget-background)" fill-rule="evenodd" opacity="0.35" style="filter:grayscale(0.4)" aria-hidden="true" />
 <svg class="hdl-node-svg" width="984" height="240" aria-hidden="true">
 <rect class="svsch-node-shape" width="984" height="240"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">leaf</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u1</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">a</text><text class="svsch-port-label" x="972" y="48" text-anchor="end" dominant-baseline="middle">y</text>
 </svg>

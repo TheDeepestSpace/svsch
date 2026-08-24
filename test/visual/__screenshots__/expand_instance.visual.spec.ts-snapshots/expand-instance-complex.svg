@@ -2737,6 +2737,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-nodes">
 <g class="svsch-node hdl-node hdl-node-instance hdl-node-expand-ghost" data-node-id="instance:top:u_dp" data-node-kind="instance" transform="translate(-144 24)">
+<path class="svsch-expand-ring-backdrop" d="M0 0H1848V432H0ZM84 36H1764V396H84Z" fill="var(--vscode-editorWidget-background)" fill-rule="evenodd" opacity="0.35" style="filter:grayscale(0.4)" aria-hidden="true" />
 <svg class="hdl-node-svg" width="1848" height="432" aria-hidden="true">
 <rect class="svsch-node-shape" width="1848" height="432"></rect><text class="svsch-node-kind" x="12" y="14" text-anchor="start" dominant-baseline="middle">datapath</text><text class="svsch-node-title" x="12" y="26" text-anchor="start" dominant-baseline="middle">u_dp</text><text class="svsch-port-label" x="12" y="48" dominant-baseline="middle">clk</text><text class="svsch-port-label" x="12" y="72" dominant-baseline="middle">bus_in<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="12" y="96" dominant-baseline="middle">pkt_in<tspan class="svsch-port-type-suffix">{}</tspan></text><text class="svsch-port-label" x="1836" y="48" text-anchor="end" dominant-baseline="middle">bus_out<tspan class="svsch-port-type-suffix">[]</tspan></text><text class="svsch-port-label" x="1836" y="72" text-anchor="end" dominant-baseline="middle">flag</text>
 </svg>

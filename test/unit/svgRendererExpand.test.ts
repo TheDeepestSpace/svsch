@@ -121,6 +121,16 @@ describe('renderSvg with an expanded instance', () => {
     expect(svg).toContain('hdl-node-expand-ghost');
     expect(svg).toContain('svsch-expand-content-border');
 
+    // The ghost keeps the same tinted outer ring as the webview while the
+    // even-odd hole leaves the child-diagram cut-out fully transparent.
+    const doc = new DOMParser().parseFromString(svg, 'application/xml');
+    const ring = doc.querySelector('.svsch-expand-ring-backdrop');
+    expect(ring).not.toBeNull();
+    expect(ring?.getAttribute('fill')).toBe('var(--vscode-editorWidget-background)');
+    expect(ring?.getAttribute('fill-rule')).toBe('evenodd');
+    expect(ring?.getAttribute('opacity')).toBe('0.35');
+    expect(ring?.getAttribute('d')?.match(/M/g)).toHaveLength(2);
+
     // The expand region is pure bookkeeping — it must not draw the orange
     // generate-arm box a real SV generate region would (the CSS rule for it
     // is always embedded in the stylesheet, so check for the element).

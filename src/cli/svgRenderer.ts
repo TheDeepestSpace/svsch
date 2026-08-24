@@ -1041,6 +1041,7 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
   const content = renderNodeComponent(node, width, height, arrayConnections);
   return [
     `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">`,
+    expandRingBackdrop(node, width, height),
     `<svg class="${escapeAttr(svgClasses)}" width="${formatNumber(width)}" height="${formatNumber(height)}" aria-hidden="true">`,
     content,
     '</svg>',
@@ -1051,6 +1052,23 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+// Pure-SVG counterpart of the webview's four .svsch-expand-grab-band
+// backdrops. The even-odd inner subpath cuts out the child-diagram area,
+// leaving the dimmed editor-widget tint only on the expanded frame's ring.
+// This is emitted before the node SVG so its outline and labels stay on top.
+function expandRingBackdrop(node: PositionedNode, width: number, height: number): string {
+  const insets = node.metadata?.expandGhost?.insets;
+  if (!insets) return '';
+  const innerRight = Math.max(insets.left, width - insets.right);
+  const innerBottom = Math.max(insets.top, height - insets.bottom);
+  const path = [
+    `M0 0H${formatNumber(width)}V${formatNumber(height)}H0Z`,
+    `M${formatNumber(insets.left)} ${formatNumber(insets.top)}`,
+    `H${formatNumber(innerRight)}V${formatNumber(innerBottom)}H${formatNumber(insets.left)}Z`,
+  ].join('');
+  return `<path class="svsch-expand-ring-backdrop" d="${path}" fill="var(--vscode-editorWidget-background)" fill-rule="evenodd" opacity="0.35" style="filter:grayscale(0.4)" aria-hidden="true" />`;
 }
 
 // The dimmed instance's own frame border — the reserved ring around the
