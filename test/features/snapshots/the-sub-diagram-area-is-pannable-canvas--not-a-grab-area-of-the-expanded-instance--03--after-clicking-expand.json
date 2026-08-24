@@ -254,7 +254,7 @@
       "id": "port:top:y",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 1872,
         "y": 60
       },
       "width": 120,
@@ -278,7 +278,7 @@
       "target": "port:top:y",
       "sourceHandle": "outer",
       "targetHandle": "port:y",
-      "path": "M 1656 72 L 1680 72 L 1752 72 L 1752 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 1656 72 L 1680 72 L 1848 72 L 1872 72"
     },
     {
       "id": "edge:port:top:a:instance:top:u1:a",

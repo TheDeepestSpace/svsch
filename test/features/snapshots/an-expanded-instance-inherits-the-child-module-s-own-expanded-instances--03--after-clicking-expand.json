@@ -129,7 +129,7 @@
       "id": "port:leaf:ly",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 1224,
         "y": 60
       },
       "width": 120,
@@ -153,7 +153,7 @@
       "target": "port:leaf:ly",
       "sourceHandle": "outer",
       "targetHandle": "port:ly",
-      "path": "M 1008 72 L 1032 72 L 1104 72 L 1104 144 L 744 144 L 744 72 L 768 72"
+      "path": "M 1008 72 L 1032 72 L 1200 72 L 1224 72"
     },
     {
       "id": "edge:port:leaf:la:instance:leaf:u_inner:la",
@@ -169,7 +169,7 @@
       "target": "expand:instance:leaf:u_inner::expand-port-label:port:inner:z",
       "sourceHandle": "cut",
       "targetHandle": "cut",
-      "path": "M 576 120 L 600 120 L 737 120 Q 744 113 751 120 L 768 120 L 792 120"
+      "path": "M 576 120 L 600 120 L 768 120 L 792 120"
     }
   ]
 }
