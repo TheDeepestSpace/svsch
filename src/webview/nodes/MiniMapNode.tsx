@@ -45,6 +45,14 @@ export function MiniMapNode({
     return null;
   }
 
+  // Boundary-port stubs are label-only standins for an expanded instance's
+  // ports (see BoundaryPortNode) — the region's outline (drawn by
+  // MiniMapRegionOutlines) already marks the expanded instance, so these
+  // don't get their own minimap shape.
+  if (node.kind === 'boundaryPort') {
+    return null;
+  }
+
   // An expanded instance's own node is just the dimmed backdrop/frame for its
   // spliced-in child diagram (see expandOverlay's dimAsExpandGhost) — like a
   // generate block, it has no filled minimap shape of its own; only its
