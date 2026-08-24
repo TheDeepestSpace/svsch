@@ -5383,6 +5383,28 @@ Then(
   },
 );
 
+// Companion to "should have kept its noted size" for the grow-only case: a
+// manual resize applied *before* Expand becomes one input to
+// expandedFrameSize's Math.max (see splice.ts) alongside the content-derived
+// size, so the resized width must survive into the expanded frame — never
+// get discarded back down to whatever the (narrower) spliced content alone
+// would need.
+Then(
+  'the {string} block should be at least as wide as its noted size',
+  async function (this: BddWorld, label: string) {
+    const id = await findNodeIdByLabel(this.webviewPage, label);
+    if (!id) throw new Error(`Could not find block "${label}"`);
+    const before = this.notedRegionBounds.get(label);
+    if (!before) throw new Error(`No noted bounds for block ${label}`);
+    const after = await getNodeBounds(this.webviewPage, id);
+    expect(
+      after.width,
+      `expected ${label} to stay at least as wide as its noted width ${before.width}, got ` +
+        after.width,
+    ).toBeGreaterThanOrEqual(before.width - 0.5);
+  },
+);
+
 // Attempts a plain left-drag on a boundary-port node without polling for
 // convergence — the node is expected NOT to move (movable port labels are
 // the #218 follow-up), so the usual drag helpers' wait-until-moved contract

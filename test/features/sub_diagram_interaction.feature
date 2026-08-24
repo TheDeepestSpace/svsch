@@ -242,6 +242,38 @@ Feature: Sub-diagram interaction
     And I try to resize the expanded instance "u1" on the right side by 4 grid cells
     Then the block "u1" should have kept its noted size
 
+  # Manually resizing the *collapsed* instance is still allowed (only the
+  # expanded frame itself refuses resize handles — see the scenario above);
+  # that resized width becomes one input to expandedFrameSize's Math.max
+  # (splice.ts) once Expand runs, alongside the content-derived size. A
+  # single-node child needs very little width, so without the grow-only
+  # comparison the frame would snap back down to hug it and discard the
+  # manual resize.
+  Scenario: Expanding a manually-resized instance keeps its widened frame
+    Given I have a file "top.sv" in my workspace:
+      """
+      module inner(input logic w, output logic z);
+        assign z = w;
+      endmodule
+
+      module leaf(input logic la, output logic ly);
+        inner u_inner(.w(la), .z(ly));
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.la(a), .ly(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I resize the "u1" block on the right side by 8 grid cells
+    Then the "u1" block should have grown on the right side
+    When I note the bounds of the block "u1"
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "la"
+    And the "u1" block should be at least as wide as its noted size
+    And all spliced content should stay inside the expanded instance "u1"
+
   # Boundary port nodes stay glued to the frame border — user-dragging them
   # is the movable-port-labels follow-up (#218), disabled until that lands.
   Scenario: Boundary port nodes on the expanded frame are not movable yet
