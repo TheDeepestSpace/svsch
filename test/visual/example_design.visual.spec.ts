@@ -1,18 +1,10 @@
 import { test } from '@playwright/test';
-import { expectGraphAndScreenshot, fitGraphView, openExampleDesignModule } from './helper';
-
-const EXAMPLE_DESIGN_MODULES = [
-  'adder',
-  'alu',
-  'control_unit',
-  'cpu_top',
-  'data_mem',
-  'imm_gen',
-  'instr_mem',
-  'mux2',
-  'pc_reg',
-  'register_file',
-];
+import {
+  EXAMPLE_DESIGN_MODULES,
+  expectGraphAndScreenshot,
+  fitGraphView,
+  openExampleDesignModule,
+} from './helper';
 
 test.describe('example design visual rendering', () => {
   for (const moduleName of EXAMPLE_DESIGN_MODULES) {

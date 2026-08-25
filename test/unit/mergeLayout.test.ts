@@ -907,6 +907,156 @@ describe('layout merge', () => {
     expect(nodePortCenterOffset(1) - nodePortCenterOffset(0)).toBe(diagramSizing.gridSize);
   });
 
+  // The ELK placement pass must lay neighbors out against each node's
+  // *rendered* box, not its canonical size — a saved manual resize or the
+  // transient expanded-frame footprint of an "Expand instance in place"
+  // Auto Layout (BuildViewModelOptions.elkSizeOverrides) both grow the node.
+  describe('auto-layout node size awareness', () => {
+    const overrideGridSize = { width: 40, height: 20 };
+    const overridePx = {
+      width: overrideGridSize.width * diagramSizing.gridSize,
+      height: overrideGridSize.height * diagramSizing.gridSize,
+    };
+
+    function expandedBox(node: PositionedNode): {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } {
+      return { x: node.position.x, y: node.position.y, ...overridePx };
+    }
+
+    it('places released nodes clear of a transient elkSizeOverride footprint', async () => {
+      const view = await buildViewModel(
+        fanoutGraph,
+        'top',
+        { version: 1, modules: {} },
+        { elkSizeOverrides: { u1: overrideGridSize } },
+      );
+
+      const u1 = view.nodes.find((node) => node.id === 'u1')!;
+      const u2 = view.nodes.find((node) => node.id === 'u2')!;
+      expect(boxesOverlap(expandedBox(u1), boundsOf(u2))).toBe(false);
+      // Transient means transient: the override never echoes back on the
+      // view's own nodes (it would otherwise leak into the webview's splice
+      // bookkeeping as a persisted manual resize).
+      expect(u1.sizeOverride).toBeUndefined();
+    });
+
+    it('places released nodes clear of a saved manual resize', async () => {
+      const layout: SavedLayout = {
+        version: 1,
+        modules: {
+          top: {
+            nodes: {
+              u1: { x: 0, y: 0, ...overrideGridSize },
+            },
+          },
+        },
+      };
+
+      const view = await buildViewModel(fanoutGraph, 'top', layout);
+
+      const u1 = view.nodes.find((node) => node.id === 'u1')!;
+      const u2 = view.nodes.find((node) => node.id === 'u2')!;
+      expect(boxesOverlap(expandedBox(u1), boundsOf(u2))).toBe(false);
+      // A saved resize (unlike the transient override) is the node's real
+      // rendered size, and does flow onto the view.
+      expect(u1.sizeOverride).toEqual(overrideGridSize);
+    });
+
+    // Regression for the "Expand instance in place" (#232/#233) bug where a
+    // wire unrelated to the expanded instance cuts straight through the
+    // expanded frame: the router only ever saw the collapsed instance's
+    // saved size as an obstacle, because the frame's real (much bigger) size
+    // lives only in the webview and was never threaded into the routing
+    // pass the way it already was for ELK's *placement* pass above. Uses a
+    // feedback (cyclic) edge, like the "ordinary feedback edges" test below,
+    // so the assertion exercises ELK's own obstacle-aware route derivation
+    // deterministically regardless of whether the libavoid-js native module
+    // is available in the current test environment.
+    it(
+      'routes a feedback edge clear of an elkSizeOverride footprint, ' +
+        'not just the collapsed size',
+      async () => {
+        const feedbackGraph: DesignGraph = {
+          rootModules: ['top'],
+          generatedAt: 'now',
+          diagnostics: [],
+          modules: {
+            top: {
+              name: 'top',
+              file: 'top.sv',
+              ports: [],
+              nodes: [
+                {
+                  id: 'latch',
+                  kind: 'latch',
+                  label: 'next_r',
+                  ports: [
+                    { id: 'q', name: 'Q', direction: 'output' },
+                    { id: 'd', name: 'D', direction: 'input' },
+                  ],
+                },
+                {
+                  id: 'mux',
+                  kind: 'mux',
+                  label: 'if en',
+                  ports: [
+                    { id: 'sel', name: 'sel', direction: 'input' },
+                    { id: 'true', name: 'true', direction: 'input' },
+                    { id: 'out', name: 'out', direction: 'output' },
+                  ],
+                },
+              ],
+              edges: [
+                {
+                  id: 'feedback',
+                  source: 'latch',
+                  sourcePort: 'q',
+                  target: 'mux',
+                  targetPort: 'true',
+                },
+                {
+                  id: 'mux-latch',
+                  source: 'mux',
+                  sourcePort: 'out',
+                  target: 'latch',
+                  targetPort: 'd',
+                },
+              ],
+            },
+          },
+        };
+
+        const emptyLayout: SavedLayout = { version: 1, modules: {} };
+        const baseline = await buildViewModel(feedbackGraph, 'top', emptyLayout);
+        const baselineRoute = baseline.edges.find((edge) => edge.id === 'feedback')?.routePoints;
+        expect(baselineRoute).toBeDefined();
+        const baselineMaxY = Math.max(...baselineRoute!.map((point) => point.y));
+
+        const muxOverride = { width: 20, height: 40 };
+        const overridden = await buildViewModel(feedbackGraph, 'top', emptyLayout, {
+          elkSizeOverrides: { mux: muxOverride },
+        });
+        const mux = overridden.nodes.find((node) => node.id === 'mux')!;
+        const overriddenBottom = mux.position.y + diagramNodeDimensions(mux).height;
+        const overriddenRoute = overridden.edges.find(
+          (edge) => edge.id === 'feedback',
+        )?.routePoints;
+        expect(overriddenRoute).toBeDefined();
+        const overriddenMaxY = Math.max(...overriddenRoute!.map((point) => point.y));
+
+        // The wrap must clear the *expanded* frame's real bottom edge...
+        expect(overriddenMaxY).toBeGreaterThanOrEqual(overriddenBottom);
+        // ...which is a strictly deeper detour than routing around the
+        // collapsed instance's saved size would have produced.
+        expect(overriddenMaxY).toBeGreaterThan(baselineMaxY);
+      },
+    );
+  });
+
   it('preserves saved node positions on the snap grid', async () => {
     const layout: SavedLayout = {
       version: 1,
