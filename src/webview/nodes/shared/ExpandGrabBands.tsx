@@ -14,11 +14,7 @@ import type { ExpandContentInsets } from '../../expand/splice';
  * interior stays fully transparent so spliced wires render at full
  * brightness — see the .hdl-node-expand-ghost rules).
  */
-export function ExpandGrabBands({
-  insets,
-}: {
-  insets: ExpandContentInsets;
-}): React.ReactElement {
+export function ExpandGrabBands({ insets }: { insets: ExpandContentInsets }): React.ReactElement {
   return (
     <React.Fragment>
       <div
