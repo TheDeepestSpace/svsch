@@ -26,7 +26,11 @@ import '@xyflow/react/dist/style.css';
 import './diagram.css';
 import './webview-chrome.css';
 import { diagramSizing } from '../diagram/constants';
-import { diagramNodeDimensions, resolvedNodeDimensions } from '../diagram/nodeSizing';
+import {
+  diagramNodeDimensions,
+  instanceParameterRows,
+  resolvedNodeDimensions,
+} from '../diagram/nodeSizing';
 import {
   annotateGenerateRegionWarnings,
   findExternalBlockIds,
@@ -36,8 +40,10 @@ import { OrthogonalEdge, type RouteChange } from './orthogonal';
 import { LineJumpProvider } from './react-flow-line-jumps';
 import { Tooltip } from './Tooltip';
 import type {
+  DesignModule,
   DiagramViewModel,
   DiagramEdge,
+  DiagramPort,
   PositionedGenerateRegion,
   PositionedNode,
 } from '../ir/types';
@@ -54,16 +60,64 @@ import {
 } from './nodes/shared/context';
 import { ModuleParameterTable } from './nodes/shared/labels';
 import type { HdlFlowNode, ArrayStackConnection } from './nodes/types';
+import {
+  childNamespace,
+  isExpandNamespacedId,
+  namespacedId,
+  spliceExpandedInstance,
+  type ExpandSpliceLayout,
+  type SpliceInput,
+} from './expand/splice';
+import {
+  absorbSplicedEdgeRouteChanges,
+  applyActiveSplices,
+  EXPAND_GHOST_CLASS,
+  removeSpliceAndDescendants,
+  syncSpliceCache,
+  type ActiveSplice,
+} from './expand/expandOverlay';
 
 interface GraphMessage {
   type: 'graph';
   view: DiagramViewModel;
   modules: string[];
+  expandedInstanceIds?: string[];
 }
 
 interface StatusMessage {
   type: 'status';
   status: 'idle' | 'rebuilding';
+}
+
+// Mirrors ExpandInstancePayload in diagramPanel.ts (not imported directly —
+// that file pulls in the `vscode` module and lives outside the webview
+// tsconfig project, same reason GraphMessage/StatusMessage above are their
+// own local declarations rather than shared imports).
+interface ExpandInstancePayload {
+  instanceId: string;
+  childModuleName: string;
+  module: DesignModule;
+  spliceLayout?: ExpandSpliceLayout;
+}
+
+interface ExpandInstanceDataMessage {
+  type: 'expandInstanceData';
+  moduleName: string;
+  payload: ExpandInstancePayload;
+}
+
+interface PendingExpandRequest {
+  namespace: string;
+  parentRegionId?: string;
+  parentModuleName: string;
+  localInstanceId: string;
+  topLevel: boolean;
+  flowInstanceId: string;
+  instanceLabel: string;
+  instancePosition: { x: number; y: number };
+  instanceSize: { width: number; height: number };
+  instanceParamRows: number;
+  instancePorts: DiagramPort[];
 }
 
 import { getVscodeApi } from './vscodeApi';
@@ -156,6 +210,25 @@ function DiagramApp(): React.ReactElement {
     // the dragged selection instead of merely stretching around their nodes.
     startRegions: PositionedGenerateRegion[];
   } | null>(null);
+  // "Expand instance in place" (issue #232) — every currently-expanded
+  // instance's spliced-in content, keyed by its expand namespace (see
+  // webview/expand/splice.ts). Kept as a ref (not React state) independent
+  // of the server-driven `view`, so an unrelated view refresh — the common
+  // case, e.g. dragging some other node — doesn't need to re-fetch or
+  // re-run ELK for content that hasn't changed; `applyActiveSplices` reattaches
+  // the cached splice to the freshly-rebuilt base nodes/edges/regions every
+  // time either changes (see the view-rebuild effect and requestExpand below).
+  const spliceMapRef = useRef<Map<string, ActiveSplice>>(new Map());
+  // Bumped to force a re-render (and re-application of spliceMapRef's
+  // contents) whenever the ref's contents change outside of a `view` update
+  // — e.g. right after a new splice is computed, or on collapse.
+  const [spliceVersion, setSpliceVersion] = useState(0);
+  // The module name spliceMapRef's current contents were computed against —
+  // see the "graph" message handler below, which clears the whole cache on a
+  // real navigation to a different module (not just an unrelated refresh of
+  // the same one).
+  const spliceMapModuleNameRef = useRef<string | undefined>(undefined);
+  const pendingSpliceRequestsRef = useRef<Map<string, PendingExpandRequest>>(new Map());
   const onNodesChange = useCallback(
     (changes: any[]) => {
       const adjusted = changes.map((change) => {
@@ -236,7 +309,42 @@ function DiagramApp(): React.ReactElement {
         }
       }
 
-      onNodesChangeRaw([...adjusted, ...followers.values()]);
+      // Dragging an expanded instance's dimmed node carries its entire spliced
+      // subtree with it — the node's own border IS the expanded frame (there's
+      // no separate region outline to drag), so moving it must move the
+      // unfolded content live, not just re-anchor it after the drop. Processed
+      // as a queue because a carried member can itself be a (nested) expanded
+      // instance whose own members then need the same delta.
+      const spliceFollowers = new Map<string, any>();
+      const carryQueue = [...adjusted];
+      while (carryQueue.length > 0) {
+        const change = carryQueue.shift();
+        if (change.type !== 'position' || !change.position) continue;
+        const splice = [...spliceMapRef.current.values()].find(
+          (s) => s.flowInstanceId === change.id,
+        );
+        if (!splice) continue;
+        const owner = nodes.find((node) => node.id === change.id);
+        if (!owner) continue;
+        const dx = change.position.x - owner.position.x;
+        const dy = change.position.y - owner.position.y;
+        if (dx === 0 && dy === 0) continue;
+        for (const memberId of splice.region.nodeIds) {
+          if (changedIds.has(memberId) || spliceFollowers.has(memberId)) continue;
+          const member = nodes.find((node) => node.id === memberId);
+          if (!member) continue;
+          const memberChange = {
+            type: 'position',
+            id: memberId,
+            position: { x: member.position.x + dx, y: member.position.y + dy },
+            dragging: change.dragging,
+          };
+          spliceFollowers.set(memberId, memberChange);
+          carryQueue.push(memberChange);
+        }
+      }
+
+      onNodesChangeRaw([...adjusted, ...followers.values(), ...spliceFollowers.values()]);
     },
     [nodes, onNodesChangeRaw],
   );
@@ -269,6 +377,9 @@ function DiagramApp(): React.ReactElement {
     };
     const inside = new Set(
       regions
+        // Expand regions render no frame of their own (the expanded instance's
+        // node is the frame) — a marquee selects that node instead.
+        .filter((region) => region.kind !== 'expand')
         .filter(
           (region) =>
             region.bounds.x >= rect.x &&
@@ -283,7 +394,16 @@ function DiagramApp(): React.ReactElement {
         return current;
       return inside;
     });
-  }, [userSelectionRect, regions, viewport]);
+
+    // Marquee selection is scoped to the top-level diagram: nodes and wires
+    // spliced inside an expanded instance (issue #232) belong to a separate
+    // sub-diagram and are exempt — the marquee selects the expanded
+    // instance's own (outer) node instead. Individual click-selection of
+    // spliced nodes is untouched (needed e.g. for nested Expand). Applied
+    // live while the rect is dragged out; handleSelectionEnd repeats the
+    // sweep once React Flow applies its final selection.
+    deselectSplicedContent(setNodes, setEdges);
+  }, [userSelectionRect, regions, viewport, setNodes, setEdges]);
 
   const handleSelectionStart = useCallback((event: React.MouseEvent) => {
     selectionStartPointRef.current = { x: event.clientX, y: event.clientY };
@@ -324,8 +444,13 @@ function DiagramApp(): React.ReactElement {
         });
         return changed ? next : current;
       });
+
+      // The marquee never selects content spliced inside an expanded
+      // instance — see the userSelectionRect effect above; this repeats the
+      // sweep after React Flow has applied its own final selection.
+      deselectSplicedContent(setNodes, setEdges);
     },
-    [reactFlow, setNodes],
+    [reactFlow, setNodes, setEdges],
   );
 
   const clearRegionSelection = useCallback(() => {
@@ -432,8 +557,15 @@ function DiagramApp(): React.ReactElement {
           node.data.node.metadata?.generateActiveState,
           'generate-node',
         );
+        // Preserve the "Expand instance in place" dimming class (see
+        // expandOverlay's dimAsExpandGhost) — this effect otherwise rebuilds
+        // className from scratch and would silently strip it every time
+        // regions/nodes change.
+        const isExpandGhost = node.className?.split(' ').includes(EXPAND_GHOST_CLASS) ?? false;
         const className =
-          [base, wantInvalid ? 'svsch-node-invalid' : ''].filter(Boolean).join(' ') || undefined;
+          [base, wantInvalid ? 'svsch-node-invalid' : '', isExpandGhost ? EXPAND_GHOST_CLASS : '']
+            .filter(Boolean)
+            .join(' ') || undefined;
         const invalid = wantInvalid || undefined;
         const dataNode =
           node.data.node.invalid === invalid && node.data.node.warningNote === warningNote
@@ -462,12 +594,21 @@ function DiagramApp(): React.ReactElement {
       );
 
       if (commit && view) {
+        // Routes of wires spliced in by "Expand instance in place" belong to
+        // the webview's own splice cache (the host knows nothing about those
+        // edges) — absorb them there so a dragged internal wire survives the
+        // next splice reattachment, and only tell the host about its own.
+        const hostChanges = absorbSplicedEdgeRouteChanges(spliceMapRef.current, changes);
+        if (hostChanges.length === 0) return;
         const flowNodes = reactFlow.getNodes() as HdlFlowNode[];
         vscode.postMessage({
           type: 'edgeRoutesChanged',
           moduleName: view.moduleName,
-          changes,
-          nodes: flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))),
+          changes: hostChanges,
+          nodes: stripExpandSplices(
+            flowNodesToPositioned(flowNodes, new Set(flowNodes.map((node) => node.id))),
+            spliceMapRef.current,
+          ),
         });
       }
     },
@@ -487,22 +628,247 @@ function DiagramApp(): React.ReactElement {
     setHovered(undefined);
   }, [setHovered]);
 
+  const [expandedInstanceIds, setExpandedInstanceIds] = useState<string[]>([]);
+
   useEffect(() => {
-    const listener = (event: MessageEvent<GraphMessage | StatusMessage>) => {
+    const listener = (
+      event: MessageEvent<GraphMessage | StatusMessage | ExpandInstanceDataMessage>,
+    ) => {
       if (event.data.type === 'graph') {
         const view = event.data.view;
+        // An expanded instance's spliced content must always reflect the
+        // child module's *current* standalone layout (see the product
+        // decision in issue #232's PR review) — a splice cached from before
+        // this navigation may be stale if the user just edited that child
+        // module's own layout directly (e.g. double-clicked into it, moved a
+        // node, and navigated back). Since this app has a single diagram
+        // panel, "navigated back" is exactly a graph message whose
+        // moduleName differs from the one spliceMapRef's contents were last
+        // computed against — clear the whole cache so every expanded
+        // instance re-fetches fresh (cheap: one host round-trip each,
+        // reusing already-in-memory layout data) rather than silently
+        // reattaching outdated content. An unrelated refresh of the *same*
+        // module (e.g. another edit) must NOT clear it, or every such splice
+        // would re-fetch on every keystroke.
+        if (
+          spliceMapModuleNameRef.current !== undefined &&
+          spliceMapModuleNameRef.current !== view.moduleName &&
+          spliceMapRef.current.size > 0
+        ) {
+          spliceMapRef.current.clear();
+          setSpliceVersion((v) => v + 1);
+        }
+        spliceMapModuleNameRef.current = view.moduleName;
         setView(view);
         setModules(event.data.modules);
+        setExpandedInstanceIds(event.data.expandedInstanceIds ?? []);
         setHovered(undefined, true);
         setHoveredEdgeId(undefined);
       } else if (event.data.type === 'status') {
         setStatus(event.data.status);
+      } else if (event.data.type === 'expandInstanceData') {
+        const { moduleName, payload } = event.data;
+        // Keyed by namespace (globally unique — see requestExpand), not by
+        // (moduleName, instanceId): two different sibling instances of the
+        // *same* child module type share that pair (moduleName here is the
+        // shared child module's own name), so two concurrent requests for
+        // "the same-named nested instance under two different parents" would
+        // otherwise collide on one dedup entry and silently drop the second.
+        // The host's response only carries (moduleName, instanceId) back, so
+        // match the oldest still-pending request for that pair.
+        let pendingKey: string | undefined;
+        for (const [key, candidate] of pendingSpliceRequestsRef.current) {
+          if (
+            candidate.parentModuleName === moduleName &&
+            candidate.localInstanceId === payload.instanceId
+          ) {
+            pendingKey = key;
+            break;
+          }
+        }
+        const pending = pendingKey ? pendingSpliceRequestsRef.current.get(pendingKey) : undefined;
+        if (pendingKey) pendingSpliceRequestsRef.current.delete(pendingKey);
+        if (!pending) return;
+        const spliceInput: SpliceInput = {
+          namespace: pending.namespace,
+          parentRegionId: pending.parentRegionId,
+          parentModuleName: pending.parentModuleName,
+          instanceId: payload.instanceId,
+          instanceLabel: pending.instanceLabel,
+          instancePosition: pending.instancePosition,
+          instanceSize: pending.instanceSize,
+          instanceParamRows: pending.instanceParamRows,
+          instancePorts: pending.instancePorts,
+          childModule: payload.module,
+          hostLayout: payload.spliceLayout,
+        };
+        void spliceExpandedInstance(spliceInput).then((result) => {
+          spliceMapRef.current.set(pending.namespace, {
+            ...result,
+            namespace: pending.namespace,
+            flowInstanceId: pending.flowInstanceId,
+            parentModuleName: pending.parentModuleName,
+            instanceId: payload.instanceId,
+            childModuleName: payload.childModuleName,
+            topLevel: pending.topLevel,
+            anchorInstancePosition: pending.instancePosition,
+          });
+          setSpliceVersion((v) => v + 1);
+        });
       }
     };
     window.addEventListener('message', listener);
     vscode.postMessage({ type: 'ready' });
     return () => window.removeEventListener('message', listener);
   }, [setHovered]);
+
+  // Sends a requestExpandInstance message and remembers enough context (the
+  // instance's current geometry, its namespace/parentRegionId in the splice
+  // tree) to build a SpliceInput once the host responds — see the
+  // `expandInstanceData` branch above. A no-op if this instance already has
+  // (or is already fetching) a splice. Both callers (the toolbar's Expand
+  // button and the auto-restore effect below) only ever pass a top-level
+  // instance of the currently open module as of #233 — nested expand is no
+  // longer reachable from the UI — but the enclosing-splice lookup is kept
+  // so this still resolves correctly if that ever changes.
+  const requestExpand = useCallback(
+    (instanceNode: HdlFlowNode) => {
+      if (!view) return;
+      let parentNamespace: string | undefined;
+      let enclosing: ActiveSplice | undefined;
+      for (const splice of spliceMapRef.current.values()) {
+        if (splice.region.nodeIds.includes(instanceNode.id)) {
+          enclosing = splice;
+          parentNamespace = splice.namespace;
+          break;
+        }
+      }
+      const localInstanceId = enclosing
+        ? instanceNode.id.slice(namespacedId(enclosing.namespace, '').length)
+        : instanceNode.id;
+      const namespace = parentNamespace
+        ? childNamespace(parentNamespace, localInstanceId)
+        : localInstanceId;
+      const parentModuleName = enclosing ? enclosing.childModuleName : view.moduleName;
+      const parentRegionId = enclosing?.region.id;
+      const topLevel = enclosing === undefined;
+
+      const node = instanceNode.data.node;
+      // Keyed by namespace, not (parentModuleName, localInstanceId) — two
+      // sibling instances of the same child module type share that pair (see
+      // the expandInstanceData handler above for why), but namespaces are
+      // always globally unique.
+      if (spliceMapRef.current.has(namespace) || pendingSpliceRequestsRef.current.has(namespace)) {
+        return;
+      }
+      pendingSpliceRequestsRef.current.set(namespace, {
+        namespace,
+        parentRegionId,
+        parentModuleName,
+        localInstanceId,
+        topLevel,
+        flowInstanceId: instanceNode.id,
+        instanceLabel: node.label,
+        instancePosition: instanceNode.position,
+        instanceSize: resolvedNodeDimensions(node),
+        instanceParamRows: instanceParameterRows(node),
+        instancePorts: node.ports,
+      });
+      vscode.postMessage({
+        type: 'requestExpandInstance',
+        moduleName: parentModuleName,
+        instanceId: localInstanceId,
+        topLevel,
+        // The live rendered geometry — the host sizes the expanded frame
+        // with these (grow-only), keeping the border and boundary-port rows
+        // exactly where the collapsed node's are on screen right now.
+        instanceSize: resolvedNodeDimensions(node),
+        instanceParamRows: instanceParameterRows(node),
+      });
+    },
+    [view],
+  );
+
+  // Auto-restore: on module (re)open, re-request a splice for every
+  // top-level instance the host has flagged expanded (see
+  // SavedModuleLayout.expanded) that isn't already cached — a previously
+  // expanded instance stays expanded across a reload without the user
+  // re-clicking Expand. Nested expands are never persisted (see
+  // diagramPanel.ts's `topLevel` guard) and, as of #233, can't be created at
+  // all — expand/collapse on a nested instance only happens from that
+  // instance's own module view — so there's nothing nested to restore here.
+  useEffect(() => {
+    if (!view) return;
+    for (const instanceId of expandedInstanceIds) {
+      if (spliceMapRef.current.has(instanceId)) continue;
+      const instanceNode = nodes.find((node) => node.id === instanceId);
+      if (!instanceNode || instanceNode.data.node.kind !== 'instance') continue;
+      requestExpand(instanceNode);
+    }
+  }, [view, expandedInstanceIds, nodes, requestExpand]);
+
+  // Keeps the host's DiagramPanel.expandedFrameSizesByModule in sync with
+  // every top-level "Expand instance in place" frame's real on-screen size
+  // — otherwise the host's own libavoid routing pass (which runs on *every*
+  // view rebuild, not just an explicit Auto Layout) only ever sees the
+  // collapsed instance's saved size, so an unrelated wire whose route
+  // happens to pass near the instance can end up cutting straight through
+  // the expanded frame instead of routing around it. Keyed on spliceVersion
+  // alone (not `view`) so a routine view refresh doesn't re-send this and
+  // re-trigger a host-side postView in a loop; spliceMapModuleNameRef tracks
+  // the module these sizes belong to without adding `view` as a dependency.
+  useEffect(() => {
+    const sizesModuleName = spliceMapModuleNameRef.current;
+    if (!sizesModuleName) return;
+    const sizes: Record<string, { width: number; height: number }> = {};
+    for (const splice of spliceMapRef.current.values()) {
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      sizes[splice.flowInstanceId] = {
+        width: Math.ceil(splice.expandedSize.width / diagramSizing.gridSize),
+        height: Math.ceil(splice.expandedSize.height / diagramSizing.gridSize),
+      };
+    }
+    vscode.postMessage({
+      type: 'expandedFrameSizesChanged',
+      moduleName: sizesModuleName,
+      sizes,
+    });
+  }, [spliceVersion]);
+
+  const collapseInstance = useCallback((namespace: string) => {
+    const splice = spliceMapRef.current.get(namespace);
+    if (!splice) return;
+    removeSpliceAndDescendants(spliceMapRef.current, namespace);
+    if (splice.topLevel) {
+      // Drop the id from the local expanded list too: the host persists the
+      // collapse but doesn't push a fresh graph message, so the auto-restore
+      // effect above would still see the stale flag on the very next nodes
+      // rebuild (triggered by the spliceVersion bump below) and immediately
+      // re-expand the instance the user just collapsed.
+      setExpandedInstanceIds((ids) => ids.filter((id) => id !== splice.instanceId));
+      vscode.postMessage({
+        type: 'collapseInstance',
+        moduleName: splice.parentModuleName,
+        instanceId: splice.instanceId,
+        topLevel: true,
+      });
+    }
+    setSpliceVersion((v) => v + 1);
+  }, []);
+
+  // GenerateRegionOverlay only knows region ids, not expand namespaces —
+  // resolve one from the other via the cached splice map.
+  const handleCollapseRegion = useCallback(
+    (regionId: string) => {
+      for (const [namespace, splice] of spliceMapRef.current) {
+        if (splice.region.id === regionId) {
+          collapseInstance(namespace);
+          return;
+        }
+      }
+    },
+    [collapseInstance],
+  );
 
   // r/t/c shortcuts for the Reroute/Cut/Tie controls, plus `c` for the
   // block-selection toolbar's Cut out button (see their badges next to the
@@ -589,11 +955,14 @@ function DiagramApp(): React.ReactElement {
       // rerouting freezes every real block in place, but a net-cut label that's
       // still tracking its port dynamically must not be forced fixed just
       // because it happened to be on screen.
-      const positioned = nodes.map((node) => ({
-        ...node.data.node,
-        position: node.position,
-        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
-      }));
+      const positioned = stripExpandSplices(
+        nodes.map((node) => ({
+          ...node.data.node,
+          position: node.position,
+          fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+        })),
+        spliceMapRef.current,
+      );
 
       if (key === 'r') {
         if (targetEdges.length === 1) {
@@ -696,22 +1065,20 @@ function DiagramApp(): React.ReactElement {
 
     const reselectIds = pendingReselectIdsRef.current;
     pendingReselectIdsRef.current = null;
-    setNodes(
-      view.nodes.map((node) => ({
-        id: node.id,
-        type: 'hdl',
-        position: node.position,
-        selected: reselectIds?.has(node.id) ?? undefined,
-        className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
-        zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
-        data: {
-          node,
-          moduleName: view.moduleName,
-          arrayConnections: arrayConnectionsByNode.get(node.id) ?? [],
-        },
-      })),
-    );
-    setRegions(view.generateRegions ?? []);
+    const baseNodes: HdlFlowNode[] = view.nodes.map((node) => ({
+      id: node.id,
+      type: 'hdl',
+      position: node.position,
+      selected: reselectIds?.has(node.id) ?? undefined,
+      className: generateStateClass(node.metadata?.generateActiveState, 'generate-node'),
+      zIndex: nodeIsArrayNode(node) ? ARRAY_NODE_Z_INDEX : BLOCK_NODE_Z_INDEX,
+      data: {
+        node,
+        moduleName: view.moduleName,
+        arrayConnections: arrayConnectionsByNode.get(node.id) ?? [],
+      },
+    }));
+    const baseRegions = view.generateRegions ?? [];
 
     const netToLeader = new Map<string, string>();
     const edgesByNet = new Map<string, string[]>();
@@ -728,35 +1095,47 @@ function DiagramApp(): React.ReactElement {
     });
 
     const sortedEdges = [...view.edges].sort(compareEdgePaintOrder);
-    setEdges(
-      sortedEdges.map((edge) => {
-        const netKey = edgeNetKey(edge);
-        const isNetLeader = netToLeader.get(netKey) === edge.id;
-        const netEdgeIds = Array.from(edgesByNet.get(netKey) || []);
+    const baseEdges: Edge[] = sortedEdges.map((edge) => {
+      const netKey = edgeNetKey(edge);
+      const isNetLeader = netToLeader.get(netKey) === edge.id;
+      const netEdgeIds = Array.from(edgesByNet.get(netKey) || []);
 
-        return {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          sourceHandle: edge.sourcePort,
-          targetHandle: edge.targetPort,
-          label: edge.label,
-          type: 'svsch',
-          className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
-          zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
-          data: {
-            waypoint: edge.waypoint,
-            routePoints: edge.routePoints,
-            onRouteChange: handleRouteChange,
-            edge,
-            moduleName: view.moduleName,
-            isNetLeader,
-            netEdgeIds,
-          },
-        };
-      }),
+      return {
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourcePort,
+        targetHandle: edge.targetPort,
+        label: edge.label,
+        type: 'svsch',
+        className: generateStateClass(edge.metadata?.generateActiveState, 'generate-edge'),
+        zIndex: edge.metadata?.cutStub ? CUT_STUB_EDGE_Z_INDEX : EDGE_Z_INDEX,
+        data: {
+          waypoint: edge.waypoint,
+          routePoints: edge.routePoints,
+          onRouteChange: handleRouteChange,
+          edge,
+          moduleName: view.moduleName,
+          isNetLeader,
+          netEdgeIds,
+        },
+      };
+    });
+
+    // Reattach every currently-expanded instance's spliced content on top of
+    // the freshly-rebuilt base — see spliceMapRef's declaration for why this
+    // is a cheap reattach (translate + merge) rather than a re-fetch/re-layout.
+    const merged = applyActiveSplices(
+      baseNodes,
+      baseEdges,
+      baseRegions,
+      spliceMapRef.current,
+      view.moduleName,
     );
-  }, [handleRouteChange, setEdges, view]);
+    setNodes(merged.nodes);
+    setRegions(merged.regions);
+    setEdges(merged.edges);
+  }, [handleRouteChange, setEdges, view, spliceVersion]);
 
   const updateNodeInternals = useStore((s) => s.updateNodeInternals);
 
@@ -816,6 +1195,24 @@ function DiagramApp(): React.ReactElement {
       // drop the region selection with it.
       if (!dragged.selected) clearRegionSelection();
       const movedIds = new Set(allNodes.map((n) => n.id));
+      // Dragging an expanded instance's dimmed node carries its whole spliced
+      // subtree (see onNodesChange's spliceFollowers) — count those members
+      // as moved too, so their internal wires' saved routes translate rigidly
+      // with the drag exactly like a multi-select group's do. Fixpoint loop:
+      // a carried member can itself be a nested expanded instance.
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const splice of spliceMapRef.current.values()) {
+          if (!movedIds.has(splice.flowInstanceId)) continue;
+          for (const memberId of splice.region.nodeIds) {
+            if (!movedIds.has(memberId)) {
+              movedIds.add(memberId);
+              grew = true;
+            }
+          }
+        }
+      }
       if (movedIds.size < 2 && !(dragged.selected && selectedRegionIds.size > 0)) return;
       const originalRoutes = new Map<string, Array<{ x: number; y: number }>>();
       for (const e of edges) {
@@ -894,9 +1291,12 @@ function DiagramApp(): React.ReactElement {
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName: view.moduleName,
-        nodes: positioned,
-        regions: expandedRegions,
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
+        regions: stripExpandRegions(expandedRegions),
       });
+      if (spliceMapRef.current.size > 0) {
+        syncSpliceCache(spliceMapRef.current, allFlowNodes, expandedRegions, reactFlow.getEdges());
+      }
 
       if (!state || state.originalRoutes.size === 0) return;
 
@@ -979,13 +1379,23 @@ function DiagramApp(): React.ReactElement {
       if (dx === 0 && dy === 0) return;
 
       if (!view) return;
+
+      // This commit can never be resizing an expanded instance's frame —
+      // HdlNode doesn't render resize handles for one (see
+      // NodeResizeControls's call site) — so it's always a plain top-level
+      // instance/register resize; syncSpliceCache below only re-syncs any
+      // *other* active splices' bookkeeping (region bounds etc.) that this
+      // node's own regrow may have shifted.
       const positioned = flowNodesToPositioned(update.nodes, new Set([drag.nodeId]));
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName: view.moduleName,
-        nodes: positioned,
-        regions: update.regions,
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
+        regions: stripExpandRegions(update.regions),
       });
+      if (spliceMapRef.current.size > 0) {
+        syncSpliceCache(spliceMapRef.current, update.nodes, update.regions);
+      }
 
       // React Flow's own dimension tracking (node.measured, read by
       // OrthogonalEdge for handle geometry) is normally kept in sync by the
@@ -1017,20 +1427,23 @@ function DiagramApp(): React.ReactElement {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
     };
-  }, [setNodes, setRegions, view, viewport.zoom, updateNodeInternals]);
+  }, [setNodes, setEdges, setRegions, view, viewport.zoom, updateNodeInternals]);
 
   const rerouteLayout = useCallback(() => {
     if (!view) {
       return;
     }
-    const positioned = nodes.map((node) => ({
-      ...node.data.node,
-      position: node.position,
-      // "Reroute All" freezes every real block in place — a net-cut label
-      // that's still tracking its port dynamically must not be forced fixed
-      // just because it happened to be on screen.
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
-    }));
+    const positioned = stripExpandSplices(
+      nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        // "Reroute All" freezes every real block in place — a net-cut label
+        // that's still tracking its port dynamically must not be forced fixed
+        // just because it happened to be on screen.
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+      })),
+      spliceMapRef.current,
+    );
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
@@ -1199,6 +1612,7 @@ function DiagramApp(): React.ReactElement {
                   onRouteChange={handleRouteChange}
                   selectedRegionIds={selectedRegionIds}
                   selectRegion={selectRegion}
+                  spliceMapRef={spliceMapRef}
                 />
               </ViewportPortal>
               {/* Rendered as a plain react-flow child (like MiniMap/Controls below), not
@@ -1220,6 +1634,9 @@ function DiagramApp(): React.ReactElement {
                 edges={edges}
                 pendingReselectIdsRef={pendingReselectIdsRef}
                 zoom={viewport.zoom}
+                onExpandInstance={requestExpand}
+                onCollapseInstance={handleCollapseRegion}
+                spliceMapRef={spliceMapRef}
               />
               <MiniMap pannable zoomable className="svsch-minimap" nodeComponent={MiniMapNode} />
               <MiniMapRegionOutlines regions={regions} />
@@ -1346,6 +1763,7 @@ function GenerateRegionOverlay({
   onRouteChange,
   selectedRegionIds,
   selectRegion,
+  spliceMapRef,
 }: {
   moduleName: string;
   regions: PositionedGenerateRegion[];
@@ -1357,6 +1775,7 @@ function GenerateRegionOverlay({
   onRouteChange: (changes: RouteChange[], commit: boolean) => void;
   selectedRegionIds: Set<string>;
   selectRegion: (regionId: string) => void;
+  spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const dragRef = useRef<RegionDragState | null>(null);
 
@@ -1381,6 +1800,25 @@ function GenerateRegionOverlay({
           : new Set([region.id]);
       const affectedNodeIds =
         kind === 'move' ? nodeIdsForRegions(affectedRegionIds, regions) : new Set<string>();
+      // A moved region may contain an expanded instance's dimmed node — carry
+      // that instance's entire spliced subtree along (its expand region has no
+      // rendered frame of its own; the node is the frame). Fixpoint loop:
+      // a carried member can itself be a nested expanded instance.
+      if (kind === 'move') {
+        let grew = true;
+        while (grew) {
+          grew = false;
+          for (const splice of spliceMapRef.current.values()) {
+            if (!affectedNodeIds.has(splice.flowInstanceId)) continue;
+            for (const memberId of splice.region.nodeIds) {
+              if (!affectedNodeIds.has(memberId)) {
+                affectedNodeIds.add(memberId);
+                grew = true;
+              }
+            }
+          }
+        }
+      }
       const startRoutes = new Map<string, Array<{ x: number; y: number }>>();
       if (kind === 'move') {
         for (const edge of edges) {
@@ -1459,8 +1897,16 @@ function GenerateRegionOverlay({
         fixed: region.fixed || drag.affectedRegionIds.has(region.id),
       }));
 
+      if (spliceMapRef.current.size > 0) {
+        syncSpliceCache(spliceMapRef.current, update.nodes, fixedRegions);
+      }
+
       if (drag.kind === 'resize') {
-        vscode.postMessage({ type: 'regionLayoutChanged', moduleName, regions: fixedRegions });
+        vscode.postMessage({
+          type: 'regionLayoutChanged',
+          moduleName,
+          regions: stripExpandRegions(fixedRegions),
+        });
         return;
       }
 
@@ -1468,8 +1914,8 @@ function GenerateRegionOverlay({
       vscode.postMessage({
         type: 'layoutChanged',
         moduleName,
-        nodes: positioned,
-        regions: fixedRegions,
+        nodes: stripExpandSplices(positioned, spliceMapRef.current),
+        regions: stripExpandRegions(fixedRegions),
       });
       applyRegionDragRoutes(
         drag,
@@ -1494,6 +1940,11 @@ function GenerateRegionOverlay({
   return (
     <div className="generate-region-layer">
       {[...regions]
+        // An "Expand instance in place" region is pure machinery (membership
+        // for drag-carry and nesting) — the expanded instance's own enlarged
+        // node is its visible frame, so it never renders an outline, label,
+        // or resize handles of its own (see expandOverlay's dimAsExpandGhost).
+        .filter((region) => region.kind !== 'expand')
         .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
         .map((region) => (
           <div
@@ -1576,9 +2027,15 @@ function GenerateRegionOverlay({
 // shortcut's block-selection fallback, since a cut stub's dangling end can't
 // be cut again.
 function cutOutEdgesForSelection(nodes: HdlFlowNode[], edges: Edge[]): Edge[] {
+  // Spliced-in expand content (see webview/expand) isn't real module IR the
+  // extension host knows about — Cut out (like Auto Layout/Revert Size
+  // below) only applies to genuine blocks in the currently open module.
   const selectedIds = new Set(
     nodes
-      .filter((node) => node.selected && node.data.node.kind !== 'netLabel')
+      .filter(
+        (node) =>
+          node.selected && node.data.node.kind !== 'netLabel' && !isExpandNamespacedId(node.id),
+      )
       .map((node) => node.id),
   );
   if (selectedIds.size === 0) return [];
@@ -1614,12 +2071,22 @@ function NodeSelectionToolbar({
   edges,
   pendingReselectIdsRef,
   zoom,
+  onExpandInstance,
+  onCollapseInstance,
+  spliceMapRef,
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
   zoom: number;
+  onExpandInstance: (instanceNode: HdlFlowNode) => void;
+  /**
+   * Collapses an "Expand instance in place" region (see issue #232) — a
+   * no-op for a real generate region id.
+   */
+  onCollapseInstance: (regionId: string) => void;
+  spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const { overlayPortalNode } = useContext(InteractionContext);
   // overlayPortalNode carries react-flow's scale(zoom) (see main.tsx's render), so button
@@ -1630,32 +2097,78 @@ function NodeSelectionToolbar({
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
   // whose actions only make sense for actual block selections.
-  const selected = useMemo(
+  const selectedBlocks = useMemo(
     () => nodes.filter((node) => node.selected && node.data.node.kind !== 'netLabel'),
     [nodes],
+  );
+  // Spliced-in expand content (see webview/expand) isn't real module IR the
+  // extension host knows about — every action except Expand/Collapse only
+  // applies to genuine blocks of the currently open module, so those actions
+  // work off this narrowed set (see cutOutEdgesForSelection for the same
+  // rule on the wire side).
+  const selected = useMemo(
+    () => selectedBlocks.filter((node) => !isExpandNamespacedId(node.id)),
+    [selectedBlocks],
   );
 
   // Same exclusion `selectedCuttableEdges` in OrthogonalEdge applies for the
   // wire "Cut" control — see cutOutEdgesForSelection.
   const cutOutEdges = useMemo(() => cutOutEdgesForSelection(nodes, edges), [nodes, edges]);
 
-  const resizedNodeIds = useMemo(
-    () =>
-      selected.filter((node) => node.data.node.sizeOverride !== undefined).map((node) => node.id),
-    [selected],
-  );
+  // An expanded instance's node carries the splice's computed expanded size
+  // as an injected sizeOverride (see expandOverlay's dimAsExpandGhost) —
+  // that's not a manual resize, so it must not surface "Revert Size".
+  const resizedNodeIds = useMemo(() => {
+    const ghostIds = new Set(
+      [...spliceMapRef.current.values()].map((splice) => splice.flowInstanceId),
+    );
+    return selected
+      .filter((node) => node.data.node.sizeOverride !== undefined && !ghostIds.has(node.id))
+      .map((node) => node.id);
+  }, [selected, spliceMapRef]);
+
+  // "Expand instance in place" (issue #232 decision 8, revised in #233): only
+  // for a single selected instance node, never a multi-select — and not for
+  // array-of-instances nodes (decision 7; #169 tracks that separately). Also
+  // excludes any instance living inside an already-expanded splice: nested
+  // expand/collapse is only ever done from that instance's own module view,
+  // never reached through an ancestor's — so a spliced-in (expand-namespaced)
+  // node offers neither control here.
+  const singleInstance =
+    selectedBlocks.length === 1 &&
+    selectedBlocks[0].data.node.kind === 'instance' &&
+    !nodeIsArrayNode(selectedBlocks[0].data.node) &&
+    !isExpandNamespacedId(selectedBlocks[0].id)
+      ? selectedBlocks[0]
+      : undefined;
+
+  // If the selected instance is already expanded, its splice is keyed by
+  // this node's own (non-namespaced, top-level) id — `flowInstanceId` is
+  // exactly this node's id in the current `nodes` array (see ActiveSplice's
+  // doc).
+  const activeSplice = singleInstance
+    ? [...spliceMapRef.current.values()].find(
+        (splice) => splice.flowInstanceId === singleInstance.id,
+      )
+    : undefined;
+  const expandableInstance = activeSplice ? undefined : singleInstance;
 
   // Nothing to offer: a lone block with every net already cut and no resize
   // override gets no control, so skip rendering the (now empty) toolbar entirely.
   if (
     !overlayPortalNode ||
-    selected.length < 1 ||
-    (selected.length < 2 && cutOutEdges.length === 0 && resizedNodeIds.length === 0)
+    selectedBlocks.length < 1 ||
+    (selectedBlocks.length < 2 &&
+      cutOutEdges.length === 0 &&
+      resizedNodeIds.length === 0 &&
+      !expandableInstance &&
+      !activeSplice) ||
+    (selected.length < 1 && !expandableInstance && !activeSplice)
   ) {
     return null;
   }
 
-  const bounds = selected.reduce(
+  const bounds = (selected.length > 0 ? selected : selectedBlocks).reduce(
     (acc, node) => {
       const size = resolvedNodeDimensions(node.data.node);
       return {
@@ -1673,21 +2186,35 @@ function NodeSelectionToolbar({
     const selectedIds = new Set(selected.map((node) => node.id));
     // A cut net's dangling end is a `netLabel` node that ELK never places
     // directly — it's re-derived every render from the real block's current
-    // port position. Selecting the real block already selects its stub edge
-    // too (React Flow selects every edge touching a selected node), so pull
-    // that edge's netLabel endpoint into the release set even when the
-    // marquee never physically covered the label itself. A netLabel that's
-    // neither selected nor attached to a selected stub edge is left alone.
+    // port position. Releasing the block must release its dangling ends with
+    // it, so pull every stub edge's netLabel endpoint into the release set
+    // whenever the block on the stub's other end is selected — even when the
+    // marquee never physically covered the label (or the stub wire) itself.
+    // A netLabel whose block isn't selected is left alone.
     const nodesById = new Map(nodes.map((node) => [node.id, node]));
+    // An expanded instance's stub edges no longer terminate on the instance
+    // id the release set carries — applyActiveSplices rewires them onto the
+    // frame's boundary-port nodes (expand-namespaced ids, never in
+    // `selected`). Resolve a boundary endpoint back to the top-level
+    // instance owning its splice so that instance's cut labels release with
+    // it, same as a collapsed block's would.
+    const boundaryOwner = new Map<string, string>();
+    for (const splice of spliceMapRef.current.values()) {
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      for (const boundaryId of splice.boundaryNodeIdByChildPortName.values()) {
+        boundaryOwner.set(boundaryId, splice.flowInstanceId);
+      }
+    }
     for (const edge of edges) {
-      if (edge.selected !== true) continue;
       const diagramEdge = (edge.data as { edge?: DiagramEdge } | undefined)?.edge;
       if (diagramEdge?.metadata?.cutStub === undefined) continue;
       const endpointIds = [edge.source, edge.target];
-      const touchesSelectedBlock = endpointIds.some(
-        (endpointId) =>
-          selectedIds.has(endpointId) && nodesById.get(endpointId)?.data.node.kind !== 'netLabel',
-      );
+      const touchesSelectedBlock = endpointIds.some((endpointId) => {
+        const resolvedId = boundaryOwner.get(endpointId) ?? endpointId;
+        return (
+          selectedIds.has(resolvedId) && nodesById.get(resolvedId)?.data.node.kind !== 'netLabel'
+        );
+      });
       if (!touchesSelectedBlock) continue;
       for (const endpointId of endpointIds) {
         if (nodesById.get(endpointId)?.data.node.kind === 'netLabel') {
@@ -1706,11 +2233,26 @@ function NodeSelectionToolbar({
     // incoming view, so these blocks stay selected across the round-trip
     // instead of losing selection once ELK re-places them.
     pendingReselectIdsRef.current = selectedIds;
+    // The host's ELK pass must place blocks against each expanded instance's
+    // *frame* size, not the collapsed size the stripped nodes payload
+    // carries (the expansion is a webview-only overlay the host's saved
+    // layout deliberately never records as a resize) — hand the frame sizes
+    // over as transient, layout-only overrides in sizeOverride grid units.
+    const expandedSizes: Record<string, { width: number; height: number }> = {};
+    for (const splice of spliceMapRef.current.values()) {
+      // Nested splices live inside another splice, not in this module.
+      if (isExpandNamespacedId(splice.flowInstanceId)) continue;
+      expandedSizes[splice.flowInstanceId] = {
+        width: Math.ceil(splice.expandedSize.width / diagramSizing.gridSize),
+        height: Math.ceil(splice.expandedSize.height / diagramSizing.gridSize),
+      };
+    }
     vscode.postMessage({
       type: 'relayoutSelection',
       moduleName,
       nodeIds: [...selectedIds],
-      nodes: positioned,
+      nodes: stripExpandSplices(positioned, spliceMapRef.current),
+      expandedSizes,
     });
   };
 
@@ -1727,11 +2269,14 @@ function NodeSelectionToolbar({
     // Matches the wire "Cut" control's positionedNodesFromFlowNodes: every real
     // block is frozen in place, but a net-cut label keeps tracking its port
     // dynamically even if the marquee happened to select it too.
-    const positioned = nodes.map((node) => ({
-      ...node.data.node,
-      position: node.position,
-      fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
-    }));
+    const positioned = stripExpandSplices(
+      nodes.map((node) => ({
+        ...node.data.node,
+        position: node.position,
+        fixed: node.data.node.kind === 'netLabel' ? node.data.node.fixed : true,
+      })),
+      spliceMapRef.current,
+    );
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
       return;
@@ -1796,6 +2341,38 @@ function NodeSelectionToolbar({
               <kbd className="svsch-shortcut-glyph" aria-hidden="true">
                 <span className="svsch-shortcut-glyph-letter">C</span>
               </kbd>
+            </button>
+          )}
+          {expandableInstance && (
+            <button
+              type="button"
+              className="svsch-selection-expand-control"
+              title="Unfold this instance's diagram in place"
+              onClick={(event) => {
+                event.stopPropagation();
+                onExpandInstance(expandableInstance);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Expand
+            </button>
+          )}
+          {activeSplice && (
+            <button
+              type="button"
+              className="svsch-selection-collapse-control"
+              title="Collapse this instance's unfolded diagram"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCollapseInstance(activeSplice.region.id);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Collapse
             </button>
           )}
         </div>
@@ -1979,6 +2556,69 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
     position: node.position,
     fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id),
   }));
+}
+
+// "Expand instance in place" splices synthetic nodes/regions (namespaced
+// `expand:...` ids, see webview/expand/splice.ts) into the same flow
+// nodes/regions state the rest of the app already reads. The extension host
+// has never heard of these ids — every message that hands a `nodes`/
+// `regions` payload back to it (layoutChanged, relayoutSelection, cutNet(s),
+// edgeRoutesChanged, ...) must strip them first. Spliced content itself is
+// never separately persisted (see splice.ts's SpliceResult doc) — it is
+// always re-derived from the child module's own standalone layout.
+function stripExpandSplices(
+  nodes: PositionedNode[],
+  splices: Map<string, ActiveSplice>,
+): PositionedNode[] {
+  const ghostOverrides = new Map(
+    [...splices.values()].map(
+      (splice) => [splice.flowInstanceId, splice.baseSizeOverride] as const,
+    ),
+  );
+  return nodes
+    .filter((node) => !isExpandNamespacedId(node.id))
+    .map((node) =>
+      // An expanded instance's node carries the splice's computed expanded
+      // size as an injected sizeOverride (see expandOverlay's
+      // dimAsExpandGhost) — restore the instance's own persisted override so
+      // the expansion never saves as a manual resize.
+      ghostOverrides.has(node.id) ? { ...node, sizeOverride: ghostOverrides.get(node.id) } : node,
+    );
+}
+
+function stripExpandRegions(regions: PositionedGenerateRegion[]): PositionedGenerateRegion[] {
+  return regions.filter((region) => region.kind !== 'expand');
+}
+
+// Drops any selection React Flow's marquee applied to nodes/wires spliced in
+// by "Expand instance in place" (ids carrying the `expand:` namespace
+// prefix): the sub-diagram inside an expanded instance is its own diagram,
+// and drag-selection operates on the top-level one only — the marquee
+// selects the expanded instance's own node instead. (Click-selection of
+// spliced nodes doesn't pass through here and keeps working, e.g. for
+// nested Expand.)
+function deselectSplicedContent(
+  setNodes: (updater: (nodes: HdlFlowNode[]) => HdlFlowNode[]) => void,
+  setEdges: (updater: (edges: Edge[]) => Edge[]) => void,
+): void {
+  setNodes((current) => {
+    let changed = false;
+    const next = current.map((node) => {
+      if (!node.selected || !isExpandNamespacedId(node.id)) return node;
+      changed = true;
+      return { ...node, selected: false };
+    });
+    return changed ? next : current;
+  });
+  setEdges((current) => {
+    let changed = false;
+    const next = current.map((edge) => {
+      if (!edge.selected || !isExpandNamespacedId(edge.id)) return edge;
+      changed = true;
+      return { ...edge, selected: false };
+    });
+    return changed ? next : current;
+  });
 }
 
 function mergeDraggedFlowNodes(nodes: HdlFlowNode[], draggedNodes: HdlFlowNode[]): HdlFlowNode[] {
