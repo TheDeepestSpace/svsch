@@ -399,6 +399,25 @@ describe('applyExpandedInstances (nested inheritance)', () => {
     );
   });
 
+  it("also carries the child's own nested expand region, not just its outer frame", async () => {
+    // Regression test: leaf is expanded two levels down (top -> u_mid ->
+    // u_leaf). Both frames must survive in top's own generateRegions — a
+    // prior bug dropped everything past the immediate child's frame, so
+    // deeply-nested expand outlines silently vanished (e.g. from the
+    // minimap, which draws one rect per region).
+    const layout = nestedLayout();
+    const view = await buildViewModel(nestedGraph, 'top', layout);
+    const result = await applyExpandedInstances({ graph: nestedGraph, layout, view });
+
+    const expandRegions = result.generateRegions?.filter((r) => r.kind === 'expand') ?? [];
+    expect(expandRegions).toHaveLength(2);
+
+    const leafRegion = expandRegions.find((r) =>
+      r.nodeIds.includes('expand:u_mid::expand:u_leaf::lcomb'),
+    );
+    expect(leafRegion).toBeDefined();
+  });
+
   it("keeps the parent's edges on the outer boundary despite nested name collisions", async () => {
     const layout = nestedLayout();
     const view = await buildViewModel(nestedGraph, 'top', layout);

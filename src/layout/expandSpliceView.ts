@@ -206,7 +206,7 @@ export async function applyExpandedInstances(input: {
 
     nodes = [...nodes, ...spliceResult.nodes];
     edges = [...edges, ...spliceResult.edges];
-    regions.push(spliceResult.region);
+    regions.push(spliceResult.region, ...(spliceResult.nestedRegions ?? []));
   }
 
   return { ...routedView, nodes, edges, generateRegions: regions };
