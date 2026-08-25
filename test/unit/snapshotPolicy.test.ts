@@ -40,7 +40,7 @@ describe('snapshot update policy', () => {
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-selected-canvas-chromium-linux.png',
       )?.maxDiffPixels,
-    ).toBe(50);
+    ).toBe(20);
     expect(
       baselineThresholdFor(
         'test/features/__screenshots__/1.91.0/example.spec.ts-snapshots/example-linux.png',

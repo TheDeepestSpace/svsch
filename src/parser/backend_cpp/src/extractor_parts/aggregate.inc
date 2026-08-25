@@ -16,88 +16,15 @@ std::string DesignExtractor::resolveSignalWidth(
     return w;
 }
 
-namespace {
-
 // Evaluates a constant integer expression, substituting identifiers via
-// `params` (already-resolved parameter values). Supports +, -, *, /, unary
-// minus, and parentheses. Used to resolve replication counts like
+// `params` (already-resolved parameter values). Used to resolve counts like
 // "(DATA_WIDTH-4)" that UHDM's constant-value evaluator won't fold when the
 // replication is nested inside a procedural concatenation operand (as
 // opposed to being the whole assignment RHS, where the declared LHS width
 // is used directly instead of the count).
 std::optional<int> evalReplicationCountExpr(const std::string& text, const std::map<std::string, int>& params) {
-    size_t pos = 0;
-    const size_t n = text.size();
-    auto skipSpace = [&]() { while (pos < n && std::isspace(static_cast<unsigned char>(text[pos]))) pos++; };
-
-    std::function<std::optional<int>()> parseExpr;
-
-    std::function<std::optional<int>()> parseFactor = [&]() -> std::optional<int> {
-        skipSpace();
-        if (pos >= n) return std::nullopt;
-        if (text[pos] == '(') {
-            pos++;
-            auto v = parseExpr();
-            skipSpace();
-            if (!v || pos >= n || text[pos] != ')') return std::nullopt;
-            pos++;
-            return v;
-        }
-        if (text[pos] == '-' || text[pos] == '+') {
-            char sign = text[pos++];
-            auto v = parseFactor();
-            if (!v) return std::nullopt;
-            return sign == '-' ? -*v : *v;
-        }
-        size_t start = pos;
-        if (std::isdigit(static_cast<unsigned char>(text[pos]))) {
-            while (pos < n && std::isdigit(static_cast<unsigned char>(text[pos]))) pos++;
-            return std::stoi(text.substr(start, pos - start));
-        }
-        if (std::isalpha(static_cast<unsigned char>(text[pos])) || text[pos] == '_' || text[pos] == '$') {
-            while (pos < n && (std::isalnum(static_cast<unsigned char>(text[pos])) || text[pos] == '_' || text[pos] == '$')) pos++;
-            auto it = params.find(text.substr(start, pos - start));
-            if (it == params.end()) return std::nullopt;
-            return it->second;
-        }
-        return std::nullopt;
-    };
-
-    std::function<std::optional<int>()> parseTerm = [&]() -> std::optional<int> {
-        auto left = parseFactor();
-        while (left) {
-            skipSpace();
-            if (pos < n && (text[pos] == '*' || text[pos] == '/')) {
-                char op = text[pos++];
-                auto right = parseFactor();
-                if (!right || (op == '/' && *right == 0)) return std::nullopt;
-                left = (op == '*') ? (*left * *right) : (*left / *right);
-            } else break;
-        }
-        return left;
-    };
-
-    parseExpr = [&]() -> std::optional<int> {
-        auto left = parseTerm();
-        while (left) {
-            skipSpace();
-            if (pos < n && (text[pos] == '+' || text[pos] == '-')) {
-                char op = text[pos++];
-                auto right = parseTerm();
-                if (!right) return std::nullopt;
-                left = (op == '+') ? (*left + *right) : (*left - *right);
-            } else break;
-        }
-        return left;
-    };
-
-    auto result = parseExpr();
-    skipSpace();
-    if (!result || pos != n) return std::nullopt;
-    return result;
+    return evaluateConstantExpression(text, params);
 }
-
-} // namespace
 
 void DesignExtractor::repairAggregateReplicationWidths(Module& mod) {
     std::map<std::string, int> paramValues;

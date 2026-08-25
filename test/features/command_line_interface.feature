@@ -110,6 +110,43 @@ Feature: Command Line Interface
     And the CLI SVG should contain "port:top:a"
     And the CLI SVG should have node "a" positioned as it is on the diagram
 
+  # Locks in issue #248: renderSvg used to only ever see the flat/collapsed
+  # view, since the expand splice (issue #232) was applied entirely
+  # client-side in React Flow state and never round-tripped back into the
+  # DiagramViewModel the CLI renders from — an exported SVG of a design with
+  # an expanded instance still just showed the plain collapsed instance box.
+  Scenario: Expanded module SVG export
+    Given I have a file "top.sv" in my workspace:
+      """sv
+      module inner(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        inner u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "a"
+    And I should see a boundary port node named "y"
+    When I run the CLI command:
+      """
+      svsch render top.sv --output top.svg
+      """
+    Then the CLI stdout should be exactly (workspace-relative):
+      """
+      top.svg
+      """
+    And a file named "top.svg" should exist in the workspace
+    # The collapsed instance is dimmed into a backdrop rather than dropped,
+    # and its child module's boundary ports/internal content are spliced in
+    # alongside it — not just the flat "u1" instance box issue #248 exported.
+    And the CLI SVG should contain "hdl-node-expand-ghost"
+    And the CLI SVG should contain "boundaryPort"
+    And the CLI SVG should contain "svsch-boundary-port-text"
+
   Scenario: Render without manual layout (--no-layout)
     Given I have a file "top.sv" in my workspace:
       """sv
