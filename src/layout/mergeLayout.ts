@@ -153,14 +153,20 @@ export async function buildViewModel(
       ? { nodes: initialPositioned, movedNodeIds: new Set<string>() }
       : packGenerateRegionSiblings(armRegions, initialPositioned, moduleLayout);
   // A pristine layout (nothing dragged, nothing released back to Auto Layout
-  // yet — see mergeRelayoutSelection/mergeNodePositions, both of which always
-  // write a `fixed` entry) is the only state this "free preset" columnizing
-  // applies to; touching the diagram at all opts a module out until a full
-  // Reset clears moduleLayout.nodes and restores it. This can no longer check
-  // for `moduleLayout.nodes` being empty: mergeNodeSnapshot now populates it
-  // with unfixed positions on every render as a durability snapshot, so
-  // presence alone no longer means "touched" — only `fixed` does.
-  const isPristineLayout = !Object.values(moduleLayout.nodes).some((node) => node.fixed);
+  // yet) is the only state this "free preset" columnizing applies to;
+  // touching the diagram at all opts a module out until a full Reset clears
+  // moduleLayout.nodes and restores it. This can no longer check for
+  // `moduleLayout.nodes` being empty: mergeNodeSnapshot now populates it with
+  // unfixed positions on every render as a durability snapshot, so presence
+  // alone no longer means "touched". It can't check for `fixed` alone either:
+  // mergeRelayoutSelection ("Auto Layout") deliberately writes released nodes
+  // with `fixed: false` rather than deleting them, so a module that's had
+  // Auto Layout run on it (but nothing pinned) must still count as touched.
+  // The distinguishing signal is whether `fixed` was ever explicitly set —
+  // mergeNodeSnapshot's entries always omit the key entirely.
+  const isPristineLayout = !Object.values(moduleLayout.nodes).some(
+    (node) => node.fixed !== undefined,
+  );
   const positioned = isPristineLayout
     ? columnizeFullyCutBoundaryPorts(designModule, activeCuts, packedGenerateLayout.nodes)
     : packedGenerateLayout.nodes;
