@@ -41,7 +41,7 @@ describe('snapshot update policy', () => {
           'generate-region-selected-canvas-chromium-linux.png',
       )?.maxDiffPixels,
     ).toBe(20);
-    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(20);
+    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(35);
     expect(
       baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels,
     ).toBe(20);

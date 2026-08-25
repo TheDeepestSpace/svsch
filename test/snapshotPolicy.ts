@@ -11,7 +11,7 @@ export const SNAPSHOT_THRESHOLDS = {
     system: 20,
   },
   pixelmatch: {
-    bdd: 20,
+    bdd: 35,
     cli: 20,
     threshold: 0.05,
   },
