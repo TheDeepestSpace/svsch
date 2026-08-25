@@ -653,7 +653,10 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         if (!n.metadata.typeName.empty()) n.metadata.typeSource = getTypeSource(lhs_first);
         // For constant part/bit selects (r[3:2], r[0], etc.) the register name
         // already encodes the bit range — don't use the base signal's declared width
-        // (which would be the full bus width) as the cell width.
+        // (which would be the full bus width) as the cell width. Compute the real
+        // slice width from the range itself (e.g. "[3:2]" -> 2 bits) rather than
+        // hardcoding 1 bit, which under-reported the width of multi-bit part-selects
+        // to every downstream consumer (D/Q port thickness, bus-composition wiring).
         std::string reg_width = "";
         {
             size_t bracket = reg_name.find('[');
@@ -662,7 +665,21 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 if (!sel.empty() && sel.back() == ']') sel.pop_back();
                 bool is_const = !sel.empty() && std::all_of(sel.begin(), sel.end(),
                     [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
-                if (is_const) reg_width = "[0:0]"; // suppresses width label; name has the range
+                if (is_const) {
+                    size_t colon = sel.find(':');
+                    if (colon == std::string::npos) {
+                        reg_width = "[0:0]";
+                    } else {
+                        try {
+                            int msb = std::stoi(sel.substr(0, colon));
+                            int lsb = std::stoi(sel.substr(colon + 1));
+                            int bits = std::abs(msb - lsb) + 1;
+                            reg_width = bits > 1 ? "[" + std::to_string(bits - 1) + ":0]" : "[0:0]";
+                        } catch (...) {
+                            reg_width = "[0:0]";
+                        }
+                    }
+                }
             }
         }
         if (reg_width.empty()) reg_width = getDeclaredSignalWidth(mod, reg_base);
