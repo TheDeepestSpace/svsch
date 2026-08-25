@@ -3,5 +3,6 @@ import { measureText, snappedWidth, type NodeSizingStrategy } from './nodeSizing
 
 export const boundaryPortSizing: NodeSizingStrategy = {
   height: () => diagramSizing.gridSize * 2,
-  width: (node) => snappedWidth(diagramSizing.gridSize * 2, measureText(node.label) + diagramSizing.gridSize),
+  width: (node) =>
+    snappedWidth(diagramSizing.gridSize * 2, measureText(node.label) + diagramSizing.gridSize),
 };
