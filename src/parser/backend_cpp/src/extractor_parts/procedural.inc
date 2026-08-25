@@ -375,6 +375,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     std::map<std::string, std::vector<vpiHandle>> reg_assigns;
     std::map<std::string, vpiHandle> reg_lhs_handles;
     std::vector<std::string> reg_first_seen_order;
+    std::set<std::string> concat_derived_regs;
     for (vpiHandle a : assignments) {
         vpiHandle lhs = vpi_handle(vpiLhs, a);
         if (lhs) {
@@ -394,6 +395,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                     if (!reg_assigns.count(segment.signal)) reg_first_seen_order.push_back(segment.signal);
                     reg_assigns[segment.signal].push_back(a);
                     if (!reg_lhs_handles.count(segment.signal)) reg_lhs_handles[segment.signal] = segment.handle;
+                    concat_derived_regs.insert(segment.signal);
                 }
                 continue;
             }
@@ -1020,6 +1022,18 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         }
 
         mod.nodes.push_back(n);
+
+        // A concat-LHS target (e.g. `registered[2]`) produced its own register above;
+        // wire its Q output into the base signal's bus composition node so downstream
+        // readers (including the module output port) see the registered value instead
+        // of being left disconnected. Plain (non-concat) partial-bit-select writes are
+        // left to synthesizeBusCompositionNodes, which coalesces adjacent slices.
+        if (!is_array_reg && !is_variable_index && concat_derived_regs.count(reg_name)
+            && reg_name.find('[') != std::string::npos) {
+            size_t bracket = reg_name.find('[');
+            ensureBusSliceCompositionInput(
+                mod, reg_base, reg_name.substr(bracket), reg_name, getSourceInfo(lhs_first));
+        }
     }
 }
 
