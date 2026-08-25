@@ -755,7 +755,7 @@ function portLabel(
 ): string {
   const label = port.label ?? port.name;
   const width = normalizeWidth(port.widthExpression ?? port.width);
-  const displayWidth = collapseWidth && width ? '[]' : width;
+  const displayWidth = collapseWidth && width ? (port.isArrayNode ? '[[]]' : '[]') : width;
   const isInterface = width === 'interface' || port.modportName !== undefined;
   const isStruct = !isInterface && port.typeName !== undefined;
   const typeName = showType ? port.typeName : undefined;
