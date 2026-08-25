@@ -802,58 +802,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
             }
 
-            // For the reset+enable case: also tag the existing mux created by lowerStatement.
             std::string d_signal_for_addr = d_signal;
-            if (is_reset_condition && else_branch_stmt) {
-                // Check if the else branch has a clock-enable if (write_en) condition
-                vpiHandle en_cond = nullptr;
-                if (vpi_get(vpiType, else_branch_stmt) == vpiIf || vpi_get(vpiType, else_branch_stmt) == vpiIfElse) {
-                    en_cond = vpi_handle(vpiCondition, else_branch_stmt);
-                }
-                if (en_cond) {
-                    std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
-                    std::string write_candidate = reg_base + "_write_candidate";
-                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + reg_name + "_next");
-                    bool write_en_mux_exists = false;
-                    for (auto& existing : mod.nodes) {
-                        if (existing.id == candidate_id) {
-                            // Tag the existing write_en mux as stacked and fix its false port
-                            existing.metadata.isArrayNode = true;
-                            existing.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                            existing.metadata.arraySize = arr_size;
-                            for (auto& p : existing.ports) {
-                                if (p.direction == "input" && (p.signal == reg_name || p.signal == reg_base + "_if_false")) {
-                                    p.signal = reg_base;
-                                }
-                            }
-                            // Use this mux output as the chain start
-                            for (const auto& p : existing.ports) {
-                                if (p.direction == "output") { d_signal_for_addr = p.signal; break; }
-                            }
-                            write_en_mux_exists = true;
-                            break;
-                        }
-                    }
-                    if (!write_en_mux_exists) {
-                        Node write_en_mux;
-                        write_en_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + write_candidate);
-                        write_en_mux.kind = "mux";
-                        write_en_mux.label = "if " + enable_signal;
-                        write_en_mux.source = n.source;
-                        write_en_mux.metadata.isArrayNode = true;
-                        write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                        write_en_mux.metadata.arraySize = arr_size;
-                        write_en_mux.metadata.isProcedural = true;
-                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
-                        write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
-                        write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
-                        write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
-                        write_en_mux.ports.push_back({"out", "output", write_candidate, reg_width});
-                        mod.nodes.push_back(write_en_mux);
-                        d_signal_for_addr = write_candidate;
-                    }
-                }
-            }
 
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.
