@@ -1159,6 +1159,15 @@ select {
   pointer-events: all;
 }
 
+/* Counter-scales against the zoom baked into the foreignObject's ancestor
+   .react-flow__viewport transform, so these buttons stay a constant screen
+   size instead of scaling with the edge path. Anchored bottom-center to
+   match the foreignObject's own centered/bottom-hugging placement around
+   its edge point (see the showCutButton x/y math in OrthogonalEdge). */
+.svsch-edge-connection-controls-scale {
+  transform-origin: bottom center;
+}
+
 .svsch-edge-connection-controls-inner {
   display: flex;
   height: 22px;
@@ -1255,6 +1264,14 @@ kbd.svsch-shortcut-glyph {
   position: absolute;
 }
 
+/* Counter-scales against the zoom baked into svsch-overlay-portal-root's
+   transform (see that class above). Anchored top-left to match this
+   layer's plain left/top placement (no offsetting translate), so the
+   scale doesn't shift the button's flow-space anchor point. */
+.svsch-cut-stub-reset-scale {
+  transform-origin: top left;
+}
+
 .svsch-selection-toolbar-layer {
   inset: 0;
   overflow: visible;
@@ -1263,10 +1280,19 @@ kbd.svsch-shortcut-glyph {
 }
 
 .svsch-selection-toolbar {
-  display: flex;
   pointer-events: none;
   position: absolute;
   transform: translate(-100%, 8px);
+}
+
+/* Counter-scales the button markup against the zoom baked into
+   svsch-overlay-portal-root's transform, so the toolbar stays a constant
+   screen size instead of growing/shrinking with the canvas. Anchored at the
+   top-right corner to match svsch-selection-toolbar's translate(-100%, ...),
+   so the scale doesn't shift the toolbar's flow-space anchor point. */
+.svsch-selection-toolbar-scale {
+  display: flex;
+  transform-origin: top right;
 }
 
 .svsch-selection-toolbar button {

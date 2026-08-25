@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { type EdgeProps, useEdges, useNodes, useReactFlow } from '@xyflow/react';
+import { type EdgeProps, useEdges, useNodes, useReactFlow, useStore } from '@xyflow/react';
 import {
   HdlPosition,
   type RouteChange,
@@ -181,6 +181,12 @@ export function OrthogonalEdge({
   data,
 }: EdgeProps): React.ReactElement {
   const reactFlow = useReactFlow();
+  // Both the foreignObject wire controls and the overlayPortalNode cut-stub
+  // reset button live inside a zoom-scaled ancestor — subscribe (rather than
+  // reactFlow.getZoom()) so their counter-scale updates live as the user
+  // zooms, not just on the next unrelated re-render.
+  const zoom = useStore((state) => state.transform[2]);
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
   const flowNodes = useNodes();
   const flowEdges = useEdges();
   const context = useOptionalLineJumpContext();
@@ -992,87 +998,92 @@ export function OrthogonalEdge({
           onMouseEnter={keepEdgeHover}
           onMouseLeave={releaseEdgeHover}
         >
-          <div className="svsch-edge-connection-controls-inner">
-            <button
-              type="button"
-              className="svsch-edge-reroute-control"
-              title={
-                isMultiSelected
-                  ? `Reroute ${selectedCuttableEdges.length} selected connections`
-                  : 'Reroute this connection'
-              }
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!diagramEdge || !edgeData?.moduleName) {
-                  return;
+          <div
+            className="svsch-edge-connection-controls-scale"
+            style={{ transform: `scale(${counterScale})` }}
+          >
+            <div className="svsch-edge-connection-controls-inner">
+              <button
+                type="button"
+                className="svsch-edge-reroute-control"
+                title={
+                  isMultiSelected
+                    ? `Reroute ${selectedCuttableEdges.length} selected connections`
+                    : 'Reroute this connection'
                 }
-                if (isMultiSelected) {
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!diagramEdge || !edgeData?.moduleName) {
+                    return;
+                  }
+                  if (isMultiSelected) {
+                    vscode.postMessage({
+                      type: 'rerouteEdges',
+                      moduleName: edgeData.moduleName,
+                      edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                      nodes: positionedNodesFromFlowNodes(flowNodes),
+                    });
+                    return;
+                  }
                   vscode.postMessage({
-                    type: 'rerouteEdges',
+                    type: 'rerouteEdge',
                     moduleName: edgeData.moduleName,
-                    edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                    edgeId: diagramEdge.id,
                     nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
-                  return;
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseEnter={() => setPendingSelectionAction('reroute')}
+                onMouseLeave={() => setPendingSelectionAction(undefined)}
+              >
+                Reroute
+                <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                  <span className="svsch-shortcut-glyph-letter">R</span>
+                </kbd>
+              </button>
+              <button
+                type="button"
+                className="svsch-edge-cut-control"
+                title={
+                  isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'
                 }
-                vscode.postMessage({
-                  type: 'rerouteEdge',
-                  moduleName: edgeData.moduleName,
-                  edgeId: diagramEdge.id,
-                  nodes: positionedNodesFromFlowNodes(flowNodes),
-                });
-              }}
-              onDoubleClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-              onMouseEnter={() => setPendingSelectionAction('reroute')}
-              onMouseLeave={() => setPendingSelectionAction(undefined)}
-            >
-              Reroute
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-                <span className="svsch-shortcut-glyph-letter">R</span>
-              </kbd>
-            </button>
-            <button
-              type="button"
-              className="svsch-edge-cut-control"
-              title={
-                isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'
-              }
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!diagramEdge || !edgeData?.moduleName) {
-                  return;
-                }
-                if (isMultiSelected) {
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!diagramEdge || !edgeData?.moduleName) {
+                    return;
+                  }
+                  if (isMultiSelected) {
+                    vscode.postMessage({
+                      type: 'cutNets',
+                      moduleName: edgeData.moduleName,
+                      edges: selectedCuttableEdges
+                        .map((edge) => edge.data?.edge)
+                        .filter((edge): edge is DiagramEdge => edge !== undefined),
+                      nodes: positionedNodesFromFlowNodes(flowNodes),
+                    });
+                    return;
+                  }
                   vscode.postMessage({
-                    type: 'cutNets',
+                    type: 'cutNet',
                     moduleName: edgeData.moduleName,
-                    edges: selectedCuttableEdges
-                      .map((edge) => edge.data?.edge)
-                      .filter((edge): edge is DiagramEdge => edge !== undefined),
+                    edge: diagramEdge,
                     nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
-                  return;
-                }
-                vscode.postMessage({
-                  type: 'cutNet',
-                  moduleName: edgeData.moduleName,
-                  edge: diagramEdge,
-                  nodes: positionedNodesFromFlowNodes(flowNodes),
-                });
-              }}
-              onDoubleClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-              onMouseEnter={() => setPendingSelectionAction('cut')}
-              onMouseLeave={() => setPendingSelectionAction(undefined)}
-            >
-              Cut
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-                <span className="svsch-shortcut-glyph-letter">C</span>
-              </kbd>
-            </button>
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseEnter={() => setPendingSelectionAction('cut')}
+                onMouseLeave={() => setPendingSelectionAction(undefined)}
+              >
+                Cut
+                <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                  <span className="svsch-shortcut-glyph-letter">C</span>
+                </kbd>
+              </button>
+            </div>
           </div>
         </foreignObject>
       )}
@@ -1094,28 +1105,33 @@ export function OrthogonalEdge({
             onMouseEnter={keepEdgeHover}
             onMouseLeave={releaseEdgeHover}
           >
-            <div className="svsch-edge-connection-controls-inner">
-              <button
-                type="button"
-                className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
-                title="Reset this dangling end to its canonical position"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!edgeData?.moduleName || !cutLabelNodeId) {
-                    return;
-                  }
-                  vscode.postMessage({
-                    type: 'resetCutLabelPosition',
-                    moduleName: edgeData.moduleName,
-                    nodeId: cutLabelNodeId,
-                  });
-                }}
-                onDoubleClick={(event) => event.stopPropagation()}
-                onMouseDown={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                Reroute
-              </button>
+            <div
+              className="svsch-cut-stub-reset-scale"
+              style={{ transform: `scale(${counterScale})` }}
+            >
+              <div className="svsch-edge-connection-controls-inner">
+                <button
+                  type="button"
+                  className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
+                  title="Reset this dangling end to its canonical position"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!edgeData?.moduleName || !cutLabelNodeId) {
+                      return;
+                    }
+                    vscode.postMessage({
+                      type: 'resetCutLabelPosition',
+                      moduleName: edgeData.moduleName,
+                      nodeId: cutLabelNodeId,
+                    });
+                  }}
+                  onDoubleClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  Reroute
+                </button>
+              </div>
             </div>
           </div>,
           overlayPortalNode,

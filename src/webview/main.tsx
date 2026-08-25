@@ -1219,6 +1219,7 @@ function DiagramApp(): React.ReactElement {
                 nodes={nodes}
                 edges={edges}
                 pendingReselectIdsRef={pendingReselectIdsRef}
+                zoom={viewport.zoom}
               />
               <MiniMap pannable zoomable className="svsch-minimap" nodeComponent={MiniMapNode} />
               <MiniMapRegionOutlines regions={regions} />
@@ -1612,13 +1613,19 @@ function NodeSelectionToolbar({
   nodes,
   edges,
   pendingReselectIdsRef,
+  zoom,
 }: {
   moduleName: string;
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
+  zoom: number;
 }): React.ReactElement | null {
   const { overlayPortalNode } = useContext(InteractionContext);
+  // overlayPortalNode carries react-flow's scale(zoom) (see main.tsx's render), so button
+  // markup here needs a counter-scale to stay a constant screen size instead of zooming
+  // with the canvas — the outer .svsch-selection-toolbar keeps its flow-space position.
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
 
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
@@ -1741,52 +1748,57 @@ function NodeSelectionToolbar({
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div className="svsch-selection-toolbar" style={{ left: bounds.right, top: bounds.bottom }}>
-        {selected.length >= 2 && (
-          <button
-            type="button"
-            className="svsch-selection-relayout-control"
-            title="Re-place and route the selected blocks; everything else stays put"
-            onClick={handleClick}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Auto Layout
-          </button>
-        )}
-        {resizedNodeIds.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-revert-size-control"
-            title={
-              resizedNodeIds.length === 1
-                ? 'Revert the selected block to its canonical size'
-                : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
-            }
-            onClick={handleRevertSize}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Revert Size
-          </button>
-        )}
-        {cutOutEdges.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-cutout-control"
-            title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
-            onClick={handleCutOut}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Cut out
-            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-              <span className="svsch-shortcut-glyph-letter">C</span>
-            </kbd>
-          </button>
-        )}
+        <div
+          className="svsch-selection-toolbar-scale"
+          style={{ transform: `scale(${counterScale})` }}
+        >
+          {selected.length >= 2 && (
+            <button
+              type="button"
+              className="svsch-selection-relayout-control"
+              title="Re-place and route the selected blocks; everything else stays put"
+              onClick={handleClick}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Auto Layout
+            </button>
+          )}
+          {resizedNodeIds.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-revert-size-control"
+              title={
+                resizedNodeIds.length === 1
+                  ? 'Revert the selected block to its canonical size'
+                  : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
+              }
+              onClick={handleRevertSize}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Revert Size
+            </button>
+          )}
+          {cutOutEdges.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-cutout-control"
+              title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
+              onClick={handleCutOut}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Cut out
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
+            </button>
+          )}
+        </div>
       </div>
     </div>,
     overlayPortalNode,
