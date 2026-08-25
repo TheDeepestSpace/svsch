@@ -1023,8 +1023,6 @@ select {
    separate buttons with a gap between them — Revert (when shown) and Tie
    sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
-  align-items: center;
-  display: flex;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -1045,11 +1043,24 @@ select {
   visibility: visible;
 }
 
-.hdl-net-label-actions button:first-child {
+/* Counter-scales against the zoom baked into the react-flow node's
+   .react-flow__viewport transform, so the pill stays a constant screen
+   size instead of growing/shrinking with the canvas — matching the
+   Reroute/Cut edge controls (see svsch-edge-connection-controls-scale).
+   Anchored left-center: the outer element's translateX already hangs the
+   pill off the label's right edge, so scaling from the left keeps it
+   hugging the label instead of drifting further away. */
+.hdl-net-label-actions-scale {
+  align-items: center;
+  display: flex;
+  transform-origin: left center;
+}
+
+.hdl-net-label-actions-scale button:first-child {
   border-radius: 3px 0 0 3px;
 }
 
-.hdl-net-label-actions button:last-child {
+.hdl-net-label-actions-scale button:last-child {
   border-radius: 0 3px 3px 0;
   border-right: 1px solid var(--vscode-panel-border);
 }
