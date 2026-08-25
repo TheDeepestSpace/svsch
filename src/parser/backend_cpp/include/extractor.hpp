@@ -77,6 +77,12 @@ struct NodePort {
     std::string preferredSide;
     std::string widthExpression;
     std::vector<ParameterRef> parameterRefs;
+    // True when this port carries a whole array (e.g. the "in" port of a
+    // dynamic array-read mux) rather than a plain bus — drives the
+    // collapsed-width label suffix ("[[]]" vs "[]") in the webview.
+    bool isArrayNode = false;
+    std::string arrayDimension;
+    int arraySize = 0;
 };
 
 struct StructField {

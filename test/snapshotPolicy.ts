@@ -5,7 +5,7 @@ import * as path from 'node:path';
 export const SNAPSHOT_THRESHOLDS = {
   playwright: {
     visual: {
-      default: 50,
+      default: 20,
       generateRegions: 120,
       muxLongNames: 2,
     },
