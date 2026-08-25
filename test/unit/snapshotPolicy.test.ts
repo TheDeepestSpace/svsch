@@ -34,14 +34,14 @@ describe('snapshot update policy', () => {
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-resize-left-chromium-linux.png',
       )?.maxDiffPixels,
-    ).toBe(50);
+    ).toBe(20);
     expect(
       baselineThresholdFor(
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-selected-canvas-chromium-linux.png',
       )?.maxDiffPixels,
-    ).toBe(50);
-    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(50);
+    ).toBe(20);
+    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(20);
     expect(
       baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels,
     ).toBe(20);
@@ -49,7 +49,7 @@ describe('snapshot update policy', () => {
       baselineThresholdFor(
         'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png',
       )?.maxDiffPixels,
-    ).toBe(50);
+    ).toBe(20);
   });
 
   it('rejects Playwright all mode', () => {
