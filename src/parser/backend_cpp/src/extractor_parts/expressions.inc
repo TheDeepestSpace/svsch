@@ -138,6 +138,12 @@ std::vector<AggregateSegment> DesignExtractor::flattenAggregateSegments(
                 seg.width = inferred > 1 ? "[" + std::to_string(inferred - 1) + ":0]" : "[0:0]";
             }
             seg.size = std::max(1, bitSizeFromWidth(seg.width));
+            // A literal RHS segment (e.g. the `1'b0` in `{data_reg, 1'b0}`) resolves to
+            // its text as a signal name, but no node actually drives that signal unless
+            // one is synthesized here — leaving the bus-composition port dangling.
+            if (isLiteralExpr(operand)) {
+                ensureLiteralNode(operand, mod, seg.signal, seg.width, operand, seg.signal);
+            }
             segments.push_back(seg);
             index++;
         }
