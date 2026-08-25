@@ -9,7 +9,11 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
-import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import {
+  SNAPSHOT_THRESHOLDS,
+  bddPixelmatchMaxDiffPixels,
+  bddVisualDiffsDir,
+} from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -72,6 +76,9 @@ export class BddWorld {
   // scenarios can assert the position was preserved.
   movedToPositions: Map<string, { x: number; y: number }> = new Map();
   notedRoutes: Map<string, string> = new Map();
+  // Viewport transform captured before a canvas pan, for "the canvas should
+  // have panned" assertions.
+  notedViewportTransform?: string;
 
   // -------------------------------------------------------------------------
   // Screenshot / snapshot helpers
@@ -234,7 +241,7 @@ export class BddWorld {
     compareBox: PngCompareBox | null = null,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    const resultsDir = bddVisualDiffsDir();
     if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
     const updateSnapshots = this.updateSnapshots || !!process.env.UPDATE_SNAPSHOTS;
 
@@ -261,7 +268,7 @@ export class BddWorld {
     const comparison = comparePngBuffers(
       expectedBuffer,
       actualBuffer,
-      SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+      bddPixelmatchMaxDiffPixels(snapshotName),
       SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
       compareBox,
     );
