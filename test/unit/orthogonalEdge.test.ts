@@ -3,6 +3,7 @@ import {
   moveRouteSegment,
   normalizeRoutePoints,
   avoidFeedbackObstacles,
+  clampPointsToRect,
   type NodeObstacle,
 } from '../../src/webview/orthogonal/logic';
 import { HdlPosition } from '../../src/webview/orthogonal/types';
@@ -246,6 +247,39 @@ describe('orthogonal edge routing', () => {
 
     expect(route[0]).toEqual({ x: 480, y: 0 });
     expect(route.every((point) => point.x === 480)).toBe(true);
+  });
+
+  // eslint-disable-next-line max-len
+  it('routes straight, not as a wrap-around loop, when the two leads land on exactly the same point', () => {
+    // Endpoints exactly two lead lengths apart — e.g. an expanded instance's
+    // border coming to rest one lead-pair short of the neighboring port. A
+    // straight run fits exactly; treating this as feedback drew a loop that
+    // doubled back through the target node.
+    const sourceX = 720;
+    const y = 72;
+    const probe = normalizeRoutePoints(
+      undefined,
+      sourceX,
+      y,
+      sourceX + 480,
+      y,
+      HdlPosition.Right,
+      HdlPosition.Left,
+    );
+    const lead = probe[0].x - sourceX;
+    const targetX = sourceX + 2 * lead;
+
+    const route = normalizeRoutePoints(
+      undefined,
+      sourceX,
+      y,
+      targetX,
+      y,
+      HdlPosition.Right,
+      HdlPosition.Left,
+    );
+    expect(route.every((point) => point.y === y)).toBe(true);
+    expect(route.every((point) => point.x >= sourceX && point.x <= targetX)).toBe(true);
   });
 
   it('routes feedback edges around the target instead of straight through the nodes', () => {
@@ -680,5 +714,65 @@ describe('avoidFeedbackObstacles', () => {
 
     expect(result).not.toEqual(zigZag);
     expect(result[result.length - 2].y).toBeGreaterThan(248);
+  });
+});
+
+describe('clampPointsToRect', () => {
+  // The frame of an expanded instance ("Expand instance in place", #232):
+  // internal spliced wires must never escape it.
+  const frame = { x: 0, y: 0, width: 480, height: 360 };
+  const insets = { top: 24, right: 6, bottom: 6, left: 6 };
+
+  it('clamps a feedback loop that would swing outside the frame back inside', () => {
+    const loop = [
+      { x: 400, y: 100 },
+      { x: 552, y: 100 }, // 72px past the right border
+      { x: 552, y: 420 }, // 60px below the bottom border
+      { x: 80, y: 420 },
+      { x: 80, y: 200 },
+    ];
+    const clamped = clampPointsToRect(loop, frame, insets);
+    for (const point of clamped) {
+      expect(point.x).toBeGreaterThanOrEqual(frame.x + insets.left);
+      expect(point.x).toBeLessThanOrEqual(frame.x + frame.width - insets.right);
+      expect(point.y).toBeGreaterThanOrEqual(frame.y + insets.top);
+      expect(point.y).toBeLessThanOrEqual(frame.y + frame.height - insets.bottom);
+    }
+    // Per-coordinate clamping is monotone, so the route stays orthogonal.
+    for (let i = 1; i < clamped.length; i += 1) {
+      const dx = Math.abs(clamped[i].x - clamped[i - 1].x);
+      const dy = Math.abs(clamped[i].y - clamped[i - 1].y);
+      expect(Math.min(dx, dy)).toBeLessThan(0.5);
+    }
+  });
+
+  it('keeps the wire below the header strip (top inset)', () => {
+    const points = [
+      { x: 100, y: 60 },
+      { x: 100, y: 4 }, // would strike through the node title
+      { x: 300, y: 4 },
+      { x: 300, y: 60 },
+    ];
+    const clamped = clampPointsToRect(points, frame, insets);
+    expect(Math.min(...clamped.map((p) => p.y))).toBe(insets.top);
+  });
+
+  it('returns an in-frame route unchanged', () => {
+    const points = [
+      { x: 100, y: 100 },
+      { x: 200, y: 100 },
+      { x: 200, y: 220 },
+      { x: 400, y: 220 },
+    ];
+    expect(clampPointsToRect(points, frame, insets)).toEqual(points);
+  });
+
+  it('is a no-op when the insets do not leave any interior', () => {
+    const tiny = { x: 0, y: 0, width: 10, height: 10 };
+    const points = [
+      { x: -20, y: 5 },
+      { x: 40, y: 5 },
+    ];
+    expect(clampPointsToRect(points, tiny, insets)).toEqual(points);
   });
 });

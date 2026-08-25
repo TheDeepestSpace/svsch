@@ -11,6 +11,7 @@ import { HdlNodeBase } from '../shared/HdlNodeBase';
 import { NodeWarningIcon } from '../shared/NodeWarningIcon';
 import { InputPortHandles } from '../shared/InputPortHandles';
 import { NodeResizeControls } from '../shared/NodeResizeControls';
+import { ExpandGrabBands } from '../shared/ExpandGrabBands';
 import { handleNodeDoubleClick, navigateToSource } from '../shared/navigation';
 import type { HdlNodeData } from '../types';
 import { InstanceNodeSvg } from './InstanceNodeSvg';
@@ -111,7 +112,19 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
           <div className="hdl-node-selection-rect" aria-hidden="true" />
         )
       }
-      resizeControls={node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
+      resizeControls={
+        <>
+          {data.expandContentInsets && <ExpandGrabBands insets={data.expandContentInsets} />}
+          {/* An expanded instance's frame (data.expandContentInsets set — see
+              expandOverlay's dimAsExpandGhost) offers no resize handles at all:
+              its size is always derived fresh from the child module's own
+              current layout (see splice.ts's expandedFrameSize), never a manual
+              override (see the product decision in issue #232's PR review). */}
+          {node.kind === 'instance' && !data.expandContentInsets && (
+            <NodeResizeControls nodeId={id} />
+          )}
+        </>
+      }
       warningIcon={<NodeWarningIcon node={node} width={nodeWidth} height={nodeHeight} />}
     />
   );

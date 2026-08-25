@@ -16,6 +16,7 @@ import { nodeTypeName, nodeIsArrayNode, structRole } from '../../ir/nodeMetadata
 import { nodeStackIsWide } from '../../ir/edgeStyle';
 import type { DiagramPort } from '../../ir/types';
 import { NetLabelNode } from './NetLabelNode';
+import { BoundaryPortNode } from './BoundaryPortNode';
 import type { HdlFlowNode } from './types';
 import { BusNodeSvg } from './bus/BusNodeSvg';
 import { GateNodeSvg } from './gate/GateNodeSvg';
@@ -64,6 +65,22 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             '--svsch-node-height': `${nodeHeight}px`,
             '--svsch-instance-param-height': `${diagramSizing.gridSize * parameterRows}px`,
             '--svsch-port-width': `${diagramSizing.portWidth}px`,
+          } as React.CSSProperties
+        }
+      />
+    );
+  }
+
+  if (node.kind === 'boundaryPort') {
+    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    return (
+      <BoundaryPortNode
+        node={node}
+        selected={selected}
+        style={
+          {
+            '--svsch-node-width': `${nodeWidth}px`,
+            '--svsch-node-height': `${nodeHeight}px`,
           } as React.CSSProperties
         }
       />

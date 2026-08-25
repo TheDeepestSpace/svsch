@@ -81,10 +81,24 @@ interface ElkLayoutNode {
   properties?: Record<string, string>;
 }
 
+export interface BuildViewModelOptions {
+  /**
+   * Transient, layout-only node size overrides in sizeOverride grid units —
+   * used by the placement ELK pass, the net-cut projection, and the routing
+   * pass (all of which must see each node's *rendered* box), never persisted
+   * and never echoed back on the returned view's nodes. The one current use:
+   * an "Expand instance in place" frame's expanded footprint during Auto
+   * Layout (see relayoutSelection in diagramPanel.ts), which deliberately
+   * isn't stored in the module's saved layout.
+   */
+  elkSizeOverrides?: Record<string, { width: number; height: number }>;
+}
+
 export async function buildViewModel(
   graph: DesignGraph,
   moduleName: string,
   layout: SavedLayout,
+  options?: BuildViewModelOptions,
 ): Promise<DiagramViewModel> {
   const designModule = graph.modules[moduleName];
   if (!designModule) {
@@ -113,6 +127,7 @@ export async function buildViewModel(
     moduleLayout,
     armRegions,
     netCutPortMargins(designModule, activeCuts),
+    options?.elkSizeOverrides,
   );
   const initialPositioned = designModule.nodes.map((node, index): PositionedNode => {
     const saved = moduleLayout.nodes[node.id];
@@ -166,13 +181,30 @@ export async function buildViewModel(
   const nodesById = new Map<string, DiagramNode>(
     positionedWithWarnings.map((node) => [node.id, node]),
   );
-  const cutProjection = buildNetCutProjection(designModule, moduleLayout, activeCuts, positioned);
+  // The net-cut projection and the routing pass below derive geometry (port
+  // lead points, collision boxes, obstacles) from these nodes — like the ELK
+  // pass above, they must see each node at its rendered box, so a transient
+  // elkSizeOverride (an expanded instance's frame during Auto Layout) applies
+  // here too. Geometry-only: the returned view's nodes stay clean of it.
+  const withGeometryOverrides = (geometryNodes: PositionedNode[]): PositionedNode[] => {
+    const overrides = options?.elkSizeOverrides;
+    if (!overrides) return geometryNodes;
+    return geometryNodes.map((node) => {
+      const override = overrides[node.id];
+      return override ? { ...node, sizeOverride: override } : node;
+    });
+  };
+  const cutProjection = buildNetCutProjection(
+    designModule,
+    moduleLayout,
+    activeCuts,
+    withGeometryOverrides(positioned),
+  );
+  const routingNodes = [...withGeometryOverrides(positionedWithWarnings), ...cutProjection.nodes];
   const routingNodesById = new Map<string, DiagramNode>(
-    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node]),
+    routingNodes.map((node) => [node.id, node]),
   );
-  const routingNodePositions = new Map(
-    [...positionedWithWarnings, ...cutProjection.nodes].map((node) => [node.id, node.position]),
-  );
+  const routingNodePositions = new Map(routingNodes.map((node) => [node.id, node.position]));
   const candidates = routedDesignEdges.filter(
     (edge) => !moduleLayout.edges?.[edge.id]?.routePoints,
   );
@@ -180,7 +212,7 @@ export async function buildViewModel(
     // Dangling ends are real visual obstacles too. Build them before routing
     // so ordinary nets cannot pass through a cut label that happens to land
     // in their otherwise-clear corridor.
-    [...positionedWithWarnings, ...cutProjection.nodes],
+    routingNodes,
     candidates,
     (nodeId, portId, includeLeadMargins, role) =>
       renderedLeadPoint(
@@ -216,7 +248,16 @@ export async function buildViewModel(
             ? undefined
             : elkLayout.routes.get(edge.id)),
       })),
-      ...cutProjection.edges,
+      ...cutProjection.edges.map((edge) => ({
+        ...edge,
+        routePoints:
+          cutStubRouteAroundSizeOverrides(
+            edge,
+            options?.elkSizeOverrides,
+            routingNodesById,
+            routingNodePositions,
+          ) ?? edge.routePoints,
+      })),
     ],
     generateRegions: positionedRegions,
     diagnostics: graph.diagnostics,
@@ -1259,7 +1300,7 @@ function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string)
     : `cut-stub:${netKey}:sink:${edgeId ?? ''}`;
 }
 
-function cutLabelEdgeStyle(
+export function cutLabelEdgeStyle(
   edge: DiagramEdge,
   nodesById: Map<string, DiagramNode>,
 ): NonNullable<NonNullable<DiagramNode['metadata']>['cutNet']>['edgeStyle'] | undefined {
@@ -1445,16 +1486,35 @@ function netCutPortMargins(
 }
 
 async function autoLayoutMissingNodes(
-  nodes: DiagramNode[],
+  rawNodes: DiagramNode[],
   edges: DiagramEdge[],
   moduleLayout: SavedModuleLayout,
   generateRegions: GenerateRegion[] = [],
   netCutMargins: Map<string, Map<string, { width: number; height: number }>> = new Map(),
+  sizeOverrides?: Record<string, { width: number; height: number }>,
 ): Promise<AutoLayoutResult> {
   const positions = new Map<string, { x: number; y: number }>();
   const routes = new Map<string, Array<{ x: number; y: number }>>();
   const regionBounds = new Map<string, RegionBounds>();
   const routePositions = new Map<string, { x: number; y: number }>();
+  // ELK must place against each node's *rendered* box: a saved manual resize
+  // (SavedNodeLayout.width/height) or a caller-supplied transient override
+  // (e.g. an expanded instance's frame during Auto Layout — see
+  // BuildViewModelOptions.elkSizeOverrides) grows the node past its
+  // canonical size, and laying neighbors out against the canonical box would
+  // place them underneath it. Annotated once here so every geometry
+  // derivation below (ELK boxes, layout offsets, gap enforcement) agrees.
+  const nodes = rawNodes.map((node) => {
+    const override = sizeOverrides?.[node.id];
+    if (override) {
+      return { ...node, sizeOverride: { width: override.width, height: override.height } };
+    }
+    const saved = moduleLayout.nodes[node.id];
+    if (saved?.width !== undefined && saved?.height !== undefined) {
+      return { ...node, sizeOverride: { width: saved.width, height: saved.height } };
+    }
+    return node;
+  });
   const nodeIds = new Set(nodes.map((node) => node.id));
   const elkEdgeNodesById = new Map(nodes.map((node) => [node.id, node]));
   if (nodes.length === 0 && generateRegions.length === 0) {
@@ -2016,8 +2076,12 @@ export function elkNodeForDiagramNode(
         portY = height;
       }
     } else if (node.kind === 'mux') {
+      // Mirrors MuxNodeSvg's own muxTopPorts/sideInputs split: the port named
+      // `sel` renders on top regardless of its position in `node.ports`,
+      // falling back to the first input only when nothing is named `sel`.
       const inputs = node.ports.filter(isInputSidePort);
-      const isSelect = port.id === inputs[0]?.id;
+      const selectPort = inputs.find((candidate) => candidate.name === 'sel') ?? inputs[0];
+      const isSelect = port.id === selectPort?.id;
       if (isSelect) {
         side = 'NORTH';
         portX = width / 2;
@@ -2025,7 +2089,8 @@ export function elkNodeForDiagramNode(
       } else if (port.direction === 'output') {
         portY = height / 2;
       } else {
-        const sideInputIndex = inputs.indexOf(port) - 1;
+        const sideInputs = inputs.filter((candidate) => candidate.id !== selectPort?.id);
+        const sideInputIndex = sideInputs.indexOf(port);
         const heightUnits = Math.max(1, Math.round(height / grid));
         const startUnit = Math.max(1, Math.ceil((heightUnits - (inputs.length - 1) + 1) / 2));
         portY = grid * (startUnit + sideInputIndex);
@@ -2820,6 +2885,92 @@ function directRenderedLeadRoute(
     return undefined;
   }
   return directLeadRoute(sourceLead, targetLead);
+}
+
+// A cut stub normally has no explicit route: its label is derived beside the
+// owning port and `forceStraight` makes the two look like a wire split in
+// place. An expanded instance can grow between a previously pinned label and
+// that port, though, or over another stub's straight corridor. In that one
+// case synthesize the shortest single-lane detour around the transient frame
+// rectangles. Keeping this scoped to size overrides preserves the ordinary
+// cut appearance everywhere else.
+function cutStubRouteAroundSizeOverrides(
+  edge: DiagramEdge,
+  sizeOverrides: Record<string, { width: number; height: number }> | undefined,
+  nodesById: Map<string, DiagramNode>,
+  nodePositions: Map<string, { x: number; y: number }>,
+): Array<{ x: number; y: number }> | undefined {
+  if (!sizeOverrides || Object.keys(sizeOverrides).length === 0) return undefined;
+  const sourceNode = nodesById.get(edge.source);
+  const targetNode = nodesById.get(edge.target);
+  // Match normalizeRoutePoints' forceStraight cut-stub convention exactly:
+  // the real block keeps its outward lead, while the cut label terminates at
+  // the label handle itself. If the synthesized route started one grid past
+  // a label, endpoint reconciliation would discard its first detour leg.
+  const sourceLead = renderedLeadPoint(
+    edge.source,
+    edge.sourcePort,
+    nodesById,
+    nodePositions,
+    sourceNode?.kind !== 'netLabel',
+    'source',
+  );
+  const targetLead = renderedLeadPoint(
+    edge.target,
+    edge.targetPort,
+    nodesById,
+    nodePositions,
+    targetNode?.kind !== 'netLabel',
+    'target',
+  );
+  if (!sourceLead || !targetLead) return undefined;
+  const direct = directLeadRoute(sourceLead, targetLead);
+
+  const obstacles = Object.keys(sizeOverrides).flatMap((nodeId) => {
+    const node = nodesById.get(nodeId);
+    const position = nodePositions.get(nodeId);
+    if (!node || !position) return [];
+    const dimensions = resolvedNodeDimensions(node);
+    return [{ ...position, ...dimensions }];
+  });
+  const intersects = (route: Array<{ x: number; y: number }>) =>
+    route
+      .slice(0, -1)
+      .some((point, index) =>
+        obstacles.some((rect) => segmentIntersectsRectInterior(point, route[index + 1], rect)),
+      );
+  const currentRoute = edge.routePoints?.length ? edge.routePoints : direct;
+  if (!intersects(currentRoute)) return undefined;
+
+  const source = direct[0];
+  const target = direct[direct.length - 1];
+  const grid = diagramSizing.gridSize;
+  const laneYs = uniqueNumbers(
+    obstacles.flatMap((rect) => [
+      snapToGrid(rect.y - grid),
+      snapToGrid(rect.y + rect.height + grid),
+    ]),
+  );
+  const laneXs = uniqueNumbers(
+    obstacles.flatMap((rect) => [
+      snapToGrid(rect.x - grid),
+      snapToGrid(rect.x + rect.width + grid),
+    ]),
+  );
+  const candidates = [
+    ...laneYs.map((y) =>
+      removeRedundantRoutePoints(
+        makeOrthogonalRoute([source, { x: source.x, y }, { x: target.x, y }, target]),
+      ),
+    ),
+    ...laneXs.map((x) =>
+      removeRedundantRoutePoints(
+        makeOrthogonalRoute([source, { x, y: source.y }, { x, y: target.y }, target]),
+      ),
+    ),
+  ].sort((a, b) => routeManhattanLength(a) - routeManhattanLength(b));
+
+  return candidates.find((candidate) => !intersects(candidate));
 }
 
 function directLeadRoute(

@@ -194,6 +194,59 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
         return control;
     };
 
+    // UHDM's constant-value evaluator (getConstantInt/isLiteralExpr) reliably
+    // folds a plain literal, but a parameterized loop bound like
+    // `(1<<ADDR_WIDTH)` comes back as an unresolved vpiOperation, and neither
+    // it nor its parameter-reference operand carries decompiled source text
+    // or resolves through vpiActual from this local (loop-scoped) use site.
+    // Walk the operand tree ourselves: recurse through binary/unary
+    // arithmetic operations, and for a leaf that isn't itself a literal,
+    // resolve its bare identifier name against the module's own already-known
+    // parameter defaults (the same defaults generateParameterValues() feeds
+    // to the generate-region and replication-width constant folders).
+    std::function<std::optional<int>(vpiHandle)> constExprValue = [&](vpiHandle expr) -> std::optional<int> {
+        if (!expr) return std::nullopt;
+        vpiHandle actual = unwrapRef(expr);
+        if (!actual) actual = expr;
+        if (isLiteralExpr(actual)) return getConstantInt(actual);
+        if (vpi_get(vpiType, actual) == vpiOperation) {
+            int op_type = vpi_get(vpiOpType, actual);
+            vpiHandle op_itr = vpi_iterate(vpiOperand, actual);
+            if (!op_itr) return std::nullopt;
+            std::vector<vpiHandle> operands;
+            while (vpiHandle op = vpi_scan(op_itr)) operands.push_back(op);
+            if (operands.size() == 1) {
+                auto v = constExprValue(operands[0]);
+                if (!v) return std::nullopt;
+                if (op_type == vpiMinusOp) return -*v;
+                if (op_type == vpiPlusOp) return *v;
+                return std::nullopt;
+            }
+            if (operands.size() == 2) {
+                auto l = constExprValue(operands[0]);
+                auto r = constExprValue(operands[1]);
+                if (!l || !r) return std::nullopt;
+                switch (op_type) {
+                    case vpiAddOp: return *l + *r;
+                    case vpiSubOp: return *l - *r;
+                    case vpiMultOp: return *l * *r;
+                    case vpiDivOp: return *r != 0 ? std::optional<int>(*l / *r) : std::nullopt;
+                    case vpiLShiftOp:
+                    case vpiArithLShiftOp: return *l << *r;
+                    case vpiRShiftOp:
+                    case vpiArithRShiftOp: return *l >> *r;
+                    default: return std::nullopt;
+                }
+            }
+            return std::nullopt;
+        }
+        std::string name = getSignalName(expr);
+        if (name.empty()) return std::nullopt;
+        auto params = generateParameterValues(mod);
+        auto it = params.find(name);
+        return it != params.end() ? std::optional<int>(it->second) : std::nullopt;
+    };
+
     // The loop body must do exactly one thing: assign one uniform value to array[index].
     std::vector<vpiHandle> loop_assignments;
     findAssignments(loop, loop_assignments);
@@ -203,11 +256,12 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle init_lhs = init ? vpi_handle(vpiLhs, init) : nullptr;
     vpiHandle init_rhs = init ? vpi_handle(vpiRhs, init) : nullptr;
     std::string loop_var = getSignalName(init_lhs);
-    if (loop_var.empty() || loop_var != index_expr || !init_rhs || !isLiteralExpr(init_rhs)) return false;
+    auto init_bound = init_rhs ? constExprValue(init_rhs) : std::nullopt;
+    if (loop_var.empty() || loop_var != index_expr || !init_bound) return false;
 
     // A loop that visits every address 0..N-1 covers the full array regardless of direction:
     // ascending (init 0, counts up) or descending (init N-1, counts down). Either is canonical.
-    int init_value = getConstantInt(init_rhs);
+    int init_value = *init_bound;
     bool descending;
     if (init_value == 0) {
         descending = false;
@@ -237,9 +291,11 @@ bool DesignExtractor::isCanonicalFullArrayResetLoop(
     vpiHandle condition_rhs = vpi_scan(condition_operands);
     bool condition_has_extra_operand = vpi_scan(condition_operands) != nullptr;
     vpi_release_handle(condition_operands);
-    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var || !isLiteralExpr(condition_rhs)) return false;
+    if (!condition_lhs || !condition_rhs || condition_has_extra_operand || getSignalName(condition_lhs) != loop_var) return false;
+    auto condition_bound = constExprValue(condition_rhs);
+    if (!condition_bound) return false;
     int expected_bound = descending ? 0 : (condition_op == vpiLtOp ? array_size : array_size - 1);
-    if (getConstantInt(condition_rhs) != expected_bound) return false;
+    if (*condition_bound != expected_bound) return false;
 
     vpiHandle increment = loop_control(vpiForIncStmt);
     if (!increment) return false;
@@ -746,58 +802,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
             }
 
-            // For the reset+enable case: also tag the existing mux created by lowerStatement.
             std::string d_signal_for_addr = d_signal;
-            if (is_reset_condition && else_branch_stmt) {
-                // Check if the else branch has a clock-enable if (write_en) condition
-                vpiHandle en_cond = nullptr;
-                if (vpi_get(vpiType, else_branch_stmt) == vpiIf || vpi_get(vpiType, else_branch_stmt) == vpiIfElse) {
-                    en_cond = vpi_handle(vpiCondition, else_branch_stmt);
-                }
-                if (en_cond) {
-                    std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
-                    std::string write_candidate = reg_base + "_write_candidate";
-                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + reg_name + "_next");
-                    bool write_en_mux_exists = false;
-                    for (auto& existing : mod.nodes) {
-                        if (existing.id == candidate_id) {
-                            // Tag the existing write_en mux as stacked and fix its false port
-                            existing.metadata.isArrayNode = true;
-                            existing.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                            existing.metadata.arraySize = arr_size;
-                            for (auto& p : existing.ports) {
-                                if (p.direction == "input" && (p.signal == reg_name || p.signal == reg_base + "_if_false")) {
-                                    p.signal = reg_base;
-                                }
-                            }
-                            // Use this mux output as the chain start
-                            for (const auto& p : existing.ports) {
-                                if (p.direction == "output") { d_signal_for_addr = p.signal; break; }
-                            }
-                            write_en_mux_exists = true;
-                            break;
-                        }
-                    }
-                    if (!write_en_mux_exists) {
-                        Node write_en_mux;
-                        write_en_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + write_candidate);
-                        write_en_mux.kind = "mux";
-                        write_en_mux.label = "if " + enable_signal;
-                        write_en_mux.source = n.source;
-                        write_en_mux.metadata.isArrayNode = true;
-                        write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                        write_en_mux.metadata.arraySize = arr_size;
-                        write_en_mux.metadata.isProcedural = true;
-                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
-                        write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
-                        write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
-                        write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
-                        write_en_mux.ports.push_back({"out", "output", write_candidate, reg_width});
-                        mod.nodes.push_back(write_en_mux);
-                        d_signal_for_addr = write_candidate;
-                    }
-                }
-            }
 
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.

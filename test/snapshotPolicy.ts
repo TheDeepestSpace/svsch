@@ -1,4 +1,6 @@
 import type { FullConfig } from '@playwright/test';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 export const SNAPSHOT_THRESHOLDS = {
   playwright: {
@@ -43,6 +45,16 @@ function isPlaywrightSnapshotNamed(filePath: string, snapshotName: string): bool
   return fileName === `${snapshotName}.png` || fileName.startsWith(`${snapshotName}-`);
 }
 
+// Per-screenshot maxDiffPixels overrides for BDD pixelmatch baselines, keyed
+// by snapshot name (basename without .png). Scoped to individual screenshots
+// only — never exempt a whole scenario or skip comparison outright (issue
+// #302: a whole-scenario skip let a stale minimap baseline ship undetected).
+const bddPixelmatchOverrides: Record<string, number> = {};
+
+export function bddPixelmatchMaxDiffPixels(snapshotName: string): number {
+  return bddPixelmatchOverrides[snapshotName] ?? SNAPSHOT_THRESHOLDS.pixelmatch.bdd;
+}
+
 export function baselineThresholdFor(filePath: string): BaselineThreshold | undefined {
   const normalizedPath = filePath.replaceAll('\\', '/').replace(/^\.\//, '');
   if (!normalizedPath.endsWith('.png')) return undefined;
@@ -83,11 +95,14 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   }
 
   if (normalizedPath.startsWith('test/features/snapshots/')) {
+    const snapshotName = normalizedPath
+      .slice(normalizedPath.lastIndexOf('/') + 1)
+      .replace(/\.png$/, '');
     return {
       suite: 'bdd',
       maxDiffPixels: normalizedPath.endsWith('--cli-png.png')
         ? SNAPSHOT_THRESHOLDS.pixelmatch.cli
-        : SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+        : bddPixelmatchMaxDiffPixels(snapshotName),
       pixelmatchThreshold: SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
     };
   }
@@ -101,6 +116,21 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
   }
 
   return undefined;
+}
+
+// Mirrors playwright.config.ts's outputDir: BDD's TMPDIR is set to a larger
+// volume in CI to dodge v9fs ENOSPC on the checked-out workspace (see #275).
+// Snapshot-mismatch diff images are debug-only output written directly by
+// step code (not through Playwright's outputDir), so without this they'd
+// still land on the small workspace volume; nesting them under the
+// already-redirected results dir means the existing CI copy step picks them
+// up for free.
+export function bddVisualDiffsDir(): string {
+  return path.join(
+    os.tmpdir(),
+    `bdd-playwright-results-${path.basename(process.cwd())}`,
+    'visual-diffs',
+  );
 }
 
 // UPDATE_SNAPSHOTS is the update switch used by the custom comparators. Keep

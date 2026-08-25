@@ -23,6 +23,7 @@ import { replicateSizing } from './replicateSizing';
 import { literalSizing } from './literalSizing';
 import { gateSizing } from './gateSizing';
 import { zextSizing } from './zextSizing';
+import { boundaryPortSizing } from './boundaryPortSizing';
 import { defaultSizing } from './defaultSizing';
 import { inverterGeometryWidth } from './nodeSizingCommon';
 import type {
@@ -41,6 +42,7 @@ export { gateBubbleGap, gateBubbleRadius, gateXorGap, gateGeometryWidth } from '
 // mirroring the instance/unknown catch-all in HdlNode.tsx.
 const sizingStrategies: Partial<Record<DiagramNode['kind'], NodeSizingStrategy>> = {
   netLabel: netLabelSizing,
+  boundaryPort: boundaryPortSizing,
   port: portSizing,
   bus: aggregateSizing,
   struct: aggregateSizing,

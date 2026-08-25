@@ -3711,6 +3711,92 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(addrMux?.source?.endColumn).toBe(24);
     });
 
+    it('keeps parameterized register-array reads and writes single-driven', async () => {
+      const graph = await runParser(backend, [
+        {
+          file: 'a_top.sv',
+          text: `
+            module a_top;
+              parameterized_register_file u_register_file();
+            endmodule
+          `,
+        },
+        {
+          file: 'parameterized_register_file.sv',
+          text: fixture('parameterized_register_file.sv'),
+        },
+      ]);
+      const mod = graph.modules.parameterized_register_file;
+      expect(mod).toBeDefined();
+
+      const arrayReg = mod.nodes.find((node) => node.id === 'reg:parameterized_register_file:regs');
+      expect(arrayReg?.isArrayNode ?? arrayReg?.metadata?.isArrayNode).toBe(true);
+      expect(arrayReg?.arrayDimension ?? arrayReg?.metadata?.arrayDimension).toBe('[0:3]');
+      expect(arrayReg?.arraySize ?? arrayReg?.metadata?.arraySize).toBe(4);
+      expect(
+        mod.edges.some(
+          (edge) =>
+            edge.source === 'port:parameterized_register_file:reset_n' &&
+            edge.target === arrayReg?.id &&
+            edge.targetPort === 'reset_n',
+        ),
+      ).toBe(true);
+
+      const addressMuxes = mod.nodes.filter((node) =>
+        node.id.startsWith('mux:parameterized_register_file:regs_addr'),
+      );
+      expect(addressMuxes).toHaveLength(1);
+      expect(addressMuxes[0].ports.find((port) => port.name === 'sel')?.connectedSignal).toBe(
+        'rd_addr',
+      );
+
+      for (const address of ['rs1_addr', 'rs2_addr']) {
+        const arrayReadSignal = `regs[${address}]`;
+        const readMux = mod.nodes.find(
+          (node) =>
+            node.kind === 'mux' &&
+            node.label === 'read' &&
+            node.ports.some(
+              (port) => port.direction === 'output' && port.connectedSignal === arrayReadSignal,
+            ),
+        );
+        const outputMux = mod.nodes.find(
+          (node) =>
+            node.kind === 'mux' &&
+            node.ports.some(
+              (port) =>
+                port.direction === 'output' &&
+                port.connectedSignal === address.replace('addr', 'data'),
+            ),
+        );
+
+        expect(readMux).toBeDefined();
+        expect(
+          mod.nodes.some((node) => node.kind === 'select' && node.label === arrayReadSignal),
+        ).toBe(false);
+        expect(
+          mod.edges.filter(
+            (edge) => edge.target === outputMux?.id && edge.targetPort === 'in:false',
+          ),
+        ).toEqual([
+          expect.objectContaining({
+            source: readMux?.id,
+            signal: arrayReadSignal,
+          }),
+        ]);
+      }
+
+      for (const node of mod.nodes) {
+        if (node.kind === 'port') continue;
+        for (const port of node.ports.filter((candidate) => candidate.direction === 'input')) {
+          const incoming = mod.edges.filter(
+            (edge) => edge.target === node.id && edge.targetPort === port.id,
+          );
+          expect(incoming, `${node.id}.${port.id}`).toHaveLength(1);
+        }
+      }
+    });
+
     it(
       'merges multiple normal index expressions into a chained address ' + 'mux for the same array',
       async () => {
@@ -3908,6 +3994,48 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
     );
 
     it(
+      'folds a full-range reset loop into the stacked array register reset ' +
+        'even when the loop bound is a parameterized expression',
+      async () => {
+        // Regression for #237: `(1<<ADDR_WIDTH)` doesn't constant-fold via UHDM's
+        // vpi_get_value from this loop-scoped use site the way a literal bound
+        // does, so the reset write was previously misdetected as an ordinary
+        // variable-index write keyed on the loop variable `a` — which has no
+        // driver — leaving the final write-address mux's selector unwired.
+        const graph = await runParser(
+          backend,
+          'array_multi_index_write_reset_parameterized_bound.sv',
+          fixture('array_multi_index_write_reset_parameterized_bound.sv'),
+        );
+        const mod =
+          graph.modules.array_multi_index_write_reset_parameterized_bound ??
+          Object.values(graph.modules)[0];
+        const arrayReg = mod.nodes.find(
+          (n) => n.id === 'reg:array_multi_index_write_reset_parameterized_bound:storage',
+        );
+        expect(arrayReg).toBeDefined();
+        expect(
+          arrayReg?.ports.some((p) => p.name === 'reset' && p.connectedSignal === 'reset'),
+        ).toBe(true);
+        expect(arrayReg?.ports.some((p) => p.name === 'RV')).toBe(false);
+
+        const addressMuxes = mod.nodes.filter((n) =>
+          n.id.startsWith('mux:array_multi_index_write_reset_parameterized_bound:storage_addr'),
+        );
+        expect(addressMuxes).toHaveLength(1);
+        const finalMux = mod.nodes.find(
+          (n) => n.id === 'mux:array_multi_index_write_reset_parameterized_bound:storage_addr',
+        );
+        expect(finalMux?.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('address');
+        expect(
+          mod.edges.some(
+            (e) => e.signal === 'address' && e.target === finalMux?.id && e.targetPort === 'sel',
+          ),
+        ).toBe(true);
+      },
+    );
+
+    it(
       'promotes write_en mux to stacked and chains it upstream of the ' +
         'addr mux for conditional array writes',
       async () => {
@@ -4048,6 +4176,53 @@ describe.each(['uhdm'] as const)('parser backend: %s', (backend) => {
       expect(selectorEdge?.isStacked).toBeFalsy();
       expect(outputEdge).toBeDefined();
       expect(outputEdge?.isStacked).toBeFalsy();
+    });
+
+    // eslint-disable-next-line max-len -- descriptive test name
+    it('emits a single read path for a continuous variable-index read of a locally written memory', async () => {
+      const graph = await runParser(
+        backend,
+        'array_local_read_write.sv',
+        fixture('array_local_read_write.sv'),
+      );
+      const mod = graph.modules.array_local_read_write;
+      expect(mod).toBeDefined();
+
+      // One scalar read mux, and no parallel select node duplicating the same read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
+      expect(mod.nodes.some((n) => n.kind === 'select')).toBe(false);
+
+      const readMux = readMuxes[0];
+      expect(readMux.isArrayNode ?? readMux.metadata?.isArrayNode).toBeFalsy();
+      expect(readMux.ports.find((p) => p.name === 'in')?.connectedSignal).toBe('ram');
+      expect(readMux.ports.find((p) => p.name === 'sel')?.connectedSignal).toBe('addr');
+      expect(readMux.ports.find((p) => p.name === 'out')?.connectedSignal).toBe('read_data');
+
+      // The read mux is the only driver of the output port.
+      const outputPort = mod.nodes.find((n) => n.id === 'port:array_local_read_write:read_data');
+      const outputDrivers = mod.edges.filter((e) => e.target === outputPort?.id);
+      expect(outputDrivers).toHaveLength(1);
+      expect(outputDrivers[0].source).toBe(readMux.id);
+    });
+
+    // eslint-disable-next-line max-len -- descriptive test name
+    it('dedupes a late-pass read mux against processAssign when the index needs sanitizing', async () => {
+      const graph = await runParser(
+        backend,
+        'array_local_read_write_sanitized_index.sv',
+        fixture('array_local_read_write_sanitized_index.sv'),
+      );
+      const mod = graph.modules.array_local_read_write_sanitized_index;
+      expect(mod).toBeDefined();
+
+      // The continuous `read_data` assignment (lowered by processAssign) and the
+      // `u_reader` instance port (lowered by the late-pass array-read synthesis)
+      // both read `ram[\addr#sel ]`. Without sanitizing the late-pass mux id the
+      // same way processAssign does, the `#` produces a second, differently-ID'd
+      // mux for the identical read.
+      const readMuxes = mod.nodes.filter((n) => n.kind === 'mux' && n.label === 'read');
+      expect(readMuxes).toHaveLength(1);
     });
 
     it('marks edges between stacked nodes as isStacked', async () => {
