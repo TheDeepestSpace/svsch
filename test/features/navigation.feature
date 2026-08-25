@@ -254,3 +254,32 @@ Feature: Navigation
 
     When I click "OK"
     Then a file named "top.svg" should exist in the workspace
+
+  # Regression: the extension's Export SVG built its view straight from
+  # buildViewModel, without applyExpandedInstances — an expanded instance
+  # exported as its flat collapsed box with nothing inside, even though the
+  # canvas (and `svsch render`, issue #248) showed the spliced sub-diagram.
+  Scenario: Exporting a diagram with an expanded instance includes the spliced sub-diagram
+    Given I have a file "top.sv" in my workspace:
+      """
+      module leaf(input logic a, output logic y);
+        assign y = a;
+      endmodule
+
+      module top(input logic a, output logic y);
+        leaf u1(.a(a), .y(y));
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I click to select the block "u1"
+    And I click the "Expand" button
+    Then I should see a boundary port node named "a"
+
+    When I click the Export SVG button
+    And I click "OK"
+    Then a file named "top.svg" should exist in the workspace
+    # The dimmed instance backdrop, its boundary ports, and the child module's
+    # internal content must all be in the exported markup.
+    And the workspace file "top.svg" should contain "hdl-node-expand-ghost"
+    And the workspace file "top.svg" should contain "boundaryPort"
+    And the workspace file "top.svg" should contain "expand:instance:top:u1:"

@@ -258,7 +258,7 @@ function nodeHeightForKind(
   outputsCount: number,
   portRows: number,
 ): number {
-  if (node.kind === 'netLabel') {
+  if (node.kind === 'netLabel' || node.kind === 'boundaryPort') {
     return diagramSizing.gridSize * 2;
   }
 
@@ -446,6 +446,18 @@ function nodeWidthForKind(
     return snappedWidth(
       diagramSizing.gridSize * 4,
       measureText(node.label) + diagramSizing.gridSize / 2,
+    );
+  }
+
+  if (node.kind === 'boundaryPort') {
+    // Hugs the label: the same 12px border inset the instance's own port
+    // labels use (see InstanceNodeSvg's `x={12}`/`x={width - 12}`), the text,
+    // and matching clearance before the inner wire lead. splice.ts then
+    // widens every node in a boundary column to the column's max width (via
+    // sizeOverride) so all inner handles share a single x past every label.
+    return snappedWidth(
+      diagramSizing.gridSize * 2,
+      measureText(node.label) + diagramSizing.gridSize,
     );
   }
 
