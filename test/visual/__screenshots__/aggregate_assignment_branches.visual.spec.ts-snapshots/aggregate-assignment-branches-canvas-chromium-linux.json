@@ -1,0 +1,1007 @@
+{
+  "nodes": [
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
+      "type": "hdl",
+      "position": {
+        "x": 1848,
+        "y": 264
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out:lhs0",
+            "name": "lhs0",
+            "direction": "output"
+          },
+          {
+            "id": "out:lhs1",
+            "name": "lhs1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
+      "type": "hdl",
+      "position": {
+        "x": 1488,
+        "y": 408
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:out",
+            "name": "out",
+            "direction": "output"
+          },
+          {
+            "id": "in:rhs0",
+            "name": "rhs0",
+            "direction": "input"
+          },
+          {
+            "id": "in:rhs1",
+            "name": "rhs1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
+      "type": "hdl",
+      "position": {
+        "x": 1488,
+        "y": 288
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out:lhs0",
+            "name": "lhs0",
+            "direction": "output"
+          },
+          {
+            "id": "out:lhs1",
+            "name": "lhs1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
+      "type": "hdl",
+      "position": {
+        "x": 1128,
+        "y": 336
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:out",
+            "name": "out",
+            "direction": "output"
+          },
+          {
+            "id": "in:rhs0",
+            "name": "rhs0",
+            "direction": "input"
+          },
+          {
+            "id": "in:rhs1",
+            "name": "rhs1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
+      "type": "hdl",
+      "position": {
+        "x": 1128,
+        "y": 456
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "out:lhs0",
+            "name": "lhs0",
+            "direction": "output"
+          },
+          {
+            "id": "out:lhs1",
+            "name": "lhs1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 456
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:out",
+            "name": "out",
+            "direction": "output"
+          },
+          {
+            "id": "in:rhs0",
+            "name": "rhs0",
+            "direction": "input"
+          },
+          {
+            "id": "in:rhs1",
+            "name": "rhs1",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
+      "type": "hdl",
+      "position": {
+        "x": 1512,
+        "y": 24
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:if_sel_n11",
+            "name": "if_sel_n11",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 216
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "out:if_sel_n9",
+            "name": "if_sel_n9",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1200,
+        "y": 144
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "inverter",
+        "ports": [
+          {
+            "id": "in:data_valid",
+            "name": "data_valid",
+            "direction": "input"
+          },
+          {
+            "id": "out:if_sel_n11_in1",
+            "name": "if_sel_n11_in1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
+      "type": "hdl",
+      "position": {
+        "x": 2232,
+        "y": 384
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
+      "type": "hdl",
+      "position": {
+        "x": 1848,
+        "y": 408
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
+      "type": "hdl",
+      "position": {
+        "x": 1488,
+        "y": 552
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
+      "type": "hdl",
+      "position": {
+        "x": 2232,
+        "y": 120
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
+      "type": "hdl",
+      "position": {
+        "x": 1872,
+        "y": 144
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
+      "type": "hdl",
+      "position": {
+        "x": 1512,
+        "y": 168
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:data_reg",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 564
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:data_reg",
+            "name": "data_reg",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:data_valid",
+      "type": "hdl",
+      "position": {
+        "x": 1128,
+        "y": 564
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:data_valid",
+            "name": "data_valid",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:din",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 228
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:din",
+            "name": "din",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:flush",
+      "type": "hdl",
+      "position": {
+        "x": 1872,
+        "y": 60
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:flush",
+            "name": "flush",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:hold_en",
+      "type": "hdl",
+      "position": {
+        "x": 792,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:hold_en",
+            "name": "hold_en",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:load_en",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:load_en",
+            "name": "load_en",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:aggregate_assignment_branches:rst",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 420
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:aggregate_assignment_branches:data_reg",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 504
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reg:aggregate_assignment_branches:data_valid",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 288
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "rst",
+            "name": "rst",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:data_reg_if_true_n0",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
+      "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
+      "sourceHandle": "out:lhs0",
+      "targetHandle": "in:true",
+      "path": "M 1992 288 L 2016 288 L 2112 288 L 2112 432 L 2208 432 L 2232 432"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:data_valid_if_true_n1",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
+      "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
+      "sourceHandle": "out:lhs1",
+      "targetHandle": "in:true",
+      "path": "M 1992 336 L 2016 336 L 2112 336 L 2112 168 L 2208 168 L 2232 168"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:aggregate_assign_n2",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
+      "sourceHandle": "out:out",
+      "targetHandle": "in:in",
+      "path": "M 1632 432 L 1656 432 L 1752 432 L 1752 288 L 1824 288 L 1848 288"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:data_reg_if_true_n3",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
+      "sourceHandle": "out:lhs0",
+      "targetHandle": "in:true",
+      "path": "M 1632 312 L 1656 312 L 1752 312 L 1752 456 L 1824 456 L 1848 456"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:data_valid_if_true_n4",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
+      "sourceHandle": "out:lhs1",
+      "targetHandle": "in:true",
+      "path": "M 1632 360 L 1656 360 L 1728 360 L 1728 321 Q 1737 312 1728 303 L 1728 192 L 1848 192 L 1872 192"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:aggregate_assign_n5",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
+      "sourceHandle": "out:out",
+      "targetHandle": "in:in",
+      "path": "M 1272 360 L 1296 360 L 1392 360 L 1392 312 L 1464 312 L 1488 312"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:data_reg_if_true_n6",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
+      "sourceHandle": "out:lhs0",
+      "targetHandle": "in:true",
+      "path": "M 1272 480 L 1296 480 L 1368 480 L 1368 600 L 1464 600 L 1488 600"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:data_valid_if_true_n7",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
+      "sourceHandle": "out:lhs1",
+      "targetHandle": "in:true",
+      "path": "M 1272 528 L 1296 528 L 1368 528 L 1368 369 Q 1377 360 1368 351 L 1368 216 L 1488 216 L 1512 216"
+    },
+    {
+      "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:aggregate_assign_n8",
+      "source": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
+      "sourceHandle": "out:out",
+      "targetHandle": "in:in",
+      "path": "M 912 480 L 936 480 L 1104 480 L 1128 480"
+    },
+    {
+      "id": "edge:gate:aggregate_assignment_branches:if_sel_n11:n12:and:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:if_sel_n11",
+      "source": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
+      "sourceHandle": "out:if_sel_n11",
+      "targetHandle": "sel",
+      "path": "M 1608 72 L 1632 72 L 1824 72 L 1824 185 Q 1831 192 1824 199 L 1824 384 L 1920 384 L 1920 432"
+    },
+    {
+      "id": "edge:gate:aggregate_assignment_branches:if_sel_n11:n12:and:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:if_sel_n11",
+      "source": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
+      "sourceHandle": "out:if_sel_n11",
+      "targetHandle": "sel",
+      "path": "M 1608 72 L 1632 72 L 1824 72 L 1824 120 L 1920 120 L 1920 168"
+    },
+    {
+      "id": "edge:gate:aggregate_assignment_branches:if_sel_n9:n10:and:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:if_sel_n9",
+      "source": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
+      "sourceHandle": "out:if_sel_n9",
+      "targetHandle": "sel",
+      "path": "M 1248 264 L 1272 264 L 1361 264 Q 1368 257 1375 264 L 1464 264 L 1464 528 L 1560 528 L 1560 576"
+    },
+    {
+      "id": "edge:gate:aggregate_assignment_branches:if_sel_n9:n10:and:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:if_sel_n9",
+      "source": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
+      "sourceHandle": "out:if_sel_n9",
+      "targetHandle": "sel",
+      "path": "M 1248 264 L 1272 264 L 1361 264 Q 1368 257 1375 264 L 1464 264 L 1464 223 Q 1471 216 1464 209 L 1464 144 L 1560 144 L 1560 192"
+    },
+    {
+      "id": "edge:inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr:gate:aggregate_assignment_branches:if_sel_n11:n12:and:if_sel_n11_in1",
+      "source": "inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr",
+      "target": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
+      "sourceHandle": "out:if_sel_n11_in1",
+      "targetHandle": "port:in1",
+      "path": "M 1230.797 168 L 1248 168 L 1368 168 L 1368 96 L 1488 96 L 1512 96"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:reg:aggregate_assignment_branches:data_reg:data_reg_next",
+      "source": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
+      "target": "reg:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "out",
+      "targetHandle": "d",
+      "path": "M 2376 432 L 2400 432 L 2400 672 L 672 672 L 672 480 L 312 480 L 312 552 L 336 552 L 360 552"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:data_reg_if_false_n0",
+      "source": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
+      "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 1992 456 L 2016 456 L 2208 456 L 2232 456"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:data_reg_if_false_n3",
+      "source": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 1632 600 L 1656 600 L 1752 600 L 1752 480 L 1824 480 L 1848 480"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:reg:aggregate_assignment_branches:data_valid:data_valid_next",
+      "source": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
+      "target": "reg:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "out",
+      "targetHandle": "d",
+      "path": "M 2328 168 L 2352 168 L 2352 48 L 2184 48 L 2184 0 L 744 0 L 744 336 L 768 336"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:data_valid_if_false_n1",
+      "source": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
+      "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 1968 192 L 1992 192 L 2105 192 Q 2112 185 2119 192 L 2208 192 L 2232 192"
+    },
+    {
+      "id": "edge:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:data_valid_if_false_n4",
+      "source": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 1608 216 L 1632 216 L 1721 216 Q 1728 209 1735 216 L 1817 216 Q 1824 209 1831 216 L 1848 216 L 1872 216"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_reg:clk",
+      "source": "port:aggregate_assignment_branches:clk",
+      "target": "reg:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 144 360 L 168 360 L 336 360 L 336 471 Q 345 480 336 489 L 336 576 L 360 576"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_valid:clk",
+      "source": "port:aggregate_assignment_branches:clk",
+      "target": "reg:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "port:clk",
+      "targetHandle": "clk",
+      "path": "M 144 360 L 168 360 L 744 360 L 768 360"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:din:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose:din",
+      "source": "port:aggregate_assignment_branches:din",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
+      "sourceHandle": "port:din",
+      "targetHandle": "in:rhs0",
+      "path": "M 912 240 L 936 240 L 1032 240 L 1032 360 L 1104 360 L 1128 360"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:flush:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:flush",
+      "source": "port:aggregate_assignment_branches:flush",
+      "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
+      "sourceHandle": "port:flush",
+      "targetHandle": "sel",
+      "path": "M 1992 72 L 2016 72 L 2343 72 Q 2352 63 2361 72 L 2376 72 L 2376 288 L 2304 288 L 2304 360 L 2304 408"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:flush:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:flush",
+      "source": "port:aggregate_assignment_branches:flush",
+      "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
+      "sourceHandle": "port:flush",
+      "targetHandle": "sel",
+      "path": "M 1992 72 L 2016 72 L 2208 72 L 2208 96 L 2280 96 L 2280 144"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:hold_en:gate:aggregate_assignment_branches:if_sel_n9:n10:and:hold_en",
+      "source": "port:aggregate_assignment_branches:hold_en",
+      "target": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
+      "sourceHandle": "port:hold_en",
+      "targetHandle": "port:in0",
+      "path": "M 912 192 L 936 192 L 1032 192 L 1032 240 L 1128 240 L 1152 240"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:load_en:gate:aggregate_assignment_branches:if_sel_n11:n12:and:load_en",
+      "source": "port:aggregate_assignment_branches:load_en",
+      "target": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
+      "sourceHandle": "port:load_en",
+      "targetHandle": "port:in0",
+      "path": "M 1272 48 L 1296 48 L 1488 48 L 1512 48"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_reg:rst",
+      "source": "port:aggregate_assignment_branches:rst",
+      "target": "reg:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "port:rst",
+      "targetHandle": "rst",
+      "path": "M 144 432 L 168 432 L 336 432 L 336 471 Q 345 480 336 489 L 336 648 L 456 648 L 456 600"
+    },
+    {
+      "id": "edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_valid:rst",
+      "source": "port:aggregate_assignment_branches:rst",
+      "target": "reg:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "port:rst",
+      "targetHandle": "rst",
+      "path": "M 144 432 L 168 432 L 329 432 Q 336 425 343 432 L 840 432 L 840 384"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_reg:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose:data_reg",
+      "source": "reg:aggregate_assignment_branches:data_reg",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
+      "sourceHandle": "q",
+      "targetHandle": "in:rhs0",
+      "path": "M 552 552 L 576 552 L 663 552 Q 672 543 681 552 L 744 552 L 744 600 L 1392 600 L 1392 432 L 1464 432 L 1488 432"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_reg:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose:data_reg",
+      "source": "reg:aggregate_assignment_branches:data_reg",
+      "target": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
+      "sourceHandle": "q",
+      "targetHandle": "in:rhs0",
+      "path": "M 552 552 L 576 552 L 663 552 Q 672 543 681 552 L 744 552 L 744 480 L 768 480"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_reg:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:data_reg",
+      "source": "reg:aggregate_assignment_branches:data_reg",
+      "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
+      "sourceHandle": "q",
+      "targetHandle": "in:false",
+      "path": "M 552 552 L 576 552 L 663 552 Q 672 543 681 552 L 744 552 L 744 624 L 1464 624 L 1488 624"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_reg:port:aggregate_assignment_branches:data_reg:data_reg",
+      "source": "reg:aggregate_assignment_branches:data_reg",
+      "target": "port:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "q",
+      "targetHandle": "port:data_reg",
+      "path": "M 552 552 L 576 552 L 663 552 Q 672 543 681 552 L 744 552 L 744 576 L 768 576"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_valid:gate:aggregate_assignment_branches:if_sel_n9:n10:and:data_valid",
+      "source": "reg:aggregate_assignment_branches:data_valid",
+      "target": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
+      "sourceHandle": "q",
+      "targetHandle": "port:in1",
+      "path": "M 912 336 L 936 336 L 1023 336 Q 1032 327 1041 336 L 1104 336 L 1104 288 L 1128 288 L 1152 288"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_valid:inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr:data_valid",
+      "source": "reg:aggregate_assignment_branches:data_valid",
+      "target": "inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr",
+      "sourceHandle": "q",
+      "targetHandle": "in:data_valid",
+      "path": "M 912 336 L 936 336 L 1023 336 Q 1032 327 1041 336 L 1104 336 L 1104 247 Q 1111 240 1104 233 L 1104 168 L 1176 168 L 1200 168"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_valid:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:data_valid",
+      "source": "reg:aggregate_assignment_branches:data_valid",
+      "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
+      "sourceHandle": "q",
+      "targetHandle": "in:false",
+      "path": "M 912 336 L 936 336 L 1023 336 Q 1032 327 1041 336 L 1104 336 L 1104 247 Q 1111 240 1104 233 L 1104 120 L 1368 120 L 1368 240 L 1457 240 Q 1464 233 1471 240 L 1488 240 L 1512 240"
+    },
+    {
+      "id": "edge:reg:aggregate_assignment_branches:data_valid:port:aggregate_assignment_branches:data_valid:data_valid",
+      "source": "reg:aggregate_assignment_branches:data_valid",
+      "target": "port:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "q",
+      "targetHandle": "port:data_valid",
+      "path": "M 912 336 L 936 336 L 1023 336 Q 1032 327 1041 336 L 1104 336 L 1104 576 L 1128 576"
+    }
+  ]
+}
