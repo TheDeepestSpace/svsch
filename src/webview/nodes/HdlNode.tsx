@@ -1,7 +1,11 @@
 import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { diagramSizing } from '../../diagram/constants';
-import { diagramNodeDimensions, instanceParameterRows } from '../../diagram/nodeSizing';
+import {
+  diagramNodeDimensions,
+  resolvedNodeDimensions,
+  instanceParameterRows,
+} from '../../diagram/nodeSizing';
 import {
   distributedInterfaceSideCenters,
   interfaceTopHatHeight,
@@ -52,7 +56,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   const isInterfacePortNode = node.kind === 'interface' && nodeRole === 'port';
 
   if (node.kind === 'netLabel') {
-    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    const { width: nodeWidth, height: nodeHeight } = resolvedNodeDimensions(node);
     const parameterRows = instanceParameterRows(node);
     return (
       <NetLabelNode
@@ -72,7 +76,7 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
   }
 
   if (node.kind === 'boundaryPort') {
-    const { width: nodeWidth, height: nodeHeight } = diagramNodeDimensions(node);
+    const { width: nodeWidth, height: nodeHeight } = resolvedNodeDimensions(node);
     return (
       <BoundaryPortNode
         node={node}
