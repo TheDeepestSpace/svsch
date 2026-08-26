@@ -462,60 +462,61 @@ test.describe('generate region visual rendering', () => {
     // webview-chrome.css) that this fixture just happens to trigger now.
     // Tracked in https://github.com/TheDeepestSpace/svsch/issues/320.
     const testFn = side === 'right' ? test.fixme : test;
-    testFn(`resizes the ${side} side of a generate region with a two-grid content clamp`, async ({
-      page,
-    }) => {
-      const label = 'g_if_one';
+    testFn(
+      `resizes the ${side} side of a generate region with a two-grid content clamp`,
+      async ({ page }) => {
+        const label = 'g_if_one';
 
-      const clampView = await openFixture(
-        page,
-        'generate_if_else_regions.sv',
-        'auto',
-        'generate_if_else_regions',
-      );
-      await resizeGenerateRegionSideByGridCells(
-        page,
-        label,
-        side,
-        side === 'right' || side === 'bottom' ? -30 : 30,
-      );
-      const padding = await regionContentPadding(page, clampView, label);
-      expect(padding[side]).toBe(diagramSizing.gridSize * 2);
+        const clampView = await openFixture(
+          page,
+          'generate_if_else_regions.sv',
+          'auto',
+          'generate_if_else_regions',
+        );
+        await resizeGenerateRegionSideByGridCells(
+          page,
+          label,
+          side,
+          side === 'right' || side === 'bottom' ? -30 : 30,
+        );
+        const padding = await regionContentPadding(page, clampView, label);
+        expect(padding[side]).toBe(diagramSizing.gridSize * 2);
 
-      const expandedView = await openFixture(
-        page,
-        'generate_if_else_regions.sv',
-        'auto',
-        'generate_if_else_regions',
-      );
+        const expandedView = await openFixture(
+          page,
+          'generate_if_else_regions.sv',
+          'auto',
+          'generate_if_else_regions',
+        );
 
-      // Give g_if_one room on the side it grows into so the resize doesn't bump a
-      // neighbouring arm — arm overlap is covered by its own dedicated tests.
-      if (side === 'top') {
-        await moveGenerateRegionByGridCells(page, 'g_if_zero', 0, -3);
-      } else if (side === 'bottom') {
-        await moveGenerateRegionByGridCells(page, '/* else */', 0, 3);
-      }
+        // Give g_if_one room on the side it grows into so the resize doesn't bump a
+        // neighbouring arm — arm overlap is covered by its own dedicated tests.
+        if (side === 'top') {
+          await moveGenerateRegionByGridCells(page, 'g_if_zero', 0, -3);
+        } else if (side === 'bottom') {
+          await moveGenerateRegionByGridCells(page, '/* else */', 0, 3);
+        }
 
-      const before = await regionBounds(page, label);
+        const before = await regionBounds(page, label);
 
-      await resizeGenerateRegionSideByGridCells(
-        page,
-        label,
-        side,
-        side === 'right' || side === 'bottom' ? 3 : -3,
-      );
-      const expanded = await regionBounds(page, label);
-      expect(regionSide(expanded, side)).toBe(
-        regionSide(before, side) +
-          (side === 'right' || side === 'bottom' ? 3 : -3) * diagramSizing.gridSize,
-      );
+        await resizeGenerateRegionSideByGridCells(
+          page,
+          label,
+          side,
+          side === 'right' || side === 'bottom' ? 3 : -3,
+        );
+        const expanded = await regionBounds(page, label);
+        expect(regionSide(expanded, side)).toBe(
+          regionSide(before, side) +
+            (side === 'right' || side === 'bottom' ? 3 : -3) * diagramSizing.gridSize,
+        );
 
-      trackView(page, await viewWithRenderedGenerateRegionBounds(page, expandedView));
-      await expectGraphAndScreenshot(page, `generate-region-resize-${side}.png`, {
-        clip: await paddedGraphAndRegionsClip(page),
-      });
-    });
+        trackView(page, await viewWithRenderedGenerateRegionBounds(page, expandedView));
+        await expectGraphAndScreenshot(page, `generate-region-resize-${side}.png`, {
+          clip: await paddedGraphAndRegionsClip(page),
+        });
+      },
+    );
   }
 });
 
