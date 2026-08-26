@@ -19,11 +19,16 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "composite": true
   },
   "include": [
     "src/webview/**/*.ts",
     "src/webview/**/*.tsx",
-    "src/types/**/*.ts"
+    "src/types/**/*.ts",
+    "src/core/pathUtils.ts",
+    "src/diagram/**/*.ts",
+    "src/ir/**/*.ts",
+    "src/layout/generateRegionValidation.ts"
   ]
 }
