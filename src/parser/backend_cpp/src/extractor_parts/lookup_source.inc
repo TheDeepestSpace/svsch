@@ -1281,7 +1281,16 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
         if (port.name == signal && !port.width.empty() && port.width != "[0:0]") return port.width;
     }
 
-    std::string source_file = mod.source.file;
+    // A module first discovered through an instance can carry the instance's source
+    // file in mod.source. Port and parameter declarations still point at the module
+    // definition, so prefer those when doing source-text declaration lookup.
+    std::string source_file;
+    for (const auto& parameter : mod.parameters) {
+        if (!parameter.source.file.empty()) {
+            source_file = parameter.source.file;
+            break;
+        }
+    }
     if (source_file.empty()) {
         for (const auto& port : mod.ports) {
             if (!port.source.file.empty()) {
@@ -1290,6 +1299,7 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
             }
         }
     }
+    if (source_file.empty()) source_file = mod.source.file;
     
     if (source_file.empty()) return "";
 
@@ -1344,9 +1354,27 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
 }
 
 std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const std::string& signal) {
-    if (signal.empty() || mod.source.file.empty()) return "";
+    if (signal.empty()) return "";
 
-    std::ifstream file = openSourceFile(mod.source.file);
+    std::string source_file;
+    for (const auto& parameter : mod.parameters) {
+        if (!parameter.source.file.empty()) {
+            source_file = parameter.source.file;
+            break;
+        }
+    }
+    if (source_file.empty()) {
+        for (const auto& port : mod.ports) {
+            if (!port.source.file.empty()) {
+                source_file = port.source.file;
+                break;
+            }
+        }
+    }
+    if (source_file.empty()) source_file = mod.source.file;
+    if (source_file.empty()) return "";
+
+    std::ifstream file = openSourceFile(source_file);
     if (!file.is_open()) return "";
     std::stringstream buffer;
     buffer << file.rdbuf();
@@ -1361,11 +1389,21 @@ std::string DesignExtractor::getDeclaredArrayDimension(const Module& mod, const 
     }
     std::regex array_decl_re(
         std::string(R"((?:input|output|inout)?\s*(?:logic|reg|wire)\s+(?:\[[^\]]+\]\s+)?(?:\w+\s+)*)") + escaped
-        + R"(\s*(\[[\s\d:]+\]))"
+        + R"(\s*(\[[^\]]+\]))"
     );
     std::smatch m;
     if (std::regex_search(text, m, array_decl_re)) {
-        return m[1].str();
+        std::string range = m[1].str();
+        std::string body = trimCopy(range.substr(1, range.size() - 2));
+        size_t colon = body.find(':');
+        if (colon == std::string::npos) return "";
+
+        const auto parameters = generateParameterValues(mod);
+        auto left = evaluateConstantExpression(body.substr(0, colon), parameters);
+        auto right = evaluateConstantExpression(body.substr(colon + 1), parameters);
+        if (left && right) {
+            return "[" + std::to_string(*left) + ":" + std::to_string(*right) + "]";
+        }
     }
     return "";
 }

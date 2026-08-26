@@ -116,7 +116,7 @@ function git(args, opts = {}) {
 }
 
 // Same auth-via-env-vars approach as trim-benchmark-history.mjs and
-// comment-benchmark-summary.mjs — see their identical helpers for why.
+// generate-benchmark-stats.mjs — see their identical helpers for why.
 function gitAuthed(githubToken, args, opts = {}) {
   const authHeader = `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${githubToken}`).toString('base64')}`;
   return git(args, {
@@ -131,8 +131,8 @@ function gitAuthed(githubToken, args, opts = {}) {
   });
 }
 
-// GitHub API GET with the same retry-on-5xx backoff as
-// comment-benchmark-summary.mjs's `request` helper.
+// GitHub API GET with the same retry-on-5xx backoff pattern used elsewhere
+// in these scripts (e.g. generate-benchmark-stats.mjs's gh-pages fetches).
 export async function fetchGitHubJson(url, githubToken) {
   const maxAttempts = 4;
   for (let attempt = 1; ; attempt += 1) {
@@ -155,7 +155,7 @@ export async function fetchGitHubJson(url, githubToken) {
 
 // Fetches one run's current state/timing directly — used both by the
 // live-capture workflow (keyed off the run id workflow_run handed it) and by
-// comment-benchmark-summary.mjs's "this run so far" preview point.
+// generate-ci-duration-stats.mjs's "this run so far" preview point.
 export async function fetchRun({ owner, repo, runId, githubToken }) {
   return fetchGitHubJson(
     `https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}`,

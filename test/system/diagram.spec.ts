@@ -531,6 +531,74 @@ test('renders a resized node at its grown size when exporting the diagram as SVG
   }
 });
 
+// "Expand instance in place" (issue #232) only offers its own Expand control
+// on an instance's own module view — a freshly-spliced nested instance shows
+// none (issue #233's "cannot be expanded directly" rule). Recursive nesting
+// is achieved instead by inheritance: splicing a child module in also
+// replays whichever of the child's own instances are already marked
+// expanded in the child's own saved layout. So building a 10-level-deep
+// expansion means walking nest_level1..nest_level9 (fixture in
+// expand_nesting_chain.sv) bottom-up, expanding each one's own "u_inner"
+// once, before finally expanding nest_top's "u_inner" — which then inherits
+// the whole chain down to the innermost AND gate in one shot.
+test('expands ten nested levels down to an AND gate and captures the final view', async ({
+  workbox,
+  evaluateInVSCode,
+}) => {
+  await clearSystemLayout();
+
+  try {
+    await openSystemDiagram(workbox, evaluateInVSCode);
+
+    const webview = workbox.frameLocator('iframe.webview').frameLocator('iframe#active-frame');
+    await webview.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+
+    for (let level = 1; level <= 9; level++) {
+      const moduleName = `nest_level${level}`;
+      await openSystemModule(workbox, webview, evaluateInVSCode, moduleName);
+
+      const instanceId = await findSystemNodeId(webview, 'u_inner', 'instance');
+      if (!instanceId) {
+        throw new Error(`Could not find instance "u_inner" in module ${moduleName}`);
+      }
+      await clickSystemNode(workbox, webview, instanceId);
+      await clickSystemToolbarButton(workbox, webview, 'Expand');
+    }
+
+    await openSystemModule(workbox, webview, evaluateInVSCode, 'nest_top');
+    const topInstanceId = await findSystemNodeId(webview, 'u_inner', 'instance');
+    if (!topInstanceId) {
+      throw new Error('Could not find instance "u_inner" in module nest_top');
+    }
+    await clickSystemNode(workbox, webview, topInstanceId);
+    await clickSystemToolbarButton(workbox, webview, 'Expand');
+
+    // The AND gate only exists at the very bottom of the chain, so its
+    // presence confirms every intermediate level was inherited correctly.
+    await expect
+      .poll(
+        async () =>
+          webview.locator('html').evaluate(() => {
+            const rf = (window as any).reactFlowInstance;
+            return rf?.getNodes?.().some((node: any) => node.data?.node?.kind === 'gate') ?? false;
+          }),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
+
+    await waitForViewportToSettle(webview);
+    await webview
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.fitView({ padding: 0.1, duration: 0 }));
+    await workbox.waitForTimeout(500);
+    await dismissSystemNotifications(workbox);
+
+    await expect(workbox).toHaveScreenshot('expand-ten-levels-nested.png');
+  } finally {
+    await clearSystemLayout();
+  }
+});
+
 const SYSTEM_GRID_SIZE = 24;
 const SYSTEM_LAYOUTS_DIR = path.resolve(__dirname, '../.svsch/layouts');
 type EvaluateInVSCode = <R, Arg = void>(fn: (vscode: any, arg: Arg) => R, arg?: Arg) => Promise<R>;
@@ -970,6 +1038,42 @@ async function clickSystemNode(
         }, nodeId),
       { timeout: 5_000 },
     )
+    .toBe(true);
+}
+
+// Mirrors the BDD "I click the {string} button" step: clicking a selection
+// toolbar action (e.g. Expand) round-trips through the extension host, so
+// wait on the on-disk layout actually changing rather than a fixed delay.
+// An expanded frame can also push the toolbar past the viewport edge (it
+// mirrors the child's full standalone width) — fit the view first when that
+// happens, same as the BDD step does.
+async function clickSystemToolbarButton(
+  workbox: Page,
+  webview: FrameLocator,
+  label: string,
+): Promise<void> {
+  const before = JSON.stringify(await readSystemLayout());
+  const button = webview.locator('.svsch-selection-toolbar button', { hasText: label });
+  await expect(button).toBeVisible();
+
+  const box = await button.boundingBox();
+  const viewport = workbox.viewportSize();
+  const offScreen =
+    !box ||
+    box.x < 0 ||
+    box.y < 0 ||
+    (viewport !== null &&
+      (box.x + box.width > viewport.width || box.y + box.height > viewport.height));
+  if (offScreen) {
+    await webview
+      .locator('html')
+      .evaluate(() => (window as any).reactFlowInstance?.fitView({ padding: 0.1, duration: 0 }));
+    await workbox.waitForTimeout(300);
+  }
+
+  await button.click();
+  await expect
+    .poll(async () => JSON.stringify(await readSystemLayout()) !== before, { timeout: 15_000 })
     .toBe(true);
 }
 

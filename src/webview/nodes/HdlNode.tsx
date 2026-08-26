@@ -32,8 +32,10 @@ import { InstanceParameterList } from './shared/labels';
 import { ArrayStackSelection } from './shared/skins';
 import { nodeStackIsWide } from '../../ir/edgeStyle';
 import { NetLabelNode } from './NetLabelNode';
+import { BoundaryPortNode } from './BoundaryPortNode';
 import { InteractionContext, type NodeResizeHandle } from './shared/context';
 import type { HdlFlowNode } from './types';
+import type { ExpandContentInsets } from '../expand/splice';
 import { RegisterNodeSvg } from './register/RegisterNodeSvg';
 import { LatchNodeSvg } from './latch/LatchNodeSvg';
 import { LiteralNodeSvg } from './literal/LiteralNodeSvg';
@@ -117,6 +119,21 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
             '--svsch-node-height': `${nodeHeight}px`,
             '--svsch-instance-param-height': `${diagramSizing.gridSize * parameterRows}px`,
             '--svsch-port-width': `${diagramSizing.portWidth}px`,
+          } as React.CSSProperties
+        }
+      />
+    );
+  }
+
+  if (node.kind === 'boundaryPort') {
+    return (
+      <BoundaryPortNode
+        node={node}
+        selected={selected}
+        style={
+          {
+            '--svsch-node-width': `${nodeWidth}px`,
+            '--svsch-node-height': `${nodeHeight}px`,
           } as React.CSSProperties
         }
       />
@@ -1199,9 +1216,59 @@ export function HdlNode({ id, data, selected }: NodeProps<HdlFlowNode>): React.R
       ) : (
         <div className="hdl-node-selection-rect" aria-hidden="true" />
       )}
-      {node.kind === 'instance' && <NodeResizeControls nodeId={id} />}
+      {data.expandContentInsets && <ExpandGrabBands insets={data.expandContentInsets} />}
+      {/* An expanded instance's frame (data.expandContentInsets set — see
+          expandOverlay's dimAsExpandGhost) offers no resize handles at all:
+          its size is always derived fresh from the child module's own
+          current layout (see splice.ts's expandedFrameSize), never a manual
+          override (see the product decision in issue #232's PR review). */}
+      {node.kind === 'instance' && !data.expandContentInsets && <NodeResizeControls nodeId={id} />}
       {warningIcon}
     </button>
+  );
+}
+
+// While a node is an expanded instance's dimmed frame, its wrapper is
+// pointer-transparent (see the .hdl-node-expand-ghost rules in diagram.css)
+// so the sub-diagram area inside behaves like ordinary canvas — middle-drag
+// pans, clicks fall through to the pane. These four bands cover the frame's
+// reserved border ring (header/parameter rows, boundary-label columns,
+// bottom inset — see ExpandContentInsets in expand/splice.ts) and re-enable
+// the pointer there, so the ring is the only place the frame itself can be
+// selected or dragged from. The ring carries the ghost's translucent
+// backdrop and its inner boundary is drawn as a visible border (the
+// interior stays fully transparent so spliced wires render at full
+// brightness — see the .hdl-node-expand-ghost rules).
+function ExpandGrabBands({ insets }: { insets: ExpandContentInsets }): React.ReactElement {
+  return (
+    <React.Fragment>
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: 0, left: 0, right: 0, height: insets.top }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: insets.top, bottom: insets.bottom, left: 0, width: insets.left }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ top: insets.top, bottom: insets.bottom, right: 0, width: insets.right }}
+      />
+      <div
+        className="svsch-expand-grab-band"
+        style={{ bottom: 0, left: 0, right: 0, height: insets.bottom }}
+      />
+      <div
+        className="svsch-expand-content-border"
+        aria-hidden="true"
+        style={{
+          top: insets.top,
+          left: insets.left,
+          right: insets.right,
+          bottom: insets.bottom,
+        }}
+      />
+    </React.Fragment>
   );
 }
 
@@ -1236,7 +1303,9 @@ const RESIZE_HANDLES: NodeResizeHandle[] = [
 // Edge/corner grow-only resize hit-zones shared by the instance and register
 // branches above. The drag itself is driven from DiagramApp (main.tsx) — see
 // startNodeResize on InteractionContext. Reverting a resize lives with the
-// other selected-block actions in NodeSelectionToolbar.
+// other selected-block actions in NodeSelectionToolbar. Never rendered for an
+// expanded instance's frame (see its call site above) — that size is always
+// derived from the child module's own layout, not manually resizable.
 function NodeResizeControls({ nodeId }: { nodeId: string }): React.ReactElement {
   const { startNodeResize } = useContext(InteractionContext);
   return (

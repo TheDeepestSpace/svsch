@@ -290,6 +290,11 @@ bypass_threshold_restriction:
     path: test/visual/__screenshots__/port_array.visual.spec.ts-snapshots/array-output-port-selected-chromium-linux.png
     diff_pixel_count: 7
     reason: *array_stack_seam_reason
+  - pr: 254
+    date: 2026-08-23
+    path: test/visual/__screenshots__/example_design.visual.spec.ts-snapshots/example-design-instr-mem-chromium-linux.png
+    diff_pixel_count: 19
+    reason: Merging master's parameterized-reset-loop fix with this PR's array-connection fix now correctly types instr_mem's read-address mux "in" port as an array, adding a "[]" suffix to its label
 # Example entry:
 # bypass_threshold_restriction:
 #   - pr: 1234

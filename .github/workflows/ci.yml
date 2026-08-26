@@ -197,8 +197,20 @@ jobs:
           chmod +x dist/svsch_backend
           chmod +x dist/surelog/bin/surelog
 
-      - name: Run Unit Tests
-        run: npm test
+      - name: Run Unit Tests With Coverage
+        run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        # Full coverage/ (lcov.info + the html reporter's annotated report),
+        # so the raw report is downloadable even without report_coverage_stats
+        # below publishing it to gh-pages (e.g. a fork PR, which can't push
+        # there).
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-coverage
+          path: coverage/
+          if-no-files-found: warn
 
   test_visual:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -295,7 +307,7 @@ jobs:
     container: *container_config
     permissions:
       # The benchmark action pushes results to gh-pages on master pushes.
-      # PR comments are posted separately by report_benchmarks below.
+      # PR comments are posted separately by report_benchmark_stats below.
       contents: write
       # Needed to delete the per-shard artifacts below once they're merged.
       actions: write
@@ -360,7 +372,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.ref == 'refs/heads/master' }}
           # PR comments are posted once, combined across suites, by the
-          # report_benchmarks job below instead of per-suite here.
+          # report_benchmark_stats job below instead of per-suite here.
           comment-always: false
           comment-on-alert: false
           fail-on-alert: false
@@ -470,6 +482,11 @@ jobs:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
     runs-on: ubuntu-latest
     container: *container_config
+    # Historical runs complete in 20-90m; a run that exceeds this has hung
+    # (observed: 4+ hours stuck on "Run BDD Tests" with zero step progress)
+    # rather than just running slow, so fail fast instead of eating the
+    # default 6h job timeout.
+    timeout-minutes: 120
     strategy:
       matrix:
         shard: [1, 2, 3, 4, 5, 6, 7, 8]
@@ -508,9 +525,29 @@ jobs:
         # a single report via `playwright merge-reports`.
         run: sudo -u dev -H -E env "PATH=$PATH" "TMPDIR=/home/dev/tmp" npm run test:bdd -- --shard=${{ matrix.shard }}/8 --reporter=blob
 
+      # closeElectronApp sweeps detached NodeService helpers after every test.
+      # Keep a shard-end sweep as an invariant/backstop so a future VS Code
+      # process shape cannot survive into artifact/cache post-steps (#275).
+      - name: Kill stray VS Code processes
+        if: always()
+        run: |
+          echo "--- processes still running under .vscode-test/ ---"
+          pgrep -fa '\.vscode-test/' || echo "(none)"
+          pkill -9 -f '\.vscode-test/' || true
+
       - name: Copy Playwright Results
         if: always()
-        run: cp -r /tmp/bdd-playwright-results test-results/bdd/ || true
+        # Playwright's outputDir (traces, videos, vscode logs, visual-diff
+        # images) lives under the test step's TMPDIR (/home/dev/tmp) to dodge
+        # v9fs ENOSPC, so it must be moved into the workspace for the artifact
+        # upload below. `mv` (not `cp`) so the runner isn't holding two full
+        # copies of this data (often hundreds of MB of videos/traces) right
+        # up until the job's trailing cache-save steps run — that peak was
+        # tipping some shards into ENOSPC (see #275).
+        run: |
+          for dir in /home/dev/tmp/bdd-playwright-results-*/; do
+            [ -d "$dir" ] && mv "$dir" test-results/bdd/playwright-output || true
+          done
 
       - *mark_workspace_safe_step
 
@@ -519,6 +556,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts-${{ matrix.shard }}
+          retention-days: 1
           path: |
             test-results/bdd/**
             test/features/snapshots/**
@@ -528,6 +566,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-blob-report-${{ matrix.shard }}
+          retention-days: 1
           path: blob-report/**
 
   merge_bdd_reports:
@@ -575,6 +614,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-artifacts
+          retention-days: 7
           path: |
             test-results/bdd/**
             test/features/snapshots/**
@@ -601,6 +641,87 @@ jobs:
             }
             core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
 
+  publish_bdd_videos:
+    needs: [merge_bdd_reports]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: bdd-video-gallery-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - *checkout_step
+
+      - name: Download merged BDD artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bdd-artifacts
+          path: gallery-input
+
+      - name: Generate BDD video gallery
+        run: node scripts/generate-bdd-video-gallery.mjs gallery-input/test-results/bdd bdd-video-gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: bdd-pages
+
+      - name: Publish BDD videos and gallery
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          gallery_path="dev/bdd-videos/pr-${PR_NUMBER}"
+
+          git -C bdd-pages config user.name "github-actions[bot]"
+          git -C bdd-pages config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git -C bdd-pages rm -r --ignore-unmatch "${gallery_path}"
+          mkdir -p "bdd-pages/${gallery_path}"
+          cp -R bdd-video-gallery/. "bdd-pages/${gallery_path}/"
+          git -C bdd-pages add "${gallery_path}"
+          git -C bdd-pages commit -m "Update BDD video gallery for PR #${PR_NUMBER}"
+
+          attempt=1
+          while ! git -C bdd-pages push origin HEAD:gh-pages; do
+            if [ "$attempt" -ge 3 ]; then
+              echo "Failed to publish gh-pages after ${attempt} attempts" >&2
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            git -C bdd-pages fetch origin gh-pages
+            git -C bdd-pages rebase origin/gh-pages
+          done
+
+      - name: Link BDD video gallery from the PR
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const marker = '<!-- bdd-video-gallery -->';
+            const { owner, repo } = context.repo;
+            const pr = context.issue.number;
+            const gallery = `https://${owner.toLowerCase()}.github.io/${repo}/dev/bdd-videos/pr-${pr}/`;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `${marker}\n[Browse all BDD scenario videos](${gallery}) · [download artifact](${run})`;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
+            }
+
   generate_bdd_docs:
     needs: [prep, build_ci_image, setup, merge_bdd_reports]
     runs-on: ubuntu-latest
@@ -622,6 +743,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bdd-html-docs
+          retention-days: 7
           path: |
             test-results/bdd/**
 
@@ -666,12 +788,13 @@ jobs:
             playwright-report/system/**
             test/system/__screenshots__/**
 
-  report_benchmarks:
-    # Posts one PR comment covering every tracked CI stat — diagram-generation
-    # benchmark suites (visual) and CI workflow duration (#282) so far —
-    # instead of each stat posting its own. BDD no longer tracks a perf
-    # benchmark — see #167 tracking its re-introduction once the
-    # busy-indicator timing artifact is fixed.
+  report_benchmark_stats:
+    # Publishes diagram-generation benchmark charts (visual) to gh-pages and
+    # renders this PR's benchmark section as markdown, for report_pr_stats to
+    # fold into the combined PR stats comment below — instead of test_visual
+    # posting its own comment. BDD no longer tracks a perf benchmark — see
+    # #167 tracking its re-introduction once the busy-indicator timing
+    # artifact is fixed.
     needs: [prep, build_ci_image, merge_visual_reports, test_system]
     if: >
       github.event_name == 'pull_request' &&
@@ -679,14 +802,10 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # comment-benchmark-summary.mjs pushes the rendered chart SVGs to
+      # generate-benchmark-stats.mjs pushes the rendered chart SVGs to
       # gh-pages (a static asset next to the benchmark history data it
-      # already publishes there) before posting the PR comment.
+      # already publishes there).
       contents: write
-      pull-requests: write
-      # The CI Duration section looks up this run's own timing (Actions API)
-      # for its "so far" preview point.
-      actions: read
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -722,11 +841,153 @@ jobs:
           # how many benchmark-* artifacts exist.
           merge-multiple: true
 
-      - name: Post combined benchmark comment
+      - name: Generate benchmark stats
         run: >-
-          node scripts/comment-benchmark-summary.mjs
+          node scripts/generate-benchmark-stats.mjs
+          benchmark-stats.md
           visual-elaboration-diagram-generation-duration=benchmarks/benchmark-elaboration.json
           visual-rendering-diagram-generation-duration=benchmarks/benchmark-rendering.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload benchmark stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-benchmark
+          path: benchmark-stats.md
+
+  report_ci_duration_stats:
+    # Renders this run's elapsed wall-clock time so far, plus the recent
+    # per-master-push trend (#282), as markdown for report_pr_stats to fold
+    # into the combined PR stats comment below — mirrors
+    # report_benchmark_stats above, run at the same point in the workflow
+    # graph so the "so far" preview covers a comparable share of the run.
+    needs: [prep, build_ci_image, merge_visual_reports, test_system]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-ci-duration-stats.mjs pushes the rendered chart SVG to
+      # gh-pages (a static asset next to the CI duration history data it
+      # already publishes there).
+      contents: write
+      # Looks up this run's own timing (Actions API) for its "so far"
+      # preview point.
+      actions: read
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Fetch gh-pages baseline
+        # Tolerate the branch not existing yet (first run, before any CI
+        # duration has ever been recorded), but let real fetch failures
+        # (auth, network) fail the job instead of silently proceeding
+        # without a baseline.
+        run: |
+          set +e
+          git ls-remote --exit-code origin gh-pages >/dev/null 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          elif [ "$status" -eq 2 ]; then
+            echo "gh-pages branch not found on remote; continuing without a baseline"
+          else
+            exit "$status"
+          fi
+
+      - name: Generate CI duration stats
+        run: node scripts/generate-ci-duration-stats.mjs ci-duration-stats.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+
+      - name: Upload CI duration stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-ci-duration
+          path: ci-duration-stats.md
+
+  report_coverage_stats:
+    # Publishes the vitest html coverage report to gh-pages and renders this
+    # PR's coverage section as markdown, for report_pr_stats to fold into the
+    # combined PR stats comment below — mirrors report_benchmark_stats above,
+    # instead of test_unit publishing/posting its own.
+    needs: [prep, build_ci_image, test_unit]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-coverage-stats.mjs pushes the html coverage report to
+      # gh-pages (GitHub Pages is enabled for this repo), so it's directly
+      # browsable instead of only downloadable as a workflow artifact.
+      contents: write
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download coverage report
+        # Tolerate test_unit having produced no unit-coverage artifact at all
+        # (e.g. the run crashed before vitest wrote any report) — leaves
+        # coverage/ empty, which generate-coverage-stats.mjs already handles
+        # the same way it handles a missing coverage-summary.json.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: unit-coverage
+          path: coverage
+
+      - name: Generate coverage stats
+        run: node scripts/generate-coverage-stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload coverage stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-coverage
+          path: coverage-stats.md
+
+  report_pr_stats:
+    # Joins every pr-stats-* artifact (each one stats-generating job's
+    # rendered markdown section — coverage, diagram-generation benchmark,
+    # ...) into a single upserted PR comment. Adding a new stat to the
+    # comment only means having its job write its own <name>.md and upload
+    # it as an artifact named pr-stats-<name>.
+    needs:
+      [prep, build_ci_image, report_coverage_stats, report_benchmark_stats, report_ci_duration_stats]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      pull-requests: write
+    steps:
+      - *checkout_step
+
+      - name: Download PR stats
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: pr-stats-*
+          path: pr-stats
+          merge-multiple: true
+
+      - name: Post combined PR stats comment
+        run: node scripts/upsert-pr-stats-comment.mjs pr-stats
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
