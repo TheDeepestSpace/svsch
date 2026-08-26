@@ -553,7 +553,11 @@ void DesignExtractor::processModule(vpiHandle mod_handle) {
             read_mux.kind = "mux";
             read_mux.label = "read";
             // Read mux is NOT stacked: it consumes the stacked array input but outputs a scalar.
-            read_mux.ports.push_back({"in", "input", base, mod.arrayDimensions[base], "in"});
+            NodePort read_mux_in{"in", "input", base, mod.arrayDimensions[base], "in"};
+            read_mux_in.isArrayNode = true;
+            read_mux_in.arrayDimension = mod.arrayDimensions[base];
+            read_mux_in.arraySize = mod.arraySizes.count(base) ? mod.arraySizes[base] : 0;
+            read_mux.ports.push_back(read_mux_in);
             std::string index_width = getDeclaredSignalWidth(mod, index);
             int index_bits = bitSizeFromWidth(index_width);
             std::string sel_label = index_bits > 1 ? "s[]" : "s";
@@ -1191,7 +1195,11 @@ void DesignExtractor::processAssign(vpiHandle assign_handle, Module& mod, bool i
             std::string array_element_width = getDeclaredSignalWidth(mod, rhs_base);
             if (array_element_width.empty()) array_element_width = getWidth(rhs);
             read_mux.ports.push_back({"sel", "input", index_signal, index_width, sel_label});
-            read_mux.ports.push_back({"in", "input", rhs_base, array_element_width, "in"});
+            NodePort read_mux_in{"in", "input", rhs_base, array_element_width, "in"};
+            read_mux_in.isArrayNode = true;
+            read_mux_in.arrayDimension = mod.arrayDimensions.count(rhs_base) ? mod.arrayDimensions[rhs_base] : "";
+            read_mux_in.arraySize = mod.arraySizes.count(rhs_base) ? mod.arraySizes[rhs_base] : 0;
+            read_mux.ports.push_back(read_mux_in);
             read_mux.ports.push_back({"out", "output", out_signal, getWidth(lhs)});
             mod.nodes.push_back(read_mux);
             return;

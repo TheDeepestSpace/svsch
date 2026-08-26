@@ -81,6 +81,16 @@ export interface SavedModuleLayout {
   edges?: Record<string, SavedEdgeLayout>;
   regions?: Record<string, SavedRegionLayout>;
   viewport?: SavedViewport;
+  /**
+   * Which of this module's instance nodes currently have "Expand" toggled on
+   * (see NodeSelectionToolbar), keyed by instance node id. Read on open so a
+   * previously-expanded instance re-expands automatically. This is the only
+   * state persisted for "Expand instance in place" — the spliced content
+   * itself is never separately saved; it's always re-derived from the child
+   * module's own standalone SavedModuleLayout (see webview/expand/splice.ts's
+   * SpliceResult doc for why: only that module's own view may edit its
+   * layout, so every expand of it just reflects that layout as-is).
+   */
   expanded?: Record<string, boolean>;
   netCuts?: Record<string, SavedNetCut>;
 }

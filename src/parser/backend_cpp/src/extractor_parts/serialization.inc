@@ -280,6 +280,11 @@ json DesignExtractor::extract(const std::string& targetModule) {
                 }
                 if (!np.label.empty()) j_port["label"] = np.label;
                 if (!np.preferredSide.empty()) j_port["preferredSide"] = np.preferredSide;
+                if (np.isArrayNode) {
+                    j_port["isArrayNode"] = true;
+                    if (!np.arrayDimension.empty()) j_port["arrayDimension"] = np.arrayDimension;
+                }
+                if (np.arraySize > 0) j_port["arraySize"] = np.arraySize;
                 if (!np.source.file.empty()) {
                     j_port["source"] = {
                         {"file", np.source.file},
