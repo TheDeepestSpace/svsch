@@ -197,8 +197,20 @@ jobs:
           chmod +x dist/svsch_backend
           chmod +x dist/surelog/bin/surelog
 
-      - name: Run Unit Tests
-        run: npm test
+      - name: Run Unit Tests With Coverage
+        run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        # Full coverage/ (lcov.info + the html reporter's annotated report),
+        # so the raw report is downloadable even without report_coverage_stats
+        # below publishing it to gh-pages (e.g. a fork PR, which can't push
+        # there).
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-coverage
+          path: coverage/
+          if-no-files-found: warn
 
   test_visual:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -295,7 +307,7 @@ jobs:
     container: *container_config
     permissions:
       # The benchmark action pushes results to gh-pages on master pushes.
-      # PR comments are posted separately by report_benchmarks below.
+      # PR comments are posted separately by report_benchmark_stats below.
       contents: write
       # Needed to delete the per-shard artifacts below once they're merged.
       actions: write
@@ -360,7 +372,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.ref == 'refs/heads/master' }}
           # PR comments are posted once, combined across suites, by the
-          # report_benchmarks job below instead of per-suite here.
+          # report_benchmark_stats job below instead of per-suite here.
           comment-always: false
           comment-on-alert: false
           fail-on-alert: false
@@ -884,11 +896,13 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: pr, body });
             }
 
-  report_benchmarks:
-    # Posts one PR comment covering diagram-generation benchmark suites
-    # (visual), instead of test_visual posting its own. BDD no longer tracks a
-    # perf benchmark — see #167 tracking its re-introduction once the
-    # busy-indicator timing artifact is fixed.
+  report_benchmark_stats:
+    # Publishes diagram-generation benchmark charts (visual) to gh-pages and
+    # renders this PR's benchmark section as markdown, for report_pr_stats to
+    # fold into the combined PR stats comment below — instead of test_visual
+    # posting its own comment. BDD no longer tracks a perf benchmark — see
+    # #167 tracking its re-introduction once the busy-indicator timing
+    # artifact is fixed.
     needs: [prep, build_ci_image, merge_visual_reports, test_system]
     if: >
       github.event_name == 'pull_request' &&
@@ -896,11 +910,10 @@ jobs:
     runs-on: ubuntu-latest
     container: *container_config
     permissions:
-      # comment-benchmark-summary.mjs pushes the rendered chart SVGs to
+      # generate-benchmark-stats.mjs pushes the rendered chart SVGs to
       # gh-pages (a static asset next to the benchmark history data it
-      # already publishes there) before posting the PR comment.
+      # already publishes there).
       contents: write
-      pull-requests: write
     steps:
       - *checkout_step
       - *restore_npm_step
@@ -936,11 +949,94 @@ jobs:
           # how many benchmark-* artifacts exist.
           merge-multiple: true
 
-      - name: Post combined benchmark comment
+      - name: Generate benchmark stats
         run: >-
-          node scripts/comment-benchmark-summary.mjs
+          node scripts/generate-benchmark-stats.mjs
+          benchmark-stats.md
           visual-elaboration-diagram-generation-duration=benchmarks/benchmark-elaboration.json
           visual-rendering-diagram-generation-duration=benchmarks/benchmark-rendering.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload benchmark stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-benchmark
+          path: benchmark-stats.md
+
+  report_coverage_stats:
+    # Publishes the vitest html coverage report to gh-pages and renders this
+    # PR's coverage section as markdown, for report_pr_stats to fold into the
+    # combined PR stats comment below — mirrors report_benchmark_stats above,
+    # instead of test_unit publishing/posting its own.
+    needs: [prep, build_ci_image, test_unit]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-coverage-stats.mjs pushes the html coverage report to
+      # gh-pages (GitHub Pages is enabled for this repo), so it's directly
+      # browsable instead of only downloadable as a workflow artifact.
+      contents: write
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download coverage report
+        # Tolerate test_unit having produced no unit-coverage artifact at all
+        # (e.g. the run crashed before vitest wrote any report) — leaves
+        # coverage/ empty, which generate-coverage-stats.mjs already handles
+        # the same way it handles a missing coverage-summary.json.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: unit-coverage
+          path: coverage
+
+      - name: Generate coverage stats
+        run: node scripts/generate-coverage-stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload coverage stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-coverage
+          path: coverage-stats.md
+
+  report_pr_stats:
+    # Joins every pr-stats-* artifact (each one stats-generating job's
+    # rendered markdown section — coverage, diagram-generation benchmark,
+    # ...) into a single upserted PR comment. Adding a new stat to the
+    # comment only means having its job write its own <name>.md and upload
+    # it as an artifact named pr-stats-<name>.
+    needs: [prep, build_ci_image, report_coverage_stats, report_benchmark_stats]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      pull-requests: write
+    steps:
+      - *checkout_step
+
+      - name: Download PR stats
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: pr-stats-*
+          path: pr-stats
+          merge-multiple: true
+
+      - name: Post combined PR stats comment
+        run: node scripts/upsert-pr-stats-comment.mjs pr-stats
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

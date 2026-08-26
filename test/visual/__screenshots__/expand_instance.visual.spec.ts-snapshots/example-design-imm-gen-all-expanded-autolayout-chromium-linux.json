@@ -1,0 +1,459 @@
+{
+  "nodes": [
+    {
+      "id": "bus:imm_gen:imm_4_b0100:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1104,
+        "y": 24
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:imm_4_b0100",
+            "name": "imm_4_b0100",
+            "direction": "output"
+          },
+          {
+            "id": "in:_7:4_",
+            "name": "[7:4]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_3:0_",
+            "name": "[3:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:imm_gen:imm_4_b0111:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1104,
+        "y": 144
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:imm_4_b0111",
+            "name": "imm_4_b0111",
+            "direction": "output"
+          },
+          {
+            "id": "in:_7:4_",
+            "name": "[7:4]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_3:0_",
+            "name": "[3:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:imm_gen:imm_4_b1000:expr",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 240
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:imm_4_b1000",
+            "name": "imm_4_b1000",
+            "direction": "output"
+          },
+          {
+            "id": "in:_7:4_",
+            "name": "[7:4]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_3:0_",
+            "name": "[3:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:imm_gen:instr",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 24
+      },
+      "width": 144,
+      "height": 149,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:instr",
+            "name": "instr",
+            "direction": "input"
+          },
+          {
+            "id": "out:_3_",
+            "name": "[3]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_3:0_",
+            "name": "[3:0]",
+            "direction": "output"
+          },
+          {
+            "id": "out:_11:8_",
+            "name": "[11:8]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:imm_gen:1_b0:1_b0",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 252
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:1_b0",
+            "name": "1'b0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:imm_gen:imm_default:_0",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 276
+      },
+      "width": 96,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:imm_default",
+            "name": "imm_default",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:imm_gen:imm:instr_11:8_:imm",
+      "type": "hdl",
+      "position": {
+        "x": 1464,
+        "y": 168
+      },
+      "width": 192,
+      "height": 144,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:imm_gen:imm",
+      "type": "hdl",
+      "position": {
+        "x": 1872,
+        "y": 228
+      },
+      "width": 216,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:imm",
+            "name": "imm",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:imm_gen:instr",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:instr",
+            "name": "instr",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 24
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:imm_4_b0100_concat_in0",
+            "name": "imm_4_b0100_concat_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 144
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:imm_4_b0111_concat_in0",
+            "name": "imm_4_b0111_concat_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 240
+      },
+      "width": 144,
+      "height": 48,
+      "data": {
+        "kind": "replicate",
+        "ports": [
+          {
+            "id": "port:in",
+            "name": "in",
+            "direction": "input"
+          },
+          {
+            "id": "port:imm_4_b1000_concat_in0",
+            "name": "imm_4_b1000_concat_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:imm_gen:imm_4_b0100:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0100",
+      "source": "bus:imm_gen:imm_4_b0100:expr",
+      "target": "mux:imm_gen:imm:instr_11:8_:imm",
+      "sourceHandle": "out:imm_4_b0100",
+      "targetHandle": "in:4_b0100",
+      "path": "M 1248 48 L 1272 48 L 1368 48 L 1368 216 L 1440 216 L 1464 216"
+    },
+    {
+      "id": "edge:bus:imm_gen:imm_4_b0111:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0111",
+      "source": "bus:imm_gen:imm_4_b0111:expr",
+      "target": "mux:imm_gen:imm:instr_11:8_:imm",
+      "sourceHandle": "out:imm_4_b0111",
+      "targetHandle": "in:4_b0111",
+      "path": "M 1248 168 L 1272 168 L 1344 168 L 1344 240 L 1440 240 L 1464 240"
+    },
+    {
+      "id": "edge:bus:imm_gen:imm_4_b1000:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b1000",
+      "source": "bus:imm_gen:imm_4_b1000:expr",
+      "target": "mux:imm_gen:imm:instr_11:8_:imm",
+      "sourceHandle": "out:imm_4_b1000",
+      "targetHandle": "in:4_b1000",
+      "path": "M 888 264 L 912 264 L 1440 264 L 1464 264"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0100:expr:instr_3:0_",
+      "source": "bus:imm_gen:instr",
+      "target": "bus:imm_gen:imm_4_b0100:expr",
+      "sourceHandle": "out:_3:0_",
+      "targetHandle": "in:_3:0_",
+      "path": "M 528 96 L 552 96 L 1080 96 L 1104 96"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0111:expr:instr_3:0_",
+      "source": "bus:imm_gen:instr",
+      "target": "bus:imm_gen:imm_4_b0111:expr",
+      "sourceHandle": "out:_3:0_",
+      "targetHandle": "in:_3:0_",
+      "path": "M 528 96 L 552 96 L 720 96 L 720 216 L 1080 216 L 1104 216"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b1000:expr:instr_3:0_",
+      "source": "bus:imm_gen:instr",
+      "target": "bus:imm_gen:imm_4_b1000:expr",
+      "sourceHandle": "out:_3:0_",
+      "targetHandle": "in:_3:0_",
+      "path": "M 528 96 L 552 96 L 720 96 L 720 312 L 744 312"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:mux:imm_gen:imm:instr_11:8_:imm:instr_11:8_",
+      "source": "bus:imm_gen:instr",
+      "target": "mux:imm_gen:imm:instr_11:8_:imm",
+      "sourceHandle": "out:_11:8_",
+      "targetHandle": "sel",
+      "path": "M 528 144 L 552 144 L 648 144 L 648 105 Q 657 96 648 87 L 648 0 L 1560 0 L 1560 144 L 1560 192"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:instr_3_",
+      "source": "bus:imm_gen:instr",
+      "target": "replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "port:in",
+      "path": "M 528 48 L 552 48 L 639 48 Q 648 39 657 48 L 720 48 L 744 48"
+    },
+    {
+      "id": "edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:instr_3_",
+      "source": "bus:imm_gen:instr",
+      "target": "replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
+      "sourceHandle": "out:_3_",
+      "targetHandle": "port:in",
+      "path": "M 528 48 L 552 48 L 639 48 Q 648 39 657 48 L 720 48 L 720 87 Q 729 96 720 105 L 720 168 L 744 168"
+    },
+    {
+      "id": "edge:literal:imm_gen:1_b0:1_b0:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:1_b0",
+      "source": "literal:imm_gen:1_b0:1_b0",
+      "target": "replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
+      "sourceHandle": "port:1_b0",
+      "targetHandle": "port:in",
+      "path": "M 168 264 L 192 264 L 360 264 L 384 264"
+    },
+    {
+      "id": "edge:literal:imm_gen:imm_default:_0:mux:imm_gen:imm:instr_11:8_:imm:imm_default",
+      "source": "literal:imm_gen:imm_default:_0",
+      "target": "mux:imm_gen:imm:instr_11:8_:imm",
+      "sourceHandle": "port:imm_default",
+      "targetHandle": "in:default",
+      "path": "M 1248 288 L 1272 288 L 1440 288 L 1464 288"
+    },
+    {
+      "id": "edge:mux:imm_gen:imm:instr_11:8_:imm:port:imm_gen:imm:imm",
+      "source": "mux:imm_gen:imm:instr_11:8_:imm",
+      "target": "port:imm_gen:imm",
+      "sourceHandle": "out",
+      "targetHandle": "port:imm",
+      "path": "M 1656 240 L 1680 240 L 1848 240 L 1872 240"
+    },
+    {
+      "id": "edge:port:imm_gen:instr:bus:imm_gen:instr:instr",
+      "source": "port:imm_gen:instr",
+      "target": "bus:imm_gen:instr",
+      "sourceHandle": "port:instr",
+      "targetHandle": "in:instr",
+      "path": "M 168 48 L 192 48 L 360 48 L 384 48"
+    },
+    {
+      "id": "edge:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b0100:expr:imm_4_b0100_concat_in0",
+      "source": "replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
+      "target": "bus:imm_gen:imm_4_b0100:expr",
+      "sourceHandle": "port:imm_4_b0100_concat_in0",
+      "targetHandle": "in:_7:4_",
+      "path": "M 888 48 L 912 48 L 1080 48 L 1104 48"
+    },
+    {
+      "id": "edge:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b0111:expr:imm_4_b0111_concat_in0",
+      "source": "replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
+      "target": "bus:imm_gen:imm_4_b0111:expr",
+      "sourceHandle": "port:imm_4_b0111_concat_in0",
+      "targetHandle": "in:_7:4_",
+      "path": "M 888 168 L 912 168 L 1080 168 L 1104 168"
+    },
+    {
+      "id": "edge:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b1000:expr:imm_4_b1000_concat_in0",
+      "source": "replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
+      "target": "bus:imm_gen:imm_4_b1000:expr",
+      "sourceHandle": "port:imm_4_b1000_concat_in0",
+      "targetHandle": "in:_7:4_",
+      "path": "M 528 264 L 552 264 L 720 264 L 744 264"
+    }
+  ]
+}

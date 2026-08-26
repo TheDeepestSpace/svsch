@@ -5,6 +5,7 @@ import { diagramNodeDimensions, nodeWarningIconCenter } from '../../diagram/node
 import { InteractionContext } from './shared/context';
 import { ArrayStackLeads, handlePositionForSide, NetLabelWire } from './shared/NetLabelWire';
 import type { PositionedNode } from '../../ir/types';
+import { isExpandNamespacedId } from '../expand/splice';
 import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
@@ -21,6 +22,11 @@ export function NetLabelNode({
   style: React.CSSProperties;
 }): React.ReactElement {
   const cutNet = node.metadata?.cutNet;
+  // A label spliced in by "Expand instance in place" belongs to the child
+  // module's own diagram — it's read-only here (like the rest of the spliced
+  // content): no rename, no Tie/Revert, and its netKey is child-local so it
+  // must not join the parent's net hover-highlight group.
+  const isSpliced = isExpandNamespacedId(node.id);
   // Absent origin (labels saved before this field existed) reads as
   // synthetic: freely renameable, same as always.
   const isDeclaredName = cutNet?.origin === 'declared';
@@ -68,7 +74,7 @@ export function NetLabelNode({
   const handleSide = cutNet?.handleSide ?? 'left';
   const handlePosition = handlePositionForSide(handleSide);
   const handleType = cutNet?.role === 'source' ? 'target' : 'source';
-  const isHovered = hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
+  const isHovered = !isSpliced && hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
   // React Flow also marks this label's cut-stub edge selected whenever the
   // block it's attached to is selected (relied on by Auto Layout to carry
   // cut-net-end labels along, see main.tsx). That propagation is not this
@@ -102,11 +108,11 @@ export function NetLabelNode({
       title={isDeclaredName ? `${node.label} (declared in source — cannot be renamed)` : node.label}
       onDoubleClick={(event) => {
         event.stopPropagation();
-        if (isDeclaredName) return;
+        if (isDeclaredName || isSpliced) return;
         setEditing(true);
       }}
       onMouseEnter={() => {
-        setHovered(cutNet?.netKey);
+        if (!isSpliced) setHovered(cutNet?.netKey);
         setIsDirectlyHovered(true);
       }}
       onMouseLeave={() => {
@@ -178,7 +184,7 @@ export function NetLabelNode({
           )}
         </span>
       )}
-      {cutNet && (
+      {cutNet && !isSpliced && (
         <span className="hdl-net-label-actions">
           {isRenamed && (
             <button
