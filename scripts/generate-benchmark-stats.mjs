@@ -345,7 +345,12 @@ for (const [key, group] of chartGroups) {
   }
   if (key === 'visual' && contentByFilename.has('visual-trend.svg')) {
     const trendUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${chartCommitSha}/dev/bench-charts/pr-${PR_NUMBER}/visual-trend.svg`;
-    lines.push('', `![Visual suite historical trend](${trendUrl})`);
+    // Plain markdown image syntax never renders wider than the SVG's own
+    // pixel width, leaving the trend chart narrower than the comment body
+    // even though there's room — an explicit width="100%" <img> stretches it
+    // to fill the available width instead (height follows automatically
+    // since no height attribute is set).
+    lines.push('', `<img src="${trendUrl}" alt="Visual suite historical trend" width="100%" />`);
   }
 
   sections.push(lines.join('\n'));

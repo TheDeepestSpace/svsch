@@ -505,6 +505,8 @@ const TREND_LEGEND_ITEMS = [
   { fill: COLORS.blue, label: 'Elaboration avg' },
   { fill: COLORS.purple, label: 'Rendering avg' },
 ];
+const TREND_HEADING_TEXT =
+  'Average duration per master run (ms) — dashed segment is this PR, not yet merged';
 
 // x-axis ticks for the trend chart: one per calendar month between the first
 // of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
@@ -561,7 +563,8 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const width = Math.max(
     TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
     legendWidth(24, TREND_LEGEND_ITEMS),
-    estimateTextWidth(title, 18) + 48
+    estimateTextWidth(title, 18) + 48,
+    (TREND_LEFT_MARGIN - 12) + estimateTextWidth(TREND_HEADING_TEXT, 14) + TREND_RIGHT_MARGIN
   );
   const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
   const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
@@ -577,7 +580,7 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const yFor = (value) => originY - value * scale;
 
   const parts = [];
-  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>`);
+  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${TREND_HEADING_TEXT}</text>`);
 
   for (let tick = 0; tick <= chartMax; tick += step) {
     const y = originY - tick * scale;
