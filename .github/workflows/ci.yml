@@ -967,8 +967,7 @@ jobs:
     # ...) into a single upserted PR comment. Adding a new stat to the
     # comment only means having its job write its own <name>.md and upload
     # it as an artifact named pr-stats-<name>.
-    needs:
-      [prep, build_ci_image, report_coverage_stats, report_benchmark_stats, report_ci_duration_stats]
+    needs: [prep, build_ci_image, report_coverage_stats, report_benchmark_stats, report_ci_duration_stats]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
