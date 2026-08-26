@@ -278,6 +278,7 @@ const renderingMetric = visualGroup?.metrics.find(
 if (elaborationMetric && renderingMetric) {
   const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
   const currentRunAverages = {
+    dateMs: Date.now(),
     elaborationAvgMs: average(elaborationMetric.entries.map((entry) => entry.value)),
     renderingAvgMs: average(renderingMetric.entries.map((entry) => entry.value)),
   };
