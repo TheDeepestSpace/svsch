@@ -108,7 +108,7 @@ bool DesignExtractor::isNonZeroResetValue(vpiHandle handle) {
 
     if (type == vpiOperation) {
         int opType = vpi_get(vpiOpType, actual);
-        if (opType == 75) { // vpiAssignmentPatternOp in UHDM
+        if (opType == 75 || opType == vpiConcatOp) { // assignment pattern or concatenation
             vpiHandle operand_itr = vpi_iterate(vpiOperand, actual);
             if (operand_itr) {
                 bool all_zero = true;
@@ -369,19 +369,40 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     std::vector<vpiHandle> assignments;
     findAssignments(stmt, assignments);
 
+    bool statement_has_case = findFirstCase(stmt) != nullptr;
+    bool has_lowerable_aggregate_assignments = false;
     std::vector<vpiHandle> aggregate_assignments;
     std::map<std::string, std::vector<vpiHandle>> reg_assigns;
+    std::map<std::string, vpiHandle> reg_lhs_handles;
     std::vector<std::string> reg_first_seen_order;
+    std::set<std::string> concat_derived_regs;
     for (vpiHandle a : assignments) {
         vpiHandle lhs = vpi_handle(vpiLhs, a);
         if (lhs) {
             if (isConcatOperation(lhs)) {
-                aggregate_assignments.push_back(a);
+                // Case statements still use the legacy aggregate path below. All other
+                // concat LHS assignments participate in lowerStatement so branch priority
+                // and register creation are shared with scalar assignments.
+                if (statement_has_case) {
+                    aggregate_assignments.push_back(a);
+                    continue;
+                }
+
+                has_lowerable_aggregate_assignments = true;
+                auto segments = flattenAggregateSegments(lhs, mod, true, true, "", {});
+                for (const auto& segment : segments) {
+                    if (segment.signal.empty()) continue;
+                    if (!reg_assigns.count(segment.signal)) reg_first_seen_order.push_back(segment.signal);
+                    reg_assigns[segment.signal].push_back(a);
+                    if (!reg_lhs_handles.count(segment.signal)) reg_lhs_handles[segment.signal] = segment.handle;
+                    concat_derived_regs.insert(segment.signal);
+                }
                 continue;
             }
             std::string sig_name = getSignalName(lhs);
             if (!reg_assigns.count(sig_name)) reg_first_seen_order.push_back(sig_name);
             reg_assigns[sig_name].push_back(a);
+            if (!reg_lhs_handles.count(sig_name)) reg_lhs_handles[sig_name] = lhs;
         }
     }
 
@@ -458,7 +479,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
     }
 
     std::map<std::string, LoweredValue> lowered_values;
-    if (!is_reset_condition && containsIf(stmt) && !findFirstCase(stmt)) {
+    if (!is_reset_condition && containsIf(stmt) && !statement_has_case) {
         std::set<std::string> targets;
         collectAssignmentTargets(stmt, targets);
         std::map<std::string, std::string> desired_outputs;
@@ -470,6 +491,36 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         std::map<std::string, std::string> desired_outputs;
         for (const auto& target : targets) desired_outputs[target] = target + "_next";
         lowered_values = lowerStatement(else_branch_stmt, mod, true, desired_outputs, always_handle);
+    } else if (has_lowerable_aggregate_assignments && !statement_has_case) {
+        vpiHandle lowered_stmt = is_reset_condition && else_branch_stmt ? else_branch_stmt : stmt;
+        std::set<std::string> targets;
+        collectAssignmentTargets(lowered_stmt, targets);
+        std::map<std::string, std::string> desired_outputs;
+        for (const auto& target : targets) desired_outputs[target] = target + "_next";
+        lowered_values = lowerStatement(lowered_stmt, mod, true, desired_outputs, always_handle);
+    }
+
+    // A non-zero aggregate reset needs the same bit breakout as a data assignment so
+    // each register's RV port receives only its own slice. Zero resets remain implicit.
+    std::map<std::string, LoweredValue> aggregate_reset_values;
+    if (is_reset_condition && reset_branch_stmt && has_lowerable_aggregate_assignments) {
+        bool has_nonzero_aggregate_reset = false;
+        for (vpiHandle assignment : assignments) {
+            vpiHandle lhs = vpi_handle(vpiLhs, assignment);
+            if (isConcatOperation(lhs) && isAncestor(reset_branch_stmt, assignment)
+                && isNonZeroResetValue(vpi_handle(vpiRhs, assignment))) {
+                has_nonzero_aggregate_reset = true;
+                break;
+            }
+        }
+        if (has_nonzero_aggregate_reset) {
+            std::set<std::string> reset_targets;
+            collectAssignmentTargets(reset_branch_stmt, reset_targets);
+            std::map<std::string, std::string> reset_outputs;
+            for (const auto& target : reset_targets) reset_outputs[target] = target + "_reset_val";
+            aggregate_reset_values = lowerStatement(
+                reset_branch_stmt, mod, true, reset_outputs, always_handle);
+        }
     }
 
     for (vpiHandle aggregate_assign : aggregate_assignments) {
@@ -533,7 +584,9 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
 
     for (auto const& reg_name : reg_name_order) {
         auto const& reg_assigns_vec = reg_assigns.at(reg_name);
-        vpiHandle lhs_first = vpi_handle(vpiLhs, reg_assigns_vec[0]);
+        vpiHandle lhs_first = reg_lhs_handles.count(reg_name)
+            ? reg_lhs_handles.at(reg_name)
+            : vpi_handle(vpiLhs, reg_assigns_vec[0]);
         std::string reg_base = getBaseSignalName(lhs_first);
         ensureDeclaredArray(mod, reg_base);
 
@@ -600,7 +653,10 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         if (!n.metadata.typeName.empty()) n.metadata.typeSource = getTypeSource(lhs_first);
         // For constant part/bit selects (r[3:2], r[0], etc.) the register name
         // already encodes the bit range — don't use the base signal's declared width
-        // (which would be the full bus width) as the cell width.
+        // (which would be the full bus width) as the cell width. Compute the real
+        // slice width from the range itself (e.g. "[3:2]" -> 2 bits) rather than
+        // hardcoding 1 bit, which under-reported the width of multi-bit part-selects
+        // to every downstream consumer (D/Q port thickness, bus-composition wiring).
         std::string reg_width = "";
         {
             size_t bracket = reg_name.find('[');
@@ -609,7 +665,21 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 if (!sel.empty() && sel.back() == ']') sel.pop_back();
                 bool is_const = !sel.empty() && std::all_of(sel.begin(), sel.end(),
                     [](char c){ return std::isdigit((unsigned char)c) || c == ':' || c == '-'; });
-                if (is_const) reg_width = "[0:0]"; // suppresses width label; name has the range
+                if (is_const) {
+                    size_t colon = sel.find(':');
+                    if (colon == std::string::npos) {
+                        reg_width = "[0:0]";
+                    } else {
+                        try {
+                            int msb = std::stoi(sel.substr(0, colon));
+                            int lsb = std::stoi(sel.substr(colon + 1));
+                            int bits = std::abs(msb - lsb) + 1;
+                            reg_width = bits > 1 ? "[" + std::to_string(bits - 1) + ":0]" : "[0:0]";
+                        } catch (...) {
+                            reg_width = "[0:0]";
+                        }
+                    }
+                }
             }
         }
         if (reg_width.empty()) reg_width = getDeclaredSignalWidth(mod, reg_base);
@@ -737,7 +807,10 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
 
         if (reset_rhs && isNonZeroResetValue(reset_rhs)) {
             std::string rv_signal;
-            if (isLiteralExpr(reset_rhs)) {
+            if (isConcatOperation(vpi_handle(vpiLhs, reset_assign_handle))
+                && aggregate_reset_values.count(reg_name)) {
+                rv_signal = aggregate_reset_values.at(reg_name).signal;
+            } else if (isLiteralExpr(reset_rhs)) {
                 rv_signal = getLiteralLabel(reset_rhs);
                 ensureLiteralNode(reset_rhs, mod, rv_signal, reg_width, reset_assign_handle, getAssignmentRhsText(reset_assign_handle));
             } else {
@@ -802,58 +875,7 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
                 }
             }
 
-            // For the reset+enable case: also tag the existing mux created by lowerStatement.
             std::string d_signal_for_addr = d_signal;
-            if (is_reset_condition && else_branch_stmt) {
-                // Check if the else branch has a clock-enable if (write_en) condition
-                vpiHandle en_cond = nullptr;
-                if (vpi_get(vpiType, else_branch_stmt) == vpiIf || vpi_get(vpiType, else_branch_stmt) == vpiIfElse) {
-                    en_cond = vpi_handle(vpiCondition, else_branch_stmt);
-                }
-                if (en_cond) {
-                    std::string enable_signal = getOrPromoteExpr(en_cond, mod, reg_base + "_en_sel", true);
-                    std::string write_candidate = reg_base + "_write_candidate";
-                    std::string candidate_id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + reg_name + "_next");
-                    bool write_en_mux_exists = false;
-                    for (auto& existing : mod.nodes) {
-                        if (existing.id == candidate_id) {
-                            // Tag the existing write_en mux as stacked and fix its false port
-                            existing.metadata.isArrayNode = true;
-                            existing.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                            existing.metadata.arraySize = arr_size;
-                            for (auto& p : existing.ports) {
-                                if (p.direction == "input" && (p.signal == reg_name || p.signal == reg_base + "_if_false")) {
-                                    p.signal = reg_base;
-                                }
-                            }
-                            // Use this mux output as the chain start
-                            for (const auto& p : existing.ports) {
-                                if (p.direction == "output") { d_signal_for_addr = p.signal; break; }
-                            }
-                            write_en_mux_exists = true;
-                            break;
-                        }
-                    }
-                    if (!write_en_mux_exists) {
-                        Node write_en_mux;
-                        write_en_mux.id = sanitizeId("mux:" + mod.name + ":" + reg_name + ":" + enable_signal + ":" + write_candidate);
-                        write_en_mux.kind = "mux";
-                        write_en_mux.label = "if " + enable_signal;
-                        write_en_mux.source = n.source;
-                        write_en_mux.metadata.isArrayNode = true;
-                        write_en_mux.metadata.arrayDimension = mod.arrayDimensions[reg_base];
-                        write_en_mux.metadata.arraySize = arr_size;
-                        write_en_mux.metadata.isProcedural = true;
-                        std::string en_width = getDeclaredSignalWidth(mod, enable_signal);
-                        write_en_mux.ports.push_back({"sel", "input", enable_signal, en_width});
-                        write_en_mux.ports.push_back({"true", "input", d_signal, reg_width, "true"});
-                        write_en_mux.ports.push_back({"false", "input", reg_base, reg_width, "false"});
-                        write_en_mux.ports.push_back({"out", "output", write_candidate, reg_width});
-                        mod.nodes.push_back(write_en_mux);
-                        d_signal_for_addr = write_candidate;
-                    }
-                }
-            }
 
             // For partial-reset array writes (rst only affects M[address], not the whole array),
             // insert a rst mux between the write candidate and the addr mux.
@@ -966,6 +988,18 @@ void DesignExtractor::processAlwaysFf(vpiHandle always_handle, Module& mod) {
         }
 
         mod.nodes.push_back(n);
+
+        // A concat-LHS target (e.g. `registered[2]`) produced its own register above;
+        // wire its Q output into the base signal's bus composition node so downstream
+        // readers (including the module output port) see the registered value instead
+        // of being left disconnected. Plain (non-concat) partial-bit-select writes are
+        // left to synthesizeBusCompositionNodes, which coalesces adjacent slices.
+        if (!is_array_reg && !is_variable_index && concat_derived_regs.count(reg_name)
+            && reg_name.find('[') != std::string::npos) {
+            size_t bracket = reg_name.find('[');
+            ensureBusSliceCompositionInput(
+                mod, reg_base, reg_name.substr(bracket), reg_name, getSourceInfo(lhs_first));
+        }
     }
 }
 
@@ -1373,10 +1407,24 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerStatement(
         result = processLoop(stmt, mod, is_clocked, desired_outputs, source_handle, result);
     } else if (type == vpiAssignment || type == 84 || type == 85) {
         vpiHandle lhs = vpi_handle(vpiLhs, stmt);
-        std::string target = getSignalName(lhs);
-        if (!target.empty()) {
-            std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
-            result[target] = lowerAssignment(stmt, mod, branch_pref, is_clocked, result);
+        if (isConcatOperation(lhs)) {
+            std::map<std::string, std::string> aggregate_outputs = desired_outputs;
+            std::set<std::string> aggregate_targets;
+            collectAggregateTargetNames(lhs, aggregate_targets);
+            for (const auto& target : aggregate_targets) {
+                if (!aggregate_outputs.count(target)) {
+                    aggregate_outputs[target] = target + "_branch_" + nextId();
+                }
+            }
+            auto aggregate_values = lowerAggregateAssignment(
+                stmt, mod, is_clocked, result, "", aggregate_outputs);
+            for (const auto& [target, value] : aggregate_values) result[target] = value;
+        } else {
+            std::string target = getSignalName(lhs);
+            if (!target.empty()) {
+                std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
+                result[target] = lowerAssignment(stmt, mod, branch_pref, is_clocked, result);
+            }
         }
     }
  else if (type == vpiEventControl) {
@@ -1386,10 +1434,24 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerStatement(
         findAssignments(stmt, assigns);
         for (vpiHandle assign : assigns) {
             vpiHandle lhs = vpi_handle(vpiLhs, assign);
-            std::string target = getSignalName(lhs);
-            if (!target.empty()) {
-                std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
-                result[target] = lowerAssignment(assign, mod, branch_pref, is_clocked, result);
+            if (isConcatOperation(lhs)) {
+                std::map<std::string, std::string> aggregate_outputs = desired_outputs;
+                std::set<std::string> aggregate_targets;
+                collectAggregateTargetNames(lhs, aggregate_targets);
+                for (const auto& target : aggregate_targets) {
+                    if (!aggregate_outputs.count(target)) {
+                        aggregate_outputs[target] = target + "_branch_" + nextId();
+                    }
+                }
+                auto aggregate_values = lowerAggregateAssignment(
+                    assign, mod, is_clocked, result, "", aggregate_outputs);
+                for (const auto& [target, value] : aggregate_values) result[target] = value;
+            } else {
+                std::string target = getSignalName(lhs);
+                if (!target.empty()) {
+                    std::string branch_pref = desired_outputs.count(target) ? desired_outputs.at(target) : target + "_branch_" + nextId();
+                    result[target] = lowerAssignment(assign, mod, branch_pref, is_clocked, result);
+                }
             }
         }
     }
