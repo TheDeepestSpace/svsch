@@ -1,0 +1,1603 @@
+{
+  "nodes": [
+    {
+      "id": "literal:control_unit:alu_op_4_b0001:3_b001",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 2196
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:alu_op_4_b0001",
+            "name": "alu_op_4_b0001",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_op_4_b0111",
+            "name": "alu_op_4_b0111",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:control_unit:alu_op_4_b0010:3_b010",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 2100
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:alu_op_4_b0010",
+            "name": "alu_op_4_b0010",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:control_unit:alu_op_4_b0011:3_b011",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 2148
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:alu_op_4_b0011",
+            "name": "alu_op_4_b0011",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "type": "hdl",
+      "position": {
+        "x": 48,
+        "y": 2244
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:alu_op_branch_n2",
+            "name": "alu_op_branch_n2",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_op_4_b0000",
+            "name": "alu_op_4_b0000",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_op_4_b0100",
+            "name": "alu_op_4_b0100",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_op_4_b0101",
+            "name": "alu_op_4_b0101",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_op_4_b0110",
+            "name": "alu_op_4_b0110",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 204
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:reg_write_4_b0000",
+            "name": "reg_write_4_b0000",
+            "direction": "output"
+          },
+          {
+            "id": "port:reg_write_4_b0001",
+            "name": "reg_write_4_b0001",
+            "direction": "output"
+          },
+          {
+            "id": "port:reg_write_4_b0010",
+            "name": "reg_write_4_b0010",
+            "direction": "output"
+          },
+          {
+            "id": "port:reg_write_4_b0011",
+            "name": "reg_write_4_b0011",
+            "direction": "output"
+          },
+          {
+            "id": "port:reg_write_4_b0100",
+            "name": "reg_write_4_b0100",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_4_b0100",
+            "name": "alu_src_4_b0100",
+            "direction": "output"
+          },
+          {
+            "id": "port:reg_write_4_b0101",
+            "name": "reg_write_4_b0101",
+            "direction": "output"
+          },
+          {
+            "id": "port:mem_to_reg_4_b0101",
+            "name": "mem_to_reg_4_b0101",
+            "direction": "output"
+          },
+          {
+            "id": "port:mem_write_4_b0110",
+            "name": "mem_write_4_b0110",
+            "direction": "output"
+          },
+          {
+            "id": "port:branch_4_b0111",
+            "name": "branch_4_b0111",
+            "direction": "output"
+          },
+          {
+            "id": "port:jump_4_b1000",
+            "name": "jump_4_b1000",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "type": "hdl",
+      "position": {
+        "x": 120,
+        "y": 1140
+      },
+      "width": 48,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:reg_write_branch_n0",
+            "name": "reg_write_branch_n0",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_branch_n1",
+            "name": "alu_src_branch_n1",
+            "direction": "output"
+          },
+          {
+            "id": "port:mem_write_branch_n3",
+            "name": "mem_write_branch_n3",
+            "direction": "output"
+          },
+          {
+            "id": "port:mem_to_reg_branch_n4",
+            "name": "mem_to_reg_branch_n4",
+            "direction": "output"
+          },
+          {
+            "id": "port:branch_branch_n5",
+            "name": "branch_branch_n5",
+            "direction": "output"
+          },
+          {
+            "id": "port:jump_branch_n6",
+            "name": "jump_branch_n6",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_4_b0000",
+            "name": "alu_src_4_b0000",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_4_b0001",
+            "name": "alu_src_4_b0001",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_4_b0010",
+            "name": "alu_src_4_b0010",
+            "direction": "output"
+          },
+          {
+            "id": "port:alu_src_4_b0011",
+            "name": "alu_src_4_b0011",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:alu_op:opcode:alu_op",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 2064
+      },
+      "width": 480,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:alu_src:opcode:alu_src",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 1056
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:branch:opcode:branch",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 1392
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:jump:opcode:jump",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 1728
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 720
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:mem_write:opcode:mem_write",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 384
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:control_unit:reg_write:opcode:reg_write",
+      "type": "hdl",
+      "position": {
+        "x": 408,
+        "y": 48
+      },
+      "width": 384,
+      "height": 288,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0000",
+            "name": "4'b0000",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0001",
+            "name": "4'b0001",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0010",
+            "name": "4'b0010",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0011",
+            "name": "4'b0011",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0100",
+            "name": "4'b0100",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0101",
+            "name": "4'b0101",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0110",
+            "name": "4'b0110",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b0111",
+            "name": "4'b0111",
+            "direction": "input"
+          },
+          {
+            "id": "in:4_b1000",
+            "name": "4'b1000",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:alu_op",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 2196
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:alu_op",
+            "name": "alu_op",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:alu_src",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 1188
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:alu_src",
+            "name": "alu_src",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:branch",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 1524
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:branch",
+            "name": "branch",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:jump",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 1860
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:jump",
+            "name": "jump",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:mem_to_reg",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 852
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:mem_to_reg",
+            "name": "mem_to_reg",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:mem_write",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 516
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:mem_write",
+            "name": "mem_write",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:opcode",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 1020
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:opcode",
+            "name": "opcode",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:control_unit:reg_write",
+      "type": "hdl",
+      "position": {
+        "x": 1080,
+        "y": 180
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:reg_write",
+            "name": "reg_write",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:literal:control_unit:alu_op_4_b0001:3_b001:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0001",
+      "source": "literal:control_unit:alu_op_4_b0001:3_b001",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0001",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 2208 L 192 2208 L 360 2208 L 360 2136 L 384 2136"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_4_b0001:3_b001:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0111",
+      "source": "literal:control_unit:alu_op_4_b0001:3_b001",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0111",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 2208 L 192 2208 L 360 2208 L 360 2280 L 384 2280"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_4_b0010:3_b010:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0010",
+      "source": "literal:control_unit:alu_op_4_b0010:3_b010",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0010",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 2112 L 192 2112 L 288 2112 L 288 2160 L 360 2160 L 384 2160"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_4_b0011:3_b011:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0011",
+      "source": "literal:control_unit:alu_op_4_b0011:3_b011",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0011",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 2160 L 192 2160 L 264 2160 L 264 2184 L 360 2184 L 384 2184"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0000",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0000",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 360 2112 L 384 2112"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0100",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0100",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 360 2208 L 384 2208"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0101",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0101",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 360 2232 L 384 2232"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0110",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_4_b0110",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 384 2256"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_branch_n2:port:alu_op_branch_n2:in:4_b1000",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_branch_n2",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 360 2304 L 384 2304"
+    },
+    {
+      "id": "edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_branch_n2:port:alu_op_branch_n2:in:default",
+      "source": "literal:control_unit:alu_op_branch_n2:3_b000",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:alu_op_branch_n2",
+      "targetHandle": "in:default",
+      "path": "M 168 2256 L 192 2256 L 360 2256 L 360 2328 L 384 2328"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0100",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_4_b0100",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 1200 L 408 1200"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:branch:opcode:branch:branch_4_b0111",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_4_b0111",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 1608 L 408 1608"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:jump:opcode:jump:jump_4_b1000",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_4_b1000",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 1968 L 408 1968"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_4_b0101",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_4_b0101",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 888 L 408 888"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:mem_write:opcode:mem_write:mem_write_4_b0110",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_4_b0110",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 576 L 408 576"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0000",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0000",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 96 L 408 96"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0001",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0001",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 120 L 408 120"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0010",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0010",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 144 L 408 144"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0011",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0011",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 168 L 408 168"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0100",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0100",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 216 L 192 216 L 384 216 L 384 192 L 408 192"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0101",
+      "source": "literal:control_unit:reg_write_4_b0000:1_b1",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_4_b0101",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 216 L 192 216 L 384 216 L 408 216"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_4_b0000",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1104 L 408 1104"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0001",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_4_b0001",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1128 L 408 1128"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0010",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_4_b0010",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 408 1152"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0011",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_4_b0011",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1176 L 408 1176"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0101",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_branch_n1",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1224 L 408 1224"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0110",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_branch_n1",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1248 L 408 1248"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0111",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_branch_n1",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1272 L 408 1272"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b1000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_branch_n1",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1296 L 408 1296"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:alu_src_branch_n1",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1320 L 408 1320"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1440 L 408 1440"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0001",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1464 L 408 1464"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0010",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1488 L 408 1488"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0011",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1512 L 408 1512"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0100",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1536 L 408 1536"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0101",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1560 L 408 1560"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0110",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1584 L 408 1584"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b1000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1632 L 408 1632"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:branch_branch_n5",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1656 L 408 1656"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1776 L 408 1776"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0001",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1800 L 408 1800"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0010",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1824 L 408 1824"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0011",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1848 L 408 1848"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0100",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1872 L 408 1872"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0101",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1896 L 408 1896"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0110",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1920 L 408 1920"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0111",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1944 L 408 1944"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:jump_branch_n6",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 1992 L 408 1992"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 768 L 408 768"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0001",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 792 L 408 792"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0010",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 816 L 408 816"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0011",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 840 L 408 840"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0100",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 864 L 408 864"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0110",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 912 L 408 912"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0111",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 936 L 408 936"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b1000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 960 L 408 960"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:mem_to_reg_branch_n4",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 984 L 408 984"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 432 L 408 432"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0001",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0001",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 456 L 408 456"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0010",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0010",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 480 L 408 480"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0011",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0011",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 504 L 408 504"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0100",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0100",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 528 L 408 528"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0101",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0101",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 552 L 408 552"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0111",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 600 L 408 600"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b1000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 624 L 408 624"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:mem_write_branch_n3",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 648 L 408 648"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b0110",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_branch_n0",
+      "targetHandle": "in:4_b0110",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 240 L 408 240"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b0111",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_branch_n0",
+      "targetHandle": "in:4_b0111",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 264 L 408 264"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b1000",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_branch_n0",
+      "targetHandle": "in:4_b1000",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 288 L 408 288"
+    },
+    {
+      "id": "edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:default",
+      "source": "literal:control_unit:reg_write_branch_n0:1_b0",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:reg_write_branch_n0",
+      "targetHandle": "in:default",
+      "path": "M 168 1152 L 192 1152 L 384 1152 L 384 312 L 408 312"
+    },
+    {
+      "id": "edge:mux:control_unit:alu_op:opcode:alu_op:port:control_unit:alu_op:alu_op",
+      "source": "mux:control_unit:alu_op:opcode:alu_op",
+      "target": "port:control_unit:alu_op",
+      "sourceHandle": "out",
+      "targetHandle": "port:alu_op",
+      "path": "M 864 2208 L 888 2208 L 1056 2208 L 1080 2208"
+    },
+    {
+      "id": "edge:mux:control_unit:alu_src:opcode:alu_src:port:control_unit:alu_src:alu_src",
+      "source": "mux:control_unit:alu_src:opcode:alu_src",
+      "target": "port:control_unit:alu_src",
+      "sourceHandle": "out",
+      "targetHandle": "port:alu_src",
+      "path": "M 792 1200 L 816 1200 L 1056 1200 L 1080 1200"
+    },
+    {
+      "id": "edge:mux:control_unit:branch:opcode:branch:port:control_unit:branch:branch",
+      "source": "mux:control_unit:branch:opcode:branch",
+      "target": "port:control_unit:branch",
+      "sourceHandle": "out",
+      "targetHandle": "port:branch",
+      "path": "M 792 1536 L 816 1536 L 1056 1536 L 1080 1536"
+    },
+    {
+      "id": "edge:mux:control_unit:jump:opcode:jump:port:control_unit:jump:jump",
+      "source": "mux:control_unit:jump:opcode:jump",
+      "target": "port:control_unit:jump",
+      "sourceHandle": "out",
+      "targetHandle": "port:jump",
+      "path": "M 792 1872 L 816 1872 L 1056 1872 L 1080 1872"
+    },
+    {
+      "id": "edge:mux:control_unit:mem_to_reg:opcode:mem_to_reg:port:control_unit:mem_to_reg:mem_to_reg",
+      "source": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "target": "port:control_unit:mem_to_reg",
+      "sourceHandle": "out",
+      "targetHandle": "port:mem_to_reg",
+      "path": "M 792 864 L 816 864 L 1056 864 L 1080 864"
+    },
+    {
+      "id": "edge:mux:control_unit:mem_write:opcode:mem_write:port:control_unit:mem_write:mem_write",
+      "source": "mux:control_unit:mem_write:opcode:mem_write",
+      "target": "port:control_unit:mem_write",
+      "sourceHandle": "out",
+      "targetHandle": "port:mem_write",
+      "path": "M 792 528 L 816 528 L 1056 528 L 1080 528"
+    },
+    {
+      "id": "edge:mux:control_unit:reg_write:opcode:reg_write:port:control_unit:reg_write:reg_write",
+      "source": "mux:control_unit:reg_write:opcode:reg_write",
+      "target": "port:control_unit:reg_write",
+      "sourceHandle": "out",
+      "targetHandle": "port:reg_write",
+      "path": "M 792 192 L 816 192 L 1056 192 L 1080 192"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:alu_op:opcode:alu_op:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:alu_op:opcode:alu_op",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 1143 Q 369 1152 360 1161 L 360 2040 L 624 2040 L 624 2088"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:alu_src:opcode:alu_src:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:alu_src:opcode:alu_src",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 375 1032 Q 384 1023 393 1032 L 600 1032 L 600 1080"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:branch:opcode:branch:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:branch:opcode:branch",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 1143 Q 369 1152 360 1161 L 360 1368 L 375 1368 Q 384 1359 393 1368 L 600 1368 L 600 1416"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:jump:opcode:jump:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:jump:opcode:jump",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 1143 Q 369 1152 360 1161 L 360 1704 L 375 1704 Q 384 1695 393 1704 L 600 1704 L 600 1752"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:mem_to_reg:opcode:mem_to_reg:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:mem_to_reg:opcode:mem_to_reg",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 696 L 375 696 Q 384 687 393 696 L 600 696 L 600 744"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:mem_write:opcode:mem_write:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:mem_write:opcode:mem_write",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 360 L 375 360 Q 384 351 393 360 L 600 360 L 600 408"
+    },
+    {
+      "id": "edge:port:control_unit:opcode:mux:control_unit:reg_write:opcode:reg_write:opcode",
+      "source": "port:control_unit:opcode",
+      "target": "mux:control_unit:reg_write:opcode:reg_write",
+      "sourceHandle": "port:opcode",
+      "targetHandle": "sel",
+      "path": "M 168 1032 L 192 1032 L 360 1032 L 360 225 Q 369 216 360 207 L 360 24 L 600 24 L 600 72"
+    }
+  ]
+}
