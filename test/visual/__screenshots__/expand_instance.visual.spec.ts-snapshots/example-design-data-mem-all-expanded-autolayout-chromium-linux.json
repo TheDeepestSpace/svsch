@@ -84,7 +84,7 @@
       "id": "cut-label:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
       "type": "hdl",
       "position": {
-        "x": 888,
+        "x": 840,
         "y": 168
       },
       "width": 96,
@@ -104,7 +104,7 @@
       "id": "cut-label:reg:data_mem:ram:q:source",
       "type": "hdl",
       "position": {
-        "x": 1536,
+        "x": 1680,
         "y": 312
       },
       "width": 96,
@@ -194,10 +194,10 @@
       "id": "mux:data_mem:ram_read_addr",
       "type": "hdl",
       "position": {
-        "x": 1008,
+        "x": 960,
         "y": 144
       },
-      "width": 96,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -327,7 +327,7 @@
         "x": 1416,
         "y": 288
       },
-      "width": 96,
+      "width": 240,
       "height": 96,
       "data": {
         "kind": "register",
@@ -374,7 +374,7 @@
       "target": "mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 535 364 L 547 364"
+      "path": "M 538.5 366 L 544.5 366"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_addr:ram",
@@ -382,7 +382,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:default",
-      "path": "M 943 364 L 955 364"
+      "path": "M 946.5 366 L 952.5 366"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:sink:edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
@@ -390,7 +390,7 @@
       "target": "mux:data_mem:ram_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "in:in",
-      "path": "M 991 196 L 1008 196"
+      "path": "M 946.5 198 L 960 198"
     },
     {
       "id": "cut-stub:reg:data_mem:ram:q:source",
@@ -398,7 +398,7 @@
       "target": "cut-label:reg:data_mem:ram:q:source",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 1519 340 L 1531 340"
+      "path": "M 1666.5 342 L 1672.5 342"
     },
     {
       "id": "edge:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mux:data_mem:ram_addr:ram_addr__next",
@@ -406,7 +406,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "out",
       "targetHandle": "in:8_b0",
-      "path": "M 655 340 L 955 340"
+      "path": "M 658.5 342 L 952.5 342"
     },
     {
       "id": "edge:mux:data_mem:ram_addr:reg:data_mem:ram:ram_next",
@@ -414,7 +414,7 @@
       "target": "reg:data_mem:ram",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 1111 340 L 1411 340"
+      "path": "M 1114.5 342 L 1408.5 342"
     },
     {
       "id": "edge:mux:data_mem:ram_read_addr:port:data_mem:read_data:read_data",
@@ -430,7 +430,7 @@
       "target": "mux:data_mem:ram_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 648 120 L 864 120 L 864 264 L 1032 264"
+      "path": "M 648 120 L 816 120 L 816 264 L 1032 264"
     },
     {
       "id": "edge:port:data_mem:addr:mux:data_mem:ram_read_addr:addr",
@@ -438,7 +438,7 @@
       "target": "mux:data_mem:ram_read_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 648 120 L 672 120 L 1056 120 L 1056 168"
+      "path": "M 648 120 L 672 120 L 1032 120 L 1032 168"
     },
     {
       "id": "edge:port:data_mem:mem_write:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mem_write",

@@ -4,7 +4,7 @@
       "id": "bus:cpu_top:instr",
       "type": "hdl",
       "position": {
-        "x": 960,
+        "x": 1008,
         "y": 3528
       },
       "width": 144,
@@ -39,7 +39,7 @@
       "id": "cut-label:gate:cpu_top:pc_src:and:out:pc_src:sink:edge:gate:cpu_top:pc_src:and:instance:cpu_top:u_pc_src_mux:pc_src",
       "type": "hdl",
       "position": {
-        "x": 936,
+        "x": -288,
         "y": -264
       },
       "width": 96,
@@ -59,7 +59,7 @@
       "id": "cut-label:gate:cpu_top:pc_src:and:out:pc_src:source",
       "type": "hdl",
       "position": {
-        "x": -552,
+        "x": -504,
         "y": -648
       },
       "width": 96,
@@ -79,7 +79,7 @@
       "id": "cut-label:instance:cpu_top:u_alu_src_mux:port:y:sink:edge:instance:cpu_top:u_alu_src_mux:instance:cpu_top:u_alu:alu_in_b",
       "type": "hdl",
       "position": {
-        "x": -1776,
+        "x": -1728,
         "y": 216
       },
       "width": 96,
@@ -99,7 +99,7 @@
       "id": "cut-label:instance:cpu_top:u_alu_src_mux:port:y:source",
       "type": "hdl",
       "position": {
-        "x": 3576,
+        "x": 3624,
         "y": -624
       },
       "width": 96,
@@ -119,7 +119,7 @@
       "id": "cut-label:instance:cpu_top:u_alu:port:result:sink:edge:instance:cpu_top:u_alu:instance:cpu_top:u_mem_to_reg_mux:alu_result",
       "type": "hdl",
       "position": {
-        "x": -456,
+        "x": -1680,
         "y": -312
       },
       "width": 96,
@@ -139,7 +139,7 @@
       "id": "cut-label:instance:cpu_top:u_alu:port:result:sink:edge:instance:cpu_top:u_alu:port:cpu_top:alu_result_out:alu_result_out",
       "type": "hdl",
       "position": {
-        "x": -1152,
+        "x": -1104,
         "y": -672
       },
       "width": 96,
@@ -159,7 +159,7 @@
       "id": "cut-label:instance:cpu_top:u_alu:port:result:source",
       "type": "hdl",
       "position": {
-        "x": 720,
+        "x": 768,
         "y": 192
       },
       "width": 96,
@@ -179,7 +179,7 @@
       "id": "cut-label:instance:cpu_top:u_alu:port:zero:sink:edge:instance:cpu_top:u_alu:gate:cpu_top:pc_src:and:alu_zero",
       "type": "hdl",
       "position": {
-        "x": -792,
+        "x": -744,
         "y": -624
       },
       "width": 96,
@@ -199,7 +199,7 @@
       "id": "cut-label:instance:cpu_top:u_alu:port:zero:source",
       "type": "hdl",
       "position": {
-        "x": 816,
+        "x": 864,
         "y": 216
       },
       "width": 96,
@@ -219,7 +219,7 @@
       "id": "cut-label:instance:cpu_top:u_branch_adder:port:sum:sink:edge:instance:cpu_top:u_branch_adder:instance:cpu_top:u_pc_src_mux:branch_target",
       "type": "hdl",
       "position": {
-        "x": 792,
+        "x": -432,
         "y": -288
       },
       "width": 144,
@@ -239,7 +239,7 @@
       "id": "cut-label:instance:cpu_top:u_branch_adder:port:sum:source",
       "type": "hdl",
       "position": {
-        "x": 696,
+        "x": 744,
         "y": -624
       },
       "width": 144,
@@ -259,7 +259,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:alu_op:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_alu:alu_op",
       "type": "hdl",
       "position": {
-        "x": -1872,
+        "x": -1824,
         "y": 240
       },
       "width": 96,
@@ -279,7 +279,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:alu_op:source",
       "type": "hdl",
       "position": {
-        "x": 2832,
+        "x": 2880,
         "y": 216
       },
       "width": 96,
@@ -299,7 +299,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:alu_src:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_alu_src_mux:alu_src",
       "type": "hdl",
       "position": {
-        "x": 2400,
+        "x": 2448,
         "y": -576
       },
       "width": 96,
@@ -319,7 +319,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:alu_src:source",
       "type": "hdl",
       "position": {
-        "x": 2928,
+        "x": 2976,
         "y": 192
       },
       "width": 96,
@@ -339,7 +339,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:branch:sink:edge:instance:cpu_top:u_control_unit:gate:cpu_top:pc_src:and:branch",
       "type": "hdl",
       "position": {
-        "x": -792,
+        "x": -744,
         "y": -672
       },
       "width": 96,
@@ -359,7 +359,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:branch:source",
       "type": "hdl",
       "position": {
-        "x": 2832,
+        "x": 2880,
         "y": 288
       },
       "width": 96,
@@ -379,7 +379,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:jump:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_jump_mux:jump",
       "type": "hdl",
       "position": {
-        "x": 3768,
+        "x": 3816,
         "y": -576
       },
       "width": 96,
@@ -399,7 +399,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:jump:source",
       "type": "hdl",
       "position": {
-        "x": 2928,
+        "x": 2976,
         "y": 312
       },
       "width": 96,
@@ -419,7 +419,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:mem_to_reg:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_mem_to_reg_mux:mem_to_reg",
       "type": "hdl",
       "position": {
-        "x": -456,
+        "x": -1680,
         "y": -264
       },
       "width": 96,
@@ -439,7 +439,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:mem_to_reg:source",
       "type": "hdl",
       "position": {
-        "x": 2928,
+        "x": 2976,
         "y": 264
       },
       "width": 96,
@@ -459,7 +459,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:mem_write:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_data_mem:mem_write",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1344,
         "y": 2712
       },
       "width": 96,
@@ -479,7 +479,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:mem_write:source",
       "type": "hdl",
       "position": {
-        "x": 3024,
+        "x": 3072,
         "y": 240
       },
       "width": 96,
@@ -499,7 +499,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:reg_write:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_register_file:reg_write",
       "type": "hdl",
       "position": {
-        "x": 1344,
+        "x": 1392,
         "y": 3576
       },
       "width": 96,
@@ -519,7 +519,7 @@
       "id": "cut-label:instance:cpu_top:u_control_unit:port:reg_write:source",
       "type": "hdl",
       "position": {
-        "x": 2832,
+        "x": 2880,
         "y": 168
       },
       "width": 96,
@@ -539,7 +539,7 @@
       "id": "cut-label:instance:cpu_top:u_data_mem:port:read_data:sink:edge:instance:cpu_top:u_data_mem:instance:cpu_top:u_mem_to_reg_mux:mem_read_data",
       "type": "hdl",
       "position": {
-        "x": -600,
+        "x": -1824,
         "y": -288
       },
       "width": 144,
@@ -559,7 +559,7 @@
       "id": "cut-label:instance:cpu_top:u_data_mem:port:read_data:source",
       "type": "hdl",
       "position": {
-        "x": 3072,
+        "x": 3168,
         "y": 2688
       },
       "width": 144,
@@ -579,7 +579,7 @@
       "id": "cut-label:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_alu_src_mux:imm",
       "type": "hdl",
       "position": {
-        "x": 2304,
+        "x": 2352,
         "y": -600
       },
       "width": 96,
@@ -599,7 +599,7 @@
       "id": "cut-label:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_branch_adder:imm",
       "type": "hdl",
       "position": {
-        "x": -432,
+        "x": -384,
         "y": -600
       },
       "width": 96,
@@ -619,7 +619,7 @@
       "id": "cut-label:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_jump_mux:imm",
       "type": "hdl",
       "position": {
-        "x": 3672,
+        "x": 3720,
         "y": -600
       },
       "width": 96,
@@ -639,7 +639,7 @@
       "id": "cut-label:instance:cpu_top:u_imm_gen:port:imm:source",
       "type": "hdl",
       "position": {
-        "x": 4608,
+        "x": 4704,
         "y": -312
       },
       "width": 96,
@@ -659,7 +659,7 @@
       "id": "cut-label:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:bus:cpu_top:instr:instr",
       "type": "hdl",
       "position": {
-        "x": 840,
+        "x": 888,
         "y": 3528
       },
       "width": 96,
@@ -679,7 +679,7 @@
       "id": "cut-label:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:instance:cpu_top:u_imm_gen:instr",
       "type": "hdl",
       "position": {
-        "x": 2280,
+        "x": 2376,
         "y": -312
       },
       "width": 96,
@@ -699,7 +699,7 @@
       "id": "cut-label:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:port:cpu_top:instr_out:instr_out",
       "type": "hdl",
       "position": {
-        "x": -1488,
+        "x": -1440,
         "y": -672
       },
       "width": 96,
@@ -719,7 +719,7 @@
       "id": "cut-label:instance:cpu_top:u_instr_mem:port:instr:source",
       "type": "hdl",
       "position": {
-        "x": -1752,
+        "x": 2256,
         "y": -288
       },
       "width": 96,
@@ -739,7 +739,7 @@
       "id": "cut-label:instance:cpu_top:u_jump_mux:port:y:sink:edge:instance:cpu_top:u_jump_mux:instance:cpu_top:u_pc_reg:next_pc",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1344,
         "y": 3216
       },
       "width": 96,
@@ -759,7 +759,7 @@
       "id": "cut-label:instance:cpu_top:u_jump_mux:port:y:source",
       "type": "hdl",
       "position": {
-        "x": 4944,
+        "x": 4992,
         "y": -624
       },
       "width": 96,
@@ -779,7 +779,7 @@
       "id": "cut-label:instance:cpu_top:u_mem_to_reg_mux:port:y:sink:edge:instance:cpu_top:u_mem_to_reg_mux:instance:cpu_top:u_register_file:reg_write_data",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1344,
         "y": 3672
       },
       "width": 144,
@@ -799,7 +799,7 @@
       "id": "cut-label:instance:cpu_top:u_mem_to_reg_mux:port:y:source",
       "type": "hdl",
       "position": {
-        "x": 2088,
+        "x": 864,
         "y": -312
       },
       "width": 144,
@@ -819,7 +819,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_adder:port:sum:sink:edge:instance:cpu_top:u_pc_adder:instance:cpu_top:u_pc_src_mux:pc_plus_1",
       "type": "hdl",
       "position": {
-        "x": 936,
+        "x": -288,
         "y": -312
       },
       "width": 96,
@@ -839,7 +839,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_adder:port:sum:source",
       "type": "hdl",
       "position": {
-        "x": 2400,
+        "x": 2448,
         "y": -624
       },
       "width": 96,
@@ -859,7 +859,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_branch_adder:pc",
       "type": "hdl",
       "position": {
-        "x": -888,
+        "x": -840,
         "y": -624
       },
       "width": 96,
@@ -879,7 +879,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_instr_mem:pc",
       "type": "hdl",
       "position": {
-        "x": -1848,
+        "x": 1056,
         "y": -288
       },
       "width": 96,
@@ -899,7 +899,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_pc_adder:pc",
       "type": "hdl",
       "position": {
-        "x": 1152,
+        "x": 1200,
         "y": -624
       },
       "width": 96,
@@ -919,7 +919,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:port:cpu_top:pc_out:pc_out",
       "type": "hdl",
       "position": {
-        "x": -1776,
+        "x": -1728,
         "y": -672
       },
       "width": 96,
@@ -939,7 +939,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_reg:port:pc:source",
       "type": "hdl",
       "position": {
-        "x": 2544,
+        "x": 2592,
         "y": 3168
       },
       "width": 96,
@@ -959,7 +959,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_src_mux:port:y:sink:edge:instance:cpu_top:u_pc_src_mux:instance:cpu_top:u_jump_mux:branch_next_pc",
       "type": "hdl",
       "position": {
-        "x": 5040,
+        "x": 5088,
         "y": -624
       },
       "width": 144,
@@ -979,7 +979,7 @@
       "id": "cut-label:instance:cpu_top:u_pc_src_mux:port:y:source",
       "type": "hdl",
       "position": {
-        "x": 2112,
+        "x": 888,
         "y": -264
       },
       "width": 144,
@@ -999,7 +999,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs1_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_alu:rs1_data",
       "type": "hdl",
       "position": {
-        "x": -1872,
+        "x": -1824,
         "y": 192
       },
       "width": 96,
@@ -1019,7 +1019,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs1_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_data_mem:rs1_data",
       "type": "hdl",
       "position": {
-        "x": 1296,
+        "x": 1344,
         "y": 2760
       },
       "width": 96,
@@ -1039,7 +1039,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs1_data:source",
       "type": "hdl",
       "position": {
-        "x": 4344,
+        "x": 4080,
         "y": 3528
       },
       "width": 96,
@@ -1059,7 +1059,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs2_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_alu_src_mux:rs2_data",
       "type": "hdl",
       "position": {
-        "x": 1056,
+        "x": 1104,
         "y": -624
       },
       "width": 96,
@@ -1079,7 +1079,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs2_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_data_mem:rs2_data",
       "type": "hdl",
       "position": {
-        "x": 1200,
+        "x": 1248,
         "y": 2736
       },
       "width": 96,
@@ -1099,7 +1099,7 @@
       "id": "cut-label:instance:cpu_top:u_register_file:port:rs2_data:source",
       "type": "hdl",
       "position": {
-        "x": 4440,
+        "x": 4176,
         "y": 3552
       },
       "width": 96,
@@ -1119,7 +1119,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::expand-port-label:port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 2664,
+        "x": 2712,
         "y": -480
       },
       "width": 96,
@@ -1139,7 +1139,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::expand-port-label:port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 2664,
+        "x": 2712,
         "y": -528
       },
       "width": 96,
@@ -1159,7 +1159,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::expand-port-label:port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 2664,
+        "x": 2712,
         "y": -576
       },
       "width": 96,
@@ -1179,7 +1179,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::expand-port-label:port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 3336,
+        "x": 3384,
         "y": -504
       },
       "width": 96,
@@ -1199,7 +1199,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::mux:mux2:y:ternary",
       "type": "hdl",
       "position": {
-        "x": 2976,
+        "x": 3024,
         "y": -528
       },
       "width": 144,
@@ -1234,7 +1234,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": -624
       },
       "width": 72,
@@ -1254,7 +1254,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": -600
       },
       "width": 72,
@@ -1274,7 +1274,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": -576
       },
       "width": 72,
@@ -1294,7 +1294,7 @@
       "id": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 3504,
+        "x": 3552,
         "y": -624
       },
       "width": 48,
@@ -1314,7 +1314,7 @@
       "id": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b000:expr",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 240
       },
       "width": 96,
@@ -1344,7 +1344,7 @@
       "id": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b001:expr",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 360
       },
       "width": 96,
@@ -1374,7 +1374,7 @@
       "id": "expand:instance:cpu_top:u_alu::comparator:alu:result_3_b100_sel:expr",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 480
       },
       "width": 96,
@@ -1404,7 +1404,7 @@
       "id": "expand:instance:cpu_top:u_alu::comparator:alu:zero:expr",
       "type": "hdl",
       "position": {
-        "x": 48,
+        "x": 96,
         "y": 768
       },
       "width": 96,
@@ -1434,7 +1434,7 @@
       "id": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:a",
       "type": "hdl",
       "position": {
-        "x": -1488,
+        "x": -1440,
         "y": 480
       },
       "width": 96,
@@ -1454,7 +1454,7 @@
       "id": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:alu_op",
       "type": "hdl",
       "position": {
-        "x": -816,
+        "x": -768,
         "y": 456
       },
       "width": 96,
@@ -1474,7 +1474,7 @@
       "id": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:b",
       "type": "hdl",
       "position": {
-        "x": -1488,
+        "x": -1440,
         "y": 528
       },
       "width": 96,
@@ -1494,7 +1494,7 @@
       "id": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:result",
       "type": "hdl",
       "position": {
-        "x": 0,
+        "x": 48,
         "y": 624
       },
       "width": 96,
@@ -1514,7 +1514,7 @@
       "id": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:zero",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 480,
         "y": 792
       },
       "width": 96,
@@ -1534,7 +1534,7 @@
       "id": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b010:and",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 600
       },
       "width": 96,
@@ -1564,7 +1564,7 @@
       "id": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b011:or",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 720
       },
       "width": 96,
@@ -1594,7 +1594,7 @@
       "id": "expand:instance:cpu_top:u_alu::literal:alu:_0:_0",
       "type": "hdl",
       "position": {
-        "x": -816,
+        "x": -768,
         "y": 852
       },
       "width": 96,
@@ -1619,7 +1619,7 @@
       "id": "expand:instance:cpu_top:u_alu::literal:alu:8_b0:8_b0",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 900
       },
       "width": 96,
@@ -1639,7 +1639,7 @@
       "id": "expand:instance:cpu_top:u_alu::literal:alu:8_b1:8_b1",
       "type": "hdl",
       "position": {
-        "x": -1176,
+        "x": -1128,
         "y": 852
       },
       "width": 96,
@@ -1659,7 +1659,7 @@
       "id": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "type": "hdl",
       "position": {
-        "x": -864,
+        "x": -816,
         "y": 720
       },
       "width": 144,
@@ -1694,7 +1694,7 @@
       "id": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "type": "hdl",
       "position": {
-        "x": -504,
+        "x": -456,
         "y": 552
       },
       "width": 288,
@@ -1749,7 +1749,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:a",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": -1608,
         "y": 192
       },
       "width": 96,
@@ -1769,7 +1769,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:alu_op",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": -1608,
         "y": 240
       },
       "width": 96,
@@ -1789,7 +1789,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:b",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": -1608,
         "y": 216
       },
       "width": 96,
@@ -1809,7 +1809,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:result",
       "type": "hdl",
       "position": {
-        "x": 600,
+        "x": 648,
         "y": 192
       },
       "width": 96,
@@ -1829,7 +1829,7 @@
       "id": "expand:instance:cpu_top:u_alu::port:alu:zero",
       "type": "hdl",
       "position": {
-        "x": 600,
+        "x": 648,
         "y": 216
       },
       "width": 96,
@@ -1849,7 +1849,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::alu:adder:sum:expr",
       "type": "hdl",
       "position": {
-        "x": 120,
+        "x": 168,
         "y": -576
       },
       "width": 96,
@@ -1879,7 +1879,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::expand-port-label:port:adder:a",
       "type": "hdl",
       "position": {
-        "x": -192,
+        "x": -144,
         "y": -576
       },
       "width": 96,
@@ -1899,7 +1899,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::expand-port-label:port:adder:b",
       "type": "hdl",
       "position": {
-        "x": -192,
+        "x": -144,
         "y": -528
       },
       "width": 96,
@@ -1919,7 +1919,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::expand-port-label:port:adder:sum",
       "type": "hdl",
       "position": {
-        "x": 432,
+        "x": 480,
         "y": -552
       },
       "width": 96,
@@ -1939,7 +1939,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::port:adder:a",
       "type": "hdl",
       "position": {
-        "x": -312,
+        "x": -264,
         "y": -624
       },
       "width": 48,
@@ -1959,7 +1959,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::port:adder:b",
       "type": "hdl",
       "position": {
-        "x": -312,
+        "x": -264,
         "y": -600
       },
       "width": 48,
@@ -1979,7 +1979,7 @@
       "id": "expand:instance:cpu_top:u_branch_adder::port:adder:sum",
       "type": "hdl",
       "position": {
-        "x": 600,
+        "x": 648,
         "y": -624
       },
       "width": 72,
@@ -1999,7 +1999,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:alu_op",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 2376
       },
       "width": 96,
@@ -2019,7 +2019,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:alu_src",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 1368
       },
       "width": 96,
@@ -2039,7 +2039,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:branch",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 1704
       },
       "width": 96,
@@ -2059,7 +2059,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:jump",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 2040
       },
       "width": 96,
@@ -2079,7 +2079,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:mem_to_reg",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 1032
       },
       "width": 96,
@@ -2099,7 +2099,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:mem_write",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 696
       },
       "width": 96,
@@ -2119,7 +2119,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:opcode",
       "type": "hdl",
       "position": {
-        "x": 1512,
+        "x": 1560,
         "y": 1200
       },
       "width": 96,
@@ -2139,7 +2139,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:reg_write",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": 360
       },
       "width": 96,
@@ -2159,7 +2159,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:alu_op_4_b0001:3_b001",
       "type": "hdl",
       "position": {
-        "x": 1488,
+        "x": 1536,
         "y": 2388
       },
       "width": 120,
@@ -2184,7 +2184,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:alu_op_4_b0010:3_b010",
       "type": "hdl",
       "position": {
-        "x": 1488,
+        "x": 1536,
         "y": 2292
       },
       "width": 120,
@@ -2204,7 +2204,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:alu_op_4_b0011:3_b011",
       "type": "hdl",
       "position": {
-        "x": 1488,
+        "x": 1536,
         "y": 2340
       },
       "width": 120,
@@ -2224,7 +2224,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:alu_op_branch_n2:3_b000",
       "type": "hdl",
       "position": {
-        "x": 1488,
+        "x": 1536,
         "y": 2436
       },
       "width": 120,
@@ -2264,7 +2264,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:reg_write_4_b0000:1_b1",
       "type": "hdl",
       "position": {
-        "x": 1560,
+        "x": 1608,
         "y": 396
       },
       "width": 48,
@@ -2334,7 +2334,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::literal:control_unit:reg_write_branch_n0:1_b0",
       "type": "hdl",
       "position": {
-        "x": 1560,
+        "x": 1608,
         "y": 1332
       },
       "width": 48,
@@ -2399,7 +2399,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "type": "hdl",
       "position": {
-        "x": 1824,
+        "x": 1872,
         "y": 2256
       },
       "width": 480,
@@ -2474,7 +2474,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 1248
       },
       "width": 384,
@@ -2549,7 +2549,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 1584
       },
       "width": 384,
@@ -2624,7 +2624,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 1920
       },
       "width": 384,
@@ -2699,7 +2699,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 912
       },
       "width": 384,
@@ -2774,7 +2774,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 576
       },
       "width": 384,
@@ -2849,7 +2849,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "type": "hdl",
       "position": {
-        "x": 1848,
+        "x": 1896,
         "y": 240
       },
       "width": 384,
@@ -2924,7 +2924,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:alu_op",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 216
       },
       "width": 120,
@@ -2944,7 +2944,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:alu_src",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 192
       },
       "width": 120,
@@ -2964,7 +2964,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:branch",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 288
       },
       "width": 120,
@@ -2984,7 +2984,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:jump",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 312
       },
       "width": 120,
@@ -3004,7 +3004,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:mem_to_reg",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 264
       },
       "width": 120,
@@ -3024,7 +3024,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:mem_write",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 240
       },
       "width": 120,
@@ -3044,7 +3044,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:opcode",
       "type": "hdl",
       "position": {
-        "x": 1320,
+        "x": 1368,
         "y": 168
       },
       "width": 96,
@@ -3064,7 +3064,7 @@
       "id": "expand:instance:cpu_top:u_control_unit::port:control_unit:reg_write",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2736,
         "y": 168
       },
       "width": 120,
@@ -3084,7 +3084,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:addr",
       "type": "hdl",
       "position": {
-        "x": 2064,
+        "x": 2112,
         "y": 2832
       },
       "width": 96,
@@ -3104,7 +3104,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:clk",
       "type": "hdl",
       "position": {
-        "x": 1608,
+        "x": 1656,
         "y": 2928
       },
       "width": 96,
@@ -3124,7 +3124,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:mem_write",
       "type": "hdl",
       "position": {
-        "x": 2064,
+        "x": 2112,
         "y": 2736
       },
       "width": 96,
@@ -3144,7 +3144,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:read_data",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2784,
         "y": 2976
       },
       "width": 96,
@@ -3164,7 +3164,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:write_data",
       "type": "hdl",
       "position": {
-        "x": 2064,
+        "x": 2112,
         "y": 2784
       },
       "width": 96,
@@ -3184,7 +3184,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr",
       "type": "hdl",
       "position": {
-        "x": 2688,
+        "x": 2784,
         "y": 2832
       },
       "width": 144,
@@ -3219,7 +3219,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "type": "hdl",
       "position": {
-        "x": 2376,
+        "x": 2448,
         "y": 2784
       },
       "width": 96,
@@ -3254,10 +3254,10 @@
       "id": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_read_addr",
       "type": "hdl",
       "position": {
-        "x": 2376,
+        "x": 2424,
         "y": 2952
       },
-      "width": 96,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -3284,7 +3284,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::port:data_mem:addr",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 2736
       },
       "width": 120,
@@ -3304,7 +3304,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::port:data_mem:clk",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 2688
       },
       "width": 120,
@@ -3324,7 +3324,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::port:data_mem:mem_write",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 2712
       },
       "width": 120,
@@ -3344,7 +3344,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::port:data_mem:read_data",
       "type": "hdl",
       "position": {
-        "x": 2928,
+        "x": 3024,
         "y": 2688
       },
       "width": 120,
@@ -3364,7 +3364,7 @@
       "id": "expand:instance:cpu_top:u_data_mem::port:data_mem:write_data",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 2760
       },
       "width": 120,
@@ -3384,10 +3384,10 @@
       "id": "expand:instance:cpu_top:u_data_mem::reg:data_mem:ram",
       "type": "hdl",
       "position": {
-        "x": 2016,
+        "x": 1968,
         "y": 2880
       },
-      "width": 96,
+      "width": 240,
       "height": 96,
       "data": {
         "kind": "register",
@@ -3414,7 +3414,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0100:expr",
       "type": "hdl",
       "position": {
-        "x": 3576,
+        "x": 3672,
         "y": -240
       },
       "width": 144,
@@ -3444,7 +3444,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0111:expr",
       "type": "hdl",
       "position": {
-        "x": 3576,
+        "x": 3672,
         "y": -120
       },
       "width": 144,
@@ -3474,7 +3474,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b1000:expr",
       "type": "hdl",
       "position": {
-        "x": 3216,
+        "x": 3312,
         "y": -24
       },
       "width": 144,
@@ -3504,7 +3504,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:instr",
       "type": "hdl",
       "position": {
-        "x": 2856,
+        "x": 2952,
         "y": -240
       },
       "width": 144,
@@ -3539,7 +3539,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::expand-port-label:port:imm_gen:imm",
       "type": "hdl",
       "position": {
-        "x": 4344,
+        "x": 4440,
         "y": -48
       },
       "width": 96,
@@ -3559,7 +3559,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::expand-port-label:port:imm_gen:instr",
       "type": "hdl",
       "position": {
-        "x": 2544,
+        "x": 2640,
         "y": -240
       },
       "width": 96,
@@ -3579,7 +3579,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::literal:imm_gen:1_b0:1_b0",
       "type": "hdl",
       "position": {
-        "x": 2592,
+        "x": 2688,
         "y": -12
       },
       "width": 48,
@@ -3599,7 +3599,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::literal:imm_gen:imm_default:_0",
       "type": "hdl",
       "position": {
-        "x": 3624,
+        "x": 3720,
         "y": 12
       },
       "width": 96,
@@ -3619,7 +3619,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "type": "hdl",
       "position": {
-        "x": 3936,
+        "x": 4032,
         "y": -96
       },
       "width": 192,
@@ -3664,7 +3664,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::port:imm_gen:imm",
       "type": "hdl",
       "position": {
-        "x": 4512,
+        "x": 4608,
         "y": -312
       },
       "width": 72,
@@ -3684,7 +3684,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::port:imm_gen:instr",
       "type": "hdl",
       "position": {
-        "x": 2400,
+        "x": 2496,
         "y": -312
       },
       "width": 72,
@@ -3704,7 +3704,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
       "type": "hdl",
       "position": {
-        "x": 3216,
+        "x": 3312,
         "y": -240
       },
       "width": 144,
@@ -3729,7 +3729,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
       "type": "hdl",
       "position": {
-        "x": 3216,
+        "x": 3312,
         "y": -120
       },
       "width": 144,
@@ -3754,7 +3754,7 @@
       "id": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
       "type": "hdl",
       "position": {
-        "x": 2856,
+        "x": 2952,
         "y": -24
       },
       "width": 144,
@@ -3779,7 +3779,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:addr",
       "type": "hdl",
       "position": {
-        "x": -1512,
+        "x": 1320,
         "y": -240
       },
       "width": 96,
@@ -3799,7 +3799,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": -888,
+        "x": 1992,
         "y": -168
       },
       "width": 96,
@@ -3819,10 +3819,10 @@
       "id": "expand:instance:cpu_top:u_instr_mem::mux:instr_mem:mem_read_addr",
       "type": "hdl",
       "position": {
-        "x": -1200,
+        "x": 1632,
         "y": -192
       },
-      "width": 96,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -3849,7 +3849,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::port:instr_mem:addr",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": 1176,
         "y": -288
       },
       "width": 72,
@@ -3869,7 +3869,7 @@
       "id": "expand:instance:cpu_top:u_instr_mem::port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": -720,
+        "x": 2160,
         "y": -288
       },
       "width": 72,
@@ -3889,7 +3889,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::expand-port-label:port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 4032,
+        "x": 4080,
         "y": -480
       },
       "width": 96,
@@ -3909,7 +3909,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::expand-port-label:port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 4032,
+        "x": 4080,
         "y": -528
       },
       "width": 96,
@@ -3929,7 +3929,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::expand-port-label:port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 4032,
+        "x": 4080,
         "y": -576
       },
       "width": 96,
@@ -3949,7 +3949,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::expand-port-label:port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 4704,
+        "x": 4752,
         "y": -504
       },
       "width": 96,
@@ -3969,7 +3969,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::mux:mux2:y:ternary",
       "type": "hdl",
       "position": {
-        "x": 4344,
+        "x": 4392,
         "y": -528
       },
       "width": 144,
@@ -4004,7 +4004,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 3888,
+        "x": 3936,
         "y": -624
       },
       "width": 72,
@@ -4024,7 +4024,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 3888,
+        "x": 3936,
         "y": -600
       },
       "width": 72,
@@ -4044,7 +4044,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 3888,
+        "x": 3936,
         "y": -576
       },
       "width": 72,
@@ -4064,7 +4064,7 @@
       "id": "expand:instance:cpu_top:u_jump_mux::port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 4872,
+        "x": 4920,
         "y": -624
       },
       "width": 48,
@@ -4084,7 +4084,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::expand-port-label:port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": -192,
+        "x": -1416,
         "y": -168
       },
       "width": 96,
@@ -4104,7 +4104,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::expand-port-label:port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": -192,
+        "x": -1416,
         "y": -216
       },
       "width": 96,
@@ -4124,7 +4124,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::expand-port-label:port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": -192,
+        "x": -1416,
         "y": -264
       },
       "width": 96,
@@ -4144,7 +4144,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::expand-port-label:port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 480,
+        "x": -744,
         "y": -192
       },
       "width": 96,
@@ -4164,7 +4164,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::mux:mux2:y:ternary",
       "type": "hdl",
       "position": {
-        "x": 120,
+        "x": -1104,
         "y": -216
       },
       "width": 144,
@@ -4199,7 +4199,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": -336,
+        "x": -1560,
         "y": -312
       },
       "width": 72,
@@ -4219,7 +4219,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": -336,
+        "x": -1560,
         "y": -288
       },
       "width": 72,
@@ -4239,7 +4239,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": -336,
+        "x": -1560,
         "y": -264
       },
       "width": 72,
@@ -4259,7 +4259,7 @@
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 648,
+        "x": -576,
         "y": -312
       },
       "width": 48,
@@ -4279,7 +4279,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::alu:adder:sum:expr",
       "type": "hdl",
       "position": {
-        "x": 1704,
+        "x": 1752,
         "y": -576
       },
       "width": 96,
@@ -4309,7 +4309,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::expand-port-label:port:adder:a",
       "type": "hdl",
       "position": {
-        "x": 1392,
+        "x": 1440,
         "y": -576
       },
       "width": 96,
@@ -4329,7 +4329,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::expand-port-label:port:adder:b",
       "type": "hdl",
       "position": {
-        "x": 1392,
+        "x": 1440,
         "y": -528
       },
       "width": 96,
@@ -4349,7 +4349,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::expand-port-label:port:adder:sum",
       "type": "hdl",
       "position": {
-        "x": 2016,
+        "x": 2064,
         "y": -552
       },
       "width": 96,
@@ -4369,7 +4369,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::port:adder:a",
       "type": "hdl",
       "position": {
-        "x": 1272,
+        "x": 1320,
         "y": -624
       },
       "width": 48,
@@ -4389,7 +4389,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::port:adder:b",
       "type": "hdl",
       "position": {
-        "x": 1272,
+        "x": 1320,
         "y": -600
       },
       "width": 48,
@@ -4409,7 +4409,7 @@
       "id": "expand:instance:cpu_top:u_pc_adder::port:adder:sum",
       "type": "hdl",
       "position": {
-        "x": 2184,
+        "x": 2232,
         "y": -624
       },
       "width": 72,
@@ -4429,7 +4429,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::expand-port-label:port:pc_reg:clk",
       "type": "hdl",
       "position": {
-        "x": 1584,
+        "x": 1632,
         "y": 3288
       },
       "width": 96,
@@ -4449,7 +4449,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::expand-port-label:port:pc_reg:next_pc",
       "type": "hdl",
       "position": {
-        "x": 1584,
+        "x": 1632,
         "y": 3240
       },
       "width": 96,
@@ -4469,7 +4469,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::expand-port-label:port:pc_reg:pc",
       "type": "hdl",
       "position": {
-        "x": 2304,
+        "x": 2352,
         "y": 3240
       },
       "width": 96,
@@ -4489,7 +4489,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::expand-port-label:port:pc_reg:reset_n",
       "type": "hdl",
       "position": {
-        "x": 1584,
+        "x": 1632,
         "y": 3336
       },
       "width": 96,
@@ -4509,7 +4509,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:clk",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 3168
       },
       "width": 96,
@@ -4529,7 +4529,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:next_pc",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 3216
       },
       "width": 96,
@@ -4549,7 +4549,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:pc",
       "type": "hdl",
       "position": {
-        "x": 2472,
+        "x": 2520,
         "y": 3168
       },
       "width": 48,
@@ -4569,7 +4569,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:reset_n",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 3192
       },
       "width": 96,
@@ -4589,7 +4589,7 @@
       "id": "expand:instance:cpu_top:u_pc_reg::reg:pc_reg:pc",
       "type": "hdl",
       "position": {
-        "x": 1896,
+        "x": 1944,
         "y": 3216
       },
       "width": 192,
@@ -4624,7 +4624,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::expand-port-label:port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 1200,
+        "x": -24,
         "y": -168
       },
       "width": 96,
@@ -4644,7 +4644,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::expand-port-label:port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 1200,
+        "x": -24,
         "y": -216
       },
       "width": 96,
@@ -4664,7 +4664,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::expand-port-label:port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 1200,
+        "x": -24,
         "y": -264
       },
       "width": 96,
@@ -4684,7 +4684,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::expand-port-label:port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 1872,
+        "x": 648,
         "y": -192
       },
       "width": 96,
@@ -4704,7 +4704,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::mux:mux2:y:ternary",
       "type": "hdl",
       "position": {
-        "x": 1512,
+        "x": 288,
         "y": -216
       },
       "width": 144,
@@ -4739,7 +4739,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:d0",
       "type": "hdl",
       "position": {
-        "x": 1056,
+        "x": -168,
         "y": -312
       },
       "width": 72,
@@ -4759,7 +4759,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:d1",
       "type": "hdl",
       "position": {
-        "x": 1056,
+        "x": -168,
         "y": -288
       },
       "width": 72,
@@ -4779,7 +4779,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:sel",
       "type": "hdl",
       "position": {
-        "x": 1056,
+        "x": -168,
         "y": -264
       },
       "width": 72,
@@ -4799,7 +4799,7 @@
       "id": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:y",
       "type": "hdl",
       "position": {
-        "x": 2040,
+        "x": 816,
         "y": -312
       },
       "width": 48,
@@ -4819,7 +4819,7 @@
       "id": "expand:instance:cpu_top:u_register_file::comparator:register_file:if_sel_n9_in1:n11:expr",
       "type": "hdl",
       "position": {
-        "x": 2448,
+        "x": 2496,
         "y": 4176
       },
       "width": 96,
@@ -4846,41 +4846,11 @@
       }
     },
     {
-      "id": "expand:instance:cpu_top:u_register_file::comparator:register_file:regs_en_sel_in1:n13:expr",
-      "type": "hdl",
-      "position": {
-        "x": 2448,
-        "y": 4296
-      },
-      "width": 96,
-      "height": 96,
-      "data": {
-        "kind": "comparator",
-        "ports": [
-          {
-            "id": "port:lhs",
-            "name": "lhs",
-            "direction": "input"
-          },
-          {
-            "id": "port:rhs",
-            "name": "rhs",
-            "direction": "input"
-          },
-          {
-            "id": "port:regs_en_sel_in1",
-            "name": "regs_en_sel_in1",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
       "id": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs1_data_sel:expr",
       "type": "hdl",
       "position": {
-        "x": 2448,
-        "y": 3576
+        "x": 2496,
+        "y": 3864
       },
       "width": 96,
       "height": 96,
@@ -4909,8 +4879,8 @@
       "id": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs2_data_sel:expr",
       "type": "hdl",
       "position": {
-        "x": 2448,
-        "y": 3840
+        "x": 2496,
+        "y": 3576
       },
       "width": 96,
       "height": 96,
@@ -4939,8 +4909,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:clk",
       "type": "hdl",
       "position": {
-        "x": 1656,
-        "y": 4536
+        "x": 1704,
+        "y": 4056
       },
       "width": 96,
       "height": 48,
@@ -4959,8 +4929,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rd_addr",
       "type": "hdl",
       "position": {
-        "x": 2136,
-        "y": 4296
+        "x": 2184,
+        "y": 4152
       },
       "width": 96,
       "height": 48,
@@ -4979,8 +4949,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:reg_write",
       "type": "hdl",
       "position": {
-        "x": 2448,
-        "y": 4104
+        "x": 2496,
+        "y": 4128
       },
       "width": 96,
       "height": 48,
@@ -4999,8 +4969,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:reset_n",
       "type": "hdl",
       "position": {
-        "x": 1656,
-        "y": 4632
+        "x": 1704,
+        "y": 4128
       },
       "width": 96,
       "height": 48,
@@ -5019,8 +4989,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs1_addr",
       "type": "hdl",
       "position": {
-        "x": 2136,
-        "y": 3672
+        "x": 2184,
+        "y": 3936
       },
       "width": 96,
       "height": 48,
@@ -5039,8 +5009,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs1_data",
       "type": "hdl",
       "position": {
-        "x": 3216,
-        "y": 3696
+        "x": 3264,
+        "y": 3960
       },
       "width": 96,
       "height": 48,
@@ -5059,8 +5029,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs2_addr",
       "type": "hdl",
       "position": {
-        "x": 2136,
-        "y": 3888
+        "x": 2184,
+        "y": 3672
       },
       "width": 96,
       "height": 48,
@@ -5079,8 +5049,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs2_data",
       "type": "hdl",
       "position": {
-        "x": 3216,
-        "y": 3960
+        "x": 3264,
+        "y": 3696
       },
       "width": 96,
       "height": 48,
@@ -5099,8 +5069,8 @@
       "id": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:write_data",
       "type": "hdl",
       "position": {
-        "x": 2904,
-        "y": 4464
+        "x": 2952,
+        "y": 4200
       },
       "width": 96,
       "height": 48,
@@ -5119,8 +5089,8 @@
       "id": "expand:instance:cpu_top:u_register_file::gate:register_file:if_sel_n9:n10:and",
       "type": "hdl",
       "position": {
-        "x": 2808,
-        "y": 4152
+        "x": 2856,
+        "y": 4080
       },
       "width": 96,
       "height": 96,
@@ -5146,41 +5116,11 @@
       }
     },
     {
-      "id": "expand:instance:cpu_top:u_register_file::gate:register_file:regs_en_sel:n12:and",
-      "type": "hdl",
-      "position": {
-        "x": 2808,
-        "y": 4272
-      },
-      "width": 96,
-      "height": 96,
-      "data": {
-        "kind": "gate",
-        "ports": [
-          {
-            "id": "port:in0",
-            "name": "in0",
-            "direction": "input"
-          },
-          {
-            "id": "port:in1",
-            "name": "in1",
-            "direction": "input"
-          },
-          {
-            "id": "out:regs_en_sel",
-            "name": "regs_en_sel",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
       "id": "expand:instance:cpu_top:u_register_file::literal:register_file:_0:_0",
       "type": "hdl",
       "position": {
-        "x": 2136,
-        "y": 3948
+        "x": 2184,
+        "y": 3900
       },
       "width": 96,
       "height": 24,
@@ -5199,8 +5139,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_addr",
       "type": "hdl",
       "position": {
-        "x": 3984,
-        "y": 4464
+        "x": 3720,
+        "y": 4176
       },
       "width": 144,
       "height": 96,
@@ -5234,43 +5174,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "type": "hdl",
       "position": {
-        "x": 3264,
-        "y": 4440
-      },
-      "width": 96,
-      "height": 96,
-      "data": {
-        "kind": "mux",
-        "ports": [
-          {
-            "id": "sel",
-            "name": "sel",
-            "direction": "input"
-          },
-          {
-            "id": "in:true",
-            "name": "true",
-            "direction": "input"
-          },
-          {
-            "id": "in:false",
-            "name": "false",
-            "direction": "input"
-          },
-          {
-            "id": "out",
-            "name": "out",
-            "direction": "output"
-          }
-        ]
-      }
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate",
-      "type": "hdl",
-      "position": {
-        "x": 3672,
-        "y": 4440
+        "x": 3312,
+        "y": 4176
       },
       "width": 96,
       "height": 96,
@@ -5304,8 +5209,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs1_addr",
       "type": "hdl",
       "position": {
-        "x": 2448,
-        "y": 3720
+        "x": 2496,
+        "y": 4008
       },
       "width": 96,
       "height": 96,
@@ -5334,8 +5239,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs2_addr",
       "type": "hdl",
       "position": {
-        "x": 2448,
-        "y": 4008
+        "x": 2496,
+        "y": 3744
       },
       "width": 96,
       "height": 96,
@@ -5364,8 +5269,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:rs1_data:ternary",
       "type": "hdl",
       "position": {
-        "x": 2808,
-        "y": 3672
+        "x": 2856,
+        "y": 3936
       },
       "width": 144,
       "height": 96,
@@ -5399,8 +5304,8 @@
       "id": "expand:instance:cpu_top:u_register_file::mux:register_file:rs2_data:ternary",
       "type": "hdl",
       "position": {
-        "x": 2808,
-        "y": 3936
+        "x": 2856,
+        "y": 3672
       },
       "width": 144,
       "height": 96,
@@ -5434,7 +5339,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:clk",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3528
       },
       "width": 120,
@@ -5454,7 +5359,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:rd_addr",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3648
       },
       "width": 120,
@@ -5474,7 +5379,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:reg_write",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3576
       },
       "width": 120,
@@ -5494,7 +5399,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:reset_n",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3552
       },
       "width": 120,
@@ -5514,7 +5419,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:rs1_addr",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3600
       },
       "width": 120,
@@ -5534,7 +5439,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:rs1_data",
       "type": "hdl",
       "position": {
-        "x": 4224,
+        "x": 3960,
         "y": 3528
       },
       "width": 96,
@@ -5554,7 +5459,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:rs2_addr",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3624
       },
       "width": 120,
@@ -5574,7 +5479,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:rs2_data",
       "type": "hdl",
       "position": {
-        "x": 4224,
+        "x": 3960,
         "y": 3552
       },
       "width": 96,
@@ -5594,7 +5499,7 @@
       "id": "expand:instance:cpu_top:u_register_file::port:register_file:write_data",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3672
       },
       "width": 120,
@@ -5614,10 +5519,10 @@
       "id": "expand:instance:cpu_top:u_register_file::reg:register_file:regs",
       "type": "hdl",
       "position": {
-        "x": 2088,
-        "y": 4488
+        "x": 2040,
+        "y": 4008
       },
-      "width": 96,
+      "width": 240,
       "height": 96,
       "data": {
         "kind": "register",
@@ -5649,7 +5554,7 @@
       "id": "gate:cpu_top:pc_src:and",
       "type": "hdl",
       "position": {
-        "x": -672,
+        "x": -624,
         "y": -672
       },
       "width": 96,
@@ -5679,7 +5584,7 @@
       "id": "instance:cpu_top:u_alu",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": -1608,
         "y": 144
       },
       "width": 2352,
@@ -5719,7 +5624,7 @@
       "id": "instance:cpu_top:u_alu_src_mux",
       "type": "hdl",
       "position": {
-        "x": 2520,
+        "x": 2568,
         "y": -672
       },
       "width": 1032,
@@ -5754,7 +5659,7 @@
       "id": "instance:cpu_top:u_branch_adder",
       "type": "hdl",
       "position": {
-        "x": -312,
+        "x": -264,
         "y": -672
       },
       "width": 984,
@@ -5784,7 +5689,7 @@
       "id": "instance:cpu_top:u_control_unit",
       "type": "hdl",
       "position": {
-        "x": 1320,
+        "x": 1368,
         "y": 144
       },
       "width": 1488,
@@ -5839,10 +5744,10 @@
       "id": "instance:cpu_top:u_data_mem",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 2616
       },
-      "width": 1632,
+      "width": 1680,
       "height": 480,
       "data": {
         "kind": "instance",
@@ -5879,7 +5784,7 @@
       "id": "instance:cpu_top:u_imm_gen",
       "type": "hdl",
       "position": {
-        "x": 2400,
+        "x": 2496,
         "y": -360
       },
       "width": 2184,
@@ -5904,10 +5809,10 @@
       "id": "instance:cpu_top:u_instr_mem",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": 1176,
         "y": -360
       },
-      "width": 1008,
+      "width": 1056,
       "height": 312,
       "data": {
         "kind": "instance",
@@ -5929,7 +5834,7 @@
       "id": "instance:cpu_top:u_jump_mux",
       "type": "hdl",
       "position": {
-        "x": 3888,
+        "x": 3936,
         "y": -672
       },
       "width": 1032,
@@ -5964,7 +5869,7 @@
       "id": "instance:cpu_top:u_mem_to_reg_mux",
       "type": "hdl",
       "position": {
-        "x": -336,
+        "x": -1560,
         "y": -360
       },
       "width": 1032,
@@ -5999,7 +5904,7 @@
       "id": "instance:cpu_top:u_pc_adder",
       "type": "hdl",
       "position": {
-        "x": 1272,
+        "x": 1320,
         "y": -672
       },
       "width": 984,
@@ -6029,7 +5934,7 @@
       "id": "instance:cpu_top:u_pc_reg",
       "type": "hdl",
       "position": {
-        "x": 1416,
+        "x": 1464,
         "y": 3120
       },
       "width": 1104,
@@ -6064,7 +5969,7 @@
       "id": "instance:cpu_top:u_pc_src_mux",
       "type": "hdl",
       "position": {
-        "x": 1056,
+        "x": -168,
         "y": -360
       },
       "width": 1032,
@@ -6099,11 +6004,11 @@
       "id": "instance:cpu_top:u_register_file",
       "type": "hdl",
       "position": {
-        "x": 1464,
+        "x": 1512,
         "y": 3456
       },
-      "width": 2856,
-      "height": 1272,
+      "width": 2544,
+      "height": 912,
       "data": {
         "kind": "instance",
         "ports": [
@@ -6159,7 +6064,7 @@
       "id": "literal:cpu_top:8_d1:8_d1",
       "type": "hdl",
       "position": {
-        "x": 864,
+        "x": 912,
         "y": -588
       },
       "width": 96,
@@ -6179,7 +6084,7 @@
       "id": "port:cpu_top:alu_result_out",
       "type": "hdl",
       "position": {
-        "x": -1032,
+        "x": -984,
         "y": -660
       },
       "width": 216,
@@ -6199,7 +6104,7 @@
       "id": "port:cpu_top:clk",
       "type": "hdl",
       "position": {
-        "x": 984,
+        "x": 1032,
         "y": 3180
       },
       "width": 120,
@@ -6219,7 +6124,7 @@
       "id": "port:cpu_top:instr_out",
       "type": "hdl",
       "position": {
-        "x": -1368,
+        "x": -1320,
         "y": -660
       },
       "width": 192,
@@ -6239,7 +6144,7 @@
       "id": "port:cpu_top:pc_out",
       "type": "hdl",
       "position": {
-        "x": -1656,
+        "x": -1608,
         "y": -660
       },
       "width": 144,
@@ -6259,7 +6164,7 @@
       "id": "port:cpu_top:reset_n",
       "type": "hdl",
       "position": {
-        "x": 984,
+        "x": 1032,
         "y": 3228
       },
       "width": 120,
@@ -6283,7 +6188,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:sel",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1032 -240 L 1032 -240 L 1056 -240"
+      "path": "M -192 -240 L -192 -240 L -168 -240"
     },
     {
       "id": "cut-stub:gate:cpu_top:pc_src:and:out:pc_src:source",
@@ -6291,7 +6196,7 @@
       "target": "cut-label:gate:cpu_top:pc_src:and:out:pc_src:source",
       "sourceHandle": "out:pc_src",
       "targetHandle": "cut",
-      "path": "M -576 -624 L -552 -624 L -552 -624"
+      "path": "M -528 -624 L -504 -624 L -504 -624"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu_src_mux:port:y:sink:edge:instance:cpu_top:u_alu_src_mux:instance:cpu_top:u_alu:alu_in_b",
@@ -6299,7 +6204,7 @@
       "target": "expand:instance:cpu_top:u_alu::port:alu:b",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -1680 240 L -1680 240 L -1656 240"
+      "path": "M -1632 240 L -1632 240 L -1608 240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu_src_mux:port:y:source",
@@ -6307,7 +6212,7 @@
       "target": "cut-label:instance:cpu_top:u_alu_src_mux:port:y:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 3552 -600 L 3576 -600 L 3576 -600"
+      "path": "M 3600 -600 L 3624 -600 L 3624 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:result:sink:edge:instance:cpu_top:u_alu:instance:cpu_top:u_mem_to_reg_mux:alu_result",
@@ -6315,7 +6220,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:d0",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -360 -288 L -360 -288 L -336 -288"
+      "path": "M -1584 -288 L -1584 -288 L -1560 -288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:result:sink:edge:instance:cpu_top:u_alu:port:cpu_top:alu_result_out:alu_result_out",
@@ -6323,7 +6228,7 @@
       "target": "port:cpu_top:alu_result_out",
       "sourceHandle": "cut",
       "targetHandle": "port:alu_result_out",
-      "path": "M -1056 -648 L -1056 -648 L -1032 -648"
+      "path": "M -1008 -648 L -1008 -648 L -984 -648"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:result:source",
@@ -6331,7 +6236,7 @@
       "target": "cut-label:instance:cpu_top:u_alu:port:result:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 696 216 L 720 216 L 720 216"
+      "path": "M 744 216 L 768 216 L 768 216"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:zero:sink:edge:instance:cpu_top:u_alu:gate:cpu_top:pc_src:and:alu_zero",
@@ -6339,7 +6244,7 @@
       "target": "gate:cpu_top:pc_src:and",
       "sourceHandle": "cut",
       "targetHandle": "port:in1",
-      "path": "M -696 -600 L -696 -600 L -672 -600"
+      "path": "M -648 -600 L -648 -600 L -624 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_alu:port:zero:source",
@@ -6347,7 +6252,7 @@
       "target": "cut-label:instance:cpu_top:u_alu:port:zero:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 696 240 L 720 240 L 816 240 L 816 240"
+      "path": "M 744 240 L 768 240 L 864 240 L 864 240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_branch_adder:port:sum:sink:edge:instance:cpu_top:u_branch_adder:instance:cpu_top:u_pc_src_mux:branch_target",
@@ -6355,7 +6260,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:d1",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 936 -264 L 936 -264 L 1032 -264 L 1056 -264"
+      "path": "M -288 -264 L -288 -264 L -192 -264 L -168 -264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_branch_adder:port:sum:source",
@@ -6363,7 +6268,7 @@
       "target": "cut-label:instance:cpu_top:u_branch_adder:port:sum:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 672 -600 L 696 -600 L 696 -600"
+      "path": "M 720 -600 L 744 -600 L 744 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:alu_op:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_alu:alu_op",
@@ -6371,7 +6276,7 @@
       "target": "expand:instance:cpu_top:u_alu::port:alu:alu_op",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -1776 264 L -1776 264 L -1680 264 L -1656 264"
+      "path": "M -1728 264 L -1728 264 L -1632 264 L -1608 264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:alu_op:source",
@@ -6379,7 +6284,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:alu_op:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 240 L 2832 240 L 2832 240"
+      "path": "M 2856 240 L 2880 240 L 2880 240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:alu_src:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_alu_src_mux:alu_src",
@@ -6387,7 +6292,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:sel",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 2496 -552 L 2496 -552 L 2520 -552"
+      "path": "M 2544 -552 L 2544 -552 L 2568 -552"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:alu_src:source",
@@ -6395,7 +6300,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:alu_src:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 216 L 2832 216 L 2928 216 L 2928 216"
+      "path": "M 2856 216 L 2880 216 L 2976 216 L 2976 216"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:branch:sink:edge:instance:cpu_top:u_control_unit:gate:cpu_top:pc_src:and:branch",
@@ -6403,7 +6308,7 @@
       "target": "gate:cpu_top:pc_src:and",
       "sourceHandle": "cut",
       "targetHandle": "port:in0",
-      "path": "M -696 -648 L -696 -648 L -672 -648"
+      "path": "M -648 -648 L -648 -648 L -624 -648"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:branch:source",
@@ -6411,7 +6316,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:branch:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 312 L 2832 312 L 2832 312"
+      "path": "M 2856 312 L 2880 312 L 2880 312"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:jump:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_jump_mux:jump",
@@ -6419,7 +6324,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::port:mux2:sel",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 3864 -552 L 3864 -552 L 3888 -552"
+      "path": "M 3912 -552 L 3912 -552 L 3936 -552"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:jump:source",
@@ -6427,7 +6332,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:jump:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 336 L 2832 336 L 2928 336 L 2928 336"
+      "path": "M 2856 336 L 2880 336 L 2976 336 L 2976 336"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:mem_to_reg:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_mem_to_reg_mux:mem_to_reg",
@@ -6435,7 +6340,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:sel",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -360 -240 L -360 -240 L -336 -240"
+      "path": "M -1584 -240 L -1584 -240 L -1560 -240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:mem_to_reg:source",
@@ -6443,7 +6348,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:mem_to_reg:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 288 L 2832 288 L 2928 288 L 2928 288"
+      "path": "M 2856 288 L 2880 288 L 2976 288 L 2976 288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:mem_write:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_data_mem:mem_write",
@@ -6451,7 +6356,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::port:data_mem:mem_write",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1392 2736 L 1392 2736 L 1416 2736"
+      "path": "M 1440 2736 L 1440 2736 L 1464 2736"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:mem_write:source",
@@ -6459,7 +6364,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:mem_write:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 264 L 2832 264 L 3024 264 L 3024 264"
+      "path": "M 2856 264 L 2880 264 L 3072 264 L 3072 264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:reg_write:sink:edge:instance:cpu_top:u_control_unit:instance:cpu_top:u_register_file:reg_write",
@@ -6467,7 +6372,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:reg_write",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1440 3600 L 1440 3600 L 1464 3600"
+      "path": "M 1488 3600 L 1488 3600 L 1512 3600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_control_unit:port:reg_write:source",
@@ -6475,7 +6380,7 @@
       "target": "cut-label:instance:cpu_top:u_control_unit:port:reg_write:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2808 192 L 2832 192 L 2832 192"
+      "path": "M 2856 192 L 2880 192 L 2880 192"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_data_mem:port:read_data:sink:edge:instance:cpu_top:u_data_mem:instance:cpu_top:u_mem_to_reg_mux:mem_read_data",
@@ -6483,7 +6388,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::port:mux2:d1",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -456 -264 L -456 -264 L -360 -264 L -336 -264"
+      "path": "M -1680 -264 L -1680 -264 L -1584 -264 L -1560 -264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_data_mem:port:read_data:source",
@@ -6491,7 +6396,7 @@
       "target": "cut-label:instance:cpu_top:u_data_mem:port:read_data:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 3048 2712 L 3072 2712 L 3072 2712"
+      "path": "M 3144 2712 L 3168 2712 L 3168 2712"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_alu_src_mux:imm",
@@ -6499,7 +6404,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:d1",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 2400 -576 L 2400 -576 L 2496 -576 L 2520 -576"
+      "path": "M 2448 -576 L 2448 -576 L 2544 -576 L 2568 -576"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_branch_adder:imm",
@@ -6507,7 +6412,7 @@
       "target": "expand:instance:cpu_top:u_branch_adder::port:adder:b",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -336 -576 L -336 -576 L -312 -576"
+      "path": "M -288 -576 L -288 -576 L -264 -576"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_imm_gen:port:imm:sink:edge:instance:cpu_top:u_imm_gen:instance:cpu_top:u_jump_mux:imm",
@@ -6515,7 +6420,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::port:mux2:d1",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 3768 -576 L 3768 -576 L 3864 -576 L 3888 -576"
+      "path": "M 3816 -576 L 3816 -576 L 3912 -576 L 3936 -576"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_imm_gen:port:imm:source",
@@ -6523,7 +6428,7 @@
       "target": "cut-label:instance:cpu_top:u_imm_gen:port:imm:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 4584 -288 L 4608 -288 L 4608 -288"
+      "path": "M 4680 -288 L 4704 -288 L 4704 -288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:bus:cpu_top:instr:instr",
@@ -6531,7 +6436,7 @@
       "target": "bus:cpu_top:instr",
       "sourceHandle": "cut",
       "targetHandle": "in:instr",
-      "path": "M 936 3552 L 936 3552 L 960 3552"
+      "path": "M 984 3552 L 984 3552 L 1008 3552"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:instance:cpu_top:u_imm_gen:instr",
@@ -6539,7 +6444,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::port:imm_gen:instr",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 2376 -288 L 2376 -288 L 2400 -288"
+      "path": "M 2472 -288 L 2472 -288 L 2496 -288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_instr_mem:port:instr:sink:edge:instance:cpu_top:u_instr_mem:port:cpu_top:instr_out:instr_out",
@@ -6547,7 +6452,7 @@
       "target": "port:cpu_top:instr_out",
       "sourceHandle": "cut",
       "targetHandle": "port:instr_out",
-      "path": "M -1392 -648 L -1392 -648 L -1368 -648"
+      "path": "M -1344 -648 L -1344 -648 L -1320 -648"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_instr_mem:port:instr:source",
@@ -6555,7 +6460,7 @@
       "target": "cut-label:instance:cpu_top:u_instr_mem:port:instr:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M -648 -264 L -624 -264 L -624 -360 L -1752 -360 L -1752 -264 L -1752 -264"
+      "path": "M 2232 -264 L 2256 -264 L 2256 -264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_jump_mux:port:y:sink:edge:instance:cpu_top:u_jump_mux:instance:cpu_top:u_pc_reg:next_pc",
@@ -6563,7 +6468,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:next_pc",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1392 3240 L 1392 3240 L 1416 3240"
+      "path": "M 1440 3240 L 1440 3240 L 1464 3240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_jump_mux:port:y:source",
@@ -6571,7 +6476,7 @@
       "target": "cut-label:instance:cpu_top:u_jump_mux:port:y:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 4920 -600 L 4944 -600 L 4944 -600"
+      "path": "M 4968 -600 L 4992 -600 L 4992 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_mem_to_reg_mux:port:y:sink:edge:instance:cpu_top:u_mem_to_reg_mux:instance:cpu_top:u_register_file:reg_write_data",
@@ -6579,7 +6484,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:write_data",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1440 3696 L 1440 3696 L 1464 3696"
+      "path": "M 1488 3696 L 1488 3696 L 1512 3696"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_mem_to_reg_mux:port:y:source",
@@ -6587,7 +6492,7 @@
       "target": "cut-label:instance:cpu_top:u_mem_to_reg_mux:port:y:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 696 -288 L 720 -288 L 720 -360 L 2088 -360 L 2088 -288 L 2088 -288"
+      "path": "M -528 -288 L -504 -288 L -504 -360 L 864 -360 L 864 -288 L 864 -288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_adder:port:sum:sink:edge:instance:cpu_top:u_pc_adder:instance:cpu_top:u_pc_src_mux:pc_plus_1",
@@ -6595,7 +6500,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::port:mux2:d0",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1032 -288 L 1032 -288 L 1056 -288"
+      "path": "M -192 -288 L -192 -288 L -168 -288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_adder:port:sum:source",
@@ -6603,7 +6508,7 @@
       "target": "cut-label:instance:cpu_top:u_pc_adder:port:sum:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2256 -600 L 2280 -600 L 2400 -600 L 2400 -600"
+      "path": "M 2304 -600 L 2328 -600 L 2448 -600 L 2448 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_branch_adder:pc",
@@ -6611,7 +6516,7 @@
       "target": "expand:instance:cpu_top:u_branch_adder::port:adder:a",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -792 -600 L -792 -600 L -336 -600 L -312 -600"
+      "path": "M -744 -600 L -744 -600 L -288 -600 L -264 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_instr_mem:pc",
@@ -6619,7 +6524,7 @@
       "target": "expand:instance:cpu_top:u_instr_mem::port:instr_mem:addr",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -1752 -264 L -1752 -264 L -1680 -264 L -1656 -264"
+      "path": "M 1152 -264 L 1152 -264 L 1176 -264"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_pc_adder:pc",
@@ -6627,7 +6532,7 @@
       "target": "expand:instance:cpu_top:u_pc_adder::port:adder:a",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1248 -600 L 1248 -600 L 1272 -600"
+      "path": "M 1296 -600 L 1296 -600 L 1320 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:port:cpu_top:pc_out:pc_out",
@@ -6635,7 +6540,7 @@
       "target": "port:cpu_top:pc_out",
       "sourceHandle": "cut",
       "targetHandle": "port:pc_out",
-      "path": "M -1680 -648 L -1680 -648 L -1656 -648"
+      "path": "M -1632 -648 L -1632 -648 L -1608 -648"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:source",
@@ -6643,7 +6548,7 @@
       "target": "cut-label:instance:cpu_top:u_pc_reg:port:pc:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2520 3192 L 2544 3192 L 2544 3192"
+      "path": "M 2568 3192 L 2592 3192 L 2592 3192"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_src_mux:port:y:sink:edge:instance:cpu_top:u_pc_src_mux:instance:cpu_top:u_jump_mux:branch_next_pc",
@@ -6651,7 +6556,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::port:mux2:d0",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 5184 -600 L 5184 -600 L 5184 -696 L 3864 -696 L 3864 -600 L 3888 -600"
+      "path": "M 5232 -600 L 5232 -600 L 5232 -696 L 3912 -696 L 3912 -600 L 3936 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_src_mux:port:y:source",
@@ -6659,7 +6564,7 @@
       "target": "cut-label:instance:cpu_top:u_pc_src_mux:port:y:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 2088 -288 L 2112 -288 L 2112 -240 L 2112 -240"
+      "path": "M 864 -288 L 888 -288 L 888 -240 L 888 -240"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs1_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_alu:rs1_data",
@@ -6667,7 +6572,7 @@
       "target": "expand:instance:cpu_top:u_alu::port:alu:a",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M -1776 216 L -1776 216 L -1680 216 L -1656 216"
+      "path": "M -1728 216 L -1728 216 L -1632 216 L -1608 216"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs1_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_data_mem:rs1_data",
@@ -6675,7 +6580,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::port:data_mem:write_data",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1392 2784 L 1392 2784 L 1416 2784"
+      "path": "M 1440 2784 L 1440 2784 L 1464 2784"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs1_data:source",
@@ -6683,7 +6588,7 @@
       "target": "cut-label:instance:cpu_top:u_register_file:port:rs1_data:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 4320 3552 L 4344 3552 L 4344 3552"
+      "path": "M 4056 3552 L 4080 3552 L 4080 3552"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs2_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_alu_src_mux:rs2_data",
@@ -6691,7 +6596,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::port:mux2:d0",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1152 -600 L 1152 -600 L 1152 -696 L 2496 -696 L 2496 -600 L 2520 -600"
+      "path": "M 1200 -600 L 1200 -600 L 1200 -696 L 2544 -696 L 2544 -600 L 2568 -600"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs2_data:sink:edge:instance:cpu_top:u_register_file:instance:cpu_top:u_data_mem:rs2_data",
@@ -6699,7 +6604,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::port:data_mem:addr",
       "sourceHandle": "cut",
       "targetHandle": "outer",
-      "path": "M 1296 2760 L 1296 2760 L 1392 2760 L 1416 2760"
+      "path": "M 1344 2760 L 1344 2760 L 1440 2760 L 1464 2760"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_register_file:port:rs2_data:source",
@@ -6707,7 +6612,7 @@
       "target": "cut-label:instance:cpu_top:u_register_file:port:rs2_data:source",
       "sourceHandle": "outer",
       "targetHandle": "cut",
-      "path": "M 4320 3576 L 4344 3576 L 4440 3576 L 4440 3576"
+      "path": "M 4056 3576 L 4080 3576 L 4176 3576 L 4176 3576"
     },
     {
       "id": "edge:bus:cpu_top:instr:instance:cpu_top:u_control_unit:instr_11:8_",
@@ -6715,7 +6620,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::port:control_unit:opcode",
       "sourceHandle": "out:_11:8_",
       "targetHandle": "outer",
-      "path": "M 1104 3552 L 1128 3552 L 1152 3552 L 1152 192 L 1296 192 L 1320 192"
+      "path": "M 1152 3552 L 1176 3552 L 1200 3552 L 1200 192 L 1344 192 L 1368 192"
     },
     {
       "id": "edge:bus:cpu_top:instr:instance:cpu_top:u_register_file:instr_5:4_",
@@ -6723,7 +6628,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:rs2_addr",
       "sourceHandle": "out:_5:4_",
       "targetHandle": "outer",
-      "path": "M 1104 3648 L 1128 3648 L 1440 3648 L 1464 3648"
+      "path": "M 1152 3648 L 1176 3648 L 1488 3648 L 1512 3648"
     },
     {
       "id": "edge:bus:cpu_top:instr:instance:cpu_top:u_register_file:instr_7:6_:out:_7:6_:port:rd_addr",
@@ -6731,7 +6636,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:rd_addr",
       "sourceHandle": "out:_7:6_",
       "targetHandle": "outer",
-      "path": "M 1104 3600 L 1128 3600 L 1272 3600 L 1272 3639 Q 1281 3648 1272 3657 L 1272 3672 L 1440 3672 L 1464 3672"
+      "path": "M 1152 3600 L 1176 3600 L 1320 3600 L 1320 3639 Q 1329 3648 1320 3657 L 1320 3672 L 1488 3672 L 1512 3672"
     },
     {
       "id": "edge:bus:cpu_top:instr:instance:cpu_top:u_register_file:instr_7:6_:out:_7:6_:port:rs1_addr",
@@ -6739,7 +6644,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:rs1_addr",
       "sourceHandle": "out:_7:6_",
       "targetHandle": "outer",
-      "path": "M 1104 3600 L 1128 3600 L 1272 3600 L 1272 3624 L 1440 3624 L 1464 3624"
+      "path": "M 1152 3600 L 1176 3600 L 1320 3600 L 1320 3624 L 1488 3624 L 1512 3624"
     },
     {
       "id": "edge:literal:cpu_top:8_d1:8_d1:instance:cpu_top:u_pc_adder:8_d1",
@@ -6747,7 +6652,7 @@
       "target": "expand:instance:cpu_top:u_pc_adder::port:adder:b",
       "sourceHandle": "port:8_d1",
       "targetHandle": "outer",
-      "path": "M 960 -576 L 984 -576 L 1248 -576 L 1272 -576"
+      "path": "M 1008 -576 L 1032 -576 L 1296 -576 L 1320 -576"
     },
     {
       "id": "edge:port:cpu_top:clk:instance:cpu_top:u_data_mem:clk",
@@ -6755,7 +6660,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::port:data_mem:clk",
       "sourceHandle": "port:clk",
       "targetHandle": "outer",
-      "path": "M 1104 3192 L 1128 3192 L 1143 3192 Q 1152 3183 1161 3192 L 1392 3192 L 1392 2712 L 1416 2712"
+      "path": "M 1152 3192 L 1176 3192 L 1191 3192 Q 1200 3183 1209 3192 L 1440 3192 L 1440 2712 L 1464 2712"
     },
     {
       "id": "edge:port:cpu_top:clk:instance:cpu_top:u_pc_reg:clk",
@@ -6763,7 +6668,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:clk",
       "sourceHandle": "port:clk",
       "targetHandle": "outer",
-      "path": "M 1104 3192 L 1128 3192 L 1143 3192 Q 1152 3183 1161 3192 L 1392 3192 L 1416 3192"
+      "path": "M 1152 3192 L 1176 3192 L 1191 3192 Q 1200 3183 1209 3192 L 1440 3192 L 1464 3192"
     },
     {
       "id": "edge:port:cpu_top:clk:instance:cpu_top:u_register_file:clk",
@@ -6771,7 +6676,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:clk",
       "sourceHandle": "port:clk",
       "targetHandle": "outer",
-      "path": "M 1104 3192 L 1128 3192 L 1143 3192 Q 1152 3183 1161 3192 L 1296 3192 L 1296 3552 L 1440 3552 L 1464 3552"
+      "path": "M 1152 3192 L 1176 3192 L 1191 3192 Q 1200 3183 1209 3192 L 1344 3192 L 1344 3552 L 1488 3552 L 1512 3552"
     },
     {
       "id": "edge:port:cpu_top:reset_n:instance:cpu_top:u_pc_reg:reset_n",
@@ -6779,7 +6684,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::port:pc_reg:reset_n",
       "sourceHandle": "port:reset_n",
       "targetHandle": "outer",
-      "path": "M 1104 3240 L 1128 3240 L 1143 3240 Q 1152 3231 1161 3240 L 1272 3240 L 1272 3216 L 1289 3216 Q 1296 3209 1303 3216 L 1392 3216 L 1416 3216"
+      "path": "M 1152 3240 L 1176 3240 L 1191 3240 Q 1200 3231 1209 3240 L 1320 3240 L 1320 3216 L 1337 3216 Q 1344 3209 1351 3216 L 1440 3216 L 1464 3216"
     },
     {
       "id": "edge:port:cpu_top:reset_n:instance:cpu_top:u_register_file:reset_n",
@@ -6787,7 +6692,7 @@
       "target": "expand:instance:cpu_top:u_register_file::port:register_file:reset_n",
       "sourceHandle": "port:reset_n",
       "targetHandle": "outer",
-      "path": "M 1104 3240 L 1128 3240 L 1143 3240 Q 1152 3231 1161 3240 L 1272 3240 L 1272 3576 L 1440 3576 L 1464 3576"
+      "path": "M 1152 3240 L 1176 3240 L 1191 3240 Q 1200 3231 1209 3240 L 1320 3240 L 1320 3576 L 1488 3576 L 1512 3576"
     },
     {
       "id": "expand:instance:cpu_top:u_alu_src_mux::edge:mux:mux2:y:ternary:port:mux2:y:y",
@@ -6795,7 +6700,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::expand-port-label:port:mux2:y",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 3120 -480 L 3144 -480 L 3312 -480 L 3336 -480"
+      "path": "M 3168 -480 L 3192 -480 L 3360 -480 L 3384 -480"
     },
     {
       "id": "expand:instance:cpu_top:u_alu_src_mux::edge:port:mux2:d0:mux:mux2:y:ternary:d0",
@@ -6803,7 +6708,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 2760 -456 L 2784 -456 L 2952 -456 L 2976 -456"
+      "path": "M 2808 -456 L 2832 -456 L 3000 -456 L 3024 -456"
     },
     {
       "id": "expand:instance:cpu_top:u_alu_src_mux::edge:port:mux2:d1:mux:mux2:y:ternary:d1",
@@ -6811,7 +6716,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M 2760 -504 L 2784 -504 L 2880 -504 L 2880 -480 L 2952 -480 L 2976 -480"
+      "path": "M 2808 -504 L 2832 -504 L 2928 -504 L 2928 -480 L 3000 -480 L 3024 -480"
     },
     {
       "id": "expand:instance:cpu_top:u_alu_src_mux::edge:port:mux2:sel:mux:mux2:y:ternary:sel",
@@ -6819,7 +6724,7 @@
       "target": "expand:instance:cpu_top:u_alu_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2760 -552 L 2784 -552 L 3048 -552 L 3048 -504"
+      "path": "M 2808 -552 L 2832 -552 L 3096 -552 L 3096 -504"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:alu:alu:result_3_b000:expr:mux:alu:result:alu_op:result:result_3_b000",
@@ -6827,7 +6732,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b000",
       "targetHandle": "in:3_b000",
-      "path": "M -1080 288 L -1056 288 L -600 288 L -600 600 L -528 600 L -504 600"
+      "path": "M -1032 288 L -1008 288 L -552 288 L -552 600 L -480 600 L -456 600"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:alu:alu:result_3_b001:expr:mux:alu:result:alu_op:result:result_3_b001",
@@ -6835,7 +6740,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b001",
       "targetHandle": "in:3_b001",
-      "path": "M -1080 408 L -1056 408 L -624 408 L -624 624 L -528 624 L -504 624"
+      "path": "M -1032 408 L -1008 408 L -576 408 L -576 624 L -480 624 L -456 624"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:comparator:alu:result_3_b100_sel:expr:mux:alu:result_3_b100:ternary:result_3_b100_sel",
@@ -6843,7 +6748,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "port:result_3_b100_sel",
       "targetHandle": "sel",
-      "path": "M -1080 528 L -1056 528 L -960 528 L -960 696 L -792 696 L -792 744"
+      "path": "M -1032 528 L -1008 528 L -912 528 L -912 696 L -744 696 L -744 744"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:comparator:alu:zero:expr:port:alu:zero:zero",
@@ -6851,7 +6756,7 @@
       "target": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:zero",
       "sourceHandle": "port:zero",
       "targetHandle": "cut",
-      "path": "M 144 816 L 168 816 L 408 816 L 432 816"
+      "path": "M 192 816 L 216 816 L 456 816 L 480 816"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:gate:alu:result_3_b010:and:mux:alu:result:alu_op:result:result_3_b010",
@@ -6859,7 +6764,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b010",
       "targetHandle": "in:3_b010",
-      "path": "M -1080 648 L -1056 648 L -969 648 Q -960 639 -951 648 L -528 648 L -504 648"
+      "path": "M -1032 648 L -1008 648 L -921 648 Q -912 639 -903 648 L -480 648 L -456 648"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:gate:alu:result_3_b011:or:mux:alu:result:alu_op:result:result_3_b011",
@@ -6867,7 +6772,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out:result_3_b011",
       "targetHandle": "in:3_b011",
-      "path": "M -1080 768 L -1056 768 L -984 768 L -984 672 L -969 672 Q -960 663 -951 672 L -528 672 L -504 672"
+      "path": "M -1032 768 L -1008 768 L -936 768 L -936 672 L -921 672 Q -912 663 -903 672 L -480 672 L -456 672"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:_0:_0:comparator:alu:zero:expr:_0",
@@ -6875,7 +6780,7 @@
       "target": "expand:instance:cpu_top:u_alu::comparator:alu:zero:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M -720 864 L -696 864 L -528 864 L -528 840 L 24 840 L 48 840"
+      "path": "M -672 864 L -648 864 L -480 864 L -480 840 L 72 840 L 96 840"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:_0:_0:mux:alu:result:alu_op:result:result_default",
@@ -6883,7 +6788,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "port:result_default",
       "targetHandle": "in:default",
-      "path": "M -720 864 L -696 864 L -528 864 L -528 720 L -504 720"
+      "path": "M -672 864 L -648 864 L -480 864 L -480 720 L -456 720"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:8_b0:8_b0:mux:alu:result_3_b100:ternary:8_b0",
@@ -6891,7 +6796,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "port:8_b0",
       "targetHandle": "in:false",
-      "path": "M -1080 912 L -1056 912 L -960 912 L -960 792 L -888 792 L -864 792"
+      "path": "M -1032 912 L -1008 912 L -912 912 L -912 792 L -840 792 L -816 792"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:literal:alu:8_b1:8_b1:mux:alu:result_3_b100:ternary:8_b1",
@@ -6899,7 +6804,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result_3_b100:ternary",
       "sourceHandle": "port:8_b1",
       "targetHandle": "in:true",
-      "path": "M -1080 864 L -1056 864 L -960 864 L -960 768 L -888 768 L -864 768"
+      "path": "M -1032 864 L -1008 864 L -912 864 L -912 768 L -840 768 L -816 768"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result_3_b100:ternary:mux:alu:result:alu_op:result:result_3_b100",
@@ -6907,7 +6812,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "out",
       "targetHandle": "in:3_b100",
-      "path": "M -720 768 L -696 768 L -600 768 L -600 696 L -528 696 L -504 696"
+      "path": "M -672 768 L -648 768 L -552 768 L -552 696 L -480 696 L -456 696"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result:alu_op:result:comparator:alu:zero:expr:result",
@@ -6915,7 +6820,7 @@
       "target": "expand:instance:cpu_top:u_alu::comparator:alu:zero:expr",
       "sourceHandle": "out",
       "targetHandle": "port:lhs",
-      "path": "M -216 648 L -192 648 L -24 648 L -24 792 L 24 792 L 48 792"
+      "path": "M -168 648 L -144 648 L 24 648 L 24 792 L 72 792 L 96 792"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:mux:alu:result:alu_op:result:port:alu:result:result",
@@ -6923,7 +6828,7 @@
       "target": "expand:instance:cpu_top:u_alu::expand-port-label:port:alu:result",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M -216 648 L -192 648 L -24 648 L 0 648"
+      "path": "M -168 648 L -144 648 L 24 648 L 48 648"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:alu:alu:result_3_b000:expr:a",
@@ -6931,7 +6836,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b000:expr",
       "sourceHandle": "cut",
       "targetHandle": "lhs",
-      "path": "M -1392 504 L -1368 504 L -1200 504 L -1200 264 L -1176 264"
+      "path": "M -1344 504 L -1320 504 L -1152 504 L -1152 264 L -1128 264"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:alu:alu:result_3_b001:expr:a",
@@ -6939,7 +6844,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b001:expr",
       "sourceHandle": "cut",
       "targetHandle": "lhs",
-      "path": "M -1392 504 L -1368 504 L -1200 504 L -1200 384 L -1176 384"
+      "path": "M -1344 504 L -1320 504 L -1152 504 L -1152 384 L -1128 384"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:comparator:alu:result_3_b100_sel:expr:a",
@@ -6947,7 +6852,7 @@
       "target": "expand:instance:cpu_top:u_alu::comparator:alu:result_3_b100_sel:expr",
       "sourceHandle": "cut",
       "targetHandle": "port:lhs",
-      "path": "M -1392 504 L -1368 504 L -1200 504 L -1176 504"
+      "path": "M -1344 504 L -1320 504 L -1152 504 L -1128 504"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:gate:alu:result_3_b010:and:a",
@@ -6955,7 +6860,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b010:and",
       "sourceHandle": "cut",
       "targetHandle": "port:in0",
-      "path": "M -1392 504 L -1368 504 L -1200 504 L -1200 624 L -1176 624"
+      "path": "M -1344 504 L -1320 504 L -1152 504 L -1152 624 L -1128 624"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:a:gate:alu:result_3_b011:or:a",
@@ -6963,7 +6868,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b011:or",
       "sourceHandle": "cut",
       "targetHandle": "port:in0",
-      "path": "M -1392 504 L -1368 504 L -1200 504 L -1200 744 L -1158.518 744"
+      "path": "M -1344 504 L -1320 504 L -1152 504 L -1152 744 L -1110.518 744"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:alu_op:mux:alu:result:alu_op:result:alu_op",
@@ -6971,7 +6876,7 @@
       "target": "expand:instance:cpu_top:u_alu::mux:alu:result:alu_op:result",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M -720 480 L -696 480 L -633 480 Q -624 471 -615 480 L -600 480 L -600 528 L -360 528 L -360 576"
+      "path": "M -672 480 L -648 480 L -585 480 Q -576 471 -567 480 L -552 480 L -552 528 L -312 528 L -312 576"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:alu:alu:result_3_b000:expr:b",
@@ -6979,7 +6884,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b000:expr",
       "sourceHandle": "cut",
       "targetHandle": "rhs",
-      "path": "M -1392 552 L -1368 552 L -1200 552 L -1200 312 L -1176 312"
+      "path": "M -1344 552 L -1320 552 L -1152 552 L -1152 312 L -1128 312"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:alu:alu:result_3_b001:expr:b",
@@ -6987,7 +6892,7 @@
       "target": "expand:instance:cpu_top:u_alu::alu:alu:result_3_b001:expr",
       "sourceHandle": "cut",
       "targetHandle": "rhs",
-      "path": "M -1392 552 L -1368 552 L -1200 552 L -1200 432 L -1176 432"
+      "path": "M -1344 552 L -1320 552 L -1152 552 L -1152 432 L -1128 432"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:comparator:alu:result_3_b100_sel:expr:b",
@@ -6995,7 +6900,7 @@
       "target": "expand:instance:cpu_top:u_alu::comparator:alu:result_3_b100_sel:expr",
       "sourceHandle": "cut",
       "targetHandle": "port:rhs",
-      "path": "M -1392 552 L -1368 552 L -1200 552 L -1176 552"
+      "path": "M -1344 552 L -1320 552 L -1152 552 L -1128 552"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:gate:alu:result_3_b010:and:b",
@@ -7003,7 +6908,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b010:and",
       "sourceHandle": "cut",
       "targetHandle": "port:in1",
-      "path": "M -1392 552 L -1368 552 L -1200 552 L -1200 672 L -1176 672"
+      "path": "M -1344 552 L -1320 552 L -1152 552 L -1152 672 L -1128 672"
     },
     {
       "id": "expand:instance:cpu_top:u_alu::edge:port:alu:b:gate:alu:result_3_b011:or:b",
@@ -7011,7 +6916,7 @@
       "target": "expand:instance:cpu_top:u_alu::gate:alu:result_3_b011:or",
       "sourceHandle": "cut",
       "targetHandle": "port:in1",
-      "path": "M -1392 552 L -1368 552 L -1200 552 L -1200 792 L -1158.518 792"
+      "path": "M -1344 552 L -1320 552 L -1152 552 L -1152 792 L -1110.518 792"
     },
     {
       "id": "expand:instance:cpu_top:u_branch_adder::edge:alu:adder:sum:expr:port:adder:sum:sum",
@@ -7019,7 +6924,7 @@
       "target": "expand:instance:cpu_top:u_branch_adder::expand-port-label:port:adder:sum",
       "sourceHandle": "out:sum",
       "targetHandle": "cut",
-      "path": "M 216 -528 L 240 -528 L 408 -528 L 432 -528"
+      "path": "M 264 -528 L 288 -528 L 456 -528 L 480 -528"
     },
     {
       "id": "expand:instance:cpu_top:u_branch_adder::edge:port:adder:a:alu:adder:sum:expr:a",
@@ -7027,7 +6932,7 @@
       "target": "expand:instance:cpu_top:u_branch_adder::alu:adder:sum:expr",
       "sourceHandle": "cut",
       "targetHandle": "lhs",
-      "path": "M -96 -552 L -72 -552 L 96 -552 L 120 -552"
+      "path": "M -48 -552 L -24 -552 L 144 -552 L 168 -552"
     },
     {
       "id": "expand:instance:cpu_top:u_branch_adder::edge:port:adder:b:alu:adder:sum:expr:b",
@@ -7035,7 +6940,7 @@
       "target": "expand:instance:cpu_top:u_branch_adder::alu:adder:sum:expr",
       "sourceHandle": "cut",
       "targetHandle": "rhs",
-      "path": "M -96 -504 L -72 -504 L 96 -504 L 120 -504"
+      "path": "M -48 -504 L -24 -504 L 144 -504 L 168 -504"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_4_b0001:3_b001:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0001",
@@ -7043,7 +6948,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0001",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 2400 L 1632 2400 L 1800 2400 L 1800 2328 L 1824 2328"
+      "path": "M 1656 2400 L 1680 2400 L 1848 2400 L 1848 2328 L 1872 2328"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_4_b0001:3_b001:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0111",
@@ -7051,7 +6956,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0111",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 2400 L 1632 2400 L 1800 2400 L 1800 2472 L 1824 2472"
+      "path": "M 1656 2400 L 1680 2400 L 1848 2400 L 1848 2472 L 1872 2472"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_4_b0010:3_b010:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0010",
@@ -7059,7 +6964,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0010",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 2304 L 1632 2304 L 1728 2304 L 1728 2352 L 1800 2352 L 1824 2352"
+      "path": "M 1656 2304 L 1680 2304 L 1776 2304 L 1776 2352 L 1848 2352 L 1872 2352"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_4_b0011:3_b011:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0011",
@@ -7067,7 +6972,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0011",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 2352 L 1632 2352 L 1704 2352 L 1704 2376 L 1800 2376 L 1824 2376"
+      "path": "M 1656 2352 L 1680 2352 L 1752 2352 L 1752 2376 L 1848 2376 L 1872 2376"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0000",
@@ -7075,7 +6980,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0000",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1800 2304 L 1824 2304"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1848 2304 L 1872 2304"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0100",
@@ -7083,7 +6988,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0100",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1800 2400 L 1824 2400"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1848 2400 L 1872 2400"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0101",
@@ -7091,7 +6996,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0101",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1800 2424 L 1824 2424"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1848 2424 L 1872 2424"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_4_b0110",
@@ -7099,7 +7004,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_4_b0110",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1824 2448"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1872 2448"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_branch_n2:port:alu_op_branch_n2:in:4_b1000",
@@ -7107,7 +7012,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_branch_n2",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1800 2496 L 1824 2496"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1848 2496 L 1872 2496"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:alu_op_branch_n2:3_b000:mux:control_unit:alu_op:opcode:alu_op:alu_op_branch_n2:port:alu_op_branch_n2:in:default",
@@ -7115,7 +7020,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "port:alu_op_branch_n2",
       "targetHandle": "in:default",
-      "path": "M 1608 2448 L 1632 2448 L 1800 2448 L 1800 2520 L 1824 2520"
+      "path": "M 1656 2448 L 1680 2448 L 1848 2448 L 1848 2520 L 1872 2520"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0100",
@@ -7123,7 +7028,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_4_b0100",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 1392 L 1848 1392"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 1392 L 1896 1392"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:branch:opcode:branch:branch_4_b0111",
@@ -7131,7 +7036,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_4_b0111",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 1800 L 1848 1800"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 1800 L 1896 1800"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:jump:opcode:jump:jump_4_b1000",
@@ -7139,7 +7044,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_4_b1000",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 2160 L 1848 2160"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 2160 L 1896 2160"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_4_b0101",
@@ -7147,7 +7052,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_4_b0101",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 1080 L 1848 1080"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 1080 L 1896 1080"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:mem_write:opcode:mem_write:mem_write_4_b0110",
@@ -7155,7 +7060,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_4_b0110",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 768 L 1848 768"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 768 L 1896 768"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0000",
@@ -7163,7 +7068,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0000",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 288 L 1848 288"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 288 L 1896 288"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0001",
@@ -7171,7 +7076,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0001",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 312 L 1848 312"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 312 L 1896 312"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0010",
@@ -7179,7 +7084,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0010",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 336 L 1848 336"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 336 L 1896 336"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0011",
@@ -7187,7 +7092,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0011",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 360 L 1848 360"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 360 L 1896 360"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0100",
@@ -7195,7 +7100,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0100",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1824 384 L 1848 384"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1872 384 L 1896 384"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_4_b0000:1_b1:mux:control_unit:reg_write:opcode:reg_write:reg_write_4_b0101",
@@ -7203,7 +7108,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_4_b0101",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 408 L 1632 408 L 1824 408 L 1848 408"
+      "path": "M 1656 408 L 1680 408 L 1872 408 L 1896 408"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0000",
@@ -7211,7 +7116,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_4_b0000",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1296 L 1848 1296"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1296 L 1896 1296"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0001",
@@ -7219,7 +7124,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_4_b0001",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1320 L 1848 1320"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1320 L 1896 1320"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0010",
@@ -7227,7 +7132,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_4_b0010",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1848 1344"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1896 1344"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_4_b0011",
@@ -7235,7 +7140,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_4_b0011",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1368 L 1848 1368"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1368 L 1896 1368"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0101",
@@ -7243,7 +7148,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_branch_n1",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1416 L 1848 1416"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1416 L 1896 1416"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0110",
@@ -7251,7 +7156,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_branch_n1",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1440 L 1848 1440"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1440 L 1896 1440"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b0111",
@@ -7259,7 +7164,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_branch_n1",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1464 L 1848 1464"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1464 L 1896 1464"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:4_b1000",
@@ -7267,7 +7172,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_branch_n1",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1488 L 1848 1488"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1488 L 1896 1488"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:alu_src:opcode:alu_src:alu_src_branch_n1:port:alu_src_branch_n1:in:default",
@@ -7275,7 +7180,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "port:alu_src_branch_n1",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1512 L 1848 1512"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1512 L 1896 1512"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0000",
@@ -7283,7 +7188,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1632 L 1848 1632"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1632 L 1896 1632"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0001",
@@ -7291,7 +7196,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1656 L 1848 1656"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1656 L 1896 1656"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0010",
@@ -7299,7 +7204,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1680 L 1848 1680"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1680 L 1896 1680"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0011",
@@ -7307,7 +7212,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1704 L 1848 1704"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1704 L 1896 1704"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0100",
@@ -7315,7 +7220,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1728 L 1848 1728"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1728 L 1896 1728"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0101",
@@ -7323,7 +7228,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1752 L 1848 1752"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1752 L 1896 1752"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b0110",
@@ -7331,7 +7236,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1776 L 1848 1776"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1776 L 1896 1776"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:4_b1000",
@@ -7339,7 +7244,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1824 L 1848 1824"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1824 L 1896 1824"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:branch:opcode:branch:branch_branch_n5:port:branch_branch_n5:in:default",
@@ -7347,7 +7252,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "port:branch_branch_n5",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1848 L 1848 1848"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1848 L 1896 1848"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0000",
@@ -7355,7 +7260,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1968 L 1848 1968"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1968 L 1896 1968"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0001",
@@ -7363,7 +7268,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1992 L 1848 1992"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1992 L 1896 1992"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0010",
@@ -7371,7 +7276,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2016 L 1848 2016"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2016 L 1896 2016"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0011",
@@ -7379,7 +7284,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2040 L 1848 2040"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2040 L 1896 2040"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0100",
@@ -7387,7 +7292,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2064 L 1848 2064"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2064 L 1896 2064"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0101",
@@ -7395,7 +7300,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2088 L 1848 2088"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2088 L 1896 2088"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0110",
@@ -7403,7 +7308,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2112 L 1848 2112"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2112 L 1896 2112"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:4_b0111",
@@ -7411,7 +7316,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2136 L 1848 2136"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2136 L 1896 2136"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:jump:opcode:jump:jump_branch_n6:port:jump_branch_n6:in:default",
@@ -7419,7 +7324,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "port:jump_branch_n6",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 2184 L 1848 2184"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 2184 L 1896 2184"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0000",
@@ -7427,7 +7332,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 960 L 1848 960"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 960 L 1896 960"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0001",
@@ -7435,7 +7340,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 984 L 1848 984"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 984 L 1896 984"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0010",
@@ -7443,7 +7348,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1008 L 1848 1008"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1008 L 1896 1008"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0011",
@@ -7451,7 +7356,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1032 L 1848 1032"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1032 L 1896 1032"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0100",
@@ -7459,7 +7364,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1056 L 1848 1056"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1056 L 1896 1056"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0110",
@@ -7467,7 +7372,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1104 L 1848 1104"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1104 L 1896 1104"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b0111",
@@ -7475,7 +7380,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1128 L 1848 1128"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1128 L 1896 1128"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:4_b1000",
@@ -7483,7 +7388,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1152 L 1848 1152"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1152 L 1896 1152"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_to_reg:opcode:mem_to_reg:mem_to_reg_branch_n4:port:mem_to_reg_branch_n4:in:default",
@@ -7491,7 +7396,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "port:mem_to_reg_branch_n4",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 1176 L 1848 1176"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 1176 L 1896 1176"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0000",
@@ -7499,7 +7404,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 624 L 1848 624"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 624 L 1896 624"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0001",
@@ -7507,7 +7412,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0001",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 648 L 1848 648"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 648 L 1896 648"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0010",
@@ -7515,7 +7420,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0010",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 672 L 1848 672"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 672 L 1896 672"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0011",
@@ -7523,7 +7428,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0011",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 696 L 1848 696"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 696 L 1896 696"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0100",
@@ -7531,7 +7436,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0100",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 720 L 1848 720"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 720 L 1896 720"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0101",
@@ -7539,7 +7444,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0101",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 744 L 1848 744"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 744 L 1896 744"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b0111",
@@ -7547,7 +7452,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 792 L 1848 792"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 792 L 1896 792"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:4_b1000",
@@ -7555,7 +7460,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 816 L 1848 816"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 816 L 1896 816"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:mem_write:opcode:mem_write:mem_write_branch_n3:port:mem_write_branch_n3:in:default",
@@ -7563,7 +7468,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "port:mem_write_branch_n3",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 840 L 1848 840"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 840 L 1896 840"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b0110",
@@ -7571,7 +7476,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_branch_n0",
       "targetHandle": "in:4_b0110",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 432 L 1848 432"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 432 L 1896 432"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b0111",
@@ -7579,7 +7484,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_branch_n0",
       "targetHandle": "in:4_b0111",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 456 L 1848 456"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 456 L 1896 456"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:4_b1000",
@@ -7587,7 +7492,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_branch_n0",
       "targetHandle": "in:4_b1000",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 480 L 1848 480"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 480 L 1896 480"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:literal:control_unit:reg_write_branch_n0:1_b0:mux:control_unit:reg_write:opcode:reg_write:reg_write_branch_n0:port:reg_write_branch_n0:in:default",
@@ -7595,7 +7500,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "port:reg_write_branch_n0",
       "targetHandle": "in:default",
-      "path": "M 1608 1344 L 1632 1344 L 1824 1344 L 1824 504 L 1848 504"
+      "path": "M 1656 1344 L 1680 1344 L 1872 1344 L 1872 504 L 1896 504"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:alu_op:opcode:alu_op:port:control_unit:alu_op:alu_op",
@@ -7603,7 +7508,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:alu_op",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2304 2400 L 2328 2400 L 2496 2400 L 2520 2400"
+      "path": "M 2352 2400 L 2376 2400 L 2544 2400 L 2568 2400"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:alu_src:opcode:alu_src:port:control_unit:alu_src:alu_src",
@@ -7611,7 +7516,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:alu_src",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 1392 L 2256 1392 L 2496 1392 L 2520 1392"
+      "path": "M 2280 1392 L 2304 1392 L 2544 1392 L 2568 1392"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:branch:opcode:branch:port:control_unit:branch:branch",
@@ -7619,7 +7524,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:branch",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 1728 L 2256 1728 L 2496 1728 L 2520 1728"
+      "path": "M 2280 1728 L 2304 1728 L 2544 1728 L 2568 1728"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:jump:opcode:jump:port:control_unit:jump:jump",
@@ -7627,7 +7532,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:jump",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 2064 L 2256 2064 L 2496 2064 L 2520 2064"
+      "path": "M 2280 2064 L 2304 2064 L 2544 2064 L 2568 2064"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:mem_to_reg:opcode:mem_to_reg:port:control_unit:mem_to_reg:mem_to_reg",
@@ -7635,7 +7540,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:mem_to_reg",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 1056 L 2256 1056 L 2496 1056 L 2520 1056"
+      "path": "M 2280 1056 L 2304 1056 L 2544 1056 L 2568 1056"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:mem_write:opcode:mem_write:port:control_unit:mem_write:mem_write",
@@ -7643,7 +7548,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:mem_write",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 720 L 2256 720 L 2496 720 L 2520 720"
+      "path": "M 2280 720 L 2304 720 L 2544 720 L 2568 720"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:mux:control_unit:reg_write:opcode:reg_write:port:control_unit:reg_write:reg_write",
@@ -7651,7 +7556,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::expand-port-label:port:control_unit:reg_write",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2232 384 L 2256 384 L 2496 384 L 2520 384"
+      "path": "M 2280 384 L 2304 384 L 2544 384 L 2568 384"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:alu_op:opcode:alu_op:opcode",
@@ -7659,7 +7564,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_op:opcode:alu_op",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 1335 Q 1809 1344 1800 1353 L 1800 2232 L 2064 2232 L 2064 2280"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 1335 Q 1857 1344 1848 1353 L 1848 2232 L 2112 2232 L 2112 2280"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:alu_src:opcode:alu_src:opcode",
@@ -7667,7 +7572,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:alu_src:opcode:alu_src",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1815 1224 Q 1824 1215 1833 1224 L 2040 1224 L 2040 1272"
+      "path": "M 1656 1224 L 1680 1224 L 1863 1224 Q 1872 1215 1881 1224 L 2088 1224 L 2088 1272"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:branch:opcode:branch:opcode",
@@ -7675,7 +7580,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:branch:opcode:branch",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 1335 Q 1809 1344 1800 1353 L 1800 1560 L 1815 1560 Q 1824 1551 1833 1560 L 2040 1560 L 2040 1608"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 1335 Q 1857 1344 1848 1353 L 1848 1560 L 1863 1560 Q 1872 1551 1881 1560 L 2088 1560 L 2088 1608"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:jump:opcode:jump:opcode",
@@ -7683,7 +7588,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:jump:opcode:jump",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 1335 Q 1809 1344 1800 1353 L 1800 1896 L 1815 1896 Q 1824 1887 1833 1896 L 2040 1896 L 2040 1944"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 1335 Q 1857 1344 1848 1353 L 1848 1896 L 1863 1896 Q 1872 1887 1881 1896 L 2088 1896 L 2088 1944"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:mem_to_reg:opcode:mem_to_reg:opcode",
@@ -7691,7 +7596,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_to_reg:opcode:mem_to_reg",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 888 L 1815 888 Q 1824 879 1833 888 L 2040 888 L 2040 936"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 888 L 1863 888 Q 1872 879 1881 888 L 2088 888 L 2088 936"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:mem_write:opcode:mem_write:opcode",
@@ -7699,7 +7604,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:mem_write:opcode:mem_write",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 552 L 1815 552 Q 1824 543 1833 552 L 2040 552 L 2040 600"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 552 L 1863 552 Q 1872 543 1881 552 L 2088 552 L 2088 600"
     },
     {
       "id": "expand:instance:cpu_top:u_control_unit::edge:port:control_unit:opcode:mux:control_unit:reg_write:opcode:reg_write:opcode",
@@ -7707,7 +7612,7 @@
       "target": "expand:instance:cpu_top:u_control_unit::mux:control_unit:reg_write:opcode:reg_write",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1608 1224 L 1632 1224 L 1800 1224 L 1800 417 Q 1809 408 1800 399 L 1800 216 L 2040 216 L 2040 264"
+      "path": "M 1656 1224 L 1680 1224 L 1848 1224 L 1848 417 Q 1857 408 1848 399 L 1848 216 L 2088 216 L 2088 264"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mux:data_mem:ram_addr:ram_addr__next",
@@ -7715,7 +7620,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr",
       "sourceHandle": "out",
       "targetHandle": "in:8_b0",
-      "path": "M 2479 2836 L 2596 2836 L 2596 2884 L 2683 2884"
+      "path": "M 2554.5 2838 L 2670 2838 L 2670 2886 L 2776.5 2886"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:mux:data_mem:ram_addr:reg:data_mem:ram:ram_next",
@@ -7723,7 +7628,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::reg:data_mem:ram",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 2839 2884 L 2860 2884 L 2860 2740 L 1876 2740 L 1876 2932 L 2011 2932"
+      "path": "M 2938.5 2886 L 2958 2886 L 2958 2742 L 1926 2742 L 1926 2934 L 1960.5 2934"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:mux:data_mem:ram_read_addr:port:data_mem:read_data:read_data",
@@ -7731,7 +7636,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::expand-port-label:port:data_mem:read_data",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2472 3000 L 2496 3000 L 2664 3000 L 2688 3000"
+      "path": "M 2568 3000 L 2592 3000 L 2760 3000 L 2784 3000"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:port:data_mem:addr:mux:data_mem:ram_addr:addr",
@@ -7739,7 +7644,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2160 2856 L 2256 2856 L 2256 2760 L 2760 2760 L 2760 2808"
+      "path": "M 2208 2856 L 2304 2856 L 2304 2760 L 2856 2760 L 2856 2808"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:port:data_mem:addr:mux:data_mem:ram_read_addr:addr",
@@ -7747,7 +7652,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2160 2856 L 2184 2856 L 2256 2856 L 2256 2928 L 2424 2928 L 2424 2976"
+      "path": "M 2208 2856 L 2232 2856 L 2304 2856 L 2304 2928 L 2496 2928 L 2496 2976"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:port:data_mem:clk:reg:data_mem:ram:clk",
@@ -7755,7 +7660,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::reg:data_mem:ram",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 1704 2952 L 1992 2952"
+      "path": "M 1752 2952 L 1944 2952"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:port:data_mem:mem_write:mux:data_mem:ram_addr_:mem_write:ram_addr__next:mem_write",
@@ -7763,7 +7668,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2160 2760 L 2424 2760"
+      "path": "M 2208 2760 L 2496 2760"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:port:data_mem:write_data:mux:data_mem:ram_addr_:mem_write:ram_addr__next:write_data",
@@ -7771,7 +7676,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M 2160 2808 L 2280 2808 L 2280 2832 L 2352 2832"
+      "path": "M 2208 2808 L 2328 2808 L 2328 2832 L 2424 2832"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:reg:data_mem:ram:mux:data_mem:ram_addr_:mem_write:ram_addr__next:ram",
@@ -7779,7 +7684,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr_:mem_write:ram_addr__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 2119 2932 L 2356 2932 L 2356 2860 L 2371 2860"
+      "path": "M 2218.5 2934 L 2406 2934 L 2406 2937 Q 2415 2928 2406 2919 L 2406 2862 L 2440.5 2862"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:reg:data_mem:ram:mux:data_mem:ram_addr:ram",
@@ -7787,7 +7692,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 2119 2932 L 2356 2932 L 2356 2908 L 2683 2908"
+      "path": "M 2218.5 2934 L 2406 2934 L 2406 2937 Q 2415 2928 2406 2919 L 2406 2910 L 2776.5 2910"
     },
     {
       "id": "expand:instance:cpu_top:u_data_mem::edge:reg:data_mem:ram:mux:data_mem:ram_read_addr:ram",
@@ -7795,7 +7700,7 @@
       "target": "expand:instance:cpu_top:u_data_mem::mux:data_mem:ram_read_addr",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 2119 2932 L 2356 2932 L 2356 3004 L 2376 3004"
+      "path": "M 2218.5 2934 L 2406 2934 L 2406 3006 L 2424 3006"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:imm_4_b0100:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0100",
@@ -7803,7 +7708,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b0100",
       "targetHandle": "in:4_b0100",
-      "path": "M 3720 -216 L 3744 -216 L 3840 -216 L 3840 -48 L 3912 -48 L 3936 -48"
+      "path": "M 3816 -216 L 3840 -216 L 3936 -216 L 3936 -48 L 4008 -48 L 4032 -48"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:imm_4_b0111:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b0111",
@@ -7811,7 +7716,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b0111",
       "targetHandle": "in:4_b0111",
-      "path": "M 3720 -96 L 3744 -96 L 3816 -96 L 3816 -24 L 3912 -24 L 3936 -24"
+      "path": "M 3816 -96 L 3840 -96 L 3912 -96 L 3912 -24 L 4008 -24 L 4032 -24"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:imm_4_b1000:expr:mux:imm_gen:imm:instr_11:8_:imm:imm_4_b1000",
@@ -7819,7 +7724,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:imm_4_b1000",
       "targetHandle": "in:4_b1000",
-      "path": "M 3360 0 L 3384 0 L 3912 0 L 3936 0"
+      "path": "M 3456 0 L 3480 0 L 4008 0 L 4032 0"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0100:expr:instr_3:0_",
@@ -7827,7 +7732,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0100:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 3000 -168 L 3024 -168 L 3552 -168 L 3576 -168"
+      "path": "M 3096 -168 L 3120 -168 L 3648 -168 L 3672 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b0111:expr:instr_3:0_",
@@ -7835,7 +7740,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0111:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 3000 -168 L 3024 -168 L 3192 -168 L 3192 -48 L 3552 -48 L 3576 -48"
+      "path": "M 3096 -168 L 3120 -168 L 3288 -168 L 3288 -48 L 3648 -48 L 3672 -48"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:bus:imm_gen:imm_4_b1000:expr:instr_3:0_",
@@ -7843,7 +7748,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b1000:expr",
       "sourceHandle": "out:_3:0_",
       "targetHandle": "in:_3:0_",
-      "path": "M 3000 -168 L 3024 -168 L 3192 -168 L 3192 48 L 3216 48"
+      "path": "M 3096 -168 L 3120 -168 L 3288 -168 L 3288 48 L 3312 48"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:mux:imm_gen:imm:instr_11:8_:imm:instr_11:8_",
@@ -7851,7 +7756,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "out:_11:8_",
       "targetHandle": "sel",
-      "path": "M 3000 -120 L 3024 -120 L 3120 -120 L 3120 -159 Q 3129 -168 3120 -177 L 3120 -264 L 4032 -264 L 4032 -120 L 4032 -72"
+      "path": "M 3096 -120 L 3120 -120 L 3216 -120 L 3216 -159 Q 3225 -168 3216 -177 L 3216 -264 L 4128 -264 L 4128 -120 L 4128 -72"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:instr_3_",
@@ -7859,7 +7764,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:in",
-      "path": "M 3000 -216 L 3024 -216 L 3111 -216 Q 3120 -225 3129 -216 L 3192 -216 L 3216 -216"
+      "path": "M 3096 -216 L 3120 -216 L 3207 -216 Q 3216 -225 3225 -216 L 3288 -216 L 3312 -216"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:bus:imm_gen:instr:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:instr_3_",
@@ -7867,7 +7772,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:in",
-      "path": "M 3000 -216 L 3024 -216 L 3111 -216 Q 3120 -225 3129 -216 L 3192 -216 L 3192 -177 Q 3201 -168 3192 -159 L 3192 -96 L 3216 -96"
+      "path": "M 3096 -216 L 3120 -216 L 3207 -216 Q 3216 -225 3225 -216 L 3288 -216 L 3288 -177 Q 3297 -168 3288 -159 L 3288 -96 L 3312 -96"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:literal:imm_gen:1_b0:1_b0:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:1_b0",
@@ -7875,7 +7780,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH_-_4",
       "sourceHandle": "port:1_b0",
       "targetHandle": "port:in",
-      "path": "M 2640 0 L 2664 0 L 2832 0 L 2856 0"
+      "path": "M 2736 0 L 2760 0 L 2928 0 L 2952 0"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:literal:imm_gen:imm_default:_0:mux:imm_gen:imm:instr_11:8_:imm:imm_default",
@@ -7883,7 +7788,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::mux:imm_gen:imm:instr_11:8_:imm",
       "sourceHandle": "port:imm_default",
       "targetHandle": "in:default",
-      "path": "M 3720 24 L 3744 24 L 3912 24 L 3936 24"
+      "path": "M 3816 24 L 3840 24 L 4008 24 L 4032 24"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:mux:imm_gen:imm:instr_11:8_:imm:port:imm_gen:imm:imm",
@@ -7891,7 +7796,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::expand-port-label:port:imm_gen:imm",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 4128 -24 L 4152 -24 L 4320 -24 L 4344 -24"
+      "path": "M 4224 -24 L 4248 -24 L 4416 -24 L 4440 -24"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:port:imm_gen:instr:bus:imm_gen:instr:instr",
@@ -7899,7 +7804,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:instr",
       "sourceHandle": "cut",
       "targetHandle": "in:instr",
-      "path": "M 2640 -216 L 2664 -216 L 2832 -216 L 2856 -216"
+      "path": "M 2736 -216 L 2760 -216 L 2928 -216 L 2952 -216"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:replicate:imm_gen:imm_4_b0100_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b0100:expr:imm_4_b0100_concat_in0",
@@ -7907,7 +7812,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0100:expr",
       "sourceHandle": "port:imm_4_b0100_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 3360 -216 L 3384 -216 L 3552 -216 L 3576 -216"
+      "path": "M 3456 -216 L 3480 -216 L 3648 -216 L 3672 -216"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:replicate:imm_gen:imm_4_b0111_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b0111:expr:imm_4_b0111_concat_in0",
@@ -7915,7 +7820,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b0111:expr",
       "sourceHandle": "port:imm_4_b0111_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 3360 -96 L 3384 -96 L 3552 -96 L 3576 -96"
+      "path": "M 3456 -96 L 3480 -96 L 3648 -96 L 3672 -96"
     },
     {
       "id": "expand:instance:cpu_top:u_imm_gen::edge:replicate:imm_gen:imm_4_b1000_concat_in0:xDATA_WIDTH___4:bus:imm_gen:imm_4_b1000:expr:imm_4_b1000_concat_in0",
@@ -7923,7 +7828,7 @@
       "target": "expand:instance:cpu_top:u_imm_gen::bus:imm_gen:imm_4_b1000:expr",
       "sourceHandle": "port:imm_4_b1000_concat_in0",
       "targetHandle": "in:_7:4_",
-      "path": "M 3000 0 L 3024 0 L 3192 0 L 3216 0"
+      "path": "M 3096 0 L 3120 0 L 3288 0 L 3312 0"
     },
     {
       "id": "expand:instance:cpu_top:u_instr_mem::edge:mux:instr_mem:mem_read_addr:port:instr_mem:instr:instr",
@@ -7931,7 +7836,7 @@
       "target": "expand:instance:cpu_top:u_instr_mem::expand-port-label:port:instr_mem:instr",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M -1104 -144 L -1080 -144 L -912 -144 L -888 -144"
+      "path": "M 1776 -144 L 1800 -144 L 1968 -144 L 1992 -144"
     },
     {
       "id": "expand:instance:cpu_top:u_instr_mem::edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr",
@@ -7939,7 +7844,7 @@
       "target": "expand:instance:cpu_top:u_instr_mem::mux:instr_mem:mem_read_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M -1416 -216 L -1392 -216 L -1152 -216 L -1152 -168"
+      "path": "M 1416 -216 L 1440 -216 L 1704 -216 L 1704 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_jump_mux::edge:mux:mux2:y:ternary:port:mux2:y:y",
@@ -7947,7 +7852,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::expand-port-label:port:mux2:y",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 4488 -480 L 4512 -480 L 4680 -480 L 4704 -480"
+      "path": "M 4536 -480 L 4560 -480 L 4728 -480 L 4752 -480"
     },
     {
       "id": "expand:instance:cpu_top:u_jump_mux::edge:port:mux2:d0:mux:mux2:y:ternary:d0",
@@ -7955,7 +7860,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 4128 -456 L 4152 -456 L 4320 -456 L 4344 -456"
+      "path": "M 4176 -456 L 4200 -456 L 4368 -456 L 4392 -456"
     },
     {
       "id": "expand:instance:cpu_top:u_jump_mux::edge:port:mux2:d1:mux:mux2:y:ternary:d1",
@@ -7963,7 +7868,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M 4128 -504 L 4152 -504 L 4248 -504 L 4248 -480 L 4320 -480 L 4344 -480"
+      "path": "M 4176 -504 L 4200 -504 L 4296 -504 L 4296 -480 L 4368 -480 L 4392 -480"
     },
     {
       "id": "expand:instance:cpu_top:u_jump_mux::edge:port:mux2:sel:mux:mux2:y:ternary:sel",
@@ -7971,7 +7876,7 @@
       "target": "expand:instance:cpu_top:u_jump_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 4128 -552 L 4152 -552 L 4416 -552 L 4416 -504"
+      "path": "M 4176 -552 L 4200 -552 L 4464 -552 L 4464 -504"
     },
     {
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::edge:mux:mux2:y:ternary:port:mux2:y:y",
@@ -7979,7 +7884,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::expand-port-label:port:mux2:y",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 264 -168 L 288 -168 L 456 -168 L 480 -168"
+      "path": "M -960 -168 L -936 -168 L -768 -168 L -744 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::edge:port:mux2:d0:mux:mux2:y:ternary:d0",
@@ -7987,7 +7892,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M -96 -144 L -72 -144 L 96 -144 L 120 -144"
+      "path": "M -1320 -144 L -1296 -144 L -1128 -144 L -1104 -144"
     },
     {
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::edge:port:mux2:d1:mux:mux2:y:ternary:d1",
@@ -7995,7 +7900,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M -96 -192 L -72 -192 L 24 -192 L 24 -168 L 96 -168 L 120 -168"
+      "path": "M -1320 -192 L -1296 -192 L -1200 -192 L -1200 -168 L -1128 -168 L -1104 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_mem_to_reg_mux::edge:port:mux2:sel:mux:mux2:y:ternary:sel",
@@ -8003,7 +7908,7 @@
       "target": "expand:instance:cpu_top:u_mem_to_reg_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M -96 -240 L -72 -240 L 192 -240 L 192 -192"
+      "path": "M -1320 -240 L -1296 -240 L -1032 -240 L -1032 -192"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_adder::edge:alu:adder:sum:expr:port:adder:sum:sum",
@@ -8011,7 +7916,7 @@
       "target": "expand:instance:cpu_top:u_pc_adder::expand-port-label:port:adder:sum",
       "sourceHandle": "out:sum",
       "targetHandle": "cut",
-      "path": "M 1800 -528 L 1824 -528 L 1992 -528 L 2016 -528"
+      "path": "M 1848 -528 L 1872 -528 L 2040 -528 L 2064 -528"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_adder::edge:port:adder:a:alu:adder:sum:expr:a",
@@ -8019,7 +7924,7 @@
       "target": "expand:instance:cpu_top:u_pc_adder::alu:adder:sum:expr",
       "sourceHandle": "cut",
       "targetHandle": "lhs",
-      "path": "M 1488 -552 L 1512 -552 L 1680 -552 L 1704 -552"
+      "path": "M 1536 -552 L 1560 -552 L 1728 -552 L 1752 -552"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_adder::edge:port:adder:b:alu:adder:sum:expr:b",
@@ -8027,7 +7932,7 @@
       "target": "expand:instance:cpu_top:u_pc_adder::alu:adder:sum:expr",
       "sourceHandle": "cut",
       "targetHandle": "rhs",
-      "path": "M 1488 -504 L 1512 -504 L 1680 -504 L 1704 -504"
+      "path": "M 1536 -504 L 1560 -504 L 1728 -504 L 1752 -504"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_reg::edge:port:pc_reg:clk:reg:pc_reg:pc:clk",
@@ -8035,7 +7940,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::reg:pc_reg:pc",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 1680 3312 L 1704 3312 L 1800 3312 L 1800 3288 L 1872 3288 L 1896 3288"
+      "path": "M 1728 3312 L 1752 3312 L 1848 3312 L 1848 3288 L 1920 3288 L 1944 3288"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_reg::edge:port:pc_reg:next_pc:reg:pc_reg:pc:next_pc",
@@ -8043,7 +7948,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::reg:pc_reg:pc",
       "sourceHandle": "cut",
       "targetHandle": "d",
-      "path": "M 1680 3264 L 1704 3264 L 1872 3264 L 1896 3264"
+      "path": "M 1728 3264 L 1752 3264 L 1920 3264 L 1944 3264"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_reg::edge:port:pc_reg:reset_n:reg:pc_reg:pc:reset_n",
@@ -8051,7 +7956,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::reg:pc_reg:pc",
       "sourceHandle": "cut",
       "targetHandle": "reset_n",
-      "path": "M 1680 3360 L 1704 3360 L 1992 3360 L 1992 3312"
+      "path": "M 1728 3360 L 1752 3360 L 2040 3360 L 2040 3312"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_reg::edge:reg:pc_reg:pc:port:pc_reg:pc:pc",
@@ -8059,7 +7964,7 @@
       "target": "expand:instance:cpu_top:u_pc_reg::expand-port-label:port:pc_reg:pc",
       "sourceHandle": "q",
       "targetHandle": "cut",
-      "path": "M 2088 3264 L 2112 3264 L 2280 3264 L 2304 3264"
+      "path": "M 2136 3264 L 2160 3264 L 2328 3264 L 2352 3264"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_src_mux::edge:mux:mux2:y:ternary:port:mux2:y:y",
@@ -8067,7 +7972,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::expand-port-label:port:mux2:y",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 1656 -168 L 1680 -168 L 1848 -168 L 1872 -168"
+      "path": "M 432 -168 L 456 -168 L 624 -168 L 648 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_src_mux::edge:port:mux2:d0:mux:mux2:y:ternary:d0",
@@ -8075,7 +7980,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:false",
-      "path": "M 1296 -144 L 1320 -144 L 1488 -144 L 1512 -144"
+      "path": "M 72 -144 L 96 -144 L 264 -144 L 288 -144"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_src_mux::edge:port:mux2:d1:mux:mux2:y:ternary:d1",
@@ -8083,7 +7988,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M 1296 -192 L 1320 -192 L 1416 -192 L 1416 -168 L 1488 -168 L 1512 -168"
+      "path": "M 72 -192 L 96 -192 L 192 -192 L 192 -168 L 264 -168 L 288 -168"
     },
     {
       "id": "expand:instance:cpu_top:u_pc_src_mux::edge:port:mux2:sel:mux:mux2:y:ternary:sel",
@@ -8091,7 +7996,7 @@
       "target": "expand:instance:cpu_top:u_pc_src_mux::mux:mux2:y:ternary",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 1296 -240 L 1320 -240 L 1584 -240 L 1584 -192"
+      "path": "M 72 -240 L 96 -240 L 360 -240 L 360 -192"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:comparator:register_file:if_sel_n9_in1:n11:expr:gate:register_file:if_sel_n9:n10:and:if_sel_n9_in1",
@@ -8099,15 +8004,7 @@
       "target": "expand:instance:cpu_top:u_register_file::gate:register_file:if_sel_n9:n10:and",
       "sourceHandle": "port:if_sel_n9_in1",
       "targetHandle": "port:in1",
-      "path": "M 2544 4224 L 2568 4224 L 2784 4224 L 2808 4224"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:comparator:register_file:regs_en_sel_in1:n13:expr:gate:register_file:regs_en_sel:n12:and:regs_en_sel_in1",
-      "source": "expand:instance:cpu_top:u_register_file::comparator:register_file:regs_en_sel_in1:n13:expr",
-      "target": "expand:instance:cpu_top:u_register_file::gate:register_file:regs_en_sel:n12:and",
-      "sourceHandle": "port:regs_en_sel_in1",
-      "targetHandle": "port:in1",
-      "path": "M 2544 4344 L 2568 4344 L 2784 4344 L 2808 4344"
+      "path": "M 2592 4224 L 2616 4224 L 2736 4224 L 2736 4152 L 2832 4152 L 2856 4152"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:comparator:register_file:rs1_data_sel:expr:mux:register_file:rs1_data:ternary:rs1_data_sel",
@@ -8115,7 +8012,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs1_data:ternary",
       "sourceHandle": "port:rs1_data_sel",
       "targetHandle": "sel",
-      "path": "M 2544 3624 L 2568 3624 L 2880 3624 L 2880 3648 L 2880 3696"
+      "path": "M 2592 3912 L 2616 3912 L 2928 3912 L 2928 3960"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:comparator:register_file:rs2_data_sel:expr:mux:register_file:rs2_data:ternary:rs2_data_sel",
@@ -8123,7 +8020,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs2_data:ternary",
       "sourceHandle": "port:rs2_data_sel",
       "targetHandle": "sel",
-      "path": "M 2544 3888 L 2568 3888 L 2880 3888 L 2880 3912 L 2880 3960"
+      "path": "M 2592 3624 L 2616 3624 L 2928 3624 L 2928 3648 L 2928 3696"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:gate:register_file:if_sel_n9:n10:and:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:if_sel_n9",
@@ -8131,15 +8028,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "sourceHandle": "out:if_sel_n9",
       "targetHandle": "sel",
-      "path": "M 2904 4200 L 3312 4200 L 3312 4416"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:gate:register_file:regs_en_sel:n12:and:mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate:regs_en_sel",
-      "source": "expand:instance:cpu_top:u_register_file::gate:register_file:regs_en_sel:n12:and",
-      "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate",
-      "sourceHandle": "out:regs_en_sel",
-      "targetHandle": "sel",
-      "path": "M 2904 4320 L 3720 4320 L 3720 4416"
+      "path": "M 2952 4128 L 3360 4128 L 3360 4152"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:comparator:register_file:if_sel_n9_in1:n11:expr:_0",
@@ -8147,15 +8036,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:if_sel_n9_in1:n11:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 2232 3960 L 2256 3960 L 2400 3960 L 2400 4248 L 2424 4248 L 2448 4248"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:comparator:register_file:regs_en_sel_in1:n13:expr:_0",
-      "source": "expand:instance:cpu_top:u_register_file::literal:register_file:_0:_0",
-      "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:regs_en_sel_in1:n13:expr",
-      "sourceHandle": "port:_0",
-      "targetHandle": "port:rhs",
-      "path": "M 2232 3960 L 2256 3960 L 2400 3960 L 2400 4368 L 2424 4368 L 2448 4368"
+      "path": "M 2280 3912 L 2304 3912 L 2448 3912 L 2448 4248 L 2472 4248 L 2496 4248"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:comparator:register_file:rs1_data_sel:expr:_0",
@@ -8163,7 +8044,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs1_data_sel:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 2232 3960 L 2256 3960 L 2400 3960 L 2400 3648 L 2424 3648 L 2448 3648"
+      "path": "M 2280 3912 L 2304 3912 L 2448 3912 L 2448 3936 L 2472 3936 L 2496 3936"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:comparator:register_file:rs2_data_sel:expr:_0",
@@ -8171,7 +8052,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs2_data_sel:expr",
       "sourceHandle": "port:_0",
       "targetHandle": "port:rhs",
-      "path": "M 2232 3960 L 2256 3960 L 2400 3960 L 2400 3912 L 2424 3912 L 2448 3912"
+      "path": "M 2280 3912 L 2304 3912 L 2448 3912 L 2448 3648 L 2472 3648 L 2496 3648"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:mux:register_file:rs1_data:ternary:_0",
@@ -8179,7 +8060,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs1_data:ternary",
       "sourceHandle": "port:_0",
       "targetHandle": "in:true",
-      "path": "M 2232 3960 L 2256 3960 L 2400 3960 L 2400 3696 L 2688 3696 L 2688 3720 L 2784 3720 L 2808 3720"
+      "path": "M 2280 3912 L 2304 3912 L 2448 3912 L 2448 3984 L 2832 3984 L 2856 3984"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:literal:register_file:_0:_0:mux:register_file:rs2_data:ternary:_0",
@@ -8187,7 +8068,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs2_data:ternary",
       "sourceHandle": "port:_0",
       "targetHandle": "in:true",
-      "path": "M 2232 3960 L 2256 3960 L 2688 3960 L 2688 3984 L 2784 3984 L 2808 3984"
+      "path": "M 2280 3912 L 2304 3912 L 2448 3912 L 2448 3720 L 2832 3720 L 2856 3720"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_addr:reg:register_file:regs:regs_next",
@@ -8195,23 +8076,15 @@
       "target": "expand:instance:cpu_top:u_register_file::reg:register_file:regs",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 4135 4516 L 4156 4516 L 4156 4588 L 2476 4588 L 2476 4468 L 2068 4468 L 2068 4540 L 2083 4540"
+      "path": "M 3874.5 4230 L 3894 4230 L 3894 4326 L 2382 4326 L 2382 3990 L 2022 3990 L 2022 4062 L 2032.5 4062"
     },
     {
-      "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate:regs_rd_addr__next",
+      "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:mux:register_file:regs_addr:regs_rd_addr__next",
       "source": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
-      "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate",
-      "sourceHandle": "out",
-      "targetHandle": "in:true",
-      "path": "M 3367 4492 L 3667 4492"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate:mux:register_file:regs_addr:regs_write_candidate",
-      "source": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate",
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_addr",
       "sourceHandle": "out",
       "targetHandle": "in:2_b0",
-      "path": "M 3775 4492 L 3892 4492 L 3892 4516 L 3979 4516"
+      "path": "M 3418.5 4230 L 3712.5 4230"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_read_rs1_addr:mux:register_file:rs1_data:ternary:regs_rs1_addr_",
@@ -8219,7 +8092,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs1_data:ternary",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 2544 3768 L 2568 3768 L 2688 3768 L 2688 3744 L 2784 3744 L 2808 3744"
+      "path": "M 2592 4056 L 2616 4056 L 2736 4056 L 2736 4008 L 2832 4008 L 2856 4008"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:regs_read_rs2_addr:mux:register_file:rs2_data:ternary:regs_rs2_addr_",
@@ -8227,7 +8100,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:rs2_data:ternary",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 2544 4056 L 2568 4056 L 2688 4056 L 2688 4008 L 2784 4008 L 2808 4008"
+      "path": "M 2592 3792 L 2616 3792 L 2736 3792 L 2736 3744 L 2832 3744 L 2856 3744"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:rs1_data:ternary:port:register_file:rs1_data:rs1_data",
@@ -8235,7 +8108,7 @@
       "target": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs1_data",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2952 3720 L 2976 3720 L 3192 3720 L 3216 3720"
+      "path": "M 3000 3984 L 3024 3984 L 3240 3984 L 3264 3984"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:mux:register_file:rs2_data:ternary:port:register_file:rs2_data:rs2_data",
@@ -8243,7 +8116,7 @@
       "target": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rs2_data",
       "sourceHandle": "out",
       "targetHandle": "cut",
-      "path": "M 2952 3984 L 2976 3984 L 3192 3984 L 3216 3984"
+      "path": "M 3000 3720 L 3024 3720 L 3240 3720 L 3264 3720"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:clk:reg:register_file:regs:clk",
@@ -8251,7 +8124,7 @@
       "target": "expand:instance:cpu_top:u_register_file::reg:register_file:regs",
       "sourceHandle": "cut",
       "targetHandle": "clk",
-      "path": "M 1752 4560 L 2064 4560"
+      "path": "M 1800 4080 L 2016 4080"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rd_addr:comparator:register_file:if_sel_n9_in1:n11:expr:rd_addr",
@@ -8259,15 +8132,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:if_sel_n9_in1:n11:expr",
       "sourceHandle": "cut",
       "targetHandle": "port:lhs",
-      "path": "M 2232 4320 L 2256 4320 L 2391 4320 Q 2400 4311 2409 4320 L 2424 4320 L 2424 4200 L 2448 4200"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rd_addr:comparator:register_file:regs_en_sel_in1:n13:expr:rd_addr",
-      "source": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:rd_addr",
-      "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:regs_en_sel_in1:n13:expr",
-      "sourceHandle": "cut",
-      "targetHandle": "port:lhs",
-      "path": "M 2232 4320 L 2256 4320 L 2391 4320 Q 2400 4311 2409 4320 L 2424 4320 L 2448 4320"
+      "path": "M 2280 4176 L 2304 4176 L 2364 4176 Q 2376 4164 2388 4176 L 2448 4176 L 2448 4200 L 2472 4200 L 2496 4200"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rd_addr:mux:register_file:regs_addr:rd_addr",
@@ -8275,7 +8140,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2232 4320 L 2424 4320 L 2424 4416 L 4056 4416 L 4056 4440"
+      "path": "M 2280 4176 L 2448 4176 L 2448 4128 L 2712 4128 L 2712 4056 L 3792 4056 L 3792 4152"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:reg_write:gate:register_file:if_sel_n9:n10:and:reg_write",
@@ -8283,15 +8148,7 @@
       "target": "expand:instance:cpu_top:u_register_file::gate:register_file:if_sel_n9:n10:and",
       "sourceHandle": "cut",
       "targetHandle": "port:in0",
-      "path": "M 2544 4128 L 2568 4128 L 2784 4128 L 2784 4176 L 2808 4176"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:reg_write:gate:register_file:regs_en_sel:n12:and:reg_write",
-      "source": "expand:instance:cpu_top:u_register_file::expand-port-label:port:register_file:reg_write",
-      "target": "expand:instance:cpu_top:u_register_file::gate:register_file:regs_en_sel:n12:and",
-      "sourceHandle": "cut",
-      "targetHandle": "port:in0",
-      "path": "M 2544 4128 L 2568 4128 L 2784 4128 L 2784 4296 L 2808 4296"
+      "path": "M 2592 4152 L 2616 4152 L 2712 4152 L 2712 4104 L 2832 4104 L 2856 4104"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:reset_n:reg:register_file:regs:reset_n",
@@ -8299,7 +8156,7 @@
       "target": "expand:instance:cpu_top:u_register_file::reg:register_file:regs",
       "sourceHandle": "cut",
       "targetHandle": "reset_n",
-      "path": "M 1752 4656 L 2136 4656 L 2136 4608"
+      "path": "M 1800 4152 L 2160 4152 L 2160 4128"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rs1_addr:comparator:register_file:rs1_data_sel:expr:rs1_addr",
@@ -8307,7 +8164,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs1_data_sel:expr",
       "sourceHandle": "cut",
       "targetHandle": "port:lhs",
-      "path": "M 2232 3696 L 2256 3696 L 2391 3696 Q 2400 3687 2409 3696 L 2424 3696 L 2424 3600 L 2448 3600"
+      "path": "M 2280 3960 L 2304 3960 L 2439 3960 Q 2448 3951 2457 3960 L 2472 3960 L 2472 3888 L 2496 3888"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rs1_addr:mux:register_file:regs_read_rs1_addr:rs1_addr",
@@ -8315,7 +8172,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs1_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2232 3696 L 2256 3696 L 2391 3696 Q 2400 3687 2409 3696 L 2496 3696 L 2496 3744"
+      "path": "M 2280 3960 L 2304 3960 L 2439 3960 Q 2448 3951 2457 3960 L 2472 3960 L 2472 3984 L 2544 3984 L 2544 4032"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rs2_addr:comparator:register_file:rs2_data_sel:expr:rs2_addr",
@@ -8323,7 +8180,7 @@
       "target": "expand:instance:cpu_top:u_register_file::comparator:register_file:rs2_data_sel:expr",
       "sourceHandle": "cut",
       "targetHandle": "port:lhs",
-      "path": "M 2232 3912 L 2256 3912 L 2391 3912 Q 2400 3903 2409 3912 L 2424 3912 L 2424 3864 L 2448 3864"
+      "path": "M 2280 3696 L 2304 3696 L 2439 3696 Q 2448 3687 2457 3696 L 2472 3696 L 2472 3600 L 2496 3600"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:rs2_addr:mux:register_file:regs_read_rs2_addr:rs2_addr",
@@ -8331,7 +8188,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs2_addr",
       "sourceHandle": "cut",
       "targetHandle": "sel",
-      "path": "M 2232 3912 L 2256 3912 L 2391 3912 Q 2400 3903 2409 3912 L 2424 3912 L 2424 3951 Q 2433 3960 2424 3969 L 2424 3984 L 2496 3984 L 2496 4032"
+      "path": "M 2280 3696 L 2304 3696 L 2439 3696 Q 2448 3687 2457 3696 L 2472 3696 L 2472 3720 L 2544 3720 L 2544 3768"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:port:register_file:write_data:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:write_data",
@@ -8339,7 +8196,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "sourceHandle": "cut",
       "targetHandle": "in:true",
-      "path": "M 3000 4488 L 3240 4488"
+      "path": "M 3048 4224 L 3288 4224"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:reg:register_file:regs:mux:register_file:regs_addr:regs",
@@ -8347,7 +8204,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_addr",
       "sourceHandle": "q",
       "targetHandle": "in:default",
-      "path": "M 2191 4540 L 2404 4540 L 2404 4564 L 2460 4564 Q 2472 4552 2484 4564 L 3892 4564 L 3892 4540 L 3979 4540"
+      "path": "M 2290.5 4062 L 2364 4062 Q 2376 4050 2388 4062 L 2439 4062 Q 2448 4053 2457 4062 L 2454 4062 L 2454 4119 Q 2463 4128 2454 4137 L 2454 4191 Q 2463 4200 2454 4209 L 2454 4239 Q 2463 4248 2454 4257 L 2454 4302 L 3582 4302 L 3582 4254 L 3712.5 4254"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:reg:register_file:regs:mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next:regs",
@@ -8355,15 +8212,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:if_sel_n9:regs_rd_addr__next",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 2191 4540 L 2460 4540 Q 2472 4528 2484 4540 L 3148 4540 L 3148 4516 L 3259 4516"
-    },
-    {
-      "id": "expand:instance:cpu_top:u_register_file::edge:reg:register_file:regs:mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate:regs",
-      "source": "expand:instance:cpu_top:u_register_file::reg:register_file:regs",
-      "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_rd_addr_:regs_en_sel:regs_write_candidate",
-      "sourceHandle": "q",
-      "targetHandle": "in:false",
-      "path": "M 2191 4540 L 2404 4540 L 2404 4564 L 2460 4564 Q 2472 4552 2484 4564 L 3532 4564 L 3532 4516 L 3667 4516"
+      "path": "M 2290.5 4062 L 2364 4062 Q 2376 4050 2388 4062 L 2439 4062 Q 2448 4053 2457 4062 L 2454 4062 L 2454 4119 Q 2463 4128 2454 4137 L 2454 4191 Q 2463 4200 2454 4209 L 2454 4239 Q 2463 4248 2454 4257 L 2454 4302 L 3198 4302 L 3198 4254 L 3304.5 4254"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:reg:register_file:regs:mux:register_file:regs_read_rs1_addr:regs",
@@ -8371,7 +8220,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs1_addr",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 2194.5 4542 L 2406 4542 L 2406 3774 L 2448 3774"
+      "path": "M 2290.5 4062 L 2496 4062"
     },
     {
       "id": "expand:instance:cpu_top:u_register_file::edge:reg:register_file:regs:mux:register_file:regs_read_rs2_addr:regs",
@@ -8379,7 +8228,7 @@
       "target": "expand:instance:cpu_top:u_register_file::mux:register_file:regs_read_rs2_addr",
       "sourceHandle": "q",
       "targetHandle": "in:in",
-      "path": "M 2194.5 4542 L 2406 4542 L 2406 4062 L 2448 4062"
+      "path": "M 2290.5 4062 L 2454 4062 L 2454 3798 L 2496 3798"
     }
   ]
 }
