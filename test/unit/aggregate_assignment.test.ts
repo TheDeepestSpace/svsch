@@ -8,6 +8,41 @@ function fixture(name: string): string {
 }
 
 describe('aggregate assignment issues', () => {
+  it('lowers conditional aggregate register assignments only once', async () => {
+    const graph = await runParser(
+      'uhdm',
+      'aggregate_assignment_branches.sv',
+      fixture('aggregate_assignment_branches.sv'),
+    );
+    const mod = graph.modules.aggregate_assignment_branches;
+
+    expect(mod).toBeDefined();
+
+    for (const signal of ['data_reg', 'data_valid']) {
+      const registerId = `reg:${mod.name}:${signal}`;
+      expect(mod.nodes.filter((node) => node.id === registerId)).toHaveLength(1);
+
+      const dDrivers = mod.edges.filter(
+        (edge) => edge.target === registerId && edge.targetPort === 'd',
+      );
+      expect(dDrivers).toHaveLength(1);
+      expect(mod.nodes.find((node) => node.id === dDrivers[0].source)?.kind).toBe('mux');
+
+      const register = mod.nodes.find((node) => node.id === registerId);
+      expect(register?.ports.some((port) => port.name === 'RV')).toBe(false);
+    }
+
+    const branchBreakouts = mod.nodes.filter(
+      (node) => node.kind === 'bus' && node.metadata?.expression === '[aggregate-breakout]',
+    );
+    expect(branchBreakouts).toHaveLength(3);
+    for (const breakout of branchBreakouts) {
+      expect(
+        mod.edges.some((edge) => edge.source === breakout.id && edge.target.includes('mux:')),
+      ).toBe(true);
+    }
+  });
+
   it('connects aggregate breakouts into slice and struct composition nodes', async () => {
     const graph = await runParser(
       'uhdm',

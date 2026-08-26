@@ -1,27 +1,110 @@
+diff --git a/node_modules/vscode-test-playwright/dist/index.d.ts b/node_modules/vscode-test-playwright/dist/index.d.ts
+index c7429ec..96638bf 100644
+--- a/node_modules/vscode-test-playwright/dist/index.d.ts
++++ b/node_modules/vscode-test-playwright/dist/index.d.ts
+@@ -1,4 +1,4 @@
+-import { TraceMode, type ElectronApplication, type Page } from '@playwright/test';
++import { TraceMode, VideoMode, type ElectronApplication, type Page } from '@playwright/test';
+ import { ObjectHandle, VSCode, VSCodeEvaluator, VSCodeFunctionOn, VSCodeHandle } from './vscodeHandle';
+ export { expect } from '@playwright/test';
+ export type VSCodeWorkerOptions = {
+@@ -11,6 +11,13 @@ export type VSCodeWorkerOptions = {
+         sources?: boolean;
+         attachments?: boolean;
+     };
++    vscodeVideo: VideoMode | {
++        mode: VideoMode;
++        size?: {
++            width: number;
++            height: number;
++        };
++    };
+     extensionsDir?: string;
+     userDataDir?: string;
+ };
 diff --git a/node_modules/vscode-test-playwright/dist/index.js b/node_modules/vscode-test-playwright/dist/index.js
-index 5570b9f..112eb5b 100644
+index 5570b9f..b3a8323 100644
 --- a/node_modules/vscode-test-playwright/dist/index.js
 +++ b/node_modules/vscode-test-playwright/dist/index.js
-@@ -66,8 +66,55 @@ function getTraceMode(trace) {
+@@ -66,8 +66,114 @@ function getTraceMode(trace) {
          return 'on-first-retry';
      return traceMode;
  }
-+async function closeElectronApp(electronApp, timeoutMs = 5000) {
-+    const proc = electronApp.process?.();
-+    if (!proc || proc.exitCode !== null || proc.signalCode) {
-+        return;
++function shouldCaptureVideo(videoMode, testInfo) {
++    if (videoMode === 'on')
++        return true;
++    if (videoMode === 'retain-on-failure')
++        return true;
++    if (videoMode === 'on-first-retry' && testInfo.retry === 1)
++        return true;
++    if (videoMode === 'on-all-retries' && testInfo.retry > 0)
++        return true;
++    if (videoMode === 'retain-on-first-failure' && testInfo.retry === 0)
++        return true;
++    return false;
++}
++function getVideoMode(video) {
++    const videoMode = typeof video === 'string' ? video : video.mode;
++    if (videoMode === 'retry-with-video')
++        return 'on-first-retry';
++    return videoMode;
++}
++function killSessionProcesses(userDataPath, installPath) {
++    const killMatching = (pattern) => {
++        try {
++            // `--` is required because the user-data pattern itself starts
++            // with `--`; without it pkill parses the pattern as an option and
++            // silently leaves the process alive (see #275).
++            cp.execFileSync('pkill', ['-9', '-f', '--', pattern], { stdio: 'ignore' });
++        }
++        catch {
++        }
++    };
++    const literalPattern = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
++    if (userDataPath)
++        killMatching(literalPattern(`--user-data-dir=${userDataPath}`));
++    // Electron utilityProcess helpers do not always inherit --user-data-dir,
++    // but every process in this session runs the same installed VS Code path.
++    if (installPath)
++        killMatching(literalPattern(installPath));
++}
++async function closeElectronApp(proc, userDataPath, installPath, timeoutMs = 5000) {
++    if (proc && proc.exitCode === null && !proc.signalCode) {
++        const processTree = collectProcessTree(proc.pid);
++        const waitForExit = new Promise(resolve => proc.once('exit', resolve));
++        killProcessTree(processTree, 'SIGTERM');
++        const exited = await Promise.race([
++            waitForExit.then(() => true),
++            new Promise(resolve => setTimeout(() => resolve(false), timeoutMs)),
++        ]);
++        if (!exited && proc.exitCode === null && !proc.signalCode) {
++            killProcessTree(processTree, 'SIGKILL');
++            console.warn(`[vscode-test-playwright] Timed out after ${timeoutMs}ms closing VSCode Electron app; killed process ${proc.pid}`);
++        }
 +    }
-+    const processTree = collectProcessTree(proc.pid);
-+    const waitForExit = new Promise(resolve => proc.once('exit', resolve));
-+    killProcessTree(processTree, 'SIGTERM');
-+    const exited = await Promise.race([
-+        waitForExit.then(() => true),
-+        new Promise(resolve => setTimeout(() => resolve(false), timeoutMs)),
-+    ]);
-+    if (!exited && proc.exitCode === null && !proc.signalCode) {
-+        killProcessTree(processTree, 'SIGKILL');
-+        console.warn(`[vscode-test-playwright] Timed out after ${timeoutMs}ms closing VSCode Electron app; killed process ${proc.pid}`);
-+    }
++    // collectProcessTree() above only walks proc's *current* descendants via
++    // pgrep -P (parent PID) at the moment we start closing. VS Code spawns at
++    // least one Node debug utility helper (--type=utility, node.mojom.NodeService)
++    // that is reparented away from that tree — observed surviving 100% of the
++    // time in CI (see #275), one per test, each still holding this test's
++    // user-data-dir open. Deferring cleanup to an end-of-shard sweep let up to
++    // a whole shard's worth of these accumulate concurrently before anything
++    // killed them, which is consistent with disk exhausting near the end of a
++    // long run. Sweep by this session's own --user-data-dir first.
++    if (userDataPath)
++        killSessionProcesses(userDataPath, undefined);
++    // Belt-and-suspenders: Electron's utilityProcess API (which backs the
++    // node.mojom.NodeService helper above) builds its own argv rather than
++    // inheriting the browser process's full Chromium command line, so it is
++    // not guaranteed to carry --user-data-dir= — the sweep above can miss it
++    // (see #275, still observed leaking after the userDataPath-only sweep).
++    // Every process for this worker's VS Code session, helper or otherwise,
++    // does still run the same installed binary, so also sweep by that path.
++    // Safe to run every test: within a worker, installPath is reused
++    // sequentially, and this only runs after this test's own app is already
++    // being torn down above, before the next test launches anything there.
++    if (installPath)
++        killSessionProcesses(undefined, installPath);
 +}
 +function collectProcessTree(rootPid) {
 +    const seen = new Set();
@@ -59,7 +142,7 @@ index 5570b9f..112eb5b 100644
      function addEventListener(emitter, eventName, handler) {
          emitter.on(eventName, handler);
          return { emitter, eventName, handler };
-@@ -80,6 +127,10 @@ function waitForLine(process, regex) {
+@@ -80,6 +186,10 @@ function waitForLine(process, regex) {
      return new Promise((resolve, reject) => {
          const rl = readline.createInterface({ input: process.stderr });
          const failError = new Error('Process failed to launch!');
@@ -70,7 +153,7 @@ index 5570b9f..112eb5b 100644
          const listeners = [
              addEventListener(rl, 'line', onLine),
              addEventListener(rl, 'close', reject.bind(null, failError)),
-@@ -95,6 +146,7 @@ function waitForLine(process, regex) {
+@@ -95,6 +205,7 @@ function waitForLine(process, regex) {
              resolve(match);
          }
          function cleanup() {
@@ -78,15 +161,36 @@ index 5570b9f..112eb5b 100644
              removeEventListeners(listeners);
          }
      });
-@@ -144,6 +196,7 @@ exports.test = test_1.test.extend({
+@@ -103,6 +214,7 @@ exports.test = test_1.test.extend({
+     vscodeVersion: ['insiders', { option: true, scope: 'worker' }],
+     extensions: [undefined, { option: true, scope: 'worker' }],
+     vscodeTrace: ['off', { option: true, scope: 'worker' }],
++    vscodeVideo: ['off', { option: true, scope: 'worker' }],
+     extensionDevelopmentPath: [undefined, { option: true }],
+     baseDir: [async ({ _createTempDir }, use) => await use(await _createTempDir()), { option: true }],
+     extensionsDir: [undefined, { option: true, scope: 'worker' }],
+@@ -135,7 +247,7 @@ exports.test = test_1.test.extend({
+             await use({ installPath, cachePath });
+         }, { timeout: 0, scope: 'worker' }],
+     // based on https://github.com/microsoft/playwright-vscode/blob/1d855b9a7aeca783223a7a9f8e3b01efbe8e16f2/tests-integration/tests/baseTest.ts
+-    electronApp: [async ({ extensionDevelopmentPath, baseDir, _vscodeInstall, vscodeTrace, trace, extensionsDir, userDataDir }, use, testInfo) => {
++    electronApp: [async ({ extensionDevelopmentPath, baseDir, _vscodeInstall, vscodeTrace, vscodeVideo, trace, extensionsDir, userDataDir }, use, testInfo) => {
+             const { installPath, cachePath } = _vscodeInstall;
+             // remove all VSCODE_* environment variables, otherwise it fails to load custom webviews with the following error:
+             // InvalidStateError: Failed to register a ServiceWorker: The document is in an invalid state
+@@ -144,13 +256,19 @@ exports.test = test_1.test.extend({
                  if (/^VSCODE_/i.test(prop))
                      delete env[prop];
              }
 +            env.ELECTRON_DISABLE_SANDBOX = '1';
++            const videoMode = getVideoMode(vscodeVideo);
++            const captureVideo = shouldCaptureVideo(videoMode, testInfo);
++            const videoSize = typeof vscodeVideo === 'object' ? vscodeVideo.size : undefined;
              const electronApp = await test_1._electron.launch({
                  executablePath: installPath,
                  env,
-@@ -151,6 +204,7 @@ exports.test = test_1.test.extend({
++                ...(captureVideo ? { recordVideo: { dir: testInfo.outputPath('videos'), ...(videoSize ? { size: videoSize } : {}) } } : {}),
+                 args: [
                      // Stolen from https://github.com/microsoft/vscode-test/blob/0ec222ef170e102244569064a12898fb203e5bb7/lib/runTest.ts#L126-L160
                      // https://github.com/microsoft/vscode/issues/84238
                      '--no-sandbox',
@@ -94,16 +198,93 @@ index 5570b9f..112eb5b 100644
                      // https://github.com/microsoft/vscode-test/issues/221
                      '--disable-gpu-sandbox',
                      // https://github.com/microsoft/vscode-test/issues/120
-@@ -184,7 +238,7 @@ exports.test = test_1.test.extend({
+@@ -158,6 +276,13 @@ exports.test = test_1.test.extend({
+                     '--skip-welcome',
+                     '--skip-release-notes',
+                     '--disable-workspace-trust',
++                    // Headless CI has no GPU, so the GPU process crashes on every
++                    // launch; Crashpad then writes a dump for each one under
++                    // user-data/Crashpad, which we never inspect. Avoid that
++                    // unnecessary per-scenario disk churn; the separate orphan
++                    // process/output-pipe cleanup below fixes the ENOSPC root
++                    // cause tracked in #275.
++                    '--disable-crash-reporter',
+                     `--extensions-dir=${extensionsDir ?? path.join(cachePath, 'extensions')}`,
+                     `--user-data-dir=${userDataDir ?? path.join(cachePath, 'user-data')}`,
+                     `--extensionTestsPath=${path.join(__dirname, 'injected', 'index')}`,
+@@ -184,11 +309,67 @@ exports.test = test_1.test.extend({
                      testInfo.attachments.push({ name: traceName, path: tracePath, contentType: 'application/zip' });
                  }
              }
 -            await electronApp.close();
-+            await closeElectronApp(electronApp);
-             const logPath = path.join(cachePath, 'user-data', 'logs');
+-            const logPath = path.join(cachePath, 'user-data', 'logs');
++            const videos = captureVideo ? context.pages().map(p => p.video()).filter(Boolean) : [];
++            // Capture the process handle before context.close() — it disposes
++            // the client-side app object, after which electronApp.process() throws.
++            const appProcess = electronApp.process();
++            const userDataPath = userDataDir ?? path.join(cachePath, 'user-data');
++            // The leaked NodeService inherited Electron's output pipe and was
++            // able to make the Actions worker persist ~1 GB/s of host-side
++            // diagnostic logs. Test execution is over and the control channel
++            // is separate, so close the output readers before app teardown:
++            // even if a helper briefly escapes the process sweep below, it no
++            // longer has a live pipe into the runner logger.
++            appProcess.stdout?.destroy();
++            appProcess.stderr?.destroy();
++            if (captureVideo) {
++                // context.close() waits for the video recorder to flush the
++                // .webm files to disk. Do not terminate Electron or call
++                // video.path() until recording finalization completes.
++                await context.close().catch(err => console.warn(`[vscode-test-playwright] Failed to close video context: ${err}`));
++            }
++            await closeElectronApp(appProcess, userDataPath, installPath);
++            if (captureVideo) {
++                const testFailed = testInfo.status !== testInfo.expectedStatus;
++                const abandonVideo = !testFailed && (videoMode === 'retain-on-failure' || videoMode === 'retain-on-first-failure');
++                for (const video of videos) {
++                    if (abandonVideo) {
++                        await video.delete().catch(() => { });
++                    }
++                    else {
++                        const videoPath = await video.path().catch(() => undefined);
++                        if (videoPath)
++                            testInfo.attachments.push({ name: `video:${path.basename(videoPath)}`, path: videoPath, contentType: 'video/webm' });
++                    }
++                }
++            }
++            const logPath = path.join(userDataPath, 'logs');
              if (fs.existsSync(logPath)) {
-                 const logOutputPath = exports.test.info().outputPath('vscode-logs');
-@@ -196,24 +250,24 @@ exports.test = test_1.test.extend({
+-                const logOutputPath = exports.test.info().outputPath('vscode-logs');
+-                await fs.promises.cp(logPath, logOutputPath, { recursive: true });
++                const testFailed = testInfo.status !== testInfo.expectedStatus;
++                if (testFailed) {
++                    const logOutputPath = exports.test.info().outputPath('vscode-logs');
++                    await fs.promises.cp(logPath, logOutputPath, { recursive: true });
++                }
++            }
++            // user-data-dir is shared across every test in the worker and is
++            // never pruned by VS Code itself: logs, Crashpad dumps, GPUCache,
++            // Code Cache, IndexedDB, etc. all pile up for the lifetime of the
++            // worker. Wipe it after every test so routine logs, caches, and
++            // dumps stay bounded and each session only contributes its own
++            // footprint. (The runner-host ENOSPC root cause in #275 was the
++            // detached process/output-pipe leak handled above.)
++            //
++            // Best-effort: closeElectronApp() above doesn't guarantee every
++            // child process (GPU/utility/crash-handler) has released its
++            // file handles yet, so an immediate recursive rm can transiently
++            // race with a straggler still writing into the tree (ENOTEMPTY).
++            // maxRetries/retryDelay absorb that; if it still fails, don't
++            // fail the test over a disk-hygiene step — just leave it for the
++            // next test's cleanup to catch up on.
++            if (fs.existsSync(userDataPath)) {
++                await fs.promises
++                    .rm(userDataPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 })
++                    .catch(err => console.warn(`[vscode-test-playwright] Failed to clean up ${userDataPath}: ${err}`));
+             }
+         }, { timeout: 0 }],
+     workbox: async ({ electronApp }, use) => {
+@@ -196,24 +377,25 @@ exports.test = test_1.test.extend({
      },
      page: ({ workbox }, use) => use(workbox),
      context: ({ electronApp }, use) => use(electronApp.context()),
@@ -116,7 +297,8 @@ index 5570b9f..112eb5b 100644
 -        const recentLogs = electronAppImpl._nodeConnection._browserLogsCollector.recentLogs();
 -        let [match] = recentLogs.map(s => s.match(vscodeTestServerRegExp)).filter(Boolean);
 +    _evaluator: async ({ electronApp, workbox, vscodeTrace }, use, testInfo) => {
-+        // Use the public Playwright API — playwright._toImpl() was removed in Playwright 1.48+.
++        // playwright._toImpl() was removed in Playwright 1.48+; convert through
++        // each object's owning connection instead.
 +        const vscodeTestServerRegExp = /VSCodeTestServer listening on (http:\/\/\S+)/;
 +        const proc = electronApp.process();
 +        const electronAppImpl = electronApp._connection?.toImpl?.(electronApp);
@@ -126,7 +308,7 @@ index 5570b9f..112eb5b 100644
 -            match = await waitForLine(process, vscodeTestServerRegExp);
 +            match = await waitForLine(proc, vscodeTestServerRegExp);
          }
-+        const pageImpl = undefined;
++        const pageImpl = workbox._connection.toImpl(workbox);
          const ws = new ws_1.WebSocket(match[1]);
          await new Promise(r => ws.once('open', r));
          const traceMode = getTraceMode(vscodeTrace);
@@ -138,7 +320,7 @@ index 5570b9f..112eb5b 100644
      },
      _vscodeHandle: async ({ _evaluator }, use) => {
          await use(_evaluator.rootHandle());
-@@ -251,7 +305,7 @@ exports.test = test_1.test.extend({
+@@ -251,7 +433,7 @@ exports.test = test_1.test.extend({
                      language: 'playwright-test',
                      mode: 'recording',
                  });
@@ -147,3 +329,17 @@ index 5570b9f..112eb5b 100644
                  closePromise = new Promise(resolve => contextImpl.recorderAppForTest.once('close', resolve));
              }
              await use();
+diff --git a/node_modules/vscode-test-playwright/dist/vscodeHandle.js b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
+index 7c12088..dee0634 100644
+--- a/node_modules/vscode-test-playwright/dist/vscodeHandle.js
++++ b/node_modules/vscode-test-playwright/dist/vscodeHandle.js
+@@ -115,7 +115,7 @@ class VSCodeEvaluator {
+     async _sendAndWaitWithTrace(op, data) {
+         if (!this._page)
+             return await this._sendAndWait(op, data);
+-        const { monotonicTime, createGuid } = require('playwright-core/lib/utils');
++        const { iso: { monotonicTime }, utils: { createGuid } } = require('playwright-core/lib/coreBundle');
+-        const tracing = this._page.context().tracing;
++        const tracing = this._page.browserContext.tracing;
+         const frame = this._page.mainFrame();
+         const metadata = {

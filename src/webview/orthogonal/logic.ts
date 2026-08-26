@@ -331,14 +331,18 @@ export function defaultRoute(
     return [sourceLead, { x: targetLead.x, y: sourceLead.y }, targetLead];
   }
 
+  // Strict comparisons: when the two leads land on exactly the same
+  // coordinate (endpoints exactly two lead lengths apart — e.g. an expanded
+  // instance's border coming to rest one lead-pair short of a neighboring
+  // port), a straight route still fits and a wrap-around loop is pure noise.
   const isRightFeedback =
     sourcePosition === HdlPosition.Right &&
     targetPosition === HdlPosition.Left &&
-    sourceLead.x >= targetLead.x;
+    sourceLead.x > targetLead.x;
   const isLeftFeedback =
     sourcePosition === HdlPosition.Left &&
     targetPosition === HdlPosition.Right &&
-    sourceLead.x <= targetLead.x;
+    sourceLead.x < targetLead.x;
 
   if (isRightFeedback || isLeftFeedback) {
     const direction = isRightFeedback ? 1 : -1;
@@ -365,11 +369,11 @@ export function defaultRoute(
   const isBottomFeedback =
     sourcePosition === HdlPosition.Bottom &&
     targetPosition === HdlPosition.Top &&
-    sourceLead.y >= targetLead.y;
+    sourceLead.y > targetLead.y;
   const isTopFeedback =
     sourcePosition === HdlPosition.Top &&
     targetPosition === HdlPosition.Bottom &&
-    sourceLead.y <= targetLead.y;
+    sourceLead.y < targetLead.y;
 
   if (isBottomFeedback || isTopFeedback) {
     const direction = isBottomFeedback ? 1 : -1;
@@ -674,6 +678,32 @@ function routeIntersectsAnyObstacle(points: OrthogonalPoint[], obstacles: NodeOb
     const next = points[index + 1];
     return obstacles.some((obstacle) => segmentIntersectsObstacle(point, next, obstacle));
   });
+}
+
+/**
+ * Clamps every route point into `rect` shrunk by the given per-side insets —
+ * used for wires spliced inside an expanded instance ("Expand instance in
+ * place", issue #232), whose derived routes (feedback loops, obstacle
+ * avoidance detours) must never escape the expanded node's own border.
+ * Per-coordinate clamping is monotone, so equal coordinates stay equal and
+ * the route stays orthogonal; collapsed zero-length zigzags are simplified
+ * away.
+ */
+export function clampPointsToRect(
+  points: OrthogonalPoint[],
+  rect: { x: number; y: number; width: number; height: number },
+  insets: { top: number; right: number; bottom: number; left: number },
+): OrthogonalPoint[] {
+  const minX = rect.x + insets.left;
+  const maxX = rect.x + rect.width - insets.right;
+  const minY = rect.y + insets.top;
+  const maxY = rect.y + rect.height - insets.bottom;
+  if (maxX <= minX || maxY <= minY) return points;
+  const clamped = points.map((point) => ({
+    x: Math.min(Math.max(point.x, minX), maxX),
+    y: Math.min(Math.max(point.y, minY), maxY),
+  }));
+  return removeRedundantPoints(clamped);
 }
 
 export function avoidFeedbackObstacles(

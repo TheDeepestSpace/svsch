@@ -1104,6 +1104,9 @@ interface RawUhdmIr {
           endCol: number;
         };
         label?: string;
+        isArrayNode?: boolean;
+        arrayDimension?: string;
+        arraySize?: number;
         source?: { file: string; line: number; col: number; endLine: number; endCol: number };
       }>;
       source: { file: string; line: number; col: number; endLine: number; endCol: number };
@@ -2000,6 +2003,9 @@ function transformToDesignGraph(raw: RawUhdmIr, workspaceRoot: string): DesignGr
                 modportSource: sourceRangeFromRaw(p.modportSource, workspaceRoot),
                 preferredSide: (p as any).preferredSide || undefined,
                 label: p.label || undefined,
+                isArrayNode: p.isArrayNode,
+                arrayDimension: p.arrayDimension,
+                arraySize: p.arraySize,
                 connectedSignal: p.signal,
                 source: portSource
                   ? {
