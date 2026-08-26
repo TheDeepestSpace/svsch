@@ -22,12 +22,21 @@ import {
 const CHART_KEYS_WITH_LABELS = new Set();
 const CHART_KEYS_WITH_CSV = new Set(['visual']);
 
-// One review comment covering every diagram-generation benchmark suite, with
-// a real "master vs. this run" bar chart (hosted on gh-pages, since GitHub
-// comments can't embed raw <svg>) plus a worst/best delta table per suite.
-// Args are "<benchmark-name>=<benchmark-file>" pairs — one per individually
-// tracked benchmark (visual has two: elaboration and rendering).
-const suiteArgs = process.argv.slice(2).map((arg) => {
+// Renders a markdown section covering every diagram-generation benchmark
+// suite, with a real "master vs. this run" bar chart (hosted on gh-pages,
+// since GitHub comments can't embed raw <svg>) plus a worst/best delta table
+// per suite — report_pr_stats folds this into the combined PR stats comment
+// (see upsert-pr-stats-comment.mjs). First arg is the output markdown file;
+// the rest are "<benchmark-name>=<benchmark-file>" pairs, one per
+// individually tracked benchmark (visual has two: elaboration and
+// rendering).
+const [outputFile, ...suiteRawArgs] = process.argv.slice(2);
+if (!outputFile) {
+  throw new Error(
+    'Usage: node scripts/generate-benchmark-stats.mjs <output-file> <name>=<file> [<name>=<file> ...]',
+  );
+}
+const suiteArgs = suiteRawArgs.map((arg) => {
   const [name, file] = arg.split('=');
   if (!name || !file) {
     throw new Error(`Invalid suite argument "${arg}", expected <benchmark-name>=<benchmark-file>`);
@@ -35,21 +44,15 @@ const suiteArgs = process.argv.slice(2).map((arg) => {
   return { name, file };
 });
 
-const {
-  GITHUB_API_URL = 'https://api.github.com',
-  GITHUB_REPOSITORY,
-  GITHUB_SHA,
-  GITHUB_TOKEN,
-  PR_NUMBER,
-} = process.env;
+const { GITHUB_REPOSITORY, GITHUB_TOKEN, PR_NUMBER } = process.env;
 
 if (suiteArgs.length === 0) {
   throw new Error(
-    'Usage: node scripts/comment-benchmark-summary.mjs <name>=<file> [<name>=<file> ...]',
+    'Usage: node scripts/generate-benchmark-stats.mjs <output-file> <name>=<file> [<name>=<file> ...]',
   );
 }
-if (!GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN || !PR_NUMBER) {
-  throw new Error('GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, and PR_NUMBER must be set');
+if (!GITHUB_REPOSITORY || !GITHUB_TOKEN || !PR_NUMBER) {
+  throw new Error('GITHUB_REPOSITORY, GITHUB_TOKEN, and PR_NUMBER must be set');
 }
 
 // Which chart each benchmark suite belongs to, and how it's labeled there.
@@ -162,7 +165,7 @@ for (const { name, file } of suiteArgs) {
   const meta = METRIC_META[name];
   if (!meta) {
     throw new Error(
-      `Unknown benchmark suite "${name}" — add it to METRIC_META in comment-benchmark-summary.mjs`,
+      `Unknown benchmark suite "${name}" — add it to METRIC_META in generate-benchmark-stats.mjs`,
     );
   }
   const entries = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -347,74 +350,11 @@ for (const [key, group] of chartGroups) {
   sections.push(lines.join('\n'));
 }
 
-const commentId = 'diagram-generation-benchmark Summary';
-const startTag = `<!-- github-benchmark-action-comment(start): ${commentId} -->`;
-const endTag = `<!-- github-benchmark-action-comment(end): ${commentId} -->`;
 const body = [
-  startTag,
-  `# Diagram generation benchmark — ${GITHUB_SHA.slice(0, 7)}`,
+  '## Diagram generation benchmark',
   ...(summaryLines.length ? [summaryLines.join('\n')] : []),
-  '',
   ...sections,
-  '',
-  endTag,
 ].join('\n\n');
 
-const headers = {
-  Accept: 'application/vnd.github+json',
-  Authorization: `Bearer ${GITHUB_TOKEN}`,
-  'Content-Type': 'application/json',
-  'X-GitHub-Api-Version': '2022-11-28',
-};
-// GitHub occasionally hasn't finished replicating a just-created/updated PR
-// to the graph backing these REST endpoints yet, which surfaces as a 404
-// complaining it "Could not resolve to a node with the global id" of the PR
-// — purely a replication-lag blip, not a real 404. Retry that (and plain
-// 5xx flakiness) a few times with backoff before giving up.
-const isTransient = (status, text) =>
-  status >= 500 ||
-  (status === 404 && text.includes('Could not resolve to a node with the global id'));
-
-const request = async (method, apiPath, requestBody) => {
-  const maxAttempts = 4;
-  for (let attempt = 1; ; attempt++) {
-    const response = await fetch(`${GITHUB_API_URL}${apiPath}`, {
-      method,
-      headers,
-      body: requestBody === undefined ? undefined : JSON.stringify(requestBody),
-      signal: AbortSignal.timeout(NETWORK_TIMEOUT_MS),
-    });
-    if (response.ok) return response.json();
-    const text = await response.text();
-    if (attempt >= maxAttempts || !isTransient(response.status, text)) {
-      throw new Error(`${method} ${apiPath} failed (${response.status}): ${text}`);
-    }
-    console.warn(
-      `${method} ${apiPath} failed (${response.status}), retrying (${attempt}/${maxAttempts})...`,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000));
-  }
-};
-
-const reviews = [];
-for (let page = 1; ; page++) {
-  const batch = await request(
-    'GET',
-    `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews?per_page=100&page=${page}`,
-  );
-  reviews.push(...batch);
-  if (batch.length < 100) break;
-}
-const existing = reviews.find((review) => review.body?.startsWith(startTag));
-if (existing) {
-  await request('PUT', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews/${existing.id}`, {
-    body,
-  });
-  console.log('Updated combined benchmark comment.');
-} else {
-  await request('POST', `/repos/${owner}/${repo}/pulls/${PR_NUMBER}/reviews`, {
-    event: 'COMMENT',
-    body,
-  });
-  console.log('Created combined benchmark comment.');
-}
+fs.writeFileSync(outputFile, `${body}\n`, 'utf8');
+console.log(`Wrote benchmark stats to ${outputFile}`);
