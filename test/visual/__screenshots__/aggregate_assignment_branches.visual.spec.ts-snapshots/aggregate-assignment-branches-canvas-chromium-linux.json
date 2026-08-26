@@ -4,8 +4,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
       "type": "hdl",
       "position": {
-        "x": 1848,
-        "y": 408
+        "x": 1752,
+        "y": 144
       },
       "width": 144,
       "height": 101,
@@ -34,8 +34,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
       "type": "hdl",
       "position": {
-        "x": 768,
-        "y": 576
+        "x": 600,
+        "y": 120
       },
       "width": 144,
       "height": 101,
@@ -64,8 +64,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
       "type": "hdl",
       "position": {
-        "x": 1488,
-        "y": 504
+        "x": 1392,
+        "y": 600
       },
       "width": 144,
       "height": 101,
@@ -94,8 +94,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
       "type": "hdl",
       "position": {
-        "x": 1128,
-        "y": 696
+        "x": 1032,
+        "y": 600
       },
       "width": 144,
       "height": 101,
@@ -124,8 +124,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
       "type": "hdl",
       "position": {
-        "x": 1128,
-        "y": 384
+        "x": 1032,
+        "y": 480
       },
       "width": 144,
       "height": 101,
@@ -154,8 +154,8 @@
       "id": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
       "type": "hdl",
       "position": {
-        "x": 768,
-        "y": 456
+        "x": 600,
+        "y": 504
       },
       "width": 144,
       "height": 101,
@@ -181,11 +181,131 @@
       }
     },
     {
+      "id": "cut-label:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_reg:clk",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 624
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_valid:clk",
+      "type": "hdl",
+      "position": {
+        "x": 552,
+        "y": 288
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:aggregate_assignment_branches:clk:port:clk:source",
+      "type": "hdl",
+      "position": {
+        "x": -96,
+        "y": 96
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_reg:rst",
+      "type": "hdl",
+      "position": {
+        "x": 192,
+        "y": 720
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_valid:rst",
+      "type": "hdl",
+      "position": {
+        "x": 696,
+        "y": 384
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cut-label:port:aggregate_assignment_branches:rst:port:rst:source",
+      "type": "hdl",
+      "position": {
+        "x": -96,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
       "id": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
       "type": "hdl",
       "position": {
-        "x": 1512,
-        "y": 72
+        "x": 1392,
+        "y": 192
       },
       "width": 96,
       "height": 96,
@@ -214,8 +334,8 @@
       "id": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
       "type": "hdl",
       "position": {
-        "x": 1152,
-        "y": 240
+        "x": 1032,
+        "y": 360
       },
       "width": 96,
       "height": 96,
@@ -244,8 +364,8 @@
       "id": "inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr",
       "type": "hdl",
       "position": {
-        "x": 1200,
-        "y": 120
+        "x": 1080,
+        "y": 240
       },
       "width": 48,
       "height": 48,
@@ -269,7 +389,7 @@
       "id": "literal:aggregate_assignment_branches:1_b0:1_b0",
       "type": "hdl",
       "position": {
-        "x": 504,
+        "x": 288,
         "y": 516
       },
       "width": 48,
@@ -289,8 +409,8 @@
       "id": "literal:aggregate_assignment_branches:1_b1:1_b1",
       "type": "hdl",
       "position": {
-        "x": 864,
-        "y": 756
+        "x": 768,
+        "y": 684
       },
       "width": 48,
       "height": 24,
@@ -309,8 +429,8 @@
       "id": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
       "type": "hdl",
       "position": {
-        "x": 2232,
-        "y": 120
+        "x": 2112,
+        "y": 144
       },
       "width": 144,
       "height": 96,
@@ -344,8 +464,8 @@
       "id": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
       "type": "hdl",
       "position": {
-        "x": 1848,
-        "y": 144
+        "x": 1752,
+        "y": 288
       },
       "width": 144,
       "height": 96,
@@ -379,8 +499,8 @@
       "id": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
       "type": "hdl",
       "position": {
-        "x": 1488,
-        "y": 360
+        "x": 1392,
+        "y": 480
       },
       "width": 144,
       "height": 96,
@@ -414,8 +534,8 @@
       "id": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
       "type": "hdl",
       "position": {
-        "x": 2232,
-        "y": 264
+        "x": 2112,
+        "y": 408
       },
       "width": 96,
       "height": 96,
@@ -449,8 +569,8 @@
       "id": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
       "type": "hdl",
       "position": {
-        "x": 1872,
-        "y": 288
+        "x": 1752,
+        "y": 432
       },
       "width": 96,
       "height": 96,
@@ -484,8 +604,8 @@
       "id": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
       "type": "hdl",
       "position": {
-        "x": 1512,
-        "y": 216
+        "x": 1392,
+        "y": 336
       },
       "width": 96,
       "height": 96,
@@ -519,8 +639,8 @@
       "id": "port:aggregate_assignment_branches:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -240,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -539,8 +659,8 @@
       "id": "port:aggregate_assignment_branches:data_reg",
       "type": "hdl",
       "position": {
-        "x": 768,
-        "y": 420
+        "x": 576,
+        "y": 732
       },
       "width": 168,
       "height": 24,
@@ -559,8 +679,8 @@
       "id": "port:aggregate_assignment_branches:data_valid",
       "type": "hdl",
       "position": {
-        "x": 1128,
-        "y": 180
+        "x": 1032,
+        "y": 324
       },
       "width": 120,
       "height": 24,
@@ -579,8 +699,8 @@
       "id": "port:aggregate_assignment_branches:din",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 708
+        "x": 696,
+        "y": 636
       },
       "width": 120,
       "height": 24,
@@ -599,8 +719,8 @@
       "id": "port:aggregate_assignment_branches:flush",
       "type": "hdl",
       "position": {
-        "x": 1872,
-        "y": 84
+        "x": 1776,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -619,8 +739,8 @@
       "id": "port:aggregate_assignment_branches:hold_en",
       "type": "hdl",
       "position": {
-        "x": 792,
-        "y": 372
+        "x": 696,
+        "y": 468
       },
       "width": 120,
       "height": 24,
@@ -639,8 +759,8 @@
       "id": "port:aggregate_assignment_branches:load_en",
       "type": "hdl",
       "position": {
-        "x": 1152,
-        "y": 60
+        "x": 1056,
+        "y": 132
       },
       "width": 120,
       "height": 24,
@@ -659,8 +779,8 @@
       "id": "port:aggregate_assignment_branches:rst",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 324
+        "x": -240,
+        "y": 156
       },
       "width": 120,
       "height": 24,
@@ -679,8 +799,8 @@
       "id": "reg:aggregate_assignment_branches:data_reg",
       "type": "hdl",
       "position": {
-        "x": 360,
-        "y": 192
+        "x": 144,
+        "y": 576
       },
       "width": 192,
       "height": 96,
@@ -714,8 +834,8 @@
       "id": "reg:aggregate_assignment_branches:data_valid",
       "type": "hdl",
       "position": {
-        "x": 768,
-        "y": 144
+        "x": 672,
+        "y": 240
       },
       "width": 144,
       "height": 96,
@@ -748,12 +868,60 @@
   ],
   "edges": [
     {
+      "id": "cut-stub:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_reg:clk",
+      "source": "cut-label:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_reg:clk",
+      "target": "reg:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 120 648 L 120 648 L 144 648"
+    },
+    {
+      "id": "cut-stub:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_valid:clk",
+      "source": "cut-label:port:aggregate_assignment_branches:clk:port:clk:sink:edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_valid:clk",
+      "target": "reg:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 648 312 L 648 312 L 672 312"
+    },
+    {
+      "id": "cut-stub:port:aggregate_assignment_branches:clk:port:clk:source",
+      "source": "port:aggregate_assignment_branches:clk",
+      "target": "cut-label:port:aggregate_assignment_branches:clk:port:clk:source",
+      "sourceHandle": "port:clk",
+      "targetHandle": "cut",
+      "path": "M -120 120 L -96 120 L -96 120"
+    },
+    {
+      "id": "cut-stub:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_reg:rst",
+      "source": "cut-label:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_reg:rst",
+      "target": "reg:aggregate_assignment_branches:data_reg",
+      "sourceHandle": "cut",
+      "targetHandle": "rst",
+      "path": "M 240 720 L 240 720 L 240 672"
+    },
+    {
+      "id": "cut-stub:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_valid:rst",
+      "source": "cut-label:port:aggregate_assignment_branches:rst:port:rst:sink:edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_valid:rst",
+      "target": "reg:aggregate_assignment_branches:data_valid",
+      "sourceHandle": "cut",
+      "targetHandle": "rst",
+      "path": "M 744 384 L 744 384 L 744 336"
+    },
+    {
+      "id": "cut-stub:port:aggregate_assignment_branches:rst:port:rst:source",
+      "source": "port:aggregate_assignment_branches:rst",
+      "target": "cut-label:port:aggregate_assignment_branches:rst:port:rst:source",
+      "sourceHandle": "port:rst",
+      "targetHandle": "cut",
+      "path": "M -120 168 L -96 168 L -96 168"
+    },
+    {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:data_reg_if_true_n0",
       "source": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
       "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
       "sourceHandle": "out:lhs0",
       "targetHandle": "in:true",
-      "path": "M 1992 432 L 2016 432 L 2112 432 L 2112 168 L 2208 168 L 2232 168"
+      "path": "M 1896 168 L 1920 168 L 2016 168 L 2016 192 L 2088 192 L 2112 192"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:data_valid_if_true_n1",
@@ -761,7 +929,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
       "sourceHandle": "out:lhs1",
       "targetHandle": "in:true",
-      "path": "M 1992 480 L 2016 480 L 2112 480 L 2112 312 L 2208 312 L 2232 312"
+      "path": "M 1896 216 L 1920 216 L 1992 216 L 1992 456 L 2088 456 L 2112 456"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout:aggregate_assign_n2",
@@ -769,7 +937,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:breakout",
       "sourceHandle": "out:out",
       "targetHandle": "in:in",
-      "path": "M 912 600 L 936 600 L 1392 600 L 1392 480 L 1752 480 L 1752 432 L 1824 432 L 1848 432"
+      "path": "M 744 144 L 768 144 L 912 144 L 912 120 L 1464 120 L 1464 168 L 1728 168 L 1752 168"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:data_reg_if_true_n3",
@@ -777,7 +945,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
       "sourceHandle": "out:lhs0",
       "targetHandle": "in:true",
-      "path": "M 1632 528 L 1656 528 L 1656 489 Q 1665 480 1656 471 L 1656 144 L 1728 144 L 1728 192 L 1824 192 L 1848 192"
+      "path": "M 1536 624 L 1560 624 L 1632 624 L 1632 336 L 1728 336 L 1752 336"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:data_valid_if_true_n4",
@@ -785,7 +953,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
       "sourceHandle": "out:lhs1",
       "targetHandle": "in:true",
-      "path": "M 1632 576 L 1656 576 L 1752 576 L 1752 336 L 1848 336 L 1872 336"
+      "path": "M 1536 672 L 1560 672 L 1656 672 L 1656 480 L 1728 480 L 1752 480"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout:aggregate_assign_n5",
@@ -793,7 +961,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:breakout",
       "sourceHandle": "out:out",
       "targetHandle": "in:in",
-      "path": "M 1272 720 L 1296 720 L 1392 720 L 1392 528 L 1464 528 L 1488 528"
+      "path": "M 1176 624 L 1200 624 L 1368 624 L 1392 624"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:data_reg_if_true_n6",
@@ -801,7 +969,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
       "sourceHandle": "out:lhs0",
       "targetHandle": "in:true",
-      "path": "M 1272 408 L 1296 408 L 1464 408 L 1488 408"
+      "path": "M 1176 504 L 1200 504 L 1296 504 L 1296 528 L 1368 528 L 1392 528"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:data_valid_if_true_n7",
@@ -809,7 +977,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
       "sourceHandle": "out:lhs1",
       "targetHandle": "in:true",
-      "path": "M 1272 456 L 1296 456 L 1296 264 L 1488 264 L 1512 264"
+      "path": "M 1176 552 L 1200 552 L 1200 384 L 1368 384 L 1392 384"
     },
     {
       "id": "edge:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout:aggregate_assign_n8",
@@ -817,7 +985,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:breakout",
       "sourceHandle": "out:out",
       "targetHandle": "in:in",
-      "path": "M 912 480 L 936 480 L 1008 480 L 1008 408 L 1104 408 L 1128 408"
+      "path": "M 744 528 L 768 528 L 936 528 L 936 504 L 1008 504 L 1032 504"
     },
     {
       "id": "edge:gate:aggregate_assignment_branches:if_sel_n11:n12:and:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:if_sel_n11",
@@ -825,7 +993,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
       "sourceHandle": "out:if_sel_n11",
       "targetHandle": "sel",
-      "path": "M 1608 120 L 1632 120 L 1920 120 L 1920 168"
+      "path": "M 1488 240 L 1512 240 L 1728 240 L 1728 264 L 1824 264 L 1824 312"
     },
     {
       "id": "edge:gate:aggregate_assignment_branches:if_sel_n11:n12:and:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:if_sel_n11",
@@ -833,7 +1001,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
       "sourceHandle": "out:if_sel_n11",
       "targetHandle": "sel",
-      "path": "M 1608 120 L 1632 120 L 1824 120 L 1824 264 L 1920 264 L 1920 312"
+      "path": "M 1488 240 L 1512 240 L 1728 240 L 1728 408 L 1800 408 L 1800 456"
     },
     {
       "id": "edge:gate:aggregate_assignment_branches:if_sel_n9:n10:and:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:if_sel_n9",
@@ -841,7 +1009,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
       "sourceHandle": "out:if_sel_n9",
       "targetHandle": "sel",
-      "path": "M 1248 288 L 1272 288 L 1289 288 Q 1296 281 1303 288 L 1464 288 L 1464 336 L 1560 336 L 1560 384"
+      "path": "M 1128 408 L 1152 408 L 1193 408 Q 1200 401 1207 408 L 1368 408 L 1368 456 L 1464 456 L 1464 504"
     },
     {
       "id": "edge:gate:aggregate_assignment_branches:if_sel_n9:n10:and:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:if_sel_n9",
@@ -849,7 +1017,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
       "sourceHandle": "out:if_sel_n9",
       "targetHandle": "sel",
-      "path": "M 1248 288 L 1272 288 L 1289 288 Q 1296 281 1303 288 L 1464 288 L 1464 271 Q 1471 264 1464 257 L 1464 192 L 1560 192 L 1560 240"
+      "path": "M 1128 408 L 1152 408 L 1193 408 Q 1200 401 1207 408 L 1368 408 L 1368 312 L 1440 312 L 1440 360"
     },
     {
       "id": "edge:inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr:gate:aggregate_assignment_branches:if_sel_n11:n12:and:if_sel_n11_in1",
@@ -857,7 +1025,7 @@
       "target": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
       "sourceHandle": "out:if_sel_n11_in1",
       "targetHandle": "port:in1",
-      "path": "M 1230.797 144 L 1248 144 L 1488 144 L 1512 144"
+      "path": "M 1110.797 264 L 1128 264 L 1368 264 L 1392 264"
     },
     {
       "id": "edge:literal:aggregate_assignment_branches:1_b0:1_b0:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose:1_b0",
@@ -865,7 +1033,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
       "sourceHandle": "port:1_b0",
       "targetHandle": "in:rhs1",
-      "path": "M 552 528 L 576 528 L 744 528 L 744 648 L 768 648"
+      "path": "M 336 528 L 360 528 L 528 528 L 528 192 L 576 192 L 600 192"
     },
     {
       "id": "edge:literal:aggregate_assignment_branches:1_b0:1_b0:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose:1_b0",
@@ -873,7 +1041,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
       "sourceHandle": "port:1_b0",
       "targetHandle": "in:rhs1",
-      "path": "M 552 528 L 576 528 L 744 528 L 768 528"
+      "path": "M 336 528 L 360 528 L 528 528 L 528 576 L 576 576 L 600 576"
     },
     {
       "id": "edge:literal:aggregate_assignment_branches:1_b1:1_b1:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose:1_b1",
@@ -881,7 +1049,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
       "sourceHandle": "port:1_b1",
       "targetHandle": "in:rhs1",
-      "path": "M 912 768 L 936 768 L 1104 768 L 1128 768"
+      "path": "M 816 696 L 840 696 L 936 696 L 936 672 L 1008 672 L 1032 672"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:reg:aggregate_assignment_branches:data_reg:data_reg_next",
@@ -889,7 +1057,7 @@
       "target": "reg:aggregate_assignment_branches:data_reg",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 2376 168 L 2400 168 L 2424 168 L 2424 24 L 312 24 L 312 240 L 336 240 L 360 240"
+      "path": "M 2256 192 L 2280 192 L 2280 120 L 1944 120 L 1944 72 L 72 72 L 72 408 L 0 408 L 0 624 L 120 624 L 144 624"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:data_reg_if_false_n0",
@@ -897,7 +1065,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 1992 192 L 2016 192 L 2103 192 Q 2112 183 2121 192 L 2208 192 L 2232 192"
+      "path": "M 1896 336 L 1920 336 L 1983 336 Q 1992 327 2001 336 L 2016 336 L 2016 216 L 2088 216 L 2112 216"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0:data_reg_if_false_n3",
@@ -905,7 +1073,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n11:data_reg_if_false_n0",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 1632 408 L 1656 408 L 1728 408 L 1728 216 L 1824 216 L 1848 216"
+      "path": "M 1536 528 L 1560 528 L 1632 528 L 1632 360 L 1728 360 L 1752 360"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:reg:aggregate_assignment_branches:data_valid:data_valid_next",
@@ -913,7 +1081,7 @@
       "target": "reg:aggregate_assignment_branches:data_valid",
       "sourceHandle": "out",
       "targetHandle": "d",
-      "path": "M 2328 312 L 2352 312 L 2400 312 L 2400 48 L 744 48 L 744 192 L 768 192"
+      "path": "M 2208 456 L 2232 456 L 2304 456 L 2304 96 L 1953 96 Q 1944 87 1935 96 L 504 96 L 504 288 L 519 288 Q 528 279 537 288 L 648 288 L 672 288"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:data_valid_if_false_n1",
@@ -921,7 +1089,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 1968 336 L 1992 336 L 2103 336 Q 2112 327 2121 336 L 2208 336 L 2232 336"
+      "path": "M 1848 480 L 1872 480 L 2088 480 L 2112 480"
     },
     {
       "id": "edge:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1:data_valid_if_false_n4",
@@ -929,23 +1097,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n11:data_valid_if_false_n1",
       "sourceHandle": "out",
       "targetHandle": "in:false",
-      "path": "M 1608 264 L 1632 264 L 1647 264 Q 1656 255 1665 264 L 1728 264 L 1728 360 L 1745 360 Q 1752 353 1759 360 L 1848 360 L 1872 360"
-    },
-    {
-      "id": "edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_reg:clk",
-      "source": "port:aggregate_assignment_branches:clk",
-      "target": "reg:aggregate_assignment_branches:data_reg",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 144 48 L 168 48 L 303 48 Q 312 39 321 48 L 336 48 L 336 264 L 360 264"
-    },
-    {
-      "id": "edge:port:aggregate_assignment_branches:clk:reg:aggregate_assignment_branches:data_valid:clk",
-      "source": "port:aggregate_assignment_branches:clk",
-      "target": "reg:aggregate_assignment_branches:data_valid",
-      "sourceHandle": "port:clk",
-      "targetHandle": "clk",
-      "path": "M 144 48 L 168 48 L 303 48 Q 312 39 321 48 L 672 48 L 672 216 L 744 216 L 768 216"
+      "path": "M 1488 384 L 1512 384 L 1623 384 Q 1632 375 1641 384 L 1656 384 L 1656 504 L 1728 504 L 1752 504"
     },
     {
       "id": "edge:port:aggregate_assignment_branches:din:bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose:din",
@@ -953,7 +1105,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:17:6:n5:compose",
       "sourceHandle": "port:din",
       "targetHandle": "in:rhs0",
-      "path": "M 912 720 L 936 720 L 1104 720 L 1128 720"
+      "path": "M 816 648 L 840 648 L 936 648 L 936 624 L 1008 624 L 1032 624"
     },
     {
       "id": "edge:port:aggregate_assignment_branches:flush:mux:aggregate_assignment_branches:data_reg:flush:data_reg_next:flush",
@@ -961,7 +1113,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:flush:data_reg_next",
       "sourceHandle": "port:flush",
       "targetHandle": "sel",
-      "path": "M 1992 96 L 2016 96 L 2304 96 L 2304 144"
+      "path": "M 1896 120 L 1920 120 L 2184 120 L 2184 168"
     },
     {
       "id": "edge:port:aggregate_assignment_branches:flush:mux:aggregate_assignment_branches:data_valid:flush:data_valid_next:flush",
@@ -969,7 +1121,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:flush:data_valid_next",
       "sourceHandle": "port:flush",
       "targetHandle": "sel",
-      "path": "M 1992 96 L 2016 96 L 2208 96 L 2208 240 L 2280 240 L 2280 288"
+      "path": "M 1896 120 L 1920 120 L 2088 120 L 2088 96 L 2304 96 L 2304 384 L 2160 384 L 2160 432"
     },
     {
       "id": "edge:port:aggregate_assignment_branches:hold_en:gate:aggregate_assignment_branches:if_sel_n9:n10:and:hold_en",
@@ -977,7 +1129,7 @@
       "target": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
       "sourceHandle": "port:hold_en",
       "targetHandle": "port:in0",
-      "path": "M 912 384 L 936 384 L 1032 384 L 1032 264 L 1128 264 L 1152 264"
+      "path": "M 816 480 L 840 480 L 936 480 L 936 384 L 1008 384 L 1032 384"
     },
     {
       "id": "edge:port:aggregate_assignment_branches:load_en:gate:aggregate_assignment_branches:if_sel_n11:n12:and:load_en",
@@ -985,23 +1137,7 @@
       "target": "gate:aggregate_assignment_branches:if_sel_n11:n12:and",
       "sourceHandle": "port:load_en",
       "targetHandle": "port:in0",
-      "path": "M 1272 72 L 1296 72 L 1392 72 L 1392 96 L 1488 96 L 1512 96"
-    },
-    {
-      "id": "edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_reg:rst",
-      "source": "port:aggregate_assignment_branches:rst",
-      "target": "reg:aggregate_assignment_branches:data_reg",
-      "sourceHandle": "port:rst",
-      "targetHandle": "rst",
-      "path": "M 144 336 L 168 336 L 456 336 L 456 288"
-    },
-    {
-      "id": "edge:port:aggregate_assignment_branches:rst:reg:aggregate_assignment_branches:data_valid:rst",
-      "source": "port:aggregate_assignment_branches:rst",
-      "target": "reg:aggregate_assignment_branches:data_valid",
-      "sourceHandle": "port:rst",
-      "targetHandle": "rst",
-      "path": "M 144 336 L 168 336 L 672 336 L 672 288 L 840 288 L 840 240"
+      "path": "M 1176 144 L 1200 144 L 1296 144 L 1296 216 L 1368 216 L 1392 216"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_reg:bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose:data_reg",
@@ -1009,7 +1145,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:15:6:n2:compose",
       "sourceHandle": "q",
       "targetHandle": "in:rhs0",
-      "path": "M 552 240 L 576 240 L 744 240 L 744 279 Q 753 288 744 297 L 744 600 L 768 600"
+      "path": "M 336 624 L 360 624 L 528 624 L 528 297 Q 537 288 528 279 L 528 144 L 576 144 L 600 144"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_reg:bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose:data_reg",
@@ -1017,7 +1153,7 @@
       "target": "bus:aggregate_assignment_branches:aggregate_assign:19:6:n8:compose",
       "sourceHandle": "q",
       "targetHandle": "in:rhs0",
-      "path": "M 552 240 L 576 240 L 744 240 L 744 279 Q 753 288 744 297 L 744 480 L 768 480"
+      "path": "M 336 624 L 360 624 L 528 624 L 528 528 L 576 528 L 600 528"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_reg:mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3:data_reg",
@@ -1025,7 +1161,7 @@
       "target": "mux:aggregate_assignment_branches:data_reg:if_sel_n9:data_reg_if_false_n3",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 552 240 L 576 240 L 744 240 L 744 279 Q 753 288 744 297 L 744 360 L 1032 360 L 1032 399 Q 1041 408 1032 417 L 1032 504 L 1368 504 L 1368 432 L 1464 432 L 1488 432"
+      "path": "M 336 624 L 360 624 L 528 624 L 528 768 L 1296 768 L 1296 633 Q 1305 624 1296 615 L 1296 552 L 1368 552 L 1392 552"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_reg:port:aggregate_assignment_branches:data_reg:data_reg",
@@ -1033,7 +1169,7 @@
       "target": "port:aggregate_assignment_branches:data_reg",
       "sourceHandle": "q",
       "targetHandle": "port:data_reg",
-      "path": "M 552 240 L 576 240 L 744 240 L 744 279 Q 753 288 744 297 L 744 432 L 768 432"
+      "path": "M 336 624 L 360 624 L 528 624 L 528 744 L 552 744 L 576 744"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_valid:gate:aggregate_assignment_branches:if_sel_n9:n10:and:data_valid",
@@ -1041,7 +1177,7 @@
       "target": "gate:aggregate_assignment_branches:if_sel_n9:n10:and",
       "sourceHandle": "q",
       "targetHandle": "port:in1",
-      "path": "M 912 192 L 936 192 L 1104 192 L 1104 257 Q 1111 264 1104 271 L 1104 312 L 1128 312 L 1152 312"
+      "path": "M 816 288 L 840 288 L 1008 288 L 1008 432 L 1032 432"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_valid:inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr:data_valid",
@@ -1049,7 +1185,7 @@
       "target": "inverter:aggregate_assignment_branches:if_sel_n11_in1:n13:expr",
       "sourceHandle": "q",
       "targetHandle": "in:data_valid",
-      "path": "M 912 192 L 936 192 L 1104 192 L 1104 144 L 1176 144 L 1200 144"
+      "path": "M 816 288 L 840 288 L 1008 288 L 1008 264 L 1056 264 L 1080 264"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_valid:mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4:data_valid",
@@ -1057,7 +1193,7 @@
       "target": "mux:aggregate_assignment_branches:data_valid:if_sel_n9:data_valid_if_false_n4",
       "sourceHandle": "q",
       "targetHandle": "in:false",
-      "path": "M 912 192 L 936 192 L 1104 192 L 1104 216 L 1392 216 L 1392 257 Q 1399 264 1392 271 L 1392 288 L 1488 288 L 1512 288"
+      "path": "M 816 288 L 840 288 L 1008 288 L 1008 312 L 1272 312 L 1272 377 Q 1279 384 1272 391 L 1272 408 L 1368 408 L 1392 408"
     },
     {
       "id": "edge:reg:aggregate_assignment_branches:data_valid:port:aggregate_assignment_branches:data_valid:data_valid",
@@ -1065,7 +1201,7 @@
       "target": "port:aggregate_assignment_branches:data_valid",
       "sourceHandle": "q",
       "targetHandle": "port:data_valid",
-      "path": "M 912 192 L 936 192 L 1104 192 L 1128 192"
+      "path": "M 816 288 L 840 288 L 1008 288 L 1008 336 L 1032 336"
     }
   ]
 }
