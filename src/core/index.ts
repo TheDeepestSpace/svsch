@@ -3,6 +3,7 @@ import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import type { DesignGraph, DiagramViewModel } from '../ir/types';
 import { buildViewModel } from '../layout/mergeLayout';
+import { applyExpandedInstances } from '../layout/expandSpliceView';
 import { buildDesignGraph, type ParserOptions } from '../parser/backend';
 import type { SavedLayout, SavedModuleLayout } from '../storage/layoutStore';
 
@@ -88,8 +89,12 @@ export async function renderModuleFromGraph(
     }
   }
 
-  const { layout, source: layoutSource } = opts.noLayout
-    ? { layout: EMPTY_LAYOUT, source: undefined }
+  const {
+    layout,
+    source: layoutSource,
+    svschDir,
+  } = opts.noLayout
+    ? { layout: EMPTY_LAYOUT, source: undefined, svschDir: undefined }
     : readLayoutForFileSync(
         svFilePath,
         workspaceRoot,
@@ -98,7 +103,14 @@ export async function renderModuleFromGraph(
         opts.svschDataDir,
       );
 
-  const view = await buildViewModel(graph, moduleName, layout);
+  let view = await buildViewModel(graph, moduleName, layout);
+  if (svschDir) {
+    // A spliced sub-diagram mirrors the child module's own saved diagram,
+    // expansions included (recursively) — pull in the layouts of every module
+    // the expand chain reaches, not just the top module's own file.
+    const closureLayout = loadExpandedLayoutClosureSync(layout, graph, svschDir, moduleName);
+    view = await applyExpandedInstances({ graph, layout: closureLayout, view });
+  }
   return { view, layoutSource };
 }
 
@@ -141,7 +153,7 @@ function readLayoutForFileSync(
   moduleName: string,
   explicitLayoutFile?: string,
   svschDataDir?: string,
-): { layout: SavedLayout; source?: string } {
+): { layout: SavedLayout; source?: string; svschDir?: string } {
   if (explicitLayoutFile) {
     const resolved = path.resolve(explicitLayoutFile);
     return { layout: readLayoutSync(resolved), source: resolved };
@@ -158,6 +170,7 @@ function readLayoutForFileSync(
     return {
       layout: readSplitModuleLayoutSync(splitLayoutPath, moduleName),
       source: splitLayoutPath,
+      svschDir,
     };
   }
 
@@ -172,11 +185,11 @@ function readLayoutForFileSync(
 
   for (const candidate of candidates) {
     if (fsSync.existsSync(candidate)) {
-      return { layout: readLayoutSync(candidate), source: candidate };
+      return { layout: readLayoutSync(candidate), source: candidate, svschDir };
     }
   }
 
-  return { layout: EMPTY_LAYOUT, source: undefined };
+  return { layout: EMPTY_LAYOUT, source: undefined, svschDir };
 }
 
 function readLayoutSync(layoutFile: string): SavedLayout {
@@ -213,6 +226,54 @@ function readSplitModuleLayoutSync(layoutFile: string, moduleName: string): Save
       cause: error,
     });
   }
+}
+
+/**
+ * Extends an already-read layout with the saved layouts of every module the
+ * expand chain reaches: starting from the rendered module, each module whose
+ * `expanded` flags point at further child modules pulls those children's
+ * `<svschDir>/layouts/<module>.json` files in too, so
+ * `applyExpandedInstances`' recursion (see buildExpandSpliceLayout) sees the
+ * same per-module state the live extension holds in memory.
+ */
+function loadExpandedLayoutClosureSync(
+  layout: SavedLayout,
+  graph: DesignGraph,
+  svschDir: string,
+  rootModule: string,
+): SavedLayout {
+  const modules = { ...layout.modules };
+  const visited = new Set<string>();
+  const queue = [rootModule];
+  while (queue.length > 0) {
+    const moduleName = queue.shift()!;
+    if (visited.has(moduleName)) {
+      continue;
+    }
+    visited.add(moduleName);
+    const module = graph.modules[moduleName];
+    if (!module) {
+      continue;
+    }
+    if (!modules[moduleName]) {
+      const layoutFile = path.join(svschDir, 'layouts', `${encodeURIComponent(moduleName)}.json`);
+      const read = readSplitModuleLayoutSync(layoutFile, moduleName).modules[moduleName];
+      if (read) {
+        modules[moduleName] = read;
+      }
+    }
+    const expanded = modules[moduleName]?.expanded ?? {};
+    for (const instanceId of Object.keys(expanded)) {
+      if (!expanded[instanceId]) {
+        continue;
+      }
+      const node = module.nodes.find((candidate) => candidate.id === instanceId);
+      if (node?.kind === 'instance' && node.moduleName) {
+        queue.push(node.moduleName);
+      }
+    }
+  }
+  return { version: 1, modules };
 }
 
 function relativeProjectFolder(workspaceRoot: string, projectDir: string): string {
