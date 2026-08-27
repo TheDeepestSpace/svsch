@@ -1379,3 +1379,27 @@ endmodule
   <img src="syntax-book/assets/unknown-construct.svg" alt="Unknown Construct diagram" />
 </p>
 
+### Function Call Block
+
+Calling an automatic function renders the call site as a FUNCTION block; double-clicking it unfolds the function's own combinational body in place.
+
+<pre><code>module top (
+  input  logic [7:0] a,
+  input  logic [7:0] b,
+  output logic [7:0] y
+);
+  function automatic [7:0] foo(
+    input [7:0] lhs,
+    input [7:0] rhs
+  );
+    foo = lhs + rhs;
+  endfunction
+<br />
+  assign y = foo(a, b);
+endmodule
+</code></pre>
+
+<p align="center">
+  <img src="syntax-book/assets/function-call-block.svg" alt="Function Call Block diagram" />
+</p>
+

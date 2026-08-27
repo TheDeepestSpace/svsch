@@ -298,6 +298,56 @@ test.describe('Syntax Book Generation & Verification', () => {
               );
             }
             expect(targetExists).toBe(true);
+          } else if (caseData.target.kind === 'display') {
+            const targetExists = viewModel.nodes.some(
+              (n) => n.kind === caseData.target.nodeKind && n.label === caseData.target.nodeLabel,
+            );
+            if (!targetExists) {
+              console.log(
+                `CASE ${caseData.id}: DISPLAY TARGET NOT FOUND. Kind: ${caseData.target.nodeKind}, ` +
+                  `Label: ${caseData.target.nodeLabel}. Nodes:`,
+                viewModel.nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label })),
+              );
+            }
+            expect(targetExists).toBe(true);
+          }
+
+          // A "display" entry (like a function/task call block) has no
+          // click-to-navigate interaction either: double-clicking it unfolds
+          // its body in place (see diagram_interaction.feature's "Navigating
+          // into a function call") rather than jumping to source, so there is
+          // no single declaration line to mark. Shows the plain source as-is,
+          // same as the net-label case below.
+          if (caseData.target.kind === 'display') {
+            const firstFileContent = Object.values(caseData.files)[0] as string;
+            const highlightedHtml = escapeCode(firstFileContent);
+
+            const nodeModulesPaths = [
+              path.resolve(__dirname, '../../node_modules/@xyflow/react/dist/style.css'),
+              path.resolve(__dirname, '../../../node_modules/@xyflow/react/dist/style.css'),
+            ];
+            let reactFlowCss = '';
+            for (const p of nodeModulesPaths) {
+              if (fs.existsSync(p)) {
+                reactFlowCss = fs.readFileSync(p, 'utf8');
+                break;
+              }
+            }
+            const extensionCss = fs.readFileSync(
+              path.resolve(__dirname, '../../src/webview/diagram.css'),
+              'utf8',
+            );
+            const svgContent = renderSvg(viewModel, { reactFlowCss, extensionCss, theme: 'dark' });
+
+            generatedEntries.push({
+              id: caseData.id,
+              title: caseData.title,
+              description: caseData.description,
+              group: groupName,
+              highlightedHtml,
+              svgContent,
+            });
+            return;
           }
 
           // A net label (unlike every other case here) has no

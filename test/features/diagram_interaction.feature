@@ -1013,6 +1013,32 @@ Feature: Diagram Interaction
     When I collapse the expanded instance "u1"
     Then I should see an instance node "u1" of module "leaf"
 
+  # Callable counterpart to "Expanding an instance in place" above (issue
+  # #335): a function call site renders as its own FUNCTION block, and
+  # double-clicking it — unlike double-clicking an instance, which switches
+  # the active module (see navigation.feature's "Navigating into module
+  # instances") — unfolds the function's own combinational body in place,
+  # the same splice mechanism instance expansion uses.
+  Scenario: Navigating into a function call expands its body in place, and Collapse restores it
+    Given I have a file "top.sv" in my workspace:
+      """
+      module top(input logic [7:0] a, input logic [7:0] b, output logic [7:0] y);
+        function automatic [7:0] foo(input [7:0] lhs, input [7:0] rhs);
+          foo = lhs + rhs;
+        endfunction
+
+        assign y = foo(a, b);
+      endmodule
+      """
+    When I open the "top" module in SVSCH
+    And I double-click on the function call node "foo"
+    Then I should see a boundary port node named "lhs"
+    And I should see a boundary port node named "rhs"
+    And I should see a dimmed function call node "foo"
+    When I collapse the expanded function call "foo"
+    Then I should not see a boundary port node named "lhs"
+    And I should see a function call node "foo"
+
   # TODO: to fix - snapshot mismatch and hint visibility after 12px centering update
   @skip
   Scenario: Resolving overlap hints manually
