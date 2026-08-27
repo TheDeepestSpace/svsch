@@ -92,6 +92,8 @@ export interface SavedModuleLayout {
    * layout, so every expand of it just reflects that layout as-is).
    */
   expanded?: Record<string, boolean>;
+  /** Per-call-site expansion state, keyed by the funcCall node's stable id. */
+  expandedFunctionCalls?: Record<string, boolean>;
   netCuts?: Record<string, SavedNetCut>;
 }
 

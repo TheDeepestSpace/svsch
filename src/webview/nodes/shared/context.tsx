@@ -36,6 +36,8 @@ export const InteractionContext = React.createContext<{
   // HdlNode only renders the handle hit-zones, the drag state machine lives
   // in DiagramApp alongside the node/region state it has to update together.
   startNodeResize: (event: React.PointerEvent, nodeId: string, handle: NodeResizeHandle) => void;
+  /** Expands a function call-site in place; used by its double-click gesture. */
+  expandFunctionCall: (nodeId: string) => void;
 }>({
   setHovered: () => {},
   setHoveredEdgeId: () => {},
@@ -44,4 +46,5 @@ export const InteractionContext = React.createContext<{
   setPendingSelectionAction: () => {},
   overlayPortalNode: null,
   startNodeResize: () => {},
+  expandFunctionCall: () => {},
 });

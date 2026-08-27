@@ -60,6 +60,14 @@ export interface ExpandInstancePayload {
   spliceLayout?: ExpandSpliceLayout;
 }
 
+/** Callable counterpart to ExpandInstancePayload, keyed by the call-site id. */
+export interface ExpandFunctionCallPayload {
+  callId: string;
+  functionId: string;
+  module: DesignModule;
+  spliceLayout?: ExpandSpliceLayout;
+}
+
 type WebviewMessage =
   | { type: 'ready' }
   | {
@@ -144,6 +152,14 @@ type WebviewMessage =
       instanceParamRows?: number;
     }
   | { type: 'collapseInstance'; moduleName: string; instanceId: string; topLevel: boolean }
+  | {
+      type: 'requestExpandFunctionCall';
+      moduleName: string;
+      callId: string;
+      topLevel: boolean;
+      callSize?: { width: number; height: number };
+    }
+  | { type: 'collapseFunctionCall'; moduleName: string; callId: string; topLevel: boolean }
   | { type: 'navigateToSource'; source: SourceRange }
   | {
       type: 'navigateToRegion';
@@ -484,6 +500,19 @@ export class DiagramPanel {
     }
     if (message.type === 'collapseInstance') {
       await this.collapseInstance(message.moduleName, message.instanceId, message.topLevel);
+      return;
+    }
+    if (message.type === 'requestExpandFunctionCall') {
+      await this.requestExpandFunctionCall(
+        message.moduleName,
+        message.callId,
+        message.topLevel,
+        message.callSize,
+      );
+      return;
+    }
+    if (message.type === 'collapseFunctionCall') {
+      await this.collapseFunctionCall(message.moduleName, message.callId, message.topLevel);
       return;
     }
     if (message.type === 'navigateToSource') {
@@ -1142,6 +1171,72 @@ export class DiagramPanel {
     await this.persistModuleLayout(store, moduleName);
   }
 
+  private async requestExpandFunctionCall(
+    moduleName: string,
+    callId: string,
+    topLevel: boolean,
+    callSize?: { width: number; height: number },
+  ): Promise<void> {
+    const store = this.getStore();
+    const designModule = this.graph?.modules[moduleName];
+    if (!store || !designModule || !this.panel) return;
+
+    const callNode = designModule.nodes.find((node) => node.id === callId);
+    if (!callNode || callNode.kind !== 'funcCall' || !callNode.functionId) return;
+    const functionId = callNode.functionId;
+    const callable = this.graph?.functions?.[functionId];
+    if (!callable) return;
+
+    if (topLevel) {
+      await this.ensureModuleLayout(store, moduleName);
+      this.layout = setFunctionCallExpanded(this.layout, moduleName, callId, true);
+      await this.persistModuleLayout(store, moduleName);
+    }
+
+    let spliceLayout: ExpandSpliceLayout | undefined;
+    try {
+      spliceLayout = this.graph
+        ? await buildExpandSpliceLayout({
+            graph: this.graph,
+            layout: this.layout,
+            childModuleName: functionId,
+            instanceId: callId,
+            instancePorts: callNode.ports,
+            instanceSize: callSize ?? resolvedNodeDimensions(callNode),
+            instanceParamRows: 0,
+            childModule: callable,
+          })
+        : undefined;
+    } catch (error) {
+      logger.warn(`function-call splice layout failed for ${functionId}: ${String(error)}`);
+    }
+
+    const payload: ExpandFunctionCallPayload = {
+      callId,
+      functionId,
+      module: callable,
+      spliceLayout,
+    };
+    await this.panel.webview.postMessage({
+      type: 'expandFunctionCallData',
+      moduleName,
+      payload,
+    });
+  }
+
+  private async collapseFunctionCall(
+    moduleName: string,
+    callId: string,
+    topLevel: boolean,
+  ): Promise<void> {
+    if (!topLevel) return;
+    const store = this.getStore();
+    if (!store) return;
+    await this.ensureModuleLayout(store, moduleName);
+    this.layout = setFunctionCallExpanded(this.layout, moduleName, callId, false);
+    await this.persistModuleLayout(store, moduleName);
+  }
+
   private postView(): Promise<void> {
     const pending = this.postViewQueue.then(() => this.postViewNow());
     this.postViewQueue = pending.catch(() => {});
@@ -1190,11 +1285,16 @@ export class DiagramPanel {
     }
     const expanded = this.layout.modules[moduleName]?.expanded;
     const expandedInstanceIds = expanded ? Object.keys(expanded).filter((id) => expanded[id]) : [];
+    const expandedFunctionCalls = this.layout.modules[moduleName]?.expandedFunctionCalls;
+    const expandedFunctionCallIds = expandedFunctionCalls
+      ? Object.keys(expandedFunctionCalls).filter((id) => expandedFunctionCalls[id])
+      : [];
     await panel.webview.postMessage({
       type: 'graph',
       view,
       modules: Object.keys(graph.modules),
       expandedInstanceIds,
+      expandedFunctionCallIds,
     });
   }
 
@@ -1264,6 +1364,28 @@ function setInstanceExpanded(
   return {
     version: 1,
     modules: { ...layout.modules, [moduleName]: { ...moduleLayout, expanded } },
+  };
+}
+
+function setFunctionCallExpanded(
+  layout: SavedLayout,
+  moduleName: string,
+  callId: string,
+  isExpanded: boolean,
+): SavedLayout {
+  const moduleLayout = layout.modules[moduleName] ?? { nodes: {} };
+  const expandedFunctionCalls = { ...(moduleLayout.expandedFunctionCalls ?? {}) };
+  if (isExpanded) {
+    expandedFunctionCalls[callId] = true;
+  } else {
+    delete expandedFunctionCalls[callId];
+  }
+  return {
+    version: 1,
+    modules: {
+      ...layout.modules,
+      [moduleName]: { ...moduleLayout, expandedFunctionCalls },
+    },
   };
 }
 

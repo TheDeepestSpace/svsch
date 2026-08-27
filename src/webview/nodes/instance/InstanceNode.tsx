@@ -15,10 +15,12 @@ import { ExpandGrabBands } from '../shared/ExpandGrabBands';
 import { handleNodeDoubleClick, navigateToSource } from '../shared/navigation';
 import type { HdlNodeData } from '../types';
 import { InstanceNodeSvg } from './InstanceNodeSvg';
+import { InteractionContext } from '../shared/context';
 
 /** Catch-all: instance nodes and any unrecognized kind. */
 export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): React.ReactElement {
   const node = data.node as PositionedNode;
+  const { expandFunctionCall } = React.useContext(InteractionContext);
   const arrayConnections = data.arrayConnections ?? [];
   const isArray = nodeIsArrayNode(node);
   // Instance blocks can render larger than their canonical auto-fit box when
@@ -54,7 +56,9 @@ export function InstanceNode({ id, data }: { id: string; data: HdlNodeData }): R
           ? `${node.source.file}${node.source.startLine ? `:${node.source.startLine}` : ''}`
           : node.kind
       }
-      onDoubleClick={() => handleNodeDoubleClick(node)}
+      onDoubleClick={() =>
+        node.kind === 'funcCall' ? expandFunctionCall(id) : handleNodeDoubleClick(node)
+      }
       svg={
         <InstanceNodeSvg
           node={node}
