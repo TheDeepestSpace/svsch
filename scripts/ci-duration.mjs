@@ -54,7 +54,10 @@ const withDurationMin = (entry) => ({ ...entry, durationMin: entry.durationSec /
 
 // The single-series form of render-benchmark-charts.mjs's trend chart —
 // reuses that renderer (generalized in the same change that introduced this
-// module) rather than hand-rolling a second SVG line chart.
+// module) rather than hand-rolling a second SVG line chart. `squish: true`
+// since this history is master-push-only and, once backfilled, runs to
+// hundreds of points — the visual suite's chart (one point per master push,
+// no backfill) keeps the renderer's unsquished default instead.
 export function renderCiDurationTrendChart({ history, currentPoint, currentLabel }) {
   return renderHistoryTrendChart({
     title: 'CI workflow duration — per master push',
@@ -63,6 +66,7 @@ export function renderCiDurationTrendChart({ history, currentPoint, currentLabel
     currentPoint: currentPoint ? withDurationMin(currentPoint) : currentPoint,
     currentLabel,
     series: DURATION_SERIES,
+    squish: true,
   });
 }
 

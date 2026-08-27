@@ -500,18 +500,25 @@ export function computeHistoryTrendData(
   return points;
 }
 
-// Forced to a fixed canvas regardless of how much history has piled up —
-// dozens (or, after a backfill, hundreds) of master-run points would
-// otherwise stretch the SVG to an unreadable multi-thousand-pixel width, one
-// hairline-thin bar-pitch per commit. Squishing every point into a fixed
-// 2000x500 window instead keeps the shape of the trend legible; individual
-// values are still in the underlying history.json for anyone who needs them.
-const TREND_WIDTH = 2000;
-const TREND_HEIGHT = 500;
 const TREND_LEFT_MARGIN = 60;
 const TREND_RIGHT_MARGIN = 24;
 const TREND_TOP_MARGIN = 92;
-const TREND_BOTTOM_MARGIN = 28;
+const TREND_PANEL_HEIGHT = 220;
+const TREND_LABEL_AREA_HEIGHT = 40;
+const TREND_POINT_PITCH = 64;
+
+// Squished-chart-only sizing: CI duration's history (hundreds of points once
+// backfilled) would otherwise stretch the point-pitch layout below to an
+// unreadable multi-thousand-pixel width, one hairline-thin bar-pitch per
+// commit. Squishing every point into a fixed 2000x500 window instead keeps
+// the shape of the trend legible; individual values are still in the
+// underlying history.json for anyone who needs them. Opt-in via `squish`
+// rather than the default, since the visual suite's much shorter history
+// (one point per master push, no backfill) reads better with real per-point
+// dots and commit-hash labels.
+const TREND_SQUISHED_WIDTH = 2000;
+const TREND_SQUISHED_HEIGHT = 500;
+const TREND_SQUISHED_BOTTOM_MARGIN = 28;
 
 // A light smoothing pass through a series of {x, y} points: each interior
 // point becomes the control of a quadratic curve into the midpoint of it and
@@ -535,18 +542,19 @@ function smoothPath(coords) {
   return d;
 }
 
-// One smoothed curve per series across every recorded master run — no
+// One line per series across every recorded master run. Unsquished (the
+// visual suite's default): each point a filled dot, with a commit-hash
+// label under every point. Squished (`squish: true`, used by CI duration —
+// see TREND_SQUISHED_WIDTH above): a single smoothed curve with no
 // per-point dots, since with hundreds of squished-together points a dot per
-// entry is just noise. The only marker drawn is the current, not yet
-// merged, point (if any), filled in a dedicated highlight color rather than
-// the series' own so it reads as "the new one" regardless of which series
-// it belongs to; the segment leading into it is dashed, the same "texture
-// cue, not color alone" convention the stacked chart above uses for its own
-// "new" bars. `series` defaults to the visual suite's elaboration/rendering
-// pair; passing a single-entry array (e.g. CI duration) draws one line
-// instead. Per-point labels (commit shas) are dropped — squished into a
-// fixed-width canvas they'd just overlap — except the current point keeps
-// its label, since which point is "not yet merged" is worth calling out.
+// entry is just noise, and no per-point labels, since they'd just overlap.
+// Either way, the final segment — into the current, not yet merged, point
+// (if any) — is dashed, the same "texture cue, not color alone" convention
+// the stacked chart above uses for its own "new" bars; its point/label are
+// always drawn regardless of squish, since which point is "not yet merged"
+// is worth calling out. `series` defaults to the visual suite's
+// elaboration/rendering pair; passing a single-entry array (e.g. CI
+// duration) draws one line instead.
 export function renderHistoryTrendChart({
   title,
   history,
@@ -555,13 +563,30 @@ export function renderHistoryTrendChart({
   series = DEFAULT_TREND_SERIES,
   currentLabel = 'this PR',
   valueLabel = 'Average duration per master run (ms)',
+  squish = false,
 }) {
   const points = computeHistoryTrendData(history, currentPoint, series, currentLabel);
   const legendItems = series.map(({ color, label }) => ({ fill: color, label }));
-  const width = TREND_WIDTH;
-  const height = TREND_HEIGHT;
-  const plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
-  const panelHeight = height - TREND_TOP_MARGIN - TREND_BOTTOM_MARGIN;
+
+  let width;
+  let height;
+  let plotWidth;
+  let panelHeight;
+  if (squish) {
+    width = TREND_SQUISHED_WIDTH;
+    height = TREND_SQUISHED_HEIGHT;
+    plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
+    panelHeight = height - TREND_TOP_MARGIN - TREND_SQUISHED_BOTTOM_MARGIN;
+  } else {
+    plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
+    width = Math.max(
+      TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
+      legendWidth(24, legendItems),
+      estimateTextWidth(title, 18) + 48,
+    );
+    height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
+    panelHeight = TREND_PANEL_HEIGHT;
+  }
   const originY = TREND_TOP_MARGIN + panelHeight;
 
   const maxValue = Math.max(1, ...points.flatMap((p) => series.map(({ key }) => p[key])));
@@ -598,7 +623,7 @@ export function renderHistoryTrendChart({
   );
 
   let currentLabelText = null;
-  const drawSeries = (key, color) => {
+  const drawSeriesSquished = (key, color) => {
     const coords = points.map((p, i) => ({ x: xFor(i), y: yFor(p[key]), isCurrent: p.isCurrent }));
     const historyCoords = coords.filter((c) => !c.isCurrent);
     const currentCoord = coords.find((c) => c.isCurrent);
@@ -621,14 +646,45 @@ export function renderHistoryTrendChart({
       currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
     }
   };
-  for (const { key, color } of series) drawSeries(key, color);
+  const drawSeries = (key, color) => {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const isPreviewSegment = points[i + 1].isCurrent;
+      const x1 = xFor(i);
+      const y1 = yFor(points[i][key]);
+      const x2 = xFor(i + 1);
+      const y2 = yFor(points[i + 1][key]);
+      parts.push(
+        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
+      );
+    }
+    points.forEach((p, i) => {
+      const x = xFor(i);
+      const y = yFor(p[key]);
+      if (p.isCurrent) {
+        parts.push(
+          `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+        );
+      } else {
+        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+      }
+    });
+  };
+  for (const { key, color } of series) (squish ? drawSeriesSquished : drawSeries)(key, color);
+
+  const labelParts = squish
+    ? []
+    : points.map((p, i) => {
+        const x = xFor(i);
+        const label = p.isCurrent ? currentLabel : p.label;
+        return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
+      });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
   <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, legendItems)}
   ${parts.join('\n')}
-  ${currentLabelText ?? ''}
+  ${squish ? (currentLabelText ?? '') : labelParts.join('\n')}
 </svg>`;
 }
 
