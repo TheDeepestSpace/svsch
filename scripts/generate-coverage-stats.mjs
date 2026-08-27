@@ -133,7 +133,7 @@ function publishReport() {
   }
 }
 
-let body;
+let sections;
 try {
   const { total } = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
   const table = [
@@ -144,23 +144,30 @@ try {
     `| Functions | ${formatMetric(total.functions)} |`,
     `| Lines | ${formatMetric(total.lines)} |`,
   ].join('\n');
-  const sections = ['## Unit test coverage', table];
-
-  if (fs.existsSync(reportIndexPath)) {
-    publishReport();
-    const reportUrl = `https://${owner.toLowerCase()}.github.io/${repo}/dev/coverage/pr-${PR_NUMBER}/index.html`;
-    sections.push(`[Browse full coverage report →](${reportUrl})`);
-  }
-
-  body = sections.join('\n\n');
+  sections = ['## Unit test coverage', table];
 } catch (err) {
   // Coverage summary can be missing if the unit test run crashed before
   // vitest finished writing reports (reportOnFailure only covers assertion
   // failures, not a hard crash) — note that in the stats comment instead of
   // failing this job, since coverage reporting isn't itself under test.
   console.error(`Failed to read coverage summary from ${summaryPath}:`, err);
-  body = ['## Unit test coverage', '_Coverage summary unavailable for this run._'].join('\n\n');
+  sections = ['## Unit test coverage', '_Coverage summary unavailable for this run._'];
 }
+
+// Kept out of the try/catch above: a gh-pages publish timeout is unrelated
+// to whether the real coverage summary parsed fine, and shouldn't discard
+// it — only the "Browse full coverage report" link should be dropped.
+if (fs.existsSync(reportIndexPath)) {
+  try {
+    publishReport();
+    const reportUrl = `https://${owner.toLowerCase()}.github.io/${repo}/dev/coverage/pr-${PR_NUMBER}/index.html`;
+    sections.push(`[Browse full coverage report →](${reportUrl})`);
+  } catch (err) {
+    console.error('Failed to publish coverage report to gh-pages:', err);
+  }
+}
+
+const body = sections.join('\n\n');
 
 fs.writeFileSync(outputPath, `${body}\n`, 'utf8');
 console.log(`Wrote coverage stats to ${outputPath}`);
