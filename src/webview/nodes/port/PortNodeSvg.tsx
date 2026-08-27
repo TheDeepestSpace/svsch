@@ -14,6 +14,10 @@ import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import { SvgParameterizedText, SvgParameterizedTextUnderlines } from '../shared/labels';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 
 export function PortNodeSvg({
   node,
@@ -27,9 +31,9 @@ export function PortNodeSvg({
   const stackLayers = arrayStackLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const port = node.ports[0];
   const direction = port?.direction ?? 'unknown';
   const isInterface = Boolean(
@@ -120,8 +124,9 @@ export function PortNodeSvg({
       {/* Array back layer */}
       {isArray && (
         <path
-          // eslint-disable-next-line max-len
-          className="port-skin-body port-skin-array-layer port-skin-array-back svsch-array-layer-back"
+          className={
+            'port-skin-body port-skin-array-layer port-skin-array-back ' + 'svsch-array-layer-back'
+          }
           transform={`translate(${stackLayers.back.dx}, ${stackLayers.back.dy})`}
           d={d}
           opacity={0.5}
@@ -130,7 +135,6 @@ export function PortNodeSvg({
       )}
       {/* Main body (also serves as middle array layer) */}
       <path
-        // eslint-disable-next-line max-len
         className={`port-skin-body${isArray ? ' port-skin-array-middle' : ''} svsch-array-layer-middle`}
         d={d}
         style={inoutBodyStyle}
@@ -138,16 +142,18 @@ export function PortNodeSvg({
       {/* Array front layer */}
       {isArray && (
         <path
-          // eslint-disable-next-line max-len
-          className="port-skin-body port-skin-array-layer port-skin-array-front svsch-array-layer-front"
+          className={
+            'port-skin-body port-skin-array-layer port-skin-array-front ' +
+            'svsch-array-layer-front'
+          }
           transform={`translate(${stackLayers.front.dx}, ${stackLayers.front.dy})`}
           d={d}
           style={inoutBodyStyle}
         />
       )}
       {!isArray && <path className="port-skin-selection" d={d} />}
-      {/* Keep IO/interface port labels full in SVG; */}
-      {/* collapsed designators belong to internal block ports. */}
+      {/* Keep IO/interface port labels full in SVG; collapsed designators belong to internal
+          block ports. */}
       <text
         className="svsch-port-label svsch-port-node-label"
         x={width / 2 + labelShiftX}
