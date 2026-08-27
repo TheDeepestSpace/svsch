@@ -1710,6 +1710,7 @@ function DiagramApp(): React.ReactElement {
                 nodes={nodes}
                 edges={edges}
                 pendingReselectIdsRef={pendingReselectIdsRef}
+                zoom={viewport.zoom}
                 onExpandInstance={requestExpand}
                 onCollapseInstance={handleCollapseRegion}
                 spliceMapRef={spliceMapRef}
@@ -2146,6 +2147,7 @@ function NodeSelectionToolbar({
   nodes,
   edges,
   pendingReselectIdsRef,
+  zoom,
   onExpandInstance,
   onCollapseInstance,
   spliceMapRef,
@@ -2154,6 +2156,7 @@ function NodeSelectionToolbar({
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
+  zoom: number;
   onExpandInstance: (instanceNode: HdlFlowNode) => void;
   /**
    * Collapses an "Expand instance in place" region (see issue #232) — a
@@ -2163,6 +2166,10 @@ function NodeSelectionToolbar({
   spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const { overlayPortalNode } = useContext(InteractionContext);
+  // overlayPortalNode carries react-flow's scale(zoom) (see main.tsx's render), so button
+  // markup here needs a counter-scale to stay a constant screen size instead of zooming
+  // with the canvas — the outer .svsch-selection-toolbar keeps its flow-space position.
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
 
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
@@ -2364,92 +2371,97 @@ function NodeSelectionToolbar({
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div className="svsch-selection-toolbar" style={{ left: bounds.right, top: bounds.bottom }}>
-        {selected.length >= 2 && (
-          <button
-            type="button"
-            className="svsch-selection-relayout-control"
-            title="Re-place and route the selected blocks; everything else stays put"
-            onClick={handleClick}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Auto Layout
-          </button>
-        )}
-        {resizedNodeIds.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-revert-size-control"
-            title={
-              resizedNodeIds.length === 1
-                ? 'Revert the selected block to its canonical size'
-                : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
-            }
-            onClick={handleRevertSize}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Revert Size
-          </button>
-        )}
-        {cutOutEdges.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-cutout-control"
-            title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
-            onClick={handleCutOut}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Cut out
-            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-              <span className="svsch-shortcut-glyph-letter">C</span>
-            </kbd>
-          </button>
-        )}
-        {expandableInstance && (
-          <button
-            type="button"
-            className="svsch-selection-expand-control"
-            title={
-              expandableInstance.data.node.kind === 'funcCall'
-                ? "Unfold this function's logic in place"
-                : "Unfold this instance's diagram in place"
-            }
-            onClick={(event) => {
-              event.stopPropagation();
-              onExpandInstance(expandableInstance);
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Expand
-          </button>
-        )}
-        {activeSplice && (
-          <button
-            type="button"
-            className="svsch-selection-collapse-control"
-            title={
-              activeSplice.expansionKind === 'funcCall'
-                ? "Collapse this function's unfolded logic"
-                : "Collapse this instance's unfolded diagram"
-            }
-            onClick={(event) => {
-              event.stopPropagation();
-              onCollapseInstance(activeSplice.region.id);
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Collapse
-          </button>
-        )}
+        <div
+          className="svsch-selection-toolbar-scale"
+          style={{ transform: `scale(${counterScale})` }}
+        >
+          {selected.length >= 2 && (
+            <button
+              type="button"
+              className="svsch-selection-relayout-control"
+              title="Re-place and route the selected blocks; everything else stays put"
+              onClick={handleClick}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Auto Layout
+            </button>
+          )}
+          {resizedNodeIds.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-revert-size-control"
+              title={
+                resizedNodeIds.length === 1
+                  ? 'Revert the selected block to its canonical size'
+                  : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
+              }
+              onClick={handleRevertSize}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Revert Size
+            </button>
+          )}
+          {cutOutEdges.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-cutout-control"
+              title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
+              onClick={handleCutOut}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Cut out
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
+            </button>
+          )}
+          {expandableInstance && (
+            <button
+              type="button"
+              className="svsch-selection-expand-control"
+              title={
+                expandableInstance.data.node.kind === 'funcCall'
+                  ? "Unfold this function's logic in place"
+                  : "Unfold this instance's diagram in place"
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+                onExpandInstance(expandableInstance);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Expand
+            </button>
+          )}
+          {activeSplice && (
+            <button
+              type="button"
+              className="svsch-selection-collapse-control"
+              title={
+                activeSplice.expansionKind === 'funcCall'
+                  ? "Collapse this function's unfolded logic"
+                  : "Collapse this instance's unfolded diagram"
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+                onCollapseInstance(activeSplice.region.id);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Collapse
+            </button>
+          )}
+        </div>
       </div>
     </div>,
     overlayPortalNode,
