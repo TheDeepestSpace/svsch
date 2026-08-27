@@ -317,14 +317,37 @@ export async function extractDesignWithUhdm(
         );
         // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
         // [0:1]`) is one wide wire per element, not a bundle of scalar
-        // lanes — don't force it stacked just because it feeds a breakout
-        // bus node. Other array-flagged nodes (registers, muxes, ports, and
-        // composition bus nodes) represent N distinct same-named elements
-        // and stay stacked regardless of width.
-        const breakoutHubIsMultiBit =
-          targetIsArrayBreakout && widthIsPotentiallyMultiBit(edge.width);
+        // lanes — don't force it stacked just because it fans out of a
+        // breakout bus node. This only applies to edges *leaving* a
+        // breakout node: the hub edge *feeding* a breakout node still
+        // carries N distinct array elements bundled onto one wire and
+        // stays stacked regardless of per-element width, same as other
+        // array-flagged nodes (registers, muxes, ports, and composition
+        // bus nodes), which represent N distinct same-named elements.
+        const sourceIsArrayBreakout =
+          sourceNode?.kind === 'bus' &&
+          sourceNode.metadata?.aggregateKind === 'array' &&
+          sourceNode.metadata?.role !== 'composition';
+        let breakoutTapIsMultiBit = false;
+        if (sourceIsArrayBreakout) {
+          // The tap's own width (and, for taps feeding a mux selector, the
+          // consumer's declared width) are often unreliable placeholders
+          // ("[0:0]") — UHDM doesn't carry the per-element width on either
+          // side. The hub edge feeding this same breakout node from its
+          // source signal does carry the correct element width, so use it
+          // both to decide stacking here and to correct the tap edge's own
+          // width for downstream thick-wire rendering.
+          const hubEdge = module.edges.find((e) => e.target === sourceNode.id);
+          const elementWidth = hubEdge?.width;
+          if (elementWidth && elementWidth !== '[0:0]') {
+            if (!edge.width || edge.width === '[0:0]') {
+              edge.width = elementWidth;
+            }
+            breakoutTapIsMultiBit = widthIsPotentiallyMultiBit(elementWidth);
+          }
+        }
 
-        if (!sourceIsScalarTap && !targetIsScalarTap && !breakoutHubIsMultiBit) {
+        if (!sourceIsScalarTap && !targetIsScalarTap && !breakoutTapIsMultiBit) {
           edge.isStacked = true;
         }
       }

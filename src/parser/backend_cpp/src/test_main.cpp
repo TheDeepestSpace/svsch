@@ -148,13 +148,11 @@ TEST(ExtractorTest, InoutArrayAliasProducesSingleEdgeIntoReader) {
     EXPECT_FALSE(found_bus_comp_to_y);
 }
 
-// A breakout tap whose own net is multi-bit (e.g. `logic [7:0] arr [0:3]`,
-// read via `arr[0]`) is one wide wire per element, not a bundle of scalar
-// lanes. Before the fix, the hub edge feeding the array-breakout node from
-// the boundary `arr` port was marked stacked regardless of the element
-// width, so it rendered as a converging stacked fan instead of a single
-// thick wire.
-TEST(ExtractorTest, MultiBitArrayBreakoutHubEdgeIsNotStacked) {
+// The hub edge feeding an array-breakout node from a boundary port (e.g.
+// `logic [7:0] arr [0:3]` into its breakout node) carries N distinct array
+// elements bundled onto one wire, regardless of whether each element is
+// itself a scalar or multi-bit net -- it must stay stacked either way.
+TEST(ExtractorTest, MultiBitArrayBreakoutHubEdgeStaysStacked) {
     namespace fs = std::filesystem;
 
     const fs::path uhdm_path = fs::path("test_uhdm_dir_array_stack_breakout/slpp_all/surelog.uhdm");
@@ -199,7 +197,73 @@ TEST(ExtractorTest, MultiBitArrayBreakoutHubEdgeIsNotStacked) {
     }
     ASSERT_NE(hub_edge, nullptr) << result.dump(2);
     EXPECT_EQ((*hub_edge)["width"], "[7:0]");
-    EXPECT_FALSE(hub_edge->contains("isStacked")) << result.dump(2);
+    ASSERT_TRUE(hub_edge->contains("isStacked")) << result.dump(2);
+    EXPECT_TRUE((*hub_edge)["isStacked"]);
+}
+
+// A breakout tap whose own net is multi-bit (e.g. `inout wire [7:0] a
+// [0:1]`, tapped as `a[0]`) is one wide wire per element, not a bundle of
+// scalar lanes. This is most visible when the tap feeds another
+// array-capable node (here, one of the per-element tristate muxes selected
+// by `drive_enable[i]`): before the fix, every tap out of a breakout node
+// was marked stacked whenever it fed an array-capable consumer, regardless
+// of the element width, so it rendered as a converging stacked fan instead
+// of a single thick wire.
+TEST(ExtractorTest, MultiBitArrayBreakoutTapIntoMuxIsNotStacked) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_uhdm_dir_inout_array_alias/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/inout_array_alias.sv";
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_uhdm_dir_inout_array_alias";
+        int ret = std::system(command.c_str());
+        if (ret != 0 || !fs::exists(uhdm_path)) {
+            GTEST_SKIP() << "Surelog not available or failed";
+        }
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& candidate : result["modules"]) {
+        if (candidate["name"] == "inout_array_alias") {
+            mod = &candidate;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    int tap_edges_found = 0;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["source"] != "bus:inout_array_alias:drive_enable") continue;
+        tap_edges_found += 1;
+        EXPECT_FALSE(edge.contains("isStacked") && edge["isStacked"] == true) << edge.dump(2);
+    }
+    EXPECT_EQ(tap_edges_found, 2) << result.dump(2);
+
+    // The hub edge feeding the breakout node stays stacked regardless.
+    const nlohmann::json* hub_edge = nullptr;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["source"] == "self" && edge["sourcePort"] == "drive_enable" &&
+            edge["target"] == "bus:inout_array_alias:drive_enable") {
+            hub_edge = &edge;
+            break;
+        }
+    }
+    ASSERT_NE(hub_edge, nullptr) << result.dump(2);
+    ASSERT_TRUE(hub_edge->contains("isStacked")) << result.dump(2);
+    EXPECT_TRUE((*hub_edge)["isStacked"]);
 }
 
 int main(int argc, char **argv) {

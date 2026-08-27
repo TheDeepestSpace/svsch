@@ -158,17 +158,39 @@ void DesignExtractor::buildEdges(Module& mod) {
                 // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
                 // [0:1]`) is one wide wire per element, not a bundle of scalar
                 // lanes — it shouldn't be marked stacked just because it's an
-                // array-node output or the hub feeding a breakout node. Node
-                // ports on array/breakout nodes don't reliably carry the
-                // element's declared width (the "whole array" hub port is
-                // often blank), so use `edge_width`, already resolved above
-                // from the driving port's declared width, the same signal the
-                // frontend's edgeIsThick()/widthIsPotentiallyMultiBit() reads.
+                // array-node output. This only applies to edges *fanning out*
+                // of a breakout node (`d` is the breakout): the hub edge
+                // *feeding* a breakout node (`l` is the breakout) still
+                // carries N distinct array elements bundled onto one wire and
+                // stays stacked regardless of per-element width.
+                //
+                // A breakout node's own ports (both its "whole array" hub
+                // port and its per-element tap ports) don't reliably carry
+                // the per-element declared width — UHDM reports them blank
+                // or "[0:0]". The one place that width is reliably known is
+                // the module boundary port sharing the node's underlying
+                // signal name, when one exists.
+                auto breakout_element_width = [&](const std::pair<std::string, std::string>& endpoint) -> std::string {
+                    for (const auto& n : mod.nodes) {
+                        if (n.id != endpoint.first) continue;
+                        if (n.kind != "bus" || n.metadata.aggregateKind != "array") return "";
+                        for (const auto& p : mod.ports) {
+                            if (p.name == n.metadata.expression) return p.width;
+                        }
+                        return "";
+                    }
+                    return "";
+                };
+
                 bool multiBitElement = widthIsPotentiallyMultiBit(edge_width);
+                if (is_array_breakout(d)) {
+                    std::string elemWidth = breakout_element_width(d);
+                    if (!elemWidth.empty()) multiBitElement = widthIsPotentiallyMultiBit(elemWidth);
+                }
 
                 e.isStacked = (stacked_signals.count(signal) > 0 && !multiBitElement)
                     || is_array_composition(d)
-                    || (is_array_breakout(l) && !multiBitElement)
+                    || is_array_breakout(l)
                     || has_array_alias(signal);
 
                 bool duplicate = false;

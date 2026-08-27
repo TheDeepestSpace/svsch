@@ -802,7 +802,8 @@ describe('parser: concatenation as bus composition', () => {
   });
 
   it(
-    'renders a multi-bit array-breakout tap as one thick wire, ' + 'not a stacked bundle (UHDM)',
+    'renders multi-bit array-breakout taps as thick wires, ' +
+      'while the hub edge feeding the breakout stays stacked (UHDM)',
     async () => {
       const graph = await runParser(
         'uhdm',
@@ -827,20 +828,68 @@ describe('parser: concatenation as bus composition', () => {
       expect(breakout).toBeDefined();
       expect(breakout?.metadata?.role).not.toBe('composition');
 
-      // The hub edge feeding the breakout node from the boundary `a` port is
-      // where the bug showed up: each tap is an 8-bit-wide net, not a scalar
-      // lane, so it must render as one thick wire, not a stacked bundle.
+      // The hub edge feeding the breakout node from the boundary `a` port
+      // carries two distinct 8-bit array elements bundled onto one wire —
+      // it stays stacked regardless of the per-element width.
       const hubEdge = mod.edges.find((e) => e.target === breakout?.id);
       expect(hubEdge).toBeDefined();
       expect(hubEdge?.width).toBe('[7:0]');
-      expect(hubEdge?.isStacked).not.toBe(true);
+      expect(hubEdge?.isStacked).toBe(true);
 
+      // The taps fanning *out* of the breakout are where the bug showed up:
+      // each tap is an 8-bit-wide net, not a scalar lane, so it must render
+      // as one thick wire, not a stacked bundle.
       const tapEdges = mod.edges.filter((e) => e.source === breakout?.id);
       expect(tapEdges).toHaveLength(2);
       for (const edge of tapEdges) {
         expect(edge.isStacked).not.toBe(true);
         expect(edge.metadata?.thick).toBe(true);
       }
+    },
+  );
+
+  it(
+    'renders a multi-bit array-breakout tap into a mux selector as a thick ' +
+      'wire, not a stacked bundle (UHDM)',
+    async () => {
+      const graph = await runParser(
+        'uhdm',
+        'array_breakout_multibit_mux.sv',
+        `
+      module array_breakout_multibit_mux(
+        input  logic [7:0] drive_enable [0:1],
+        inout  wire  [7:0] a [0:1]
+      );
+        assign a[0] = drive_enable[0] ? 8'hff : 8'hzz;
+        assign a[1] = drive_enable[1] ? 8'hff : 8'hzz;
+      endmodule
+    `,
+      );
+      const mod = graph.modules.array_breakout_multibit_mux;
+      expect(mod).toBeDefined();
+
+      const breakout = mod.nodes.find(
+        (n) =>
+          n.kind === 'bus' &&
+          n.metadata?.aggregateKind === 'array' &&
+          n.metadata?.role !== 'composition',
+      );
+      expect(breakout).toBeDefined();
+
+      // Before the fix, every tap out of a breakout node was marked stacked
+      // whenever it fed another array-capable node (here, the per-element
+      // tristate muxes selected by `drive_enable[i]`), regardless of the
+      // element width.
+      const tapEdges = mod.edges.filter((e) => e.source === breakout?.id);
+      expect(tapEdges).toHaveLength(2);
+      for (const edge of tapEdges) {
+        expect(edge.isStacked).not.toBe(true);
+        expect(edge.metadata?.thick).toBe(true);
+      }
+
+      const hubEdge = mod.edges.find((e) => e.target === breakout?.id);
+      expect(hubEdge).toBeDefined();
+      expect(hubEdge?.isStacked).toBe(true);
     },
   );
 
