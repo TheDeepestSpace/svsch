@@ -18,7 +18,7 @@ import type {
   SourceRange,
 } from '../ir/types';
 import { edgeId, stableId } from '../ir/ids';
-import { annotateWireStyles } from '../ir/edgeStyle';
+import { annotateWireStyles, widthIsPotentiallyMultiBit } from '../ir/edgeStyle';
 import { orderGraphModules } from './moduleOrdering';
 import { extractDesignFromText } from './textExtractor';
 import { logger } from '../logger';
@@ -297,12 +297,12 @@ export async function extractDesignWithUhdm(
         (sourceNode?.kind === 'bus' &&
           sourceNode.metadata?.aggregateKind === 'array' &&
           sourceNode.metadata?.role === 'composition');
+      const targetIsArrayBreakout =
+        targetNode?.kind === 'bus' &&
+        targetNode.metadata?.aggregateKind === 'array' &&
+        targetNode.metadata?.role !== 'composition';
       const targetIsArray =
-        targetNode?.isArrayNode ||
-        targetNode?.metadata?.isArrayNode ||
-        (targetNode?.kind === 'bus' &&
-          targetNode.metadata?.aggregateKind === 'array' &&
-          targetNode.metadata?.role !== 'composition');
+        targetNode?.isArrayNode || targetNode?.metadata?.isArrayNode || targetIsArrayBreakout;
 
       if (sourceIsArray || targetIsArray) {
         const sourcePort = sourceNode?.ports.find((p) => p.id === edge.sourcePort);
@@ -315,8 +315,16 @@ export async function extractDesignWithUhdm(
           targetNode?.kind === 'bus' &&
           (targetPort?.label?.includes('[') || targetPort?.name?.includes('['))
         );
+        // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
+        // [0:1]`) is one wide wire per element, not a bundle of scalar
+        // lanes — don't force it stacked just because it feeds a breakout
+        // bus node. Other array-flagged nodes (registers, muxes, ports, and
+        // composition bus nodes) represent N distinct same-named elements
+        // and stay stacked regardless of width.
+        const breakoutHubIsMultiBit =
+          targetIsArrayBreakout && widthIsPotentiallyMultiBit(edge.width);
 
-        if (!sourceIsScalarTap && !targetIsScalarTap) {
+        if (!sourceIsScalarTap && !targetIsScalarTap && !breakoutHubIsMultiBit) {
           edge.isStacked = true;
         }
       }

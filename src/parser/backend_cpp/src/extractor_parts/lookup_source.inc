@@ -155,9 +155,20 @@ void DesignExtractor::buildEdges(Module& mod) {
                     return false;
                 };
 
-                e.isStacked = stacked_signals.count(signal) > 0
+                // A breakout tap whose own net is multi-bit (e.g. `wire [7:0] a
+                // [0:1]`) is one wide wire per element, not a bundle of scalar
+                // lanes — it shouldn't be marked stacked just because it's an
+                // array-node output or the hub feeding a breakout node. Node
+                // ports on array/breakout nodes don't reliably carry the
+                // element's declared width (the "whole array" hub port is
+                // often blank), so use `edge_width`, already resolved above
+                // from the driving port's declared width, the same signal the
+                // frontend's edgeIsThick()/widthIsPotentiallyMultiBit() reads.
+                bool multiBitElement = widthIsPotentiallyMultiBit(edge_width);
+
+                e.isStacked = (stacked_signals.count(signal) > 0 && !multiBitElement)
                     || is_array_composition(d)
-                    || is_array_breakout(l)
+                    || (is_array_breakout(l) && !multiBitElement)
                     || has_array_alias(signal);
 
                 bool duplicate = false;

@@ -148,6 +148,60 @@ TEST(ExtractorTest, InoutArrayAliasProducesSingleEdgeIntoReader) {
     EXPECT_FALSE(found_bus_comp_to_y);
 }
 
+// A breakout tap whose own net is multi-bit (e.g. `logic [7:0] arr [0:3]`,
+// read via `arr[0]`) is one wide wire per element, not a bundle of scalar
+// lanes. Before the fix, the hub edge feeding the array-breakout node from
+// the boundary `arr` port was marked stacked regardless of the element
+// width, so it rendered as a converging stacked fan instead of a single
+// thick wire.
+TEST(ExtractorTest, MultiBitArrayBreakoutHubEdgeIsNotStacked) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_uhdm_dir_array_stack_breakout/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/array_stack_breakout.sv";
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_uhdm_dir_array_stack_breakout";
+        int ret = std::system(command.c_str());
+        if (ret != 0 || !fs::exists(uhdm_path)) {
+            GTEST_SKIP() << "Surelog not available or failed";
+        }
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& candidate : result["modules"]) {
+        if (candidate["name"] == "array_stack_breakout") {
+            mod = &candidate;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    const nlohmann::json* hub_edge = nullptr;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["source"] == "self" && edge["sourcePort"] == "arr" &&
+            edge["targetPort"] == "arr") {
+            hub_edge = &edge;
+            break;
+        }
+    }
+    ASSERT_NE(hub_edge, nullptr) << result.dump(2);
+    EXPECT_EQ((*hub_edge)["width"], "[7:0]");
+    EXPECT_FALSE(hub_edge->contains("isStacked")) << result.dump(2);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

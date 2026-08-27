@@ -800,4 +800,75 @@ describe('parser: concatenation as bus composition', () => {
       expect(edge.metadata?.aggregate).not.toBe('struct');
     }
   });
+
+  it(
+    'renders a multi-bit array-breakout tap as one thick wire, ' + 'not a stacked bundle (UHDM)',
+    async () => {
+      const graph = await runParser(
+        'uhdm',
+        'array_breakout_multibit.sv',
+        `
+      module array_breakout_multibit(
+        inout wire [7:0] a [0:1],
+        output logic [7:0] elem0,
+        output logic [7:0] elem1
+      );
+        assign elem0 = a[0];
+        assign elem1 = a[1];
+      endmodule
+    `,
+      );
+      const mod = graph.modules.array_breakout_multibit;
+      expect(mod).toBeDefined();
+
+      const breakout = mod.nodes.find(
+        (n) => n.kind === 'bus' && n.metadata?.aggregateKind === 'array',
+      );
+      expect(breakout).toBeDefined();
+      expect(breakout?.metadata?.role).not.toBe('composition');
+
+      // The hub edge feeding the breakout node from the boundary `a` port is
+      // where the bug showed up: each tap is an 8-bit-wide net, not a scalar
+      // lane, so it must render as one thick wire, not a stacked bundle.
+      const hubEdge = mod.edges.find((e) => e.target === breakout?.id);
+      expect(hubEdge).toBeDefined();
+      expect(hubEdge?.width).toBe('[7:0]');
+      expect(hubEdge?.isStacked).not.toBe(true);
+
+      const tapEdges = mod.edges.filter((e) => e.source === breakout?.id);
+      expect(tapEdges).toHaveLength(2);
+      for (const edge of tapEdges) {
+        expect(edge.isStacked).not.toBe(true);
+        expect(edge.metadata?.thick).toBe(true);
+      }
+    },
+  );
+
+  it('keeps a scalar (1-bit) array-breakout tap stacked, not thick (UHDM)', async () => {
+    const graph = await runParser(
+      'uhdm',
+      'array_breakout_scalar.sv',
+      `
+      module array_breakout_scalar(
+        inout wire a [0:1],
+        output logic elem0,
+        output logic elem1
+      );
+        assign elem0 = a[0];
+        assign elem1 = a[1];
+      endmodule
+    `,
+    );
+    const mod = graph.modules.array_breakout_scalar;
+    expect(mod).toBeDefined();
+
+    const breakout = mod.nodes.find(
+      (n) => n.kind === 'bus' && n.metadata?.aggregateKind === 'array',
+    );
+    expect(breakout).toBeDefined();
+
+    const hubEdge = mod.edges.find((e) => e.target === breakout?.id);
+    expect(hubEdge).toBeDefined();
+    expect(hubEdge?.isStacked).toBe(true);
+  });
 });
