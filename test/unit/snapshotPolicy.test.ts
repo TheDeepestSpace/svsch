@@ -31,6 +31,12 @@ describe('snapshot update policy', () => {
     ).toBe(2);
     expect(
       baselineThresholdFor(
+        'test/visual/__screenshots__/nested_case.visual.spec.ts-snapshots/' +
+          'nested-case-literal-collision-canvas-chromium-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(120);
+    expect(
+      baselineThresholdFor(
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-resize-left-chromium-linux.png',
       )?.maxDiffPixels,

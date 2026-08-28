@@ -16,11 +16,16 @@ import {
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
 import {
   SvgParameterizedText,
   SvgParameterizedTextUnderlines,
   SvgPortLabel,
 } from '../shared/labels';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
 export function RegisterNodeSvg({
@@ -31,9 +36,9 @@ export function RegisterNodeSvg({
   onNavigateToSource,
 }: NodeSvgProps): React.ReactElement {
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const g = diagramSizing.gridSize;
   // A resize override can make `width`/`height` (the rendered box) larger than the
   // node's canonical auto-fit size. Extra input rows stay pinned at their canonical
@@ -140,37 +145,13 @@ export function RegisterNodeSvg({
     </>
   );
 
-  const arrayLayerClassName = (layerId: string) =>
-    `svsch-node-shape hdl-node-array-layer hdl-node-array-${layerId} ` +
-    `svsch-array-layer-${layerId}`;
-  const backgroundShapeClassName =
-    `svsch-node-shape` +
-    (isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : '');
-  const typeLabelClassName =
-    `svsch-type-label svsch-register-type-label` + (typeSource ? ' svsch-svg-link' : '');
-
   return (
     <>
       {targetStackLeads}
-      {/* Array stack layers (back→middle→front for correct z-order) */}
-      {isArray &&
-        skinLayers
-          .filter((layer) => layer.id !== 'front')
-          .map((layer) => (
-            <rect
-              key={layer.id}
-              className={arrayLayerClassName(layer.id)}
-              transform={`translate(${layer.dx}, ${layer.dy})`}
-              width={width}
-              height={height}
-              opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-            />
-          ))}
-
-      {/* Background */}
-      <rect
-        className={backgroundShapeClassName}
-        transform={shapeTransform}
+      <ArrayStackSkinRect
+        isArray={isArray}
+        skinLayers={skinLayers}
+        shapeTransform={shapeTransform}
         width={width}
         height={height}
       />
@@ -195,7 +176,7 @@ export function RegisterNodeSvg({
         <tspan>{node.label}</tspan>
         {typeName ? (
           <tspan
-            className={typeLabelClassName}
+            className={`svsch-type-label svsch-register-type-label${typeSource ? ' svsch-svg-link' : ''}`}
             dx={suffixGap}
             onClick={navigateSvgType}
             onDoubleClick={stopSvgInteraction}
