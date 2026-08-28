@@ -3,6 +3,7 @@ import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
   computeMonthTicks,
+  computeMovingAverages,
   mergeBenchmarkHistory,
 } from '../../scripts/render-benchmark-charts.mjs';
 
@@ -151,6 +152,39 @@ describe('computeHistoryTrendData', () => {
     expect(points).toEqual([
       { dateMs: currentDateMs, elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
     ]);
+  });
+});
+
+describe('computeMovingAverages', () => {
+  const point = (dateMs: number, elaborationAvgMs: number, renderingAvgMs: number) => ({
+    dateMs,
+    elaborationAvgMs,
+    renderingAvgMs,
+  });
+
+  it('averages over a widening window until it reaches the full window size', () => {
+    const points = [point(1, 10, 100), point(2, 20, 200), point(3, 30, 300)];
+    expect(computeMovingAverages(points, 2)).toEqual([
+      point(1, 10, 100),
+      point(2, 15, 150),
+      point(3, 25, 250),
+    ]);
+  });
+
+  it('only averages over the trailing windowSize points once history exceeds it', () => {
+    const points = [point(1, 10, 0), point(2, 20, 0), point(3, 30, 0), point(4, 40, 0)];
+    expect(computeMovingAverages(points, 2).at(-1)).toEqual(point(4, 35, 0));
+  });
+
+  it('returns an empty list for no points', () => {
+    expect(computeMovingAverages([])).toEqual([]);
+  });
+
+  it('defaults to a 10-run window', () => {
+    const points = Array.from({ length: 12 }, (_, i) => point(i, i, i * 10));
+    const result = computeMovingAverages(points);
+    // Last point averages indices 2..11 (10 points): elaboration mean of 2..11 = 6.5
+    expect(result.at(-1)).toEqual(point(11, 6.5, 65));
   });
 });
 
