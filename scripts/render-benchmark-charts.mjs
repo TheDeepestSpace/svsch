@@ -206,8 +206,9 @@ function renderLegend(x, y, items) {
   let cursorX = x;
   const parts = [];
   for (const item of items) {
+    const opacityAttr = item.opacity === undefined ? '' : ` opacity="${item.opacity}"`;
     parts.push(
-      `<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}" />`,
+      `<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}"${opacityAttr} />`,
     );
     const labelX = cursorX + 20;
     parts.push(
@@ -501,12 +502,34 @@ const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
+const MOVING_AVERAGE_WINDOW = 10;
 const TREND_LEGEND_ITEMS = [
   { fill: COLORS.blue, label: 'Elaboration avg' },
   { fill: COLORS.purple, label: 'Rendering avg' },
+  { fill: COLORS.blue, label: `Elaboration (${MOVING_AVERAGE_WINDOW}-run avg)`, opacity: 0.55 },
+  { fill: COLORS.purple, label: `Rendering (${MOVING_AVERAGE_WINDOW}-run avg)`, opacity: 0.55 },
 ];
 const TREND_HEADING_TEXT =
   'Average duration per master run (ms) — dashed segment is this PR, not yet merged';
+
+// Trailing moving average per metric: each point is the mean of itself and up
+// to the previous windowSize-1 points, so the smoothed line starts at the
+// very first point (averaged over whatever history exists so far) rather
+// than only appearing once a full window of runs has accumulated. Computed
+// over the same point list the raw lines plot (history + current preview
+// point), so a PR that continues or breaks a trend is reflected immediately
+// rather than waiting for it to merge.
+export function computeMovingAverages(points, windowSize = MOVING_AVERAGE_WINDOW) {
+  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  return points.map((point, index) => {
+    const window = points.slice(Math.max(0, index - windowSize + 1), index + 1);
+    return {
+      dateMs: point.dateMs,
+      elaborationAvgMs: average(window.map((p) => p.elaborationAvgMs)),
+      renderingAvgMs: average(window.map((p) => p.renderingAvgMs)),
+    };
+  });
+}
 
 // x-axis ticks for the trend chart: one per calendar month between the first
 // of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
@@ -549,6 +572,7 @@ export function computeMonthTicks(minDateMs, maxDateMs) {
 // unconfirmed even in grayscale.
 export function renderHistoryTrendChart({ title, history, currentRunAverages }) {
   const points = computeHistoryTrendData(history, currentRunAverages);
+  const movingAveragePoints = computeMovingAverages(points);
   const dateMsValues = points.map((p) => p.dateMs);
   const minDateMs = Math.min(...dateMsValues);
   const maxDateMs = Math.max(...dateMsValues);
@@ -613,6 +637,24 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
       }
     });
   };
+  // Moving average lines are drawn first (no point markers, dotted, dimmed)
+  // so the raw per-run lines and dots sit on top of them rather than being
+  // obscured — they're a smoothed-trend backdrop, not a second dataset
+  // competing for attention. The dotted style is deliberately distinct from
+  // the raw line's own dashed "this PR, not yet merged" preview segment
+  // above, so the two textures never read as the same thing.
+  const drawMovingAverage = (key, color) => {
+    for (let i = 0; i < movingAveragePoints.length - 1; i += 1) {
+      const x1 = xFor(movingAveragePoints[i].dateMs);
+      const y1 = yFor(movingAveragePoints[i][key]);
+      const x2 = xFor(movingAveragePoints[i + 1].dateMs);
+      const y2 = yFor(movingAveragePoints[i + 1][key]);
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" stroke-dasharray="1,3" stroke-linecap="round" opacity="0.55" />`);
+    }
+  };
+  drawMovingAverage('elaborationAvgMs', COLORS.blue);
+  drawMovingAverage('renderingAvgMs', COLORS.purple);
+
   drawSeries('elaborationAvgMs', COLORS.blue);
   drawSeries('renderingAvgMs', COLORS.purple);
 

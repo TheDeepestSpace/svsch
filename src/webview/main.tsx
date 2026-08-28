@@ -1447,6 +1447,26 @@ function DiagramApp(): React.ReactElement {
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
+  // Equivalent to marquee-selecting every block and clicking the floating
+  // selection toolbar's "Auto Layout" — releases every real block (net-cut
+  // labels excluded, same filter the selection toolbar applies) for one ELK
+  // pass using current positions as placement hints.
+  const autoLayoutAll = useCallback(() => {
+    if (!view) {
+      return;
+    }
+    const releasedIds = new Set(
+      nodes.filter((node) => node.data.node.kind !== 'netLabel').map((node) => node.id),
+    );
+    const positioned = buildRelayoutPositionedNodes(nodes, releasedIds);
+    vscode.postMessage({
+      type: 'relayoutSelection',
+      moduleName: view.moduleName,
+      nodeIds: [...releasedIds],
+      nodes: positioned,
+    });
+  }, [nodes, view]);
+
   const nodeTypes = useMemo(() => ({ hdl: HdlNode }), []);
   const edgeTypes = useMemo(() => ({ svsch: OrthogonalEdge }), []);
   const diagramStyle = useMemo(
@@ -1521,6 +1541,12 @@ function DiagramApp(): React.ReactElement {
           onClick={rerouteLayout}
         >
           Reroute All
+        </button>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={autoLayoutAll}
+        >
+          Auto Layout All
         </button>
         <button
           className="vscode-control vscode-button"
@@ -2222,13 +2248,7 @@ function NodeSelectionToolbar({
         }
       }
     }
-    const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
-      ...node,
-      // Released nodes go free; every other real block is frozen in place —
-      // but an unrelated net-cut label that's still tracking its port
-      // dynamically must not be forced fixed just because it's on screen.
-      fixed: selectedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
-    }));
+    const positioned = buildRelayoutPositionedNodes(nodes, selectedIds);
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip
     // instead of losing selection once ELK re-places them.
@@ -2555,6 +2575,20 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
     ...node.data.node,
     position: node.position,
     fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id),
+  }));
+}
+
+// Shared by the floating selection toolbar's "Auto Layout" and the main
+// toolbar's "Auto Layout All": released nodes go free; every other real block
+// is frozen in place — but an unrelated net-cut label that's still tracking
+// its port dynamically must not be forced fixed just because it's on screen.
+function buildRelayoutPositionedNodes(
+  nodes: HdlFlowNode[],
+  releasedIds: Set<string>,
+): PositionedNode[] {
+  return flowNodesToPositioned(nodes, new Set()).map((node) => ({
+    ...node,
+    fixed: releasedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
   }));
 }
 
