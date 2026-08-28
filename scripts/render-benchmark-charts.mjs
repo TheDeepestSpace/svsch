@@ -208,8 +208,9 @@ function renderLegend(x, y, items) {
   let cursorX = x;
   const parts = [];
   for (const item of items) {
+    const opacityAttr = item.opacity === undefined ? '' : ` opacity="${item.opacity}"`;
     parts.push(
-      `<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}" />`,
+      `<rect x="${cursorX}" y="${y}" width="14" height="14" rx="2" fill="${item.fill}"${opacityAttr} />`,
     );
     const labelX = cursorX + 20;
     parts.push(
@@ -517,7 +518,6 @@ const MONTH_LABELS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
-
 // Squished-chart-only sizing: CI duration's history (hundreds of points once
 // backfilled) would otherwise cram far too many dots/labels into even the
 // bounded time-driven width above to stay legible. Squishing every point
@@ -531,6 +531,34 @@ const MONTH_LABELS = [
 const TREND_SQUISHED_WIDTH = 2000;
 const TREND_SQUISHED_HEIGHT = 500;
 const TREND_SQUISHED_BOTTOM_MARGIN = 28;
+const MOVING_AVERAGE_WINDOW = 10;
+
+// Trailing moving average per metric: each point is the mean of itself and up
+// to the previous windowSize-1 points, so the smoothed line starts at the
+// very first point (averaged over whatever history exists so far) rather
+// than only appearing once a full window of runs has accumulated. Computed
+// over the same point list the raw lines plot (history + current preview
+// point), so a PR that continues or breaks a trend is reflected immediately
+// rather than waiting for it to merge. Averages every key on the point
+// except dateMs/isCurrent rather than hardcoding elaborationAvgMs/
+// renderingAvgMs, so it works for any `series` renderHistoryTrendChart is
+// given (e.g. CI duration's single durationMin series) without a parallel
+// `series` argument of its own.
+export function computeMovingAverages(points, windowSize = MOVING_AVERAGE_WINDOW) {
+  const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const keys =
+    points.length > 0
+      ? Object.keys(points[0]).filter((key) => key !== 'dateMs' && key !== 'isCurrent')
+      : [];
+  return points.map((point, index) => {
+    const window = points.slice(Math.max(0, index - windowSize + 1), index + 1);
+    const result = { dateMs: point.dateMs };
+    for (const key of keys) {
+      result[key] = average(window.map((p) => p[key]));
+    }
+    return result;
+  });
+}
 
 // x-axis ticks for the trend chart: one per calendar month between the first
 // of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
@@ -570,7 +598,10 @@ export function computeMonthTicks(minDateMs, maxDateMs) {
 // its neighbor, so the path passes near every point without the sharp
 // elbows a plain polyline would have at each one — cheap to compute and
 // good enough for a trend line where the shape matters more than any single
-// point's exact position.
+// point's exact position. Only used by the squished (CI duration) layout —
+// the unsquished layout draws its raw series as a plain polyline and relies
+// on the moving-average overlay below for a smoothed read instead (see
+// drawMovingAverage).
 function smoothPath(coords) {
   if (coords.length === 0) return '';
   if (coords.length <= 2) {
@@ -587,16 +618,18 @@ function smoothPath(coords) {
   return d;
 }
 
-// One smoothed curve per series across every recorded master run, positioned
-// on a real time scale (see xFor below) — a plain polyline over that time
-// scale puts a sharp elbow at every point, and since points aren't evenly
-// spaced (irregular gaps between master pushes) those elbows read as a
-// crooked, jagged line rather than a trend. Unsquished (the visual suite's
-// default): the curve keeps a filled dot per point plus a month-tick x-axis,
-// since there are few enough points for both to stay legible. Squished
-// (`squish: true`, used by CI duration — see TREND_SQUISHED_WIDTH above):
-// the same smoothed curve but with no per-point dots or labels, since with
-// hundreds of squished-together points either would just be noise. Either
+// One line per series across every recorded master run, positioned on a real
+// time scale (see xFor below) — points aren't evenly spaced (irregular gaps
+// between master pushes), which is why a plain polyline through them alone
+// reads as a crooked/jagged line rather than a trend. Unsquished (the visual
+// suite's default): a dimmed, dotted trailing-moving-average line is drawn
+// underneath the raw polyline as a smoothed-trend backdrop (see
+// drawMovingAverage), alongside a filled dot per point and a month-tick
+// x-axis, since there are few enough points for all three to stay legible.
+// Squished (`squish: true`, used by CI duration — see TREND_SQUISHED_WIDTH
+// above): the raw series is instead drawn as a single smoothed curve
+// (smoothPath) with no per-point dots, labels, or moving average, since with
+// hundreds of squished-together points those would just be noise. Either
 // way, the final segment — into the current, not yet merged, point (if any)
 // — is dashed, the same "texture cue, not color alone" convention the
 // stacked chart above uses for its own "new" bars; its point/label are
@@ -622,7 +655,15 @@ export function renderHistoryTrendChart({
     ? { dateMs: Date.now(), ...currentPoint }
     : currentPoint;
   const points = computeHistoryTrendData(history, resolvedCurrentPoint, series);
-  const legendItems = series.map(({ color, label }) => ({ fill: color, label }));
+  const movingAveragePoints = computeMovingAverages(points);
+  // Squish drops the moving average (see comment above), so its legend
+  // entries would otherwise advertise a line that's never drawn.
+  const legendItems = squish
+    ? series.map(({ color, label }) => ({ fill: color, label }))
+    : series.flatMap(({ color, label }) => [
+        { fill: color, label },
+        { fill: color, label: `${label} (${MOVING_AVERAGE_WINDOW}-run avg)`, opacity: 0.55 },
+      ]);
 
   const dateMsValues = points.map((p) => p.dateMs);
   const minDateMs = Math.min(...dateMsValues);
@@ -692,12 +733,34 @@ export function renderHistoryTrendChart({
     `<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
   );
 
-  // Both branches share the same smoothed curve + dashed preview segment;
-  // squish additionally drops the per-point dots (noise at hundreds of
-  // points) in favor of one highlighted marker + label on the preview point,
-  // since there's no other axis labeling in squished mode to place it by.
+  // Moving average lines are drawn first (no point markers, dotted, dimmed)
+  // so the raw per-run lines and dots sit on top of them rather than being
+  // obscured — they're a smoothed-trend backdrop, not a second dataset
+  // competing for attention. The dotted style is deliberately distinct from
+  // the raw line's own dashed "this PR, not yet merged" preview segment
+  // below, so the two textures never read as the same thing. Skipped for
+  // squish, whose own smoothPath curve already reads as a trend on its own.
+  const drawMovingAverage = (key, color) => {
+    for (let i = 0; i < movingAveragePoints.length - 1; i += 1) {
+      const x1 = xFor(movingAveragePoints[i].dateMs);
+      const y1 = yFor(movingAveragePoints[i][key]);
+      const x2 = xFor(movingAveragePoints[i + 1].dateMs);
+      const y2 = yFor(movingAveragePoints[i + 1][key]);
+      parts.push(
+        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" stroke-dasharray="1,3" stroke-linecap="round" opacity="0.55" />`,
+      );
+    }
+  };
+  if (!squish) {
+    for (const { key, color } of series) drawMovingAverage(key, color);
+  }
+
+  // Squish draws its raw series as a single smoothPath curve with no dots;
+  // unsquished draws a plain polyline with a dot per point (the moving
+  // average above is what supplies the smoothed read there). Either way the
+  // final segment into the current, not-yet-merged point (if any) is dashed.
   let currentLabelText = null;
-  const drawSeries = (key, color) => {
+  const drawSeriesSquished = (key, color) => {
     const coords = points.map((p) => ({
       x: xFor(p.dateMs),
       y: yFor(p[key]),
@@ -711,35 +774,43 @@ export function renderHistoryTrendChart({
         `<path d="${smoothPath(historyCoords)}" fill="none" stroke="${color}" stroke-width="2" />`,
       );
     }
-    if (currentCoord && historyCoords.length > 0) {
-      const prev = historyCoords[historyCoords.length - 1];
-      parts.push(
-        `<path d="M ${prev.x} ${prev.y} L ${currentCoord.x} ${currentCoord.y}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" />`,
-      );
-    }
-
-    if (squish) {
-      if (currentCoord) {
+    if (currentCoord) {
+      if (historyCoords.length > 0) {
+        const prev = historyCoords[historyCoords.length - 1];
         parts.push(
-          `<circle cx="${currentCoord.x}" cy="${currentCoord.y}" r="5" fill="${COLORS.highlight}" stroke="${color}" stroke-width="2" />`,
+          `<path d="M ${prev.x} ${prev.y} L ${currentCoord.x} ${currentCoord.y}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" />`,
         );
-        currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
       }
-    } else {
-      points.forEach((p) => {
-        const x = xFor(p.dateMs);
-        const y = yFor(p[key]);
-        if (p.isCurrent) {
-          parts.push(
-            `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
-          );
-        } else {
-          parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
-        }
-      });
+      parts.push(
+        `<circle cx="${currentCoord.x}" cy="${currentCoord.y}" r="5" fill="${COLORS.highlight}" stroke="${color}" stroke-width="2" />`,
+      );
+      currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
     }
   };
-  for (const { key, color } of series) drawSeries(key, color);
+  const drawSeries = (key, color) => {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const isPreviewSegment = points[i + 1].isCurrent;
+      const x1 = xFor(points[i].dateMs);
+      const y1 = yFor(points[i][key]);
+      const x2 = xFor(points[i + 1].dateMs);
+      const y2 = yFor(points[i + 1][key]);
+      parts.push(
+        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
+      );
+    }
+    points.forEach((p) => {
+      const x = xFor(p.dateMs);
+      const y = yFor(p[key]);
+      if (p.isCurrent) {
+        parts.push(
+          `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+        );
+      } else {
+        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+      }
+    });
+  };
+  for (const { key, color } of series) (squish ? drawSeriesSquished : drawSeries)(key, color);
 
   // Squished: just the preview point's own label (currentLabelText above),
   // since per-point labels would overlap. Unsquished: month-only ticks in
