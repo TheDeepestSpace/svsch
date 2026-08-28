@@ -343,6 +343,13 @@ export async function extractDesignWithUhdm(
             if (!edge.width || edge.width === '[0:0]') {
               edge.width = elementWidth;
             }
+            // The breakout node's own tap port (rendered as the node's port
+            // lead) carries the same unreliable placeholder width as the
+            // edge did — correct it too so the lead line renders with the
+            // same thickness as the wire now leaving it.
+            if (sourcePort && (!sourcePort.width || sourcePort.width === '[0:0]')) {
+              sourcePort.width = elementWidth;
+            }
             breakoutTapIsMultiBit = widthIsPotentiallyMultiBit(elementWidth);
           }
         }
