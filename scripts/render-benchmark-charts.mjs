@@ -479,23 +479,21 @@ const DEFAULT_TREND_SERIES = [
 // its tests consume, so "which point is the preview" can never disagree
 // between them. Only the `series` keys are copied onto each point (rather
 // than spreading the whole history entry), so unrelated fields like `sha`
-// don't leak into the render/test-facing shape. `currentPoint` is optional —
-// omitting it (e.g. a gh-pages dashboard chart with no in-flight run to
-// preview) plots history alone, with no dashed preview segment.
-export function computeHistoryTrendData(
-  history,
-  currentPoint,
-  series = DEFAULT_TREND_SERIES,
-  currentLabel = 'this PR',
-) {
+// don't leak into the render/test-facing shape. Each point carries a numeric
+// `dateMs` (rather than a display label) so the chart can place it on a real
+// time scale — `entry.date`/`currentPoint.dateMs` is the source in each
+// case, since the current run has no persisted `date` yet. `currentPoint` is
+// optional — omitting it (e.g. a gh-pages dashboard chart with no in-flight
+// run to preview) plots history alone, with no dashed preview segment.
+export function computeHistoryTrendData(history, currentPoint, series = DEFAULT_TREND_SERIES) {
   const pick = (source) => Object.fromEntries(series.map(({ key }) => [key, source[key]]));
   const points = history.map((entry) => ({
-    label: entry.sha.slice(0, 7),
+    dateMs: new Date(entry.date).getTime(),
     ...pick(entry),
     isCurrent: false,
   }));
   if (currentPoint) {
-    points.push({ label: currentLabel, ...pick(currentPoint), isCurrent: true });
+    points.push({ dateMs: currentPoint.dateMs, ...pick(currentPoint), isCurrent: true });
   }
   return points;
 }
@@ -505,20 +503,67 @@ const TREND_RIGHT_MARGIN = 24;
 const TREND_TOP_MARGIN = 92;
 const TREND_PANEL_HEIGHT = 220;
 const TREND_LABEL_AREA_HEIGHT = 40;
-const TREND_POINT_PITCH = 64;
+// Plot width scales with the actual time span rather than the point count
+// (spacing is time-driven, not index-driven) — bounded so two widely-spaced
+// commits don't render as a single cramped segment and 200 tightly-clustered
+// ones don't blow the chart out to an unreadable width. Only used by the
+// unsquished layout; squish uses its own fixed canvas (see below) since even
+// this bounded width still overlaps hundreds of dots into noise.
+const TREND_MIN_PLOT_WIDTH = 480;
+const TREND_MAX_PLOT_WIDTH = 1400;
+const TREND_PX_PER_DAY = 20;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MONTH_LABELS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
 // Squished-chart-only sizing: CI duration's history (hundreds of points once
-// backfilled) would otherwise stretch the point-pitch layout below to an
-// unreadable multi-thousand-pixel width, one hairline-thin bar-pitch per
-// commit. Squishing every point into a fixed 2000x500 window instead keeps
-// the shape of the trend legible; individual values are still in the
-// underlying history.json for anyone who needs them. Opt-in via `squish`
-// rather than the default, since the visual suite's much shorter history
-// (one point per master push, no backfill) reads better with real per-point
-// dots and commit-hash labels.
+// backfilled) would otherwise cram far too many dots/labels into even the
+// bounded time-driven width above to stay legible. Squishing every point
+// into a fixed, wider 2000x500 window and dropping per-point dots/labels
+// (see renderHistoryTrendChart's squish branch) keeps the shape of the trend
+// legible instead; individual values are still in the underlying
+// history.json for anyone who needs them. Opt-in via `squish` rather than
+// the default, since the visual suite's much shorter history (one point per
+// master push, no backfill) reads better with real per-point dots and the
+// month-tick axis below.
 const TREND_SQUISHED_WIDTH = 2000;
 const TREND_SQUISHED_HEIGHT = 500;
 const TREND_SQUISHED_BOTTOM_MARGIN = 28;
+
+// x-axis ticks for the trend chart: one per calendar month between the first
+// of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
+// many (if any) actual data points fall in a given month — replaces the old
+// per-commit SHA labels, which didn't scale past a handful of points. Labels
+// pick up a two-digit year suffix only when the whole range spans more than
+// one calendar year, since otherwise it's dead weight on every tick.
+export function computeMonthTicks(minDateMs, maxDateMs) {
+  const isValidRange =
+    Number.isFinite(minDateMs) && Number.isFinite(maxDateMs) && minDateMs <= maxDateMs;
+  if (!isValidRange) return [];
+  const minDate = new Date(minDateMs);
+  const maxDate = new Date(maxDateMs);
+  const spansMultipleYears = minDate.getUTCFullYear() !== maxDate.getUTCFullYear();
+
+  const ticks = [];
+  let year = minDate.getUTCFullYear();
+  let month = minDate.getUTCMonth();
+  while (true) {
+    const tickMs = Date.UTC(year, month, 1);
+    if (tickMs > maxDateMs) break;
+    const label = spansMultipleYears
+      ? `${MONTH_LABELS[month]} '${String(year % 100).padStart(2, '0')}`
+      : MONTH_LABELS[month];
+    ticks.push({ dateMs: tickMs, label });
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
+  }
+  return ticks;
+}
 
 // A light smoothing pass through a series of {x, y} points: each interior
 // point becomes the control of a quadratic curve into the midpoint of it and
@@ -542,18 +587,18 @@ function smoothPath(coords) {
   return d;
 }
 
-// One line per series across every recorded master run. Unsquished (the
-// visual suite's default): each point a filled dot, with a commit-hash
-// label under every point. Squished (`squish: true`, used by CI duration —
-// see TREND_SQUISHED_WIDTH above): a single smoothed curve with no
-// per-point dots, since with hundreds of squished-together points a dot per
-// entry is just noise, and no per-point labels, since they'd just overlap.
-// Either way, the final segment — into the current, not yet merged, point
-// (if any) — is dashed, the same "texture cue, not color alone" convention
-// the stacked chart above uses for its own "new" bars; its point/label are
-// always drawn regardless of squish, since which point is "not yet merged"
-// is worth calling out. `series` defaults to the visual suite's
-// elaboration/rendering pair; passing a single-entry array (e.g. CI
+// One line per series across every recorded master run, positioned on a real
+// time scale (see xFor below). Unsquished (the visual suite's default): each
+// point a filled dot, with a month-tick x-axis. Squished (`squish: true`,
+// used by CI duration — see TREND_SQUISHED_WIDTH above): a single smoothed
+// curve with no per-point dots, since with hundreds of squished-together
+// points a dot per entry is just noise, and no per-point labels, since
+// they'd just overlap. Either way, the final segment — into the current, not
+// yet merged, point (if any) — is dashed, the same "texture cue, not color
+// alone" convention the stacked chart above uses for its own "new" bars; its
+// point/label are always drawn regardless of squish, since which point is
+// "not yet merged" is worth calling out. `series` defaults to the visual
+// suite's elaboration/rendering pair; passing a single-entry array (e.g. CI
 // duration) draws one line instead.
 export function renderHistoryTrendChart({
   title,
@@ -565,8 +610,20 @@ export function renderHistoryTrendChart({
   valueLabel = 'Average duration per master run (ms)',
   squish = false,
 }) {
-  const points = computeHistoryTrendData(history, currentPoint, series, currentLabel);
+  // `dateMs` defaults to chart-generation time when the caller hasn't
+  // already threaded one through (e.g. an in-progress "so far" preview) —
+  // computeHistoryTrendData itself stays pure/deterministic for testing, so
+  // the default lives here instead.
+  const resolvedCurrentPoint = currentPoint
+    ? { dateMs: Date.now(), ...currentPoint }
+    : currentPoint;
+  const points = computeHistoryTrendData(history, resolvedCurrentPoint, series);
   const legendItems = series.map(({ color, label }) => ({ fill: color, label }));
+
+  const dateMsValues = points.map((p) => p.dateMs);
+  const minDateMs = Math.min(...dateMsValues);
+  const maxDateMs = Math.max(...dateMsValues);
+  const dateSpanMs = maxDateMs - minDateMs;
 
   let width;
   let height;
@@ -578,12 +635,22 @@ export function renderHistoryTrendChart({
     plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
     panelHeight = height - TREND_TOP_MARGIN - TREND_SQUISHED_BOTTOM_MARGIN;
   } else {
-    plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
+    const naturalPlotWidth = points.length <= 1 || dateSpanMs === 0
+      ? TREND_MIN_PLOT_WIDTH
+      : Math.min(
+          TREND_MAX_PLOT_WIDTH,
+          Math.max(TREND_MIN_PLOT_WIDTH, (dateSpanMs / MS_PER_DAY) * TREND_PX_PER_DAY),
+        );
     width = Math.max(
-      TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
+      TREND_LEFT_MARGIN + naturalPlotWidth + TREND_RIGHT_MARGIN,
       legendWidth(24, legendItems),
       estimateTextWidth(title, 18) + 48,
     );
+    // Stretch the plot itself to fill whatever width won above (rather than
+    // leaving the time-span-driven natural width as blank space to its
+    // right) so the graph always fills the full chart, margins aside — the
+    // whole point of rendering it at width="100%" in the PR comment.
+    plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
     height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
     panelHeight = TREND_PANEL_HEIGHT;
   }
@@ -594,10 +661,9 @@ export function renderHistoryTrendChart({
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = panelHeight / chartMax;
 
-  const xFor = (index) =>
-    points.length <= 1
-      ? TREND_LEFT_MARGIN + plotWidth / 2
-      : TREND_LEFT_MARGIN + (index / (points.length - 1)) * plotWidth;
+  const xFor = (dateMs) => (points.length <= 1 || dateSpanMs === 0
+    ? TREND_LEFT_MARGIN + plotWidth / 2
+    : TREND_LEFT_MARGIN + ((dateMs - minDateMs) / dateSpanMs) * plotWidth);
   const yFor = (value) => originY - value * scale;
 
   const hasPreview = points.some((p) => p.isCurrent);
@@ -624,7 +690,11 @@ export function renderHistoryTrendChart({
 
   let currentLabelText = null;
   const drawSeriesSquished = (key, color) => {
-    const coords = points.map((p, i) => ({ x: xFor(i), y: yFor(p[key]), isCurrent: p.isCurrent }));
+    const coords = points.map((p) => ({
+      x: xFor(p.dateMs),
+      y: yFor(p[key]),
+      isCurrent: p.isCurrent,
+    }));
     const historyCoords = coords.filter((c) => !c.isCurrent);
     const currentCoord = coords.find((c) => c.isCurrent);
 
@@ -649,16 +719,16 @@ export function renderHistoryTrendChart({
   const drawSeries = (key, color) => {
     for (let i = 0; i < points.length - 1; i += 1) {
       const isPreviewSegment = points[i + 1].isCurrent;
-      const x1 = xFor(i);
+      const x1 = xFor(points[i].dateMs);
       const y1 = yFor(points[i][key]);
-      const x2 = xFor(i + 1);
+      const x2 = xFor(points[i + 1].dateMs);
       const y2 = yFor(points[i + 1][key]);
       parts.push(
         `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
       );
     }
-    points.forEach((p, i) => {
-      const x = xFor(i);
+    points.forEach((p) => {
+      const x = xFor(p.dateMs);
       const y = yFor(p[key]);
       if (p.isCurrent) {
         parts.push(
@@ -671,12 +741,22 @@ export function renderHistoryTrendChart({
   };
   for (const { key, color } of series) (squish ? drawSeriesSquished : drawSeries)(key, color);
 
-  const labelParts = squish
-    ? []
-    : points.map((p, i) => {
-        const x = xFor(i);
-        const label = p.isCurrent ? currentLabel : p.label;
-        return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
+  // Squished: just the preview point's own label (currentLabelText above),
+  // since per-point labels would overlap. Unsquished: month-only ticks in
+  // place of the old per-point SHA labels — clamped into the plot area since
+  // the first tick (first-of-month at-or-before the earliest point) can fall
+  // before minDateMs and would otherwise land under the y-axis labels.
+  const axisLabelParts = squish
+    ? currentLabelText
+      ? [currentLabelText]
+      : []
+    : computeMonthTicks(minDateMs, maxDateMs).map((tick) => {
+        const rawX = xFor(tick.dateMs);
+        const x = Math.min(Math.max(rawX, TREND_LEFT_MARGIN), TREND_LEFT_MARGIN + plotWidth);
+        return [
+          `<line x1="${x}" y1="${originY}" x2="${x}" y2="${originY + 5}" stroke="${COLORS.axis}" stroke-width="1" />`,
+          `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(tick.label)}</text>`,
+        ].join('\n');
       });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
@@ -684,7 +764,7 @@ export function renderHistoryTrendChart({
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, legendItems)}
   ${parts.join('\n')}
-  ${squish ? (currentLabelText ?? '') : labelParts.join('\n')}
+  ${axisLabelParts.join('\n')}
 </svg>`;
 }
 

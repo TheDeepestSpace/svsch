@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
+  computeMonthTicks,
   mergeBenchmarkHistory,
 } from '../../scripts/render-benchmark-charts.mjs';
 
@@ -105,41 +106,78 @@ describe('mergeBenchmarkHistory', () => {
 describe('computeHistoryTrendData', () => {
   const entryA = {
     sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    date: '2026-01-05T00:00:00.000Z',
     elaborationAvgMs: 120,
     renderingAvgMs: 80,
   };
   const entryB = {
     sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    date: '2026-01-10T00:00:00.000Z',
     elaborationAvgMs: 110,
     renderingAvgMs: 90,
   };
 
   it('appends the current run as a marked preview point after history, oldest first', () => {
+    const currentDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
     const points = computeHistoryTrendData([entryA, entryB], {
+      dateMs: currentDateMs,
       elaborationAvgMs: 100,
       renderingAvgMs: 70,
     });
     expect(points).toEqual([
       {
-        label: entryA.sha.slice(0, 7),
+        dateMs: new Date(entryA.date).getTime(),
         elaborationAvgMs: entryA.elaborationAvgMs,
         renderingAvgMs: entryA.renderingAvgMs,
         isCurrent: false,
       },
       {
-        label: entryB.sha.slice(0, 7),
+        dateMs: new Date(entryB.date).getTime(),
         elaborationAvgMs: entryB.elaborationAvgMs,
         renderingAvgMs: entryB.renderingAvgMs,
         isCurrent: false,
       },
-      { label: 'this PR', elaborationAvgMs: 100, renderingAvgMs: 70, isCurrent: true },
+      { dateMs: currentDateMs, elaborationAvgMs: 100, renderingAvgMs: 70, isCurrent: true },
     ]);
   });
 
   it('produces just the preview point when there is no history yet', () => {
-    const points = computeHistoryTrendData([], { elaborationAvgMs: 50, renderingAvgMs: 40 });
+    const currentDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData([], {
+      dateMs: currentDateMs,
+      elaborationAvgMs: 50,
+      renderingAvgMs: 40,
+    });
     expect(points).toEqual([
-      { label: 'this PR', elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
+      { dateMs: currentDateMs, elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
+    ]);
+  });
+});
+
+describe('computeMonthTicks', () => {
+  it('returns one tick per calendar month starting the month at-or-before the min date', () => {
+    const minDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
+    const maxDateMs = new Date('2026-03-05T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(minDateMs, maxDateMs)).toEqual([
+      { dateMs: Date.UTC(2026, 0, 1), label: 'Jan' },
+      { dateMs: Date.UTC(2026, 1, 1), label: 'Feb' },
+      { dateMs: Date.UTC(2026, 2, 1), label: 'Mar' },
+    ]);
+  });
+
+  it('adds a two-digit year suffix once the range spans more than one year', () => {
+    const minDateMs = new Date('2025-12-20T00:00:00.000Z').getTime();
+    const maxDateMs = new Date('2026-01-10T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(minDateMs, maxDateMs)).toEqual([
+      { dateMs: Date.UTC(2025, 11, 1), label: "Dec '25" },
+      { dateMs: Date.UTC(2026, 0, 1), label: "Jan '26" },
+    ]);
+  });
+
+  it('returns a single tick when min and max fall in the same month', () => {
+    const dateMs = new Date('2026-06-15T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(dateMs, dateMs)).toEqual([
+      { dateMs: Date.UTC(2026, 5, 1), label: 'Jun' },
     ]);
   });
 });
@@ -153,27 +191,22 @@ describe('computeHistoryTrendData with a custom series', () => {
   };
 
   it('only copies the given series keys onto each point (not the whole entry)', () => {
-    const points = computeHistoryTrendData([historyEntry], { durationSec: 480 }, CUSTOM_SERIES);
+    const currentDateMs = new Date('2026-01-02T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData(
+      [historyEntry],
+      { dateMs: currentDateMs, durationSec: 480 },
+      CUSTOM_SERIES,
+    );
     expect(points).toEqual([
-      { label: historyEntry.sha.slice(0, 7), durationSec: 500, isCurrent: false },
-      { label: 'this PR', durationSec: 480, isCurrent: true },
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+      { dateMs: currentDateMs, durationSec: 480, isCurrent: true },
     ]);
   });
 
   it('omits the preview point entirely when currentPoint is nullish', () => {
     const points = computeHistoryTrendData([historyEntry], undefined, CUSTOM_SERIES);
     expect(points).toEqual([
-      { label: historyEntry.sha.slice(0, 7), durationSec: 500, isCurrent: false },
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
     ]);
-  });
-
-  it('labels the preview point with a custom currentLabel', () => {
-    const points = computeHistoryTrendData(
-      [],
-      { durationSec: 10 },
-      CUSTOM_SERIES,
-      'this run (so far)',
-    );
-    expect(points).toEqual([{ label: 'this run (so far)', durationSec: 10, isCurrent: true }]);
   });
 });
