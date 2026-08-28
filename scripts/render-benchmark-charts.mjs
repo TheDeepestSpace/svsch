@@ -284,7 +284,7 @@ function renderXLabels(names, originY, barPitch) {
   return parts.join('\n');
 }
 
-// Shared by renderStackedSuiteChart and the CSV export (comment-benchmark-summary.mjs)
+// Shared by renderStackedSuiteChart and the CSV export (generate-benchmark-stats.mjs)
 // so the CSV's row order always matches the chart's left-to-right bar order:
 // fastest-to-slowest by total (elaboration + rendering), not by name.
 export function computeStackedData(metrics) {
@@ -464,16 +464,19 @@ export function renderDeltaTableMarkdown(rows) {
 // computed by computeBenchmarkHistory) plus the current — not yet merged —
 // PR run's averages into the ordered point list both
 // renderHistoryTrendChart and its tests consume, so "which point is the PR
-// preview" can never disagree between them.
+// preview" can never disagree between them. Each point carries a numeric
+// `dateMs` (rather than a display label) so the chart can place it on a real
+// time scale; `currentRunAverages.dateMs` is the chart-generation timestamp,
+// threaded in by the caller since the current run has no persisted date yet.
 export function computeHistoryTrendData(history, currentRunAverages) {
   const points = history.map((entry) => ({
-    label: entry.sha.slice(0, 7),
+    dateMs: new Date(entry.date).getTime(),
     elaborationAvgMs: entry.elaborationAvgMs,
     renderingAvgMs: entry.renderingAvgMs,
     isCurrent: false,
   }));
   points.push({
-    label: 'this PR',
+    dateMs: currentRunAverages.dateMs,
     elaborationAvgMs: currentRunAverages.elaborationAvgMs,
     renderingAvgMs: currentRunAverages.renderingAvgMs,
     isCurrent: true,
@@ -486,11 +489,57 @@ const TREND_RIGHT_MARGIN = 24;
 const TREND_TOP_MARGIN = 92;
 const TREND_PANEL_HEIGHT = 220;
 const TREND_LABEL_AREA_HEIGHT = 40;
-const TREND_POINT_PITCH = 64;
+// Plot width now scales with the actual time span rather than the point
+// count (spacing is time-driven, not index-driven) — bounded so two
+// widely-spaced commits don't render as a single cramped segment and 200
+// tightly-clustered ones don't blow the chart out to an unreadable width.
+const TREND_MIN_PLOT_WIDTH = 480;
+const TREND_MAX_PLOT_WIDTH = 1400;
+const TREND_PX_PER_DAY = 20;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MONTH_LABELS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 const TREND_LEGEND_ITEMS = [
   { fill: COLORS.blue, label: 'Elaboration avg' },
   { fill: COLORS.purple, label: 'Rendering avg' },
 ];
+const TREND_HEADING_TEXT =
+  'Average duration per master run (ms) — dashed segment is this PR, not yet merged';
+
+// x-axis ticks for the trend chart: one per calendar month between the first
+// of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
+// many (if any) actual data points fall in a given month — replaces the old
+// per-commit SHA labels, which didn't scale past a handful of points. Labels
+// pick up a two-digit year suffix only when the whole range spans more than
+// one calendar year, since otherwise it's dead weight on every tick.
+export function computeMonthTicks(minDateMs, maxDateMs) {
+  const isValidRange =
+    Number.isFinite(minDateMs) && Number.isFinite(maxDateMs) && minDateMs <= maxDateMs;
+  if (!isValidRange) return [];
+  const minDate = new Date(minDateMs);
+  const maxDate = new Date(maxDateMs);
+  const spansMultipleYears = minDate.getUTCFullYear() !== maxDate.getUTCFullYear();
+
+  const ticks = [];
+  let year = minDate.getUTCFullYear();
+  let month = minDate.getUTCMonth();
+  while (true) {
+    const tickMs = Date.UTC(year, month, 1);
+    if (tickMs > maxDateMs) break;
+    const label = spansMultipleYears
+      ? `${MONTH_LABELS[month]} '${String(year % 100).padStart(2, '0')}`
+      : MONTH_LABELS[month];
+    ticks.push({ dateMs: tickMs, label });
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
+  }
+  return ticks;
+}
 
 // One line per metric (elaboration, rendering) across every recorded master
 // run, each point a filled dot; the final segment — into the current, not
@@ -500,12 +549,28 @@ const TREND_LEGEND_ITEMS = [
 // unconfirmed even in grayscale.
 export function renderHistoryTrendChart({ title, history, currentRunAverages }) {
   const points = computeHistoryTrendData(history, currentRunAverages);
-  const plotWidth = Math.max((points.length - 1) * TREND_POINT_PITCH, TREND_POINT_PITCH);
+  const dateMsValues = points.map((p) => p.dateMs);
+  const minDateMs = Math.min(...dateMsValues);
+  const maxDateMs = Math.max(...dateMsValues);
+  const dateSpanMs = maxDateMs - minDateMs;
+
+  const naturalPlotWidth = points.length <= 1 || dateSpanMs === 0
+    ? TREND_MIN_PLOT_WIDTH
+    : Math.min(
+        TREND_MAX_PLOT_WIDTH,
+        Math.max(TREND_MIN_PLOT_WIDTH, (dateSpanMs / MS_PER_DAY) * TREND_PX_PER_DAY),
+      );
   const width = Math.max(
-    TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
+    TREND_LEFT_MARGIN + naturalPlotWidth + TREND_RIGHT_MARGIN,
     legendWidth(24, TREND_LEGEND_ITEMS),
-    estimateTextWidth(title, 18) + 48
+    estimateTextWidth(title, 18) + 48,
+    (TREND_LEFT_MARGIN - 12) + estimateTextWidth(TREND_HEADING_TEXT, 14) + TREND_RIGHT_MARGIN
   );
+  // Stretch the plot itself to fill whatever width won above (rather than
+  // leaving the time-span-driven natural width as blank space to its right)
+  // so the graph always fills the full chart, margins aside — the whole
+  // point of rendering it at width="100%" in the PR comment.
+  const plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
   const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
   const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
 
@@ -514,13 +579,13 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
   const scale = TREND_PANEL_HEIGHT / chartMax;
 
-  const xFor = (index) => (points.length <= 1
+  const xFor = (dateMs) => (points.length <= 1 || dateSpanMs === 0
     ? TREND_LEFT_MARGIN + plotWidth / 2
-    : TREND_LEFT_MARGIN + (index / (points.length - 1)) * plotWidth);
+    : TREND_LEFT_MARGIN + ((dateMs - minDateMs) / dateSpanMs) * plotWidth);
   const yFor = (value) => originY - value * scale;
 
   const parts = [];
-  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">Average duration per master run (ms) — dashed segment is this PR, not yet merged</text>`);
+  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${TREND_HEADING_TEXT}</text>`);
 
   for (let tick = 0; tick <= chartMax; tick += step) {
     const y = originY - tick * scale;
@@ -532,14 +597,14 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const drawSeries = (key, color) => {
     for (let i = 0; i < points.length - 1; i += 1) {
       const isPreviewSegment = points[i + 1].isCurrent;
-      const x1 = xFor(i);
+      const x1 = xFor(points[i].dateMs);
       const y1 = yFor(points[i][key]);
-      const x2 = xFor(i + 1);
+      const x2 = xFor(points[i + 1].dateMs);
       const y2 = yFor(points[i + 1][key]);
       parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`);
     }
-    points.forEach((p, i) => {
-      const x = xFor(i);
+    points.forEach((p) => {
+      const x = xFor(p.dateMs);
       const y = yFor(p[key]);
       if (p.isCurrent) {
         parts.push(`<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`);
@@ -551,10 +616,18 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   drawSeries('elaborationAvgMs', COLORS.blue);
   drawSeries('renderingAvgMs', COLORS.purple);
 
-  const labelParts = points.map((p, i) => {
-    const x = xFor(i);
-    const label = p.isCurrent ? 'this PR' : p.label;
-    return `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${p.isCurrent ? COLORS.ink : COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif" font-weight="${p.isCurrent ? '600' : '400'}">${escapeXml(label)}</text>`;
+  // Month-only ticks in place of the old per-point SHA labels — clamped into
+  // the plot area since the first tick (first-of-month at-or-before the
+  // earliest point) can fall before minDateMs and would otherwise land under
+  // the y-axis labels.
+  const monthTicks = computeMonthTicks(minDateMs, maxDateMs);
+  const tickParts = monthTicks.map((tick) => {
+    const rawX = xFor(tick.dateMs);
+    const x = Math.min(Math.max(rawX, TREND_LEFT_MARGIN), TREND_LEFT_MARGIN + plotWidth);
+    return [
+      `<line x1="${x}" y1="${originY}" x2="${x}" y2="${originY + 5}" stroke="${COLORS.axis}" stroke-width="1" />`,
+      `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(tick.label)}</text>`,
+    ].join('\n');
   });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
@@ -562,7 +635,7 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
   ${renderLegend(24, 52, TREND_LEGEND_ITEMS)}
   ${parts.join('\n')}
-  ${labelParts.join('\n')}
+  ${tickParts.join('\n')}
 </svg>`;
 }
 

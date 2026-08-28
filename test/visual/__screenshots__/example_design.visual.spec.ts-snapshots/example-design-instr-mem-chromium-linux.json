@@ -7,7 +7,7 @@
         "x": 456,
         "y": 72
       },
-      "width": 96,
+      "width": 144,
       "height": 96,
       "data": {
         "kind": "mux",
@@ -54,7 +54,7 @@
       "id": "port:instr_mem:instr",
       "type": "hdl",
       "position": {
-        "x": 768,
+        "x": 816,
         "y": 108
       },
       "width": 240,
@@ -78,7 +78,7 @@
       "target": "port:instr_mem:instr",
       "sourceHandle": "out",
       "targetHandle": "port:instr",
-      "path": "M 552 120 L 576 120 L 744 120 L 768 120"
+      "path": "M 600 120 L 624 120 L 792 120 L 816 120"
     },
     {
       "id": "edge:port:instr_mem:addr:mux:instr_mem:mem_read_addr:addr",
@@ -86,7 +86,7 @@
       "target": "mux:instr_mem:mem_read_addr",
       "sourceHandle": "port:addr",
       "targetHandle": "sel",
-      "path": "M 240 48 L 264 48 L 504 48 L 504 96"
+      "path": "M 240 48 L 264 48 L 528 48 L 528 96"
     }
   ]
 }

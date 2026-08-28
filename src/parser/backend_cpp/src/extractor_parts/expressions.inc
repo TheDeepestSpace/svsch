@@ -138,6 +138,12 @@ std::vector<AggregateSegment> DesignExtractor::flattenAggregateSegments(
                 seg.width = inferred > 1 ? "[" + std::to_string(inferred - 1) + ":0]" : "[0:0]";
             }
             seg.size = std::max(1, bitSizeFromWidth(seg.width));
+            // A literal RHS segment (e.g. the `1'b0` in `{data_reg, 1'b0}`) resolves to
+            // its text as a signal name, but no node actually drives that signal unless
+            // one is synthesized here — leaving the bus-composition port dangling.
+            if (isLiteralExpr(operand)) {
+                ensureLiteralNode(operand, mod, seg.signal, seg.width, operand, seg.signal);
+            }
             segments.push_back(seg);
             index++;
         }
@@ -184,7 +190,8 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
     Module& mod,
     bool is_procedural,
     const std::map<std::string, LoweredValue>& current_drivers,
-    const std::string& output_suffix
+    const std::string& output_suffix,
+    const std::map<std::string, std::string>& desired_outputs
 ) {
     std::map<std::string, LoweredValue> result = current_drivers;
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
@@ -248,16 +255,29 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
         auto seg = lhs_segments[i];
         if (seg.signal.empty()) continue;
         std::string target_signal = seg.signal;
-        if (is_procedural && !output_suffix.empty()) seg.signal += output_suffix;
+        auto desired_output = desired_outputs.find(target_signal);
+        bool renamed = false;
+        if (is_procedural && desired_output != desired_outputs.end()) {
+            seg.signal = desired_output->second;
+            renamed = true;
+        } else if (is_procedural && !output_suffix.empty()) {
+            seg.signal += output_suffix;
+            renamed = true;
+        }
         int size = std::max(1, seg.size);
         std::string label = size > 1
             ? "[" + std::to_string(current_bit) + ":" + std::to_string(current_bit - size + 1) + "]"
             : "[" + std::to_string(current_bit) + "]";
         breakout.ports.push_back({"lhs" + std::to_string(i), "output", seg.signal, seg.width, label});
 
-        if (output_suffix.empty() && !seg.structField.empty()) {
+        // Only wire the bus/struct composition input when seg.signal is still the real
+        // target signal name. A rename (branch/"_next" suffix, or a desired_outputs
+        // remap) means this breakout produces an intermediate driver value, not the
+        // final signal — composing that into the merge node would bypass whatever
+        // produces the actual signal (e.g. a register) and starve it of its real input.
+        if (!renamed && !seg.structField.empty()) {
             ensureStructFieldCompositionInput(mod, seg.baseSignal, seg.structField, seg.signal, getSourceInfo(seg.handle));
-        } else if (output_suffix.empty() && seg.signal.find('[') != std::string::npos) {
+        } else if (!renamed && seg.signal.find('[') != std::string::npos) {
             std::string base = seg.baseSignal.empty() ? getBaseSignalName(seg.handle) : seg.baseSignal;
             if (!base.empty()) {
                 size_t bracket = seg.signal.find('[');
