@@ -21,8 +21,14 @@ function findFiles(root, predicate) {
 function videoMetadataBySourceName(report) {
   const metadata = new Map();
 
-  function visitSuite(suite, parents) {
-    const titles = [...parents, suite.title].filter(Boolean);
+  // depth 0 is the per-file root suite; depth 1 is the Feature-level suite
+  // (playwright-bdd always emits exactly one describe per Feature there).
+  // Anything deeper (e.g. a Scenario Outline's own describe) is prefixed
+  // onto the scenario label instead of overwriting the feature.
+  function visitSuite(suite, depth, feature, scenarioTitles) {
+    const currentFeature = depth === 1 ? suite.title : feature;
+    const currentScenarioTitles =
+      depth > 1 ? [...scenarioTitles, suite.title].filter(Boolean) : scenarioTitles;
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests ?? []) {
         for (const result of test.results ?? []) {
@@ -32,8 +38,8 @@ function videoMetadataBySourceName(report) {
               ? attachment.name.slice('video:'.length)
               : path.basename(attachment.path);
             metadata.set(sourceName, {
-              feature: titles.at(-1) ?? 'BDD scenario',
-              scenario: spec.title,
+              feature: currentFeature ?? 'BDD scenario',
+              scenario: [...currentScenarioTitles, spec.title].filter(Boolean).join(' › '),
               status: result.status ?? 'unknown',
               retry: result.retry ?? 0,
               duration: result.duration ?? 0,
@@ -42,10 +48,11 @@ function videoMetadataBySourceName(report) {
         }
       }
     }
-    for (const child of suite.suites ?? []) visitSuite(child, titles);
+    for (const child of suite.suites ?? [])
+      visitSuite(child, depth + 1, currentFeature, currentScenarioTitles);
   }
 
-  for (const suite of report?.suites ?? []) visitSuite(suite, []);
+  for (const suite of report?.suites ?? []) visitSuite(suite, 0, undefined, []);
   return metadata;
 }
 
