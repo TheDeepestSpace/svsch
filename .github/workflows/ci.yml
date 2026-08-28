@@ -445,10 +445,18 @@ jobs:
                 a.name.startsWith('visual-blob-report-') ||
                 a.name.startsWith('visual-benchmark-raw-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (err) {
+                // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                // deleting one artifact shouldn't fail the whole job.
+                core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard visual artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard visual artifact(s)`);
 
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -636,10 +644,18 @@ jobs:
             const perShard = artifacts.filter(
               (a) => a.name.startsWith('bdd-artifacts-') || a.name.startsWith('bdd-blob-report-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (err) {
+                // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                // deleting one artifact shouldn't fail the whole job.
+                core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard BDD artifact(s)`);
 
   publish_bdd_videos:
     needs: [merge_bdd_reports]
