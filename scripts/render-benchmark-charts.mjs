@@ -554,18 +554,23 @@ export function renderHistoryTrendChart({ title, history, currentRunAverages }) 
   const maxDateMs = Math.max(...dateMsValues);
   const dateSpanMs = maxDateMs - minDateMs;
 
-  const plotWidth = points.length <= 1 || dateSpanMs === 0
+  const naturalPlotWidth = points.length <= 1 || dateSpanMs === 0
     ? TREND_MIN_PLOT_WIDTH
     : Math.min(
         TREND_MAX_PLOT_WIDTH,
         Math.max(TREND_MIN_PLOT_WIDTH, (dateSpanMs / MS_PER_DAY) * TREND_PX_PER_DAY),
       );
   const width = Math.max(
-    TREND_LEFT_MARGIN + plotWidth + TREND_RIGHT_MARGIN,
+    TREND_LEFT_MARGIN + naturalPlotWidth + TREND_RIGHT_MARGIN,
     legendWidth(24, TREND_LEGEND_ITEMS),
     estimateTextWidth(title, 18) + 48,
     (TREND_LEFT_MARGIN - 12) + estimateTextWidth(TREND_HEADING_TEXT, 14) + TREND_RIGHT_MARGIN
   );
+  // Stretch the plot itself to fill whatever width won above (rather than
+  // leaving the time-span-driven natural width as blank space to its right)
+  // so the graph always fills the full chart, margins aside — the whole
+  // point of rendering it at width="100%" in the PR comment.
+  const plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
   const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
   const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
 
