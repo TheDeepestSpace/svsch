@@ -1282,71 +1282,70 @@ std::string DesignExtractor::getDeclaredSignalWidth(const Module& mod, const std
     }
 
     // A module first discovered through an instance can carry the instance's source
-    // file in mod.source. Port and parameter declarations still point at the module
-    // definition, so prefer those when doing source-text declaration lookup.
-    std::string source_file;
+    // file in mod.source, and its ports can point at the parent module's connection
+    // list as well. Try every source file associated with the module, preferring node
+    // bodies because procedural/continuous nodes retain the child definition's file.
+    std::vector<std::string> source_files;
+    std::set<std::string> seen_source_files;
+    auto add_source_file = [&](const std::string& file) {
+        if (!file.empty() && seen_source_files.insert(file).second) source_files.push_back(file);
+    };
+    for (const auto& node : mod.nodes) add_source_file(node.source.file);
     for (const auto& parameter : mod.parameters) {
-        if (!parameter.source.file.empty()) {
-            source_file = parameter.source.file;
-            break;
-        }
+        add_source_file(parameter.source.file);
     }
-    if (source_file.empty()) {
-        for (const auto& port : mod.ports) {
-            if (!port.source.file.empty()) {
-                source_file = port.source.file;
-                break;
-            }
-        }
+    for (const auto& port : mod.ports) {
+        add_source_file(port.source.file);
     }
-    if (source_file.empty()) source_file = mod.source.file;
-    
-    if (source_file.empty()) return "";
+    add_source_file(mod.source.file);
 
-    std::ifstream file = openSourceFile(source_file);
-    if (!file.is_open()) return "";
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string text = buffer.str();
     std::string escaped_signal;
     for (char c : signal) {
         if (std::string(".^$|()[]{}*+?_\\").find(c) != std::string::npos) escaped_signal += "\\";
         escaped_signal += c;
     }
 
-    std::regex decl_re(R"((?:input|output|inout)?\s*(?:logic|wire|reg)\s+(\[[^\]]+\])([^,;\)\n]*))");
-    std::sregex_iterator next(text.begin(), text.end(), decl_re);
-    std::sregex_iterator end;
-    while (next != end) {
-        std::string range = (*next)[1].str();
-        std::string vars = (*next)[2].str();
-        std::regex var_re(R"(\b)" + escaped_signal + R"(\b)");
-        if (std::regex_search(vars, var_re)) {
-            return range;
+    for (const auto& source_file : source_files) {
+        std::ifstream file = openSourceFile(source_file);
+        if (!file.is_open()) continue;
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string text = buffer.str();
+
+        std::regex decl_re(R"((?:input|output|inout)?\s*(?:logic|wire|reg)\s+(\[[^\]]+\])([^,;\)\n]*))");
+        std::sregex_iterator next(text.begin(), text.end(), decl_re);
+        std::sregex_iterator end;
+        while (next != end) {
+            std::string range = (*next)[1].str();
+            std::string vars = (*next)[2].str();
+            std::regex var_re(R"(\b)" + escaped_signal + R"(\b)");
+            if (std::regex_search(vars, var_re)) {
+                return range;
+            }
+            next++;
         }
-        next++;
-    }
 
-    std::map<std::string, std::string> type_widths;
-    std::regex enum_type_re(R"(typedef\s+enum\s+(?:\w+\s+)*(\[[^\]]+\])\s*\{[^}]*\}\s*(\w+)\s*;)");
-    for (std::sregex_iterator it(text.begin(), text.end(), enum_type_re), end; it != end; ++it) {
-        type_widths[(*it)[2].str()] = (*it)[1].str();
-    }
-
-    std::regex typed_decl_re(R"((?:^|[;\n])\s*(\w+)\s+([^;]+);)");
-    for (std::sregex_iterator it(text.begin(), text.end(), typed_decl_re), end; it != end; ++it) {
-        std::string type_name = (*it)[1].str();
-        auto width_it = type_widths.find(type_name);
-        if (width_it != type_widths.end() && declarationListContains((*it)[2].str(), signal)) {
-            return width_it->second;
+        std::map<std::string, std::string> type_widths;
+        std::regex enum_type_re(R"(typedef\s+enum\s+(?:\w+\s+)*(\[[^\]]+\])\s*\{[^}]*\}\s*(\w+)\s*;)");
+        for (std::sregex_iterator it(text.begin(), text.end(), enum_type_re), end; it != end; ++it) {
+            type_widths[(*it)[2].str()] = (*it)[1].str();
         }
-    }
 
-    std::regex vector_decl_re(R"((?:^|[;\n,])\s*(?:(?:input|output|inout)\s+)?(?:logic|wire|reg)\s+(\[[^\]]+\])\s+([^;,\)]+))");
-    for (std::sregex_iterator it(text.begin(), text.end(), vector_decl_re), end; it != end; ++it) {
-        if (declarationListContains((*it)[2].str(), signal)) {
-            return (*it)[1].str();
+        std::regex typed_decl_re(R"((?:^|[;\n])\s*(\w+)\s+([^;]+);)");
+        for (std::sregex_iterator it(text.begin(), text.end(), typed_decl_re), end; it != end; ++it) {
+            std::string type_name = (*it)[1].str();
+            auto width_it = type_widths.find(type_name);
+            if (width_it != type_widths.end() && declarationListContains((*it)[2].str(), signal)) {
+                return width_it->second;
+            }
+        }
+
+        std::regex vector_decl_re(R"((?:^|[;\n,])\s*(?:(?:input|output|inout)\s+)?(?:logic|wire|reg)\s+(\[[^\]]+\])\s+([^;,\)]+))");
+        for (std::sregex_iterator it(text.begin(), text.end(), vector_decl_re), end; it != end; ++it) {
+            if (declarationListContains((*it)[2].str(), signal)) {
+                return (*it)[1].str();
+            }
         }
     }
 

@@ -753,16 +753,34 @@ jobs:
     steps:
       - *checkout_step
 
+      - name: Checkout base ref features
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: bdd-base-checkout
+          persist-credentials: false
+          sparse-checkout: |
+            test/features
+          sparse-checkout-cone-mode: false
+
       - name: Download merged BDD artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: bdd-artifacts
           path: gallery-input
 
+      - name: Diff BDD scenarios vs base
+        run: |
+          node scripts/diff-bdd-scenarios.mjs \
+            bdd-scenario-status.json \
+            bdd-base-checkout/test/features \
+            test/features
+
       - name: Generate BDD video gallery
         run: node scripts/generate-bdd-video-gallery.mjs gallery-input/test-results/bdd bdd-video-gallery
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BDD_SCENARIO_STATUS_FILE: bdd-scenario-status.json
 
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

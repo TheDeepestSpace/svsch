@@ -1,0 +1,587 @@
+{
+  "nodes": [
+    {
+      "id": "bus:enum_concat_case:funct3",
+      "type": "hdl",
+      "position": {
+        "x": 384,
+        "y": 120
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "in:funct3",
+            "name": "funct3",
+            "direction": "input"
+          },
+          {
+            "id": "out:funct3_1:0_",
+            "name": "funct3[1:0]",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bus:enum_concat_case:write_enable_sel:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1152,
+        "y": 120
+      },
+      "width": 144,
+      "height": 101,
+      "data": {
+        "kind": "bus",
+        "ports": [
+          {
+            "id": "out:write_enable_sel",
+            "name": "write_enable_sel",
+            "direction": "output"
+          },
+          {
+            "id": "in:_3:2_",
+            "name": "[3:2]",
+            "direction": "input"
+          },
+          {
+            "id": "in:_1:0_",
+            "name": "[1:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:enum_concat_case:if_sel_n1:expr",
+      "type": "hdl",
+      "position": {
+        "x": 1848,
+        "y": 24
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:if_sel_n1",
+            "name": "if_sel_n1",
+            "direction": "output"
+          },
+          {
+            "id": "port:funct3_2_",
+            "name": "funct3[2]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comb:enum_concat_case:transfersize:expr",
+      "type": "hdl",
+      "position": {
+        "x": 744,
+        "y": 96
+      },
+      "width": 192,
+      "height": 72,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:transfersize",
+            "name": "transfersize",
+            "direction": "output"
+          },
+          {
+            "id": "port:funct3_1:0_",
+            "name": "funct3[1:0]",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d0:4_b0001",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_BYTE_2_d0",
+            "name": "write_enable_if_false_n0_BYTE_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d1:4_b0010",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_BYTE_2_d1",
+            "name": "write_enable_if_false_n0_BYTE_2_d1",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d2:4_b0100",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 348
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_BYTE_2_d2",
+            "name": "write_enable_if_false_n0_BYTE_2_d2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d3:4_b1000",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 396
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_BYTE_2_d3",
+            "name": "write_enable_if_false_n0_BYTE_2_d3",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_default:4_bxxxx",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_default",
+            "name": "write_enable_if_false_n0_default",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d0:4_b0011",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_HALF_2_d0",
+            "name": "write_enable_if_false_n0_HALF_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d2:4_b1100",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 492
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_HALF_2_d2",
+            "name": "write_enable_if_false_n0_HALF_2_d2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_false_n0_WORD_2_d0:4_b1111",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 540
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_false_n0_WORD_2_d0",
+            "name": "write_enable_if_false_n0_WORD_2_d0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "literal:enum_concat_case:write_enable_if_true_n0:4_b0000",
+      "type": "hdl",
+      "position": {
+        "x": 1920,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "literal",
+        "ports": [
+          {
+            "id": "port:write_enable_if_true_n0",
+            "name": "write_enable_if_true_n0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:enum_concat_case:write_enable:if_sel_n1:write_enable",
+      "type": "hdl",
+      "position": {
+        "x": 2256,
+        "y": 120
+      },
+      "width": 144,
+      "height": 96,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:true",
+            "name": "true",
+            "direction": "input"
+          },
+          {
+            "id": "in:false",
+            "name": "false",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "type": "hdl",
+      "position": {
+        "x": 1512,
+        "y": 288
+      },
+      "width": 528,
+      "height": 240,
+      "data": {
+        "kind": "mux",
+        "ports": [
+          {
+            "id": "sel",
+            "name": "sel",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d0_",
+            "name": "{BYTE, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d1_",
+            "name": "{BYTE, 2'd1}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d2_",
+            "name": "{BYTE, 2'd2}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_BYTE_2_d3_",
+            "name": "{BYTE, 2'd3}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_HALF_2_d0_",
+            "name": "{HALF, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_HALF_2_d2_",
+            "name": "{HALF, 2'd2}",
+            "direction": "input"
+          },
+          {
+            "id": "in:_WORD_2_d0_",
+            "name": "{WORD, 2'd0}",
+            "direction": "input"
+          },
+          {
+            "id": "in:default",
+            "name": "default",
+            "direction": "input"
+          },
+          {
+            "id": "out",
+            "name": "out",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:enum_concat_case:address",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 204
+      },
+      "width": 168,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:address",
+            "name": "address",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:enum_concat_case:funct3",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 144,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:funct3",
+            "name": "funct3",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:enum_concat_case:write_enable",
+      "type": "hdl",
+      "position": {
+        "x": 2640,
+        "y": 156
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:write_enable",
+            "name": "write_enable",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:bus:enum_concat_case:funct3:comb:enum_concat_case:transfersize:expr:funct3_1:0_",
+      "source": "bus:enum_concat_case:funct3",
+      "target": "comb:enum_concat_case:transfersize:expr",
+      "sourceHandle": "out:funct3_1:0_",
+      "targetHandle": "port:funct3_1:0_",
+      "path": "M 528 144 L 552 144 L 720 144 L 744 144"
+    },
+    {
+      "id": "edge:bus:enum_concat_case:write_enable_sel:expr:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_sel",
+      "source": "bus:enum_concat_case:write_enable_sel:expr",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "out:write_enable_sel",
+      "targetHandle": "sel",
+      "path": "M 1296 144 L 1320 144 L 1776 144 L 1776 264 L 1776 312"
+    },
+    {
+      "id": "edge:comb:enum_concat_case:if_sel_n1:expr:mux:enum_concat_case:write_enable:if_sel_n1:write_enable:if_sel_n1",
+      "source": "comb:enum_concat_case:if_sel_n1:expr",
+      "target": "mux:enum_concat_case:write_enable:if_sel_n1:write_enable",
+      "sourceHandle": "out:if_sel_n1",
+      "targetHandle": "sel",
+      "path": "M 2040 72 L 2064 72 L 2328 72 L 2328 96 L 2328 144"
+    },
+    {
+      "id": "edge:comb:enum_concat_case:transfersize:expr:bus:enum_concat_case:write_enable_sel:expr:transfersize",
+      "source": "comb:enum_concat_case:transfersize:expr",
+      "target": "bus:enum_concat_case:write_enable_sel:expr",
+      "sourceHandle": "out:transfersize",
+      "targetHandle": "in:_3:2_",
+      "path": "M 936 144 L 960 144 L 1128 144 L 1152 144"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d0:4_b0001:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_BYTE_2_d0",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d0:4_b0001",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_BYTE_2_d0",
+      "targetHandle": "in:_BYTE_2_d0_",
+      "path": "M 1296 264 L 1320 264 L 1416 264 L 1416 336 L 1488 336 L 1512 336"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d1:4_b0010:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_BYTE_2_d1",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d1:4_b0010",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_BYTE_2_d1",
+      "targetHandle": "in:_BYTE_2_d1_",
+      "path": "M 1296 312 L 1320 312 L 1416 312 L 1416 360 L 1488 360 L 1512 360"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d2:4_b0100:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_BYTE_2_d2",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d2:4_b0100",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_BYTE_2_d2",
+      "targetHandle": "in:_BYTE_2_d2_",
+      "path": "M 1296 360 L 1320 360 L 1392 360 L 1392 384 L 1488 384 L 1512 384"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d3:4_b1000:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_BYTE_2_d3",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_BYTE_2_d3:4_b1000",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_BYTE_2_d3",
+      "targetHandle": "in:_BYTE_2_d3_",
+      "path": "M 1296 408 L 1320 408 L 1488 408 L 1512 408"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_default:4_bxxxx:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_default",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_default:4_bxxxx",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_default",
+      "targetHandle": "in:default",
+      "path": "M 1296 600 L 1320 600 L 1416 600 L 1416 504 L 1488 504 L 1512 504"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d0:4_b0011:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_HALF_2_d0",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d0:4_b0011",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_HALF_2_d0",
+      "targetHandle": "in:_HALF_2_d0_",
+      "path": "M 1296 456 L 1320 456 L 1392 456 L 1392 432 L 1488 432 L 1512 432"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d2:4_b1100:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_HALF_2_d2",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_HALF_2_d2:4_b1100",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_HALF_2_d2",
+      "targetHandle": "in:_HALF_2_d2_",
+      "path": "M 1296 504 L 1320 504 L 1392 504 L 1392 456 L 1488 456 L 1512 456"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_false_n0_WORD_2_d0:4_b1111:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:write_enable_if_false_n0_WORD_2_d0",
+      "source": "literal:enum_concat_case:write_enable_if_false_n0_WORD_2_d0:4_b1111",
+      "target": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "sourceHandle": "port:write_enable_if_false_n0_WORD_2_d0",
+      "targetHandle": "in:_WORD_2_d0_",
+      "path": "M 1296 552 L 1320 552 L 1416 552 L 1416 480 L 1488 480 L 1512 480"
+    },
+    {
+      "id": "edge:literal:enum_concat_case:write_enable_if_true_n0:4_b0000:mux:enum_concat_case:write_enable:if_sel_n1:write_enable:write_enable_if_true_n0",
+      "source": "literal:enum_concat_case:write_enable_if_true_n0:4_b0000",
+      "target": "mux:enum_concat_case:write_enable:if_sel_n1:write_enable",
+      "sourceHandle": "port:write_enable_if_true_n0",
+      "targetHandle": "in:true",
+      "path": "M 2040 144 L 2064 144 L 2160 144 L 2160 168 L 2232 168 L 2256 168"
+    },
+    {
+      "id": "edge:mux:enum_concat_case:write_enable:if_sel_n1:write_enable:port:enum_concat_case:write_enable:write_enable",
+      "source": "mux:enum_concat_case:write_enable:if_sel_n1:write_enable",
+      "target": "port:enum_concat_case:write_enable",
+      "sourceHandle": "out",
+      "targetHandle": "port:write_enable",
+      "path": "M 2400 168 L 2424 168 L 2616 168 L 2640 168"
+    },
+    {
+      "id": "edge:mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0:mux:enum_concat_case:write_enable:if_sel_n1:write_enable:write_enable_if_false_n0",
+      "source": "mux:enum_concat_case:write_enable:write_enable_sel:write_enable_if_false_n0",
+      "target": "mux:enum_concat_case:write_enable:if_sel_n1:write_enable",
+      "sourceHandle": "out",
+      "targetHandle": "in:false",
+      "path": "M 2040 408 L 2064 408 L 2160 408 L 2160 192 L 2232 192 L 2256 192"
+    },
+    {
+      "id": "edge:port:enum_concat_case:address:bus:enum_concat_case:write_enable_sel:expr:byte_index",
+      "source": "port:enum_concat_case:address",
+      "target": "bus:enum_concat_case:write_enable_sel:expr",
+      "sourceHandle": "port:address",
+      "targetHandle": "in:_1:0_",
+      "path": "M 936 216 L 960 216 L 1056 216 L 1056 192 L 1128 192 L 1152 192"
+    },
+    {
+      "id": "edge:port:enum_concat_case:funct3:bus:enum_concat_case:funct3:funct3",
+      "source": "port:enum_concat_case:funct3",
+      "target": "bus:enum_concat_case:funct3",
+      "sourceHandle": "port:funct3",
+      "targetHandle": "in:funct3",
+      "path": "M 168 144 L 192 144 L 360 144 L 384 144"
+    }
+  ]
+}
