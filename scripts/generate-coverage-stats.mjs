@@ -20,11 +20,19 @@ const outputPath = outputPathArg ?? 'coverage-stats.md';
 const summaryPath = path.join(coverageDir, 'coverage-summary.json');
 const reportIndexPath = path.join(coverageDir, 'index.html');
 
-const { GITHUB_REPOSITORY, GITHUB_TOKEN, PR_NUMBER } = process.env;
+const { GITHUB_REPOSITORY, GITHUB_TOKEN, PR_NUMBER, GITHUB_SERVER_URL, GITHUB_RUN_ID } = process.env;
 if (!GITHUB_REPOSITORY || !GITHUB_TOKEN || !PR_NUMBER) {
   throw new Error('GITHUB_REPOSITORY, GITHUB_TOKEN, and PR_NUMBER must be set');
 }
 const [owner, repo] = GITHUB_REPOSITORY.split('/');
+// GITHUB_SERVER_URL/GITHUB_RUN_ID are set by default on every GitHub Actions
+// runner (unlike the vars above, they don't need to be passed in via the
+// workflow's `env:`) — used below to link back to this run's log when the
+// gh-pages publish fails, since that's where the actual error lives.
+const runUrl =
+  GITHUB_SERVER_URL && GITHUB_RUN_ID
+    ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
+    : undefined;
 
 function formatMetric(metric) {
   if (!metric || metric.pct === 'Unknown') return 'N/A';
@@ -156,7 +164,8 @@ try {
 
 // Kept out of the try/catch above: a gh-pages publish timeout is unrelated
 // to whether the real coverage summary parsed fine, and shouldn't discard
-// it — only the "Browse full coverage report" link should be dropped.
+// it — only the "Browse full coverage report" link is swapped for a note
+// (with a link back to this run, since that's where the actual error is).
 if (fs.existsSync(reportIndexPath)) {
   try {
     publishReport();
@@ -164,6 +173,11 @@ if (fs.existsSync(reportIndexPath)) {
     sections.push(`[Browse full coverage report →](${reportUrl})`);
   } catch (err) {
     console.error('Failed to publish coverage report to gh-pages:', err);
+    sections.push(
+      runUrl
+        ? `_Coverage report unavailable — publish to gh-pages failed. See the [failing run](${runUrl}) for details._`
+        : '_Coverage report unavailable — publish to gh-pages failed._',
+    );
   }
 }
 
