@@ -587,18 +587,22 @@ function smoothPath(coords) {
   return d;
 }
 
-// One line per series across every recorded master run, positioned on a real
-// time scale (see xFor below). Unsquished (the visual suite's default): each
-// point a filled dot, with a month-tick x-axis. Squished (`squish: true`,
-// used by CI duration — see TREND_SQUISHED_WIDTH above): a single smoothed
-// curve with no per-point dots, since with hundreds of squished-together
-// points a dot per entry is just noise, and no per-point labels, since
-// they'd just overlap. Either way, the final segment — into the current, not
-// yet merged, point (if any) — is dashed, the same "texture cue, not color
-// alone" convention the stacked chart above uses for its own "new" bars; its
-// point/label are always drawn regardless of squish, since which point is
-// "not yet merged" is worth calling out. `series` defaults to the visual
-// suite's elaboration/rendering pair; passing a single-entry array (e.g. CI
+// One smoothed curve per series across every recorded master run, positioned
+// on a real time scale (see xFor below) — a plain polyline over that time
+// scale puts a sharp elbow at every point, and since points aren't evenly
+// spaced (irregular gaps between master pushes) those elbows read as a
+// crooked, jagged line rather than a trend. Unsquished (the visual suite's
+// default): the curve keeps a filled dot per point plus a month-tick x-axis,
+// since there are few enough points for both to stay legible. Squished
+// (`squish: true`, used by CI duration — see TREND_SQUISHED_WIDTH above):
+// the same smoothed curve but with no per-point dots or labels, since with
+// hundreds of squished-together points either would just be noise. Either
+// way, the final segment — into the current, not yet merged, point (if any)
+// — is dashed, the same "texture cue, not color alone" convention the
+// stacked chart above uses for its own "new" bars; its point/label are
+// always drawn regardless of squish, since which point is "not yet merged"
+// is worth calling out. `series` defaults to the visual suite's
+// elaboration/rendering pair; passing a single-entry array (e.g. CI
 // duration) draws one line instead.
 export function renderHistoryTrendChart({
   title,
@@ -688,8 +692,12 @@ export function renderHistoryTrendChart({
     `<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`,
   );
 
+  // Both branches share the same smoothed curve + dashed preview segment;
+  // squish additionally drops the per-point dots (noise at hundreds of
+  // points) in favor of one highlighted marker + label on the preview point,
+  // since there's no other axis labeling in squished mode to place it by.
   let currentLabelText = null;
-  const drawSeriesSquished = (key, color) => {
+  const drawSeries = (key, color) => {
     const coords = points.map((p) => ({
       x: xFor(p.dateMs),
       y: yFor(p[key]),
@@ -703,43 +711,35 @@ export function renderHistoryTrendChart({
         `<path d="${smoothPath(historyCoords)}" fill="none" stroke="${color}" stroke-width="2" />`,
       );
     }
-    if (currentCoord) {
-      if (historyCoords.length > 0) {
-        const prev = historyCoords[historyCoords.length - 1];
-        parts.push(
-          `<path d="M ${prev.x} ${prev.y} L ${currentCoord.x} ${currentCoord.y}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" />`,
-        );
-      }
+    if (currentCoord && historyCoords.length > 0) {
+      const prev = historyCoords[historyCoords.length - 1];
       parts.push(
-        `<circle cx="${currentCoord.x}" cy="${currentCoord.y}" r="5" fill="${COLORS.highlight}" stroke="${color}" stroke-width="2" />`,
-      );
-      currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
-    }
-  };
-  const drawSeries = (key, color) => {
-    for (let i = 0; i < points.length - 1; i += 1) {
-      const isPreviewSegment = points[i + 1].isCurrent;
-      const x1 = xFor(points[i].dateMs);
-      const y1 = yFor(points[i][key]);
-      const x2 = xFor(points[i + 1].dateMs);
-      const y2 = yFor(points[i + 1][key]);
-      parts.push(
-        `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`,
+        `<path d="M ${prev.x} ${prev.y} L ${currentCoord.x} ${currentCoord.y}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" />`,
       );
     }
-    points.forEach((p) => {
-      const x = xFor(p.dateMs);
-      const y = yFor(p[key]);
-      if (p.isCurrent) {
+
+    if (squish) {
+      if (currentCoord) {
         parts.push(
-          `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+          `<circle cx="${currentCoord.x}" cy="${currentCoord.y}" r="5" fill="${COLORS.highlight}" stroke="${color}" stroke-width="2" />`,
         );
-      } else {
-        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+        currentLabelText = `<text x="${currentCoord.x}" y="${originY + 18}" font-size="10" text-anchor="middle" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif" font-weight="600">${escapeXml(currentLabel)}</text>`;
       }
-    });
+    } else {
+      points.forEach((p) => {
+        const x = xFor(p.dateMs);
+        const y = yFor(p[key]);
+        if (p.isCurrent) {
+          parts.push(
+            `<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`,
+          );
+        } else {
+          parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+        }
+      });
+    }
   };
-  for (const { key, color } of series) (squish ? drawSeriesSquished : drawSeries)(key, color);
+  for (const { key, color } of series) drawSeries(key, color);
 
   // Squished: just the preview point's own label (currentLabelText above),
   // since per-point labels would overlap. Unsquished: month-only ticks in
