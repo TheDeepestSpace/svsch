@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectGraphAndScreenshot, fitGraphView, openFixture, paddedAllNodesClip } from './helper';
+import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
 
 test.describe('nested case visual rendering', () => {
   test('renders sibling nested-case arms with identical labels as distinct literal nodes', async ({
@@ -49,6 +50,9 @@ test.describe('nested case visual rendering', () => {
     await fitGraphView(page);
     await expectGraphAndScreenshot(page, 'nested-case-literal-collision-canvas.png', {
       clip: await paddedAllNodesClip(page),
+      // See SNAPSHOT_THRESHOLDS.playwright.visual.nestedCaseLiteralCollision
+      // for why this screenshot needs a wider tolerance (issue #339).
+      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.visual.nestedCaseLiteralCollision,
     });
   });
 });

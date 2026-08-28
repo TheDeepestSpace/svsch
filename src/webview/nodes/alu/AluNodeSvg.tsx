@@ -2,10 +2,15 @@ import React from 'react';
 import type { NodeSvgProps } from '../shared/NodeSvgProps';
 import { diagramSizing } from '../../../diagram/constants';
 import { muxRightTopY } from '../../../diagram/muxGeometry';
+import { aluInputPortTops } from '../../../diagram/aluGeometry';
 import { nodeOperation, nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
@@ -20,9 +25,9 @@ export function AluNodeSvg({
   const stackLayers = arrayStackLayersFor(stackWide);
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const hasInputSideConnection = (port: DiagramPort): boolean =>
     hasArrayConnection(port.id, 'target') ||
     (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
@@ -52,8 +57,8 @@ export function AluNodeSvg({
     `Z`,
   ].join(' ');
 
-  // Input port centers: top = (index === 0 ? g : g*3) - g/2, center = top + g/2
-  const inputYs = [g * 1, g * 3];
+  // Input port centers: top = aluInputPortTops(g)[index] - g/2, center = top + g/2
+  const inputYs = aluInputPortTops(g);
 
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const contentShiftX = isArray ? stackLayers.front.dx : 0;

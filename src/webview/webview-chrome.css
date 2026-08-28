@@ -77,6 +77,13 @@ select {
   display: flex;
   gap: 12px;
   min-height: 40px;
+  /* Without this, a flex row that can't fit its buttons forces this grid
+     row's implicit min-content width past the viewport, stretching the
+     whole .shell grid (including the canvas row) wider than what's visible
+     — see the "Auto Layout All" button regression on narrow VS Code
+     windows where the toolbar just barely stopped fitting. */
+  min-width: 0;
+  overflow-x: auto;
   padding: 6px 12px;
 }
 
@@ -1023,8 +1030,6 @@ select {
    separate buttons with a gap between them — Revert (when shown) and Tie
    sit flush against each other, sharing borders. */
 .hdl-net-label-actions {
-  align-items: center;
-  display: flex;
   opacity: 0;
   pointer-events: none;
   position: absolute;
@@ -1045,11 +1050,24 @@ select {
   visibility: visible;
 }
 
-.hdl-net-label-actions button:first-child {
+/* Counter-scales against the zoom baked into the react-flow node's
+   .react-flow__viewport transform, so the pill stays a constant screen
+   size instead of growing/shrinking with the canvas — matching the
+   Reroute/Cut edge controls (see svsch-edge-connection-controls-scale).
+   Anchored left-center: the outer element's translateX already hangs the
+   pill off the label's right edge, so scaling from the left keeps it
+   hugging the label instead of drifting further away. */
+.hdl-net-label-actions-scale {
+  align-items: center;
+  display: flex;
+  transform-origin: left center;
+}
+
+.hdl-net-label-actions-scale button:first-child {
   border-radius: 3px 0 0 3px;
 }
 
-.hdl-net-label-actions button:last-child {
+.hdl-net-label-actions-scale button:last-child {
   border-radius: 0 3px 3px 0;
   border-right: 1px solid var(--vscode-panel-border);
 }
@@ -1159,6 +1177,15 @@ select {
   pointer-events: all;
 }
 
+/* Counter-scales against the zoom baked into the foreignObject's ancestor
+   .react-flow__viewport transform, so these buttons stay a constant screen
+   size instead of scaling with the edge path. Anchored bottom-center to
+   match the foreignObject's own centered/bottom-hugging placement around
+   its edge point (see the showCutButton x/y math in OrthogonalEdge). */
+.svsch-edge-connection-controls-scale {
+  transform-origin: bottom center;
+}
+
 .svsch-edge-connection-controls-inner {
   display: flex;
   height: 22px;
@@ -1255,6 +1282,14 @@ kbd.svsch-shortcut-glyph {
   position: absolute;
 }
 
+/* Counter-scales against the zoom baked into svsch-overlay-portal-root's
+   transform (see that class above). Anchored top-left to match this
+   layer's plain left/top placement (no offsetting translate), so the
+   scale doesn't shift the button's flow-space anchor point. */
+.svsch-cut-stub-reset-scale {
+  transform-origin: top left;
+}
+
 .svsch-selection-toolbar-layer {
   inset: 0;
   overflow: visible;
@@ -1263,10 +1298,19 @@ kbd.svsch-shortcut-glyph {
 }
 
 .svsch-selection-toolbar {
-  display: flex;
   pointer-events: none;
   position: absolute;
   transform: translate(-100%, 8px);
+}
+
+/* Counter-scales the button markup against the zoom baked into
+   svsch-overlay-portal-root's transform, so the toolbar stays a constant
+   screen size instead of growing/shrinking with the canvas. Anchored at the
+   top-right corner to match svsch-selection-toolbar's translate(-100%, ...),
+   so the scale doesn't shift the toolbar's flow-space anchor point. */
+.svsch-selection-toolbar-scale {
+  display: flex;
+  transform-origin: top right;
 }
 
 .svsch-selection-toolbar button {

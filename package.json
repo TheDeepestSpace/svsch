@@ -2,9 +2,10 @@
   "name": "svsch",
   "displayName": "svsch",
   "description": "Generate interactive visual block diagrams from SystemVerilog projects.",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "publisher": "thedeepestspace",
   "license": "AGPL-3.0",
+  "icon": "icon.png",
   "bin": {
     "svsch": "./dist/cli.js"
   },
@@ -116,6 +117,7 @@
     "format": "prettier --write 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'test/**/*.{ts,tsx}' 'scripts/**/*.js'",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:backend": "node scripts/run-backend-tests.js",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots=changed",
@@ -159,6 +161,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/vscode": "^1.90.0",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.11",
     "@vscode/vsce": "^3.2.1",
     "diff": "^9.0.0",
     "eslint": "^9.39.5",
@@ -180,7 +183,7 @@
     "typescript-eslint": "^8.67.0",
     "typescript-eslint-ts-compat": "npm:typescript@6.0.3",
     "vite": "^8.0.16",
-    "vitest": "^4.1.0",
+    "vitest": "^4.1.11",
     "vscode-test-playwright": "^0.0.1-beta2"
   },
   "overrides": {
