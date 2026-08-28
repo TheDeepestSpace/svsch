@@ -64,8 +64,11 @@ import { LoopNodeSvg } from '../webview/nodes/loop/LoopNodeSvg';
 import { MuxNodeSvg } from '../webview/nodes/mux/MuxNodeSvg';
 import { SelectNodeSvg } from '../webview/nodes/mux/SelectNodeSvg';
 import { AluNodeSvg } from '../webview/nodes/alu/AluNodeSvg';
+import { ComparatorNodeSvg } from '../webview/nodes/comparator/ComparatorNodeSvg';
+import { ZextNodeSvg } from '../webview/nodes/zext/ZextNodeSvg';
 import { BusNodeSvg } from '../webview/nodes/bus/BusNodeSvg';
 import { InstanceNodeSvg } from '../webview/nodes/instance/InstanceNodeSvg';
+import { BoundaryPortNodeSvg } from '../webview/nodes/BoundaryPortNodeSvg';
 import { NetLabelWirePaths } from '../webview/nodes/shared/NetLabelWire';
 import { SvgArrayStackLeads } from '../webview/nodes/shared/SvgArrayStackLeads';
 import type { ArrayConnection, NodeSvgProps } from '../webview/nodes/shared/NodeSvgProps';
@@ -163,7 +166,8 @@ export function renderSvg(view: DiagramViewModel, options: SvgRendererOptions = 
     // Wrappers first so their fill renders behind the arm borders.
     ...[...(view.generateRegions ?? [])]
       .sort((a, b) => (a.isGenerateBlock ? 0 : 1) - (b.isGenerateBlock ? 0 : 1))
-      .map(renderGenerateRegion),
+      .map(renderGenerateRegion)
+      .filter(Boolean),
     '</g>',
     '<g class="svsch-edges">',
     ...renderedEdges.map(renderEdge),
@@ -276,10 +280,60 @@ export function svgBridgeCss(): string {
   stroke-dasharray: 7 5;
   stroke-width: 2;
 }
+/* Boundary-port node ("Expand instance in place", issue #232) — the DOM
+   version's .hdl-boundary-port rules are a flexbox layout with no equivalent
+   tree in the exported SVG (see BoundaryPortNodeSvg), so the label/lead are
+   drawn with plain SVG text/line elements and styled here instead. */
+.svsch-boundary-port-text {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+.svsch-boundary-port-lead {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  stroke-width: 1.5px;
+}
+.svsch-boundary-port-lead-thick {
+  stroke-width: 4.5px;
+}
+.svsch-boundary-port-lead-struct {
+  stroke: var(--vscode-editor-foreground);
+  stroke-dasharray: 2 2;
+}
+.svsch-boundary-port-lead-interface {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-dasharray: 2 2;
+}
+/* An expanded instance's own node, dimmed into a backdrop for its spliced-in
+   child diagram (see DiagramNodeMetadata.expandGhost) — same visual language
+   as the webview's .hdl-node-expand-ghost (dimmed + desaturated body, fully
+   transparent interior so spliced wires read at full brightness) minus the
+   DOM-only grab-band/resize-handle rules, which have no purpose in a static
+   export. */
+g.hdl-node-expand-ghost > svg.hdl-node-svg {
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+g.hdl-node-expand-ghost .svsch-node-shape {
+  fill: none;
+}
+.svsch-expand-content-border {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-charts-blue);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
 `.trim();
 }
 
 function renderGenerateRegion(region: PositionedGenerateRegion): string {
+  // An "Expand instance in place" region (issue #232) is pure bookkeeping —
+  // its bounds are exactly the expanded instance's own (ghost) node rect, and
+  // that node's own border already reads as the frame; unlike a real SV
+  // generate region it has no separate visible outline (see splice.ts's
+  // assembleSpliceResult).
+  if (region.kind === 'expand') return '';
   const classes = [
     'svsch-generate-region',
     region.isGenerateBlock ? 'svsch-generate-block' : '',
@@ -474,6 +528,19 @@ function connectionPortGeometry(
       default:
         return { offset: { x: 0, y: height / 2 }, side: 'WEST' };
     }
+  }
+  if (node.kind === 'boundaryPort') {
+    // The webview's Handles are keyed 'outer'/'inner' (see BoundaryPortNode),
+    // not a real DiagramPort id — renderedPortGeometry's elk-port lookup
+    // would never match, so resolve directly from `outerSide` the same way
+    // expandLayout.ts's boundaryInnerLead does for the 'inner' handle.
+    const { width, height } = resolvedNodeDimensions(node);
+    const outerSide = node.metadata?.boundaryPort?.outerSide ?? 'left';
+    const isOuterHandle = portId === 'outer';
+    const facesLeft = isOuterHandle ? outerSide === 'left' : outerSide === 'right';
+    return facesLeft
+      ? { offset: { x: 0, y: height / 2 }, side: 'WEST' }
+      : { offset: { x: width, y: height / 2 }, side: 'EAST' };
   }
   return visualHandleGeometry(node, portId) ?? renderedPortGeometry(node, portId, false, role);
 }
@@ -974,15 +1041,49 @@ function renderNode(node: PositionedNode, arrayConnections: ArrayConnection[] = 
   const content = renderNodeComponent(node, width, height, arrayConnections);
   return [
     `<g class="${escapeAttr(classes)}" data-node-id="${escapeAttr(node.id)}" data-node-kind="${escapeAttr(node.kind)}" transform="translate(${formatNumber(node.position.x)} ${formatNumber(node.position.y)})">`,
+    expandRingBackdrop(node, width, height),
     `<svg class="${escapeAttr(svgClasses)}" width="${formatNumber(width)}" height="${formatNumber(height)}" aria-hidden="true">`,
     content,
     '</svg>',
     nodeErrorOutline(node, width, height),
     nodeWarningIcon(node, width, height),
+    expandContentBorder(node, width, height),
     '</g>',
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+// Pure-SVG counterpart of the webview's four .svsch-expand-grab-band
+// backdrops. The even-odd inner subpath cuts out the child-diagram area,
+// leaving the dimmed editor-widget tint only on the expanded frame's ring.
+// This is emitted before the node SVG so its outline and labels stay on top.
+function expandRingBackdrop(node: PositionedNode, width: number, height: number): string {
+  const insets = node.metadata?.expandGhost?.insets;
+  if (!insets) return '';
+  const innerRight = Math.max(insets.left, width - insets.right);
+  const innerBottom = Math.max(insets.top, height - insets.bottom);
+  const path = [
+    `M0 0H${formatNumber(width)}V${formatNumber(height)}H0Z`,
+    `M${formatNumber(insets.left)} ${formatNumber(insets.top)}`,
+    `H${formatNumber(innerRight)}V${formatNumber(innerBottom)}H${formatNumber(insets.left)}Z`,
+  ].join('');
+  return `<path class="svsch-expand-ring-backdrop" d="${path}" fill="var(--vscode-editorWidget-background)" fill-rule="evenodd" opacity="0.35" style="filter:grayscale(0.4)" aria-hidden="true" />`;
+}
+
+// The dimmed instance's own frame border — the reserved ring around the
+// spliced-in child diagram (see DiagramNodeMetadata.expandGhost). Drawn as a
+// plain SVG rect: unlike the webview, the exported SVG has no separate grab
+// bands to hang this on, so it's simplest to draw directly here rather than
+// route it through a CSS-only bridge rule.
+function expandContentBorder(node: PositionedNode, width: number, height: number): string {
+  const insets = node.metadata?.expandGhost?.insets;
+  if (!insets) return '';
+  const x = insets.left;
+  const y = insets.top;
+  const w = Math.max(0, width - insets.left - insets.right);
+  const h = Math.max(0, height - insets.top - insets.bottom);
+  return `<rect class="svsch-expand-content-border" x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(w)}" height="${formatNumber(h)}" />`;
 }
 
 // Error highlight for a block overlapping an unrelated generate arm. SVG-skinned
@@ -1014,7 +1115,9 @@ function nodeUsesSvgSelectionOutline(node: PositionedNode): boolean {
     node.kind === 'select' ||
     node.kind === 'alu' ||
     node.kind === 'inverter' ||
-    node.kind === 'gate'
+    node.kind === 'gate' ||
+    node.kind === 'comparator' ||
+    node.kind === 'zext'
   )
     return true;
   return node.kind === 'interface' && structRole(node) !== 'modport';
@@ -1145,6 +1248,7 @@ function isPlaywrightFragment(value: unknown): value is PlaywrightJsxFragment {
 }
 
 function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
+  if (node.kind === 'boundaryPort') return BoundaryPortNodeSvg;
   if (node.kind === 'register') return RegisterNodeSvg;
   if (node.kind === 'latch') return LatchNodeSvg;
   if (node.kind === 'literal') return LiteralNodeSvg;
@@ -1158,6 +1262,8 @@ function nodeSvgComponent(node: DiagramNode): NodeSvgComponent {
   if (node.kind === 'mux') return MuxNodeSvg;
   if (node.kind === 'select') return SelectNodeSvg;
   if (node.kind === 'alu') return AluNodeSvg;
+  if (node.kind === 'comparator') return ComparatorNodeSvg;
+  if (node.kind === 'zext') return ZextNodeSvg;
   if (node.kind === 'bus' || node.kind === 'struct' || node.kind === 'interface') return BusNodeSvg;
   return InstanceNodeSvg;
 }
@@ -1193,6 +1299,19 @@ function nodeWrapperClasses(node: PositionedNode): string {
     return busWrapperClasses(node);
   }
 
+  if (node.kind === 'boundaryPort') {
+    const outerSide = node.metadata?.boundaryPort?.outerSide ?? 'left';
+    return [
+      'svsch-node',
+      'hdl-node',
+      'hdl-node-boundaryPort',
+      `svsch-boundary-port-outer-${outerSide}`,
+      node.invalid ? 'svsch-node-invalid' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
   return [
     'svsch-node',
     'hdl-node',
@@ -1200,6 +1319,7 @@ function nodeWrapperClasses(node: PositionedNode): string {
     node.kind === 'register' || node.kind === 'latch' ? 'hdl-register-node' : '',
     node.kind === 'instance' && instanceParameterRows(node) > 0 ? 'hdl-node-has-params' : '',
     nodeIsArrayNode(node) ? 'hdl-node-array' : '',
+    node.metadata?.expandGhost ? 'hdl-node-expand-ghost' : '',
     generateStateClass(node.metadata?.generateActiveState, 'generate-node') ?? '',
     node.invalid ? 'svsch-node-invalid' : '',
   ]

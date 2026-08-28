@@ -91,6 +91,53 @@ export function extractBaseline(benchmarkData, suiteName) {
   return baseline;
 }
 
+// Derives the historical per-master-run averages directly from
+// github-action-benchmark's own gh-pages payload (dev/bench/data.js) rather
+// than a separately maintained file — every master push already appends one
+// entry per tracked suite there (see the `auto-push` steps in ci.yml), so
+// this just re-shapes that data into the {sha, date, elaborationAvgMs,
+// renderingAvgMs} points the trend chart wants. Entries are matched across
+// suites by commit id (both are tracked in the same job run, so a push that
+// recorded one recorded the other) and any commit missing one side is
+// dropped rather than plotted with a gap.
+export function computeBenchmarkHistory(benchmarkData) {
+  const elaborationEntries =
+    benchmarkData?.entries?.['visual-elaboration-diagram-generation-duration'] ?? [];
+  const renderingByCommit = new Map(
+    (benchmarkData?.entries?.['visual-rendering-diagram-generation-duration'] ?? []).map(
+      (entry) => [entry.commit.id, entry],
+    ),
+  );
+  const average = (benches) => benches.reduce((sum, bench) => sum + bench.value, 0) / benches.length;
+  return elaborationEntries
+    .filter((entry) => renderingByCommit.has(entry.commit.id))
+    .map((entry) => ({
+      sha: entry.commit.id,
+      date: new Date(entry.date).toISOString(),
+      elaborationAvgMs: average(entry.benches),
+      renderingAvgMs: average(renderingByCommit.get(entry.commit.id).benches),
+    }));
+}
+
+// dev/bench/data.js only keeps the most recent MAX_ENTRIES_PER_SUITE raw
+// per-test entries per suite (trim-benchmark-history.mjs prunes the rest to
+// stay under git show's maxBuffer), but the {sha, date, elaborationAvgMs,
+// renderingAvgMs} points computeBenchmarkHistory derives from those entries
+// are tiny and worth keeping forever — so they're persisted separately, in
+// dev/bench/history-averages.json, and merged into rather than replaced on
+// every run. Existing entries win on sha collision (an average, once
+// computed, never changes); anything new is appended. Result stays
+// oldest-first, matching computeBenchmarkHistory's own ordering.
+export function mergeBenchmarkHistory(existingHistory, freshHistory) {
+  const bySha = new Map(existingHistory.map((entry) => [entry.sha, entry]));
+  for (const entry of freshHistory) {
+    if (!bySha.has(entry.sha)) {
+      bySha.set(entry.sha, entry);
+    }
+  }
+  return [...bySha.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
 // Joins each current-run entry with its baseline (if any) into the shape both
 // the chart and the delta table consume.
 export function computeDeltaRows(entries, baselineByName) {
@@ -237,7 +284,7 @@ function renderXLabels(names, originY, barPitch) {
   return parts.join('\n');
 }
 
-// Shared by renderStackedSuiteChart and the CSV export (comment-benchmark-summary.mjs)
+// Shared by renderStackedSuiteChart and the CSV export (generate-benchmark-stats.mjs)
 // so the CSV's row order always matches the chart's left-to-right bar order:
 // fastest-to-slowest by total (elaboration + rendering), not by name.
 export function computeStackedData(metrics) {
@@ -411,6 +458,185 @@ export function renderDeltaTableMarkdown(rows) {
   lines.push(`| **Avg** — across ${avg.count} test${avg.count === 1 ? '' : 's'} with a baseline | | ${avgSignNominal}${avg.avgNominal.toFixed(0)} ms (${avgSignPct}${avg.avgPct.toFixed(1)}%) |`);
 
   return lines.join('\n');
+}
+
+// Line-chart trend data prep: turns persisted history (oldest→newest, as
+// computed by computeBenchmarkHistory) plus the current — not yet merged —
+// PR run's averages into the ordered point list both
+// renderHistoryTrendChart and its tests consume, so "which point is the PR
+// preview" can never disagree between them. Each point carries a numeric
+// `dateMs` (rather than a display label) so the chart can place it on a real
+// time scale; `currentRunAverages.dateMs` is the chart-generation timestamp,
+// threaded in by the caller since the current run has no persisted date yet.
+export function computeHistoryTrendData(history, currentRunAverages) {
+  const points = history.map((entry) => ({
+    dateMs: new Date(entry.date).getTime(),
+    elaborationAvgMs: entry.elaborationAvgMs,
+    renderingAvgMs: entry.renderingAvgMs,
+    isCurrent: false,
+  }));
+  points.push({
+    dateMs: currentRunAverages.dateMs,
+    elaborationAvgMs: currentRunAverages.elaborationAvgMs,
+    renderingAvgMs: currentRunAverages.renderingAvgMs,
+    isCurrent: true,
+  });
+  return points;
+}
+
+const TREND_LEFT_MARGIN = 60;
+const TREND_RIGHT_MARGIN = 24;
+const TREND_TOP_MARGIN = 92;
+const TREND_PANEL_HEIGHT = 220;
+const TREND_LABEL_AREA_HEIGHT = 40;
+// Plot width now scales with the actual time span rather than the point
+// count (spacing is time-driven, not index-driven) — bounded so two
+// widely-spaced commits don't render as a single cramped segment and 200
+// tightly-clustered ones don't blow the chart out to an unreadable width.
+const TREND_MIN_PLOT_WIDTH = 480;
+const TREND_MAX_PLOT_WIDTH = 1400;
+const TREND_PX_PER_DAY = 20;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MONTH_LABELS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+const TREND_LEGEND_ITEMS = [
+  { fill: COLORS.blue, label: 'Elaboration avg' },
+  { fill: COLORS.purple, label: 'Rendering avg' },
+];
+const TREND_HEADING_TEXT =
+  'Average duration per master run (ms) — dashed segment is this PR, not yet merged';
+
+// x-axis ticks for the trend chart: one per calendar month between the first
+// of the month at-or-before `minDateMs` and `maxDateMs`, independent of how
+// many (if any) actual data points fall in a given month — replaces the old
+// per-commit SHA labels, which didn't scale past a handful of points. Labels
+// pick up a two-digit year suffix only when the whole range spans more than
+// one calendar year, since otherwise it's dead weight on every tick.
+export function computeMonthTicks(minDateMs, maxDateMs) {
+  const isValidRange =
+    Number.isFinite(minDateMs) && Number.isFinite(maxDateMs) && minDateMs <= maxDateMs;
+  if (!isValidRange) return [];
+  const minDate = new Date(minDateMs);
+  const maxDate = new Date(maxDateMs);
+  const spansMultipleYears = minDate.getUTCFullYear() !== maxDate.getUTCFullYear();
+
+  const ticks = [];
+  let year = minDate.getUTCFullYear();
+  let month = minDate.getUTCMonth();
+  while (true) {
+    const tickMs = Date.UTC(year, month, 1);
+    if (tickMs > maxDateMs) break;
+    const label = spansMultipleYears
+      ? `${MONTH_LABELS[month]} '${String(year % 100).padStart(2, '0')}`
+      : MONTH_LABELS[month];
+    ticks.push({ dateMs: tickMs, label });
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
+  }
+  return ticks;
+}
+
+// One line per metric (elaboration, rendering) across every recorded master
+// run, each point a filled dot; the final segment — into the current, not
+// yet merged, PR run — is dashed and its point drawn hollow rather than
+// filled, the same "texture cue, not color alone" convention the stacked
+// chart above uses for its own "new" bars, so the preview point reads as
+// unconfirmed even in grayscale.
+export function renderHistoryTrendChart({ title, history, currentRunAverages }) {
+  const points = computeHistoryTrendData(history, currentRunAverages);
+  const dateMsValues = points.map((p) => p.dateMs);
+  const minDateMs = Math.min(...dateMsValues);
+  const maxDateMs = Math.max(...dateMsValues);
+  const dateSpanMs = maxDateMs - minDateMs;
+
+  const naturalPlotWidth = points.length <= 1 || dateSpanMs === 0
+    ? TREND_MIN_PLOT_WIDTH
+    : Math.min(
+        TREND_MAX_PLOT_WIDTH,
+        Math.max(TREND_MIN_PLOT_WIDTH, (dateSpanMs / MS_PER_DAY) * TREND_PX_PER_DAY),
+      );
+  const width = Math.max(
+    TREND_LEFT_MARGIN + naturalPlotWidth + TREND_RIGHT_MARGIN,
+    legendWidth(24, TREND_LEGEND_ITEMS),
+    estimateTextWidth(title, 18) + 48,
+    (TREND_LEFT_MARGIN - 12) + estimateTextWidth(TREND_HEADING_TEXT, 14) + TREND_RIGHT_MARGIN
+  );
+  // Stretch the plot itself to fill whatever width won above (rather than
+  // leaving the time-span-driven natural width as blank space to its right)
+  // so the graph always fills the full chart, margins aside — the whole
+  // point of rendering it at width="100%" in the PR comment.
+  const plotWidth = width - TREND_LEFT_MARGIN - TREND_RIGHT_MARGIN;
+  const height = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT + TREND_LABEL_AREA_HEIGHT;
+  const originY = TREND_TOP_MARGIN + TREND_PANEL_HEIGHT;
+
+  const maxValue = Math.max(1, ...points.flatMap((p) => [p.elaborationAvgMs, p.renderingAvgMs]));
+  const step = niceStep(maxValue);
+  const chartMax = Math.ceil((maxValue * 1.18) / step) * step || step;
+  const scale = TREND_PANEL_HEIGHT / chartMax;
+
+  const xFor = (dateMs) => (points.length <= 1 || dateSpanMs === 0
+    ? TREND_LEFT_MARGIN + plotWidth / 2
+    : TREND_LEFT_MARGIN + ((dateMs - minDateMs) / dateSpanMs) * plotWidth);
+  const yFor = (value) => originY - value * scale;
+
+  const parts = [];
+  parts.push(`<text x="${TREND_LEFT_MARGIN - 12}" y="${originY - TREND_PANEL_HEIGHT - 10}" font-size="14" font-weight="600" fill="${COLORS.ink}" font-family="system-ui, -apple-system, sans-serif">${TREND_HEADING_TEXT}</text>`);
+
+  for (let tick = 0; tick <= chartMax; tick += step) {
+    const y = originY - tick * scale;
+    parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${y}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${y}" stroke="${COLORS.gridline}" stroke-width="1" />`);
+    parts.push(`<text x="${TREND_LEFT_MARGIN - 10}" y="${y + 4}" font-size="11" text-anchor="end" fill="${COLORS.inkMuted}" font-family="system-ui, -apple-system, sans-serif">${Math.round(tick)}</text>`);
+  }
+  parts.push(`<line x1="${TREND_LEFT_MARGIN}" y1="${originY}" x2="${TREND_LEFT_MARGIN + plotWidth}" y2="${originY}" stroke="${COLORS.axis}" stroke-width="1.5" />`);
+
+  const drawSeries = (key, color) => {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const isPreviewSegment = points[i + 1].isCurrent;
+      const x1 = xFor(points[i].dateMs);
+      const y1 = yFor(points[i][key]);
+      const x2 = xFor(points[i + 1].dateMs);
+      const y2 = yFor(points[i + 1][key]);
+      parts.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="2" ${isPreviewSegment ? 'stroke-dasharray="5,4"' : ''} />`);
+    }
+    points.forEach((p) => {
+      const x = xFor(p.dateMs);
+      const y = yFor(p[key]);
+      if (p.isCurrent) {
+        parts.push(`<circle cx="${x}" cy="${y}" r="4.5" fill="${COLORS.surface}" stroke="${color}" stroke-width="2" />`);
+      } else {
+        parts.push(`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`);
+      }
+    });
+  };
+  drawSeries('elaborationAvgMs', COLORS.blue);
+  drawSeries('renderingAvgMs', COLORS.purple);
+
+  // Month-only ticks in place of the old per-point SHA labels — clamped into
+  // the plot area since the first tick (first-of-month at-or-before the
+  // earliest point) can fall before minDateMs and would otherwise land under
+  // the y-axis labels.
+  const monthTicks = computeMonthTicks(minDateMs, maxDateMs);
+  const tickParts = monthTicks.map((tick) => {
+    const rawX = xFor(tick.dateMs);
+    const x = Math.min(Math.max(rawX, TREND_LEFT_MARGIN), TREND_LEFT_MARGIN + plotWidth);
+    return [
+      `<line x1="${x}" y1="${originY}" x2="${x}" y2="${originY + 5}" stroke="${COLORS.axis}" stroke-width="1" />`,
+      `<text x="${x}" y="${originY + 16}" font-size="10" text-anchor="middle" fill="${COLORS.inkSecondary}" font-family="system-ui, -apple-system, sans-serif">${escapeXml(tick.label)}</text>`,
+    ].join('\n');
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="0" y="0" width="${width}" height="${height}" fill="${COLORS.surface}" />
+  <text x="24" y="34" font-size="18" font-weight="600" fill="${COLORS.ink}">${escapeXml(title)}</text>
+  ${renderLegend(24, 52, TREND_LEGEND_ITEMS)}
+  ${parts.join('\n')}
+  ${tickParts.join('\n')}
+</svg>`;
 }
 
 // Benchmark names come from spec filenames and test titles (see

@@ -791,6 +791,77 @@ text {
   opacity: 1;
 }
 
+/* "Expand instance in place" (issue #232): the expanded instance's own node
+   stays on screen as a dimmed backdrop — full outline, parameters, port
+   labels and all — behind the unfolded content spliced on top of it (see
+   expandOverlay's dimAsExpandGhost). Same lift-on-select convention as
+   .generate-node-inactive above: selecting the ghost (to reveal the
+   "Collapse" control) restores full brightness rather than fading the
+   selection outline along with the rest of it.
+
+   The interior (the sub-diagram area inside the border ring) is fully
+   transparent: the webview's stacking order paints every node above every
+   wire (see .react-flow__nodes in webview-chrome.css), so any body fill here
+   would veil the spliced wires under it and dim them relative to top-level
+   wires. Only the border-ring grab bands carry the translucent backdrop. */
+.hdl-node-expand-ghost .hdl-node {
+  background: transparent;
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+
+.hdl-node-expand-ghost .hdl-node .svsch-node-shape {
+  fill: none;
+}
+
+.hdl-node-expand-ghost .svsch-expand-grab-band {
+  background: var(--vscode-editorWidget-background);
+}
+
+/* The ring's inner boundary, drawn so the user can see where the frame's own
+   grab/interaction area ends and the sub-canvas begins — wire routes are
+   clamped to stay inside it (see OrthogonalEdge's clampPointsToRect pass). */
+.hdl-node-expand-ghost .svsch-expand-content-border {
+  border: 1px dashed var(--vscode-charts-blue);
+  pointer-events: none;
+  position: absolute;
+}
+
+.react-flow__node.selected.hdl-node-expand-ghost .hdl-node {
+  filter: none;
+  opacity: 0.75;
+}
+
+/* While expanded, the boundary-port nodes render each port's label at full
+   brightness exactly where the instance's own (now dimmed) label sits — hide
+   the instance's copy so the two don't read as a doubled label. */
+.hdl-node-expand-ghost .svsch-port-label {
+  visibility: hidden;
+}
+
+/* The sub-diagram area inside the expanded frame behaves like ordinary
+   canvas: the ghost's whole wrapper is pointer-transparent (!important beats
+   React Flow's inline pointerEvents: all), so middle-drag pans and clicks
+   fall through to the pane there. The frame itself is only selectable/
+   draggable from the grab bands HdlNode lays over its reserved border ring
+   (header rows, boundary-label columns, bottom inset — see ExpandGrabBands),
+   plus its resize handles, which sit on that ring anyway. */
+.react-flow__node.hdl-node-expand-ghost {
+  pointer-events: none !important;
+}
+
+.svsch-expand-grab-band {
+  position: absolute;
+}
+
+.hdl-node-expand-ghost .svsch-expand-grab-band {
+  pointer-events: auto;
+}
+
+.hdl-node-expand-ghost .svsch-node-resize-handle {
+  pointer-events: auto;
+}
+
 .hdl-node-has-params {
   grid-template-rows: 16px var(--svsch-instance-param-height) calc(var(--svsch-node-header-height) - 16px) 1fr;
 }
@@ -869,13 +940,16 @@ text {
 .hdl-node-select,
 .hdl-node-alu,
 .hdl-node-inverter,
-.hdl-node-gate {
+.hdl-node-gate,
+.hdl-node-comparator,
+.hdl-node-zext {
   background: transparent;
   box-shadow: none;
 }
 
 .hdl-node-inverter,
-.hdl-node-gate {
+.hdl-node-gate,
+.hdl-node-zext {
   padding: 0;
 }
 
@@ -1018,7 +1092,9 @@ text {
 .hdl-node-select:focus,
 .hdl-node-alu:focus,
 .hdl-node-inverter:focus,
-.hdl-node-gate:focus {
+.hdl-node-gate:focus,
+.hdl-node-comparator:focus,
+.hdl-node-zext:focus {
   outline: none;
 }
 
@@ -1031,7 +1107,11 @@ text {
 .hdl-node-inverter>.node-kind,
 .hdl-node-inverter>.node-title,
 .hdl-node-gate>.node-kind,
-.hdl-node-gate>.node-title {
+.hdl-node-gate>.node-title,
+.hdl-node-comparator>.node-kind,
+.hdl-node-comparator>.node-title,
+.hdl-node-zext>.node-kind,
+.hdl-node-zext>.node-title {
   display: none;
 }
 
@@ -1388,7 +1468,11 @@ text {
 .hdl-node-inverter:focus .node-skin-selection,
 .hdl-node-inverter:focus-visible .node-skin-selection,
 .hdl-node-gate:focus .node-skin-selection,
-.hdl-node-gate:focus-visible .node-skin-selection {
+.hdl-node-gate:focus-visible .node-skin-selection,
+.hdl-node-comparator:focus .node-skin-selection,
+.hdl-node-comparator:focus-visible .node-skin-selection,
+.hdl-node-zext:focus .node-skin-selection,
+.hdl-node-zext:focus-visible .node-skin-selection {
   opacity: 1;
 }
 
@@ -1612,6 +1696,113 @@ text {
   left: 50%;
 }
 
+/* Boundary-port node ("Expand instance in place", issue #232) — label-only,
+   anchored flush to the expanded node's border. The 12px padding on the
+   outer side is the same border inset the instance's own port labels use
+   (InstanceNodeSvg's `x={12}`/`x={width - 12}`), so the label doesn't shift
+   horizontally when the instance expands; the flex-growing lead fills the
+   rest of the node from the label's inner edge to the inner handle, so no
+   wire segment is ever drawn across the text. */
+.hdl-boundary-port {
+  align-items: center;
+  box-sizing: border-box;
+  color: var(--vscode-editor-foreground);
+  display: flex;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  gap: 4px;
+  height: var(--svsch-node-height);
+  overflow: visible;
+  position: relative;
+  width: var(--svsch-node-width);
+}
+
+.hdl-boundary-port-outer-left {
+  padding-left: 12px;
+}
+
+.hdl-boundary-port-outer-right {
+  padding-right: 12px;
+}
+
+.hdl-boundary-port-text {
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hdl-boundary-port-selected .hdl-boundary-port-text {
+  color: var(--vscode-focusBorder);
+}
+
+/* The visible continuation of the internal wire on the label's other side —
+   1.5px tall to match .svsch-edge's stroke-width, vertically centered on the
+   same y the handles (top: 50%) put the wire endpoints on. */
+.hdl-boundary-port-lead {
+  background: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  flex: 1;
+  height: 1.5px;
+}
+
+/* Wire-style variants mirroring the edge classes so the lead reads as a stub
+   of the wire it continues: 4.5px matches .svsch-edge-thick, and the 8px
+   striped bands recreate .svsch-edge-struct / .svsch-edge-interface's
+   pattern strokes (2px stripes on a 10px 45° period over the same dimmed
+   -bg backing color) with a CSS gradient, since the lead is a span, not an
+   SVG path that could reference the shared <pattern> defs. */
+.hdl-boundary-port-lead-thick {
+  height: 4.5px;
+}
+
+.hdl-boundary-port-lead-struct,
+.hdl-boundary-port-lead-interface {
+  background-color: color-mix(in srgb, color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background)) 50%, var(--vscode-editor-background));
+  height: 8px;
+}
+
+.hdl-boundary-port-lead-struct {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--vscode-editor-foreground) 0,
+    var(--vscode-editor-foreground) 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
+.hdl-boundary-port-lead-interface {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground)) 0,
+    color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground)) 2px,
+    transparent 2px,
+    transparent 10px
+  );
+}
+
+.hdl-boundary-port-selected .hdl-boundary-port-lead {
+  background: var(--vscode-focusBorder);
+}
+
+.hdl-boundary-port .react-flow__handle {
+  background: transparent;
+  border: 0;
+  height: 0;
+  min-height: 0;
+  min-width: 0;
+  pointer-events: all;
+  width: 0;
+}
+
+.hdl-boundary-port .react-flow__handle-left {
+  left: 0;
+  top: 50%;
+}
+
+.hdl-boundary-port .react-flow__handle-right {
+  right: 0;
+  top: 50%;
+}
+
 .hdl-node-inverter>.react-flow__handle-left,
 .hdl-node-inverter>.react-flow__handle-right {
   background: transparent;
@@ -1628,6 +1819,25 @@ text {
 }
 
 .hdl-node-inverter>.react-flow__handle-right {
+  right: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-left,
+.hdl-node-zext>.react-flow__handle-right {
+  background: transparent;
+  border: 0;
+  height: 0;
+  min-height: 0;
+  min-width: 0;
+  pointer-events: all;
+  width: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-left {
+  left: 0;
+}
+
+.hdl-node-zext>.react-flow__handle-right {
   right: 0;
 }
 
@@ -1916,6 +2126,20 @@ text {
 .svsch-node-shape.hdl-node-gate {
   fill: color-mix(in srgb, white 36%, var(--vscode-editor-background));
   stroke: white;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-comparator .svsch-node-shape,
+.svsch-node-shape.hdl-node-comparator {
+  fill: color-mix(in srgb, var(--vscode-charts-blue) 14%, var(--vscode-editor-background));
+  stroke: var(--vscode-charts-blue);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.hdl-node-zext .svsch-node-shape,
+.svsch-node-shape.hdl-node-zext {
+  fill: color-mix(in srgb, var(--vscode-descriptionForeground) 10%, var(--vscode-editor-background));
+  stroke: var(--vscode-descriptionForeground);
   stroke-linejoin: round;
   stroke-width: 1.5;
 }
@@ -2441,6 +2665,50 @@ path.port-skin-body.port-skin-harness {
   stroke: var(--svsch-error-highlight, var(--vscode-charts-red));
   stroke-dasharray: 7 5;
   stroke-width: 2;
+}
+/* Boundary-port node ("Expand instance in place", issue #232) — the DOM
+   version's .hdl-boundary-port rules are a flexbox layout with no equivalent
+   tree in the exported SVG (see BoundaryPortNodeSvg), so the label/lead are
+   drawn with plain SVG text/line elements and styled here instead. */
+.svsch-boundary-port-text {
+  fill: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+.svsch-boundary-port-lead {
+  stroke: color-mix(in srgb, var(--vscode-editor-foreground) 68%, var(--vscode-editor-background));
+  stroke-width: 1.5px;
+}
+.svsch-boundary-port-lead-thick {
+  stroke-width: 4.5px;
+}
+.svsch-boundary-port-lead-struct {
+  stroke: var(--vscode-editor-foreground);
+  stroke-dasharray: 2 2;
+}
+.svsch-boundary-port-lead-interface {
+  stroke: color-mix(in srgb, var(--vscode-charts-blue) 60%, var(--vscode-editor-foreground));
+  stroke-dasharray: 2 2;
+}
+/* An expanded instance's own node, dimmed into a backdrop for its spliced-in
+   child diagram (see DiagramNodeMetadata.expandGhost) — same visual language
+   as the webview's .hdl-node-expand-ghost (dimmed + desaturated body, fully
+   transparent interior so spliced wires read at full brightness) minus the
+   DOM-only grab-band/resize-handle rules, which have no purpose in a static
+   export. */
+g.hdl-node-expand-ghost > svg.hdl-node-svg {
+  filter: grayscale(0.4);
+  opacity: 0.35;
+}
+g.hdl-node-expand-ghost .svsch-node-shape {
+  fill: none;
+}
+.svsch-expand-content-border {
+  fill: none;
+  pointer-events: none;
+  stroke: var(--vscode-charts-blue);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
 }
 /*]]>*/
 </style>

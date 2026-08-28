@@ -9,7 +9,11 @@ import { buildDesignGraph } from '../../src/parser/backend';
 import { buildViewModel, mergeNodePositions } from '../../src/layout/mergeLayout';
 import { compareGraphState, assertBaselineCreatable } from '../graphRegression';
 import { comparePngBuffers, type PngCompareBox } from '../pngSnapshotComparison';
-import { SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import {
+  SNAPSHOT_THRESHOLDS,
+  bddPixelmatchMaxDiffPixels,
+  bddVisualDiffsDir,
+} from '../snapshotPolicy';
 
 // ---------------------------------------------------------------------------
 // BddWorld — mutable per-scenario state, analogous to old CustomWorld
@@ -72,12 +76,16 @@ export class BddWorld {
   // scenarios can assert the position was preserved.
   movedToPositions: Map<string, { x: number; y: number }> = new Map();
   notedRoutes: Map<string, string> = new Map();
+  // Viewport transform captured before a canvas pan, for "the canvas should
+  // have panned" assertions.
+  notedViewportTransform?: string;
 
   // -------------------------------------------------------------------------
   // Screenshot / snapshot helpers
   // -------------------------------------------------------------------------
 
   async takeScreenshot(label: string): Promise<Buffer | null> {
+    await this._fitDiagramIfClipped();
     await this._settleWorkbenchForScreenshot();
     const screenshot = await this.workbox.screenshot();
     await this._attachBuffer(screenshot, 'image/png');
@@ -233,7 +241,7 @@ export class BddWorld {
     compareBox: PngCompareBox | null = null,
   ): Promise<void> {
     const snapshotsDir = path.join(process.cwd(), 'test', 'features', 'snapshots');
-    const resultsDir = path.join(process.cwd(), 'test-results', 'bdd', 'visual-diffs');
+    const resultsDir = bddVisualDiffsDir();
     if (!fs.existsSync(snapshotsDir)) fs.mkdirSync(snapshotsDir, { recursive: true });
     const updateSnapshots = this.updateSnapshots || !!process.env.UPDATE_SNAPSHOTS;
 
@@ -260,7 +268,7 @@ export class BddWorld {
     const comparison = comparePngBuffers(
       expectedBuffer,
       actualBuffer,
-      SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+      bddPixelmatchMaxDiffPixels(snapshotName),
       SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
       compareBox,
     );
@@ -562,6 +570,46 @@ export class BddWorld {
     }
 
     await refreshFilesExplorer(this.workbox, this.evaluateInVSCode);
+    await this._waitForViewportTransformToSettle();
+  }
+
+  // Cheap in-page check so screenshots are self-correcting when a prior
+  // action (drag, cut-net tie-back, module switch) pushed a node outside the
+  // visible pane: only pay for a fit-view click + settle-wait when something
+  // is actually clipped, not on every screenshot.
+  async _fitDiagramIfClipped(): Promise<void> {
+    const isFullyInView = await this.webviewPage
+      .locator('body')
+      .evaluate(() => {
+        const rf = (window as any).reactFlowInstance;
+        const pane = document.querySelector('.react-flow__pane');
+        if (!rf || !pane) return true;
+        const { x: vx, y: vy, zoom } = rf.getViewport();
+        const paneRect = (pane as HTMLElement).getBoundingClientRect();
+        const epsilon = 0.5;
+        return rf.getNodes().every((n: any) => {
+          const w = n.measured?.width ?? n.width ?? 0;
+          const h = n.measured?.height ?? n.height ?? 0;
+          if (!w || !h) return true;
+          const left = n.position.x * zoom + vx;
+          const top = n.position.y * zoom + vy;
+          return (
+            left >= -epsilon &&
+            top >= -epsilon &&
+            left + w * zoom <= paneRect.width + epsilon &&
+            top + h * zoom <= paneRect.height + epsilon
+          );
+        });
+      })
+      .catch(() => true);
+
+    if (isFullyInView) return;
+
+    await this.webviewPage.locator('.react-flow__controls-fitview').click();
+    await this._waitForViewportTransformToSettle();
+  }
+
+  async _waitForViewportTransformToSettle(): Promise<void> {
     await this.webviewPage
       .locator('body')
       .evaluate(async () => {

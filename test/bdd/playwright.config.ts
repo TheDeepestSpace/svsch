@@ -3,7 +3,7 @@ import type { VSCodeWorkerOptions, VSCodeTestOptions } from 'vscode-test-playwri
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import path from 'path';
 import os from 'os';
-import { configuredPlaywrightUpdateMode, SNAPSHOT_THRESHOLDS } from '../snapshotPolicy';
+import { configuredPlaywrightUpdateMode } from '../snapshotPolicy';
 
 const root = path.resolve(__dirname, '../..');
 const vscodeVersion = process.env.VSCODE_VERSION || '1.91.0';
@@ -41,6 +41,12 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   globalSetup: path.resolve(__dirname, 'globalSetup.ts'),
   globalTeardown: path.resolve(__dirname, '../globalTeardown.ts'),
   testDir: outputDir,
+  // Required for `--shard` to split individual scenarios across shards. Without
+  // it, Playwright treats each spec file as an atomic unit when sharding, and
+  // playwright-bdd compiles each .feature file into a single spec file — with
+  // only 5 feature files, shards beyond the 5th would sit empty. workers stays
+  // 1, so this doesn't change execution concurrency within a shard.
+  fullyParallel: true,
   // The resize/persist round-trip (CSS custom property -> React Flow's
   // ResizeObserver-driven `measured` size) occasionally takes longer than a
   // scenario's poll timeout to converge on CI runners; one retry absorbs
@@ -53,10 +59,6 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
   workers: 1,
   timeout: 120_000,
   reporter: reporters,
-  snapshotDir: path.join(root, 'test/features/__screenshots__', vscodeVersion),
-  expect: {
-    toHaveScreenshot: { maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.bdd },
-  },
   use: {
     extensionDevelopmentPath: root,
     // Use a minimal workspace with no .sv files at startup; scenarios write
@@ -65,6 +67,25 @@ export default defineConfig<VSCodeTestOptions, VSCodeWorkerOptions>({
     deviceScaleFactor: 1,
     vscodeVersion,
     vscodeTrace: 'retain-on-failure',
+    // Keep every CI video for the review gallery. The earlier ENOSPC failures
+    // were caused by an orphaned VS Code utility process flooding its inherited
+    // runner log pipe, not by the videos (a complete run is about 40 MiB at
+    // this size). Local runs keep only failures to avoid leaving routine debris.
+    // Provided by our vscode-test-playwright patch — upstream has no video
+    // support (recordVideo is passed to the Electron launch).
+    //
+    // Downscaled well below the 1400x1000 viewport: every scenario records
+    // (even passing ones — we don't know a test failed until it's over, so
+    // the in-progress recording is deleted afterwards rather than skipped),
+    // and a hung close (see closeElectronApp's 5s force-kill path, and the
+    // 15s context.close() budget above it in the patch) lets a still-running
+    // renderer keep emitting video frames for that whole window before being
+    // killed. A smaller frame bounds how much a single stuck scenario can
+    // write in that window; still plenty to see what a failure looked like.
+    vscodeVideo: {
+      mode: process.env.CI ? 'on' : 'retain-on-failure',
+      size: { width: 640, height: 460 },
+    },
     viewport: { width: 1400, height: 1000 },
   },
 });

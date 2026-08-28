@@ -9,6 +9,8 @@ export type DiagramNodeKind =
   | 'alu'
   | 'inverter'
   | 'gate'
+  | 'comparator'
+  | 'zext'
   | 'bus'
   | 'struct'
   | 'interface'
@@ -17,7 +19,8 @@ export type DiagramNodeKind =
   | 'loop'
   | 'replicate'
   | 'unknown'
-  | 'netLabel';
+  | 'netLabel'
+  | 'boundaryPort';
 
 /** Boolean gate node operation — drives which glyph GateNodeSvg draws. */
 export type GateOperation = 'and' | 'or' | 'xor' | 'nand' | 'nor' | 'xnor';
@@ -119,6 +122,42 @@ export interface DiagramNodeMetadata {
   generateRegionId?: string;
   generateActiveState?: string;
   handlePosition?: 'left' | 'top' | 'right' | 'bottom' | string;
+  /**
+   * Present only on `kind: 'boundaryPort'` nodes synthesized client-side when
+   * splicing an expanded instance's child module in place (see "Expand" in
+   * NodeSelectionToolbar / webview/expand). `outerSide` is which side of the
+   * node faces away from the expanded region's interior (where the parent's
+   * pre-existing wire keeps landing, unchanged); the opposite side faces the
+   * spliced-in internal nodes.
+   */
+  boundaryPort?: {
+    instanceId: string;
+    childModuleName: string;
+    childPortId: string;
+    outerSide: 'left' | 'right';
+    /**
+     * Wire style of the net passing through this port, mirrored from the
+     * child module's own annotated edges (see annotateWireStyles) so the
+     * node's drawn lead stub matches the struct/interface/multi-bit style of
+     * the wire it continues — same idea as cutNet.edgeStyle on netLabel
+     * nodes.
+     */
+    edgeStyle?: {
+      aggregate?: 'struct' | 'interface' | string;
+      thick?: boolean;
+    };
+  };
+  /**
+   * Present only on an expanded instance's own node once
+   * `applyExpandedInstances`/`applyActiveSplices` has dimmed it into a
+   * backdrop for its spliced-in child diagram (see webview/expand). `insets`
+   * is the frame's reserved border ring (ExpandContentInsets in
+   * webview/expand/splice.ts) — the only part of the node's body that isn't
+   * covered by spliced content.
+   */
+  expandGhost?: {
+    insets: { top: number; left: number; right: number; bottom: number };
+  };
   cutNet?: {
     netKey: string;
     role: 'source' | 'sink';
@@ -212,6 +251,12 @@ export interface GateDiagramNode extends BaseDiagramNode {
   kind: 'gate';
   operation?: GateOperation | string;
 }
+export interface ComparatorDiagramNode extends BaseDiagramNode {
+  kind: 'comparator';
+}
+export interface ZextDiagramNode extends BaseDiagramNode {
+  kind: 'zext';
+}
 export interface CombDiagramNode extends BaseDiagramNode {
   kind: 'comb';
 }
@@ -254,6 +299,9 @@ export interface ModuleDiagramNode extends BaseDiagramNode {
 export interface NetLabelDiagramNode extends BaseDiagramNode {
   kind: 'netLabel';
 }
+export interface BoundaryPortDiagramNode extends BaseDiagramNode {
+  kind: 'boundaryPort';
+}
 
 export type DiagramNode =
   | RegisterDiagramNode
@@ -261,6 +309,8 @@ export type DiagramNode =
   | AluDiagramNode
   | InverterDiagramNode
   | GateDiagramNode
+  | ComparatorDiagramNode
+  | ZextDiagramNode
   | CombDiagramNode
   | MuxDiagramNode
   | SelectDiagramNode
@@ -274,7 +324,8 @@ export type DiagramNode =
   | LoopDiagramNode
   | UnknownDiagramNode
   | ModuleDiagramNode
-  | NetLabelDiagramNode;
+  | NetLabelDiagramNode
+  | BoundaryPortDiagramNode;
 
 export interface DiagramEdgeMetadata {
   aggregate?: 'struct' | 'interface' | string;
@@ -350,6 +401,19 @@ export interface GenerateRegion {
   warnings?: string[];
   // True for the synthesized wrapper region around a whole if/case expression's arms.
   isGenerateBlock?: boolean;
+  /**
+   * Client-only (`kind: 'expand'`): identifies this as a synthesized "expand
+   * instance in place" region rather than a real SV generate region. Never
+   * set by the extractor/server — the webview splices these into the same
+   * `regions` array/overlay/drag-sync machinery as real generate regions
+   * (see webview/expand) purely to reuse that already-working code, and
+   * strips them back out before sending `regions` to the extension host.
+   */
+  expandedInstance?: {
+    instanceId: string;
+    childModuleName: string;
+    parentModuleName: string;
+  };
 }
 
 export interface PositionedGenerateRegion extends GenerateRegion {

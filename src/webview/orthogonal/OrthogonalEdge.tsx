@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { type EdgeProps, useEdges, useNodes, useReactFlow } from '@xyflow/react';
+import { type EdgeProps, useEdges, useNodes, useReactFlow, useStore } from '@xyflow/react';
 import {
   HdlPosition,
   type RouteChange,
@@ -20,6 +20,7 @@ import {
   midpoint,
   pointNearPathStart,
   avoidFeedbackObstacles,
+  clampPointsToRect,
   type NodeObstacle,
 } from './logic';
 import { findNetJunctions, moveSharedNetSegments } from './netGeometry';
@@ -35,6 +36,7 @@ import { edgeIsThick, nodeStackIsWide } from '../../ir/edgeStyle';
 import { arrayStackLayersFor, type ArrayStackLayerId } from '../arrayStackGeometry';
 import { diagramNodeDimensions } from '../../diagram/nodeSizing';
 import { isInputSidePort } from '../../diagram/portDirection';
+import { isExpandNamespacedId, type ExpandContentInsets } from '../expand/splice';
 import {
   computeStackedEdgeLayerPoints,
   convergingStackPath,
@@ -52,6 +54,20 @@ interface OrthogonalEdgeData extends SerializableOrthogonalRoute {
   moduleName?: string;
   isNetLeader?: boolean;
   netEdgeIds?: string[];
+  /**
+   * Set on edges spliced in by "Expand instance in place" (issue #232): the
+   * flow id of the expanded instance's own node, whose live rect is the
+   * frame this wire must stay inside (see the clampPointsToRect pass on
+   * officialPoints below).
+   */
+  containerNodeId?: string;
+  /**
+   * Set together with containerNodeId: the frame's border-ring widths (see
+   * ExpandContentInsets in expand/splice.ts). The clamp keeps this wire's
+   * derived route inside the ring's inner boundary, so no wire ever runs
+   * under the ring's grab bands (where it couldn't be hovered/selected).
+   */
+  contentInsets?: ExpandContentInsets;
 }
 
 import { getVscodeApi } from '../vscodeApi';
@@ -151,6 +167,13 @@ function positionedNodesFromFlowNodes(flowNodes: any[]): PositionedNode[] {
       if (!diagramNode || !node.position) {
         return undefined;
       }
+      // Spliced-in "Expand instance in place" content (issue #232, ids
+      // prefixed `expand:`) isn't part of the extension host's module IR —
+      // never send it back in a nodes payload (main.tsx's stripExpandSplices
+      // does the same at its own message-sending sites).
+      if (isExpandNamespacedId(diagramNode.id)) {
+        return undefined;
+      }
       return {
         ...diagramNode,
         position: node.position,
@@ -181,6 +204,12 @@ export function OrthogonalEdge({
   data,
 }: EdgeProps): React.ReactElement {
   const reactFlow = useReactFlow();
+  // Both the foreignObject wire controls and the overlayPortalNode cut-stub
+  // reset button live inside a zoom-scaled ancestor — subscribe (rather than
+  // reactFlow.getZoom()) so their counter-scale updates live as the user
+  // zooms, not just on the next unrelated re-render.
+  const zoom = useStore((state) => state.transform[2]);
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
   const flowNodes = useNodes();
   const flowEdges = useEdges();
   const context = useOptionalLineJumpContext();
@@ -253,7 +282,8 @@ export function OrthogonalEdge({
         (edge) =>
           edge.selected === true &&
           edge.data?.edge !== undefined &&
-          edge.data.edge.metadata?.cutStub === undefined,
+          edge.data.edge.metadata?.cutStub === undefined &&
+          !isExpandNamespacedId(edge.id),
       ),
     [flowEdges],
   );
@@ -293,7 +323,7 @@ export function OrthogonalEdge({
         .filter((obstacle): obstacle is NodeObstacle => obstacle !== undefined),
     [flowNodes],
   );
-  const officialPoints = React.useMemo(() => {
+  const routedOfficialPoints = React.useMemo(() => {
     if (
       diagramEdge?.metadata?.forceStraight === true ||
       (diagramEdge?.routePoints && diagramEdge.routePoints.length > 0)
@@ -307,6 +337,56 @@ export function OrthogonalEdge({
       targetPosition as unknown as HdlPosition,
     );
   }, [normalizedOfficialPoints, obstacles, sourcePosition, targetPosition, diagramEdge]);
+
+  // A wire spliced inside an expanded instance must never escape that
+  // instance's own border (the node IS the frame — see webview/expand):
+  // clamp the whole derived route (feedback loops, obstacle detours, saved
+  // drags alike) into the container node's live rect minus its border ring
+  // (edgeData.contentInsets), so no wire runs under the ring's grab bands
+  // where it couldn't be hovered or selected. Skipped while either handle
+  // itself sits outside the frame (an internal node dragged beyond the
+  // not-yet-growing border — clamping only the route would break
+  // orthogonality against the un-clamped handle endpoints). A boundary
+  // port's inner handle sits half a grid inside the ring's inner boundary
+  // (see EXPAND_RING_PULLBACK), so its stub clamps without distortion.
+  const containerFlowNode = edgeData?.containerNodeId
+    ? flowNodes.find((node) => node.id === edgeData.containerNodeId)
+    : undefined;
+  const containerInsets = edgeData?.contentInsets;
+  const officialPoints = React.useMemo(() => {
+    const containerRect = containerFlowNode ? nodeObstacle(containerFlowNode) : undefined;
+    if (!containerRect) return routedOfficialPoints;
+    const handlesInside = [
+      { x: sourceX, y: sourceY },
+      { x: targetX, y: targetY },
+    ].every(
+      (handle) =>
+        handle.x >= containerRect.x &&
+        handle.x <= containerRect.x + containerRect.width &&
+        handle.y >= containerRect.y &&
+        handle.y <= containerRect.y + containerRect.height,
+    );
+    if (!handlesInside) return routedOfficialPoints;
+    const inset = diagramSizing.gridSize / 4;
+    return clampPointsToRect(
+      routedOfficialPoints,
+      containerRect,
+      containerInsets ?? {
+        top: diagramSizing.nodeHeaderHeight,
+        right: inset,
+        bottom: inset,
+        left: inset,
+      },
+    );
+  }, [
+    routedOfficialPoints,
+    containerFlowNode,
+    containerInsets,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+  ]);
 
   const forceStraight = diagramEdge?.metadata?.forceStraight === true;
   const isVertical = Math.abs(sourceX - targetX) < 1;
@@ -542,16 +622,24 @@ export function OrthogonalEdge({
   // selected wire's controls, so the user can see (and act on) the whole batch.
   // Cut stubs are excluded from multi-select batching (they can't be cut again),
   // so they only ever show their own solo Reroute control on direct hover.
+  // Edges spliced in by "Expand instance in place" (issue #232, ids prefixed
+  // `expand:` — see webview/expand/splice.ts) aren't part of the extension
+  // host's module IR at all; Reroute/Cut aren't supported on them in v1, so
+  // don't even offer the controls (see also positionedNodesFromFlowNodes's
+  // filter below, which protects the node payload the same way).
+  const isExpandSplicedEdge = diagramEdge !== undefined && isExpandNamespacedId(diagramEdge.id);
   const showCutButton =
     diagramEdge !== undefined &&
     edgeData?.moduleName !== undefined &&
     !isCutStub &&
+    !isExpandSplicedEdge &&
     (isEdgeHovered || (isMultiSelected && selectionHoverActive));
   const showCutStubResetButton =
     isCutStub &&
     diagramEdge !== undefined &&
     edgeData?.moduleName !== undefined &&
     cutLabelNodeId !== undefined &&
+    !isExpandSplicedEdge &&
     isEdgeHovered;
   const netGeometries =
     context && edgeData?.netEdgeIds
@@ -742,6 +830,12 @@ export function OrthogonalEdge({
             for (const fn of flowNodes) {
               const dn = fn.data?.node;
               if (dn?.kind !== 'netLabel' || dn.metadata?.cutNet?.netKey !== netKey) {
+                continue;
+              }
+              // A spliced (expand-namespaced) label's netKey is child-local —
+              // it only belongs to this net's halo if this edge is spliced
+              // too, not when a parent net happens to share the same key.
+              if (isExpandNamespacedId(fn.id) !== isExpandSplicedEdge) {
                 continue;
               }
               const pos = (fn as any).positionAbsolute ?? fn.position;
@@ -939,49 +1033,54 @@ export function OrthogonalEdge({
           />
         ),
       )}
-      {points.slice(0, -1).map((point, index) => {
-        const next = points[index + 1];
-        const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
-        if (index === 0 || index === points.length - 2) {
-          return null;
-        }
-        return (
-          <React.Fragment key={`${id}-segment-${index}`}>
-            {hoveredSegmentIndex === index && (
+      {/* A spliced edge's route comes from the child module's own standalone
+          layout, like its nodes' positions — no segment-drag handles are
+          offered for one (isExpandSplicedEdge), mirroring how its nodes are
+          non-draggable (see expandOverlay's toFlowNode). */}
+      {!isExpandSplicedEdge &&
+        points.slice(0, -1).map((point, index) => {
+          const next = points[index + 1];
+          const orientation = segmentOrientation(point, next) ?? dominantOrientation(point, next);
+          if (index === 0 || index === points.length - 2) {
+            return null;
+          }
+          return (
+            <React.Fragment key={`${id}-segment-${index}`}>
+              {hoveredSegmentIndex === index && (
+                <path
+                  className="svsch-edge-segment-highlight"
+                  d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
+                />
+              )}
               <path
-                className="svsch-edge-segment-highlight"
+                key={`${id}-segment-${index}`}
+                className={`svsch-edge-segment-handle svsch-edge-segment-${orientation}`}
                 d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
-              />
-            )}
-            <path
-              key={`${id}-segment-${index}`}
-              className={`svsch-edge-segment-handle svsch-edge-segment-${orientation}`}
-              d={`M ${point.x} ${point.y} L ${next.x} ${next.y}`}
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId);
-                setHoveredSegmentIndex(index);
-                moveSegment(event, index, false);
-              }}
-              onPointerMove={(event) => {
-                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  moveSegment(event, activeSegmentIndexRef.current, false);
-                }
-              }}
-              onPointerUp={(event) => {
-                moveSegment(event, activeSegmentIndexRef.current, true);
-                setHoveredSegmentIndex(null);
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
-              onMouseEnter={() => setHoveredSegmentIndex(index)}
-              onMouseLeave={() => {
-                if (!isDragging) {
+                onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  setHoveredSegmentIndex(index);
+                  moveSegment(event, index, false);
+                }}
+                onPointerMove={(event) => {
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                    moveSegment(event, activeSegmentIndexRef.current, false);
+                  }
+                }}
+                onPointerUp={(event) => {
+                  moveSegment(event, activeSegmentIndexRef.current, true);
                   setHoveredSegmentIndex(null);
-                }
-              }}
-            />
-          </React.Fragment>
-        );
-      })}
+                  event.currentTarget.releasePointerCapture(event.pointerId);
+                }}
+                onMouseEnter={() => setHoveredSegmentIndex(index)}
+                onMouseLeave={() => {
+                  if (!isDragging) {
+                    setHoveredSegmentIndex(null);
+                  }
+                }}
+              />
+            </React.Fragment>
+          );
+        })}
       {showCutButton && (
         <foreignObject
           width={110}
@@ -992,87 +1091,92 @@ export function OrthogonalEdge({
           onMouseEnter={keepEdgeHover}
           onMouseLeave={releaseEdgeHover}
         >
-          <div className="svsch-edge-connection-controls-inner">
-            <button
-              type="button"
-              className="svsch-edge-reroute-control"
-              title={
-                isMultiSelected
-                  ? `Reroute ${selectedCuttableEdges.length} selected connections`
-                  : 'Reroute this connection'
-              }
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!diagramEdge || !edgeData?.moduleName) {
-                  return;
+          <div
+            className="svsch-edge-connection-controls-scale"
+            style={{ transform: `scale(${counterScale})` }}
+          >
+            <div className="svsch-edge-connection-controls-inner">
+              <button
+                type="button"
+                className="svsch-edge-reroute-control"
+                title={
+                  isMultiSelected
+                    ? `Reroute ${selectedCuttableEdges.length} selected connections`
+                    : 'Reroute this connection'
                 }
-                if (isMultiSelected) {
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!diagramEdge || !edgeData?.moduleName) {
+                    return;
+                  }
+                  if (isMultiSelected) {
+                    vscode.postMessage({
+                      type: 'rerouteEdges',
+                      moduleName: edgeData.moduleName,
+                      edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                      nodes: positionedNodesFromFlowNodes(flowNodes),
+                    });
+                    return;
+                  }
                   vscode.postMessage({
-                    type: 'rerouteEdges',
+                    type: 'rerouteEdge',
                     moduleName: edgeData.moduleName,
-                    edgeIds: selectedCuttableEdges.map((edge) => edge.id),
+                    edgeId: diagramEdge.id,
                     nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
-                  return;
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseEnter={() => setPendingSelectionAction('reroute')}
+                onMouseLeave={() => setPendingSelectionAction(undefined)}
+              >
+                Reroute
+                <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                  <span className="svsch-shortcut-glyph-letter">R</span>
+                </kbd>
+              </button>
+              <button
+                type="button"
+                className="svsch-edge-cut-control"
+                title={
+                  isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'
                 }
-                vscode.postMessage({
-                  type: 'rerouteEdge',
-                  moduleName: edgeData.moduleName,
-                  edgeId: diagramEdge.id,
-                  nodes: positionedNodesFromFlowNodes(flowNodes),
-                });
-              }}
-              onDoubleClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-              onMouseEnter={() => setPendingSelectionAction('reroute')}
-              onMouseLeave={() => setPendingSelectionAction(undefined)}
-            >
-              Reroute
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-                <span className="svsch-shortcut-glyph-letter">R</span>
-              </kbd>
-            </button>
-            <button
-              type="button"
-              className="svsch-edge-cut-control"
-              title={
-                isMultiSelected ? `Cut ${selectedCuttableEdges.length} selected nets` : 'Cut net'
-              }
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!diagramEdge || !edgeData?.moduleName) {
-                  return;
-                }
-                if (isMultiSelected) {
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!diagramEdge || !edgeData?.moduleName) {
+                    return;
+                  }
+                  if (isMultiSelected) {
+                    vscode.postMessage({
+                      type: 'cutNets',
+                      moduleName: edgeData.moduleName,
+                      edges: selectedCuttableEdges
+                        .map((edge) => edge.data?.edge)
+                        .filter((edge): edge is DiagramEdge => edge !== undefined),
+                      nodes: positionedNodesFromFlowNodes(flowNodes),
+                    });
+                    return;
+                  }
                   vscode.postMessage({
-                    type: 'cutNets',
+                    type: 'cutNet',
                     moduleName: edgeData.moduleName,
-                    edges: selectedCuttableEdges
-                      .map((edge) => edge.data?.edge)
-                      .filter((edge): edge is DiagramEdge => edge !== undefined),
+                    edge: diagramEdge,
                     nodes: positionedNodesFromFlowNodes(flowNodes),
                   });
-                  return;
-                }
-                vscode.postMessage({
-                  type: 'cutNet',
-                  moduleName: edgeData.moduleName,
-                  edge: diagramEdge,
-                  nodes: positionedNodesFromFlowNodes(flowNodes),
-                });
-              }}
-              onDoubleClick={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-              onMouseEnter={() => setPendingSelectionAction('cut')}
-              onMouseLeave={() => setPendingSelectionAction(undefined)}
-            >
-              Cut
-              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-                <span className="svsch-shortcut-glyph-letter">C</span>
-              </kbd>
-            </button>
+                }}
+                onDoubleClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseEnter={() => setPendingSelectionAction('cut')}
+                onMouseLeave={() => setPendingSelectionAction(undefined)}
+              >
+                Cut
+                <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                  <span className="svsch-shortcut-glyph-letter">C</span>
+                </kbd>
+              </button>
+            </div>
           </div>
         </foreignObject>
       )}
@@ -1094,28 +1198,33 @@ export function OrthogonalEdge({
             onMouseEnter={keepEdgeHover}
             onMouseLeave={releaseEdgeHover}
           >
-            <div className="svsch-edge-connection-controls-inner">
-              <button
-                type="button"
-                className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
-                title="Reset this dangling end to its canonical position"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!edgeData?.moduleName || !cutLabelNodeId) {
-                    return;
-                  }
-                  vscode.postMessage({
-                    type: 'resetCutLabelPosition',
-                    moduleName: edgeData.moduleName,
-                    nodeId: cutLabelNodeId,
-                  });
-                }}
-                onDoubleClick={(event) => event.stopPropagation()}
-                onMouseDown={(event) => event.stopPropagation()}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                Reroute
-              </button>
+            <div
+              className="svsch-cut-stub-reset-scale"
+              style={{ transform: `scale(${counterScale})` }}
+            >
+              <div className="svsch-edge-connection-controls-inner">
+                <button
+                  type="button"
+                  className="svsch-edge-reroute-control svsch-edge-reroute-control-solo"
+                  title="Reset this dangling end to its canonical position"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!edgeData?.moduleName || !cutLabelNodeId) {
+                      return;
+                    }
+                    vscode.postMessage({
+                      type: 'resetCutLabelPosition',
+                      moduleName: edgeData.moduleName,
+                      nodeId: cutLabelNodeId,
+                    });
+                  }}
+                  onDoubleClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  Reroute
+                </button>
+              </div>
             </div>
           </div>,
           overlayPortalNode,

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Handle } from '@xyflow/react';
+import { Handle, useStore } from '@xyflow/react';
 import { getVscodeApi } from '../vscodeApi';
 import { diagramNodeDimensions, nodeWarningIconCenter } from '../../diagram/nodeSizing';
 import { InteractionContext } from './shared/context';
 import { ArrayStackLeads, handlePositionForSide, NetLabelWire } from './shared/NetLabelWire';
 import type { PositionedNode } from '../../ir/types';
+import { isExpandNamespacedId } from '../expand/splice';
 import { Tooltip } from '../Tooltip';
 
 const vscode = getVscodeApi();
@@ -21,6 +22,11 @@ export function NetLabelNode({
   style: React.CSSProperties;
 }): React.ReactElement {
   const cutNet = node.metadata?.cutNet;
+  // A label spliced in by "Expand instance in place" belongs to the child
+  // module's own diagram — it's read-only here (like the rest of the spliced
+  // content): no rename, no Tie/Revert, and its netKey is child-local so it
+  // must not join the parent's net hover-highlight group.
+  const isSpliced = isExpandNamespacedId(node.id);
   // Absent origin (labels saved before this field existed) reads as
   // synthetic: freely renameable, same as always.
   const isDeclaredName = cutNet?.origin === 'declared';
@@ -30,6 +36,13 @@ export function NetLabelNode({
   const isRenamed = cutNet?.isRenamed === true;
   const aliasNames = cutNet?.aliasNames;
   const { hoveredNetKey, setHovered } = React.useContext(InteractionContext);
+  // The label itself lives inside react-flow's zoom-scaled viewport, so its
+  // Revert/Tie action pill would otherwise grow and shrink with the canvas
+  // like the edge Reroute/Cut controls did before their own counter-scale
+  // fix (see OrthogonalEdge) — subscribe rather than reactFlow.getZoom() so
+  // it stays live as the user zooms, not just on the next unrelated render.
+  const zoom = useStore((state) => state.transform[2]);
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(node.label);
   const [isDirectlyHovered, setIsDirectlyHovered] = React.useState(false);
@@ -68,7 +81,7 @@ export function NetLabelNode({
   const handleSide = cutNet?.handleSide ?? 'left';
   const handlePosition = handlePositionForSide(handleSide);
   const handleType = cutNet?.role === 'source' ? 'target' : 'source';
-  const isHovered = hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
+  const isHovered = !isSpliced && hoveredNetKey !== undefined && hoveredNetKey === cutNet?.netKey;
   // React Flow also marks this label's cut-stub edge selected whenever the
   // block it's attached to is selected (relied on by Auto Layout to carry
   // cut-net-end labels along, see main.tsx). That propagation is not this
@@ -102,11 +115,11 @@ export function NetLabelNode({
       title={isDeclaredName ? `${node.label} (declared in source — cannot be renamed)` : node.label}
       onDoubleClick={(event) => {
         event.stopPropagation();
-        if (isDeclaredName) return;
+        if (isDeclaredName || isSpliced) return;
         setEditing(true);
       }}
       onMouseEnter={() => {
-        setHovered(cutNet?.netKey);
+        if (!isSpliced) setHovered(cutNet?.netKey);
         setIsDirectlyHovered(true);
       }}
       onMouseLeave={() => {
@@ -178,18 +191,42 @@ export function NetLabelNode({
           )}
         </span>
       )}
-      {cutNet && (
+      {cutNet && !isSpliced && (
         <span className="hdl-net-label-actions">
-          {isRenamed && (
+          <span
+            className="hdl-net-label-actions-scale"
+            style={{ transform: `scale(${counterScale})` }}
+          >
+            {isRenamed && (
+              <button
+                className="hdl-net-label-revert nodrag nopan"
+                type="button"
+                aria-label="Revert label to the net's default name"
+                title="Revert label to the net's default name"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  vscode.postMessage({
+                    type: 'revertCutNetLabel',
+                    moduleName,
+                    netKey: cutNet.netKey,
+                  });
+                }}
+                onDoubleClick={stopDrag}
+                onMouseDown={stopDrag}
+                onPointerDown={stopDrag}
+              >
+                Revert label
+              </button>
+            )}
             <button
-              className="hdl-net-label-revert nodrag nopan"
+              className="hdl-net-label-tie nodrag nopan"
               type="button"
-              aria-label="Revert label to the net's default name"
-              title="Revert label to the net's default name"
+              aria-label="Tie net back together"
+              title="Tie net back together"
               onClick={(event) => {
                 event.stopPropagation();
                 vscode.postMessage({
-                  type: 'revertCutNetLabel',
+                  type: 'tieNet',
                   moduleName,
                   netKey: cutNet.netKey,
                 });
@@ -198,31 +235,12 @@ export function NetLabelNode({
               onMouseDown={stopDrag}
               onPointerDown={stopDrag}
             >
-              Revert label
+              Tie
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">T</span>
+              </kbd>
             </button>
-          )}
-          <button
-            className="hdl-net-label-tie nodrag nopan"
-            type="button"
-            aria-label="Tie net back together"
-            title="Tie net back together"
-            onClick={(event) => {
-              event.stopPropagation();
-              vscode.postMessage({
-                type: 'tieNet',
-                moduleName,
-                netKey: cutNet.netKey,
-              });
-            }}
-            onDoubleClick={stopDrag}
-            onMouseDown={stopDrag}
-            onPointerDown={stopDrag}
-          >
-            Tie
-            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-              <span className="svsch-shortcut-glyph-letter">T</span>
-            </kbd>
-          </button>
+          </span>
         </span>
       )}
       {node.warningNote && (

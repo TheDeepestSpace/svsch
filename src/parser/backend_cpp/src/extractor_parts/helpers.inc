@@ -25,6 +25,119 @@ std::string trimCopy(const std::string& value) {
     return value.substr(start, end - start);
 }
 
+// Evaluate the small constant-expression subset used by unpacked array bounds.
+// Surelog does not consistently expose parameterized unpacked ranges through VPI,
+// so source declarations such as [0:(1 << ADDR_WIDTH)-1] need a deterministic
+// fallback once module parameter values have been collected.
+std::optional<int> evaluateConstantExpression(
+    const std::string& text,
+    const std::map<std::string, int>& parameters
+) {
+    size_t pos = 0;
+    auto skip_space = [&]() {
+        while (pos < text.size() && std::isspace(static_cast<unsigned char>(text[pos]))) pos++;
+    };
+
+    std::function<std::optional<int>()> parse_shift;
+    std::function<std::optional<int>()> parse_additive;
+    std::function<std::optional<int>()> parse_multiplicative;
+    std::function<std::optional<int>()> parse_primary;
+
+    parse_primary = [&]() -> std::optional<int> {
+        skip_space();
+        if (pos >= text.size()) return std::nullopt;
+
+        if (text[pos] == '(') {
+            pos++;
+            auto value = parse_shift();
+            skip_space();
+            if (!value || pos >= text.size() || text[pos] != ')') return std::nullopt;
+            pos++;
+            return value;
+        }
+
+        if (text[pos] == '+' || text[pos] == '-') {
+            char sign = text[pos++];
+            auto value = parse_primary();
+            if (!value) return std::nullopt;
+            return sign == '-' ? -*value : *value;
+        }
+
+        size_t start = pos;
+        if (std::isdigit(static_cast<unsigned char>(text[pos]))) {
+            while (pos < text.size() && std::isdigit(static_cast<unsigned char>(text[pos]))) pos++;
+            try {
+                return std::stoi(text.substr(start, pos - start));
+            } catch (...) {
+                return std::nullopt;
+            }
+        }
+
+        if (std::isalpha(static_cast<unsigned char>(text[pos])) || text[pos] == '_' || text[pos] == '$') {
+            while (pos < text.size()) {
+                unsigned char ch = static_cast<unsigned char>(text[pos]);
+                if (!std::isalnum(ch) && text[pos] != '_' && text[pos] != '$') break;
+                pos++;
+            }
+            auto parameter = parameters.find(text.substr(start, pos - start));
+            return parameter == parameters.end()
+                ? std::nullopt
+                : std::optional<int>(parameter->second);
+        }
+
+        return std::nullopt;
+    };
+
+    parse_multiplicative = [&]() -> std::optional<int> {
+        auto left = parse_primary();
+        while (left) {
+            skip_space();
+            if (pos >= text.size() || (text[pos] != '*' && text[pos] != '/' && text[pos] != '%')) break;
+            char op = text[pos++];
+            auto right = parse_primary();
+            if (!right || ((op == '/' || op == '%') && *right == 0)) return std::nullopt;
+            if (op == '*') left = *left * *right;
+            else if (op == '/') left = *left / *right;
+            else left = *left % *right;
+        }
+        return left;
+    };
+
+    parse_additive = [&]() -> std::optional<int> {
+        auto left = parse_multiplicative();
+        while (left) {
+            skip_space();
+            if (pos >= text.size() || (text[pos] != '+' && text[pos] != '-')) break;
+            char op = text[pos++];
+            auto right = parse_multiplicative();
+            if (!right) return std::nullopt;
+            left = op == '+' ? *left + *right : *left - *right;
+        }
+        return left;
+    };
+
+    parse_shift = [&]() -> std::optional<int> {
+        auto left = parse_additive();
+        while (left) {
+            skip_space();
+            bool shift_left = text.compare(pos, 2, "<<") == 0;
+            bool shift_right = text.compare(pos, 2, ">>") == 0;
+            if (!shift_left && !shift_right) break;
+            pos += 2;
+            auto right = parse_additive();
+            if (!right || *right < 0 || *right >= static_cast<int>(sizeof(int) * 8)) {
+                return std::nullopt;
+            }
+            left = shift_left ? *left << *right : *left >> *right;
+        }
+        return left;
+    };
+
+    auto result = parse_shift();
+    skip_space();
+    return result && pos == text.size() ? result : std::nullopt;
+}
+
 bool declarationListContains(const std::string& declarations, const std::string& name) {
     std::stringstream stream(declarations);
     std::string item;

@@ -138,6 +138,12 @@ std::vector<AggregateSegment> DesignExtractor::flattenAggregateSegments(
                 seg.width = inferred > 1 ? "[" + std::to_string(inferred - 1) + ":0]" : "[0:0]";
             }
             seg.size = std::max(1, bitSizeFromWidth(seg.width));
+            // A literal RHS segment (e.g. the `1'b0` in `{data_reg, 1'b0}`) resolves to
+            // its text as a signal name, but no node actually drives that signal unless
+            // one is synthesized here — leaving the bus-composition port dangling.
+            if (isLiteralExpr(operand)) {
+                ensureLiteralNode(operand, mod, seg.signal, seg.width, operand, seg.signal);
+            }
             segments.push_back(seg);
             index++;
         }
@@ -184,7 +190,8 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
     Module& mod,
     bool is_procedural,
     const std::map<std::string, LoweredValue>& current_drivers,
-    const std::string& output_suffix
+    const std::string& output_suffix,
+    const std::map<std::string, std::string>& desired_outputs
 ) {
     std::map<std::string, LoweredValue> result = current_drivers;
     vpiHandle lhs = vpi_handle(vpiLhs, assign_handle);
@@ -248,16 +255,29 @@ std::map<std::string, LoweredValue> DesignExtractor::lowerAggregateAssignment(
         auto seg = lhs_segments[i];
         if (seg.signal.empty()) continue;
         std::string target_signal = seg.signal;
-        if (is_procedural && !output_suffix.empty()) seg.signal += output_suffix;
+        auto desired_output = desired_outputs.find(target_signal);
+        bool renamed = false;
+        if (is_procedural && desired_output != desired_outputs.end()) {
+            seg.signal = desired_output->second;
+            renamed = true;
+        } else if (is_procedural && !output_suffix.empty()) {
+            seg.signal += output_suffix;
+            renamed = true;
+        }
         int size = std::max(1, seg.size);
         std::string label = size > 1
             ? "[" + std::to_string(current_bit) + ":" + std::to_string(current_bit - size + 1) + "]"
             : "[" + std::to_string(current_bit) + "]";
         breakout.ports.push_back({"lhs" + std::to_string(i), "output", seg.signal, seg.width, label});
 
-        if (output_suffix.empty() && !seg.structField.empty()) {
+        // Only wire the bus/struct composition input when seg.signal is still the real
+        // target signal name. A rename (branch/"_next" suffix, or a desired_outputs
+        // remap) means this breakout produces an intermediate driver value, not the
+        // final signal — composing that into the merge node would bypass whatever
+        // produces the actual signal (e.g. a register) and starve it of its real input.
+        if (!renamed && !seg.structField.empty()) {
             ensureStructFieldCompositionInput(mod, seg.baseSignal, seg.structField, seg.signal, getSourceInfo(seg.handle));
-        } else if (output_suffix.empty() && seg.signal.find('[') != std::string::npos) {
+        } else if (!renamed && seg.signal.find('[') != std::string::npos) {
             std::string base = seg.baseSignal.empty() ? getBaseSignalName(seg.handle) : seg.baseSignal;
             if (!base.empty()) {
                 size_t bracket = seg.signal.find('[');
@@ -421,6 +441,22 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
         ? repeat_expr
         : (repeat_count > 0 ? std::to_string(repeat_count) : repeat_expr);
 
+    // UHDM doesn't always fold a parameterized repeat-count expression (e.g.
+    // "DATA_WIDTH-4") to a constant when the replication is nested inside a
+    // procedural concatenation operand. Resolve it ourselves from already-known
+    // parameter values now (width math only — repeat_label/id_label above keep
+    // showing the symbolic expression), rather than leaving it to the later
+    // repairAggregateReplicationWidths pass: callers such as lowerCaseStatement
+    // read this node's output width immediately (to decide whether a zext is
+    // needed) and would otherwise see a stale 1-bit width and insert a spurious
+    // zext that a later width repair can't retract.
+    int width_repeat_count = repeat_count;
+    if (width_repeat_count <= 0 && !repeat_expr.empty()) {
+        if (auto resolved = evalReplicationCountExpr(repeat_expr, generateParameterValues(mod))) {
+            if (*resolved > 0) width_repeat_count = *resolved;
+        }
+    }
+
     std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
     std::string node_id = sanitizeId("replicate:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":x" + id_label);
     if (!is_procedural) {
@@ -477,7 +513,7 @@ std::string DesignExtractor::promoteReplicationExpr(vpiHandle expr, Module& mod,
         int body_width_size = bitSizeFromWidth(body_width);
         body_size += body_width_size > 0 ? body_width_size : expressionBitSize(body);
     }
-    int total_size = body_size * std::max(1, repeat_count);
+    int total_size = body_size * std::max(1, width_repeat_count);
     std::string width = getWidth(expr);
     if (total_size > bitSizeFromWidth(width)) {
         width = total_size > 1 ? "[" + std::to_string(total_size - 1) + ":0]" : "[0:0]";
@@ -595,6 +631,121 @@ std::string DesignExtractor::promoteAluExpr(vpiHandle expr, Module& mod, const s
         display_label = display_label.substr(0, display_label.size() - 5);
     }
     n.ports.push_back({out_signal, "output", out_signal, width, display_label});
+    mod.nodes.push_back(n);
+    propagateStruct(mod, preferred_name, out_signal);
+    return out_signal;
+}
+
+bool DesignExtractor::isComparatorOperation(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
+    switch (vpi_get(vpiOpType, expr)) {
+        case vpiLtOp:
+        case vpiLeOp:
+        case vpiGtOp:
+        case vpiGeOp:
+        case vpiEqOp:
+        case vpiNeqOp:
+        case vpiCaseEqOp:
+        case vpiCaseNeqOp:
+            return true;
+        default:
+            return false;
+    }
+}
+
+std::string DesignExtractor::comparatorOperationSymbol(vpiHandle expr) {
+    if (!expr || vpi_get(vpiType, expr) != vpiOperation) return "";
+    switch (vpi_get(vpiOpType, expr)) {
+        case vpiLtOp: return "<";
+        case vpiLeOp: return "<=";
+        case vpiGtOp: return ">";
+        case vpiGeOp: return ">=";
+        case vpiEqOp: return "==";
+        case vpiNeqOp: return "!=";
+        case vpiCaseEqOp: return "===";
+        case vpiCaseNeqOp: return "!==";
+        default: return "";
+    }
+}
+
+std::string DesignExtractor::promoteComparatorExpr(vpiHandle expr, Module& mod, const std::string& preferred_name, bool is_procedural, const std::map<std::string, LoweredValue>& current_drivers) {
+    if (!expr || !isComparatorOperation(expr)) return "";
+
+    std::vector<vpiHandle> operands;
+    vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
+    if (op_itr) {
+        while (vpiHandle operand = vpi_scan(op_itr)) {
+            operands.push_back(operand);
+        }
+        vpi_release_handle(op_itr);
+    }
+    if (operands.size() != 2) {
+        return "";
+    }
+
+    std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
+    std::string node_id = "comparator:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":expr";
+    if (!is_procedural) {
+        for (const auto& n : mod.nodes) {
+            if (n.id == node_id) return out_signal;
+        }
+    }
+
+    bool lhs_is_literal = isLiteralExpr(operands[0]);
+    std::string lhs_signal = lhs_is_literal
+        ? getLiteralLabel(operands[0])
+        : getOrPromoteExpr(operands[0], mod, out_signal + "_lhs", is_procedural, current_drivers);
+
+    bool rhs_is_literal = isLiteralExpr(operands[1]);
+    std::string rhs_signal = rhs_is_literal
+        ? getLiteralLabel(operands[1])
+        : getOrPromoteExpr(operands[1], mod, out_signal + "_rhs", is_procedural, current_drivers);
+
+    // An unsized literal (e.g. '0, '1) has no self-determined width, so when
+    // it's compared against an operand with a known width, adopt that width
+    // instead of leaving it empty (which would render the connecting wire as
+    // 1-bit thin regardless of the comparator's actual operand width).
+    std::string lhs_width = getDeclaredSignalWidth(mod, lhs_signal);
+    if (lhs_width.empty()) lhs_width = getWidth(operands[0]);
+    std::string rhs_width = getDeclaredSignalWidth(mod, rhs_signal);
+    if (rhs_width.empty()) rhs_width = getWidth(operands[1]);
+    if (lhs_width.empty() && lhs_is_literal && !rhs_width.empty()) {
+        lhs_width = rhs_width;
+    }
+    if (rhs_width.empty() && rhs_is_literal && !lhs_width.empty()) {
+        rhs_width = lhs_width;
+    }
+
+    if (lhs_is_literal) {
+        ensureLiteralNode(operands[0], mod, lhs_signal, lhs_width, expr, lhs_signal);
+    }
+    if (rhs_is_literal) {
+        ensureLiteralNode(operands[1], mod, rhs_signal, rhs_width, expr, rhs_signal);
+    }
+
+    std::string expr_str = getExprText(expr);
+
+    Node n;
+    n.id = node_id;
+    n.kind = "comparator";
+    n.label = "";
+    n.source = getSourceInfo(expr);
+    refineSourceInfo(n.source, expr);
+    n.metadata.expression = expr_str;
+    n.metadata.operation = comparatorOperationSymbol(expr);
+    n.metadata.isProcedural = is_procedural;
+    n.metadata.parameterRefs = collectParameterRefs(expr, mod);
+    n.ports.push_back({"lhs", "input", lhs_signal, lhs_width, "lhs"});
+    n.ports.push_back({"rhs", "input", rhs_signal, rhs_width, "rhs"});
+
+    // A comparison always yields a single bit, regardless of operand width.
+    // Use an explicit "[0:0]" (rather than an empty string) so downstream
+    // width checks can tell "known to be 1 bit" apart from "unknown".
+    std::string display_label = out_signal;
+    if (display_label.size() >= 5 && display_label.compare(display_label.size() - 5, 5, "_next") == 0) {
+        display_label = display_label.substr(0, display_label.size() - 5);
+    }
+    n.ports.push_back({out_signal, "output", out_signal, "[0:0]", display_label});
     mod.nodes.push_back(n);
     propagateStruct(mod, preferred_name, out_signal);
     return out_signal;
@@ -827,19 +978,23 @@ std::string DesignExtractor::promoteInverterExpr(vpiHandle expr, Module& mod, co
 bool DesignExtractor::isGateOperation(vpiHandle expr) {
     if (!expr || vpi_get(vpiType, expr) != vpiOperation) return false;
     int op = vpi_get(vpiOpType, expr);
-    return op == vpiBitAndOp || op == vpiBitOrOp || op == vpiBitXorOp || op == vpiBitXNorOp;
+    return op == vpiBitAndOp || op == vpiBitOrOp || op == vpiBitXorOp || op == vpiBitXNorOp || op == vpiLogAndOp || op == vpiLogOrOp;
 }
 
 // AND/OR/XOR keep their name; a negated output (fused from an enclosing `~(...)`,
 // see getOrPromoteExpr) becomes NAND/NOR/XNOR. A source-level XNOR (`^~`/`~^`) is
 // already negated by definition, so negateOutput is never applied to it — that
-// would double-negate back to XOR, which callers must not request.
+// would double-negate back to XOR, which callers must not request. Logical `&&`/
+// `||` reuse the AND/OR names — same glyph, since the difference is only in how
+// the output width is resolved (see promoteGateExpr's isLogical handling).
 std::string DesignExtractor::gateOperationName(int opType, bool negateOutput) {
     switch (opType) {
         case vpiBitAndOp: return negateOutput ? "nand" : "and";
         case vpiBitOrOp: return negateOutput ? "nor" : "or";
         case vpiBitXorOp: return negateOutput ? "xnor" : "xor";
         case vpiBitXNorOp: return "xnor";
+        case vpiLogAndOp: return negateOutput ? "nand" : "and";
+        case vpiLogOrOp: return negateOutput ? "nor" : "or";
         default: return "";
     }
 }
@@ -896,11 +1051,44 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
     std::string out_signal = preferred_name.empty() ? nextId() : preferred_name;
     std::string width = getWidth(expr);
 
+    // `&&`/`||` reduce each operand to a boolean truth value first (unlike
+    // bitwise `&`/`|`, which are per-bit and preserve operand width), so the
+    // result is always a single bit regardless of operand width — same as a
+    // comparator (see promoteComparatorExpr).
+    bool isLogical = (opType == vpiLogAndOp || opType == vpiLogOrOp);
+    if (isLogical) {
+        width = "[0:0]";
+
+        // Unlike the bitwise ops (which flatten same-operator chains and
+        // otherwise let a differently-typed nested operand stand as its own
+        // separate gate — see collectGateOperands), a logical `&&`/`||` only
+        // promotes when BOTH direct operands are simple (not themselves a
+        // gate/ALU operation). A condition like `(sel & valid) || force_i`
+        // mixes a bitwise sub-expression into a logical one; rather than
+        // wiring an AND gate into an OR gate, the whole thing collapses to
+        // one flattened selector comb node (see getOrPromoteExpr's fallback).
+        vpiHandle guard_itr = vpi_iterate(vpiOperand, expr);
+        std::vector<vpiHandle> guard_operands;
+        if (guard_itr) {
+            while (vpiHandle operand = vpi_scan(guard_itr)) {
+                guard_operands.push_back(operand);
+            }
+            vpi_release_handle(guard_itr);
+        }
+        for (auto operand : guard_operands) {
+            if (isGateOperation(operand) || isAluOperation(operand)) return "";
+        }
+    }
+
     std::vector<vpiHandle> leaf_operands;
-    if (opType == vpiBitXNorOp) {
-        // XNOR isn't associative under this fusion (see collectGateOperands) —
-        // only take this gate's own direct operands; a nested XNOR operand
-        // stays its own separate 2-input gate instead of being folded in.
+    if (opType == vpiBitXNorOp || isLogical) {
+        // XNOR isn't associative under this fusion (see collectGateOperands).
+        // Logical `&&`/`||` are excluded from n-ary flattening too: unlike
+        // the bitwise ops, their operands aren't necessarily boolean-width
+        // already, so folding a chain in would lose the per-operand
+        // reduce-to-boolean step. Either way, only take this gate's own
+        // direct operands; a nested same-kind operand stays its own
+        // separate 2-input gate instead of being folded in.
         vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
         if (op_itr) {
             while (vpiHandle operand = vpi_scan(op_itr)) {
@@ -1046,6 +1234,11 @@ std::string DesignExtractor::getOrPromoteExpr(vpiHandle expr, Module& mod, const
     if (isAluOperation(expr)) {
         std::string alu_signal = promoteAluExpr(expr, mod, preferred_name, is_procedural, current_drivers);
         if (!alu_signal.empty()) return alu_signal;
+    }
+
+    if (isComparatorOperation(expr)) {
+        std::string comparator_signal = promoteComparatorExpr(expr, mod, preferred_name, is_procedural, current_drivers);
+        if (!comparator_signal.empty()) return comparator_signal;
     }
 
     // It's a complex expression, promote it to a comb node

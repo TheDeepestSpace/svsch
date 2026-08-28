@@ -1,22 +1,31 @@
 import type { FullConfig } from '@playwright/test';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 export const SNAPSHOT_THRESHOLDS = {
   playwright: {
     visual: {
-      default: 50,
-      generateRegions: 120,
+      default: 20,
       muxLongNames: 2,
+      // nested-case-literal-collision-canvas renders two sibling literal
+      // nodes with adjacent, near-identical labels ("4'hA"/"4'hB"); CI has
+      // shown small (~81px) sub-pixel antialiasing diffs there (issue #339)
+      // that don't reproduce locally and aren't a real rendering regression.
+      nestedCaseLiteralCollision: 120,
     },
-    bdd: 300,
-    system: 500,
-    pixelmatchThreshold: 0.2,
+    system: 20,
   },
   pixelmatch: {
-    bdd: 50,
-    cli: 100,
-    threshold: 0.1,
+    bdd: 35,
+    cli: 20,
+    threshold: 0.05,
   },
 } as const;
+
+// toHaveScreenshot() doesn't set a threshold, so it runs with Playwright's own
+// default. The gate below re-derives numDiffPixels via pixelmatch directly, so
+// it must match that default to reject at the same sensitivity as the live test.
+const PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD = 0.2;
 
 export type SnapshotSuite = 'visual' | 'bdd' | 'system';
 
@@ -26,21 +35,19 @@ export interface BaselineThreshold {
   pixelmatchThreshold: number;
 }
 
-const generateRegionOverrides = [
-  'error-highlight-block-types',
-  'generate-block-intrusion-warning',
-  'generate-block-overlap-warning',
-  'generate-case-regions-auto-canvas',
-  'generate-case-regions-canvas',
-  'generate-if-else-regions-auto-canvas',
-  'generate-if-else-regions-canvas',
-  'generate-region-external-node-warning',
-  'generate-region-overlap-warning',
-];
-
 function isPlaywrightSnapshotNamed(filePath: string, snapshotName: string): boolean {
   const fileName = filePath.slice(filePath.lastIndexOf('/') + 1);
   return fileName === `${snapshotName}.png` || fileName.startsWith(`${snapshotName}-`);
+}
+
+// Per-screenshot maxDiffPixels overrides for BDD pixelmatch baselines, keyed
+// by snapshot name (basename without .png). Scoped to individual screenshots
+// only — never exempt a whole scenario or skip comparison outright (issue
+// #302: a whole-scenario skip let a stale minimap baseline ship undetected).
+const bddPixelmatchOverrides: Record<string, number> = {};
+
+export function bddPixelmatchMaxDiffPixels(snapshotName: string): number {
+  return bddPixelmatchOverrides[snapshotName] ?? SNAPSHOT_THRESHOLDS.pixelmatch.bdd;
 }
 
 export function baselineThresholdFor(filePath: string): BaselineThreshold | undefined {
@@ -49,45 +56,33 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
 
   if (normalizedPath.startsWith('test/visual/__screenshots__/')) {
     let maxDiffPixels: number = SNAPSHOT_THRESHOLDS.playwright.visual.default;
-    if (normalizedPath.includes('/generate_regions.visual.spec.ts-snapshots/')) {
-      const hasFixedOverride = generateRegionOverrides.some((name) =>
-        isPlaywrightSnapshotNamed(normalizedPath, name),
-      );
-      const hasResizeOverride =
-        isPlaywrightSnapshotNamed(normalizedPath, 'generate-region-resize-bottom') ||
-        isPlaywrightSnapshotNamed(normalizedPath, 'generate-region-resize-left') ||
-        isPlaywrightSnapshotNamed(normalizedPath, 'generate-region-resize-right') ||
-        isPlaywrightSnapshotNamed(normalizedPath, 'generate-region-resize-top');
-      if (hasFixedOverride || hasResizeOverride) {
-        maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.visual.generateRegions;
-      }
-    } else if (
+    if (
       normalizedPath.includes('/mux.visual.spec.ts-snapshots/') &&
       isPlaywrightSnapshotNamed(normalizedPath, 'mux-long-names-webview')
     ) {
       maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.visual.muxLongNames;
+    } else if (
+      normalizedPath.includes('/nested_case.visual.spec.ts-snapshots/') &&
+      isPlaywrightSnapshotNamed(normalizedPath, 'nested-case-literal-collision-canvas')
+    ) {
+      maxDiffPixels = SNAPSHOT_THRESHOLDS.playwright.visual.nestedCaseLiteralCollision;
     }
     return {
       suite: 'visual',
       maxDiffPixels,
-      pixelmatchThreshold: SNAPSHOT_THRESHOLDS.playwright.pixelmatchThreshold,
-    };
-  }
-
-  if (normalizedPath.startsWith('test/features/__screenshots__/')) {
-    return {
-      suite: 'bdd',
-      maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.bdd,
-      pixelmatchThreshold: SNAPSHOT_THRESHOLDS.playwright.pixelmatchThreshold,
+      pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }
 
   if (normalizedPath.startsWith('test/features/snapshots/')) {
+    const snapshotName = normalizedPath
+      .slice(normalizedPath.lastIndexOf('/') + 1)
+      .replace(/\.png$/, '');
     return {
       suite: 'bdd',
       maxDiffPixels: normalizedPath.endsWith('--cli-png.png')
         ? SNAPSHOT_THRESHOLDS.pixelmatch.cli
-        : SNAPSHOT_THRESHOLDS.pixelmatch.bdd,
+        : bddPixelmatchMaxDiffPixels(snapshotName),
       pixelmatchThreshold: SNAPSHOT_THRESHOLDS.pixelmatch.threshold,
     };
   }
@@ -96,11 +91,26 @@ export function baselineThresholdFor(filePath: string): BaselineThreshold | unde
     return {
       suite: 'system',
       maxDiffPixels: SNAPSHOT_THRESHOLDS.playwright.system,
-      pixelmatchThreshold: SNAPSHOT_THRESHOLDS.playwright.pixelmatchThreshold,
+      pixelmatchThreshold: PLAYWRIGHT_DEFAULT_PIXELMATCH_THRESHOLD,
     };
   }
 
   return undefined;
+}
+
+// Mirrors playwright.config.ts's outputDir: BDD's TMPDIR is set to a larger
+// volume in CI to dodge v9fs ENOSPC on the checked-out workspace (see #275).
+// Snapshot-mismatch diff images are debug-only output written directly by
+// step code (not through Playwright's outputDir), so without this they'd
+// still land on the small workspace volume; nesting them under the
+// already-redirected results dir means the existing CI copy step picks them
+// up for free.
+export function bddVisualDiffsDir(): string {
+  return path.join(
+    os.tmpdir(),
+    `bdd-playwright-results-${path.basename(process.cwd())}`,
+    'visual-diffs',
+  );
 }
 
 // UPDATE_SNAPSHOTS is the update switch used by the custom comparators. Keep

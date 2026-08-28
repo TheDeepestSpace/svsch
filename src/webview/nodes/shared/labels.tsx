@@ -466,13 +466,14 @@ export function PortLabel({
     typeSource?: any;
     modportName?: string;
     modportSource?: any;
+    isArrayNode?: boolean;
   };
   showWidth?: boolean;
   showType?: boolean;
   collapseWidth?: boolean;
 }) {
   const width = normalizeWidth(port.widthExpression ?? port.width);
-  const displayWidth = collapseWidth && width ? '[]' : width;
+  const displayWidth = collapseWidth && width ? (port.isArrayNode ? '[[]]' : '[]') : width;
   const label =
     normalizeWidth(port.label ?? port.name) === undefined &&
     (port.label ?? port.name).startsWith('[')
@@ -582,7 +583,8 @@ export function portDisplayLabel(port: DiagramPort, options: SvgPortLabelOptions
   const isInterfacePort = portIsInterfaceLike(port);
   const showInterfaceSuffix = isInterfacePort && !hideInterfaceSuffix;
   const isStruct = !isInterfacePort && port.typeName !== undefined;
-  const displayWidth = collapseWidth && width && width !== 'interface' ? '[]' : width;
+  const displayWidth =
+    collapseWidth && width && width !== 'interface' ? (port.isArrayNode ? '[[]]' : '[]') : width;
   const typeOrWidth = showType ? port.typeName : undefined;
 
   let suffix = '';
@@ -618,7 +620,8 @@ export function SvgPortLabel({
   const isInterfacePort = portIsInterfaceLike(port);
   const showInterfaceSuffix = isInterfacePort && !hideInterfaceSuffix;
   const isStruct = !isInterfacePort && port.typeName !== undefined;
-  const displayWidth = collapseWidth && width && width !== 'interface' ? '[]' : width;
+  const displayWidth =
+    collapseWidth && width && width !== 'interface' ? (port.isArrayNode ? '[[]]' : '[]') : width;
   const typeOrWidth = showType ? port.typeName : undefined;
   const visibleFullSuffix =
     !isInterfacePort && !isStruct && showWidth && !collapseWidth
@@ -685,6 +688,8 @@ export function formatNodeKind(node: DiagramNode): string {
   if (node.kind === 'alu') return 'ALU';
   if (node.kind === 'inverter') return 'INVERTER';
   if (node.kind === 'gate') return 'GATE';
+  if (node.kind === 'comparator') return 'COMPARATOR';
+  if (node.kind === 'zext') return 'ZERO-EXTEND';
   if (node.kind === 'comb') return 'COMBINATIONAL';
   if (node.kind === 'replicate') return node.label;
   if (node.kind === 'bus') return 'BUS';

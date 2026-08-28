@@ -9,6 +9,11 @@ import {
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackLayersFor, arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import { ArrayStackSkinRect } from '../shared/ArrayStackSkinRect';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 
 export function ReplicateNodeSvg({
@@ -24,9 +29,9 @@ export function ReplicateNodeSvg({
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const arrayDim = nodeArrayDimension(node);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const outputs: DiagramPort[] = node.ports.filter((p: DiagramPort) => p.direction === 'output');
   const contentShiftX = isArray ? stackLayers.front.dx : 0;
   const contentShiftY = isArray ? stackLayers.front.dy : 0;
@@ -49,27 +54,10 @@ export function ReplicateNodeSvg({
 
   return (
     <>
-      {isArray &&
-        skinLayers
-          .filter((layer) => layer.id !== 'front')
-          .map((layer) => (
-            <rect
-              key={layer.id}
-              className={
-                `svsch-node-shape hdl-node-array-layer hdl-node-array-${layer.id} ` +
-                `svsch-array-layer-${layer.id}`
-              }
-              transform={`translate(${layer.dx}, ${layer.dy})`}
-              width={width}
-              height={height}
-              opacity={layer.id === 'back' ? 0.5 : layer.id === 'middle' ? 0.75 : 1}
-            />
-          ))}
-      <rect
-        className={`svsch-node-shape${
-          isArray ? ' hdl-node-array-layer hdl-node-array-front svsch-array-layer-front' : ''
-        }`}
-        transform={shapeTransform}
+      <ArrayStackSkinRect
+        isArray={isArray}
+        skinLayers={skinLayers}
+        shapeTransform={shapeTransform}
         width={width}
         height={height}
       />

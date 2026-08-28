@@ -1,0 +1,294 @@
+{
+  "nodes": [
+    {
+      "id": "expand:instance:top:u1::expand-port-label:port:param_leaf:a",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::expand-port-label:port:param_leaf:clk",
+      "type": "hdl",
+      "position": {
+        "x": 288,
+        "y": 192
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::expand-port-label:port:param_leaf:y",
+      "type": "hdl",
+      "position": {
+        "x": 1008,
+        "y": 144
+      },
+      "width": 96,
+      "height": 48,
+      "data": {
+        "kind": "netLabel",
+        "ports": [
+          {
+            "id": "cut",
+            "name": "cut",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::port:param_leaf:a",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 96
+      },
+      "width": 72,
+      "height": 48,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::port:param_leaf:clk",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 72
+      },
+      "width": 72,
+      "height": 48,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::port:param_leaf:y",
+      "type": "hdl",
+      "position": {
+        "x": 1176,
+        "y": 72
+      },
+      "width": 48,
+      "height": 48,
+      "data": {
+        "kind": "boundaryPort",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand:instance:top:u1::reg:param_leaf:y",
+      "type": "hdl",
+      "position": {
+        "x": 600,
+        "y": 120
+      },
+      "width": 192,
+      "height": 96,
+      "data": {
+        "kind": "register",
+        "ports": [
+          {
+            "id": "d",
+            "name": "D",
+            "direction": "input"
+          },
+          {
+            "id": "q",
+            "name": "Q",
+            "direction": "output"
+          },
+          {
+            "id": "clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance:top:u1",
+      "type": "hdl",
+      "position": {
+        "x": 144,
+        "y": 24
+      },
+      "width": 1080,
+      "height": 264,
+      "data": {
+        "kind": "instance",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          },
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:a",
+      "type": "hdl",
+      "position": {
+        "x": -192,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:clk",
+      "type": "hdl",
+      "position": {
+        "x": -192,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:clk",
+            "name": "clk",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:top:y",
+      "type": "hdl",
+      "position": {
+        "x": 1440,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "output"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:instance:top:u1:port:top:y:y",
+      "source": "expand:instance:top:u1::port:param_leaf:y",
+      "target": "port:top:y",
+      "sourceHandle": "outer",
+      "targetHandle": "port:y",
+      "path": "M 1224 96 L 1248 96 L 1416 96 L 1440 96"
+    },
+    {
+      "id": "edge:port:top:a:instance:top:u1:a",
+      "source": "port:top:a",
+      "target": "expand:instance:top:u1::port:param_leaf:a",
+      "sourceHandle": "port:a",
+      "targetHandle": "outer",
+      "path": "M -72 144 L -48 144 L 48 144 L 48 120 L 120 120 L 144 120"
+    },
+    {
+      "id": "edge:port:top:clk:instance:top:u1:clk",
+      "source": "port:top:clk",
+      "target": "expand:instance:top:u1::port:param_leaf:clk",
+      "sourceHandle": "port:clk",
+      "targetHandle": "outer",
+      "path": "M -72 96 L -48 96 L 120 96 L 144 96"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:port:param_leaf:a:reg:param_leaf:y:a",
+      "source": "expand:instance:top:u1::expand-port-label:port:param_leaf:a",
+      "target": "expand:instance:top:u1::reg:param_leaf:y",
+      "sourceHandle": "cut",
+      "targetHandle": "d",
+      "path": "M 384 168 L 408 168 L 576 168 L 600 168"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:port:param_leaf:clk:reg:param_leaf:y:clk",
+      "source": "expand:instance:top:u1::expand-port-label:port:param_leaf:clk",
+      "target": "expand:instance:top:u1::reg:param_leaf:y",
+      "sourceHandle": "cut",
+      "targetHandle": "clk",
+      "path": "M 384 216 L 408 216 L 504 216 L 504 192 L 576 192 L 600 192"
+    },
+    {
+      "id": "expand:instance:top:u1::edge:reg:param_leaf:y:port:param_leaf:y:y",
+      "source": "expand:instance:top:u1::reg:param_leaf:y",
+      "target": "expand:instance:top:u1::expand-port-label:port:param_leaf:y",
+      "sourceHandle": "q",
+      "targetHandle": "cut",
+      "path": "M 792 168 L 816 168 L 984 168 L 1008 168"
+    }
+  ]
+}
