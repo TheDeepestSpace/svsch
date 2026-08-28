@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
+  computeMonthTicks,
+  computeMovingAverages,
   mergeBenchmarkHistory,
 } from '../../scripts/render-benchmark-charts.mjs';
 
@@ -105,41 +107,111 @@ describe('mergeBenchmarkHistory', () => {
 describe('computeHistoryTrendData', () => {
   const entryA = {
     sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    date: '2026-01-05T00:00:00.000Z',
     elaborationAvgMs: 120,
     renderingAvgMs: 80,
   };
   const entryB = {
     sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    date: '2026-01-10T00:00:00.000Z',
     elaborationAvgMs: 110,
     renderingAvgMs: 90,
   };
 
   it('appends the current run as a marked preview point after history, oldest first', () => {
+    const currentDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
     const points = computeHistoryTrendData([entryA, entryB], {
+      dateMs: currentDateMs,
       elaborationAvgMs: 100,
       renderingAvgMs: 70,
     });
     expect(points).toEqual([
       {
-        label: entryA.sha.slice(0, 7),
+        dateMs: new Date(entryA.date).getTime(),
         elaborationAvgMs: entryA.elaborationAvgMs,
         renderingAvgMs: entryA.renderingAvgMs,
         isCurrent: false,
       },
       {
-        label: entryB.sha.slice(0, 7),
+        dateMs: new Date(entryB.date).getTime(),
         elaborationAvgMs: entryB.elaborationAvgMs,
         renderingAvgMs: entryB.renderingAvgMs,
         isCurrent: false,
       },
-      { label: 'this PR', elaborationAvgMs: 100, renderingAvgMs: 70, isCurrent: true },
+      { dateMs: currentDateMs, elaborationAvgMs: 100, renderingAvgMs: 70, isCurrent: true },
     ]);
   });
 
   it('produces just the preview point when there is no history yet', () => {
-    const points = computeHistoryTrendData([], { elaborationAvgMs: 50, renderingAvgMs: 40 });
+    const currentDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData([], {
+      dateMs: currentDateMs,
+      elaborationAvgMs: 50,
+      renderingAvgMs: 40,
+    });
     expect(points).toEqual([
-      { label: 'this PR', elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
+      { dateMs: currentDateMs, elaborationAvgMs: 50, renderingAvgMs: 40, isCurrent: true },
+    ]);
+  });
+});
+
+describe('computeMovingAverages', () => {
+  const point = (dateMs: number, elaborationAvgMs: number, renderingAvgMs: number) => ({
+    dateMs,
+    elaborationAvgMs,
+    renderingAvgMs,
+  });
+
+  it('averages over a widening window until it reaches the full window size', () => {
+    const points = [point(1, 10, 100), point(2, 20, 200), point(3, 30, 300)];
+    expect(computeMovingAverages(points, 2)).toEqual([
+      point(1, 10, 100),
+      point(2, 15, 150),
+      point(3, 25, 250),
+    ]);
+  });
+
+  it('only averages over the trailing windowSize points once history exceeds it', () => {
+    const points = [point(1, 10, 0), point(2, 20, 0), point(3, 30, 0), point(4, 40, 0)];
+    expect(computeMovingAverages(points, 2).at(-1)).toEqual(point(4, 35, 0));
+  });
+
+  it('returns an empty list for no points', () => {
+    expect(computeMovingAverages([])).toEqual([]);
+  });
+
+  it('defaults to a 10-run window', () => {
+    const points = Array.from({ length: 12 }, (_, i) => point(i, i, i * 10));
+    const result = computeMovingAverages(points);
+    // Last point averages indices 2..11 (10 points): elaboration mean of 2..11 = 6.5
+    expect(result.at(-1)).toEqual(point(11, 6.5, 65));
+  });
+});
+
+describe('computeMonthTicks', () => {
+  it('returns one tick per calendar month starting the month at-or-before the min date', () => {
+    const minDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
+    const maxDateMs = new Date('2026-03-05T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(minDateMs, maxDateMs)).toEqual([
+      { dateMs: Date.UTC(2026, 0, 1), label: 'Jan' },
+      { dateMs: Date.UTC(2026, 1, 1), label: 'Feb' },
+      { dateMs: Date.UTC(2026, 2, 1), label: 'Mar' },
+    ]);
+  });
+
+  it('adds a two-digit year suffix once the range spans more than one year', () => {
+    const minDateMs = new Date('2025-12-20T00:00:00.000Z').getTime();
+    const maxDateMs = new Date('2026-01-10T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(minDateMs, maxDateMs)).toEqual([
+      { dateMs: Date.UTC(2025, 11, 1), label: "Dec '25" },
+      { dateMs: Date.UTC(2026, 0, 1), label: "Jan '26" },
+    ]);
+  });
+
+  it('returns a single tick when min and max fall in the same month', () => {
+    const dateMs = new Date('2026-06-15T00:00:00.000Z').getTime();
+    expect(computeMonthTicks(dateMs, dateMs)).toEqual([
+      { dateMs: Date.UTC(2026, 5, 1), label: 'Jun' },
     ]);
   });
 });
