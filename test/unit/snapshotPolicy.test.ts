@@ -31,30 +31,31 @@ describe('snapshot update policy', () => {
     ).toBe(2);
     expect(
       baselineThresholdFor(
+        'test/visual/__screenshots__/nested_case.visual.spec.ts-snapshots/' +
+          'nested-case-literal-collision-canvas-chromium-linux.png',
+      )?.maxDiffPixels,
+    ).toBe(120);
+    expect(
+      baselineThresholdFor(
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-resize-left-chromium-linux.png',
       )?.maxDiffPixels,
-    ).toBe(120);
+    ).toBe(20);
     expect(
       baselineThresholdFor(
         'test/visual/__screenshots__/generate_regions.visual.spec.ts-snapshots/' +
           'generate-region-selected-canvas-chromium-linux.png',
       )?.maxDiffPixels,
     ).toBe(20);
-    expect(
-      baselineThresholdFor(
-        'test/features/__screenshots__/1.91.0/example.spec.ts-snapshots/example-linux.png',
-      )?.maxDiffPixels,
-    ).toBe(300);
-    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(50);
+    expect(baselineThresholdFor('test/features/snapshots/example.png')?.maxDiffPixels).toBe(35);
     expect(
       baselineThresholdFor('test/features/snapshots/example--cli-png.png')?.maxDiffPixels,
-    ).toBe(100);
+    ).toBe(20);
     expect(
       baselineThresholdFor(
         'test/system/__screenshots__/1.91.0/diagram.spec.ts-snapshots/full-window-linux.png',
       )?.maxDiffPixels,
-    ).toBe(500);
+    ).toBe(20);
   });
 
   it('rejects Playwright all mode', () => {

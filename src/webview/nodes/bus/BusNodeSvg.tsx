@@ -17,7 +17,8 @@ import {
   interfaceTopPortX,
   orderedInterfaceSidePorts,
 } from '../../../diagram/interfaceGeometry';
-import { busTapPortCenterY } from '../../../diagram/busGeometry';
+import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
+import { busTapPortCenterY, isBusComposition } from '../../../diagram/busGeometry';
 import type { DiagramPort, SourceRange } from '../../../ir/types';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
 import {
@@ -27,6 +28,10 @@ import {
   getSvgStructFieldAnnotation,
 } from '../shared/labels';
 import { isInputSidePort } from '../../../diagram/portDirection';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 
 export function BusNodeSvg({
   node,
@@ -37,10 +42,11 @@ export function BusNodeSvg({
 }: NodeSvgProps): React.ReactElement {
   const isArray = nodeIsArrayNode(node);
   const stackWide = isArray && nodeStackIsWide(node);
+  const _skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const monoTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.62;
   const linkTextWidth = (text: string, fontSize: number) => text.length * fontSize * 0.55;
   const dottedUnderline = (
@@ -295,12 +301,7 @@ export function BusNodeSvg({
     (p: DiagramPort) => p.direction === 'output',
   );
 
-  const isComposition =
-    node.kind === 'struct'
-      ? role === 'composition'
-      : isInterface
-        ? false
-        : aggregateInputs.length > 1;
+  const isComposition = isBusComposition(node, role);
   const isArrayAggregate = node.kind === 'bus' && node.metadata?.aggregateKind === 'array';
 
   const taps: DiagramPort[] = isInterfaceModport
@@ -314,6 +315,15 @@ export function BusNodeSvg({
   const tapCenters = taps.map((_: DiagramPort, i: number) =>
     busTapPortCenterY(i, isInterfaceModport ? 2 : 1),
   );
+
+  const _kindLabel =
+    node.kind === 'struct'
+      ? 'STRUCT'
+      : node.kind === 'bus'
+        ? 'BUS'
+        : isInterfaceModport
+          ? 'MODPORT'
+          : 'INTERFACE';
 
   if (taps.length === 0) {
     return <></>;
