@@ -5,6 +5,10 @@ import { nodeIsArrayNode } from '../../../ir/nodeMetadata';
 import { nodeStackIsWide } from '../../../ir/edgeStyle';
 import { arrayStackSkinLayersFor } from '../../arrayStackGeometry';
 import { SvgArrayStackLeads } from '../shared/SvgArrayStackLeads';
+import {
+  hasArrayConnection as sharedHasArrayConnection,
+  arrayConnectionThick as sharedArrayConnectionThick,
+} from '../shared/arrayConnections';
 import type { DiagramPort } from '../../../ir/types';
 import { isInoutPort, isInputSidePort } from '../../../diagram/portDirection';
 
@@ -18,9 +22,9 @@ export function InverterNodeSvg({
   const stackWide = isArray && nodeStackIsWide(node);
   const skinLayers = arrayStackSkinLayersFor(stackWide);
   const hasArrayConnection = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).some((c) => c.portId === portId && c.role === role);
+    sharedHasArrayConnection(arrayConnections, portId, role);
   const arrayConnectionThick = (portId: string | undefined, role: 'source' | 'target'): boolean =>
-    (arrayConnections ?? []).find((c) => c.portId === portId && c.role === role)?.thick ?? false;
+    sharedArrayConnectionThick(arrayConnections, portId, role);
   const hasInputSideConnection = (port: DiagramPort): boolean =>
     hasArrayConnection(port.id, 'target') ||
     (isInoutPort(port) && hasArrayConnection(port.id, 'source'));
