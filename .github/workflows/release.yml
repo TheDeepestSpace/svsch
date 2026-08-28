@@ -55,6 +55,7 @@ jobs:
           create-github-releases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
       - name: Resolve released tag
         id: resolve-tag
