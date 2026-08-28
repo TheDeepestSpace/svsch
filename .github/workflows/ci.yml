@@ -636,10 +636,24 @@ jobs:
             const perShard = artifacts.filter(
               (a) => a.name.startsWith('bdd-artifacts-') || a.name.startsWith('bdd-blob-report-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (error) {
+                // On a job rerun, the listing above can still include an
+                // artifact a prior attempt already deleted (API list/delete
+                // consistency lag) — a 404 here just means it's gone already,
+                // not a real failure, so don't crash the job over it.
+                if (error.status === 404) {
+                  core.info(`Artifact ${artifact.id} (${artifact.name}) already deleted, skipping`);
+                } else {
+                  throw error;
+                }
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard BDD artifact(s)`);
 
   publish_bdd_videos:
     needs: [merge_bdd_reports]
