@@ -64,11 +64,17 @@ function currentVisualBenchmarkName(): string | undefined {
 // same naming/log-file convention — see mux.visual.spec.ts and
 // bus_composition.visual.spec.ts, which predate this instrumentation and
 // otherwise silently produce zero benchmark data.
+//
+// `name` defaults to the currently running test's title, but callers that
+// measure work shared across many tests (e.g. the memoized cpu example-design
+// elaboration below) should pass a fixed name explicitly — otherwise the
+// sample gets attributed to whichever test happens to trigger the shared
+// work first, which varies with Playwright's worker scheduling.
 export function recordVisualBenchmark(
   metric: 'elaboration' | 'rendering',
   durationMs: number,
+  name = currentVisualBenchmarkName(),
 ): void {
-  const name = currentVisualBenchmarkName();
   if (!name) return;
   const samplesFile =
     metric === 'elaboration' ? visualElaborationSamplesFile : visualRenderingSamplesFile;
@@ -230,6 +236,16 @@ export const EXAMPLE_DESIGN_MODULES = [
 const exampleDesignRoot = path.resolve(__dirname, 'fixtures/example_designs/cpu');
 let exampleDesignGraphPromise: Promise<DesignGraph> | undefined;
 
+// Fixed rather than derived from the running test's title: this elaboration
+// is memoized once per worker and shared across ~10 tests (all of
+// example_design.visual.spec.ts plus expand_instance.visual.spec.ts's
+// "every instance expanded" suite), so whichever test happens to trigger it
+// first varies with Playwright's worker/test scheduling. Attributing the
+// sample to that test made the benchmark chart flip between test names (and
+// spuriously show "new"/no-baseline) run to run — see #344.
+const exampleDesignElaborationBenchmarkName =
+  'example_design.visual.spec.ts › cpu example design elaboration (shared)';
+
 function exampleDesignGraph(): Promise<DesignGraph> {
   exampleDesignGraphPromise ??= (async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'svsch-example-design-'));
@@ -239,7 +255,7 @@ function exampleDesignGraph(): Promise<DesignGraph> {
         fs.copyFileSync(path.join(exampleDesignRoot, file), path.join(tmpDir, file));
       }
 
-      return await buildGraphFromWorkspace(tmpDir);
+      return await buildGraphFromWorkspace(tmpDir, exampleDesignElaborationBenchmarkName);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
@@ -464,7 +480,10 @@ export async function fitGraphView(page: Page, padding = 0.12): Promise<void> {
   await page.waitForTimeout(100);
 }
 
-async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGraph> {
+async function buildGraphFromWorkspace(
+  workspaceRoot: string,
+  benchmarkName?: string,
+): Promise<DesignGraph> {
   const surelogPath =
     process.env.SVSCH_SURELOG_PATH ?? path.resolve(__dirname, '../../dist/surelog/bin/surelog');
   const backendPath = path.resolve(__dirname, '../../dist/svsch_backend');
@@ -479,7 +498,7 @@ async function buildGraphFromWorkspace(workspaceRoot: string): Promise<DesignGra
     backendPath,
     includeExternalDiagnostics: false,
   });
-  recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt);
+  recordVisualBenchmark('elaboration', Date.now() - elaborationStartedAt, benchmarkName);
   return graph;
 }
 

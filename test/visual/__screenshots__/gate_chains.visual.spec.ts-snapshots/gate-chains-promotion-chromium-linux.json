@@ -1,0 +1,759 @@
+{
+  "nodes": [
+    {
+      "id": "comb:logical_gate_chains:bitwise_logical_fallback:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 192
+      },
+      "width": 192,
+      "height": 120,
+      "data": {
+        "kind": "comb",
+        "ports": [
+          {
+            "id": "out:bitwise_logical_fallback",
+            "name": "bitwise_logical_fallback",
+            "direction": "output"
+          },
+          {
+            "id": "port:x",
+            "name": "x",
+            "direction": "input"
+          },
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "input"
+          },
+          {
+            "id": "port:z",
+            "name": "z",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comparator:logical_gate_chains:mixed_comparators_in0:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 576
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "comparator",
+        "ports": [
+          {
+            "id": "port:lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:mixed_comparators_in0",
+            "name": "mixed_comparators_in0",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "comparator:logical_gate_chains:mixed_comparators_in2:expr",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 744
+      },
+      "width": 96,
+      "height": 96,
+      "data": {
+        "kind": "comparator",
+        "ports": [
+          {
+            "id": "port:lhs",
+            "name": "lhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:rhs",
+            "name": "rhs",
+            "direction": "input"
+          },
+          {
+            "id": "port:mixed_comparators_in2",
+            "name": "mixed_comparators_in2",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:logical_gate_chains:and_chain:and",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 360
+      },
+      "width": 96,
+      "height": 192,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "port:in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "port:in3",
+            "name": "in3",
+            "direction": "input"
+          },
+          {
+            "id": "out:and_chain",
+            "name": "and_chain",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:logical_gate_chains:mixed_comparators:and",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 624
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "port:in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out:mixed_comparators",
+            "name": "mixed_comparators",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gate:logical_gate_chains:or_chain:or",
+      "type": "hdl",
+      "position": {
+        "x": 360,
+        "y": 24
+      },
+      "width": 96,
+      "height": 144,
+      "data": {
+        "kind": "gate",
+        "ports": [
+          {
+            "id": "port:in0",
+            "name": "in0",
+            "direction": "input"
+          },
+          {
+            "id": "port:in1",
+            "name": "in1",
+            "direction": "input"
+          },
+          {
+            "id": "port:in2",
+            "name": "in2",
+            "direction": "input"
+          },
+          {
+            "id": "out:or_chain",
+            "name": "or_chain",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:a",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 372
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:a",
+            "name": "a",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:and_chain",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 444
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:and_chain",
+            "name": "and_chain",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:b",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 420
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:b",
+            "name": "b",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:bitwise_logical_fallback",
+      "type": "hdl",
+      "position": {
+        "x": 768,
+        "y": 228
+      },
+      "width": 240,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:bitwise_logical_fallback",
+            "name": "bitwise_logical_fallback",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:c",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 468
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:c",
+            "name": "c",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:d",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 516
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:d",
+            "name": "d",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:e",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 36
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:e",
+            "name": "e",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:f",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:f",
+            "name": "f",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:g",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 132
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:g",
+            "name": "g",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:mixed_comparators",
+      "type": "hdl",
+      "position": {
+        "x": 984,
+        "y": 684
+      },
+      "width": 192,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:mixed_comparators",
+            "name": "mixed_comparators",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:or_chain",
+      "type": "hdl",
+      "position": {
+        "x": 672,
+        "y": 84
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:or_chain",
+            "name": "or_chain",
+            "direction": "output"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:p",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 588
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:p",
+            "name": "p",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:q",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 636
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:q",
+            "name": "q",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:r",
+      "type": "hdl",
+      "position": {
+        "x": 336,
+        "y": 684
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:r",
+            "name": "r",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:s",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 756
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:s",
+            "name": "s",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:t",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 804
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:t",
+            "name": "t",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:x",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 204
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:x",
+            "name": "x",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:y",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 252
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:y",
+            "name": "y",
+            "direction": "input"
+          }
+        ]
+      }
+    },
+    {
+      "id": "port:logical_gate_chains:z",
+      "type": "hdl",
+      "position": {
+        "x": 24,
+        "y": 300
+      },
+      "width": 120,
+      "height": 24,
+      "data": {
+        "kind": "port",
+        "ports": [
+          {
+            "id": "port:z",
+            "name": "z",
+            "direction": "input"
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:comb:logical_gate_chains:bitwise_logical_fallback:expr:port:logical_gate_chains:bitwise_logical_fallback:bitwise_logical_fallback",
+      "source": "comb:logical_gate_chains:bitwise_logical_fallback:expr",
+      "target": "port:logical_gate_chains:bitwise_logical_fallback",
+      "sourceHandle": "out:bitwise_logical_fallback",
+      "targetHandle": "port:bitwise_logical_fallback",
+      "path": "M 552 240 L 576 240 L 744 240 L 768 240"
+    },
+    {
+      "id": "edge:comparator:logical_gate_chains:mixed_comparators_in0:expr:gate:logical_gate_chains:mixed_comparators:and:mixed_comparators_in0",
+      "source": "comparator:logical_gate_chains:mixed_comparators_in0:expr",
+      "target": "gate:logical_gate_chains:mixed_comparators:and",
+      "sourceHandle": "port:mixed_comparators_in0",
+      "targetHandle": "port:in0",
+      "path": "M 456 624 L 480 624 L 576 624 L 576 648 L 648 648 L 672 648"
+    },
+    {
+      "id": "edge:comparator:logical_gate_chains:mixed_comparators_in2:expr:gate:logical_gate_chains:mixed_comparators:and:mixed_comparators_in2",
+      "source": "comparator:logical_gate_chains:mixed_comparators_in2:expr",
+      "target": "gate:logical_gate_chains:mixed_comparators:and",
+      "sourceHandle": "port:mixed_comparators_in2",
+      "targetHandle": "port:in2",
+      "path": "M 456 792 L 480 792 L 576 792 L 576 744 L 648 744 L 672 744"
+    },
+    {
+      "id": "edge:gate:logical_gate_chains:and_chain:and:port:logical_gate_chains:and_chain:and_chain",
+      "source": "gate:logical_gate_chains:and_chain:and",
+      "target": "port:logical_gate_chains:and_chain",
+      "sourceHandle": "out:and_chain",
+      "targetHandle": "port:and_chain",
+      "path": "M 456 456 L 480 456 L 648 456 L 672 456"
+    },
+    {
+      "id": "edge:gate:logical_gate_chains:mixed_comparators:and:port:logical_gate_chains:mixed_comparators:mixed_comparators",
+      "source": "gate:logical_gate_chains:mixed_comparators:and",
+      "target": "port:logical_gate_chains:mixed_comparators",
+      "sourceHandle": "out:mixed_comparators",
+      "targetHandle": "port:mixed_comparators",
+      "path": "M 768 696 L 792 696 L 960 696 L 984 696"
+    },
+    {
+      "id": "edge:gate:logical_gate_chains:or_chain:or:port:logical_gate_chains:or_chain:or_chain",
+      "source": "gate:logical_gate_chains:or_chain:or",
+      "target": "port:logical_gate_chains:or_chain",
+      "sourceHandle": "out:or_chain",
+      "targetHandle": "port:or_chain",
+      "path": "M 456 96 L 480 96 L 648 96 L 672 96"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:a:gate:logical_gate_chains:and_chain:and:a",
+      "source": "port:logical_gate_chains:a",
+      "target": "gate:logical_gate_chains:and_chain:and",
+      "sourceHandle": "port:a",
+      "targetHandle": "port:in0",
+      "path": "M 144 384 L 168 384 L 336 384 L 360 384"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:b:gate:logical_gate_chains:and_chain:and:b",
+      "source": "port:logical_gate_chains:b",
+      "target": "gate:logical_gate_chains:and_chain:and",
+      "sourceHandle": "port:b",
+      "targetHandle": "port:in1",
+      "path": "M 144 432 L 168 432 L 336 432 L 360 432"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:c:gate:logical_gate_chains:and_chain:and:c",
+      "source": "port:logical_gate_chains:c",
+      "target": "gate:logical_gate_chains:and_chain:and",
+      "sourceHandle": "port:c",
+      "targetHandle": "port:in2",
+      "path": "M 144 480 L 168 480 L 336 480 L 360 480"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:d:gate:logical_gate_chains:and_chain:and:d",
+      "source": "port:logical_gate_chains:d",
+      "target": "gate:logical_gate_chains:and_chain:and",
+      "sourceHandle": "port:d",
+      "targetHandle": "port:in3",
+      "path": "M 144 528 L 168 528 L 336 528 L 360 528"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:e:gate:logical_gate_chains:or_chain:or:e",
+      "source": "port:logical_gate_chains:e",
+      "target": "gate:logical_gate_chains:or_chain:or",
+      "sourceHandle": "port:e",
+      "targetHandle": "port:in0",
+      "path": "M 144 48 L 168 48 L 336 48 L 377.482 48"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:f:gate:logical_gate_chains:or_chain:or:f",
+      "source": "port:logical_gate_chains:f",
+      "target": "gate:logical_gate_chains:or_chain:or",
+      "sourceHandle": "port:f",
+      "targetHandle": "port:in1",
+      "path": "M 144 96 L 168 96 L 336 96 L 377.482 96"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:g:gate:logical_gate_chains:or_chain:or:g",
+      "source": "port:logical_gate_chains:g",
+      "target": "gate:logical_gate_chains:or_chain:or",
+      "sourceHandle": "port:g",
+      "targetHandle": "port:in2",
+      "path": "M 144 144 L 168 144 L 336 144 L 377.482 144"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:p:comparator:logical_gate_chains:mixed_comparators_in0:expr:p",
+      "source": "port:logical_gate_chains:p",
+      "target": "comparator:logical_gate_chains:mixed_comparators_in0:expr",
+      "sourceHandle": "port:p",
+      "targetHandle": "port:lhs",
+      "path": "M 144 600 L 168 600 L 336 600 L 360 600"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:q:comparator:logical_gate_chains:mixed_comparators_in0:expr:q",
+      "source": "port:logical_gate_chains:q",
+      "target": "comparator:logical_gate_chains:mixed_comparators_in0:expr",
+      "sourceHandle": "port:q",
+      "targetHandle": "port:rhs",
+      "path": "M 144 648 L 168 648 L 336 648 L 360 648"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:r:gate:logical_gate_chains:mixed_comparators:and:r",
+      "source": "port:logical_gate_chains:r",
+      "target": "gate:logical_gate_chains:mixed_comparators:and",
+      "sourceHandle": "port:r",
+      "targetHandle": "port:in1",
+      "path": "M 456 696 L 480 696 L 648 696 L 672 696"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:s:comparator:logical_gate_chains:mixed_comparators_in2:expr:s",
+      "source": "port:logical_gate_chains:s",
+      "target": "comparator:logical_gate_chains:mixed_comparators_in2:expr",
+      "sourceHandle": "port:s",
+      "targetHandle": "port:lhs",
+      "path": "M 144 768 L 168 768 L 336 768 L 360 768"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:t:comparator:logical_gate_chains:mixed_comparators_in2:expr:t",
+      "source": "port:logical_gate_chains:t",
+      "target": "comparator:logical_gate_chains:mixed_comparators_in2:expr",
+      "sourceHandle": "port:t",
+      "targetHandle": "port:rhs",
+      "path": "M 144 816 L 168 816 L 336 816 L 360 816"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:x:comb:logical_gate_chains:bitwise_logical_fallback:expr:x",
+      "source": "port:logical_gate_chains:x",
+      "target": "comb:logical_gate_chains:bitwise_logical_fallback:expr",
+      "sourceHandle": "port:x",
+      "targetHandle": "port:x",
+      "path": "M 144 216 L 168 216 L 264 216 L 264 240 L 336 240 L 360 240"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:y:comb:logical_gate_chains:bitwise_logical_fallback:expr:y",
+      "source": "port:logical_gate_chains:y",
+      "target": "comb:logical_gate_chains:bitwise_logical_fallback:expr",
+      "sourceHandle": "port:y",
+      "targetHandle": "port:y",
+      "path": "M 144 264 L 168 264 L 336 264 L 360 264"
+    },
+    {
+      "id": "edge:port:logical_gate_chains:z:comb:logical_gate_chains:bitwise_logical_fallback:expr:z",
+      "source": "port:logical_gate_chains:z",
+      "target": "comb:logical_gate_chains:bitwise_logical_fallback:expr",
+      "sourceHandle": "port:z",
+      "targetHandle": "port:z",
+      "path": "M 144 312 L 168 312 L 264 312 L 264 288 L 336 288 L 360 288"
+    }
+  ]
+}

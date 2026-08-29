@@ -3,6 +3,7 @@ import {
   computeBenchmarkHistory,
   computeHistoryTrendData,
   computeMonthTicks,
+  computeMovingAverages,
   mergeBenchmarkHistory,
   renderHistoryTrendChart,
 } from '../../scripts/render-benchmark-charts.mjs';
@@ -155,6 +156,39 @@ describe('computeHistoryTrendData', () => {
   });
 });
 
+describe('computeMovingAverages', () => {
+  const point = (dateMs: number, elaborationAvgMs: number, renderingAvgMs: number) => ({
+    dateMs,
+    elaborationAvgMs,
+    renderingAvgMs,
+  });
+
+  it('averages over a widening window until it reaches the full window size', () => {
+    const points = [point(1, 10, 100), point(2, 20, 200), point(3, 30, 300)];
+    expect(computeMovingAverages(points, 2)).toEqual([
+      point(1, 10, 100),
+      point(2, 15, 150),
+      point(3, 25, 250),
+    ]);
+  });
+
+  it('only averages over the trailing windowSize points once history exceeds it', () => {
+    const points = [point(1, 10, 0), point(2, 20, 0), point(3, 30, 0), point(4, 40, 0)];
+    expect(computeMovingAverages(points, 2).at(-1)).toEqual(point(4, 35, 0));
+  });
+
+  it('returns an empty list for no points', () => {
+    expect(computeMovingAverages([])).toEqual([]);
+  });
+
+  it('defaults to a 10-run window', () => {
+    const points = Array.from({ length: 12 }, (_, i) => point(i, i, i * 10));
+    const result = computeMovingAverages(points);
+    // Last point averages indices 2..11 (10 points): elaboration mean of 2..11 = 6.5
+    expect(result.at(-1)).toEqual(point(11, 6.5, 65));
+  });
+});
+
 describe('computeMonthTicks', () => {
   it('returns one tick per calendar month starting the month at-or-before the min date', () => {
     const minDateMs = new Date('2026-01-15T00:00:00.000Z').getTime();
@@ -221,5 +255,34 @@ describe('renderHistoryTrendChart milestones', () => {
   it('defaults to no markers when milestones is omitted', () => {
     const svg = renderHistoryTrendChart({ title: 'test', history: [entryA], currentRunAverages });
     expect(svg).not.toContain('stroke-dasharray="3,3"');
+  });
+});
+
+describe('computeHistoryTrendData with a custom series', () => {
+  const CUSTOM_SERIES = [{ key: 'durationSec', color: '#000000', label: 'Duration' }];
+  const historyEntry = {
+    sha: 'cccccccccccccccccccccccccccccccccccccccc',
+    date: '2026-01-01T00:00:00.000Z',
+    durationSec: 500,
+  };
+
+  it('only copies the given series keys onto each point (not the whole entry)', () => {
+    const currentDateMs = new Date('2026-01-02T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData(
+      [historyEntry],
+      { dateMs: currentDateMs, durationSec: 480 },
+      CUSTOM_SERIES,
+    );
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+      { dateMs: currentDateMs, durationSec: 480, isCurrent: true },
+    ]);
+  });
+
+  it('omits the preview point entirely when currentPoint is nullish', () => {
+    const points = computeHistoryTrendData([historyEntry], undefined, CUSTOM_SERIES);
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+    ]);
   });
 });
