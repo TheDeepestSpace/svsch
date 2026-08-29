@@ -445,10 +445,18 @@ jobs:
                 a.name.startsWith('visual-blob-report-') ||
                 a.name.startsWith('visual-benchmark-raw-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (err) {
+                // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                // deleting one artifact shouldn't fail the whole job.
+                core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard visual artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard visual artifact(s)`);
 
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -641,15 +649,17 @@ jobs:
               try {
                 await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
                 deleted++;
-              } catch (error) {
+              } catch (err) {
                 // On a job rerun, the listing above can still include an
                 // artifact a prior attempt already deleted (API list/delete
                 // consistency lag) — a 404 here just means it's gone already,
                 // not a real failure, so don't crash the job over it.
-                if (error.status === 404) {
+                if (err.status === 404) {
                   core.info(`Artifact ${artifact.id} (${artifact.name}) already deleted, skipping`);
                 } else {
-                  throw error;
+                  // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                  // deleting one artifact shouldn't fail the whole job.
+                  core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
                 }
               }
             }
