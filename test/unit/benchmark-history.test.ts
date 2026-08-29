@@ -215,3 +215,32 @@ describe('computeMonthTicks', () => {
     ]);
   });
 });
+
+describe('computeHistoryTrendData with a custom series', () => {
+  const CUSTOM_SERIES = [{ key: 'durationSec', color: '#000000', label: 'Duration' }];
+  const historyEntry = {
+    sha: 'cccccccccccccccccccccccccccccccccccccccc',
+    date: '2026-01-01T00:00:00.000Z',
+    durationSec: 500,
+  };
+
+  it('only copies the given series keys onto each point (not the whole entry)', () => {
+    const currentDateMs = new Date('2026-01-02T00:00:00.000Z').getTime();
+    const points = computeHistoryTrendData(
+      [historyEntry],
+      { dateMs: currentDateMs, durationSec: 480 },
+      CUSTOM_SERIES,
+    );
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+      { dateMs: currentDateMs, durationSec: 480, isCurrent: true },
+    ]);
+  });
+
+  it('omits the preview point entirely when currentPoint is nullish', () => {
+    const points = computeHistoryTrendData([historyEntry], undefined, CUSTOM_SERIES);
+    expect(points).toEqual([
+      { dateMs: new Date(historyEntry.date).getTime(), durationSec: 500, isCurrent: false },
+    ]);
+  });
+});

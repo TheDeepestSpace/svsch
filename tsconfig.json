@@ -1,18 +1,8 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "node16",
-    "ignoreDeprecations": "6.0",
-    "noUncheckedSideEffectImports": false,
-    "moduleResolution": "node16",
-    "jsx": "react-jsx",
-    "lib": ["ESNext", "dom"],
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "out",
-    "types": ["node"]
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.cli.json" },
+    { "path": "./tsconfig.extension.json" },
+    { "path": "./tsconfig.webview.json" }
+  ]
 }
