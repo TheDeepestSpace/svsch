@@ -1,0 +1,52 @@
+name: Record CI Duration
+
+# Decoupled from ci.yml itself: this workflow only ever reads that run's
+# timing back from the Actions API after the fact, so tracking overall
+# workflow wall-clock duration (#282) can never touch, or regress, the main
+# pipeline. See scripts/ci-duration.mjs / scripts/record-ci-duration.mjs.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Multiple CI runs on master can complete close together; serialize their
+  # gh-pages pushes rather than relying solely on record-ci-duration.mjs's
+  # own retry-on-push-race loop.
+  group: gh-pages-publish-ci-duration
+  cancel-in-progress: false
+
+jobs:
+  record:
+    # workflow_run fires for every completed run of CI, including PRs — the
+    # "per merge" duration series only tracks push-to-master runs (see
+    # #282), so anything else is skipped here rather than via a second `on:`
+    # filter (workflow_run doesn't support filtering by the triggering run's
+    # branch/event directly).
+    if: >
+      github.event.workflow_run.head_branch == 'master' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Record CI duration
+        run: node scripts/record-ci-duration.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}

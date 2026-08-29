@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scenarioKey, splitScenarioKey } from './diff-bdd-scenarios.mjs';
 
-function findFiles(root, predicate) {
+export function findFiles(root, predicate) {
   if (!fs.existsSync(root)) return [];
   const files = [];
   const pending = [root];
@@ -18,7 +18,7 @@ function findFiles(root, predicate) {
   return files;
 }
 
-function videoMetadataBySourceName(report) {
+function videoMetadataBySourceName(report, defaultFeatureLabel) {
   const metadata = new Map();
 
   // depth 0 is the per-file root suite; depth 1 is the Feature-level suite
@@ -38,7 +38,7 @@ function videoMetadataBySourceName(report) {
               ? attachment.name.slice('video:'.length)
               : path.basename(attachment.path);
             metadata.set(sourceName, {
-              feature: currentFeature ?? 'BDD scenario',
+              feature: currentFeature ?? defaultFeatureLabel,
               scenario: [...currentScenarioTitles, spec.title].filter(Boolean).join(' › '),
               status: result.status ?? 'unknown',
               retry: result.retry ?? 0,
@@ -127,7 +127,7 @@ function renderIndex(videos, options) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BDD videos · PR #${escapeHtml(options.prNumber ?? '?')}</title>
+  <title>${escapeHtml(options.title ?? 'BDD videos')} · PR #${escapeHtml(options.prNumber ?? '?')}</title>
   <style>
     :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
     body { margin: 0 auto; max-width: 1500px; padding: 2rem; }
@@ -158,7 +158,7 @@ function renderIndex(videos, options) {
 <body>
   <header>
     <div>
-      <h1>BDD scenario videos · PR #${escapeHtml(options.prNumber ?? '?')}</h1>
+      <h1>${escapeHtml(options.heading ?? 'BDD scenario videos')} · PR #${escapeHtml(options.prNumber ?? '?')}</h1>
       <p class="summary">${videos.length} videos · ${formatBytes(totalBytes)} · commit ${commitLink}</p>
     </div>
     <div class="controls">
@@ -224,12 +224,13 @@ function removedScenarioEntries(changeStatus) {
   return removed;
 }
 
-export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
+export function generateVideoGallery(inputDir, outputDir, options = {}) {
+  const defaultFeatureLabel = options.defaultFeatureLabel ?? 'BDD scenario';
   const reportPath = path.join(inputDir, 'playwright-report.json');
   const report = fs.existsSync(reportPath)
     ? JSON.parse(fs.readFileSync(reportPath, 'utf8'))
     : undefined;
-  const metadata = videoMetadataBySourceName(report);
+  const metadata = videoMetadataBySourceName(report, defaultFeatureLabel);
   const sourceVideos = findFiles(inputDir, (file) => file.endsWith('.webm')).sort();
   const removed = removedScenarioEntries(options.changeStatus);
   if (!sourceVideos.length && !removed.length) {
@@ -243,7 +244,7 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
   const width = String(sourceVideos.length).length;
   const videos = sourceVideos.map((source, index) => {
     const info = metadata.get(path.basename(source)) ?? {
-      feature: 'BDD scenario',
+      feature: defaultFeatureLabel,
       scenario: path.basename(path.dirname(path.dirname(source))),
       status: 'unknown',
       retry: 0,
@@ -278,25 +279,33 @@ export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
   return allEntries;
 }
 
+export function generateBddVideoGallery(inputDir, outputDir, options = {}) {
+  return generateVideoGallery(inputDir, outputDir, options);
+}
+
 const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
 if (invokedPath === fileURLToPath(import.meta.url)) {
   const [inputDir, outputDir] = process.argv.slice(2);
   if (!inputDir || !outputDir) {
-    console.error(
-      'Usage: node scripts/generate-bdd-video-gallery.mjs <bdd-results-dir> <output-dir>',
-    );
+    console.error('Usage: node scripts/generate-bdd-video-gallery.mjs <results-dir> <output-dir>');
     process.exitCode = 2;
   } else {
     const prNumber = process.env.PR_NUMBER;
+    // Env-driven so the BDD invocation (no title/heading overrides, but a
+    // scenario status file) keeps its existing defaults while other suites
+    // (e.g. system) can opt into their own labeling from CI.
     const statusFile = process.env.BDD_SCENARIO_STATUS_FILE;
     const changeStatus =
       statusFile && fs.existsSync(statusFile)
         ? JSON.parse(fs.readFileSync(statusFile, 'utf8'))
         : undefined;
-    const videos = generateBddVideoGallery(inputDir, outputDir, {
+    const videos = generateVideoGallery(inputDir, outputDir, {
       prNumber,
       repository: process.env.GITHUB_REPOSITORY,
       sha: process.env.GITHUB_SHA,
+      title: process.env.GALLERY_TITLE,
+      heading: process.env.GALLERY_HEADING,
+      defaultFeatureLabel: process.env.GALLERY_FEATURE_LABEL,
       changeStatus,
     });
     const totalBytes = videos.reduce((sum, video) => sum + video.bytes, 0);
