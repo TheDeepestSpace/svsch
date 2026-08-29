@@ -1110,13 +1110,68 @@ jobs:
           name: pr-stats-coverage
           path: coverage-stats.md
 
+  report_backend_coverage_stats:
+    # Publishes the genhtml backend coverage report (collect_backend_coverage)
+    # to gh-pages and renders this PR's backend coverage section as markdown,
+    # for report_pr_stats to fold into the combined PR stats comment below —
+    # mirrors report_coverage_stats above, for the C++ backend's gcov/lcov
+    # data instead of vitest's.
+    needs: [prep, build_ci_image, collect_backend_coverage]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-backend-coverage-stats.mjs pushes the genhtml report to
+      # gh-pages (GitHub Pages is enabled for this repo), so it's directly
+      # browsable instead of only downloadable as a workflow artifact.
+      contents: write
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Download backend coverage report
+        # Tolerate collect_backend_coverage having produced no artifact at
+        # all (e.g. every producer job failed before uploading its share) —
+        # leaves coverage/backend/ empty, which generate-backend-coverage-stats.mjs
+        # already handles the same way it handles a missing lcov.info.
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: backend-coverage-final
+          path: coverage/backend
+
+      - name: Generate backend coverage stats
+        run: node scripts/generate-backend-coverage-stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Upload backend coverage stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-backend-coverage
+          path: backend-coverage-stats.md
+
   report_pr_stats:
     # Joins every pr-stats-* artifact (each one stats-generating job's
     # rendered markdown section — coverage, diagram-generation benchmark,
     # ...) into a single upserted PR comment. Adding a new stat to the
     # comment only means having its job write its own <name>.md and upload
     # it as an artifact named pr-stats-<name>.
-    needs: [prep, build_ci_image, report_coverage_stats, report_benchmark_stats, report_ci_duration_stats]
+    needs:
+      [
+        prep,
+        build_ci_image,
+        report_coverage_stats,
+        report_backend_coverage_stats,
+        report_benchmark_stats,
+        report_ci_duration_stats,
+      ]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -1161,7 +1216,19 @@ jobs:
     # gtest-only capture from test_backend_coverage. Non-blocking — not in
     # package_extension/pack_npm's `needs` — same "visibility only" contract
     # as test_backend_coverage already had.
-    needs: [prep, build_ci_image, setup, build_backend_coverage, test_backend_coverage, test_unit, test_bdd, test_visual, test_syntax, test_system]
+    needs:
+      [
+        prep,
+        build_ci_image,
+        setup,
+        build_backend_coverage,
+        test_backend_coverage,
+        test_unit,
+        test_bdd,
+        test_visual,
+        test_syntax,
+        test_system,
+      ]
     if: always() && needs.build_backend_coverage.result == 'success'
     runs-on: ubuntu-latest
     container: *container_config
@@ -1202,10 +1269,27 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: backend-coverage-final
-          path: coverage/backend/lcov.info
+          path: |
+            coverage/backend/lcov.info
+            coverage/backend/html/**
 
   package_extension:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, merge_visual_reports, test_syntax, test_bdd, test_system, security_audit]
+    needs:
+      [
+        prep,
+        build_ci_image,
+        setup,
+        build_extension,
+        build_backend,
+        build_cli,
+        test_backend,
+        test_unit,
+        merge_visual_reports,
+        test_syntax,
+        test_bdd,
+        test_system,
+        security_audit,
+      ]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -1232,10 +1316,25 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: extension-vsix
-          path: "*.vsix"
+          path: '*.vsix'
 
   pack_npm:
-    needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli, test_backend, test_unit, merge_visual_reports, test_syntax, test_bdd, test_system, security_audit]
+    needs:
+      [
+        prep,
+        build_ci_image,
+        setup,
+        build_extension,
+        build_backend,
+        build_cli,
+        test_backend,
+        test_unit,
+        merge_visual_reports,
+        test_syntax,
+        test_bdd,
+        test_system,
+        security_audit,
+      ]
     runs-on: ubuntu-latest
     container: *container_config
     steps:
@@ -1253,7 +1352,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: npm-tarball
-          path: "*.tgz"
+          path: '*.tgz'
 
   test_global_install:
     needs: [prep, build_ci_image, pack_npm]

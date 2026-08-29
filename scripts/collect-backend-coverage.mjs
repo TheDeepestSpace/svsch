@@ -8,7 +8,7 @@
 // gtest-only capture from `npm run test:backend:coverage`).
 //
 // Usage: node scripts/collect-backend-coverage.mjs [extra-lcov-info-file ...]
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -21,6 +21,7 @@ const OUT_DIR = path.resolve(WORKSPACE_ROOT, 'coverage/backend');
 const RUNTIME_INFO = path.join(OUT_DIR, 'lcov-runtime.info');
 const COMBINED_INFO = path.join(OUT_DIR, 'lcov-combined.info');
 const FINAL_INFO = path.join(OUT_DIR, 'lcov.info');
+const HTML_DIR = path.join(OUT_DIR, 'html');
 
 const extraInfoFiles = process.argv.slice(2);
 
@@ -154,3 +155,13 @@ execFileSync(
 );
 
 execFileSync('lcov', ['--summary', FINAL_INFO], { stdio: 'inherit' });
+
+// Same optional genhtml step run-backend-coverage.js does for local runs —
+// report_backend_coverage_stats (ci.yml) publishes this directory to
+// gh-pages if it exists, so CI gets the same annotated report a local
+// `npm run test:backend:coverage` produces.
+if (spawnSync('genhtml', ['--version']).status === 0) {
+  execFileSync('genhtml', [FINAL_INFO, '--output-directory', HTML_DIR], { stdio: 'inherit' });
+} else {
+  console.warn('genhtml not found; skipping HTML report generation.');
+}
