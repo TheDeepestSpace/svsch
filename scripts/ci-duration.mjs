@@ -204,13 +204,23 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
   }
 
   const worktreeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gh-pages-ci-duration-'));
+  let worktreeAdded = false;
   try {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
-      gitAuthed(githubToken, ['fetch', 'origin', 'gh-pages']);
-      if (attempt > 1) {
-        git(['worktree', 'remove', '--force', worktreeDir]);
+      try {
+        gitAuthed(githubToken, ['fetch', 'origin', 'gh-pages']);
+        if (worktreeAdded) {
+          git(['worktree', 'remove', '--force', worktreeDir]);
+          worktreeAdded = false;
+        }
+        git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
+        worktreeAdded = true;
+      } catch (err) {
+        if (attempt === 3) throw err;
+        // Transient network failure, or someone else's push race, fetching
+        // or checking out gh-pages — refetch and retry.
+        continue;
       }
-      git(['worktree', 'add', '--detach', worktreeDir, 'origin/gh-pages']);
 
       const historyPath = path.join(worktreeDir, HISTORY_PATH);
       const existingHistory = fs.existsSync(historyPath)
@@ -256,10 +266,12 @@ export async function publishCiDurationHistory({ freshEntries, githubToken, desc
       }
     }
   } finally {
-    try {
-      git(['worktree', 'remove', '--force', worktreeDir]);
-    } catch {
-      // Best-effort cleanup.
+    if (worktreeAdded) {
+      try {
+        git(['worktree', 'remove', '--force', worktreeDir]);
+      } catch {
+        // Best-effort cleanup.
+      }
     }
   }
 }
