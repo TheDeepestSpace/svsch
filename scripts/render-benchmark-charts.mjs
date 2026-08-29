@@ -621,22 +621,22 @@ function smoothPath(coords) {
 // One line per series across every recorded master run, positioned on a real
 // time scale (see xFor below) — points aren't evenly spaced (irregular gaps
 // between master pushes), which is why a plain polyline through them alone
-// reads as a crooked/jagged line rather than a trend. Unsquished (the visual
-// suite's default): a dimmed, dotted trailing-moving-average line is drawn
-// underneath the raw polyline as a smoothed-trend backdrop (see
-// drawMovingAverage), alongside a filled dot per point and a month-tick
-// x-axis, since there are few enough points for all three to stay legible.
-// Squished (`squish: true`, used by CI duration — see TREND_SQUISHED_WIDTH
-// above): the raw series is instead drawn as a single smoothed curve
-// (smoothPath) with no per-point dots, labels, or moving average, since with
-// hundreds of squished-together points those would just be noise. Either
-// way, the final segment — into the current, not yet merged, point (if any)
-// — is dashed, the same "texture cue, not color alone" convention the
-// stacked chart above uses for its own "new" bars; its point/label are
-// always drawn regardless of squish, since which point is "not yet merged"
-// is worth calling out. `series` defaults to the visual suite's
-// elaboration/rendering pair; passing a single-entry array (e.g. CI
-// duration) draws one line instead.
+// reads as a crooked/jagged line rather than a trend. Both layouts draw a
+// dimmed, dotted trailing-moving-average line as a smoothed-trend backdrop
+// (see drawMovingAverage). Unsquished (the visual suite's default): the
+// average sits underneath a raw polyline with a filled dot per point and a
+// month-tick x-axis, since there are few enough points for all three to stay
+// legible. Squished (`squish: true`, used by CI duration — see
+// TREND_SQUISHED_WIDTH above): the raw series is instead drawn as a single
+// smoothed curve (smoothPath, which the average line also rides for the same
+// reason) with no per-point dots or labels, since with hundreds of
+// squished-together points those would just be noise. Either way, the final
+// segment — into the current, not yet merged, point (if any) — is dashed,
+// the same "texture cue, not color alone" convention the stacked chart above
+// uses for its own "new" bars; its point/label are always drawn regardless
+// of squish, since which point is "not yet merged" is worth calling out.
+// `series` defaults to the visual suite's elaboration/rendering pair;
+// passing a single-entry array (e.g. CI duration) draws one line instead.
 export function renderHistoryTrendChart({
   title,
   history,
@@ -656,14 +656,10 @@ export function renderHistoryTrendChart({
     : currentPoint;
   const points = computeHistoryTrendData(history, resolvedCurrentPoint, series);
   const movingAveragePoints = computeMovingAverages(points);
-  // Squish drops the moving average (see comment above), so its legend
-  // entries would otherwise advertise a line that's never drawn.
-  const legendItems = squish
-    ? series.map(({ color, label }) => ({ fill: color, label }))
-    : series.flatMap(({ color, label }) => [
-        { fill: color, label },
-        { fill: color, label: `${label} (${MOVING_AVERAGE_WINDOW}-run avg)`, opacity: 0.55 },
-      ]);
+  const legendItems = series.flatMap(({ color, label }) => [
+    { fill: color, label },
+    { fill: color, label: `${label} (${MOVING_AVERAGE_WINDOW}-run avg)`, opacity: 0.55 },
+  ]);
 
   const dateMsValues = points.map((p) => p.dateMs);
   const minDateMs = Math.min(...dateMsValues);
@@ -738,9 +734,21 @@ export function renderHistoryTrendChart({
   // obscured — they're a smoothed-trend backdrop, not a second dataset
   // competing for attention. The dotted style is deliberately distinct from
   // the raw line's own dashed "this PR, not yet merged" preview segment
-  // below, so the two textures never read as the same thing. Skipped for
-  // squish, whose own smoothPath curve already reads as a trend on its own.
+  // below, so the two textures never read as the same thing. Squish rides
+  // the same smoothPath curve the raw series uses (see drawSeriesSquished
+  // below) — with hundreds of squished-together points, straight dotted
+  // segments between them would themselves read as a second crooked line;
+  // unsquished draws plain straight segments since its handful of points
+  // don't have that problem.
   const drawMovingAverage = (key, color) => {
+    if (squish) {
+      const coords = movingAveragePoints.map((p) => ({ x: xFor(p.dateMs), y: yFor(p[key]) }));
+      if (coords.length === 0) return;
+      parts.push(
+        `<path d="${smoothPath(coords)}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="1,4" stroke-linecap="round" opacity="0.55" />`,
+      );
+      return;
+    }
     for (let i = 0; i < movingAveragePoints.length - 1; i += 1) {
       const x1 = xFor(movingAveragePoints[i].dateMs);
       const y1 = yFor(movingAveragePoints[i][key]);
@@ -751,9 +759,7 @@ export function renderHistoryTrendChart({
       );
     }
   };
-  if (!squish) {
-    for (const { key, color } of series) drawMovingAverage(key, color);
-  }
+  for (const { key, color } of series) drawMovingAverage(key, color);
 
   // Squish draws its raw series as a single smoothPath curve with no dots;
   // unsquished draws a plain polyline with a dot per point (the moving

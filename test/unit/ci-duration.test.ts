@@ -63,7 +63,20 @@ describe('renderCiDurationTrendChart', () => {
       ],
     });
     expect(svg).toContain('<svg');
-    expect(svg).not.toContain('stroke-dasharray');
+    // No preview point means no "not yet merged" dashed segment — the only
+    // dashed stroke present should be the dotted moving-average overlay.
+    expect(svg).not.toContain('stroke-dasharray="5,4"');
+  });
+
+  it('draws a 10-run moving average line alongside the raw history curve', () => {
+    const svg = renderCiDurationTrendChart({
+      history: [
+        { sha: 'aaaa', date: '2026-01-01T00:00:00.000Z', durationSec: 500 },
+        { sha: 'bbbb', date: '2026-01-02T00:00:00.000Z', durationSec: 480 },
+      ],
+    });
+    expect(svg).toContain('10-run avg');
+    expect(svg).toContain('stroke-dasharray="1,4"');
   });
 
   it('draws a dashed preview segment labeled with currentLabel when currentPoint is given', () => {
@@ -73,6 +86,6 @@ describe('renderCiDurationTrendChart', () => {
       currentLabel: 'this run (so far)',
     });
     expect(svg).toContain('this run (so far)');
-    expect(svg).toContain('stroke-dasharray');
+    expect(svg).toContain('stroke-dasharray="5,4"');
   });
 });
