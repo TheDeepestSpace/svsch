@@ -7,16 +7,17 @@ import {
   DEFAULT_RESET_SIGNAL_NAMES,
 } from '../../src/parser/textExtractor';
 
-// extractor.hpp is C++ and can't import the TS defaults, so its own
-// hardcoded defaults are parsed out here and checked for drift too.
-const EXTRACTOR_HPP_PATH = join(__dirname, '../../src/parser/backend_cpp/include/extractor.hpp');
-const extractorHpp = readFileSync(EXTRACTOR_HPP_PATH, 'utf-8');
+// main.cpp is C++ and can't import the TS defaults, so its own hardcoded
+// defaults (applied there, not on the DesignExtractor class) are parsed out
+// here and checked for drift too.
+const MAIN_CPP_PATH = join(__dirname, '../../src/parser/backend_cpp/src/main.cpp');
+const mainCpp = readFileSync(MAIN_CPP_PATH, 'utf-8');
 
 function parseBackendDefault(fieldName: string): string[] {
-  const match = extractorHpp.match(
-    new RegExp(`std::vector<std::string>\\s+${fieldName}\\s*=\\s*\\{([^}]*)\\}`),
+  const match = mainCpp.match(
+    new RegExp(`extractor\\.${fieldName}\\s*=\\s*\\{([^}]*)\\}`),
   );
-  if (!match) throw new Error(`Could not find default for ${fieldName} in extractor.hpp`);
+  if (!match) throw new Error(`Could not find default for ${fieldName} in main.cpp`);
   return match[1]
     .split(',')
     .map((entry) => entry.trim().replace(/^"|"$/g, ''))

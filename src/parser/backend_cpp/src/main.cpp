@@ -70,6 +70,11 @@ int main(int argc, char** argv) {
 
     svsch::DesignExtractor extractor(designs[0]);
     extractor.workspace_root = workspaceRoot;
+    // Keep in sync with DEFAULT_CLOCK_SIGNAL_NAMES/DEFAULT_RESET_SIGNAL_NAMES in
+    // src/parser/textExtractor.ts and the svsch.clockSignalNames/resetSignalNames
+    // defaults in package.json; test/unit/packageJsonDefaults.test.ts fails if these drift apart.
+    extractor.clock_signal_names = {"clk", "clock"};
+    extractor.reset_signal_names = {"rst", "reset"};
     if (!signalNamesJson.empty()) {
         try {
             json signalNames = json::parse(signalNamesJson);

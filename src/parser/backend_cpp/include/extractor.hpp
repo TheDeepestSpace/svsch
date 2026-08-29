@@ -285,11 +285,10 @@ public:
     DesignExtractor(vpiHandle design);
     json extract(const std::string& targetModule = "");
     std::string workspace_root;
-    // Keep in sync with DEFAULT_CLOCK_SIGNAL_NAMES/DEFAULT_RESET_SIGNAL_NAMES in
-    // src/parser/textExtractor.ts and the svsch.clockSignalNames/resetSignalNames
-    // defaults in package.json; test/unit/packageJsonDefaults.test.ts fails if these drift apart.
-    std::vector<std::string> clock_signal_names = {"clk", "clock"};
-    std::vector<std::string> reset_signal_names = {"rst", "reset"};
+    // No default here: callers must set these explicitly. main() supplies the
+    // package.json-matching defaults (see main.cpp); tests configure their own.
+    std::vector<std::string> clock_signal_names;
+    std::vector<std::string> reset_signal_names;
 
 private:
     void processModule(vpiHandle module_handle);

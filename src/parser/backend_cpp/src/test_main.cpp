@@ -34,6 +34,8 @@ TEST(ExtractorTest, BusBreakoutOutputsExpectedNodes) {
 
     vpiHandle design = restoredDesigns[0];
     svsch::DesignExtractor extractor(design);
+    extractor.clock_signal_names = {"clk", "clock"};
+    extractor.reset_signal_names = {"rst", "reset"};
     nlohmann::json result = extractor.extract();
 
     ASSERT_TRUE(result.contains("modules"));
@@ -175,6 +177,7 @@ TEST(ExtractorTest, SyncResetNestedNegationIsActiveLow) {
 
     vpiHandle design = restoredDesigns[0];
     svsch::DesignExtractor extractor(design);
+    extractor.clock_signal_names = {"clk", "clock"};
     extractor.reset_signal_names = {"clr"};
     nlohmann::json result = extractor.extract();
 
@@ -293,6 +296,8 @@ TEST(ExtractorTest, InoutArrayAliasProducesSingleEdgeIntoReader) {
 
     vpiHandle design = restoredDesigns[0];
     svsch::DesignExtractor extractor(design);
+    extractor.clock_signal_names = {"clk", "clock"};
+    extractor.reset_signal_names = {"rst", "reset"};
     nlohmann::json result = extractor.extract();
 
     ASSERT_TRUE(result.contains("modules"));
