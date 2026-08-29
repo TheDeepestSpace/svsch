@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateBddVideoGallery } from '../../scripts/generate-bdd-video-gallery.mjs';
+import {
+  generateBddVideoGallery,
+  generateVideoGallery,
+} from '../../scripts/generate-bdd-video-gallery.mjs';
 import { scenarioKey } from '../../scripts/diff-bdd-scenarios.mjs';
 
 const temporaryDirectories: string[] = [];
@@ -71,11 +74,11 @@ function makeGalleryInput(scenarioTitle: string) {
   return { input, output };
 }
 
-describe('generateBddVideoGallery', () => {
+describe('generateVideoGallery', () => {
   it('copies every WebM and labels it from the merged Playwright report', () => {
     const { input, output } = makeGalleryInput('selects & moves a node');
 
-    const videos = generateBddVideoGallery(input, output, {
+    const videos = generateVideoGallery(input, output, {
       prNumber: '275',
       repository: 'TheDeepestSpace/svsch',
       sha: '1234567890abcdef',
@@ -93,101 +96,33 @@ describe('generateBddVideoGallery', () => {
     expect(html).toContain('12345678');
   });
 
-  it('labels a Scenario Outline row with the outline name and keeps the Feature name', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bdd-video-gallery-test-'));
+  it('honors a custom title/heading/feature-fallback for non-BDD suites', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'video-gallery-test-'));
     temporaryDirectories.push(root);
-    const input = path.join(root, 'bdd');
+    const input = path.join(root, 'system');
     const output = path.join(root, 'gallery');
     const videoDirectory = path.join(input, 'playwright-output', 'scenario', 'videos');
-    const mergedVideoPath = (digit: string) =>
-      `/tmp/blob-report/resources/${digit.repeat(40)}.webm`;
     fs.mkdirSync(videoDirectory, { recursive: true });
-    fs.writeFileSync(path.join(videoDirectory, 'plain.webm'), 'video-plain');
-    fs.writeFileSync(path.join(videoDirectory, 'outline.webm'), 'video-outline');
-    fs.writeFileSync(
-      path.join(input, 'playwright-report.json'),
-      JSON.stringify({
-        suites: [
-          {
-            title: 'command_line_interface.feature.spec.js',
-            specs: [],
-            suites: [
-              {
-                title: 'Command Line Interface',
-                specs: [
-                  {
-                    title: 'Help command output',
-                    tests: [
-                      {
-                        results: [
-                          {
-                            status: 'passed',
-                            retry: 0,
-                            duration: 500,
-                            attachments: [
-                              {
-                                name: 'video:plain.webm',
-                                contentType: 'video/webm',
-                                path: mergedVideoPath('1'),
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-                suites: [
-                  {
-                    title: 'SVG themes',
-                    specs: [
-                      {
-                        title: 'Example #1',
-                        tests: [
-                          {
-                            results: [
-                              {
-                                status: 'passed',
-                                retry: 0,
-                                duration: 800,
-                                attachments: [
-                                  {
-                                    name: 'video:outline.webm',
-                                    contentType: 'video/webm',
-                                    path: mergedVideoPath('2'),
-                                  },
-                                ],
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                    ],
-                    suites: [],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      }),
-    );
+    fs.writeFileSync(path.join(videoDirectory, 'only.webm'), 'video');
 
-    const videos = generateBddVideoGallery(input, output, {
-      prNumber: '297',
-      repository: 'TheDeepestSpace/svsch',
-      sha: 'abcdef1234567890',
+    const videos = generateVideoGallery(input, output, {
+      prNumber: '294',
+      title: 'System videos',
+      heading: 'System test videos',
+      defaultFeatureLabel: 'System scenario',
     });
 
-    const plain = videos.find((video) => video.scenario === 'Help command output');
-    const outline = videos.find((video) => video.scenario === 'SVG themes › Example #1');
-
-    expect(plain).toBeDefined();
-    expect(plain?.feature).toBe('Command Line Interface');
-    expect(outline).toBeDefined();
-    expect(outline?.feature).toBe('Command Line Interface');
+    // No playwright-report.json present, so metadata falls back to the
+    // configured default label rather than the BDD-specific one.
+    expect(videos).toHaveLength(1);
+    expect(videos[0].feature).toBe('System scenario');
+    const html = fs.readFileSync(path.join(output, 'index.html'), 'utf8');
+    expect(html).toContain('<title>System videos · PR #294</title>');
+    expect(html).toContain('<h1>System test videos · PR #294</h1>');
   });
+});
 
+describe('generateBddVideoGallery', () => {
   it('defaults changeStatus to unchanged and omits the badge when no status map is given', () => {
     const { input, output } = makeGalleryInput('an unmodified scenario');
 
