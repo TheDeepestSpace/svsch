@@ -14,9 +14,7 @@ const MAIN_CPP_PATH = join(__dirname, '../../src/parser/backend_cpp/src/main.cpp
 const mainCpp = readFileSync(MAIN_CPP_PATH, 'utf-8');
 
 function parseBackendDefault(fieldName: string): string[] {
-  const match = mainCpp.match(
-    new RegExp(`extractor\\.${fieldName}\\s*=\\s*\\{([^}]*)\\}`),
-  );
+  const match = mainCpp.match(new RegExp(`extractor\\.${fieldName}\\s*=\\s*\\{([^}]*)\\}`));
   if (!match) throw new Error(`Could not find default for ${fieldName} in main.cpp`);
   return match[1]
     .split(',')
