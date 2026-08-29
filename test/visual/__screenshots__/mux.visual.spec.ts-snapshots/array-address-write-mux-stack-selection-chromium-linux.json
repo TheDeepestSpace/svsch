@@ -24,8 +24,8 @@
       "id": "cut-label:port:array_address_write_register:clk:port:clk:source",
       "type": "hdl",
       "position": {
-        "x": 168,
-        "y": 24
+        "x": -216,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -64,8 +64,8 @@
       "id": "cut-label:reg:array_address_write_register:storage:q:sink:edge:reg:array_address_write_register:storage:port:array_address_write_register:out_data:out_data",
       "type": "hdl",
       "position": {
-        "x": 288,
-        "y": 24
+        "x": 1296,
+        "y": 96
       },
       "width": 96,
       "height": 48,
@@ -159,8 +159,8 @@
       "id": "port:array_address_write_register:clk",
       "type": "hdl",
       "position": {
-        "x": 24,
-        "y": 36
+        "x": -360,
+        "y": 108
       },
       "width": 120,
       "height": 24,
@@ -199,8 +199,8 @@
       "id": "port:array_address_write_register:out_data",
       "type": "hdl",
       "position": {
-        "x": 408,
-        "y": 36
+        "x": 1416,
+        "y": 108
       },
       "width": 168,
       "height": 24,
@@ -261,7 +261,7 @@
       "target": "cut-label:port:array_address_write_register:clk:port:clk:source",
       "sourceHandle": "port:clk",
       "targetHandle": "cut",
-      "path": "M 144 48 L 168 48 L 168 48"
+      "path": "M -240 120 L -216 120 L -216 120"
     },
     {
       "id": "cut-stub:reg:array_address_write_register:storage:q:sink:edge:reg:array_address_write_register:storage:mux:array_address_write_register:storage_addr:storage",
@@ -277,7 +277,7 @@
       "target": "port:array_address_write_register:out_data",
       "sourceHandle": "cut",
       "targetHandle": "port:out_data",
-      "path": "M 394.5 54 L 400.5 54"
+      "path": "M 1402.5 126 L 1408.5 126"
     },
     {
       "id": "cut-stub:reg:array_address_write_register:storage:q:source",

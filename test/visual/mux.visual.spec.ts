@@ -3009,9 +3009,7 @@ async function buildFixtureView(
               ? createRegisterVisualLayout(graph, moduleName)
               : layoutMode === 'register-enable'
                 ? createRegisterEnableVisualLayout(graph, moduleName)
-                : layoutMode === 'array-address-write'
-                  ? createArrayAddressWriteVisualLayout(graph, moduleName)
-                  : layoutMode === 'array-address-read'
+                : layoutMode === 'array-address-read'
                     ? createArrayAddressReadVisualLayout(graph, moduleName)
                     : layoutMode === 'comb'
                       ? createCombVisualLayout(graph, moduleName)
@@ -3106,50 +3104,6 @@ function createRegisterEnableVisualLayout(graph: DesignGraph, moduleName: string
 
   outputPorts.forEach((port) => {
     nodes[port.id] = { x: regX + grid * 11, y: regY };
-  });
-
-  return { version: 1, modules: { [moduleName]: { nodes } } };
-}
-
-function createArrayAddressWriteVisualLayout(graph: DesignGraph, moduleName: string): SavedLayout {
-  const designModule = graph.modules[moduleName];
-  const reg =
-    designModule.nodes.find((node) => node.kind === 'register' && node.label === 'storage') ??
-    designModule.nodes.find((node) => node.kind === 'register');
-  const mux = designModule.nodes.find(
-    (node) =>
-      node.kind === 'mux' &&
-      (node.isArrayNode || node.metadata?.isArrayNode) &&
-      node.ports.some((port) => port.name === 'sel' && port.connectedSignal === 'address'),
-  );
-  const inputPorts = designModule.nodes.filter(
-    (node) => node.kind === 'port' && node.ports[0]?.direction === 'input',
-  );
-  const outputPorts = designModule.nodes.filter(
-    (node) => node.kind === 'port' && node.ports[0]?.direction === 'output',
-  );
-  const nodes: Record<string, { x: number; y: number }> = {};
-  const grid = 24;
-  const muxX = grid * 10;
-  const muxY = grid * 6;
-  const regX = grid * 22;
-  const regY = grid * 6;
-
-  if (mux) nodes[mux.id] = { x: muxX, y: muxY };
-  if (reg) nodes[reg.id] = { x: regX, y: regY };
-
-  inputPorts.forEach((port) => {
-    if (port.label === 'address') {
-      nodes[port.id] = { x: muxX - grid, y: muxY - grid * 5 };
-    } else if (port.label === 'clk') {
-      nodes[port.id] = { x: regX - grid * 7, y: regY + grid * 5 };
-    } else {
-      nodes[port.id] = { x: grid, y: muxY + grid };
-    }
-  });
-
-  outputPorts.forEach((port) => {
-    nodes[port.id] = { x: regX + grid * 3, y: regY };
   });
 
   return { version: 1, modules: { [moduleName]: { nodes } } };
