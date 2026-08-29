@@ -3010,12 +3010,12 @@ async function buildFixtureView(
               : layoutMode === 'register-enable'
                 ? createRegisterEnableVisualLayout(graph, moduleName)
                 : layoutMode === 'array-address-read'
-                    ? createArrayAddressReadVisualLayout(graph, moduleName)
-                    : layoutMode === 'comb'
-                      ? createCombVisualLayout(graph, moduleName)
-                      : layoutMode === 'alu'
-                        ? createAluVisualLayout(graph, moduleName)
-                        : ({ version: 1, modules: {} } as SavedLayout);
+                  ? createArrayAddressReadVisualLayout(graph, moduleName)
+                  : layoutMode === 'comb'
+                    ? createCombVisualLayout(graph, moduleName)
+                    : layoutMode === 'alu'
+                      ? createAluVisualLayout(graph, moduleName)
+                      : ({ version: 1, modules: {} } as SavedLayout);
 
     return buildViewModel(graph, moduleName, withFirstOpenAutoCutEdges(layout, graph, moduleName));
   } finally {
