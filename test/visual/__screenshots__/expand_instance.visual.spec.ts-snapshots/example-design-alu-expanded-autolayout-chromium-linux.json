@@ -2520,7 +2520,7 @@
       "target": "instance:cpu_top:u_jump_mux",
       "sourceHandle": "cut",
       "targetHandle": "port:d1",
-      "path": "M 48 312 L 48 312 L 744 312 L 768 312"
+      "path": "M 48 312 L 48 312 L 48 360 L 744 360 L 744 312 L 768 312"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_imm_gen:port:imm:source",
@@ -2576,7 +2576,7 @@
       "target": "cut-label:instance:cpu_top:u_jump_mux:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 960 288 L 984 288 L 1056 288 L 1056 360 L 672 360 L 672 321 Q 681 312 672 303 L 672 288 L 672 288"
+      "path": "M 960 288 L 984 288 L 984 216 L 672 216 L 672 288 L 672 288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_mem_to_reg_mux:port:y:sink:edge:instance:cpu_top:u_mem_to_reg_mux:instance:cpu_top:u_register_file:reg_write_data",
@@ -2592,7 +2592,7 @@
       "target": "cut-label:instance:cpu_top:u_mem_to_reg_mux:port:y:source",
       "sourceHandle": "port:y",
       "targetHandle": "cut",
-      "path": "M 1464 288 L 1488 288 L 2016 288 L 2016 288"
+      "path": "M 1464 288 L 1488 288 L 1488 360 L 2016 360 L 2016 288 L 2016 288"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_adder:port:sum:sink:edge:instance:cpu_top:u_pc_adder:instance:cpu_top:u_pc_src_mux:pc_plus_1",
@@ -2616,7 +2616,7 @@
       "target": "instance:cpu_top:u_branch_adder",
       "sourceHandle": "cut",
       "targetHandle": "port:a",
-      "path": "M 2520 120 L 2520 120 L 2592 120 L 2592 192 L 2040 192 L 2040 120 L 2064 120"
+      "path": "M 2520 120 L 2520 120 L 2520 168 L 2040 168 L 2040 120 L 2064 120"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_instr_mem:pc",
@@ -2624,7 +2624,7 @@
       "target": "instance:cpu_top:u_instr_mem",
       "sourceHandle": "cut",
       "targetHandle": "port:addr",
-      "path": "M 2976 144 L 2976 144 L 3048 144 L 3048 216 L 2544 216 L 2544 144 L 2568 144"
+      "path": "M 2976 144 L 2976 144 L 2976 192 L 2544 192 L 2544 144 L 2568 144"
     },
     {
       "id": "cut-stub:instance:cpu_top:u_pc_reg:port:pc:sink:edge:instance:cpu_top:u_pc_reg:instance:cpu_top:u_pc_adder:pc",

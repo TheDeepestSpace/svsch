@@ -251,7 +251,7 @@ export async function buildViewModel(
       ...cutProjection.edges.map((edge) => ({
         ...edge,
         routePoints:
-          cutStubRouteAroundSizeOverrides(
+          cutStubRouteAroundObstacles(
             edge,
             options?.elkSizeOverrides,
             routingNodesById,
@@ -2889,18 +2889,20 @@ function directRenderedLeadRoute(
 
 // A cut stub normally has no explicit route: its label is derived beside the
 // owning port and `forceStraight` makes the two look like a wire split in
-// place. An expanded instance can grow between a previously pinned label and
-// that port, though, or over another stub's straight corridor. In that one
-// case synthesize the shortest single-lane detour around the transient frame
-// rectangles. Keeping this scoped to size overrides preserves the ordinary
-// cut appearance everywhere else.
-function cutStubRouteAroundSizeOverrides(
+// place. Collision resolution can move an automatic label along that port's
+// axis, though, and the longer straight corridor may then cross an unrelated
+// block. Synthesize the shortest single-lane detour around every rendered
+// node in that case. Persisted user routes remain untouched unless a transient
+// expanded-size override has grown across them, matching the previous behavior.
+function cutStubRouteAroundObstacles(
   edge: DiagramEdge,
   sizeOverrides: Record<string, { width: number; height: number }> | undefined,
   nodesById: Map<string, DiagramNode>,
   nodePositions: Map<string, { x: number; y: number }>,
 ): Array<{ x: number; y: number }> | undefined {
-  if (!sizeOverrides || Object.keys(sizeOverrides).length === 0) return undefined;
+  const hasPersistedRoute = Boolean(edge.routePoints?.length);
+  const overrideIds = Object.keys(sizeOverrides ?? {});
+  if (hasPersistedRoute && overrideIds.length === 0) return undefined;
   const sourceNode = nodesById.get(edge.source);
   const targetNode = nodesById.get(edge.target);
   // Match normalizeRoutePoints' forceStraight cut-stub convention exactly:
@@ -2926,13 +2928,14 @@ function cutStubRouteAroundSizeOverrides(
   if (!sourceLead || !targetLead) return undefined;
   const direct = directLeadRoute(sourceLead, targetLead);
 
-  const obstacles = Object.keys(sizeOverrides).flatMap((nodeId) => {
-    const node = nodesById.get(nodeId);
-    const position = nodePositions.get(nodeId);
-    if (!node || !position) return [];
-    const dimensions = resolvedNodeDimensions(node);
-    return [{ ...position, ...dimensions }];
-  });
+  const obstacles = hasPersistedRoute
+    ? overrideIds.flatMap((nodeId) => {
+        const node = nodesById.get(nodeId);
+        const position = nodePositions.get(nodeId);
+        if (!node || !position) return [];
+        return [{ ...position, ...resolvedNodeDimensions(node) }];
+      })
+    : routeObstacles(nodesById, nodePositions);
   const intersects = (route: Array<{ x: number; y: number }>) =>
     route
       .slice(0, -1)
