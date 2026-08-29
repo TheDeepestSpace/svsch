@@ -445,10 +445,18 @@ jobs:
                 a.name.startsWith('visual-blob-report-') ||
                 a.name.startsWith('visual-benchmark-raw-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (err) {
+                // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                // deleting one artifact shouldn't fail the whole job.
+                core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard visual artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard visual artifact(s)`);
 
   test_syntax:
     needs: [prep, build_ci_image, setup, build_extension, build_backend, build_cli]
@@ -636,10 +644,26 @@ jobs:
             const perShard = artifacts.filter(
               (a) => a.name.startsWith('bdd-artifacts-') || a.name.startsWith('bdd-blob-report-')
             );
+            let deleted = 0;
             for (const artifact of perShard) {
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+              try {
+                await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+                deleted++;
+              } catch (err) {
+                // On a job rerun, the listing above can still include an
+                // artifact a prior attempt already deleted (API list/delete
+                // consistency lag) — a 404 here just means it's gone already,
+                // not a real failure, so don't crash the job over it.
+                if (err.status === 404) {
+                  core.info(`Artifact ${artifact.id} (${artifact.name}) already deleted, skipping`);
+                } else {
+                  // Best-effort cleanup: a transient GitHub API error (e.g. 502)
+                  // deleting one artifact shouldn't fail the whole job.
+                  core.warning(`Failed to delete artifact ${artifact.id} (${artifact.name}): ${err.message}`);
+                }
+              }
             }
-            core.info(`Deleted ${perShard.length} per-shard BDD artifact(s)`);
+            core.info(`Deleted ${deleted}/${perShard.length} per-shard BDD artifact(s)`);
 
   publish_bdd_videos:
     needs: [merge_bdd_reports]
@@ -656,16 +680,34 @@ jobs:
     steps:
       - *checkout_step
 
+      - name: Checkout base ref features
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: bdd-base-checkout
+          persist-credentials: false
+          sparse-checkout: |
+            test/features
+          sparse-checkout-cone-mode: false
+
       - name: Download merged BDD artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: bdd-artifacts
           path: gallery-input
 
+      - name: Diff BDD scenarios vs base
+        run: |
+          node scripts/diff-bdd-scenarios.mjs \
+            bdd-scenario-status.json \
+            bdd-base-checkout/test/features \
+            test/features
+
       - name: Generate BDD video gallery
         run: node scripts/generate-bdd-video-gallery.mjs gallery-input/test-results/bdd bdd-video-gallery
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BDD_SCENARIO_STATUS_FILE: bdd-scenario-status.json
 
       - name: Checkout gh-pages
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -857,6 +899,64 @@ jobs:
           name: pr-stats-benchmark
           path: benchmark-stats.md
 
+  report_ci_duration_stats:
+    # Renders this run's elapsed wall-clock time so far, plus the recent
+    # per-master-push trend (#282), as markdown for report_pr_stats to fold
+    # into the combined PR stats comment below — mirrors
+    # report_benchmark_stats above, run at the same point in the workflow
+    # graph so the "so far" preview covers a comparable share of the run.
+    needs: [prep, build_ci_image, merge_visual_reports, test_system]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container: *container_config
+    permissions:
+      # generate-ci-duration-stats.mjs pushes the rendered chart SVG to
+      # gh-pages (a static asset next to the CI duration history data it
+      # already publishes there).
+      contents: write
+      # Looks up this run's own timing (Actions API) for its "so far"
+      # preview point.
+      actions: read
+    steps:
+      - *checkout_step
+      - *restore_npm_step
+
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Fetch gh-pages baseline
+        # Tolerate the branch not existing yet (first run, before any CI
+        # duration has ever been recorded), but let real fetch failures
+        # (auth, network) fail the job instead of silently proceeding
+        # without a baseline.
+        run: |
+          set +e
+          git ls-remote --exit-code origin gh-pages >/dev/null 2>&1
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          elif [ "$status" -eq 2 ]; then
+            echo "gh-pages branch not found on remote; continuing without a baseline"
+          else
+            exit "$status"
+          fi
+
+      - name: Generate CI duration stats
+        run: node scripts/generate-ci-duration-stats.mjs ci-duration-stats.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+
+      - name: Upload CI duration stats
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-stats-ci-duration
+          path: ci-duration-stats.md
+
   report_coverage_stats:
     # Publishes the vitest html coverage report to gh-pages and renders this
     # PR's coverage section as markdown, for report_pr_stats to fold into the
@@ -909,7 +1009,7 @@ jobs:
     # ...) into a single upserted PR comment. Adding a new stat to the
     # comment only means having its job write its own <name>.md and upload
     # it as an artifact named pr-stats-<name>.
-    needs: [prep, build_ci_image, report_coverage_stats, report_benchmark_stats]
+    needs: [prep, build_ci_image, report_coverage_stats, report_benchmark_stats, report_ci_duration_stats]
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository

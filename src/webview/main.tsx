@@ -1447,6 +1447,26 @@ function DiagramApp(): React.ReactElement {
     vscode.postMessage({ type: 'rerouteLayout', moduleName: view.moduleName, nodes: positioned });
   }, [nodes, view]);
 
+  // Equivalent to marquee-selecting every block and clicking the floating
+  // selection toolbar's "Auto Layout" — releases every real block (net-cut
+  // labels excluded, same filter the selection toolbar applies) for one ELK
+  // pass using current positions as placement hints.
+  const autoLayoutAll = useCallback(() => {
+    if (!view) {
+      return;
+    }
+    const releasedIds = new Set(
+      nodes.filter((node) => node.data.node.kind !== 'netLabel').map((node) => node.id),
+    );
+    const positioned = buildRelayoutPositionedNodes(nodes, releasedIds);
+    vscode.postMessage({
+      type: 'relayoutSelection',
+      moduleName: view.moduleName,
+      nodeIds: [...releasedIds],
+      nodes: positioned,
+    });
+  }, [nodes, view]);
+
   const nodeTypes = useMemo(() => ({ hdl: HdlNode }), []);
   const edgeTypes = useMemo(() => ({ svsch: OrthogonalEdge }), []);
   const diagramStyle = useMemo(
@@ -1521,6 +1541,12 @@ function DiagramApp(): React.ReactElement {
           onClick={rerouteLayout}
         >
           Reroute All
+        </button>
+        <button
+          className="vscode-control vscode-button vscode-button-secondary"
+          onClick={autoLayoutAll}
+        >
+          Auto Layout All
         </button>
         <button
           className="vscode-control vscode-button"
@@ -1633,6 +1659,7 @@ function DiagramApp(): React.ReactElement {
                 nodes={nodes}
                 edges={edges}
                 pendingReselectIdsRef={pendingReselectIdsRef}
+                zoom={viewport.zoom}
                 onExpandInstance={requestExpand}
                 onCollapseInstance={handleCollapseRegion}
                 spliceMapRef={spliceMapRef}
@@ -2069,6 +2096,7 @@ function NodeSelectionToolbar({
   nodes,
   edges,
   pendingReselectIdsRef,
+  zoom,
   onExpandInstance,
   onCollapseInstance,
   spliceMapRef,
@@ -2077,6 +2105,7 @@ function NodeSelectionToolbar({
   nodes: HdlFlowNode[];
   edges: Edge[];
   pendingReselectIdsRef: React.MutableRefObject<Set<string> | null>;
+  zoom: number;
   onExpandInstance: (instanceNode: HdlFlowNode) => void;
   /**
    * Collapses an "Expand instance in place" region (see issue #232) — a
@@ -2086,6 +2115,10 @@ function NodeSelectionToolbar({
   spliceMapRef: React.MutableRefObject<Map<string, ActiveSplice>>;
 }): React.ReactElement | null {
   const { overlayPortalNode } = useContext(InteractionContext);
+  // overlayPortalNode carries react-flow's scale(zoom) (see main.tsx's render), so button
+  // markup here needs a counter-scale to stay a constant screen size instead of zooming
+  // with the canvas — the outer .svsch-selection-toolbar keeps its flow-space position.
+  const counterScale = 1 / Math.max(zoom || 1, 0.01);
 
   // A cut net's dangling end is a synthetic `netLabel` node, not a real block —
   // selecting (or merely clicking through to) one shouldn't surface a toolbar
@@ -2215,13 +2248,7 @@ function NodeSelectionToolbar({
         }
       }
     }
-    const positioned = flowNodesToPositioned(nodes, new Set()).map((node) => ({
-      ...node,
-      // Released nodes go free; every other real block is frozen in place —
-      // but an unrelated net-cut label that's still tracking its port
-      // dynamically must not be forced fixed just because it's on screen.
-      fixed: selectedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
-    }));
+    const positioned = buildRelayoutPositionedNodes(nodes, selectedIds);
     // Consumed (and cleared) the next time the nodes array is rebuilt from an
     // incoming view, so these blocks stay selected across the round-trip
     // instead of losing selection once ELK re-places them.
@@ -2286,84 +2313,89 @@ function NodeSelectionToolbar({
   return createPortal(
     <div className="svsch-selection-toolbar-layer">
       <div className="svsch-selection-toolbar" style={{ left: bounds.right, top: bounds.bottom }}>
-        {selected.length >= 2 && (
-          <button
-            type="button"
-            className="svsch-selection-relayout-control"
-            title="Re-place and route the selected blocks; everything else stays put"
-            onClick={handleClick}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Auto Layout
-          </button>
-        )}
-        {resizedNodeIds.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-revert-size-control"
-            title={
-              resizedNodeIds.length === 1
-                ? 'Revert the selected block to its canonical size'
-                : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
-            }
-            onClick={handleRevertSize}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Revert Size
-          </button>
-        )}
-        {cutOutEdges.length > 0 && (
-          <button
-            type="button"
-            className="svsch-selection-cutout-control"
-            title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
-            onClick={handleCutOut}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Cut out
-            <kbd className="svsch-shortcut-glyph" aria-hidden="true">
-              <span className="svsch-shortcut-glyph-letter">C</span>
-            </kbd>
-          </button>
-        )}
-        {expandableInstance && (
-          <button
-            type="button"
-            className="svsch-selection-expand-control"
-            title="Unfold this instance's diagram in place"
-            onClick={(event) => {
-              event.stopPropagation();
-              onExpandInstance(expandableInstance);
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Expand
-          </button>
-        )}
-        {activeSplice && (
-          <button
-            type="button"
-            className="svsch-selection-collapse-control"
-            title="Collapse this instance's unfolded diagram"
-            onClick={(event) => {
-              event.stopPropagation();
-              onCollapseInstance(activeSplice.region.id);
-            }}
-            onDoubleClick={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            Collapse
-          </button>
-        )}
+        <div
+          className="svsch-selection-toolbar-scale"
+          style={{ transform: `scale(${counterScale})` }}
+        >
+          {selected.length >= 2 && (
+            <button
+              type="button"
+              className="svsch-selection-relayout-control"
+              title="Re-place and route the selected blocks; everything else stays put"
+              onClick={handleClick}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Auto Layout
+            </button>
+          )}
+          {resizedNodeIds.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-revert-size-control"
+              title={
+                resizedNodeIds.length === 1
+                  ? 'Revert the selected block to its canonical size'
+                  : `Revert ${resizedNodeIds.length} selected blocks to their canonical sizes`
+              }
+              onClick={handleRevertSize}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Revert Size
+            </button>
+          )}
+          {cutOutEdges.length > 0 && (
+            <button
+              type="button"
+              className="svsch-selection-cutout-control"
+              title={`Cut ${cutOutEdges.length} connection(s) on the selected block(s)`}
+              onClick={handleCutOut}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Cut out
+              <kbd className="svsch-shortcut-glyph" aria-hidden="true">
+                <span className="svsch-shortcut-glyph-letter">C</span>
+              </kbd>
+            </button>
+          )}
+          {expandableInstance && (
+            <button
+              type="button"
+              className="svsch-selection-expand-control"
+              title="Unfold this instance's diagram in place"
+              onClick={(event) => {
+                event.stopPropagation();
+                onExpandInstance(expandableInstance);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Expand
+            </button>
+          )}
+          {activeSplice && (
+            <button
+              type="button"
+              className="svsch-selection-collapse-control"
+              title="Collapse this instance's unfolded diagram"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCollapseInstance(activeSplice.region.id);
+              }}
+              onDoubleClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              Collapse
+            </button>
+          )}
+        </div>
       </div>
     </div>,
     overlayPortalNode,
@@ -2543,6 +2575,20 @@ function flowNodesToPositioned(nodes: HdlFlowNode[], fixedIds: Set<string>): Pos
     ...node.data.node,
     position: node.position,
     fixed: node.data.node.fixed || node.selected || fixedIds.has(node.id),
+  }));
+}
+
+// Shared by the floating selection toolbar's "Auto Layout" and the main
+// toolbar's "Auto Layout All": released nodes go free; every other real block
+// is frozen in place — but an unrelated net-cut label that's still tracking
+// its port dynamically must not be forced fixed just because it's on screen.
+function buildRelayoutPositionedNodes(
+  nodes: HdlFlowNode[],
+  releasedIds: Set<string>,
+): PositionedNode[] {
+  return flowNodesToPositioned(nodes, new Set()).map((node) => ({
+    ...node,
+    fixed: releasedIds.has(node.id) ? false : node.kind === 'netLabel' ? node.fixed : true,
   }));
 }
 

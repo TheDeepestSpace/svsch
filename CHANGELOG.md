@@ -1,5 +1,24 @@
 # svsch
 
+## 0.4.1
+
+### Patch Changes
+
+- 1ea7491: Add an icon for the VS Code extension listing.
+- 495a83f: Highlight new (green), modified (orange), and removed (red) scenario cards in the BDD video gallery, with New/Modified/Removed/Unchanged/All filters alongside the existing search box. `publish_bdd_videos` now fetches the PR base ref and diffs `test/features/**/*.feature` against head to classify each scenario.
+- 122c972: Bump changesets/action from 2.1.0 to 2.1.1
+- 0041e84: Bump docker/setup-buildx-action from 4.2.0 to 4.3.0
+- 0acf19a: Bump multiple-cucumber-html-reporter from 4.2.0 to 4.3.0
+- fa6b9e6: Bump svgo from 4.0.2 to 4.1.0
+- 40f2de0: Bump @types/vscode from 1.125.0 to 1.134.0
+- b8a77db: Bump @vitejs/plugin-react from 6.0.3 to 6.1.0
+- fd26251: Fix action buttons (e.g. edge/connection controls, port selection handles) scaling with canvas zoom instead of staying a constant screen size. Buttons are now counter-scaled against the current zoom level so they render at a fixed visual size regardless of zoom.
+- aa79945: Fix flaky `nested-case-literal-collision-canvas` visual test by widening its screenshot diff tolerance to account for observed CI-only sub-pixel antialiasing noise (~81px) that isn't a real rendering regression.
+- 49a5e64: Fix BDD video gallery labels for Scenario Outline rows so each example is labeled correctly instead of collapsing to the outline title.
+- 4121125: Preserve declared operand widths in concatenated case selectors when a module is discovered through an instance.
+- 75a9c2c: Refactor node rendering: split the monolithic `HdlNode.tsx` if-chain into self-contained per-kind components (register/latch, replicate, literal, inverter, mux/select, alu, comb/loop, instance, port) that each call a shared `HdlNodeBase`, and dedupe the `isBusComposition()` ternary, the `hasArrayConnection`/`arrayConnectionThick` helpers, and the array-stack-skin rect JSX that were copy-pasted across every node-kind SVG file. No render/visual changes — verified with a new render-snapshot regression test covering every node kind. Bus/struct/interface rendering is intentionally left as-is for a follow-up (tracked in issue #172).
+- 8bb9317: Add a trailing 10-run moving average overlay per series (elaboration/rendering) to the "Visual suite — historical average per master run" trend chart in PR stats comments, drawn dotted and dimmed behind the raw lines.
+
 ## 0.4.0
 
 ### Minor Changes
