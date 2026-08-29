@@ -1,9 +1,21 @@
 void DesignExtractor::buildEdges(Module& mod) {
     // Collect stacked signals: outputs of isArrayNode nodes. Scalar controls can still
     // be promoted into stacked inputs when they target array-capable nodes.
+    //
+    // A breakout bus node (kind "bus", aggregateKind "array", role != "composition",
+    // e.g. `logic y_arr [3:0]` fed by an instance array) is the one exception: its
+    // whole-array bundle arrives on an *input* port, and its *output* ports are the
+    // already-disambiguated per-element taps (`y_arr[0]`, `y_arr[1]`, ...) — each one
+    // names a single resolved net, not a bundle of N array elements. Registers, muxes,
+    // ports, and composition bus nodes are the opposite: their output ports carry the
+    // same signal name repeated across N elements, which is genuinely a bundle and
+    // must stay stacked.
     std::set<std::string> stacked_signals;
     for (const auto& n : mod.nodes) {
         if (!n.metadata.isArrayNode) continue;
+        bool isArrayBreakoutBus =
+            n.kind == "bus" && n.metadata.aggregateKind == "array" && n.metadata.role != "composition";
+        if (isArrayBreakoutBus) continue;
         for (const auto& p : n.ports) {
             if (p.direction == "output") stacked_signals.insert(p.signal);
         }

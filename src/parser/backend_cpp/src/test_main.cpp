@@ -266,6 +266,74 @@ TEST(ExtractorTest, MultiBitArrayBreakoutTapIntoMuxIsNotStacked) {
     EXPECT_TRUE((*hub_edge)["isStacked"]);
 }
 
+// A breakout node whose *elements* are themselves scalar (e.g. `logic y_arr
+// [3:0]`, an array of single-bit nets fed by an instance array's per-element
+// outputs) still has taps that are already-resolved individual signals, not
+// a bundle -- `y_arr[0]` names exactly one net. Before this fix, every
+// breakout node's output ports (its per-element taps) were unconditionally
+// added to the backend's "stacked signals" set just because the node itself
+// was array-flagged, so these taps rendered as a converging stacked fan
+// (three parallel lines) even though each is a single 1-bit wire. Only the
+// hub edge feeding the breakout node from the instance array (which
+// genuinely bundles N distinct 1-bit signals onto one wire) should stay
+// stacked.
+TEST(ExtractorTest, SingleBitArrayBreakoutTapsAreNotStacked) {
+    namespace fs = std::filesystem;
+
+    const fs::path uhdm_path = fs::path("test_uhdm_dir_instance_array/slpp_all/surelog.uhdm");
+    if (!fs::exists(uhdm_path)) {
+        const fs::path fixture_path = fs::path(__FILE__)
+            .parent_path().parent_path().parent_path().parent_path().parent_path()
+            / "test/fixtures/instance_array.sv";
+
+        const std::string command = "surelog -parse -sverilog " + fixture_path.string() + " -o test_uhdm_dir_instance_array";
+        int ret = std::system(command.c_str());
+        if (ret != 0 || !fs::exists(uhdm_path)) {
+            GTEST_SKIP() << "Surelog not available or failed";
+        }
+    }
+
+    UHDM::Serializer serializer;
+    std::vector<vpiHandle> restoredDesigns = serializer.Restore(uhdm_path.string());
+    ASSERT_FALSE(restoredDesigns.empty());
+
+    vpiHandle design = restoredDesigns[0];
+    svsch::DesignExtractor extractor(design);
+    nlohmann::json result = extractor.extract();
+
+    ASSERT_TRUE(result.contains("modules"));
+
+    const nlohmann::json* mod = nullptr;
+    for (const auto& candidate : result["modules"]) {
+        if (candidate["name"] == "instance_array_top") {
+            mod = &candidate;
+            break;
+        }
+    }
+    ASSERT_NE(mod, nullptr) << result.dump(2);
+
+    int tap_edges_found = 0;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["source"] != "bus:instance_array_top:y_arr") continue;
+        tap_edges_found += 1;
+        EXPECT_FALSE(edge.contains("isStacked") && edge["isStacked"] == true) << edge.dump(2);
+    }
+    EXPECT_EQ(tap_edges_found, 4) << result.dump(2);
+
+    // The hub edge feeding the breakout node from the mux instance array
+    // still bundles 4 distinct 1-bit signals onto one wire and must stay stacked.
+    const nlohmann::json* hub_edge = nullptr;
+    for (const auto& edge : (*mod)["edges"]) {
+        if (edge["target"] == "bus:instance_array_top:y_arr") {
+            hub_edge = &edge;
+            break;
+        }
+    }
+    ASSERT_NE(hub_edge, nullptr) << result.dump(2);
+    ASSERT_TRUE(hub_edge->contains("isStacked")) << result.dump(2);
+    EXPECT_TRUE((*hub_edge)["isStacked"]);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
