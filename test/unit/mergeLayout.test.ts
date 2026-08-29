@@ -12,6 +12,7 @@ import {
   firstOpenAutoCutEdges,
   markFirstOpenHandled,
   mergeEdgeRoutePoints,
+  mergeEdgeSnapshot,
   mergeEdgeWaypoint,
   mergeFirstOpenNetCuts,
   mergeNetCut,
@@ -38,7 +39,7 @@ import {
 } from '../../src/diagram/constants';
 import { diagramNodeDimensions, resolvedNodeDimensions } from '../../src/diagram/nodeSizing';
 import { edgeNetKey } from '../../src/ir/edgeNet';
-import type { DesignGraph, DiagramNode, PositionedNode } from '../../src/ir/types';
+import type { DesignGraph, DiagramEdge, DiagramNode, PositionedNode } from '../../src/ir/types';
 import { LayoutStore, type SavedLayout } from '../../src/storage/layoutStore';
 
 function boundsOf(node: PositionedNode): { x: number; y: number; width: number; height: number } {
@@ -4699,6 +4700,63 @@ describe('unconditional full-render layout snapshot', () => {
     ]);
 
     expect(Object.keys(snapshot.modules.top.nodes)).toEqual(['a']);
+  });
+
+  it('mergeEdgeSnapshot records every route into routeSnapshot, not routePoints', async () => {
+    const view = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
+
+    const snapshot = mergeEdgeSnapshot({ version: 1, modules: {} }, 'top', view.edges);
+    const saved = snapshot.modules.top.edges!;
+
+    for (const edge of view.edges) {
+      expect(edge.routePoints).toBeDefined();
+      expect(saved[edge.id]).toEqual({ routeSnapshot: edge.routePoints });
+      expect(saved[edge.id].routePoints).toBeUndefined();
+    }
+  });
+
+  it('mergeEdgeSnapshot never overwrites a user-fixed routePoints entry', () => {
+    const fixed: SavedLayout = {
+      version: 1,
+      modules: {
+        top: { nodes: {}, edges: { 'a-u': { routePoints: [{ x: 1, y: 1 }] } } },
+      },
+    };
+
+    const snapshot = mergeEdgeSnapshot(fixed, 'top', [
+      { ...chainModule.edges[0], routePoints: [{ x: 999, y: 999 }] } as DiagramEdge,
+    ]);
+
+    expect(snapshot.modules.top.edges!['a-u']).toEqual({ routePoints: [{ x: 1, y: 1 }] });
+  });
+
+  it('mergeEdgeSnapshot skips synthetic cut-stub edges', () => {
+    const snapshot = mergeEdgeSnapshot({ version: 1, modules: {} }, 'top', [
+      { ...chainModule.edges[0], routePoints: [{ x: 1, y: 1 }] } as DiagramEdge,
+      {
+        id: 'cut-stub:a:out:source',
+        source: 'a',
+        target: 'cut-label:a:out:source',
+        routePoints: [{ x: 2, y: 2 }],
+      } as unknown as DiagramEdge,
+    ]);
+
+    expect(Object.keys(snapshot.modules.top.edges!)).toEqual(['a-u']);
+  });
+
+  it('a routeSnapshot never excludes its edge from re-routing on the next render', async () => {
+    const opened = await buildViewModel(chainGraph, 'top', { version: 1, modules: {} });
+    const layout = mergeEdgeSnapshot({ version: 1, modules: {} }, 'top', opened.edges);
+    const savedRoute = layout.modules.top.edges!['a-u'].routeSnapshot;
+    expect(savedRoute).toBeDefined();
+
+    // A routeSnapshot must not be treated like a fixed routePoints entry: the
+    // edge stays a normal re-routing candidate on the next render, and its
+    // freshly-computed route (not the stale snapshot) wins.
+    const rerendered = await buildViewModel(chainGraph, 'top', layout);
+    const edge = rerendered.edges.find((candidate) => candidate.id === 'a-u')!;
+    const freshRoute = opened.edges.find((candidate) => candidate.id === 'a-u')!.routePoints;
+    expect(edge.routePoints).toEqual(freshRoute);
   });
 
   it('markFirstOpenHandled sets the flag once and is idempotent', () => {

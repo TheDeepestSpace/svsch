@@ -255,7 +255,8 @@ export async function buildViewModel(
           result.routes.get(edge.id) ??
           (edgeTouchesMovedNode(edge, packedGenerateLayout.movedNodeIds)
             ? undefined
-            : elkLayout.routes.get(edge.id)),
+            : elkLayout.routes.get(edge.id)) ??
+          moduleLayout.edges?.[edge.id]?.routeSnapshot,
       })),
       ...cutProjection.edges.map((edge) => ({
         ...edge,
@@ -1301,6 +1302,10 @@ function cutLabelNodeId(netKey: string, role: 'source' | 'sink', edgeId?: string
 
 function isCutLabelNodeId(id: string): boolean {
   return id.startsWith('cut-label:');
+}
+
+function isCutStubEdgeId(id: string): boolean {
+  return id.startsWith('cut-stub:');
 }
 
 function cutStubEdgeId(netKey: string, role: 'source' | 'sink', edgeId?: string): string {
@@ -4102,6 +4107,42 @@ export function mergeNodeSnapshot(
   next.modules[moduleName] = {
     ...existing,
     nodes: mergedNodes,
+  };
+  return next;
+}
+
+/**
+ * Edge counterpart to mergeNodeSnapshot: records every rendered edge's
+ * just-computed route into `routeSnapshot`, never into `routePoints` — a
+ * user-fixed `routePoints` entry (see mergeEdgeRoutePoints) always wins and
+ * is left untouched, and `routeSnapshot` is only ever consulted in
+ * buildViewModel as the last-resort fallback when neither libavoid nor ELK
+ * produced a route this render. A cut-net stub edge is always a synthetic,
+ * per-render straight line (see makeCutStubEdge), never something worth
+ * snapshotting.
+ */
+export function mergeEdgeSnapshot(
+  layout: SavedLayout,
+  moduleName: string,
+  edges: DiagramEdge[],
+): SavedLayout {
+  const next: SavedLayout = {
+    version: 1,
+    modules: { ...layout.modules },
+  };
+  const existing: SavedModuleLayout = next.modules[moduleName] ?? { nodes: {} };
+  const mergedEdges: NonNullable<SavedModuleLayout['edges']> = { ...(existing.edges ?? {}) };
+
+  for (const edge of edges) {
+    if (isCutStubEdgeId(edge.id) || !edge.routePoints) continue;
+    const saved = mergedEdges[edge.id];
+    if (saved?.routePoints) continue;
+    mergedEdges[edge.id] = { ...saved, routeSnapshot: edge.routePoints };
+  }
+
+  next.modules[moduleName] = {
+    ...existing,
+    edges: Object.keys(mergedEdges).length > 0 ? mergedEdges : undefined,
   };
   return next;
 }

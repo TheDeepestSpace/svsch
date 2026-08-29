@@ -17,6 +17,7 @@ import {
   firstOpenAutoCutEdges,
   markFirstOpenHandled,
   mergeEdgeRoutePoints,
+  mergeEdgeSnapshot,
   mergeEdgeWaypoint,
   mergeFirstOpenNetCuts,
   mergeNetCut,
@@ -1190,6 +1191,7 @@ export class DiagramPanel {
     });
     if (store) {
       this.layout = mergeNodeSnapshot(this.layout, moduleName, view.nodes);
+      this.layout = mergeEdgeSnapshot(this.layout, moduleName, view.edges);
       // Fire-and-forget: this per-render durability snapshot must never make
       // the webview wait on a disk write. LayoutStore debounces per module
       // and skips writes whose content hasn't actually changed, so an idle

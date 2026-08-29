@@ -24,6 +24,17 @@ export interface SavedEdgeLayout {
     x: number;
     y: number;
   }>;
+  /**
+   * Full-render safety net (see mergeEdgeSnapshot): the edge's last-computed
+   * route, recorded on every render regardless of whether the user ever
+   * touched it. Unlike `routePoints`, this never marks the edge as manually
+   * fixed and never excludes it from auto-routing — it's only a fallback used
+   * if a render's routing pass fails to produce a route for this edge.
+   */
+  routeSnapshot?: Array<{
+    x: number;
+    y: number;
+  }>;
   stale?: boolean;
 }
 
