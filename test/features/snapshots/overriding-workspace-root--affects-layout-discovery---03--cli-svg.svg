@@ -2068,6 +2068,8 @@ text {
 }
 .hdl-node-instance .svsch-node-shape,
 .hdl-node-module .svsch-node-shape,
+.hdl-node-funcCall .svsch-node-shape,
+.hdl-node-taskCall .svsch-node-shape,
 .svsch-node-shape.hdl-node-instance {
   stroke: var(--vscode-charts-blue);
 }
