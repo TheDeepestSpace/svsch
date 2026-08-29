@@ -34,9 +34,6 @@
     "src/webview/nodes/MiniMapNode.tsx",
     "src/webview/nodes/NetLabelNode.tsx",
     "src/webview/nodes/index.ts",
-    "src/webview/nodes/types.ts",
-    "src/webview/nodes/shared/context.tsx",
-    "src/webview/nodes/shared/skins.tsx",
     "src/webview/orthogonal/OrthogonalEdge.tsx",
     "src/webview/orthogonal/index.ts",
     "src/parser/backend_cpp/build/**"
