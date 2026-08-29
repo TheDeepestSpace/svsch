@@ -438,6 +438,16 @@ test('hides the block-selection toolbar when only a cut net label is selected', 
       )
       .toBe(true);
 
+    // The cut instance and its newly-created cut-net-end stub should already
+    // be selected, so the user can immediately drag the group without
+    // re-selecting anything (issue #361).
+    await expect(webview.locator(`.react-flow__node[data-id="${blockId}"]`)).toHaveClass(
+      /selected/,
+    );
+    await expect(webview.locator(`.react-flow__node[data-id="${labelId}"]`)).toHaveClass(
+      /selected/,
+    );
+
     await clickSystemNode(workbox, webview, labelId!);
 
     await expect(

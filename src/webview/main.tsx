@@ -2297,6 +2297,18 @@ function NodeSelectionToolbar({
       })),
       spliceMapRef.current,
     );
+    // The cut instance and its newly-created cut-net-end stubs should stay
+    // selected so the user can immediately drag the group — mirrors
+    // handleClick's pendingReselectIdsRef handoff. Id format matches
+    // cutLabelNodeId() in mergeLayout.ts, which is what actually creates
+    // these nodes once the host processes the cut.
+    const reselectIds = new Set(selected.map((node) => node.id));
+    for (const edge of diagramEdges) {
+      const netKey = edgeNetKey(edge);
+      reselectIds.add(`cut-label:${netKey}:source`);
+      reselectIds.add(`cut-label:${netKey}:sink:${edge.id}`);
+    }
+    pendingReselectIdsRef.current = reselectIds;
     if (diagramEdges.length === 1) {
       vscode.postMessage({ type: 'cutNet', moduleName, edge: diagramEdges[0], nodes: positioned });
       return;
