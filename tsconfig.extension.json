@@ -19,14 +19,26 @@
     "types": [
       "node",
       "vscode"
-    ]
+    ],
+    "composite": true
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "src/cli/svgRenderer.ts"
   ],
   "exclude": [
-    "src/webview/**",
+    "src/webview/main.tsx",
+    "src/webview/expand/expandOverlay.ts",
+    "src/webview/nodes/HdlNode.tsx",
+    "src/webview/nodes/MiniMapNode.tsx",
+    "src/webview/nodes/NetLabelNode.tsx",
+    "src/webview/nodes/index.ts",
+    "src/webview/nodes/types.ts",
+    "src/webview/nodes/shared/context.tsx",
+    "src/webview/nodes/shared/skins.tsx",
+    "src/webview/orthogonal/OrthogonalEdge.tsx",
+    "src/webview/orthogonal/index.ts",
     "src/parser/backend_cpp/build/**"
   ]
 }
