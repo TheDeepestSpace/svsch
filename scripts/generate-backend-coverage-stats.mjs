@@ -14,7 +14,9 @@ import path from 'node:path';
 // this one was pulled from, not a dependency to share.
 const [, , lcovInfoPathArg, outputPathArg, htmlDirArg] = process.argv;
 const lcovInfoPath = lcovInfoPathArg ?? 'coverage/backend/lcov.info';
-const outputPath = outputPathArg ?? 'backend-coverage-stats.md';
+// upsert-pr-stats-comment.mjs joins *.md files in sorted filename order —
+// the "zz-" prefix keeps this section last, after coverage-stats.md.
+const outputPath = outputPathArg ?? 'zz-backend-coverage-stats.md';
 const htmlDir = htmlDirArg ?? 'coverage/backend/html';
 const reportIndexPath = path.join(htmlDir, 'index.html');
 
