@@ -7,6 +7,12 @@ of your IDE.
 
 Check out the [SVSCH Syntax Book](docs/svsch-syntax-book.md) for a visual reference of supported SystemVerilog constructs and their generated block diagrams.
 
+## Requirements
+
+The extension and CLI currently only support **Linux x86_64 (x64)**. The bundled Surelog binary and
+the native diagram backend are prebuilt for that platform; macOS, Windows, and arm64 are not supported
+yet.
+
 Notable features:
 * live updates: diagram is updated in real time after the code is updated
 * source code navigation: double click on the diagram node to highlight the corresponding SV
