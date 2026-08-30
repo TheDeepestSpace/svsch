@@ -2754,86 +2754,10 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 <path class="svsch-edge-jump-halo" d="M 648 607 Q 655 600 648 593" style="stroke-width: 12" data-edge-id="edge:bus:instance_array_top:b_bus:bus_comp:instance_array_top:b_arr:b_bus_3_" data-jump-index="1" />
 <path class="svsch-edge" data-edge-id="edge:bus:instance_array_top:b_bus:bus_comp:instance_array_top:b_arr:b_bus_3_" data-net-key="bus:instance_array_top:b_bus:out:_3_" d="M 528 648 L 552 648 L 617 648 Q 624 641 631 648 L 648 648 L 648 607 Q 655 600 648 593 L 648 552 L 720 552 L 744 552" />
 <path class="svsch-edge-overlap-hint" d="M 648 556 L 648 644" data-edge-id="edge:bus:instance_array_top:b_bus:bus_comp:instance_array_top:b_arr:b_bus_3_" data-overlap-id="edge:bus:instance_array_top:b_bus:bus_comp:instance_array_top:b_arr:b_bus_3_-overlap-2-edge:bus:instance_array_top:b_bus:bus_comp:instance_array_top:b_arr:b_bus_1_-2" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_"><defs>
-<linearGradient id="svsch-stack-converge-gradient-back-gzszuy" gradientUnits="userSpaceOnUse" x1="319" y1="868" x2="528" y2="844">
-<stop offset="0%" class="svsch-stack-gradient-back-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-middle-gzszuy" gradientUnits="userSpaceOnUse" x1="318" y1="864" x2="528" y2="840">
-<stop offset="0%" class="svsch-stack-gradient-middle-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-front-gzszuy" gradientUnits="userSpaceOnUse" x1="317" y1="860" x2="528" y2="836">
-<stop offset="0%" class="svsch-stack-gradient-front-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-</defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_" data-net-key="bus:instance_array_top:y_arr:out:_0_" style="stroke: url(#svsch-stack-converge-gradient-back-gzszuy)" d="M 319 868 L 436 868 L 436 844 L 528 844" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_" data-net-key="bus:instance_array_top:y_arr:out:_0_" style="stroke: url(#svsch-stack-converge-gradient-middle-gzszuy)" d="M 318 864 L 432 864 L 432 840 L 528 840" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_" data-net-key="bus:instance_array_top:y_arr:out:_0_" style="stroke: url(#svsch-stack-converge-gradient-front-gzszuy)" d="M 317 860 L 428 860 L 428 836 L 528 836" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_"><defs>
-<linearGradient id="svsch-stack-converge-gradient-back-13dj4bu" gradientUnits="userSpaceOnUse" x1="319" y1="916" x2="528" y2="940">
-<stop offset="0%" class="svsch-stack-gradient-back-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-middle-13dj4bu" gradientUnits="userSpaceOnUse" x1="318" y1="912" x2="528" y2="936">
-<stop offset="0%" class="svsch-stack-gradient-middle-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-front-13dj4bu" gradientUnits="userSpaceOnUse" x1="317" y1="908" x2="528" y2="932">
-<stop offset="0%" class="svsch-stack-gradient-front-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-</defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_" data-net-key="bus:instance_array_top:y_arr:out:_1_" style="stroke: url(#svsch-stack-converge-gradient-back-13dj4bu)" d="M 319 916 L 436 916 L 436 940 L 528 940" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_" data-net-key="bus:instance_array_top:y_arr:out:_1_" style="stroke: url(#svsch-stack-converge-gradient-middle-13dj4bu)" d="M 318 912 L 432 912 L 432 936 L 528 936" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_" data-net-key="bus:instance_array_top:y_arr:out:_1_" style="stroke: url(#svsch-stack-converge-gradient-front-13dj4bu)" d="M 317 908 L 428 908 L 428 932 L 528 932" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_"><defs>
-<linearGradient id="svsch-stack-converge-gradient-back-1pr98sq" gradientUnits="userSpaceOnUse" x1="319" y1="964" x2="528" y2="1036">
-<stop offset="0%" class="svsch-stack-gradient-back-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-middle-1pr98sq" gradientUnits="userSpaceOnUse" x1="318" y1="960" x2="528" y2="1032">
-<stop offset="0%" class="svsch-stack-gradient-middle-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-front-1pr98sq" gradientUnits="userSpaceOnUse" x1="317" y1="956" x2="528" y2="1028">
-<stop offset="0%" class="svsch-stack-gradient-front-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-</defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_" data-net-key="bus:instance_array_top:y_arr:out:_2_" style="stroke: url(#svsch-stack-converge-gradient-back-1pr98sq)" d="M 319 964 L 436 964 L 436 1036 L 528 1036" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_" data-net-key="bus:instance_array_top:y_arr:out:_2_" style="stroke: url(#svsch-stack-converge-gradient-middle-1pr98sq)" d="M 318 960 L 432 960 L 432 1032 L 528 1032" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_" data-net-key="bus:instance_array_top:y_arr:out:_2_" style="stroke: url(#svsch-stack-converge-gradient-front-1pr98sq)" d="M 317 956 L 428 956 L 428 1028 L 528 1028" /></g>
-<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_"><defs>
-<linearGradient id="svsch-stack-converge-gradient-back-d3vbai" gradientUnits="userSpaceOnUse" x1="319" y1="1012" x2="528" y2="1132">
-<stop offset="0%" class="svsch-stack-gradient-back-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-middle-d3vbai" gradientUnits="userSpaceOnUse" x1="318" y1="1008" x2="528" y2="1128">
-<stop offset="0%" class="svsch-stack-gradient-middle-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-<linearGradient id="svsch-stack-converge-gradient-front-d3vbai" gradientUnits="userSpaceOnUse" x1="317" y1="1004" x2="528" y2="1124">
-<stop offset="0%" class="svsch-stack-gradient-front-stop" />
-<stop offset="78%" class="svsch-stack-gradient-regular-stop" />
-<stop offset="100%" class="svsch-stack-gradient-regular-stop" />
-</linearGradient>
-</defs>
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-back" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_" data-net-key="bus:instance_array_top:y_arr:out:_3_" style="stroke: url(#svsch-stack-converge-gradient-back-d3vbai)" d="M 319 1012 L 412 1012 L 412 1132 L 528 1132" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_" data-net-key="bus:instance_array_top:y_arr:out:_3_" style="stroke: url(#svsch-stack-converge-gradient-middle-d3vbai)" d="M 318 1008 L 408 1008 L 408 1128 L 528 1128" />
-<path class="svsch-edge svsch-edge-stacked-converge svsch-edge-stacked-front" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_" data-net-key="bus:instance_array_top:y_arr:out:_3_" style="stroke: url(#svsch-stack-converge-gradient-front-d3vbai)" d="M 317 1004 L 404 1004 L 404 1124 L 528 1124" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_"><path class="svsch-edge" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_0_:alias:y_arr_0_" data-net-key="bus:instance_array_top:y_arr:out:_0_" d="M 312 864 L 336 864 L 432 864 L 432 840 L 504 840 L 528 840" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_"><path class="svsch-edge" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_" data-net-key="bus:instance_array_top:y_arr:out:_1_" d="M 312 912 L 336 912 L 432 912 L 432 936 L 504 936 L 528 936" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_"><path class="svsch-edge" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_" data-net-key="bus:instance_array_top:y_arr:out:_2_" d="M 312 960 L 336 960 L 432 960 L 432 1032 L 504 1032 L 528 1032" /></g>
+<g class="svsch-edge-group" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_"><path class="svsch-edge" data-edge-id="edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_" data-net-key="bus:instance_array_top:y_arr:out:_3_" d="M 312 1008 L 336 1008 L 408 1008 L 408 1128 L 504 1128 L 528 1128" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:comb:instance_array_top:y_bus_0_:alias:bus_comp:instance_array_top:y_bus:y_bus_0_"><path class="svsch-edge" data-edge-id="edge:comb:instance_array_top:y_bus_0_:alias:bus_comp:instance_array_top:y_bus:y_bus_0_" data-net-key="comb:instance_array_top:y_bus[0]:alias:out:y_bus_0_" d="M 720 840 L 744 840 L 816 840 L 816 960 L 912 960 L 936 960" /></g>
 <g class="svsch-edge-group" data-edge-id="edge:comb:instance_array_top:y_bus_1_:alias:bus_comp:instance_array_top:y_bus:y_bus_1_"><path class="svsch-edge-jump-halo" d="M 809 936 Q 816 929 823 936" style="stroke-width: 12" data-edge-id="edge:comb:instance_array_top:y_bus_1_:alias:bus_comp:instance_array_top:y_bus:y_bus_1_" data-jump-index="0" />
 <path class="svsch-edge" data-edge-id="edge:comb:instance_array_top:y_bus_1_:alias:bus_comp:instance_array_top:y_bus:y_bus_1_" data-net-key="comb:instance_array_top:y_bus[1]:alias:out:y_bus_1_" d="M 720 936 L 744 936 L 809 936 Q 816 929 823 936 L 840 936 L 840 912 L 912 912 L 936 912" /></g>
@@ -2882,7 +2806,7 @@ g.hdl-node-expand-ghost .svsch-node-shape {
 </g>
 <g class="svsch-node hdl-bus-node hdl-bus-breakout hdl-bus-array-breakout hdl-node-array" data-node-id="bus:instance_array_top:y_arr" data-node-kind="bus" transform="translate(144 840)">
 <svg class="hdl-node-svg" width="168" height="216" aria-hidden="true">
-<defs><linearGradient id="svsch-bus-array-cap-bus-instance_array_top-y_arr" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" class="svsch-bus-array-cap-stop-strong"></stop><stop offset="100%" class="svsch-bus-array-cap-stop-dim"></stop></linearGradient></defs><rect class="svsch-bus-pipe svsch-bus-pipe-array" x="9" y="12" width="6" height="168" rx="3"></rect><rect class="svsch-bus-array-pipe-cap" x="11" y="174" width="34" height="6" rx="3" fill="url(#svsch-bus-array-cap-bus-instance_array_top-y_arr)" transform="rotate(45 11 177)"></rect><g class="svsch-bus-tap" data-port-id="out:_0_"><line class="svsch-bus-tap-line" x1="15" y1="24" x2="168" y2="24"></line><rect x="27" y="16" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_0_" x="37" y="24" dominant-baseline="middle">[0]</text></g><g class="svsch-bus-tap" data-port-id="out:_1_"><line class="svsch-bus-tap-line" x1="15" y1="72" x2="168" y2="72"></line><rect x="27" y="64" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_1_" x="37" y="72" dominant-baseline="middle">[1]</text></g><g class="svsch-bus-tap" data-port-id="out:_2_"><line class="svsch-bus-tap-line" x1="15" y1="120" x2="168" y2="120"></line><rect x="27" y="112" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_2_" x="37" y="120" dominant-baseline="middle">[2]</text></g><g class="svsch-bus-tap" data-port-id="out:_3_"><line class="svsch-bus-tap-line" x1="15" y1="168" x2="168" y2="168"></line><rect x="27" y="160" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_3_" x="37" y="168" dominant-baseline="middle">[3]</text></g><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 173 20 L 164 20"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 174 24 L 168 24"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 175 28 L 172 28"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 173 68 L 164 68"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 174 72 L 168 72"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 175 76 L 172 76"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 173 116 L 164 116"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 174 120 L 168 120"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 175 124 L 172 124"></path></g><g class="svsch-array-stack-leads svsch-array-stack-leads-source svsch-array-stack-leads-right" aria-hidden="true"><path class="svsch-array-stack-lead svsch-array-stack-lead-front svsch-array-stack-lead-source-right" d="M 173 164 L 164 164"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-middle svsch-array-stack-lead-source-right" d="M 174 168 L 168 168"></path><path class="svsch-array-stack-lead svsch-array-stack-lead-back svsch-array-stack-lead-source-right" d="M 175 172 L 172 172"></path></g>
+<defs><linearGradient id="svsch-bus-array-cap-bus-instance_array_top-y_arr" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" class="svsch-bus-array-cap-stop-strong"></stop><stop offset="100%" class="svsch-bus-array-cap-stop-dim"></stop></linearGradient></defs><rect class="svsch-bus-pipe svsch-bus-pipe-array" x="9" y="12" width="6" height="168" rx="3"></rect><rect class="svsch-bus-array-pipe-cap" x="11" y="174" width="34" height="6" rx="3" fill="url(#svsch-bus-array-cap-bus-instance_array_top-y_arr)" transform="rotate(45 11 177)"></rect><g class="svsch-bus-tap" data-port-id="out:_0_"><line class="svsch-bus-tap-line" x1="15" y1="24" x2="168" y2="24"></line><rect x="27" y="16" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_0_" x="37" y="24" dominant-baseline="middle">[0]</text></g><g class="svsch-bus-tap" data-port-id="out:_1_"><line class="svsch-bus-tap-line" x1="15" y1="72" x2="168" y2="72"></line><rect x="27" y="64" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_1_" x="37" y="72" dominant-baseline="middle">[1]</text></g><g class="svsch-bus-tap" data-port-id="out:_2_"><line class="svsch-bus-tap-line" x1="15" y1="120" x2="168" y2="120"></line><rect x="27" y="112" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_2_" x="37" y="120" dominant-baseline="middle">[2]</text></g><g class="svsch-bus-tap" data-port-id="out:_3_"><line class="svsch-bus-tap-line" x1="15" y1="168" x2="168" y2="168"></line><rect x="27" y="160" width="42" height="16" fill="var(--vscode-editor-background)"></rect><text class="svsch-bus-tap-label" data-port-id="out:_3_" x="37" y="168" dominant-baseline="middle">[3]</text></g>
 </svg>
 </g>
 <g class="svsch-node hdl-node hdl-node-comb" data-node-id="comb:instance_array_top:y_bus[0]:alias" data-node-kind="comb" transform="translate(528 792)">

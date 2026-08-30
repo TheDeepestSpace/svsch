@@ -999,27 +999,34 @@ std::string DesignExtractor::gateOperationName(int opType, bool negateOutput) {
     }
 }
 
-// Flattens a chain of the *same* binary bitwise operator into one leaf list, e.g.
-// `a & b & c & d` (parsed as nested 2-input ANDs) becomes [a, b, c, d] for a single
-// n-input AND gate. Never descends into a different operator (`(a|b)&c` keeps the
-// OR as one opaque leaf feeding the AND) or across a width boundary — a nested
-// operand whose self-determined width differs from the parent's marks an implicit
-// truncation/extension the flattened gate can't represent losslessly, so it stays
-// a separate leaf/sub-gate instead of being folded in. XNOR is excluded entirely:
-// unlike AND/OR/XOR it isn't associative under this fusion — `(a ^~ b) ^~ c`
-// computes `a ^ b ^ c`, not the 3-input XNOR `~(a ^ b ^ c)` a naive flatten would
+// Flattens a chain of the *same* binary operator into one leaf list, e.g.
+// `a & b & c & d` (parsed as nested 2-input ANDs) becomes [a, b, c, d] for a
+// single n-input AND gate. Never descends into a different operator. Bitwise
+// operators also stop at a width boundary: a nested operand whose
+// self-determined width differs from the parent's marks an implicit
+// truncation/extension the flattened gate can't represent losslessly. Logical
+// `&&`/`||` chains do not need that check because every operand is independently
+// reduced to a one-bit truth value. XNOR is excluded entirely: unlike
+// AND/OR/XOR it isn't associative under this fusion — `(a ^~ b) ^~ c` computes
+// `a ^ b ^ c`, not the 3-input XNOR `~(a ^ b ^ c)` a naive flatten would
 // produce — so callers never recurse into it (see promoteGateExpr).
 void DesignExtractor::collectGateOperands(vpiHandle expr, int opType, const std::string& outputWidth, std::vector<vpiHandle>& leaves) {
     if (expr && vpi_get(vpiType, expr) == vpiOperation && vpi_get(vpiOpType, expr) == opType) {
-        // Compare self-determined bit sizes rather than raw width strings: an
-        // empty/scalar width must default to 1 bit on both sides so ordinary
-        // 1-bit chains (the common case) still flatten, while a genuinely
-        // resolved-but-different width (e.g. a 1-bit child folding into a
-        // 4-bit parent) is never silently treated as a match.
-        int childSize = expressionBitSize(expr);
-        int outputSize = bitSizeFromWidth(outputWidth);
-        if (outputSize <= 0) outputSize = 1;
-        if (childSize == outputSize) {
+        bool isLogical = (opType == vpiLogAndOp || opType == vpiLogOrOp);
+        bool compatibleWidth = isLogical;
+        if (!isLogical) {
+            // Compare self-determined bit sizes rather than raw width strings:
+            // an empty/scalar width must default to 1 bit on both sides so
+            // ordinary 1-bit chains (the common case) still flatten, while a
+            // genuinely resolved-but-different width (e.g. a 1-bit child
+            // folding into a 4-bit parent) is never silently treated as a
+            // match.
+            int childSize = expressionBitSize(expr);
+            int outputSize = bitSizeFromWidth(outputWidth);
+            if (outputSize <= 0) outputSize = 1;
+            compatibleWidth = (childSize == outputSize);
+        }
+        if (compatibleWidth) {
             std::vector<vpiHandle> operands;
             vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
             if (op_itr) {
@@ -1058,37 +1065,11 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
     bool isLogical = (opType == vpiLogAndOp || opType == vpiLogOrOp);
     if (isLogical) {
         width = "[0:0]";
-
-        // Unlike the bitwise ops (which flatten same-operator chains and
-        // otherwise let a differently-typed nested operand stand as its own
-        // separate gate — see collectGateOperands), a logical `&&`/`||` only
-        // promotes when BOTH direct operands are simple (not themselves a
-        // gate/ALU operation). A condition like `(sel & valid) || force_i`
-        // mixes a bitwise sub-expression into a logical one; rather than
-        // wiring an AND gate into an OR gate, the whole thing collapses to
-        // one flattened selector comb node (see getOrPromoteExpr's fallback).
-        vpiHandle guard_itr = vpi_iterate(vpiOperand, expr);
-        std::vector<vpiHandle> guard_operands;
-        if (guard_itr) {
-            while (vpiHandle operand = vpi_scan(guard_itr)) {
-                guard_operands.push_back(operand);
-            }
-            vpi_release_handle(guard_itr);
-        }
-        for (auto operand : guard_operands) {
-            if (isGateOperation(operand) || isAluOperation(operand)) return "";
-        }
     }
 
     std::vector<vpiHandle> leaf_operands;
-    if (opType == vpiBitXNorOp || isLogical) {
+    if (opType == vpiBitXNorOp) {
         // XNOR isn't associative under this fusion (see collectGateOperands).
-        // Logical `&&`/`||` are excluded from n-ary flattening too: unlike
-        // the bitwise ops, their operands aren't necessarily boolean-width
-        // already, so folding a chain in would lose the per-operand
-        // reduce-to-boolean step. Either way, only take this gate's own
-        // direct operands; a nested same-kind operand stays its own
-        // separate 2-input gate instead of being folded in.
         vpiHandle op_itr = vpi_iterate(vpiOperand, expr);
         if (op_itr) {
             while (vpiHandle operand = vpi_scan(op_itr)) {
@@ -1100,6 +1081,16 @@ std::string DesignExtractor::promoteGateExpr(vpiHandle expr, Module& mod, const 
         collectGateOperands(expr, opType, width, leaf_operands);
     }
     if (leaf_operands.size() < 2) return "";
+
+    if (isLogical) {
+        // Same-kind logical nodes have been flattened out above. Preserve the
+        // existing fallback for all other nested gate/ALU expressions: a
+        // condition like `(sel & valid) || force_i` should remain one opaque
+        // comb node rather than a bitwise AND gate feeding a logical OR gate.
+        for (auto operand : leaf_operands) {
+            if (isGateOperation(operand) || isAluOperation(operand)) return "";
+        }
+    }
 
     std::string node_id = "gate:" + mod.name + ":" + out_signal + (is_procedural ? ":" + nextId() : "") + ":" + opName;
     if (!is_procedural) {

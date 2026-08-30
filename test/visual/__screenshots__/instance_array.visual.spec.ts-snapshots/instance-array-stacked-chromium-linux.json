@@ -703,7 +703,7 @@
       "target": "comb:instance_array_top:y_bus[0]:alias",
       "sourceHandle": "out:_0_",
       "targetHandle": "port:y_arr",
-      "path": "M 319 868 L 436 868 L 436 844 L 528 844"
+      "path": "M 312 864 L 336 864 L 432 864 L 432 840 L 504 840 L 528 840"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_1_:alias:y_arr_1_",
@@ -711,7 +711,7 @@
       "target": "comb:instance_array_top:y_bus[1]:alias",
       "sourceHandle": "out:_1_",
       "targetHandle": "port:y_arr",
-      "path": "M 319 916 L 436 916 L 436 940 L 528 940"
+      "path": "M 312 912 L 336 912 L 432 912 L 432 936 L 504 936 L 528 936"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_2_:alias:y_arr_2_",
@@ -719,7 +719,7 @@
       "target": "comb:instance_array_top:y_bus[2]:alias",
       "sourceHandle": "out:_2_",
       "targetHandle": "port:y_arr",
-      "path": "M 319 964 L 436 964 L 436 1036 L 528 1036"
+      "path": "M 312 960 L 336 960 L 432 960 L 432 1032 L 504 1032 L 528 1032"
     },
     {
       "id": "edge:bus:instance_array_top:y_arr:comb:instance_array_top:y_bus_3_:alias:y_arr_3_",
@@ -727,7 +727,7 @@
       "target": "comb:instance_array_top:y_bus[3]:alias",
       "sourceHandle": "out:_3_",
       "targetHandle": "port:y_arr",
-      "path": "M 319 1012 L 412 1012 L 412 1132 L 528 1132"
+      "path": "M 312 1008 L 336 1008 L 408 1008 L 408 1128 L 504 1128 L 528 1128"
     },
     {
       "id": "edge:comb:instance_array_top:y_bus_0_:alias:bus_comp:instance_array_top:y_bus:y_bus_0_",

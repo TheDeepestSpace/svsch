@@ -1,4 +1,4 @@
-name: Clean up BDD video galleries
+name: Clean up video galleries
 
 on:
   pull_request_target:
@@ -22,6 +22,9 @@ jobs:
           fetch-depth: 1
 
       - name: Remove galleries for closed PRs
+        # Covers both the BDD gallery (dev/bdd-videos) and the system gallery
+        # (dev/system-videos, see #294) — same layout and lifecycle, so one
+        # sweep handles both instead of two near-identical workflows.
         env:
           GH_TOKEN: ${{ github.token }}
           CLOSED_PR: ${{ github.event.pull_request.number }}
@@ -30,15 +33,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          gallery_dirs="dev/bdd-videos dev/system-videos"
+          branch_prefixes="bdd-videos-pr- system-videos-pr-"
+
           if [ -n "${CLOSED_PR}" ]; then
             candidates="${CLOSED_PR}"
           else
             candidates=$(
               {
-                git ls-remote --heads origin 'refs/heads/bdd-videos-pr-*' |
-                  sed -n 's#.*refs/heads/bdd-videos-pr-\([0-9][0-9]*\)$#\1#p'
-                find dev/bdd-videos -mindepth 1 -maxdepth 1 -type d -name 'pr-[0-9]*' 2>/dev/null |
-                  sed -n 's#.*/pr-\([0-9][0-9]*\)$#\1#p'
+                for prefix in ${branch_prefixes}; do
+                  git ls-remote --heads origin "refs/heads/${prefix}*" |
+                    sed -n "s#.*refs/heads/${prefix}\([0-9][0-9]*\)\$#\1#p"
+                done
+                for dir in ${gallery_dirs}; do
+                  find "${dir}" -mindepth 1 -maxdepth 1 -type d -name 'pr-[0-9]*' 2>/dev/null |
+                    sed -n 's#.*/pr-\([0-9][0-9]*\)$#\1#p'
+                done
               } | sort -un
             )
           fi
@@ -52,12 +62,14 @@ jobs:
             if [ "${state}" = "open" ]; then
               continue
             fi
-            git rm -r --ignore-unmatch "dev/bdd-videos/pr-${pr_number}"
+            for dir in ${gallery_dirs}; do
+              git rm -r --ignore-unmatch "${dir}/pr-${pr_number}"
+            done
             closed_prs="${closed_prs} ${pr_number}"
           done
 
           if ! git diff --cached --quiet; then
-            git commit -m "Remove BDD galleries for closed PRs"
+            git commit -m "Remove video galleries for closed PRs"
             attempt=1
             while ! git push origin HEAD:gh-pages; do
               if [ "$attempt" -ge 3 ]; then
@@ -71,8 +83,10 @@ jobs:
           fi
 
           for pr_number in ${closed_prs}; do
-            media_branch="bdd-videos-pr-${pr_number}"
-            if git ls-remote --exit-code --heads origin "refs/heads/${media_branch}" >/dev/null 2>&1; then
-              git push origin --delete "${media_branch}"
-            fi
+            for prefix in ${branch_prefixes}; do
+              media_branch="${prefix}${pr_number}"
+              if git ls-remote --exit-code --heads origin "refs/heads/${media_branch}" >/dev/null 2>&1; then
+                git push origin --delete "${media_branch}"
+              fi
+            done
           done
